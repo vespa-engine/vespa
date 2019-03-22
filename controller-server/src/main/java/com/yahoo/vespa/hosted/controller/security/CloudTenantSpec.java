@@ -1,22 +1,20 @@
-package com.yahoo.vespa.hosted.controller.permits;
+package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.TenantName;
-
-import java.security.Principal;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Wraps the permit data of an Okta tenancy modification.
+ * Extends the specification for creating a cloud tenant.
  *
  * @author jonmv
  */
-public class CloudTenantPermit extends TenantPermit {
+public class CloudTenantSpec extends TenantSpec {
 
     private final String registrationToken;
 
-    public CloudTenantPermit(TenantName tenant, Principal user, String registrationToken) {
-        super(tenant, user);
+    public CloudTenantSpec(TenantName tenant, String registrationToken) {
+        super(tenant);
         this.registrationToken = requireNonNull(registrationToken);
     }
 

@@ -1,0 +1,23 @@
+package com.yahoo.vespa.hosted.controller.security;
+
+import java.security.Principal;
+
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Credentials representing an entity for which to modify access control rules.
+ *
+ * @author jonmv
+ */
+public class Credentials {
+
+    private final Principal user;
+
+    public Credentials(Principal user) {
+        this.user = requireNonNull(user);
+    }
+
+    /** Returns the user which makes the request. */
+    public Principal user() { return user; }
+
+}

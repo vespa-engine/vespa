@@ -3,20 +3,17 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
-import com.yahoo.vespa.hosted.controller.permits.PermitStore;
-import com.yahoo.vespa.hosted.controller.permits.TenantPermit;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
-import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -25,8 +22,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static com.yahoo.vespa.hosted.controller.tenant.Tenant.Type.cloud;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling tenants.
@@ -40,12 +35,12 @@ public class TenantController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final PermitStore permits;
+    private final AccessControl accessControl;
 
-    public TenantController(Controller controller, CuratorDb curator, PermitStore permits) {
+    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
-        this.permits = permits;
+        this.accessControl = accessControl;
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
@@ -68,8 +63,8 @@ public class TenantController {
     }
 
     /** Returns the lsit of tenants accessible to the given user. */
-    public List<Tenant> asList(Principal user) {
-        return permits.accessibleTenants(asList(), user);
+    public List<Tenant> asList(Credentials credentials) {
+        return accessControl.accessibleTenants(asList(), credentials);
     }
 
     /** Locks a tenant for modification and applies the given action. */
@@ -106,11 +101,11 @@ public class TenantController {
         }
     }
 
-    /** Create a tenant, provided the given permit is valid. */
-    public void create(TenantPermit permit) {
-        try (Lock lock = lock(permit.tenant())) {
-            requireNonExistent(permit.tenant());
-            curator.writeTenant(permits.createTenant(permit, asList(), Collections.emptyList()));
+    /** Create a tenant, provided the given credentials are valid. */
+    public void create(TenantSpec tenantSpec, Credentials credentials) {
+        try (Lock lock = lock(tenantSpec.tenant())) {
+            requireNonExistent(tenantSpec.tenant());
+            curator.writeTenant(accessControl.createTenant(tenantSpec, credentials, asList()));
         }
     }
 
@@ -124,41 +119,23 @@ public class TenantController {
         return get(TenantName.from(name));
     }
 
-    /** Find Athenz tenant by name */
-    public Optional<AthenzTenant> athenzTenant(TenantName name) {
-        return curator.readTenant(name)
-                      .filter(AthenzTenant.class::isInstance)
-                      .map(AthenzTenant.class::cast);
-    }
-
-    /** Returns Athenz tenant with name or throws if no such tenant exists */
-    public AthenzTenant requireAthenzTenant(TenantName name) {
-        return athenzTenant(name).orElseThrow(() -> new IllegalArgumentException("Tenant '" + name + "' not found"));
-    }
-
-    /** Updates the tenant contained in the given permit with new data. */
-    public void update(TenantPermit permit) {
-        try (Lock lock = lock(permit.tenant())) {
-            Tenant tenant = require(permit.tenant());
-            List<Tenant> otherTenants = new ArrayList<>(asList());
-            otherTenants.remove(tenant);
-
-            List<Application> applications = controller.applications().asList(permit.tenant());
-            permits.deleteTenant(permit, tenant, applications);
-            curator.writeTenant(permits.createTenant(permit, otherTenants, applications));
+    /** Updates the tenant contained in the given tenant spec with new data. */
+    public void update(TenantSpec tenantSpec, Credentials credentials) {
+        try (Lock lock = lock(tenantSpec.tenant())) {
+            curator.writeTenant(accessControl.updateTenant(tenantSpec, credentials, asList(), controller.applications().asList(tenantSpec.tenant())));
         }
     }
 
-    /** Deletes the tenant in the given permit. */
-    public void delete(TenantPermit permit) {
-        try (Lock lock = lock(permit.tenant())) {
-            Tenant tenant = require(permit.tenant());
-            if ( ! controller.applications().asList(tenant.name()).isEmpty())
-                throw new IllegalArgumentException("Could not delete tenant '" + tenant.name().value()
+    /** Deletes the given tenant. */
+    public void delete(TenantName tenant, Credentials credentials) {
+        try (Lock lock = lock(tenant)) {
+            require(tenant);
+            if ( ! controller.applications().asList(tenant).isEmpty())
+                throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
                                                    + "': This tenant has active applications");
 
-            curator.removeTenant(tenant.name());
-            permits.deleteTenant(permit, tenant, controller.applications().asList(permit.tenant()));
+            curator.removeTenant(tenant);
+            accessControl.deleteTenant(tenant, credentials);
         }
     }
 

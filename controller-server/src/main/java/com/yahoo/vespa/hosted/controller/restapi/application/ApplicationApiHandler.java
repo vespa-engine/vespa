@@ -23,7 +23,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
@@ -69,13 +68,13 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.PermitExtractor;
+import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant.Type;
@@ -103,6 +102,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -116,15 +116,15 @@ import static java.util.stream.Collectors.joining;
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final PermitExtractor permits;
+    private final AccessControlRequests accessControlRequests;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
                                  Controller controller,
-                                 PermitExtractor permits) {
+                                 AccessControlRequests accessControlRequests) {
         super(parentCtx);
         this.controller = controller;
-        this.permits = permits;
+        this.accessControlRequests = accessControlRequests;
     }
 
     @Override
@@ -267,7 +267,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (user == null)
             throw new NotAuthorizedException("You must be authenticated.");
 
-        List<Tenant> tenants = controller.tenants().asList(user);
+        TenantName tenantName = TenantName.from(UserTenant.normalizeUser(user.getIdentity().getName()));
+        List<Tenant> tenants = controller.tenants().asList(new Credentials(user));
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
@@ -275,8 +276,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant.type() == Type.user &&
-                                                                         ((UserTenant) tenant).is(user.getIdentity().getName())));
+        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant.name().equals(tenantName)));
         return new SlimeJsonResponse(slime);
     }
 
@@ -738,21 +738,29 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
         getTenantOrThrow(tenantName);
-        controller.tenants().update(permits.getTenantPermit(TenantName.from(tenantName), request));
+        TenantName tenant = TenantName.from(tenantName);
+        Inspector requestObject = toSlime(request.getData()).get();
+        controller.tenants().update(accessControlRequests.specification(tenant, requestObject),
+                                    accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
-        controller.tenants().create(permits.getTenantPermit(TenantName.from(tenantName), request));
+        TenantName tenant = TenantName.from(tenantName);
+        Inspector requestObject = toSlime(request.getData()).get();
+        controller.tenants().create(accessControlRequests.specification(tenant, requestObject),
+                                    accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
+        Inspector requestObject = toSlime(request.getData()).get();
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         try {
-            Optional<ApplicationPermit> permit = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
-                    ? Optional.of(permits.getApplicationPermit(id, request)) : Optional.empty();
-            Application application = controller.applications().createApplication(id, permit);
+            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                    ? Optional.empty()
+                    : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
+            Application application = controller.applications().createApplication(id, credentials);
 
             Slime slime = new Slime();
             toSlime(application, slime.setObject(), request);
@@ -953,7 +961,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (tenant.get().type() == Tenant.Type.user)
             controller.tenants().deleteUser((UserTenant) tenant.get());
         else
-            controller.tenants().delete(permits.getTenantPermit(tenant.get().name(), request));
+            controller.tenants().delete(tenant.get().name(),
+                                        accessControlRequests.credentials(tenant.get().name(),
+                                                                          toSlime(request.getData()).get(),
+                                                                          request.getJDiscRequest()));
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request);
@@ -961,9 +972,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        Optional<ApplicationPermit> permit = controller.tenants().require(id.tenant()).type() != Tenant.Type.user
-                ? Optional.of(permits.getApplicationPermit(id, request)) : Optional.empty();
-        controller.applications().deleteApplication(id, permit);
+        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                ? Optional.empty()
+                : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+        controller.applications().deleteApplication(id, credentials);
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 

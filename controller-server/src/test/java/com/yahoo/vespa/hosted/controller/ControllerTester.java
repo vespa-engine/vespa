@@ -44,12 +44,12 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
+import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -264,13 +264,13 @@ public final class ControllerTester {
         Optional<Tenant> existing = controller().tenants().get(name);
         if (existing.isPresent()) return name;
         AthenzUser user = new AthenzUser("user");
-        AthenzTenantPermit permit = new AthenzTenantPermit(name,
-                                                           new AthenzPrincipal(user),
-                                                           Optional.of(createDomainWithAdmin(domainName, user)),
+        AthenzDomain domain = createDomainWithAdmin(domainName, user);
+        AthenzTenantSpec tenantSpec = new AthenzTenantSpec(name,
+                                                           Optional.of(domain),
                                                            Optional.of(new Property("Property" + propertyId)),
-                                                           Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new),
-                                                           new OktaAccessToken("okta-token"));
-        controller().tenants().create(permit);
+                                                           Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
+        AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
+        controller().tenants().create(tenantSpec, credentials);
         if (contact.isPresent())
             controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
                     controller().tenants().store(tenant.with(contact.get())));
@@ -282,20 +282,20 @@ public final class ControllerTester {
         return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
 
-    public Optional<ApplicationPermit> permitFor(ApplicationId id) {
-        return domainOf(id).map(domain -> new AthenzApplicationPermit(id, domain, new OktaAccessToken("okta-token")));
+    public Optional<Credentials> credentialsFor(ApplicationId id) {
+        return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")), domain, new OktaAccessToken("okta-token")));
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
-        controller().applications().createApplication(applicationId, permitFor(applicationId));
+        controller().applications().createApplication(applicationId, credentialsFor(applicationId));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
                 controller().applications().store(lockedApplication.withProjectId(OptionalLong.of(projectId))));
         return controller().applications().require(applicationId);
     }
 
     public void deleteApplication(ApplicationId id) {
-        controller().applications().deleteApplication(id, permitFor(id));
+        controller().applications().deleteApplication(id, credentialsFor(id));
     }
 
     public void deploy(Application application, ZoneId zone) {

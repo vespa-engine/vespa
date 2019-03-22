@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -10,7 +12,6 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
@@ -18,17 +19,16 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.AthenzApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.AthenzTenantPermit;
-import com.yahoo.vespa.hosted.controller.permits.PermitStore;
-import com.yahoo.vespa.hosted.controller.permits.TenantPermit;
+import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
+import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import javax.ws.rs.ForbiddenException;
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -38,8 +38,9 @@ import java.util.stream.Collectors;
 
 /**
  * @author bjorncs
+ * @author jonmv
  */
-public class AthenzFacade implements PermitStore {
+public class AthenzFacade implements AccessControl {
 
     private static final Logger log = Logger.getLogger(AthenzFacade.class.getName());
     private final ZmsClient zmsClient;
@@ -58,61 +59,95 @@ public class AthenzFacade implements PermitStore {
     }
 
     @Override
-    public Tenant createTenant(TenantPermit permit, List<Tenant> existing, List<Application> applications) {
-        AthenzTenantPermit athenzPermit = (AthenzTenantPermit) permit;
-        AthenzDomain domain = athenzPermit.domain()
-                                          .orElseThrow(() -> new IllegalArgumentException("Must provide Athenz domain."));
+    public Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
+        AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
+        AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
+        AthenzDomain domain = athenzCredentials.domain();
 
-        Tenant tenant = AthenzTenant.create(athenzPermit.tenant(),
-                                            athenzPermit.domain()
-                                                        .orElseThrow(() -> new IllegalArgumentException("Must provide Athenz domain.")),
-                                            athenzPermit.property()
-                                                        .orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
-                                            athenzPermit.propertyId());
-
-        verifyIsDomainAdmin(((AthenzPrincipal) athenzPermit.user()).getIdentity(), domain);
+        verifyIsDomainAdmin(athenzCredentials.user().getIdentity(), domain);
 
         Optional<Tenant> existingWithSameDomain = existing.stream()
-                .filter(existingTenant ->    existingTenant instanceof AthenzTenant
-                                          && domain.equals(((AthenzTenant) existingTenant).domain()))
-                .findAny();
+                                                          .filter(tenant ->    tenant.type() == Tenant.Type.athenz
+                                                                            && domain.equals(((AthenzTenant) tenant).domain()))
+                                                          .findAny();
 
-        if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
-            if ( ! existingWithSameDomain.get().name().equals(permit.tenant()))
-                throw new IllegalArgumentException("Could not create tenant '" + athenzPermit.tenant().value() +
-                                                   "': The Athens domain '" +
-                                                   domain.getName() + "' is already connected to tenant '" +
-                                                   existingWithSameDomain.get().name().value() + "'");
+        AthenzTenant tenant = AthenzTenant.create(spec.tenant(),
+                                                  domain,
+                                                  spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                                  spec.propertyId());
+
+        if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
+            throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
+                                               "': The Athens domain '" +
+                                               domain.getName() + "' is already connected to tenant '" +
+                                               existingWithSameDomain.get().name().value() + "'");
         }
-        else { // Create tenant, and optionally application, resources in Athenz if domain is not already taken.
-            log("createTenancy(tenantDomain=%s, service=%s)", athenzPermit.domain(), service);
-            zmsClient.createTenancy(domain, service, athenzPermit.token());
-
-            for (Application application : applications)
-                createApplication(domain, application.id().application(), athenzPermit.token());
+        else { // Create tenant resources in Athenz if domain is not already taken.
+            log("createTenancy(tenantDomain=%s, service=%s)", domain, service);
+            zmsClient.createTenancy(domain, service, athenzCredentials.token());
         }
 
         return tenant;
     }
 
     @Override
-    public void deleteTenant(TenantPermit permit, Tenant tenant, List<Application> applications) {
-        AthenzTenantPermit athenzPermit = (AthenzTenantPermit) permit;
-        AthenzDomain domain = ((AthenzTenant) tenant).domain();
+    public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications) {
+        AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
+        AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
+        AthenzDomain domain = athenzCredentials.domain();
 
-        for (Application application : applications)
-            deleteApplication(domain,
-                              application.id().application(),
-                              athenzPermit.token());
+        verifyIsDomainAdmin(athenzCredentials.user().getIdentity(), domain);
 
-        log("deleteTenancy(tenantDomain=%s, service=%s)", athenzPermit.domain(), service);
-        zmsClient.deleteTenancy(domain, service, athenzPermit.token());
+        Optional<Tenant> existingWithSameDomain = existing.stream()
+                                                          .filter(tenant ->    tenant.type() == Tenant.Type.athenz
+                                                                            && domain.equals(((AthenzTenant) tenant).domain()))
+                                                          .findAny();
+
+        Tenant tenant = AthenzTenant.create(spec.tenant(),
+                                            domain,
+                                            spec.property().orElseThrow(() -> new IllegalArgumentException("Must provide property.")),
+                                            spec.propertyId());
+
+        int index = existing.indexOf(tenant);
+        if (index == -1) throw new IllegalArgumentException("Cannot update a non-existent tenant.");
+        AthenzTenant oldTenant = (AthenzTenant) existing.get(index);
+
+        if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
+            if ( ! existingWithSameDomain.get().equals(oldTenant))
+                throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
+                                                   "': The Athens domain '" +
+                                                   domain.getName() + "' is already connected to tenant '" +
+                                                   existingWithSameDomain.get().name().value() + "'");
+
+            return tenant; // Short-circuit here if domain is still the same.
+        }
+        else { // Delete and recreate tenant, and optionally application, resources in Athenz otherwise.
+            log("createTenancy(tenantDomain=%s, service=%s)", domain, service);
+            zmsClient.createTenancy(domain, service, athenzCredentials.token());
+            for (Application application : applications)
+                createApplication(domain, application.id().application(), athenzCredentials.token());
+
+            log("deleteTenancy(tenantDomain=%s, service=%s)", oldTenant.domain(), service);
+            for (Application application : applications)
+                deleteApplication(oldTenant.domain(), application.id().application(), athenzCredentials.token());
+            zmsClient.deleteTenancy(oldTenant.domain(), service, athenzCredentials.token());
+        }
+
+        return tenant;
     }
 
     @Override
-    public void createApplication(ApplicationPermit permit) {
-        AthenzApplicationPermit athenzPermit = (AthenzApplicationPermit) permit;
-        createApplication(athenzPermit.domain(), athenzPermit.application().application(), athenzPermit.token());
+    public void deleteTenant(TenantName tenant, Credentials credentials) {
+        AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
+
+        log("deleteTenancy(tenantDomain=%s, service=%s)", athenzCredentials.domain(), service);
+        zmsClient.deleteTenancy(athenzCredentials.domain(), service, athenzCredentials.token());
+    }
+
+    @Override
+    public void createApplication(ApplicationId application, Credentials credentials) {
+        AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
+        createApplication(athenzCredentials.domain(), application.application(), athenzCredentials.token());
     }
 
     private void createApplication(AthenzDomain domain, ApplicationName application, OktaAccessToken token) {
@@ -124,20 +159,20 @@ public class AthenzFacade implements PermitStore {
     }
 
     @Override
-    public void deleteApplication(ApplicationPermit permit) {
-        AthenzApplicationPermit athenzPermit = (AthenzApplicationPermit) permit;
+    public void deleteApplication(ApplicationId id, Credentials credentials) {
+        AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         log("deleteProviderResourceGroup(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
-            athenzPermit.domain(), service.getDomain().getName(), service.getName(), athenzPermit.application());
-        zmsClient.deleteProviderResourceGroup(athenzPermit.domain(), service, athenzPermit.application().application().value(), athenzPermit.token());
+            athenzCredentials.domain(), service.getDomain().getName(), service.getName(), id.application());
+        zmsClient.deleteProviderResourceGroup(athenzCredentials.domain(), service, id.application().value(), athenzCredentials.token());
     }
 
     @Override
-    public List<Tenant> accessibleTenants(List<Tenant> tenants, Principal principal) {
-        AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
+    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
+        AthenzIdentity identity =  ((AthenzPrincipal) credentials.user()).getIdentity();
         List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
         return tenants.stream()
-                      .filter(tenant ->    tenant instanceof UserTenant && ((UserTenant) tenant).is(identity.getName())
-                                        || tenant instanceof AthenzTenant && userDomains.contains(((AthenzTenant) tenant).domain()))
+                      .filter(tenant ->    tenant.type() == Tenant.Type.user && ((UserTenant) tenant).is(identity.getName())
+                                        || tenant.type() == Tenant.Type.athenz && userDomains.contains(((AthenzTenant) tenant).domain()))
                       .collect(Collectors.toUnmodifiableList());
     }
 

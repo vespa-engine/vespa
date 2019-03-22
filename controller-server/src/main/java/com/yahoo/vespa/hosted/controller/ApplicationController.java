@@ -50,12 +50,12 @@ import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
-import com.yahoo.vespa.hosted.controller.permits.ApplicationPermit;
-import com.yahoo.vespa.hosted.controller.permits.PermitStore;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -65,6 +65,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.security.Principal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -104,7 +105,7 @@ public class ApplicationController {
     private final ArtifactRepository artifactRepository;
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
-    private final PermitStore permits;
+    private final AccessControl accessControl;
     private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
@@ -113,13 +114,13 @@ public class ApplicationController {
     private final DeploymentTrigger deploymentTrigger;
 
     ApplicationController(Controller controller, CuratorDb curator,
-                          PermitStore permits, RotationsConfig rotationsConfig,
+                          AccessControl accessControl, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
-        this.permits = permits;
+        this.accessControl = accessControl;
         this.nameService = nameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
@@ -217,7 +218,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Application createApplication(ApplicationId id, Optional<ApplicationPermit> permit) {
+    public Application createApplication(ApplicationId id, Optional<Credentials> credentials) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
             throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
@@ -235,11 +236,11 @@ public class ApplicationController {
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (tenant.get().type() != Tenant.Type.user) {
-                if ( ! permit.isPresent())
-                    throw new IllegalArgumentException("Could not create '" + id + "': No permit provided");
+                if ( ! credentials.isPresent())
+                    throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
 
                 if (id.instance().isDefault()) // Only store the application permits for non-user applications.
-                    permits.createApplication(permit.get());
+                    accessControl.createApplication(id, credentials.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
@@ -542,10 +543,10 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId applicationId, Optional<ApplicationPermit> permit) {
+    public void deleteApplication(ApplicationId applicationId, Optional<Credentials> credentials) {
         Tenant tenant = controller.tenants().require(applicationId.tenant());
-        if (tenant.type() != Tenant.Type.user && ! permit.isPresent())
-                throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No permit provided");
+        if (tenant.type() != Tenant.Type.user && ! credentials.isPresent())
+                throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No credentials provided");
 
         // Find all instances of the application
         List<ApplicationId> instances = asList(applicationId.tenant()).stream()
@@ -570,7 +571,7 @@ public class ApplicationController {
 
         // Only delete permits once.
         if (tenant.type() != Tenant.Type.user)
-            permits.deleteApplication(permit.get());
+            accessControl.deleteApplication(applicationId, credentials.get());
     }
 
     /**
@@ -731,7 +732,7 @@ public class ApplicationController {
             Tenant tenant = controller.tenants().require(tenantName);
             deployer.filter(AthenzUser.class::isInstance)
                     .ifPresentOrElse(user -> {
-                                         if ( ! ((AthenzFacade) permits).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
+                                         if ( ! ((AthenzFacade) accessControl).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
                                              throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +
                                                                                 "services in Athenz domain " + identityDomain.value() + ". " +
                                                                                 "Please reach out to the domain admin.");
