@@ -31,7 +31,7 @@ public class FS4SearchInvokerTestCase {
         var searcher = mockSearcher();
         var cluster = new MockSearchCluster("?", 1, 1);
         var fs4invoker = new FS4SearchInvoker(searcher, query, mockFailingChannel(), Optional.empty());
-        var interleave = new InterleavedSearchInvoker(Collections.singleton(fs4invoker), searcher, cluster);
+        var interleave = new InterleavedSearchInvoker(Collections.singleton(fs4invoker), searcher, cluster, null);
 
         long start = System.currentTimeMillis();
         interleave.search(query, QueryPacket.create(null, null), null);

@@ -7,18 +7,12 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
-import com.yahoo.search.dispatch.InterleavedSearchInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Set;
 
 /**
  * @author ollivir
@@ -28,50 +22,15 @@ public class RpcInvokerFactory extends InvokerFactory {
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     private final RpcResourcePool rpcResourcePool;
-    private final SearchCluster searchCluster;
 
     public RpcInvokerFactory(RpcResourcePool rpcResourcePool, SearchCluster searchCluster) {
+        super(searchCluster);
         this.rpcResourcePool = rpcResourcePool;
-        this.searchCluster = searchCluster;
     }
 
     @Override
-    public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher, Query query, OptionalInt groupId, List<Node> nodes,
-            boolean acceptIncompleteCoverage) {
-        List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
-        Set<Integer> failed = null;
-        for (Node node : nodes) {
-            if (node.isWorking()) {
-                invokers.add(new RpcSearchInvoker(searcher, node, rpcResourcePool));
-            } else {
-                if (failed == null) {
-                    failed = new HashSet<>();
-                }
-                failed.add(node.key());
-            }
-        }
-
-        if (failed != null) {
-            List<Node> success = new ArrayList<>(nodes.size() - failed.size());
-            for (Node node : nodes) {
-                if (!failed.contains(node.key())) {
-                    success.add(node);
-                }
-            }
-            if (!searchCluster.isPartialGroupCoverageSufficient(groupId, success)) {
-                if (acceptIncompleteCoverage) {
-                    invokers.add(createCoverageErrorInvoker(nodes, failed));
-                } else {
-                    return Optional.empty();
-                }
-            }
-        }
-
-        if (invokers.size() == 1) {
-            return Optional.of(invokers.get(0));
-        } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searcher, searchCluster));
-        }
+    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node) {
+        return Optional.of(new RpcSearchInvoker(searcher, node, rpcResourcePool));
     }
 
     @Override

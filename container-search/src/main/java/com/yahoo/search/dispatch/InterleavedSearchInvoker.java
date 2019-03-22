@@ -40,6 +40,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final VespaBackEndSearcher searcher;
     private final SearchCluster searchCluster;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
+    private final Set<Integer> alreadyFailedNodes;
     private Query query;
 
     private boolean adaptiveTimeoutCalculated = false;
@@ -59,13 +60,14 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private boolean trimResult = false;
 
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, VespaBackEndSearcher searcher, SearchCluster searchCluster) {
+    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, VespaBackEndSearcher searcher, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
         this.searcher = searcher;
         this.searchCluster = searchCluster;
         this.availableForProcessing = newQueue();
+        this.alreadyFailedNodes = alreadyFailedNodes;
     }
 
     /**
@@ -116,7 +118,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         if (result == null) {
             result = new Result(query);
         }
-        insertTimeoutErrors();
+        insertNetworkErrors();
         result.setCoverage(createCoverage());
         trimResult(execution);
         Result ret = result;
@@ -134,13 +136,33 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         }
     }
 
-    private void insertTimeoutErrors() {
+    private void insertNetworkErrors() {
+        // Network errors will be reported as errors only when all nodes fail, otherwise they are just traced
+        boolean asErrors = answeredNodes == 0;
+
         if (!invokers.isEmpty()) {
             String keys = invokers.stream().map(SearchInvoker::distributionKey).map(dk -> dk.map(i -> i.toString()).orElse("(unspecified)"))
                     .collect(Collectors.joining(", "));
 
-            result.hits().addError(ErrorMessage.createTimeout("Backend communication timeout on nodes with distribution-keys: " + keys));
+            if (asErrors) {
+                result.hits().addError(ErrorMessage
+                        .createTimeout("Backend communication timeout on all nodes in group (distribution-keys: " + keys + ")"));
+            } else {
+                query.trace("Backend communication timeout on nodes with distribution-keys: " + keys, 5);
+            }
             timedOut = true;
+        }
+        if (alreadyFailedNodes != null) {
+            var message = "Connection failure on nodes with distribution-keys: "
+                    + alreadyFailedNodes.stream().map(v -> Integer.toString(v)).collect(Collectors.joining(", "));
+            if (asErrors) {
+                result.hits().addError(ErrorMessage.createBackendCommunicationError(message));
+            } else {
+                query.trace(message, 5);
+            }
+            int failed = alreadyFailedNodes.size();
+            askedNodes += failed;
+            answeredNodes += failed;
         }
     }
 
@@ -204,6 +226,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private Coverage createCoverage() {
         adjustDegradedCoverage();
+
         Coverage coverage = new Coverage(answeredDocs, answeredActiveDocs, answeredNodesParticipated, 1);
         coverage.setNodesTried(askedNodes);
         coverage.setSoonActive(answeredSoonActiveDocs);
