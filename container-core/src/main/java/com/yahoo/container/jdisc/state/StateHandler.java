@@ -235,6 +235,7 @@ public class StateHandler extends AbstractRequestHandler {
                 GaugeMetric gauge = (GaugeMetric) tuple.val;
                 JSONObjectWithLegibleException valueFields = new JSONObjectWithLegibleException();
                 valueFields.put("average", gauge.getAverage())
+                        .put("sum", gauge.getSum())
                         .put("count", gauge.getCount())
                         .put("last", gauge.getLast())
                         .put("max", gauge.getMax())

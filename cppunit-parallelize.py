@@ -20,14 +20,14 @@ def parse_arguments():
     return args
 
 def take(lst, n):
-    return [ lst.pop() for i in xrange(n) ]
+    return [ lst.pop() for i in range(n) ]
 
 def chunkify(lst, chunks):
     lst = copy.copy(lst)
-    chunk_size = len(lst) / chunks
+    chunk_size = int(len(lst) / chunks)
     chunk_surplus = len(lst) % chunks
 
-    result = [ take(lst, chunk_size) for i in xrange(chunks) ]
+    result = [ take(lst, chunk_size) for i in range(chunks) ]
     if chunk_surplus:
         result.append(lst)
 
@@ -45,7 +45,8 @@ def error_if_file_not_found(function):
 
 @error_if_file_not_found
 def get_test_suites(testrunner):
-    return subprocess.check_output((testrunner, "--list")).strip().split("\n")
+    out = subprocess.check_output((testrunner, "--list"))
+    return out.decode('utf-8').strip().split("\n")
 
 class Process:
     def __init__(self, cmd, group):
@@ -83,26 +84,26 @@ test_suites = get_test_suites(args.testrunner)
 test_suite_groups = chunkify(test_suites, args.chunks)
 processes = build_processes(test_suite_groups)
 
-print "Running %d test suites in %d parallel chunks with ~%d tests each" % (len(test_suites), len(test_suite_groups), len(test_suite_groups[0]))
+print("Running %d test suites in %d parallel chunks with ~%d tests each" % (len(test_suites), len(test_suite_groups), len(test_suite_groups[0])))
 
 processes_left = len(processes)
 while True:
     try:
         for proc in processes:
             return_code = proc.handle.poll()
-            proc.output += proc.handle.stdout.read()
+            proc.output += proc.handle.stdout.read().decode('utf-8')
 
             if return_code == 0:
                 proc.finished = True
                 processes_left -= 1
                 if processes_left > 0:
-                    print "%d test suite(s) left" % processes_left
+                    print("%d test suite(s) left" % processes_left)
                 else:
-                    print "All test suites ran successfully"
+                    print("All test suites ran successfully")
                     sys.exit(0)
             elif return_code is not None:
-                print "Error: one of '%s' test suites failed:" % ", ".join(proc.group)
-                print >>sys.stderr, proc.output
+                print("Error: one of '%s' test suites failed:" % ", ".join(proc.group))
+                sys.stderr.write(proc.output)
                 sys.exit(return_code)
 
             time.sleep(0.01)
