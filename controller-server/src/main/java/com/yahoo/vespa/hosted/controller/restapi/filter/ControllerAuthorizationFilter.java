@@ -3,8 +3,9 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
@@ -20,6 +21,10 @@ import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
+import com.yahoo.vespa.hosted.controller.role.Action;
+import com.yahoo.vespa.hosted.controller.role.Context;
+import com.yahoo.vespa.hosted.controller.role.Role;
+import com.yahoo.vespa.hosted.controller.role.RoleMembership;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -28,18 +33,12 @@ import com.yahoo.yolean.chain.Provides;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.WebApplicationException;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static com.yahoo.jdisc.http.HttpRequest.Method.HEAD;
-import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
-import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
-import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 
 /**
@@ -51,50 +50,36 @@ import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SC
 @Provides("ControllerAuthorizationFilter")
 public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
-    private static final List<Method> WHITELISTED_METHODS = List.of(GET, OPTIONS, HEAD);
-
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
     private final AthenzFacade athenz;
-    private final TenantController tenantController;
+    private final Controller controller;
 
     @Inject
     public ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
                                          Controller controller,
                                          CorsFilterConfig corsConfig) {
-        super(corsConfig);
-        this.athenz = new AthenzFacade(clientFactory);
-        this.tenantController = controller.tenants();
+        this(clientFactory, controller, Set.copyOf(corsConfig.allowedUrls()));
     }
 
     ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
-                                  TenantController tenantController,
+                                  Controller controller,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
         this.athenz = new AthenzFacade(clientFactory);;
-        this.tenantController = tenantController;
+        this.controller = controller;
     }
 
-    // NOTE: Be aware of the ordering of the path pattern matching. Semantics may change if the patterns are evaluated
-    //       in different order.
     @Override
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
-        Method method = getMethod(request);
-        if (isWhiteListedMethod(method)) return Optional.empty();
-
         try {
             Path path = new Path(request.getRequestURI());
-            AthenzPrincipal principal = getPrincipalOrThrow(request);
-            if (isWhiteListedOperation(path, method)) {
-                // no authz check
-            } else if (isHostedOperatorOperation(path, method)) {
-                verifyIsHostedOperator(principal);
-            } else if (isTenantAdminOperation(path, method)) {
-                verifyIsTenantAdmin(principal, getTenantName(path));
-            } else if (isTenantPipelineOperation(path, method)) {
-                verifyIsTenantPipelineOperator(principal, getTenantName(path), getApplicationName(path));
-            } else {
-                throw new ForbiddenException("No access control is declared for path: '" + path.asString() + "'");
+            Optional<AthenzPrincipal> principal = principalFrom(request);
+            Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
+            AthenzRoleResolver resolver = new AthenzRoleResolver(principal, athenz, controller, path);
+            RoleMembership roles = resolver.membership();
+            if (!roles.allow(action, request.getRequestURI())) {
+                throw new ForbiddenException("Access denied");
             }
             return Optional.empty();
         } catch (WebApplicationException e) {
@@ -105,146 +90,112 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         }
     }
 
-    private static boolean isWhiteListedMethod(Method method) {
-        return WHITELISTED_METHODS.contains(method);
-    }
+    // TODO: Pull class up and resolve roles from roles defined in Athenz
+    private static class AthenzRoleResolver implements RoleMembership.Resolver {
 
-    private static boolean isWhiteListedOperation(Path path, Method method) {
-        return path.matches("/application/v4/user") && method == PUT || // Create user tenant
-               path.matches("/application/v4/tenant/{tenant}") && method == POST; // Create tenant
-    }
+        private final Optional<AthenzPrincipal> principal;
+        private final AthenzFacade athenz;
+        private final TenantController tenants;
+        private final Path path;
+        private final SystemName system;
 
-    private static boolean isHostedOperatorOperation(Path path, Method method) {
-        if (isWhiteListedOperation(path, method)) return false;
-        return path.matches("/controller/v1/{*}") ||
-               path.matches("/provision/v2/{*}") ||
-               path.matches("/flags/v1/{*}") ||
-               path.matches("/os/v1/{*}") ||
-               path.matches("/zone/v2/{*}") ||
-               path.matches("/nodes/v2/{*}") ||
-               path.matches("/orchestrator/v1/{*}");
-    }
-
-    private static boolean isTenantAdminOperation(Path path, Method method) {
-        if (isHostedOperatorOperation(path, method)) return false;
-        return path.matches("/application/v4/tenant/{tenant}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{*}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{job}/{*}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override");
-    }
-
-    private static boolean isTenantPipelineOperation(Path path, Method method) {
-        if (isTenantAdminOperation(path, method)) return false;
-        return path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/submit") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/promote") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}");
-    }
-
-    private void verifyIsHostedOperator(AthenzPrincipal principal) {
-        if (!isHostedOperator(principal.getIdentity())) {
-            throw new ForbiddenException("Vespa operator role required");
+        public AthenzRoleResolver(Optional<AthenzPrincipal> principal, AthenzFacade athenz, Controller controller, Path path) {
+            this.principal = principal;
+            this.athenz = athenz;
+            this.tenants = controller.tenants();
+            this.path = path;
+            this.system = controller.system();
         }
-    }
 
-    private boolean isHostedOperator(AthenzIdentity identity) {
-        return athenz.hasHostedOperatorAccess(identity);
-    }
-
-    private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantName name) {
-        tenantController.get(name)
-                .ifPresent(tenant -> {
-                    if (!isTenantAdmin(principal.getIdentity(), tenant)) {
-                        throw new ForbiddenException("Tenant admin or Vespa operator role required");
-                    }
-                });
-    }
-
-    private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
-        if (tenant instanceof AthenzTenant) {
-            return athenz.hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
-        } else if (tenant instanceof UserTenant) {
-            if (!(identity instanceof AthenzUser)) {
-                return false;
+        private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
+            if (tenant instanceof AthenzTenant) {
+                return athenz.hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
+            } else if (tenant instanceof UserTenant) {
+                if (!(identity instanceof AthenzUser)) {
+                    return false;
+                }
+                AthenzUser user = (AthenzUser) identity;
+                return ((UserTenant) tenant).is(user.getName()) || isHostedOperator(identity);
             }
-            AthenzUser user = (AthenzUser) identity;
-            return ((UserTenant) tenant).is(user.getName()) || isHostedOperator(identity);
-        }
-        throw new InternalServerErrorException("Unknown tenant type: " + tenant.getClass().getSimpleName());
-    }
-
-    private void verifyIsTenantPipelineOperator(AthenzPrincipal principal,
-                                                TenantName name,
-                                                ApplicationName application) {
-        tenantController.get(name)
-                .ifPresent(tenant -> verifyIsTenantPipelineOperator(principal.getIdentity(), tenant, application));
-    }
-
-    private void verifyIsTenantPipelineOperator(AthenzIdentity identity, Tenant tenant, ApplicationName application) {
-        if (isHostedOperator(identity)) return;
-
-        AthenzDomain principalDomain = identity.getDomain();
-        if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
-            throw new ForbiddenException(String.format(
-                    "'%s' is not a Screwdriver identity. Only Screwdriver is allowed to deploy to this environment.",
-                    identity.getFullName()));
+            throw new InternalServerErrorException("Unknown tenant type: " + tenant.getClass().getSimpleName());
         }
 
-        // NOTE: no fine-grained deploy authorization for non-Athenz tenants
-        if (tenant instanceof AthenzTenant) {
-            AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
-            if (!hasDeployerAccess(identity, tenantDomain, application)) {
-                throw new ForbiddenException(String.format(
-                        "'%1$s' does not have access to '%2$s'. " +
+        private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
+            try {
+                return athenz.hasApplicationAccess(identity,
+                                                   ApplicationAction.deploy,
+                                                   tenantDomain,
+                                                   application);
+            } catch (ZmsClientException e) {
+                throw new InternalServerErrorException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
+            }
+        }
+
+        private boolean isHostedOperator(AthenzIdentity identity) {
+            return athenz.hasHostedOperatorAccess(identity);
+        }
+
+        @Override
+        public RoleMembership membership() {
+            Optional<Tenant> tenant = tenant(path);
+            Context context = context(tenant);
+            Set<Context> contexts = Set.of(context);
+            if (principal.isEmpty()) {
+                return new RoleMembership(Map.of(Role.everyone, contexts));
+            }
+            if (isHostedOperator(principal.get().getIdentity())) {
+                return new RoleMembership(Map.of(Role.hostedOperator, contexts));
+            }
+            if (tenant.isPresent() && isTenantAdmin(principal.get().getIdentity(), tenant.get())) {
+                return new RoleMembership(Map.of(Role.tenantAdmin, contexts));
+            }
+            AthenzDomain principalDomain = principal.get().getIdentity().getDomain();
+            if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
+                // NOTE: Only fine-grained deploy authorization for Athenz tenants
+                Optional<ApplicationName> application = context.application();
+                if (application.isPresent() && tenant.isPresent() && tenant.get() instanceof AthenzTenant) {
+                    AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
+                    if (!hasDeployerAccess(principal.get().getIdentity(), tenantDomain, application.get())) {
+                        throw new ForbiddenException(String.format(
+                                "'%1$s' does not have access to '%2$s'. " +
                                 "Either the application has not been created at Vespa dashboard or " +
                                 "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        identity.getFullName(), application.value(), tenantDomain.getName()));
+                                principal.get().getIdentity().getFullName(), application.get().value(), tenantDomain.getName()));
+                    }
+                }
+                return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
             }
+            return new RoleMembership(Map.of(Role.everyone, contexts));
+        }
+
+        private Optional<Tenant> tenant(Path path) {
+            if (!path.matches("/application/v4/tenant/{tenant}/{*}")) {
+                return Optional.empty();
+            }
+            return tenants.get(TenantName.from(path.get("tenant")));
+        }
+
+        // TODO: Currently there's only one context for each role, but this will change
+        private Context context(Optional<Tenant> tenant) {
+            if (principal.isEmpty() || tenant.isEmpty()) {
+                return Context.empty(system);
+            }
+            if (!isTenantAdmin(principal.get().getIdentity(), tenant.get())) {
+                return Context.empty(system);
+            }
+            // TODO: Remove this. Current behaviour always allows tenant full access to all its applications, but with
+            //       the new role setup, each role will include a complete context (tenant + app)
+            Optional<ApplicationName> application = Optional.empty();
+            if (path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}")) {
+                application = Optional.of(ApplicationName.from(path.get("application")));
+            }
+            return Context.of(tenant.get().name(), application, system);
         }
     }
 
-    private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
-        try {
-            return athenz
-                    .hasApplicationAccess(
-                            identity,
-                            ApplicationAction.deploy,
-                            tenantDomain,
-                            application);
-        } catch (ZmsClientException e) {
-            throw new InternalServerErrorException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
-        }
-    }
-
-    private static TenantName getTenantName(Path path) {
-        if (!path.matches("/application/v4/tenant/{tenant}/{*}"))
-            throw new InternalServerErrorException("Unable to handle path: " + path.asString());
-        return TenantName.from(path.get("tenant"));
-    }
-
-    private static ApplicationName getApplicationName(Path path) {
-        if (!path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}"))
-            throw new InternalServerErrorException("Unable to handle path: " + path.asString());
-        return ApplicationName.from(path.get("application"));
-    }
-
-    private static Method getMethod(DiscFilterRequest request) {
-        return Method.valueOf(request.getMethod().toUpperCase());
-    }
-
-    private static AthenzPrincipal getPrincipalOrThrow(DiscFilterRequest request) {
-        return getPrincipal(request)
-                .orElseThrow(() -> new NotAuthorizedException("User not authenticated"));
-    }
-
-    private static Optional<AthenzPrincipal> getPrincipal(DiscFilterRequest request) {
+    private static Optional<AthenzPrincipal> principalFrom(DiscFilterRequest request) {
         return Optional.ofNullable(request.getUserPrincipal())
-                .map(AthenzPrincipal.class::cast);
+                       .map(AthenzPrincipal.class::cast);
     }
 
 }

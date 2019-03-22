@@ -25,13 +25,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.jdisc.http.HttpResponse.Status.FORBIDDEN;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -160,8 +160,8 @@ public class ControllerAuthorizationFilterTest {
 
     private static ControllerAuthorizationFilter createFilter(ControllerTester controllerTester) {
         return new ControllerAuthorizationFilter(new AthenzClientFactoryMock(controllerTester.athenzDb()),
-                                                 controllerTester.controller().tenants(),
-                                                 singleton("http://localhost"));
+                                                 controllerTester.controller(),
+                                                 Set.of("http://localhost"));
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,

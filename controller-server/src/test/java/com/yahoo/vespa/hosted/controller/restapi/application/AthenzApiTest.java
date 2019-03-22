@@ -10,6 +10,9 @@ import org.junit.Test;
 
 import java.io.File;
 
+/**
+ * @author jonmv
+ */
 public class AthenzApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";

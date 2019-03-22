@@ -5,7 +5,6 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -20,10 +19,6 @@ import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.createCorsResp
 public abstract class CorsRequestFilterBase extends JsonSecurityRequestFilterBase {
 
     private final Set<String> allowedUrls;
-
-    protected CorsRequestFilterBase(CorsFilterConfig config) {
-        this(new HashSet<>(config.allowedUrls()));
-    }
 
     protected CorsRequestFilterBase(Set<String> allowedUrls) {
         this.allowedUrls = allowedUrls;
