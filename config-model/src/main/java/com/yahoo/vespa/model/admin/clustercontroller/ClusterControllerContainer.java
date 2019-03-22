@@ -32,13 +32,11 @@ public class ClusterControllerContainer extends Container implements
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZKFACADE_BUNDLE = new ComponentSpecification("zkfacade");
-    private final int index;
 
     private final Set<String> bundles = new TreeSet<>();
 
     public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper, boolean isHosted) {
         super(parent, "" + index, index);
-        this.index = index;
         addHandler(
                 new Handler(new ComponentModel(new BundleInstantiationSpecification(
                     new ComponentSpecification("clustercontroller-status"),
@@ -80,7 +78,7 @@ public class ClusterControllerContainer extends Container implements
 
     @Override
     public boolean requiresWantedPort() {
-        return index == 0;
+        return index() == 0;
     }
 
     @Override
@@ -107,7 +105,7 @@ public class ClusterControllerContainer extends Container implements
 
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
-        builder.myid(index);
+        builder.myid(index());
     }
 
     @Override
@@ -115,7 +113,4 @@ public class ClusterControllerContainer extends Container implements
         builder.jvm(new QrStartConfig.Jvm.Builder().heapsize(512));
     }
 
-    int getIndex() {
-        return index;
-    }
 }

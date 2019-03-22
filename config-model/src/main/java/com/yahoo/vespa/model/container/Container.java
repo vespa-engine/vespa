@@ -134,7 +134,7 @@ public abstract class Container extends AbstractService implements
     }
     
     /** Returns the index of this node. The index of a given node is stable through changes with best effort. */
-    public int index() { return index; }
+    public final int index() { return index; }
 
     // We cannot set bindings yet, as baseport is not initialized
     public void addBuiltinHandlers() { }
