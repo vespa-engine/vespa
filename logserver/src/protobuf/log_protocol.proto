@@ -26,15 +26,15 @@ message LogMessage {
     string service = 5;
     string component = 6;
     enum Level {
-        FATAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        CONFIG = 3,
-        INFO = 4,
-        EVENT = 5,
-        DEBUG = 6,
-        SPAM = 7,
-        UNKNOWN = 8
+        FATAL = 0;
+        ERROR = 1;
+        WARNING = 2;
+        CONFIG = 3;
+        INFO = 4;
+        EVENT = 5;
+        DEBUG = 6;
+        SPAM = 7;
+        UNKNOWN = 8;
     }
     Level level = 7;
     string payload = 8;
