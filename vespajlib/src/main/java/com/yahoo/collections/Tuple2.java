@@ -12,7 +12,7 @@ package com.yahoo.collections;
  * new class and do the work inside that class instead? Etc.)
  * </p>
  *
- * @authorSteinar Knutsen
+ * @author Steinar Knutsen
  */
 public final class Tuple2<T1, T2> {
 
