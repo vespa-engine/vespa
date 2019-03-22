@@ -105,7 +105,7 @@ case $1 in
     start)
         nohup sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
-        userargs=$vespa_base__jvmargs_configproxy
+        userargs=$VESPA_CONFIGPROXY_JVMARGS
         if [ "$userargs" == "" ]; then
             userargs=$services__jvmargs_configproxy
         fi

@@ -147,7 +147,7 @@ export standalone_jdisc_container__deployment_profile=configserver
 # class path
 CP="${VESPA_HOME}/lib/jars/jdisc_core-jar-with-dependencies.jar"
 
-baseuserargs="$vespa_base__jvmargs_configserver"
+baseuserargs="$VESPA_CONFIGSERVER_JVMARGS"
 serveruserargs="$cloudconfig_server__jvmargs"
 jvmargs="$baseuserargs $serveruserargs"
 
