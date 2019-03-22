@@ -187,7 +187,9 @@ public class SystemStateBroadcasterTest {
         ClusterStateBundle stateBundle;
         ClusterFixture cf;
 
+        @SuppressWarnings("rawtypes") // Java generics <3
         final ArgumentCaptor<Communicator.Waiter> d0Waiter;
+        @SuppressWarnings("rawtypes")
         final ArgumentCaptor<Communicator.Waiter> d1Waiter;
 
         private StateActivationFixture(boolean enableDeferred) {
@@ -204,6 +206,7 @@ public class SystemStateBroadcasterTest {
             d1Waiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
         }
 
+        @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
         void expectSetSystemStateInvocationsToBothDistributors() {
             clusterNodeInfos(cf.cluster(), Node.ofDistributor(0), Node.ofDistributor(1)).forEach(nodeInfo -> {
                 verify(mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo),
@@ -221,6 +224,7 @@ public class SystemStateBroadcasterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
     public void activation_not_sent_before_all_distributors_have_acked_state_bundle() {
         var f = StateActivationFixture.withTwoPhaseEnabled();
         var cf = f.cf;
@@ -250,6 +254,7 @@ public class SystemStateBroadcasterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
     public void state_bundle_not_considered_converged_until_activation_acked_by_all_distributors() {
         var f = StateActivationFixture.withTwoPhaseEnabled();
         var cf = f.cf;
@@ -285,6 +290,7 @@ public class SystemStateBroadcasterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
     public void activation_not_sent_if_deferred_activation_is_disabled_in_state_bundle() {
         var f = StateActivationFixture.withTwoPhaseDisabled();
         var cf = f.cf;
@@ -306,6 +312,7 @@ public class SystemStateBroadcasterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
     public void activation_convergence_considers_actual_version_returned_from_node() {
         var f = StateActivationFixture.withTwoPhaseEnabled();
         var cf = f.cf;
