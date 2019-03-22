@@ -312,46 +312,45 @@ public class RuleBase {
      * @return the error caused by analyzing the query, or null if there was no error
      *         If there is an error, this query is destroyed (unusable)
      */
-    public String analyze(Query query,int traceLevel) {
-        int queryTraceLevel=query.getTraceLevel();
-        if (traceLevel>0 && queryTraceLevel==0)
+    public String analyze(Query query, int traceLevel) {
+        int queryTraceLevel = query.getTraceLevel();
+        if (traceLevel > 0 && queryTraceLevel == 0)
             query.setTraceLevel(1);
 
-        matchAutomata(query,traceLevel);
-        String error=analyzer.evaluate(query,traceLevel);
+        matchAutomata(query, traceLevel);
+        String error = analyzer.evaluate(query, traceLevel);
 
         query.setTraceLevel(queryTraceLevel);
         return error;
     }
 
     protected void matchAutomata(Query query,int traceLevel) {
-        List<PhraseMatcher.Phrase> matches=getPhraseMatcher().matchPhrases(query.getModel().getQueryTree().getRoot());
-        if (matches==null || matches.size()==0) return;
-        for (Iterator<PhraseMatcher.Phrase> i=matches.iterator(); i.hasNext(); ) {
-            PhraseMatcher.Phrase phrase= i.next();
-            if (traceLevel>=3)
-                 query.trace("Semantic searcher automata matched " + phrase,false,1);
+        List<PhraseMatcher.Phrase> matches = getPhraseMatcher().matchPhrases(query.getModel().getQueryTree().getRoot());
+        if (matches == null || matches.size() == 0) return;
+        for (Iterator<PhraseMatcher.Phrase> i = matches.iterator(); i.hasNext(); ) {
+            PhraseMatcher.Phrase phrase = i.next();
+            if (traceLevel >= 3)
+                 query.trace("Semantic searcher automata matched " + phrase, false, 1);
 
-            annotatePhrase(phrase,query,traceLevel);
+            annotatePhrase(phrase, query, traceLevel);
         }
     }
 
-    // Note: When changing this method, change CompatibleRuleBase as well!
     // TODO: Values are not added right now
     protected void annotatePhrase(PhraseMatcher.Phrase phrase,Query query,int traceLevel) {
-        for (StringTokenizer tokens=new StringTokenizer(phrase.getData(),"|",false) ; tokens.hasMoreTokens(); ) {
-            String token=tokens.nextToken();
-            int semicolonIndex=token.indexOf(";");
-            String annotation=token;
-            String value="";
-            if (semicolonIndex>0) {
-                annotation=token.substring(0,semicolonIndex);
-                value=token.substring(semicolonIndex+1);
+        for (StringTokenizer tokens = new StringTokenizer(phrase.getData(),"|",false) ; tokens.hasMoreTokens(); ) {
+            String token = tokens.nextToken();
+            int semicolonIndex = token.indexOf(";");
+            String annotation = token;
+            String value = "";
+            if (semicolonIndex > 0) {
+                annotation = token.substring(0, semicolonIndex);
+                value = token.substring(semicolonIndex + 1);
             }
 
             // Annotate all matched items
-            phrase.getItem(0).addAnnotation(annotation,phrase);
-            if (traceLevel>=4)
+            phrase.getItem(0).addAnnotation(annotation, phrase);
+            if (traceLevel >= 4)
                 query.trace("   Annotating '" + phrase + "' as " + annotation +
                         (value.equals("") ? "" :"=" + value),false,1);
         }
@@ -359,11 +358,11 @@ public class RuleBase {
 
     private void makeReferences() {
         for (Iterator<ProductionRule> i=ruleIterator(); i.hasNext(); ) {
-            ProductionRule rule=i.next();
+            ProductionRule rule = i.next();
             rule.makeReferences(this);
         }
-        for (Iterator<NamedCondition> i=conditionIterator(); i.hasNext(); ) {
-            NamedCondition namedCondition=i.next();
+        for (Iterator<NamedCondition> i = conditionIterator(); i.hasNext(); ) {
+            NamedCondition namedCondition = i.next();
             namedCondition.getCondition().makeReferences(this);
         }
     }
@@ -398,14 +397,14 @@ public class RuleBase {
      * in the form they will be evaluated, with all included rule bases inlined
      */
     public String toContentString() {
-        StringBuilder b=new StringBuilder();
-        for (Iterator<ProductionRule> i=productionRules.iterator(); i.hasNext(); ) {
+        StringBuilder b = new StringBuilder();
+        for (Iterator<ProductionRule> i = productionRules.iterator(); i.hasNext(); ) {
             b.append(i.next().toString());
             b.append("\n");
         }
         b.append("\n");
         b.append("\n");
-        for (Iterator<NamedCondition> i=namedConditions.values().iterator(); i.hasNext(); ) {
+        for (Iterator<NamedCondition> i = namedConditions.values().iterator(); i.hasNext(); ) {
             b.append(i.next().toString());
             b.append("\n");
         }

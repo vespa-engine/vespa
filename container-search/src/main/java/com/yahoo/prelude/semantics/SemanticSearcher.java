@@ -26,9 +26,9 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 @Before({PhaseNames.TRANSFORMED_QUERY, STEMMING})
 public class SemanticSearcher extends Searcher {
 
-    private static final CompoundName rulesRulebase=new CompoundName("rules.rulebase");
-    private static final CompoundName rulesOff=new CompoundName("rules.off");
-    private static final CompoundName tracelevelRules=new CompoundName("tracelevel.rules");
+    private static final CompoundName rulesRulebase = new CompoundName("rules.rulebase");
+    private static final CompoundName rulesOff = new CompoundName("rules.off");
+    private static final CompoundName tracelevelRules = new CompoundName("tracelevel.rules");
 
     /** The default rule base of this */
     private RuleBase defaultRuleBase;
@@ -81,34 +81,34 @@ public class SemanticSearcher extends Searcher {
         if (query.properties().getBoolean(rulesOff))
             return execution.search(query);
 
-        int traceLevel= query.properties().getInteger(tracelevelRules, query.getTraceLevel()-2);
-        if (traceLevel<0) traceLevel=0;
-        RuleBase ruleBase=resolveRuleBase(query);
-        if (ruleBase==null)
+        int traceLevel = query.properties().getInteger(tracelevelRules, query.getTraceLevel() - 2);
+        if (traceLevel < 0) traceLevel = 0;
+        RuleBase ruleBase = resolveRuleBase(query);
+        if (ruleBase == null)
             return execution.search(query);
 
-        String error=ruleBase.analyze(query,traceLevel);
-        if (error!=null)
-            return handleError(ruleBase, query,error);
+        String error = ruleBase.analyze(query, traceLevel);
+        if (error != null)
+            return handleError(ruleBase, query, error);
         else
             return execution.search(query);
     }
 
     private RuleBase resolveRuleBase(Query query) {
-        String ruleBaseName=query.properties().getString(rulesRulebase);
-        if (ruleBaseName==null || ruleBaseName.equals("")) return getDefaultRuleBase();
-        RuleBase ruleBase=getRuleBase(ruleBaseName);
-        if (ruleBase==null)
+        String ruleBaseName = query.properties().getString(rulesRulebase);
+        if (ruleBaseName == null || ruleBaseName.equals("")) return getDefaultRuleBase();
+        RuleBase ruleBase = getRuleBase(ruleBaseName);
+        if (ruleBase == null)
             throw new RuleBaseException("Requested rule base '" + ruleBaseName + "' does not exist");
         return ruleBase;
     }
 
     private Result handleError(RuleBase ruleBase,Query query,String error) {
-        String message="Evaluation of query '" + query.getModel().getQueryTree() +
-                       "' over '" + ruleBase + "' caused the invalid query '" +
-                       query.getModel().getQueryTree().getRoot() + "': " + error;
+        String message = "Evaluation of query '" + query.getModel().getQueryTree() +
+                         "' over '" + ruleBase + "' caused the invalid query '" +
+                         query.getModel().getQueryTree().getRoot() + "': " + error;
         getLogger().warning(message);
-        return new Result(query,ErrorMessage.createInvalidQueryTransformation(message));
+        return new Result(query, ErrorMessage.createInvalidQueryTransformation(message));
     }
 
     /** Returns the default rule base */
@@ -119,7 +119,7 @@ public class SemanticSearcher extends Searcher {
      * The part of the name following the last dot (if any) is removed before lookup.
      */
     public RuleBase getRuleBase(String ruleBaseName) {
-        ruleBaseName=RuleImporter.stripLastName(ruleBaseName);
+        ruleBaseName = RuleImporter.stripLastName(ruleBaseName);
         return ruleBases.get(ruleBaseName);
     }
 

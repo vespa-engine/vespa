@@ -14,9 +14,8 @@ class Computer;
 /**
  * The collection of metrics calculated by the string match metric calculator.
  *
- * @author <a href="mailto:bratseth@yahoo-inc.com">Jon Bratseth</a>
+ * @author Jon Bratseth
  * @author Simon Thoresen Hult
- * @version $Id$
  */
 class Metrics {
 public:
