@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.application.container.handler.Request;
-import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzService;
@@ -13,7 +12,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -1267,13 +1265,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         recordedStatus =
                 tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(JobType.productionApNortheast2);
         assertNull("Status of never-triggered jobs is empty", recordedStatus);
-
-        Response response;
-
-        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
-        Inspector jobs = SlimeUtils.jsonToSlime(response.getBody()).get();
-        assertEquals("Response contains no items, as all jobs are triggered", 0, jobs.children());
-
+        assertTrue("All jobs have been run", tester.controller().applications().deploymentTrigger().jobsToRun().isEmpty());
     }
 
     @Test
