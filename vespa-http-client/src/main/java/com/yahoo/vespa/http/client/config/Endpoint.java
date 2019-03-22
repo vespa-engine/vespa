@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.config;
 
+import net.jcip.annotations.Immutable;
+
 import java.io.Serializable;
 
 /**
@@ -9,6 +11,7 @@ import java.io.Serializable;
  *
  * @author Einar M R Rosenvinge
  */
+@Immutable
 public final class Endpoint implements Serializable {
 
     /**
