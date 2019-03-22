@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.config;
 
 import com.google.common.annotations.Beta;
+import net.jcip.annotations.Immutable;
 
 import java.util.concurrent.TimeUnit;
 
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
  * @author Einar M R Rosenvinge
  */
+@Immutable
 public final class FeedParams {
 
     public boolean getDenyIfBusyV3() {
