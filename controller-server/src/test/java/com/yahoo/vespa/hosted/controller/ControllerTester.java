@@ -264,6 +264,7 @@ public final class ControllerTester {
         AthenzUser user = new AthenzUser("user");
         AthenzDomain domain = createDomainWithAdmin(domainName, user);
         AthenzTenantSpec tenantSpec = new AthenzTenantSpec(name,
+                                                           domain,
                                                            new Property("Property" + propertyId),
                                                            Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
         AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
@@ -280,7 +281,9 @@ public final class ControllerTester {
     }
 
     public Optional<Credentials> credentialsFor(ApplicationId id) {
-        return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")), domain, new OktaAccessToken("okta-token")));
+        return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
+                                                                domain,
+                                                                new OktaAccessToken("okta-token")));
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {

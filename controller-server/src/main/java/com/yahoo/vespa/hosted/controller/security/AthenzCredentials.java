@@ -4,6 +4,8 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 
+import java.util.Optional;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -27,7 +29,7 @@ public class AthenzCredentials extends Credentials {
     @Override
     public AthenzPrincipal user() { return (AthenzPrincipal) super.user(); }
 
-    /** Returns the Athenz domain on whose behalf this request is made. */
+    /** Returns the Athenz domain of the tenant on whose behalf this request is made. */
     public AthenzDomain domain() { return domain; }
 
     /** Returns the token proving access to the requested action under this domain. */
