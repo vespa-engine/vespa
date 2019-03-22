@@ -3,10 +3,8 @@
  * com.yahoo.vespa.hadoop.mapreduce contains classes and utilities
  * to enable feeding directly to Vespa endpoints from mapreduce.
  * It is a minimal layer over the Vespa HTTP client.
- **/
-@ExportPackage
-@PublicApi
+ *
+ * NOTE: This is a PUBLIC API, but not annotated as such because this is not a bundle and
+ *       we don't want to introduce Vespa dependencies.
+ */
 package com.yahoo.vespa.hadoop.mapreduce;
-
-import com.yahoo.api.annotations.PublicApi;
-import com.yahoo.osgi.annotation.ExportPackage;
