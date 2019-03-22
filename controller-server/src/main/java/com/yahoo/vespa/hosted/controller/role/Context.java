@@ -40,14 +40,24 @@ public class Context {
         return system;
     }
 
-    /** Returns an empty context in given system */
-    public static Context empty(SystemName system) {
+    /** Returns whether this context is considered limited */
+    public boolean limited() {
+        return tenant.isPresent() || application.isPresent();
+    }
+
+    /** Returns a context that has no restrictions on tenant or application in given system */
+    public static Context unlimitedIn(SystemName system) {
         return new Context(Optional.empty(), Optional.empty(), system);
     }
 
-    /** Returns context for a tenant and an optional application in system */
-    public static Context of(TenantName tenant, Optional<ApplicationName> application, SystemName system) {
-        return new Context(Optional.of(tenant), application, system);
+    /** Returns a context that is limited to given tenant and system */
+    public static Context limitedTo(TenantName tenant, SystemName system) {
+        return new Context(Optional.of(tenant), Optional.empty(), system);
+    }
+
+    /** Returns a context that is limited to given tenant, application and system */
+    public static Context limitedTo(TenantName tenant, ApplicationName application, SystemName system) {
+        return new Context(Optional.of(tenant), Optional.of(application), system);
     }
 
     @Override

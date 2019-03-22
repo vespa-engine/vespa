@@ -152,18 +152,14 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             AthenzDomain principalDomain = principal.get().getIdentity().getDomain();
             if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
                 // NOTE: Only fine-grained deploy authorization for Athenz tenants
-                Optional<ApplicationName> application = context.application();
-                if (application.isPresent() && tenant.isPresent() && tenant.get() instanceof AthenzTenant) {
+                if (context.application().isPresent() && tenant.isPresent() && tenant.get() instanceof AthenzTenant) {
                     AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
-                    if (!hasDeployerAccess(principal.get().getIdentity(), tenantDomain, application.get())) {
-                        throw new ForbiddenException(String.format(
-                                "'%1$s' does not have access to '%2$s'. " +
-                                "Either the application has not been created at Vespa dashboard or " +
-                                "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                                principal.get().getIdentity().getFullName(), application.get().value(), tenantDomain.getName()));
+                    if (hasDeployerAccess(principal.get().getIdentity(), tenantDomain, context.application().get())) {
+                        return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
                     }
+                } else {
+                    return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
                 }
-                return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
             }
             return new RoleMembership(Map.of(Role.everyone, contexts));
         }
@@ -178,18 +174,14 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         // TODO: Currently there's only one context for each role, but this will change
         private Context context(Optional<Tenant> tenant) {
             if (principal.isEmpty() || tenant.isEmpty()) {
-                return Context.empty(system);
-            }
-            if (!isTenantAdmin(principal.get().getIdentity(), tenant.get())) {
-                return Context.empty(system);
+                return Context.unlimitedIn(system);
             }
             // TODO: Remove this. Current behaviour always allows tenant full access to all its applications, but with
             //       the new role setup, each role will include a complete context (tenant + app)
-            Optional<ApplicationName> application = Optional.empty();
             if (path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}")) {
-                application = Optional.of(ApplicationName.from(path.get("application")));
+                return Context.limitedTo(tenant.get().name(), ApplicationName.from(path.get("application")), system);
             }
-            return Context.of(tenant.get().name(), application, system);
+            return Context.limitedTo(tenant.get().name(), system);
         }
     }
 

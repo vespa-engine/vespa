@@ -55,12 +55,12 @@ public enum PathGroup {
      * roles are not granted in specific contexts.
      */
     buildService("/zone/v1/{*}",
-                 "/application/v4/tenant/{ignored}/application/{ignored2}/jobreport",
-                 "/application/v4/tenant/{ignored}/application/{ignored2}/submit",
-                 "/application/v4/tenant/{ignored}/application/{ignored2}/promote",
-                 "/application/v4/tenant/{ignored}/application/{ignored2}/environment/prod/{*}",
-                 "/application/v4/tenant/{ignored}/application/{ignored2}/environment/test/{*}",
-                 "/application/v4/tenant/{ignored}/application/{ignored2}/environment/staging/{*}"),
+                 "/application/v4/tenant/{tenant}/application/{application}/jobreport",
+                 "/application/v4/tenant/{tenant}/application/{application}/submit",
+                 "/application/v4/tenant/{tenant}/application/{application}/promote",
+                 "/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}",
+                 "/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}",
+                 "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
 
     /** Paths providing information about deployment status */
     deployment("/badge/v1/{*}",
