@@ -89,6 +89,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>docproc</artifactId>
       <version>${project.version}</version>
@@ -209,7 +214,7 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchlib</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
   <build>
