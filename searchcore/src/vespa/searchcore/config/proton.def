@@ -452,3 +452,6 @@ maintenancejobs.resourcelimitfactor double default = 1.05
 ## Currently used by 'lid_space_compaction' job.
 maintenancejobs.maxoutstandingmoveops int default=10
 
+## Controls the type of bucket checksum used. Do not change unless 
+## in depth understanding is present.
+bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart

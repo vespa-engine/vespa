@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include "checksumaggregator.h"
 #include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/document/base/globalid.h>
-#include <vespa/persistence/spi/bucketinfo.h>
+#include <vespa/vespalib/util/memory.h>
 
 namespace proton::bucketdb {
+
+class ChecksumAggregator;
 
 /**
  * Class BucketState represent the known state of a bucket in raw form.
@@ -14,34 +16,44 @@ namespace proton::bucketdb {
 class BucketState
 {
 public:
-    typedef document::GlobalId GlobalId;
-    typedef storage::spi::Timestamp Timestamp;
+    using ChecksumType = ChecksumAggregator::ChecksumType;
+    using GlobalId = document::GlobalId;
+    using Timestamp = storage::spi::Timestamp;
+    using BucketChecksum = storage::spi::BucketChecksum;
 
 private:
     static constexpr uint32_t READY = static_cast<uint32_t>(SubDbType::READY);
-    static constexpr uint32_t REMOVED =
-        static_cast<uint32_t>(SubDbType::REMOVED);
-    static constexpr uint32_t NOTREADY =
-        static_cast<uint32_t>(SubDbType::NOTREADY);
+    static constexpr uint32_t REMOVED = static_cast<uint32_t>(SubDbType::REMOVED);
+    static constexpr uint32_t NOTREADY = static_cast<uint32_t>(SubDbType::NOTREADY);
     static constexpr uint32_t COUNTS = static_cast<uint32_t>(SubDbType::COUNT);
     uint32_t _docCount[COUNTS];
-    uint32_t _checksum;
     size_t   _docSizes[COUNTS];
-    bool _active;
+    vespalib::CloneablePtr<ChecksumAggregator>  _checksum;
+    bool     _active;
+
+    static ChecksumType _checksumType;
+    static std::unique_ptr<ChecksumAggregator> createChecksum(BucketChecksum seed);
 
 public:
+    static void setChecksumType(ChecksumType checksum);
     BucketState();
+    BucketState(const BucketState & rhs);
+    BucketState(BucketState && rhs) noexcept;
+    BucketState & operator=(BucketState && rhs) noexcept;
+    ~BucketState();
 
-    static uint32_t calcChecksum(const GlobalId &gid, const Timestamp &timestamp);
+    static BucketChecksum addChecksum(BucketChecksum a, BucketChecksum b);
 
     void add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
     void remove(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
 
-    void modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
+    void modify(const GlobalId &gid,
+                const Timestamp &oldTimestamp, uint32_t oldDocSize,
                 const Timestamp &newTimestamp, uint32_t newDocSize,
                 SubDbType subDbType);
 
-    BucketState &setActive(bool active) {
+    BucketState &
+    setActive(bool active) {
         _active = active;
         return *this;
     }
@@ -55,7 +67,7 @@ public:
     size_t getNotReadyDocSizes() const { return _docSizes[NOTREADY]; }
     uint32_t getDocumentCount() const { return getReadyCount() + getNotReadyCount(); }
     uint32_t getEntryCount() const { return getDocumentCount() + getRemovedCount(); }
-    storage::spi::BucketChecksum getChecksum() const { return storage::spi::BucketChecksum(_checksum); }
+    BucketChecksum getChecksum() const { return _checksum->getChecksum(); }
     bool empty() const;
     BucketState &operator+=(const BucketState &rhs);
     BucketState &operator-=(const BucketState &rhs);

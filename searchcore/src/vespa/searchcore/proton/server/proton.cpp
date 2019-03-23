@@ -70,6 +70,19 @@ convert(InternalProtonType::Packetcompresstype type)
 }
 
 void
+setBucketCheckSumType(const ProtonConfig & proton)
+{
+    switch (proton.bucketdb.checksumtype) {
+    case InternalProtonType::Bucketdb::LEGACY:
+        bucketdb::BucketState::setChecksumType(bucketdb::BucketState::ChecksumType::LEGACY);
+        break;
+    case InternalProtonType::Bucketdb::XXHASH64:
+        bucketdb::BucketState::setChecksumType(bucketdb::BucketState::ChecksumType::XXHASH64);
+        break;
+    }
+}
+
+void
 setFS4Compression(const ProtonConfig & proton)
 {
     FS4PersistentPacketStreamer & fs4(FS4PersistentPacketStreamer::Instance);
@@ -241,6 +254,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
 
+    setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir,
                                                                  diskMemUsageSamplerConfig(protonConfig, hwInfo));

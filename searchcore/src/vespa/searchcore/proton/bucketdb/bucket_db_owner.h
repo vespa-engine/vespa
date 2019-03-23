@@ -44,6 +44,7 @@ public:
     Guard takeGuard() {
         return Guard(&_bucketDB, _mutex);
     }
+    const BucketDB & getBucketDB() const { return _bucketDB; }
 };
 
 } // namespace proton

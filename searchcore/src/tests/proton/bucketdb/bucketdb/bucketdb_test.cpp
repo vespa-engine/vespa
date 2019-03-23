@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("bucketdb_test");
-
 #include <vespa/searchcore/proton/bucketdb/bucket_db_explorer.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdb.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("bucketdb_test");
 
 using namespace document;
 using namespace proton;
@@ -128,8 +129,8 @@ TEST_F("require that bucket checksum is a combination of sub db types", Fixture)
 
     EXPECT_EQUAL(zero, f.get().getChecksum());
     EXPECT_EQUAL(ready,            f.add(TIME_1, SDT::READY).getChecksum());
-    EXPECT_EQUAL(ready + notReady, f.add(TIME_2, SDT::NOTREADY).getChecksum());
-    EXPECT_EQUAL(ready + notReady, f.add(TIME_3, SDT::REMOVED).getChecksum());
+    EXPECT_EQUAL(BucketState::addChecksum(ready, notReady), f.add(TIME_2, SDT::NOTREADY).getChecksum());
+    EXPECT_EQUAL(BucketState::addChecksum(ready, notReady), f.add(TIME_3, SDT::REMOVED).getChecksum());
     EXPECT_EQUAL(notReady, f.remove(TIME_1, SDT::READY).getChecksum());
     EXPECT_EQUAL(zero,     f.remove(TIME_2, SDT::NOTREADY).getChecksum());
     EXPECT_EQUAL(zero,     f.remove(TIME_3, SDT::REMOVED).getChecksum());
@@ -179,17 +180,20 @@ TEST_F("require that bucket checksum ignores document sizes", Fixture)
 TEST("require that bucket db can be explored")
 {
     BucketDBOwner db;
-    db.takeGuard()->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
+    const BucketState & expectedState = db.takeGuard()->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
     {
         BucketDBExplorer explorer(db.takeGuard());
         Slime expectSlime;
-        vespalib::string expectJson =
+        vespalib::asciistream expectJson;
+        expectJson <<
             "{"
             "  numBuckets: 1,"
             "  buckets: ["
             "    {"
             "      id: '0x2000000000000031',"
-            "      checksum: '0x93939394',"
+            "      checksum: '0x"
+            << vespalib::hex << expectedState.getChecksum() <<
+            "',"
             "      readyCount: 1,"
             "      notReadyCount: 0,"
             "      removedCount: 0,"
@@ -200,7 +204,7 @@ TEST("require that bucket db can be explored")
             "    }"
             "  ]"
             "}";
-        EXPECT_TRUE(JsonFormat::decode(expectJson, expectSlime) > 0);
+        EXPECT_TRUE(JsonFormat::decode(expectJson.str(), expectSlime) > 0);
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
         explorer.get_state(inserter, true);
@@ -210,6 +214,65 @@ TEST("require that bucket db can be explored")
 
     // Must ensure empty bucket db before destruction.
     db.takeGuard()->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
+}
+
+BucketChecksum
+verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
+    GlobalId gid1("a");
+    GlobalId gid2("b");
+    Timestamp t1(0);
+    Timestamp t2(1);
+    auto ckaggr = ChecksumAggregator::create(type, BucketChecksum(0));
+
+    EXPECT_EQUAL(0u, ckaggr->getChecksum());
+    ckaggr->addDoc(gid1, t1);
+    BucketChecksum afterAdd = ckaggr->getChecksum();
+    EXPECT_NOT_EQUAL(0u, afterAdd);                   // add Changes checksum
+    ckaggr->removeDoc(gid1, t1);
+    EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
+    ckaggr->addDoc(gid1, t2);
+    EXPECT_NOT_EQUAL(afterAdd, ckaggr->getChecksum()); // timestamp changes checksum
+    ckaggr->removeDoc(gid1, t2);
+    EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
+    ckaggr->addDoc(gid2, t1);
+    EXPECT_NOT_EQUAL(afterAdd, ckaggr->getChecksum()); // gid changes checksum
+    ckaggr->removeDoc(gid2, t1);
+    EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
+
+    {
+        // Verify order does not matter, only current content. A,B == B,A
+        ckaggr->addDoc(gid1, t1);
+        BucketChecksum after1AddOfGid1 = ckaggr->getChecksum();
+        ckaggr->addDoc(gid2, t2);
+        BucketChecksum after2Add1 = ckaggr->getChecksum();
+        ckaggr->removeDoc(gid2, t2);
+        EXPECT_EQUAL(after1AddOfGid1, ckaggr->getChecksum());
+        ckaggr->removeDoc(gid1, t1);
+        EXPECT_EQUAL(0u, ckaggr->getChecksum());
+
+        ckaggr->addDoc(gid2, t2);
+        EXPECT_NOT_EQUAL(after1AddOfGid1, ckaggr->getChecksum());
+        ckaggr->addDoc(gid1, t1);
+        EXPECT_EQUAL(after2Add1, ckaggr->getChecksum());
+        ckaggr->removeDoc(gid2, t2);
+        EXPECT_EQUAL(after1AddOfGid1, ckaggr->getChecksum());
+        ckaggr->removeDoc(gid1, t1);
+        EXPECT_EQUAL(0u, ckaggr->getChecksum());          // add/remove are symmetrical
+    }
+
+    ckaggr->addDoc(gid1, t1); // Add something so we can verify it does not change between releases.
+
+    return ckaggr->getChecksum();
+}
+
+TEST("test that legacy checksum complies") {
+    BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::LEGACY);
+    EXPECT_EQUAL(0x61u, cksum);
+}
+
+TEST("test that xxhash64 checksum complies") {
+    BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::XXHASH64);
+    EXPECT_EQUAL(0xc34cd5c3u, cksum);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

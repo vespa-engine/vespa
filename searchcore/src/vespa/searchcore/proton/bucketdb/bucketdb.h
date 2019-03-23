@@ -33,33 +33,19 @@ public:
     BucketDB();
     virtual ~BucketDB();
 
-    const BucketState &
-    add(const GlobalId &gid,
-        const BucketId &bucketId,
-        const Timestamp &timestamp,
-        uint32_t docSize,
-        SubDbType subDbType);
+    const BucketState & add(const GlobalId &gid,
+                            const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
+                            SubDbType subDbType);
 
-    void add(const BucketId &bucketId, const BucketState & state) {
-        _map[bucketId] += state;
-    }
+    void add(const BucketId &bucketId, const BucketState & state);
+    void remove(const GlobalId &gid,
+                const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
+                SubDbType subDbType);
 
-    void
-    remove(const GlobalId &gid,
-           const BucketId &bucketId,
-           const Timestamp &timestamp,
-           uint32_t docSize,
-           SubDbType subDbType);
-
-    void
-    modify(const GlobalId &gid,
-           const BucketId &oldBucketId,
-           const Timestamp &oldTimestamp,
-           uint32_t oldDocSize,
-           const BucketId &newBucketId,
-           const Timestamp &newTimestamp,
-           uint32_t newDocSize,
-           SubDbType subDbType);
+    void modify(const GlobalId &gid,
+                const BucketId &oldBucketId, const Timestamp &oldTimestamp, uint32_t oldDocSize,
+                const BucketId &newBucketId, const Timestamp &newTimestamp, uint32_t newDocSize,
+                SubDbType subDbType);
 
     BucketState get(const BucketId &bucketId) const;
     void cacheBucket(const BucketId &bucketId);
