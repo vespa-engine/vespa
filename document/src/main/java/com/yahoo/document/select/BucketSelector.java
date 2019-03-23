@@ -5,7 +5,7 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.SelectInput;
 import com.yahoo.document.select.parser.SelectParser;
-import com.yahoo.document.select.parser.TokenMgrException;
+import com.yahoo.document.select.parser.TokenMgrError;
 import com.yahoo.document.select.simple.SelectionParser;
 
 /**
@@ -53,7 +53,7 @@ public class BucketSelector {
                 SelectParser parser = new SelectParser(new SelectInput(selector));
                 return parser.expression().getBucketSet(factory);
              }
-        } catch (TokenMgrException e) {
+        } catch (TokenMgrError e) {
             ParseException t = new ParseException();
             throw (ParseException) t.initCause(e);
         } catch (RuntimeException e) {

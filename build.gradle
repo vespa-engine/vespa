@@ -63,10 +63,14 @@ buildscript {
 
 def generateConfig(dest, spec) {
     return tasks.create("${spec}".replaceAll("[^A-Za-z0-9]", "")) {
-      print "generating with ${dest} and ${spec}"
+	//return;
+
+
+      //print "generating with ${dest} and ${spec}"
       if( !new File("${dest}").exists() ) {
         new File("${dest}").mkdirs()
       }
+      //print "generating with ${dest} and ${spec}"
 
       javaexec {
         workingDir = file(buildDir)
@@ -76,6 +80,7 @@ def generateConfig(dest, spec) {
         main = "com.yahoo.config.codegen.MakeConfig"
         jvmArgs = [ "-Dconfig.dest=${dest}", "-Dconfig.spec=${spec}" ]
       }
+      //} // cancel this
     }
 }
 

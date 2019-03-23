@@ -47,6 +47,7 @@ install_manifest.txt
 *.cbp
 .gradle
 /build/
+**/build/
 gradle-app.setting
 !gradle-wrapper.jar
 .gradletasknamecache

@@ -11,3 +11,20 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     providedCompile project(':container-dependency-versions:parent:component')
 }
+
+task generateConfigurations() {
+  FileTree tree = fileTree("${projectDir}/src/main/config").include('*.def')
+    tree.each {File file ->
+        generateConfig("${buildDir}/generated-sources/configgen/", "${file}")
+    }
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}

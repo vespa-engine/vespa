@@ -15,3 +15,20 @@ dependencies {
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.google.inject:guice:3.0'
 }
+
+task generateConfigurations() {
+  FileTree tree = fileTree("${projectDir}/src/main/resources/configdefinitions").include('*.def')
+    tree.each {File file ->
+        generateConfig("${buildDir}/generated-sources/configgen/", "${file}")
+    }
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}

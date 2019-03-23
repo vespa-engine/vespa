@@ -13,3 +13,20 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:config')
     providedCompile project(':container-dependency-versions:parent:component')
 }
+
+task generateConfigurations() {
+  FileTree tree = fileTree("${projectDir}/src/main/resources/configdefinitions").include('*.def')
+    tree.each {File file ->
+        generateConfig("${buildDir}/generated-sources/configgen/", "${file}")
+    }
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}

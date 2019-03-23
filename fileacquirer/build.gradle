@@ -6,3 +6,20 @@ dependencies {
     compile project(':container-dependency-versions:parent:config')
     testCompile 'junit:junit:4.12'
 }
+
+task generateConfigurations() {
+  FileTree tree = fileTree("${projectDir}/src/main/resources/configdefinitions").include('*.def')
+    tree.each {File file ->
+        generateConfig("${buildDir}/generated-sources/configgen/", "${file}")
+    }
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}
