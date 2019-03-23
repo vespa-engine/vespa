@@ -37,3 +37,50 @@ subprojects {
         }
     }
 }
+
+
+buildscript {
+  repositories {
+        mavenLocal()
+        maven {
+            url = 'http://repo.maven.apache.org/maven2'
+        }
+
+        maven {
+            url = 'https://yahoo.bintray.com/maven'
+        }
+
+        maven {
+            url = 'https://repository.apache.org/content/groups/public'
+        }
+    }
+
+  dependencies {
+    classpath 'com.yahoo.vespa:configgen:7.28.21'
+  }
+}
+
+
+def generateConfig(dest, spec) {
+    return tasks.create("${spec}".replaceAll("[^A-Za-z0-9]", "")) {
+      print "generating with ${dest} and ${spec}"
+      if( !new File("${dest}").exists() ) {
+        new File("${dest}").mkdirs()
+      }
+
+      javaexec {
+        workingDir = file(buildDir)
+        outputs.dir "${dest}"
+
+        classpath = buildscript.configurations.classpath
+        main = "com.yahoo.config.codegen.MakeConfig"
+        jvmArgs = [ "-Dconfig.dest=${dest}", "-Dconfig.spec=${spec}" ]
+      }
+    }
+}
+
+//task generateAll {
+//  generateConfig("/tmp", "${rootDir}/container-accesslogging/src/main/resources/configdefinitions/access-log.def")
+//}
+
+

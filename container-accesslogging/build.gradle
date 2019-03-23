@@ -15,3 +15,17 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:config-lib')
     providedCompile project(':container-dependency-versions:parent:vespajlib')
 }
+
+task generateConfigurations() {
+  generateConfig("${buildDir}/generated-sources/configgen/", "${projectDir}/src/main/resources/configdefinitions/access-log.def")
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}

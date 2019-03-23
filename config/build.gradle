@@ -21,6 +21,7 @@ dependencies {
 }
 
 task generateVtag(type: JavaExec) {
+    dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
     workingDir = file(buildDir)
     outputs.dir "${buildDir}"
 

@@ -14,7 +14,7 @@ dependencies {
     compile 'com.google.inject:guice:3.0'
     compile 'com.google.inject.extensions:guice-assistedinject:3.0'
     compile 'com.google.inject.extensions:guice-multibindings:3.0'
-    compile 'commons-daemon:commons-daemon:1.0.3'
+    compile 'commons-daemon:commons-daemon:1.1.0'
     compile 'org.apache.felix:org.apache.felix.framework:6.0.2'
     compile 'org.apache.felix:org.apache.felix.log:1.0.1'
     compile 'org.slf4j:slf4j-api:1.7.5'
