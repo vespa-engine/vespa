@@ -5,7 +5,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
-import com.yahoo.searchlib.rankingexpression.parser.TokenMgrException;
+import com.yahoo.searchlib.rankingexpression.parser.TokenMgrError;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
@@ -177,7 +177,7 @@ public class RankingExpression implements Serializable {
         try {
             return new RankingExpressionParser(reader).rankingExpression();
         }
-        catch (TokenMgrException e) {
+        catch (TokenMgrError e) {
             throw new ParseException(e.getMessage());
         }
     }

@@ -30,3 +30,9 @@ dependencies {
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.google.protobuf:protobuf-java:3.7.0'
 }
+
+task generateConfigurations() {
+  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
+}
+
+compileJava.dependsOn generateConfigurations

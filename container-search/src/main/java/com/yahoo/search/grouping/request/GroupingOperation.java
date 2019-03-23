@@ -6,7 +6,7 @@ import com.yahoo.collections.LazySet;
 import com.yahoo.search.grouping.request.parser.GroupingParser;
 import com.yahoo.search.grouping.request.parser.GroupingParserInput;
 import com.yahoo.search.grouping.request.parser.ParseException;
-import com.yahoo.search.grouping.request.parser.TokenMgrException;
+import com.yahoo.search.grouping.request.parser.TokenMgrError;
 
 import java.util.*;
 
@@ -617,7 +617,7 @@ public abstract class GroupingOperation extends GroupingNode {
         GroupingParserInput input = new GroupingParserInput(str);
         try {
             return new GroupingParser(input).requestList();
-        } catch (ParseException | TokenMgrException e) {
+        } catch (ParseException | TokenMgrError e) {
             throw new IllegalArgumentException(input.formatException(e.getMessage()), e);
         }
     }

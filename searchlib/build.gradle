@@ -11,6 +11,15 @@ dependencies {
     compileOnly 'com.google.protobuf:protobuf-java:3.7.0'
     providedCompile project(':container-dependency-versions:parent:vespajlib')
     providedCompile project(':container-dependency-versions:parent:config-model-api')
+
+   javacc
 }
 
 description = 'searchlib'
+
+compileJavacc {
+    inputDirectory = file("${projectDir}/src/main/javacc")
+    outputDirectory = file("${buildDir}/generated/javacc")
+}
+
+compileJava.dependsOn compileJavacc
