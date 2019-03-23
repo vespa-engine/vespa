@@ -56,7 +56,7 @@ compileJava {
 sourceSets {
     main{
         java {
-           srcDir "$buildDir/generated-src/antlr/main/"
+           srcDir "${buildDir}/generated-src/antlr/main/"
         }
     }
 }

@@ -7,6 +7,7 @@ options {
 }
 
 @header {
+  package com.yahoo.search.yql;
   import java.util.Stack;
   import com.yahoo.search.yql.*;
 }

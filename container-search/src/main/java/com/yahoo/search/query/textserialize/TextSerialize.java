@@ -6,7 +6,7 @@ import com.yahoo.search.query.textserialize.item.ItemContext;
 import com.yahoo.search.query.textserialize.item.ItemFormHandler;
 import com.yahoo.search.query.textserialize.parser.ParseException;
 import com.yahoo.search.query.textserialize.parser.Parser;
-import com.yahoo.search.query.textserialize.parser.TokenMgrException;
+import com.yahoo.search.query.textserialize.parser.TokenMgrError;
 import com.yahoo.search.query.textserialize.serializer.QueryTreeSerializer;
 
 import java.io.StringReader;
@@ -28,7 +28,7 @@ public class TextSerialize {
                         "(type = " + result.getClass() + ")");
             }
             return (Item) result;
-        } catch (ParseException | TokenMgrException e) {
+        } catch (ParseException | TokenMgrError e) {
             throw new RuntimeException(e);
         }
     }
