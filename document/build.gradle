@@ -34,3 +34,4 @@ task generateProjectConfigurations() {
 compileJava.dependsOn generateProjectConfigurations
 compileJava.dependsOn compileJavacc
 
+

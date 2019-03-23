@@ -11,3 +11,9 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     providedCompile project(':container-dependency-versions:parent:component')
 }
+
+task generateProjectConfigurations() {
+  configCodegen2("${projectDir}/src/main/config", "${buildDir}/generated-sources/configgen/")
+}
+
+compileJava.dependsOn generateProjectConfigurations

@@ -209,6 +209,7 @@ project(':container-dependency-versions:parent:jaxrs_client_utils').projectDir =
 project(':container-dependency-versions:parent:jaxrs_utils').projectDir = file('jaxrs_utils')
 project(':container-dependency-versions:parent:jdisc-security-filters').projectDir = file('jdisc-security-filters')
 project(':container-dependency-versions:parent:jdisc_core').projectDir = file('jdisc_core')
+/*
 project(':container-dependency-versions:parent:integration-test-parent:integration_test').projectDir = file('jdisc_core_test/integration_test')
 project(':container-dependency-versions:parent:integration-test-parent:test_bundles:app-a').projectDir = file('jdisc_core_test/test_bundles/app-a')
 project(':container-dependency-versions:parent:integration-test-parent:test_bundles:app-b-priv').projectDir = file('jdisc_core_test/test_bundles/app-b-priv')
@@ -245,6 +246,7 @@ project(':container-dependency-versions:parent:integration-test-parent:test_bund
 project(':container-dependency-versions:parent:integration-test-parent:test_bundles:my-server-provider').projectDir = file('jdisc_core_test/test_bundles/my-server-provider')
 project(':container-dependency-versions:parent:integration-test-parent:test_bundles').projectDir = file('jdisc_core_test/test_bundles')
 project(':container-dependency-versions:parent:integration-test-parent').projectDir = file('jdisc_core_test')
+*/
 project(':container-dependency-versions:parent:jdisc_http_service').projectDir = file('jdisc_http_service')
 project(':container-dependency-versions:parent:jdisc_jetty').projectDir = file('jdisc_jetty')
 project(':container-dependency-versions:parent:jdisc_messagebus_service').projectDir = file('jdisc_messagebus_service')

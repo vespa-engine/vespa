@@ -32,13 +32,6 @@ allprojects {
     version = '7.28.21'
 }
 
-def generateDefaultConfigurations() {
-  def randomTask = "task_"+new Random().nextInt(10000000)
-  return tasks.create(randomTask) {
-    configCodegen2("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
-  }
-}
-
 subprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
@@ -74,12 +67,13 @@ subprojects {
       main{
         java {
            srcDir "${buildDir}/generated-sources/configgen/"
+           srcDir "${buildDir}/generated-sources/configgen-default/"
            srcDir "${buildDir}/generated/javacc/"
         }
       }
     }
 
-    compileJava.dependsOn generateDefaultConfigurations()
+    compileJava.dependsOn generateDefaultConfigurations("${projectDir}", "${buildDir}")
 }
 
 ext {
@@ -87,9 +81,15 @@ ext {
 
 }
 
+def generateDefaultConfigurations(aProjectDir, aBuildDir) {
+  def randomTask = "task_"+new Random().nextInt(10000000)
+  return tasks.create(randomTask) {
+    configCodegen2(aProjectDir+"/src/main/resources/configdefinitions", aBuildDir+"/generated-sources/configgen-default/")
+  }
+}
+
 def configCodegen2(source, dest) { 
   def randomTask = "task_"+new Random().nextInt(10000000)
-  //return tasks.create("${source}".replaceAll("[^A-Za-z0-9]", "")) {
   return tasks.create(randomTask) {
     if( !new File("${dest}").exists() ) {
       new File("${dest}").mkdirs() 
@@ -117,22 +117,3 @@ def codegenSpec(dest, spec) {
       }
     }
 }
-
-/*
-def generateVtag() {
-    def randomTask = "task_"+new Random().nextInt(10000000)
-    return tasks.create(randomTask) {
-      javaexec {
-	dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
-        workingDir = file(buildDir)
-        outputs.dir "${buildDir}"
-
-        classpath = files([
-          "${rootDir}/vespajlib/build/classes/java/main"
-          ])
-        main = "com.yahoo.vespa.VersionTagger"
-        args = [ "${rootDir}/dist/vtag.map", "com.yahoo.vespa.config", "${buildDir}/generated-sources/vtag" ]
-      }
-    }
-}
-*/
