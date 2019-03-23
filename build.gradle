@@ -93,7 +93,7 @@ def configCodegen2(source, dest) {
   return tasks.create(randomTask) {
     if( !new File("${dest}").exists() ) {
       new File("${dest}").mkdirs() 
-      FileTree tree = fileTree("${source}").include('*.def')
+      FileTree tree = fileTree("${source}").include('**/*.def')
         tree.each {File file ->
           codegenSpec("${dest}", "${file}")
         }
@@ -118,5 +118,21 @@ def codegenSpec(dest, spec) {
     }
 }
 
+/*
+def generateVtag() {
+    def randomTask = "task_"+new Random().nextInt(10000000)
+    return tasks.create(randomTask) {
+      javaexec {
+	dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
+        workingDir = file(buildDir)
+        outputs.dir "${buildDir}"
 
-
+        classpath = files([
+          "${rootDir}/vespajlib/build/classes/java/main"
+          ])
+        main = "com.yahoo.vespa.VersionTagger"
+        args = [ "${rootDir}/dist/vtag.map", "com.yahoo.vespa.config", "${buildDir}/generated-sources/vtag" ]
+      }
+    }
+}
+*/

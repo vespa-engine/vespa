@@ -14,7 +14,7 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.parser.SDParser;
 import com.yahoo.searchdefinition.parser.SimpleCharStream;
-import com.yahoo.searchdefinition.parser.TokenMgrException;
+import com.yahoo.searchdefinition.parser.TokenMgrError;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -168,7 +168,7 @@ public class SearchBuilder {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
             search = new SDParser(stream, deployLogger, app, rankProfileRegistry, documentsOnly).search(docTypeMgr, searchDefDir);
-        } catch (TokenMgrException e) {
+        } catch (TokenMgrError e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
             throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));

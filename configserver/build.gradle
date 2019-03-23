@@ -40,3 +40,25 @@ dependencies {
     compileOnly 'com.google.guava:guava:20.0'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
 }
+
+task generateVtag(type: JavaExec) {
+    dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
+    workingDir = file(buildDir)
+    outputs.dir "${buildDir}"
+
+    classpath = files([
+        "${rootDir}/vespajlib/build/classes/java/main"
+        ])
+    main = "com.yahoo.vespa.VersionTagger"
+    args = [ "${rootDir}/dist/vtag.map", "com.yahoo.vespa.config.server.version", "${buildDir}/generated-sources/vtag" ]
+}
+
+compileJava.dependsOn generateVtag
+
+sourceSets {
+    main{
+        java {
+            srcDir "${buildDir}/generated-sources/vtag/"
+        }
+    }
+}
