@@ -22,16 +22,3 @@ dependencies {
     compileOnly 'org.eclipse.jetty:jetty-servlet:9.4.15.v20190215'
 }
 
-task generateConfigurations() {
-  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
-}
-
-compileJava.dependsOn generateConfigurations
-
-sourceSets {
-    main{
-        java {
-           srcDir "${buildDir}/generated-sources/configgen/"
-        }
-    }
-}

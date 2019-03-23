@@ -32,6 +32,13 @@ allprojects {
     version = '7.28.21'
 }
 
+def generateDefaultConfigurations() {
+  def randomTask = "task_"+new Random().nextInt(10000000)
+  return tasks.create(randomTask) {
+    configCodegen2("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
+  }
+}
+
 subprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
@@ -71,6 +78,8 @@ subprojects {
         }
       }
     }
+
+    compileJava.dependsOn generateDefaultConfigurations()
 }
 
 ext {
@@ -78,8 +87,10 @@ ext {
 
 }
 
-def configCodegen(source, dest) { 
-  return tasks.create("${source}".replaceAll("[^A-Za-z0-9]", "")) {
+def configCodegen2(source, dest) { 
+  def randomTask = "task_"+new Random().nextInt(10000000)
+  //return tasks.create("${source}".replaceAll("[^A-Za-z0-9]", "")) {
+  return tasks.create(randomTask) {
     if( !new File("${dest}").exists() ) {
       new File("${dest}").mkdirs() 
       FileTree tree = fileTree("${source}").include('*.def')

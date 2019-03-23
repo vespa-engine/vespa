@@ -18,7 +18,6 @@ dependencies {
     compileOnly 'com.google.guava:guava:20.0'
     compileOnly 'com.google.inject:guice:3.0'
 
-    //javacc
 }
 
 compileJavacc {
@@ -28,10 +27,10 @@ compileJavacc {
 
 description = 'document'
 
-task generateConfigurations() {
-  configCodegen("${projectDir}/src/vespa/document/config", "${buildDir}/generated-sources/configgen/")
+task generateProjectConfigurations() {
+  configCodegen2("${projectDir}/src/vespa/document/config", "${buildDir}/generated-sources/configgen/")
 }
 
-compileJava.dependsOn generateConfigurations
+compileJava.dependsOn generateProjectConfigurations
 compileJava.dependsOn compileJavacc
 

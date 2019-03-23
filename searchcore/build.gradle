@@ -7,3 +7,10 @@ dependencies {
 }
 
 description = 'searchcore'
+
+task generateProjectConfigurations() {
+  println "here?"
+  configCodegen2("${projectDir}/src/vespa/searchcore/config/", "${buildDir}/generated-sources/configgen/")
+}
+
+compileJava.dependsOn generateProjectConfigurations

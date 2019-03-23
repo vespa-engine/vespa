@@ -8,7 +8,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingParser;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
-import com.yahoo.vespa.indexinglanguage.parser.TokenMgrException;
+import com.yahoo.vespa.indexinglanguage.parser.TokenMgrError;
 
 /**
  * @author Simon Thoresen Hult
@@ -43,7 +43,7 @@ public final class ScriptParser {
                 try {
                     return parser.statement();
                 }
-                catch (TokenMgrException e) {
+                catch (TokenMgrError e) {
                     throw new ParseException(e.getMessage());
                 }
             }

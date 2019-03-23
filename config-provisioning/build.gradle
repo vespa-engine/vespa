@@ -18,18 +18,4 @@ dependencies {
 
 description = 'config-provisioning'
 
-task generateConfigurations() {
-  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
-}
-
-compileJava.dependsOn generateConfigurations
-
-sourceSets {
-    main{
-        java {
-           srcDir "${buildDir}/generated-sources/configgen/"
-        }
-    }
-}
-
 

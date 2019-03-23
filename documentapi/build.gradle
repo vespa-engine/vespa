@@ -15,17 +15,3 @@ dependencies {
     testCompile 'org.mockito:mockito-all:1.9.5'
     compileOnly 'com.google.guava:guava:20.0'
 }
-
-task generateConfigurations() {
-  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
-}
-
-compileJava.dependsOn generateConfigurations
-
-sourceSets {
-    main{
-        java {
-           srcDir "${buildDir}/generated-sources/configgen/"
-        }
-    }
-}

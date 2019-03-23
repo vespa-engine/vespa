@@ -11,3 +11,4 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:messagebus-disc')
     providedCompile project(':container-dependency-versions:parent:container-messagebus')
 }
+
