@@ -10,3 +10,17 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:messagebus-disc')
     providedCompile project(':container-dependency-versions:parent:documentapi')
 }
+
+task generateConfigurations() {
+  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}

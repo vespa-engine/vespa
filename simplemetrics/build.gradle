@@ -11,3 +11,17 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:container-di')
     providedCompile project(':container-dependency-versions:parent:container-core')
 }
+
+task generateConfigurations() {
+  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
+}
+
+compileJava.dependsOn generateConfigurations
+
+sourceSets {
+    main{
+        java {
+           srcDir "${buildDir}/generated-sources/configgen/"
+        }
+    }
+}

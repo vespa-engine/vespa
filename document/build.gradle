@@ -33,12 +33,7 @@ compileJavacc {
 description = 'document'
 
 task generateConfigurations() {
-  print "hehrererekr;k;lesk"
-  FileTree tree = fileTree("${projectDir}/src/vespa/document/config/").include('*.def')
-    tree.each {File file ->
-	println "File *************   ${file}"
-        generateConfig("${buildDir}/generated-sources/configgen/", "${file}")
-    }
+  configCodegen("${projectDir}/src/vespa/document/config", "${buildDir}/generated-sources/configgen/")
 }
 
 compileJava.dependsOn generateConfigurations

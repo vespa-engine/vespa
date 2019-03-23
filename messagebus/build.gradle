@@ -13,10 +13,7 @@ dependencies {
 }
 
 task generateConfigurations() {
-  FileTree tree = fileTree("${projectDir}/src/main/config").include('*.def')
-    tree.each {File file ->
-        generateConfig("${buildDir}/generated-sources/configgen/", "${file}")
-    }
+  configCodegen("${projectDir}/src/main/config", "${buildDir}/generated-sources/configgen/")
 }
 
 compileJava.dependsOn generateConfigurations

@@ -17,7 +17,7 @@ dependencies {
 }
 
 task generateConfigurations() {
-  generateConfig("${buildDir}/generated-sources/configgen/", "${projectDir}/src/main/resources/configdefinitions/access-log.def")
+  configCodegen("${projectDir}/src/main/resources/configdefinitions", "${buildDir}/generated-sources/configgen/")
 }
 
 compileJava.dependsOn generateConfigurations

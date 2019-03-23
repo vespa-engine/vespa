@@ -60,17 +60,23 @@ buildscript {
   }
 }
 
+def configCodegen(source, dest) { 
+  return tasks.create("${source}".replaceAll("[^A-Za-z0-9]", "")) {
+    if( !new File("${dest}").exists() ) {
+      new File("${dest}").mkdirs() 
+      FileTree tree = fileTree("${source}").include('*.def')
+        tree.each {File file ->
+          codegenSpec("${dest}", "${file}")
+        }
+    }
+  }
+}
 
-def generateConfig(dest, spec) {
+def codegenSpec(dest, spec) {
     return tasks.create("${spec}".replaceAll("[^A-Za-z0-9]", "")) {
-	//return;
-
-
-      //print "generating with ${dest} and ${spec}"
       if( !new File("${dest}").exists() ) {
         new File("${dest}").mkdirs()
       }
-      //print "generating with ${dest} and ${spec}"
 
       javaexec {
         workingDir = file(buildDir)
@@ -80,12 +86,8 @@ def generateConfig(dest, spec) {
         main = "com.yahoo.config.codegen.MakeConfig"
         jvmArgs = [ "-Dconfig.dest=${dest}", "-Dconfig.spec=${spec}" ]
       }
-      //} // cancel this
     }
 }
 
-//task generateAll {
-//  generateConfig("/tmp", "${rootDir}/container-accesslogging/src/main/resources/configdefinitions/access-log.def")
-//}
 
 
