@@ -79,11 +79,11 @@ subprojects {
       }
     }
 
-    compileJava.dependsOn generateDefaultConfigurations(
+    compileJava.dependsOn generateConfigurationsTask(
 	"${projectDir}/src/main/resources/configdefinitions", 
 	"${buildDir}/generated-sources/configgen-default/")
 
-    compileTestJava.dependsOn generateDefaultConfigurations(
+    compileTestJava.dependsOn generateConfigurationsTask(
         "${projectDir}/src/test/resources/configdefinitions",
         "${buildDir}/generated-sources/configgen-default-test/")
 }
@@ -93,22 +93,22 @@ ext {
 
 }
 
-def generateDefaultConfigurations(configdefinitionsDir, targetDir) {
-  def randomTask = "task_"+new Random().nextInt(10000000)
-  return tasks.create(randomTask) {
-    configCodegen2(configdefinitionsDir, targetDir)
-  }
-}
+def generateConfigurationsTask(source, dest) { 
+  def randomTask = "configgen_" + 
+	source.replaceAll("[^A-Za-z0-9]", "") + 
+	"_" + new Random().nextInt(1000000000)
 
-def configCodegen2(source, dest) { 
-  def randomTask = "task_"+new Random().nextInt(10000000)
   return tasks.create(randomTask) {
-    if( !new File("${dest}").exists() ) {
-      new File("${dest}").mkdirs() 
-      FileTree tree = fileTree("${source}").include('**/*.def')
-        tree.each {File file ->
-          codegenSpec("${dest}", "${file}")
-        }
+    logger.info("Creating codegen task for " + source)
+    doLast {
+      logger.info("Executing codegen task for " + source)
+      if( !new File("${dest}").exists() ) {
+        new File("${dest}").mkdirs() 
+        FileTree tree = fileTree("${source}").include('**/*.def')
+          tree.each {File file ->
+            codegenSpec("${dest}", "${file}")
+          }
+      }
     }
   }
 }

@@ -27,11 +27,10 @@ compileJavacc {
 
 description = 'document'
 
-task generateProjectConfigurations() {
-  configCodegen2("${projectDir}/src/vespa/document/config", "${buildDir}/generated-sources/configgen/")
-}
+compileJava.dependsOn generateConfigurationsTask(
+        "${projectDir}/src/vespa/document/config",        
+        "${buildDir}/generated-sources/configgen/")
 
-compileJava.dependsOn generateProjectConfigurations
 compileJava.dependsOn compileJavacc
 
 

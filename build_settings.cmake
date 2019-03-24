@@ -21,7 +21,8 @@ set(C_WARN_OPTS "-Winline -Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wc
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+message("HEY! this is ${CMAKE_CXX_COMPILER_ID}")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
   set(CXX_SPECIFIC_WARN_OPTS "-Wnon-virtual-dtor -Wformat-security")
 else()
   set(CXX_SPECIFIC_WARN_OPTS "-Wsuggest-override -Wnon-virtual-dtor -Wformat-security")
