@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.Exceptions;
-import net.jcip.annotations.Immutable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -83,7 +82,6 @@ public class Result {
     /**
      * Information in a Result for a single operation sent to a single endpoint.
      */
-    @Immutable
     public static final class Detail {
 
         private final ResultType resultType;

@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import net.jcip.annotations.Immutable;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
@@ -26,7 +25,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Einar M R Rosenvinge
  */
-@Immutable
 public final class ConnectionParams {
 
     /**
