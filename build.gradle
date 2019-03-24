@@ -71,9 +71,20 @@ subprojects {
            srcDir "${buildDir}/generated/javacc/"
         }
       }
+      test {
+	java {
+           srcDir "${buildDir}/generated-sources/configgen-default-test/"
+	}
+      }
     }
 
-    compileJava.dependsOn generateDefaultConfigurations("${projectDir}", "${buildDir}")
+    compileJava.dependsOn generateDefaultConfigurations(
+	"${projectDir}/src/main/resources/configdefinitions", 
+	"${buildDir}/generated-sources/configgen-default/")
+
+    compileTestJava.dependsOn generateDefaultConfigurations(
+        "${projectDir}/src/test/resources/configdefinitions",
+        "${buildDir}/generated-sources/configgen-default-test/")
 }
 
 ext {
@@ -81,10 +92,10 @@ ext {
 
 }
 
-def generateDefaultConfigurations(aProjectDir, aBuildDir) {
+def generateDefaultConfigurations(configdefinitionsDir, targetDir) {
   def randomTask = "task_"+new Random().nextInt(10000000)
   return tasks.create(randomTask) {
-    configCodegen2(aProjectDir+"/src/main/resources/configdefinitions", aBuildDir+"/generated-sources/configgen-default/")
+    configCodegen2(configdefinitionsDir, targetDir)
   }
 }
 
