@@ -149,6 +149,11 @@ include(':container-dependency-versions:parent:vespalog')
 include(':container-dependency-versions:parent:vsm')
 include(':container-dependency-versions:parent:yolean')
 include(':container-dependency-versions:parent:zkfacade')
+
+// extras:
+include(':configgen')
+project(':configgen').projectDir = file('configgen')
+
 project(':container-dependency-versions:parent:application').projectDir = file('application')
 project(':container-dependency-versions:parent:application-model').projectDir = file('application-model')
 project(':container-dependency-versions:parent:application-preprocessor').projectDir = file('application-preprocessor')
