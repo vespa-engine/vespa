@@ -73,6 +73,7 @@ subprojects {
       }
       test {
 	java {
+           srcDir "${buildDir}/generated-sources/configgen-test/"
            srcDir "${buildDir}/generated-sources/configgen-default-test/"
 	}
       }

@@ -20,6 +20,12 @@ dependencies {
     compileOnly 'com.google.guava:guava:20.0'
 }
 
+task generateProjectTestConfigurations() {
+  configCodegen2("${projectDir}/src/test/resources/configs", "${buildDir}/generated-sources/configgen-test/")
+}
+
+compileTestJava.dependsOn generateProjectTestConfigurations
+
 task generateVtag(type: JavaExec) {
     dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
     workingDir = file(buildDir)
