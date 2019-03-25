@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
-import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
@@ -20,8 +20,9 @@ import java.util.logging.Logger;
 /**
  * @author baldersheim
  */
-public class FileDistributionImpl implements FileDistribution {
+public class FileDistributionImpl implements FileDistribution, RequestWaiter {
     private final static Logger log = Logger.getLogger(FileDistributionImpl.class.getName());
+    private final static double rpcTimeout = 1.0;
 
     private final Supervisor supervisor;
     private final File fileReferencesDir;
@@ -45,14 +46,21 @@ public class FileDistributionImpl implements FileDistribution {
     // as downloading will then start synchronously when a service requests a file reference instead
     private void startDownloadingFileReferences(String hostName, int port, Set<FileReference> fileReferences) {
         Target target = supervisor.connect(new Spec(hostName, port));
-        double timeout = 0.1;
         Request request = new Request("filedistribution.setFileReferencesToDownload");
+        request.setContext(target);
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));
-        log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target.toString());
-        target.invokeSync(request, timeout);
-        if (request.isError() && request.errorCode() != ErrorCode.CONNECTION) {
-            log.log(LogLevel.DEBUG, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
-        }
-        target.close();
+        log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target);
+        target.invokeAsync(request, rpcTimeout, this);
     }
+
+
+    @Override
+    public void handleRequestDone(Request req) {
+        Target target = (Target) req.getContext();
+        if (req.isError()) {
+            log.log(LogLevel.DEBUG, req.methodName() + " failed for " + target + ": " + req.errorCode() + " (" + req.errorMessage() + ")");
+        }
+        if (target != null) target.close();
+    }
+
 }
