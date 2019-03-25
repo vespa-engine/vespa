@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.role;
 import com.yahoo.restapi.Path;
 
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -65,7 +64,7 @@ public enum PathGroup {
                      "/deployment/v1/{*}",
                      "/zone/v1/{*}");
 
-    private final Set<String> pathSpecs;
+    final Set<String> pathSpecs;
 
     PathGroup(String... pathSpecs) {
         this.pathSpecs = Set.of(pathSpecs);
@@ -95,21 +94,6 @@ public enum PathGroup {
             }
             return match;
         }).isPresent();
-    }
-
-    static {
-        // Ensure that all path spec sets are disjoint
-        for (PathGroup pg : PathGroup.all()) {
-            for (PathGroup pg2 : PathGroup.all()) {
-                if (pg == pg2) continue;
-                Set<String> overlapping = new LinkedHashSet<>(pg.pathSpecs);
-                overlapping.retainAll(pg2.pathSpecs);
-                if (!overlapping.isEmpty()) {
-                    throw new AssertionError("The following path specs overlap in " + pg + " and " + pg2 +
-                                             ": " + overlapping);
-                }
-            }
-        }
     }
 
 }
