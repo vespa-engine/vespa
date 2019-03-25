@@ -194,6 +194,10 @@ public:
     size_t getNumActiveDocs() const;
     DocsumBySlime & getDocsumBySlime() { return *_docsumBySlime; }
 
+    search::engine::SearchServer &get_search_server();
+    search::engine::DocsumServer &get_docsum_server();
+    search::engine::MonitorServer &get_monitor_server();
+
     vespalib::string getDelayedConfigs() const;
 
     StatusReport::List getStatusReports() const override;

@@ -34,6 +34,8 @@ public:
         _trace.setLevel(level);
         _trace.start(minLevel);
     }
+    Request & setTraceLevel(uint32_t level) { _trace.setLevel(level); return *this; }
+    uint32_t getTraceLevel() const { return _trace.getLevel(); }
 
     Trace & trace() const { return _trace; }
 private:

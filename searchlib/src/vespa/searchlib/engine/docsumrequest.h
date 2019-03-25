@@ -4,7 +4,7 @@
 
 #include "propertiesmap.h"
 #include "request.h"
-#include "source_description.h"
+#include "lazy_source.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
 
@@ -19,39 +19,7 @@ public:
 
     using UP = std::unique_ptr<DocsumRequest>;
     using SP = std::shared_ptr<DocsumRequest>;
-
-    class Source {
-    private:
-        mutable DocsumRequest::UP _request;
-        mutable FS4Packet_GETDOCSUMSX *_fs4Packet;
-        void lazyDecode() const;
-        const SourceDescription _desc;
-        std::unique_ptr<RelativeTime> _relativeTime;
-    public:
-
-        Source(DocsumRequest * request) : _request(request), _fs4Packet(nullptr), _desc(0), _relativeTime() {}
-        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(nullptr), _desc(0), _relativeTime() {}
-        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc);
-
-        Source(Source && rhs) noexcept;
-        ~Source();
-
-        const DocsumRequest * operator -> () const { return get(); }
-
-        const DocsumRequest * get() const {
-            lazyDecode();
-            return _request.get();
-        }
-
-        Source& operator= (Source && rhs) = delete;
-        Source & operator= (const Source &) = delete;
-        Source(const Source &) = delete;
-
-        UP release() {
-            lazyDecode();
-            return std::move(_request);
-        }
-    };
+    using Source = LazySource<DocsumRequest>;
 
     class Hit {
     public:

@@ -126,6 +126,8 @@ vespa_define_module(
     src/tests/docstore/store_by_bucket
     src/tests/engine/docsumapi
     src/tests/engine/monitorapi
+    src/tests/engine/proto_converter
+    src/tests/engine/proto_rpc_adapter
     src/tests/engine/searchapi
     src/tests/engine/transportserver
     src/tests/expression/attributenode

@@ -123,6 +123,14 @@ public:
         return lookup(MapNames::MODEL);
     }
 
+    /**
+     * Obtain trace
+     *
+     * @return trace
+     **/
+    const Props &trace() const {
+        return lookup(MapNames::TRACE);
+    }
 };
 
 }

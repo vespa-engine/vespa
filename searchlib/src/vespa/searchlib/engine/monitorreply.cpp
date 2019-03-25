@@ -8,6 +8,7 @@ MonitorReply::MonitorReply()
     : mld(),
       activeDocsRequested(false),
       partid(),
+      distribution_key(-1),
       timestamp(),
       totalNodes(),
       activeNodes(),

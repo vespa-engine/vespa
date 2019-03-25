@@ -14,6 +14,44 @@ LOG_SETUP(".engine.transportserver");
 
 namespace search::engine {
 
+namespace {
+
+struct SearchRequestDecoder : SearchRequest::Source::Decoder {
+    PacketConverter::QUERYX *packet;
+    RelativeTime relative_time;
+    SearchRequestDecoder(PacketConverter::QUERYX *qx)
+        : packet(qx), relative_time(std::make_unique<FastosClock>()) {}
+    std::unique_ptr<SearchRequest> decode() override {
+        auto req = std::make_unique<SearchRequest>(std::move(relative_time));
+        PacketConverter::toSearchRequest(*packet, *req);
+        return req;
+    }
+    ~SearchRequestDecoder() override { packet->Free(); }
+};
+
+std::unique_ptr<SearchRequest::Source::Decoder> search_request_decoder(PacketConverter::QUERYX *qx) {
+    return std::make_unique<SearchRequestDecoder>(qx);
+}
+
+struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
+    PacketConverter::GETDOCSUMSX *packet;
+    RelativeTime relative_time;
+    DocsumRequestDecoder(PacketConverter::GETDOCSUMSX *gdx)
+        : packet(gdx), relative_time(std::make_unique<FastosClock>()) {}
+    std::unique_ptr<DocsumRequest> decode() override {
+        auto req = std::make_unique<DocsumRequest>(std::move(relative_time), false);
+        PacketConverter::toDocsumRequest(*packet, *req);
+        return req;
+    }
+    ~DocsumRequestDecoder() override { packet->Free(); }
+};
+
+std::unique_ptr<DocsumRequest::Source::Decoder> docsum_request_decoder(PacketConverter::GETDOCSUMSX *gdx) {
+    return std::make_unique<DocsumRequestDecoder>(gdx);
+}
+
+}
+
 //-----------------------------------------------------------------------------
 
 typedef search::fs4transport::FS4PersistentPacketStreamer PacketStreamer;
@@ -191,7 +229,7 @@ TransportServer::HandlePacket(FNET_Packet *packet, FNET_Context context)
             if (shouldLog(DEBUG_SEARCH)) {
                 logPacket("incoming packet", packet, channel, 0);
             }
-            SearchRequest::Source req(qx, _sourceDesc);
+            SearchRequest::Source req(search_request_decoder(qx));
             packet = nullptr;
             _pending.push(new SearchHandler(*this, std::move(req), channel, _clients.size()));
             rc = FNET_CLOSE_CHANNEL;
@@ -200,7 +238,7 @@ TransportServer::HandlePacket(FNET_Packet *packet, FNET_Context context)
             if (shouldLog(DEBUG_DOCSUM)) {
                 logPacket("incoming packet", packet, channel, 0);
             }
-            DocsumRequest::Source req(gdx, _sourceDesc);
+            DocsumRequest::Source req(docsum_request_decoder(gdx));
             packet = nullptr;
             _pending.push(new DocsumHandler(*this, std::move(req), channel));
             rc = FNET_CLOSE_CHANNEL;
@@ -364,7 +402,6 @@ TransportServer::TransportServer(SearchServer &searchServer,
       _failed(false),
       _doListen(true),
       _threadPool(256 * 1024),
-      _sourceDesc(port),
       _listenSpec(),
       _listener(0),
       _clients(),

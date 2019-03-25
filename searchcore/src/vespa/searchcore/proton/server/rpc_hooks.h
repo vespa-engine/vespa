@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/engine/proto_rpc_adapter.h>
 #include <mutex>
 #include <condition_variable>
 
@@ -19,6 +20,8 @@ class DocsumByRPC;
 class RPCHooksBase : public FRT_Invokable
 {
 private:
+    using ProtoRpcAdapter = search::engine::ProtoRpcAdapter;
+
     class Session {
     private:
         fastos::TimeStamp _createTime;
@@ -62,6 +65,7 @@ private:
     Proton                         & _proton;
     std::unique_ptr<DocsumByRPC>     _docsumByRPC;
     std::unique_ptr<FRT_Supervisor>  _orb;
+    std::unique_ptr<ProtoRpcAdapter> _proto_rpc_adapter;
     slobrok::api::RegisterAPI        _regAPI;
     std::mutex                       _stateLock;
     std::condition_variable          _stateCond;
