@@ -47,9 +47,8 @@ vespalib::string make_expected_response(const vespalib::string &content_type, co
     return vespalib::make_string("HTTP/1.1 200 OK\r\n"
                                  "Connection: close\r\n"
                                  "Content-Type: %s\r\n"
-                                 "Content-Length: %zu\r\n"
                                  "\r\n"
-                                 "%s", content_type.c_str(), content.size(), content.c_str());
+                                 "%s", content_type.c_str(), content.c_str());
 }
 
 vespalib::string make_expected_error(int code, const vespalib::string &message) {

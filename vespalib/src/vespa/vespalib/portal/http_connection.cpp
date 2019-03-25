@@ -222,7 +222,6 @@ HttpConnection::respond_with_content(const vespalib::string &content_type,
         dst.printf("HTTP/1.1 200 OK\r\n");
         dst.printf("Connection: close\r\n");
         dst.printf("Content-Type: %s\r\n", content_type.c_str());
-        dst.printf("Content-Length: %zu\r\n", content.size());
         dst.printf("\r\n");
         dst.write(content.data(), content.size());
     }
