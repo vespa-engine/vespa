@@ -44,7 +44,7 @@ public enum Policy {
                           .on(PathGroup.all())
                           .in(SystemName.main, SystemName.cd, SystemName.dev),
                  Privilege.grant(Action.read)
-                          .on(PathGroup.deployment)
+                          .on(PathGroup.deploymentStatus)
                           .in(SystemName.all()));
 
     private final Set<Privilege> privileges;

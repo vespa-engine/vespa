@@ -63,8 +63,8 @@ public enum PathGroup {
                  "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
 
     /** Paths providing information about deployment status */
-    deployment("/badge/v1/{*}",
-               "/deployment/v1/{*}");
+    deploymentStatus("/badge/v1/{*}",
+                     "/deployment/v1/{*}");
 
     private final Set<String> pathSpecs;
 
