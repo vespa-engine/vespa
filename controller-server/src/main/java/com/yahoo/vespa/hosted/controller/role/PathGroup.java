@@ -30,13 +30,16 @@ public enum PathGroup {
     /** Paths used when onboarding and creating a new tenants */
     onboardingUser("/application/v4/user"),
 
+    // Tenant parameter is ignored here as context for the role is not defined until after a tenant has been created
     onboardingTenant("/application/v4/tenant/{ignored}"),
+
+    /** Read-only paths used when onboarding tenants */
+    onboardingTenantInformation("/athenz/v1/",
+                                "/athenz/v1/domains"),
 
 
     /** Paths used by tenant/application administrators */
-    tenant("/athenz/v1/",
-           "/athenz/v1/domains",
-           "/application/v4/",
+    tenant("/application/v4/",
            "/application/v4/athensDomain/",
            "/application/v4/property/",
            "/application/v4/tenant/",

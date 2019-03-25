@@ -41,6 +41,9 @@ public enum Policy {
                           .on(PathGroup.onboardingTenant)
                           .in(SystemName.main, SystemName.cd, SystemName.dev),
                  Privilege.grant(Action.read)
+                          .on(PathGroup.onboardingTenantInformation)
+                          .in(SystemName.main, SystemName.cd, SystemName.dev),
+                 Privilege.grant(Action.read)
                           .on(PathGroup.all())
                           .in(SystemName.main, SystemName.cd, SystemName.dev),
                  Privilege.grant(Action.read)
