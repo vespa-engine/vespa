@@ -104,6 +104,9 @@ public class CuratorDb {
     CuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
+        // TODO: This cleans up unused paths. Remove after 7.32 has been released
+        curator.delete(lockRoot.append("jobQueuesLock"));
+        curator.delete(root.append("jobQueues"));
     }
 
     /** Returns all hosts configured to be part of this ZooKeeper cluster */
