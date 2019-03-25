@@ -50,21 +50,18 @@ public enum PathGroup {
            "/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}",
            "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"),
 
-    /**
-     * Paths used for deployments by build service(s). Note that context is ignored in these paths as build service
-     * roles are not granted in specific contexts.
-     */
-    buildService("/zone/v1/{*}",
-                 "/application/v4/tenant/{tenant}/application/{application}/jobreport",
+    /** Paths used for deployments by build service(s) */
+    buildService("/application/v4/tenant/{tenant}/application/{application}/jobreport",
                  "/application/v4/tenant/{tenant}/application/{application}/submit",
                  "/application/v4/tenant/{tenant}/application/{application}/promote",
                  "/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}",
                  "/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}",
                  "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
 
-    /** Paths providing information about deployment status */
+    /** Read-only paths providing information related to deployments */
     deploymentStatus("/badge/v1/{*}",
-                     "/deployment/v1/{*}");
+                     "/deployment/v1/{*}",
+                     "/zone/v1/{*}");
 
     private final Set<String> pathSpecs;
 
