@@ -4,8 +4,9 @@ namespace=config.docproc
 # Queue size (in milliseconds) for this node
 # Positive size gives a ThroughPutLimitQueue. ### Experimental.
 # 0 Gives a PriorityQueue
-# Negative values gives a SynchronousQueue, in effect increasing number of threads as required (if numthreads == -1)
+# Negative values gives a SynchronousQueue if numthreads <= 0 (which increases thread pool size as required),
+# otherwise a LinkedBlockingQueue
 maxqueuetimems int default=-1
 
-#The number of threads in the DocprocHandler worker thread pool
+# The number of threads in the DocprocHandler worker thread pool
 numthreads int default=-1

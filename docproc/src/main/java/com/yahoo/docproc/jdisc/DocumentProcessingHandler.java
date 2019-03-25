@@ -90,11 +90,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      DocumentProcessingHandlerParameters params) {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
              new DocprocThreadPoolExecutor(params.getMaxNumThreads(),
-                                           (params.getMaxQueueTimeMs() > 0)
-                                               ? new ThroughputLimitQueue<>(params.getMaxQueueTimeMs())
-                                               : (params.getMaxQueueTimeMs() < 0)
-                                                   ? new SynchronousQueue<>()
-                                                   : new PriorityBlockingQueue<>(), //Probably no need to bound this queue, see bug #4254537
+                                           chooseQueueType(params),
                                            new DocprocThreadManager(params.getMaxConcurrentFactor(),
                                                                     params.getDocumentExpansionFactor(),
                                                                     params.getContainerCoreMemoryMb(),
@@ -104,6 +100,19 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
              params.getStatisticsManager(),
              params.getMetric(),
              params.getContainerDocConfig());
+    }
+
+    private static BlockingQueue<Runnable> chooseQueueType(DocumentProcessingHandlerParameters params) {
+        if (params.getMaxQueueTimeMs() > 0) {
+            return new ThroughputLimitQueue<>(params.getMaxQueueTimeMs());
+        }
+        if (params.getMaxQueueTimeMs() == 0) {
+            return new PriorityBlockingQueue<>(); // Probably no need to bound this queue, see bug #4254537
+        }
+        if (params.getMaxNumThreads() > 0) {
+            return new LinkedBlockingQueue<>();
+        }
+        return new SynchronousQueue<>();
     }
 
     @Inject
