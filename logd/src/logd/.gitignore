@@ -5,3 +5,5 @@ config-logd.cpp
 config-logd.h
 core
 logd
+*.pb.h
+*.pb.cc
