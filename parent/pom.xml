@@ -710,6 +710,11 @@
                 <version>${jna.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.tensorflow</groupId>
                 <artifactId>proto</artifactId>
                 <version>${tensorflow.version}</version>
@@ -758,6 +763,7 @@
         <test.hide>true</test.hide>
         <doclint>all</doclint>
         <surefire.version>2.21.0</surefire.version>
+        <protobuf.version>3.7.0</protobuf.version>
     </properties>
 
 </project>
