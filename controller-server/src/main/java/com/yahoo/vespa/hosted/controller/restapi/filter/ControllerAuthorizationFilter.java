@@ -78,7 +78,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
             AthenzRoleResolver resolver = new AthenzRoleResolver(principal, athenz, controller, path);
             RoleMembership roles = resolver.membership();
-            if (!roles.allow(action, request.getRequestURI())) {
+            if (!roles.allows(action, request.getRequestURI())) {
                 throw new ForbiddenException("Access denied");
             }
             return Optional.empty();

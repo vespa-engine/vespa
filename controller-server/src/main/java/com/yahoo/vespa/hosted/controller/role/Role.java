@@ -27,7 +27,7 @@ public enum Role {
      * Returns whether this role is allowed to perform action in given role context. Action is allowed if at least one
      * policy evaluates to true.
      */
-    public boolean allow(Action action, String path, Context context) {
+    public boolean allows(Action action, String path, Context context) {
         return policies.stream().anyMatch(policy -> policy.evaluate(action, path, context));
     }
 

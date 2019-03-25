@@ -19,11 +19,11 @@ public class RoleMembership {
     }
 
     /** Returns whether any role in this allows action to take place in path */
-    public boolean allow(Action action, String path) {
+    public boolean allows(Action action, String path) {
         return roles.entrySet().stream().anyMatch(kv -> {
             Role role = kv.getKey();
             Set<Context> contexts = kv.getValue();
-            return contexts.stream().anyMatch(context -> role.allow(action, path, context));
+            return contexts.stream().anyMatch(context -> role.allows(action, path, context));
         });
     }
 
