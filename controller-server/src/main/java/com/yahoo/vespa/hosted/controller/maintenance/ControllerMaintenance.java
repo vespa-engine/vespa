@@ -5,6 +5,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -53,6 +54,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ContactInformationMaintainer contactInformationMaintainer;
     private final CostReportMaintainer costReportMaintainer;
     private final RoutingPolicyMaintainer routingPolicyMaintainer;
+    private final ResourceMeterMaintainer resourceMeterMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -61,6 +63,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
+                                 ResourceSnapshotConsumer resourceSnapshotConsumer,
                                  SelfHostedCostConfig selfHostedCostConfig) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
@@ -83,6 +86,7 @@ public class ControllerMaintenance extends AbstractComponent {
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
         routingPolicyMaintainer = new RoutingPolicyMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService, curator);
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(5), jobControl, nodeRepositoryClient, Clock.systemUTC(), resourceSnapshotConsumer);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -111,6 +115,7 @@ public class ControllerMaintenance extends AbstractComponent {
         contactInformationMaintainer.deconstruct();
         costReportMaintainer.deconstruct();
         routingPolicyMaintainer.deconstruct();
+        resourceMeterMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

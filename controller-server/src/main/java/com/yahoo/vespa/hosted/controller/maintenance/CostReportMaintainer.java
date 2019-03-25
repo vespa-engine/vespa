@@ -46,6 +46,6 @@ public class CostReportMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        consumer.Consume(CostCalculator.toCsv(CostCalculator.calculateCost(nodeRepository, controller(), clock, selfHostedCostConfig)));
+        consumer.Consume(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, selfHostedCostConfig));
     }
 }
