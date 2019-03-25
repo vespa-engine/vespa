@@ -45,7 +45,7 @@ public enum PathGroup {
            "/application/v4/tenant/",
            "/application/v4/tenant-pipeline/",
            "/application/v4/tenant/{tenant}",
-           "/application/v4/tenant/tenant1/application/",
+           "/application/v4/tenant/{tenant}/application/",
            "/application/v4/tenant/{tenant}/application/{application}",
            "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
            "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{job}/{*}",
