@@ -70,9 +70,12 @@ public enum PathGroup {
         this.pathSpecs = Set.of(pathSpecs);
     }
 
-    /** Returns path if it matches any spec in this group */
+    /** Returns path if it matches any spec in this group, with match groups set by the match. */
     private Optional<Path> get(String path) {
-        return Optional.of(path).map(Path::new).filter(p -> pathSpecs.stream().anyMatch(p::matches));
+        Path matcher = new Path(path);
+        for (String spec : pathSpecs) // Iterate to be sure the Path's state is that of the match.
+            if (matcher.matches(spec)) return Optional.of(matcher);
+        return Optional.empty();
     }
 
     /** All known path groups */
@@ -82,7 +85,7 @@ public enum PathGroup {
 
     /** Returns whether this group matches path in given context */
     public boolean matches(String path, Context context) {
-        return get(path).filter(p -> {
+        return get(path).map(p -> {
             boolean match = true;
             String tenant = p.get("tenant");
             if (tenant != null && context.tenant().isPresent()) {
@@ -93,7 +96,7 @@ public enum PathGroup {
                 match &= context.application().get().value().equals(application);
             }
             return match;
-        }).isPresent();
+        }).orElse(false);
     }
 
 }
