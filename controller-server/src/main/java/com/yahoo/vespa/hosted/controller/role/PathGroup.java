@@ -40,7 +40,6 @@ public enum PathGroup {
 
     /** Paths used by tenant/application administrators */
     tenant("/application/v4/",
-           "/application/v4/athensDomain/",
            "/application/v4/property/",
            "/application/v4/tenant/",
            "/application/v4/tenant-pipeline/",
