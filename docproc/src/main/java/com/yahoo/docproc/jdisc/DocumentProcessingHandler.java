@@ -93,7 +93,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                            (params.getMaxQueueTimeMs() > 0)
                                                ? new ThroughputLimitQueue<>(params.getMaxQueueTimeMs())
                                                : (params.getMaxQueueTimeMs() < 0)
-                                                   ? new LinkedBlockingQueue<>()
+                                                   ? new SynchronousQueue<>()
                                                    : new PriorityBlockingQueue<>(), //Probably no need to bound this queue, see bug #4254537
                                            new DocprocThreadManager(params.getMaxConcurrentFactor(),
                                                                     params.getDocumentExpansionFactor(),

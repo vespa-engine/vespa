@@ -4,7 +4,7 @@ namespace=config.docproc
 # Queue size (in milliseconds) for this node
 # Positive size gives a ThroughPutLimitQueue. ### Experimental.
 # 0 Gives a PriorityQueue
-# Negative values gives a ordinary LinkedBlockingQueue. This is fastest and most efficient.
+# Negative values gives a SynchronousQueue, in effect increasing number of threads as required (if numthreads == -1)
 maxqueuetimems int default=-1
 
 #The number of threads in the DocprocHandler worker thread pool
