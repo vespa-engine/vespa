@@ -80,6 +80,11 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
             Path path = new Path(request.getRequestURI());
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
+
+            // Avoid expensive lookups when request is always legal.
+            if (RoleMembership.everyone().allows(action, request.getRequestURI()))
+                return Optional.empty();
+
             RoleMembership roles = new AthenzRoleResolver(athenz, controller, path).membership(principal);
             if (!roles.allows(action, request.getRequestURI())) {
                 throw new ForbiddenException("Access denied");
