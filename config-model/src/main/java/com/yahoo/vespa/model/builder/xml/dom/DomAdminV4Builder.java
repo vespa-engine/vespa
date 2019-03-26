@@ -76,6 +76,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.count() > 1) throw new IllegalArgumentException("You can only request a single log server");
         if (deployState.getProperties().applicationId().instance().isTester()) return; // No logserver is needed on tester applications
+        if (deployState.getVespaVersion().getMajor() == 6) return; // Logserver is not supported on Vespa 6
         if (nodesSpecification.isDedicated()) {
             Collection<HostResource> hosts = allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
