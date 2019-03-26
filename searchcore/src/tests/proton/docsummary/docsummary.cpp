@@ -34,6 +34,7 @@
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <regex>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
@@ -655,7 +656,8 @@ Test::requireThatSummariesTimeout()
     vespalib::SimpleBuffer buf;
     vespalib::Slime summary = getSlime(*rep, 0, false);
     JsonFormat::encode(summary, buf, false);
-    EXPECT_TRUE(vespalib::Regexp("Timed out with -[0-9]+us left.").match(buf.get().make_stringref()));
+    auto bufstring = buf.get().make_stringref(); 
+    EXPECT_TRUE(std::regex_search(bufstring.data(), bufstring.data() + bufstring.size(), std::basic_regex<char>("Timed out with -[0-9]+us left.")));
 }
 
 void
