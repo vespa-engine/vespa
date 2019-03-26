@@ -20,8 +20,8 @@ public class DocprocThreadPoolExecutor extends ThreadPoolExecutor {
 
     public DocprocThreadPoolExecutor(int maxNumThreads, BlockingQueue<Runnable> queue, DocprocThreadManager threadMgr) {
         super((maxNumThreads > 0) ? maxNumThreads : Runtime.getRuntime().availableProcessors(),
-              (maxNumThreads > 0) ? maxNumThreads : Runtime.getRuntime().availableProcessors(),
-              5, TimeUnit.MINUTES,
+              (maxNumThreads > 0) ? maxNumThreads : 8192,
+              1, TimeUnit.SECONDS,
               queue,
               new DaemonThreadFactory("docproc-"));
         this.threadManager = threadMgr;
