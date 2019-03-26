@@ -8,20 +8,10 @@
 
 namespace logdemon {
 
-using SeenMap = std::unordered_set<std::string>;
 // Mapping saying if a level should be forwarded or not
 using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
 
 struct Metrics;
-
-class LevelParser
-{
-private:
-    SeenMap _seenLevelMap;
-public:
-    ns_log::Logger::LogLevel parseLevel(const char *level);
-    LevelParser() : _seenLevelMap() {}
-};
 
 /**
  * Class used to forward log lines to the logserver via a one-way text protocol.
@@ -31,7 +21,6 @@ private:
     int _logserverfd;
     Metrics &_metrics;
     ForwardMap _forwardMap;
-    LevelParser _levelparser;
     int _badLines;
     const char *copystr(const char *b, const char *e) {
         int len = e - b;
