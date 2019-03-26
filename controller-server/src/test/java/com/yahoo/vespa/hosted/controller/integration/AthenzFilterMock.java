@@ -31,7 +31,6 @@ public class AthenzFilterMock implements SecurityRequestFilter {
 
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
-        if (request.getMethod().equalsIgnoreCase("OPTIONS")) return;
         String identityName = request.getHeader(IDENTITY_HEADER_NAME);
         if (identityName == null) {
             Response response = new Response(HttpResponse.Status.UNAUTHORIZED);

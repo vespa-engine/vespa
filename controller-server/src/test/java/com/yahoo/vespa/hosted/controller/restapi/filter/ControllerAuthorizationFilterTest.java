@@ -23,15 +23,16 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.jdisc.http.HttpResponse.Status.FORBIDDEN;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,9 +48,11 @@ public class ControllerAuthorizationFilterTest {
     private static final AthenzUser USER = user("john");
     private static final AthenzUser HOSTED_OPERATOR = user("hosted-operator");
     private static final AthenzDomain TENANT_DOMAIN = new AthenzDomain("tenantdomain");
+    private static final AthenzDomain TENANT_DOMAIN2 = new AthenzDomain("tenantdomain2");
     private static final AthenzService TENANT_ADMIN = new AthenzService(TENANT_DOMAIN, "adminservice");
     private static final AthenzService TENANT_PIPELINE = HostedAthenzIdentities.from(new ScrewdriverId("12345"));
     private static final TenantName TENANT = TenantName.from("mytenant");
+    private static final TenantName TENANT2 = TenantName.from("othertenant");
     private static final ApplicationId APPLICATION = new ApplicationId("myapp");
 
     @Test
@@ -101,6 +104,8 @@ public class ControllerAuthorizationFilterTest {
         controllerTester.athenzDb().hostedOperators.add(HOSTED_OPERATOR);
         controllerTester.createTenant(TENANT.value(), TENANT_DOMAIN.getName(), null);
         controllerTester.createApplication(TENANT, APPLICATION.id(), "default", 12345);
+        controllerTester.createTenant(TENANT2.value(), TENANT_DOMAIN2.getName(), null);
+        controllerTester.createApplication(TENANT2, APPLICATION.id(), "default", 42);
         AthenzDbMock.Domain domainMock = controllerTester.athenzDb().domains.get(TENANT_DOMAIN);
         domainMock.admins.add(TENANT_ADMIN);
         domainMock.applications.get(APPLICATION).addRoleMember(ApplicationAction.deploy, TENANT_PIPELINE);
@@ -121,6 +126,12 @@ public class ControllerAuthorizationFilterTest {
 
         testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/submit",
                       allowed, forbidden, filter);
+
+        // Pipeline cannot access other app
+        List<AthenzIdentity> forbiddenIncludingPipeline = new ArrayList<>(forbidden);
+        forbiddenIncludingPipeline.add(TENANT_PIPELINE);
+        testApiAccess(POST, "/application/v4/tenant/othertenant/application/myapp/environment/prod/region/myregion/instance/default/deploy",
+                      List.of(HOSTED_OPERATOR), forbiddenIncludingPipeline, filter);
 
     }
 
@@ -155,13 +166,13 @@ public class ControllerAuthorizationFilterTest {
 
     private static void assertIsForbidden(Optional<AuthorizationResponse> response) {
         assertTrue("Expected a response from filter", response.isPresent());
-        assertEquals("Invalid status code", response.get().statusCode, FORBIDDEN);
+        assertEquals("Invalid status code", FORBIDDEN, response.get().statusCode);
     }
 
     private static ControllerAuthorizationFilter createFilter(ControllerTester controllerTester) {
         return new ControllerAuthorizationFilter(new AthenzClientFactoryMock(controllerTester.athenzDb()),
-                                                 controllerTester.controller().tenants(),
-                                                 singleton("http://localhost"));
+                                                 controllerTester.controller(),
+                                                 Set.of("http://localhost"));
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,

@@ -321,6 +321,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("application2.json"));
 
+        // GET application having both change and outstanding change
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              new File("application2.json"));
+
+
         // PATCH in a major version override
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
                                       .userIdentity(USER_ID)
@@ -382,10 +388,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("application1-recursive.json"));
 
         // GET logs
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application//application1/environment/prod/region/us-central-1/instance/default/logs?from=1233&to=3214", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/prod/region/us-central-1/instance/default/logs?from=1233&to=3214", GET)
                                         .userIdentity(USER_ID),
                                         new File("logs.json"));
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application//application1/environment/prod/region/us-central-1/instance/default/logs?from=1233&to=3214&streaming", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/prod/region/us-central-1/instance/default/logs?from=1233&to=3214&streaming", GET)
                         .userIdentity(USER_ID),
                 "INFO - All good");
 
@@ -570,7 +576,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"user\":\"other_user\",\"tenants\":[],\"tenantExists\":false}");
 
         // OPTIONS return 200 OK
-        tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS),
+        tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS)
+                                      .userIdentity(USER_ID),
                               "");
 
         // Promote from pipeline
@@ -674,6 +681,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Setup
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
         // Create tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
@@ -703,19 +711,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
         HttpEntity noAppEntity = createApplicationDeployData(Optional.empty(), true);
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
                                       .data(noAppEntity)
-                                      .userIdentity(USER_ID),
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Deployment of system applications during a system upgrade is not allowed\"}",
                               400);
         tester.upgradeSystem(tester.controller().versionStatus().controllerVersion().get().versionNumber());
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
                         .data(noAppEntity)
-                        .userIdentity(USER_ID),
+                        .userIdentity(HOSTED_VESPA_OPERATOR),
                 new File("deploy-result.json"));
 
         // POST (deploy) a system application without an application package
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/proxy-host/environment/prod/region/us-central-1/instance/default/deploy", POST)
                         .data(noAppEntity)
-                        .userIdentity(USER_ID),
+                        .userIdentity(HOSTED_VESPA_OPERATOR),
                 new File("deploy-no-deployment.json"), 400);
     }
 
@@ -809,13 +817,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
-        // PUT (update) non-existing tenant
+        // PUT (update) non-existing tenant returns 403 as tenant access cannot be determined when the tenant does not exist
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}",
-                              404);
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
         // GET non-existing tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET)
@@ -936,20 +944,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete application 'tenant1.application1': Application not found\"}",
                               404);
+
         // DELETE tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
                               new File("tenant-without-applications.json"));
-        // DELETE tenant again - should produce 404
+        // DELETE tenant again returns 403 as tenant access cannot be determined when the tenant does not exist
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete tenant 'tenant1': Tenant not found\"}",
-                              404);
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
         // Promote application chef env for nonexistent tenant/application
         tester.assertResponse(request("/application/v4/tenant/dontexist/application/dontexist/environment/prod/region/us-west-1/instance/default/promote", POST)
-                                      .userIdentity(USER_ID),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"Unable to promote Chef environments for application\"}",
                               500);
 
@@ -1005,7 +1014,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
                                       .userIdentity(unauthorizedUser)
                                       .oktaAccessToken(OKTA_AT),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
                               403);
 
         // (Create it with the right tenant id)
@@ -1020,13 +1029,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"'user.myuser' is not a Screwdriver identity. Only Screwdriver is allowed to deploy to this environment.\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
                               403);
 
         // Deleting an application for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(unauthorizedUser),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
                               403);
 
         // (Deleting it with the right tenant id)
@@ -1040,7 +1049,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
                                       .userIdentity(unauthorizedUser),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
                               403);
         
         // Change Athens domain
@@ -1055,7 +1064,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(unauthorizedUser),
-                              "{\n  \"code\" : 403,\n  \"message\" : \"Tenant admin or Vespa operator role required\"\n}",
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
                               403);
     }
 
