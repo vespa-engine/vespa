@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.AbstractService;
  * system.
  *
  * @author gjoranv
+ * @author bjorncs
  */
 public class Logserver extends AbstractService {
 
@@ -17,10 +18,10 @@ public class Logserver extends AbstractService {
 
     public Logserver(AbstractConfigProducer parent) {
         super(parent, "logserver");
-        portsMeta.on(0).tag("unused");
-        portsMeta.on(1).tag("logtp");
-        portsMeta.on(2).tag("logtp").tag("telnet").tag("last-errors-holder");
-        portsMeta.on(3).tag("logtp").tag("telnet").tag("replicator");
+        portsMeta.on(0).tag("logtp").tag("rpc");
+        portsMeta.on(1).tag("logtp").tag("legacy");
+        portsMeta.on(2).tag("unused");
+        portsMeta.on(3).tag("unused");
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
     }
@@ -37,6 +38,8 @@ public class Logserver extends AbstractService {
      */
     private String getMyJVMArgs() {
         StringBuilder sb = new StringBuilder();
+        sb.append("-Dlogserver.rpcListenPort=").append(getRelativePort(0));
+        sb.append(" ");
         sb.append("-Dlogserver.listenport=").append(getRelativePort(1));
         sb.append(" ");
         sb.append("-Dlogserver.logarchive.dir=" + logArchiveDir);
@@ -56,7 +59,7 @@ public class Logserver extends AbstractService {
      * @return 'true' always
      */
     public boolean requiresWantedPort() {
-        return true;
+        return true; // TODO Support dynamic port allocation for logserver
     }
 
     /**
@@ -68,7 +71,7 @@ public class Logserver extends AbstractService {
 
     @Override
     public String[] getPortSuffixes() {
-        return new String[]{ "unused", "logtp", "last.errors", "replicator" };
+        return new String[]{ "logtp/rpc", "logtp/legacy", "unused/1", "unused/2" };
     }
 
 }

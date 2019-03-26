@@ -18,6 +18,7 @@ import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
+import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -28,7 +29,6 @@ import org.junit.Test;
 
 import java.util.Set;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,6 +93,9 @@ public class AdminTestCase {
         vespaModel.getConfig(lb, "admin/slobrok.0");
         LogdConfig lc = new LogdConfig(lb);
         assertEquals(lc.logserver().host(), localhost);
+
+        Service logserver = vespaModel.getService("admin/logserver").get();
+        assertEquals(logserver.getRelativePort(0), lc.logserver().rpcPort());
 
         // Verify services in the sentinel config
         SentinelConfig.Builder b = new SentinelConfig.Builder();
