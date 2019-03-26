@@ -16,7 +16,7 @@ public class UserApiTest extends ControllerContainerTest {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/user/v1/"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No 'GET' handler at '/user/v1/'\"}", 404);
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n" + "}", 403);
     }
 
 }
