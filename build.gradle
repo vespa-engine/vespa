@@ -85,37 +85,6 @@ subprojects {
       }
     }
 
-    //def xyz = generateConfigurationsTask(
-      //  "${projectDir}/src/test/resources/configdefinitions",
-        //"${buildDir}/generated-sources/configgen-default-test/")
-
-   task hello {
-     doLast {
-       if( !new File("${buildDir}/generated-sources/configgen-default/").exists() ) {
-	new File("${buildDir}/generated-sources/configgen-default/").mkdirs()
-         FileTree tree = fileTree("${projectDir}/src/main/resources/configdefinitions").include('**/*.def')
-           tree.each {File file ->
-              executeCodegen("${buildDir}/generated-sources/configgen-default/", "${file}")
-           }
-       }
-     }
-   }
-
-   task helloTest {
-     doLast {
-	println "helloTest"
-       if( !new File("${buildDir}/generated-sources/configgen-default-test/").exists() ) {
-	println "directory creatied:" + "${buildDir}/generated-sources/configgen-default-test/"
-        new File("${buildDir}/generated-sources/configgen-default-test/").mkdirs() 
-	println "Listing here:" + "${projectDir}/src/test/resources/configdefinitions"
-	FileTree tree = fileTree("${projectDir}/src/test/resources/configdefinitions").include('**/*.def')
-           tree.each {File file ->
-		println "Executing on file:" + file
-              executeCodegen("${buildDir}/generated-sources/configgen-default-test/", "${file}")
-           }
-       }
-     }
-   }
     compileJava.dependsOn generateConfigurationsTask(
 	"${projectDir}/src/main/resources/configdefinitions", 
 	"${buildDir}/generated-sources/configgen-default/")

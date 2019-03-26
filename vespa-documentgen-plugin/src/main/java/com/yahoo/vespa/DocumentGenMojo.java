@@ -31,6 +31,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -935,4 +936,10 @@ public class DocumentGenMojo extends AbstractMojo {
     private static String upperCaseFirstChar(String s) {
         return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
+    
+    public static void main(String[] args) 
+    {
+    	DocumentGenMojo mojo = new DocumentGenMojo();
+        mojo.execute(new File(args[0]), new File(args[1]), args[2]);
+	}
 }
