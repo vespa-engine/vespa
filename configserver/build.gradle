@@ -14,6 +14,7 @@ dependencies {
     testCompile 'com.github.tomakehurst:wiremock-standalone:2.6.0'
     testCompile project(':container-dependency-versions:parent:testutil')
     testCompile project(':container-dependency-versions:parent:config-model-api')
+    testCompile project(path: ':container-dependency-versions:parent:config-model-api', configuration: 'tests' )
     testCompile project(':container-dependency-versions:parent:config-application-package')
     testCompile 'com.google.guava:guava-testlib:20.0'
     testCompile project(':container-dependency-versions:parent:container-test')

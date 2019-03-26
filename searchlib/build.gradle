@@ -29,5 +29,8 @@ sourceSets {
     proto {
      srcDir 'src/protobuf'
     }
+    java {
+      srcDir 'build/generated/source/proto/main/java/'
+    }
   }
 }

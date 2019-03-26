@@ -16,3 +16,7 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:component')
     compileOnly 'com.google.inject:guice:3.0'
 }
+
+compileTestJava.dependsOn generateConfigurationsTask(
+	"${projectDir}/src/test/vespa-configdef",
+	"${buildDir}/generated-sources/configgen-test/")

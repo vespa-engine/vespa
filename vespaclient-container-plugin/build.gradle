@@ -5,6 +5,7 @@
 dependencies {
     compile project(':container-dependency-versions:parent:vespaclient-core')
     compile project(':container-dependency-versions:parent:vespa-http-client')
+    testCompile 'org.hamcrest:hamcrest-core:1.3'	// jarhell : needs to classload before junit
     testCompile 'junit:junit:4.12'
     testCompile 'org.apache.httpcomponents:httpclient:4.4.1'
     testCompile 'org.mockito:mockito-all:1.8.4'

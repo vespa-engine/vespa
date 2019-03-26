@@ -3,9 +3,9 @@
  */
 
 dependencies {
+    testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'	// jarhell : needs to classload before junit
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'
     testCompile project(':container-dependency-versions:parent:testutil')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'

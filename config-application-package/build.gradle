@@ -6,6 +6,7 @@ dependencies {
     compile 'com.thaiopensource:jing:20091111'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     testCompile project(':container-dependency-versions:parent:config-model-api')
+    testCompile project(path: ':container-dependency-versions:parent:config-model-api', configuration: 'tests' )
     testCompile project(':container-dependency-versions:parent:configdefinitions')
     testCompile 'junit:junit:4.12'
     testCompile 'xmlunit:xmlunit:1.5'
