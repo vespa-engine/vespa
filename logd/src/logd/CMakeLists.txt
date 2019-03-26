@@ -15,11 +15,15 @@ vespa_add_library(logd STATIC
     conn.cpp
     legacy_forwarder.cpp
     metrics.cpp
+    proto_converter.cpp
     state_reporter.cpp
     watcher.cpp
     ${logd_PROTOBUF_SRCS}
 
     DEPENDS
 )
+
 vespa_generate_config(logd ../main/resources/configdefinitions/logd.def)
 install_config_definition(../main/resources/configdefinitions/logd.def cloud.config.log.logd.def)
+
+vespa_add_target_package_dependency(logd Protobuf)
