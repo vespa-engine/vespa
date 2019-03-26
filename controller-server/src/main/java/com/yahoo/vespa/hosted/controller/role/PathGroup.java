@@ -62,7 +62,11 @@ public enum PathGroup {
     /** Read-only paths providing information related to deployments */
     deploymentStatus("/badge/v1/{*}",
                      "/deployment/v1/{*}",
-                     "/zone/v1/{*}");
+                     "/zone/v1/{*}"),
+
+    /** Paths used by some dashboard */
+    dashboard("/",
+              "/d/{*}");
 
     final Set<String> pathSpecs;
 
