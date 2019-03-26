@@ -23,10 +23,7 @@ public enum Policy {
      */
     tenant(Privilege.grant(Action.all())
                     .on(PathGroup.tenant)
-                    .in(SystemName.all()),
-           Privilege.grant(Action.read)
-                    .on(PathGroup.all())
-                    .in(SystemName.main, SystemName.cd, SystemName.dev)),
+                    .in(SystemName.all())),
 
     /** Build service policy only allows access relevant for build service(s) */
     buildService(Privilege.grant(Action.all())
