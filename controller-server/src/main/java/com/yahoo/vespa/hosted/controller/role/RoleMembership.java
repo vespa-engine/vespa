@@ -17,18 +17,21 @@ import java.util.stream.Stream;
  */
 public class RoleMembership {
 
-    private static final RoleMembership everyone = new RoleMembership(Map.of(Role.everyone,
-                                                                             Stream.of(SystemName.values())
-                                                                                   .map(Context::unlimitedIn)
-                                                                                   .collect(Collectors.toUnmodifiableSet())));
-
     private final Map<Role, Set<Context>> roles;
 
     public RoleMembership(Map<Role, Set<Context>> roles) {
+        if (roles.values().stream()
+                 .flatMap(Set::stream)
+                 .map(Context::system)
+                 .distinct().count() != 1)
+            throw new IllegalArgumentException("A RoleMembership should be defined only for a single system.");
+
         this.roles = Map.copyOf(roles);
     }
 
-    public static RoleMembership everyone() { return everyone; }
+    public static RoleMembership everyoneIn(SystemName system) {
+        return new RoleMembership(Map.of(Role.everyone, Set.of(Context.unlimitedIn(system))));
+    }
 
     /** Returns whether any role in this allows action to take place in path */
     public boolean allows(Action action, String path) {
