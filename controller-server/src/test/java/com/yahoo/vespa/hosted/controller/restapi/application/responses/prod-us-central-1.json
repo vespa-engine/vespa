@@ -13,7 +13,6 @@
     "http://alias-endpoint.vespa.yahooapis.com:4080"
   ],
   "nodes": "http://localhost:8080/zone/v2/prod/us-central-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
-  "elkUrl": "http://log.prod.us-central-1.test/#/discover?_g=()&_a=(columns:!(_source),index:'logstash-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'HV-tenant:%22tenant1%22%20AND%20HV-application:%22application1%22%20AND%20HV-region:%22us-central-1%22%20AND%20HV-instance:%22default%22%20AND%20HV-environment:%22prod%22')),sort:!('@timestamp',desc))",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-central-1&application=tenant1.application1",
   "version": "(ignore)",
   "revision": "(ignore)",

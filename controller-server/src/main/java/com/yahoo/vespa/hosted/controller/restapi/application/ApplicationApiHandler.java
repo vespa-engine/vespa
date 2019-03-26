@@ -553,10 +553,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                   .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
-
-        controller.zoneRegistry().getLogServerUri(deploymentId)
-                .ifPresent(elkUrl -> response.setString("elkUrl", elkUrl.toString()));
-
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.applicationVersion().id());
