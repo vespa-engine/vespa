@@ -12,6 +12,7 @@ vespa_define_module(
 
     TESTS
     src/test
+    src/test/log_message
     src/test/simple
     src/test/threads
 )
