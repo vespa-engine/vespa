@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
  * which is used in java.util.logging.
  *
  * @author  Bjorn Borud
+ * @author bjorncs
  */
 public class LogMessage
 {
