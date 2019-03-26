@@ -66,7 +66,8 @@ public enum PathGroup {
 
     /** Paths used by some dashboard */
     dashboard("/",
-              "/d/{*}");
+              "/d/{*}",
+              "/statuspage/v1/{*}");
 
     final Set<String> pathSpecs;
 

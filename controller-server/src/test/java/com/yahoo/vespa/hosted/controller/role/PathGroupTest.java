@@ -39,8 +39,11 @@ public class PathGroupTest {
                     String[] parts2 = path2.split("/");
 
                     int end = Math.min(parts1.length, parts2.length);
-                    if (end < parts1.length && ! parts2[end - 1].equals("{*}") && ! parts1[end].equals("{*}")) continue;
-                    if (end < parts2.length && ! parts1[end - 1].equals("{*}") && ! parts2[end].equals("{*}")) continue;
+                    // If one path has more parts than the other ...
+                    // and the other doesn't end with a wildcard matcher ...
+                    // and the longest one isn't just one part longer, which is a wildcard ...
+                    if (end < parts1.length && (end == 0 || ! parts2[end - 1].equals("{*}")) && ! parts1[end].equals("{*}")) continue;
+                    if (end < parts2.length && (end == 0 || ! parts1[end - 1].equals("{*}")) && ! parts2[end].equals("{*}")) continue;
 
                     int i;
                     for (i = 0; i < end; i++)
