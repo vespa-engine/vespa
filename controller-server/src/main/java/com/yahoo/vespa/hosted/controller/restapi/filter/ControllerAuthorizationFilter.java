@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
@@ -76,7 +77,8 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             Principal principal = request.getUserPrincipal();
-            if (principal == null) throw new ForbiddenException("Access denied.");
+            if (principal == null)
+                return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
 
             Path path = new Path(request.getRequestURI());
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
@@ -86,11 +88,12 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                 return Optional.empty();
 
             RoleMembership roles = new AthenzRoleResolver(athenz, controller, path).membership(principal);
-            if (!roles.allows(action, request.getRequestURI())) {
-                throw new ForbiddenException("Access denied");
-            }
-            return Optional.empty();
-        } catch (WebApplicationException e) {
+            if (roles.allows(action, request.getRequestURI()))
+                return Optional.empty();
+
+            return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
+        }
+        catch (WebApplicationException e) {
             int statusCode = e.getResponse().getStatus();
             String errorMessage = e.getMessage();
             log.log(LogLevel.WARNING, String.format("Access denied (%d): %s", statusCode, errorMessage));
