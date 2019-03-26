@@ -307,6 +307,10 @@ public class DummyVdsNode {
 
     public ClusterStateBundle getClusterStateBundle() {
         synchronized(timer) {
+            // In a two-phase state activation scenario, bundles are added to `clusterStateBundles` _before_
+            // the version has been activated. Since we want this method to only return _activated_ bundles
+            // we filter out versions that are not yet activated. In a non two-phase scenario the activated
+            // version is implicitly the same as the most recently received bundle, so the filter is a no-op.
             return clusterStateBundles.stream()
                     .filter(b -> b.getVersion() <= activatedClusterStateVersion)
                     .findFirst() // Most recent cluster state bundle first in list

@@ -49,7 +49,7 @@ public class SystemStateBroadcasterTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            broadcaster.broadcastStateActivationsIfRequired(dbContextFrom(cf.cluster()), mockCommunicator); // nope!
+            broadcaster.broadcastStateActivationsIfRequired(dbContextFrom(cf.cluster()), mockCommunicator);
         }
     }
 
@@ -142,21 +142,21 @@ public class SystemStateBroadcasterTest {
         verify(f.mockCommunicator).setSystemState(eq(expectedDistr0Bundle), eq(cf.cluster().getNodeInfo(Node.ofDistributor(0))), any());
     }
 
-    private class MockSetClusterStateRequest extends SetClusterStateRequest {
+    private static class MockSetClusterStateRequest extends SetClusterStateRequest {
         public MockSetClusterStateRequest(NodeInfo nodeInfo, int clusterStateVersion) {
             super(nodeInfo, clusterStateVersion);
         }
     }
 
-    private class MockActivateClusterStateVersionRequest extends ActivateClusterStateVersionRequest {
+    private static class MockActivateClusterStateVersionRequest extends ActivateClusterStateVersionRequest {
         public MockActivateClusterStateVersionRequest(NodeInfo nodeInfo, int systemStateVersion) {
             super(nodeInfo, systemStateVersion);
         }
     }
 
-    private void respondToSetClusterStateBundle(NodeInfo nodeInfo,
-                                                ClusterStateBundle stateBundle,
-                                                Communicator.Waiter<SetClusterStateRequest> waiter) {
+    private static void respondToSetClusterStateBundle(NodeInfo nodeInfo,
+                                                       ClusterStateBundle stateBundle,
+                                                       Communicator.Waiter<SetClusterStateRequest> waiter) {
         // Have to patch in that we've actually sent the bundle in the first place...
         nodeInfo.setClusterStateVersionBundleSent(stateBundle);
 
@@ -165,10 +165,10 @@ public class SystemStateBroadcasterTest {
         waiter.done(req);
     }
 
-    private void respondToActivateClusterStateVersion(NodeInfo nodeInfo,
-                                                      ClusterStateBundle stateBundle,
-                                                      int actualVersion,
-                                                      Communicator.Waiter<ActivateClusterStateVersionRequest> waiter) {
+    private static void respondToActivateClusterStateVersion(NodeInfo nodeInfo,
+                                                             ClusterStateBundle stateBundle,
+                                                             int actualVersion,
+                                                             Communicator.Waiter<ActivateClusterStateVersionRequest> waiter) {
         // Have to patch in that we've actually sent the bundle in the first place...
         nodeInfo.setClusterStateVersionActivationSent(stateBundle.getVersion());
 
@@ -177,9 +177,9 @@ public class SystemStateBroadcasterTest {
         waiter.done(req);
     }
 
-    private void respondToActivateClusterStateVersion(NodeInfo nodeInfo,
-                                                      ClusterStateBundle stateBundle,
-                                                      Communicator.Waiter<ActivateClusterStateVersionRequest> waiter) {
+    private static void respondToActivateClusterStateVersion(NodeInfo nodeInfo,
+                                                             ClusterStateBundle stateBundle,
+                                                             Communicator.Waiter<ActivateClusterStateVersionRequest> waiter) {
         respondToActivateClusterStateVersion(nodeInfo, stateBundle, stateBundle.getVersion(), waiter);
     }
 
@@ -212,6 +212,16 @@ public class SystemStateBroadcasterTest {
                 verify(mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo),
                         (nodeInfo.getNodeIndex() == 0 ? d0Waiter : d1Waiter).capture());
             });
+        }
+
+        @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
+        void ackStateBundleFromBothDistributors() {
+            expectSetSystemStateInvocationsToBothDistributors();
+            simulateBroadcastTick(cf);
+
+            respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(0)), stateBundle, d0Waiter.getValue());
+            respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(1)), stateBundle, d1Waiter.getValue());
+            simulateBroadcastTick(cf);
         }
 
         static StateActivationFixture withTwoPhaseEnabled() {
@@ -259,13 +269,7 @@ public class SystemStateBroadcasterTest {
         var f = StateActivationFixture.withTwoPhaseEnabled();
         var cf = f.cf;
 
-        f.expectSetSystemStateInvocationsToBothDistributors();
-        f.simulateBroadcastTick(cf);
-        // ACK state bundle from both distributors
-        respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(0)), f.stateBundle, f.d0Waiter.getValue());
-        respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(1)), f.stateBundle, f.d1Waiter.getValue());
-
-        f.simulateBroadcastTick(cf);
+        f.ackStateBundleFromBothDistributors();
 
         final var d0ActivateWaiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
         final var d1ActivateWaiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
@@ -295,12 +299,7 @@ public class SystemStateBroadcasterTest {
         var f = StateActivationFixture.withTwoPhaseDisabled();
         var cf = f.cf;
 
-        f.expectSetSystemStateInvocationsToBothDistributors();
-        f.simulateBroadcastTick(cf);
-        // ACK state bundle from both distributors
-        respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(0)), f.stateBundle, f.d0Waiter.getValue());
-        respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(1)), f.stateBundle, f.d1Waiter.getValue());
-        f.simulateBroadcastTick(cf);
+        f.ackStateBundleFromBothDistributors();
 
         // At this point the cluster state shall be considered converged.
         assertEquals(f.stateBundle, f.broadcaster.getLastClusterStateBundleConverged());
@@ -317,13 +316,7 @@ public class SystemStateBroadcasterTest {
         var f = StateActivationFixture.withTwoPhaseEnabled();
         var cf = f.cf;
 
-        f.expectSetSystemStateInvocationsToBothDistributors();
-        f.simulateBroadcastTick(cf);
-        // ACK state bundle from both distributors
-        respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(0)), f.stateBundle, f.d0Waiter.getValue());
-        respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(1)), f.stateBundle, f.d1Waiter.getValue());
-
-        f.simulateBroadcastTick(cf);
+        f.ackStateBundleFromBothDistributors();
 
         final var d0ActivateWaiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
         final var d1ActivateWaiter = ArgumentCaptor.forClass(Communicator.Waiter.class);

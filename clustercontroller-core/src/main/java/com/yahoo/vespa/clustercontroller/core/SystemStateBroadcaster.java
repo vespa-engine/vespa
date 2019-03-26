@@ -100,8 +100,13 @@ public class SystemStateBroadcaster {
                             "implicitly treating state %d as activated on node", info, version));
                 }
             } else if (reply.getActualVersion() != version) {
-                log.log(LogLevel.DEBUG, () -> String.format("Activation of version %d did not take effect, node %s " +
-                        "reports it has an actual pending version of %d", version, info, reply.getActualVersion()));
+                boolean nodeOk = nodeReportsSelfAsAvailable(info);
+                // Avoid spamming the logs since this will happen on all resends until (presumably) the controller
+                // loses election status.
+                // TODO this should trigger a loss of current controller's leadership!
+                reportNodeError(nodeOk, info, String.format("Activation of version %d did not take effect, node %s " +
+                                "reports it has an actual pending version of %d. Racing with another controller?",
+                                version, info, reply.getActualVersion()));
                 success = false;
             } else {
                 log.log(LogLevel.DEBUG, () -> String.format("Node %s reports successful activation of state " +
@@ -114,6 +119,10 @@ public class SystemStateBroadcaster {
         activateClusterStateVersionReplies.clear();
     }
 
+    private static boolean nodeReportsSelfAsAvailable(NodeInfo info) {
+        return info.getReportedState().getState().oneOf("uir");
+    }
+
     private void processSetClusterStateResponses() {
         for (SetClusterStateRequest req : setClusterStateReplies) {
             NodeInfo info = req.getNodeInfo();
@@ -123,7 +132,7 @@ public class SystemStateBroadcaster {
                 info.setClusterStateBundleVersionAcknowledged(version, false);
                 if (req.getReply().getReturnCode() != Communicator.TRANSIENT_ERROR) {
                     if (info.getNewestSystemStateVersionSent() == version) {
-                        boolean nodeOk = info.getReportedState().getState().oneOf("uir");
+                        boolean nodeOk = nodeReportsSelfAsAvailable(info);
                         reportNodeError(nodeOk, info,
                                 String.format("Got error response %d: %s from %s setdistributionstates request.",
                                         req.getReply().getReturnCode(), req.getReply().getReturnMessage(), info));
