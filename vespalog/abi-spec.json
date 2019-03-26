@@ -118,6 +118,7 @@
       "public"
     ],
     "methods": [
+      "public java.time.Instant getTimestamp()",
       "public long getTime()",
       "public long getTimeInSeconds()",
       "public java.lang.String getHost()",

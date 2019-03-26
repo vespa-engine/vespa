@@ -1,6 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers.archive;
 
+import com.yahoo.log.LogLevel;
+import com.yahoo.log.LogMessage;
+import com.yahoo.logserver.filter.LogFilter;
+import com.yahoo.logserver.filter.LogFilterManager;
+import com.yahoo.logserver.handlers.AbstractLogHandler;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -10,13 +16,6 @@ import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.yahoo.logserver.filter.LogFilter;
-import com.yahoo.logserver.filter.LogFilterManager;
-
-import com.yahoo.log.LogLevel;
-import com.yahoo.log.LogMessage;
-import com.yahoo.logserver.handlers.AbstractLogHandler;
 
 
 /**
@@ -131,7 +130,7 @@ public class ArchiverHandler extends AbstractLogHandler {
      * Return the appropriate LogWriter given a log message.
      */
     private synchronized LogWriter getLogWriter(LogMessage m) throws IOException {
-        Integer slot = dateHash(m.getTime());
+        Integer slot = dateHash(m.getTimestamp().toEpochMilli());
         LogWriter logWriter = logWriterLRUCache.get(slot);
         if (logWriter != null) {
             return logWriter;
@@ -174,7 +173,7 @@ public class ArchiverHandler extends AbstractLogHandler {
      * XXX optimize!
      */
     public String getPrefix(LogMessage msg) {
-        calendar.setTimeInMillis(msg.getTime());
+        calendar.setTimeInMillis(msg.getTimestamp().toEpochMilli());
 /*
         int year   = calendar.get(Calendar.YEAR);
         int month  = calendar.get(Calendar.MONTH) + 1;

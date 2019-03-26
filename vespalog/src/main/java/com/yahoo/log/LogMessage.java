@@ -4,6 +4,7 @@ package com.yahoo.log;
 import com.yahoo.log.event.Event;
 import com.yahoo.log.event.MalformedEventException;
 
+import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,8 +33,7 @@ public class LogMessage
                         "(.+)$"         // payload
                         );
 
-    private long     time;
-    private String   timeStr;
+    private Instant time;
     private String   host;
     private long     processId;
     private long     threadId;
@@ -47,11 +47,10 @@ public class LogMessage
      * Private constructor.  Log messages should never be instantiated
      * directly; only as the result of a static factory method.
      */
-    private LogMessage (String timeStr, Long time, String host, long processId, long threadId,
+    private LogMessage (Instant time, String host, long processId, long threadId,
                         String service, String component, Level level,
                         String payload)
     {
-        this.timeStr = timeStr;
         this.time = time;
         this.host = host;
         this.processId = processId;
@@ -62,8 +61,17 @@ public class LogMessage
         this.payload = payload;
     }
 
-    public long     getTime ()          {return time;}
-    public long     getTimeInSeconds () {return time / 1000;}
+    public Instant  getTimestamp()       {return time;}
+    /**
+     * @deprecated Use {@link #getTimestamp()}
+     */
+    @Deprecated(since = "7", forRemoval = true)
+    public long     getTime ()          {return time.toEpochMilli();}
+    /**
+     * @deprecated Use {@link #getTimestamp()}
+     */
+    @Deprecated(since = "7", forRemoval = true)
+    public long     getTimeInSeconds () {return time.getEpochSecond();}
     public String   getHost ()          {return host;}
     public long     getProcessId()      {return processId;}
     public OptionalLong getThreadId()      {return threadId != -1 ? OptionalLong.of(threadId) : OptionalLong.empty();}
@@ -94,19 +102,20 @@ public class LogMessage
         }
 
         Level msgLevel = LogLevel.parse(m.group(6));
-        Long timestamp = parseTimestamp(m.group(1));
+        Instant timestamp = parseTimestamp(m.group(1));
         String threadProcess = m.group(3);
 
-        return new LogMessage(m.group(1), timestamp, m.group(2), parseProcessId(threadProcess), parseThreadId(threadProcess),
+        return new LogMessage(timestamp, m.group(2), parseProcessId(threadProcess), parseThreadId(threadProcess),
                               m.group(4), m.group(5), msgLevel,
                               m.group(7));
     }
 
-    private static long parseTimestamp(String timeStr) throws InvalidLogFormatException {
+    private static Instant parseTimestamp(String timeStr) throws InvalidLogFormatException {
         try {
-            return (long) (Double.parseDouble(timeStr) * 1000);
+            long nanoseconds = (long) (Double.parseDouble(timeStr) * 1_000_000_000L);
+            return Instant.ofEpochSecond(0, nanoseconds);
         } catch (NumberFormatException e) {
-            throw new InvalidLogFormatException("Invalid time string:" + timeStr);
+            throw new InvalidLogFormatException("Invalid time string: " + timeStr);
         }
     }
 
@@ -143,7 +152,7 @@ public class LogMessage
         if ((level == LogLevel.EVENT) && (event == null)) {
             try {
                 event = Event.parse(getPayload());
-                event.setTime(time);
+                event.setTime(time.toEpochMilli());
             }
             catch (MalformedEventException e) {
                 log.log(LogLevel.DEBUG, "Got malformed event: " + getPayload());
@@ -158,6 +167,7 @@ public class LogMessage
      */
     public String toString () {
         String threadProcess = VespaFormat.formatThreadProcess(processId, threadId);
+        String timeStr = VespaFormat.formatTime(time);
         return new StringBuilder(timeStr.length()
                                 + host.length()
                                 + threadProcess.length()
