@@ -127,9 +127,10 @@
         <module>vespaclient-java</module>
         <module>vespa-athenz</module>
         <module>vespa-documentgen-plugin</module>
-        <module>vespa_feed_perf</module>
         <module>vespa-hadoop</module>
         <module>vespa-http-client</module>
+        <module>vespa-testrunner-components</module>
+        <module>vespa_feed_perf</module>
         <module>vespa_jersey2</module>
         <module>vespajlib</module>
         <module>vespalog</module>
