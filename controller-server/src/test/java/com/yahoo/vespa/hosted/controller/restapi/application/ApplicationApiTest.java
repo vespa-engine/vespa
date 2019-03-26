@@ -959,8 +959,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Promote application chef env for nonexistent tenant/application
         tester.assertResponse(request("/application/v4/tenant/dontexist/application/dontexist/environment/prod/region/us-west-1/instance/default/promote", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"Unable to promote Chef environments for application\"}",
-                              500);
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
         // Create legancy tenant name containing underscores
         tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,

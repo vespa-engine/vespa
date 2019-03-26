@@ -149,32 +149,34 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             if ( ! (principal instanceof AthenzPrincipal))
                 throw new IllegalStateException("Expected an AthenzPrincipal to be set on the request.");
 
-            Map<Role, Set<Context>> memberships = new HashMap<>();
+            RoleMembership.Builder memberships = RoleMembership.in(system);
             AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
             Optional<Tenant> tenant = tenant();
             Context context = context(tenant); // TODO this way of computing a context is wrong, but we must
                                                // do it until we ask properly for roles based on token.
-            Set<Context> contexts = Set.of(context);
             if (isHostedOperator(identity)) {
-                memberships.put(Role.hostedOperator, contexts);
+                memberships.add(Role.hostedOperator);
             }
             if (tenant.isPresent() && isTenantAdmin(identity, tenant.get())) {
-                memberships.put(Role.tenantAdmin, contexts);
+                memberships.add(Role.tenantAdmin).limitedTo(tenant.get().name());
             }
             AthenzDomain principalDomain = identity.getDomain();
             if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
-                // NOTE: Only fine-grained deploy authorization for Athenz tenants
-                if (context.application().isPresent() && tenant.isPresent() && tenant.get() instanceof AthenzTenant) {
-                    AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
-                    if (hasDeployerAccess(identity, tenantDomain, context.application().get())) {
-                        memberships.put(Role.tenantPipelineOperator, contexts);
+                if (context.application().isPresent() && tenant.isPresent()) {
+                    // NOTE: Only fine-grained deploy authorization for Athenz tenants
+                    if (tenant.get() instanceof AthenzTenant) {
+                        AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
+                        if (hasDeployerAccess(identity, tenantDomain, context.application().get())) {
+                            memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), context.application().get());
+                        }
                     }
-                } else {
-                    memberships.put(Role.tenantPipelineOperator, contexts);
+                    else {
+                        memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), context.application().get());
+                    }
                 }
             }
-            memberships.put(Role.everyone, contexts);
-            return new RoleMembership(memberships);
+            memberships.add(Role.everyone);
+            return memberships.build();
         }
 
         private Optional<Tenant> tenant() {
