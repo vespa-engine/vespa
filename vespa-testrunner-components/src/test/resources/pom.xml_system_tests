@@ -55,7 +55,7 @@
                     <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
                     <environmentVariables>
-                        <LD_LIBRARY_PATH>/home/y/lib64</LD_LIBRARY_PATH>
+                        <LD_LIBRARY_PATH>/opt/vespa/lib64</LD_LIBRARY_PATH>
                     </environmentVariables>
                 </configuration>
             </plugin>

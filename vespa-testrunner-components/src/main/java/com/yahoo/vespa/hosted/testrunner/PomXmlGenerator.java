@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.testrunner;
 
+import com.yahoo.vespa.defaults.Defaults;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -67,7 +69,7 @@ public class PomXmlGenerator {
             "                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>\n" +
             "                    <redirectTestOutputToFile>false</redirectTestOutputToFile>\n" +
             "                    <environmentVariables>\n" +
-            "                        <LD_LIBRARY_PATH>/home/y/lib64</LD_LIBRARY_PATH>\n" +
+            "                        <LD_LIBRARY_PATH>" + Defaults.getDefaults().underVespaHome("lib64") + "</LD_LIBRARY_PATH>\n" +
             "                    </environmentVariables>\n" +
             "                </configuration>\n" +
             "            </plugin>\n" +
