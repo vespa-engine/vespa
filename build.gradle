@@ -5,7 +5,7 @@
 buildscript {
   repositories {
 	maven {
-            url uri('/tmp/repo2')
+            url uri('javacc-gradle-plugin')
         }
         mavenLocal()
         maven {
