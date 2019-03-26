@@ -12,7 +12,7 @@ public class UserApiTest extends ControllerContainerTest {
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/user/responses/";
 
     @Test
-    public void testBadgeApi() {
+    public void testUserApi() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/user/v1/"),
