@@ -19,7 +19,7 @@ PARSER_BEGIN(TreeNetParser)
 
 package com.yahoo.searchlib.treenet.parser;
 
-import com.yahoo.searchlib.rankingexpression.parser.*;
+import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
 import com.yahoo.searchlib.treenet.rule.*;
 import java.io.StringReader;
 import java.util.ArrayList;

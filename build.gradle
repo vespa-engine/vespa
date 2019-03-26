@@ -92,6 +92,8 @@ subprojects {
     compileTestJava.dependsOn generateConfigurationsTask(
         "${projectDir}/src/test/resources/configdefinitions",
         "${buildDir}/generated-sources/configgen-default-test/")
+
+    compileJava.dependsOn compileJavacc
 }
 
 ext {
