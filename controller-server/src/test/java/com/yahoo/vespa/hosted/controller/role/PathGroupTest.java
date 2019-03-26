@@ -5,6 +5,8 @@ import org.junit.Test;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static org.junit.Assert.fail;
+
 /**
  * @author jonmv
  * @author mpolden
@@ -19,8 +21,7 @@ public class PathGroupTest {
                 Set<String> overlapping = new LinkedHashSet<>(pg.pathSpecs);
                 overlapping.retainAll(pg2.pathSpecs);
                 if (!overlapping.isEmpty()) {
-                    throw new AssertionError("The following path specs overlap in " + pg + " and " + pg2 +
-                                             ": " + overlapping);
+                    fail("The following path specs overlap in " + pg + " and " + pg2 + ": " + overlapping);
                 }
             }
         }
@@ -29,7 +30,7 @@ public class PathGroupTest {
     @Test
     public void uniqueMatches() {
         // Ensure that each path group contains at most one match for any given path, to avoid undefined context extraction.
-        for (PathGroup group : PathGroup.values()) {
+        for (PathGroup group : PathGroup.values())
             for (String path1 : group.pathSpecs)
                 for (String path2 : group.pathSpecs) {
                     if (path1 == path2) continue;
@@ -43,13 +44,12 @@ public class PathGroupTest {
 
                     int i;
                     for (i = 0; i < end; i++)
-                        if (   ! parts1[i].equals(parts2[i])
+                        if (   !  parts1[i].equals(parts2[i])
                             && ! (parts1[i].startsWith("{") && parts1[i].endsWith("}"))
                             && ! (parts2[i].startsWith("{") && parts2[i].endsWith("}"))) break;
 
-                    if (i == end) throw new AssertionError("Paths '" + path1 + "' and '" + path2 +"' overlap.");
+                    if (i == end) fail("Paths '" + path1 + "' and '" + path2 + "' overlap.");
                 }
-        }
     }
 
 }

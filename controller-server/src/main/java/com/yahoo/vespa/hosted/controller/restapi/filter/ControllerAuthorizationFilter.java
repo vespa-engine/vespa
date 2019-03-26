@@ -34,6 +34,7 @@ import com.yahoo.yolean.chain.Provides;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.WebApplicationException;
+import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -74,10 +75,10 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             Path path = new Path(request.getRequestURI());
-            Optional<AthenzPrincipal> principal = principalFrom(request);
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
-            AthenzRoleResolver resolver = new AthenzRoleResolver(principal, athenz, controller, path);
-            RoleMembership roles = resolver.membership();
+            RoleMembership roles = Optional.ofNullable(request.getUserPrincipal())
+                                           .map(new AthenzRoleResolver(athenz, controller, path)::membership)
+                                           .orElse(RoleMembership.everyone());
             if (!roles.allows(action, request.getRequestURI())) {
                 throw new ForbiddenException("Access denied");
             }
@@ -93,14 +94,12 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     // TODO: Pull class up and resolve roles from roles defined in Athenz
     private static class AthenzRoleResolver implements RoleMembership.Resolver {
 
-        private final Optional<AthenzPrincipal> principal;
         private final AthenzFacade athenz;
         private final TenantController tenants;
         private final Path path;
         private final SystemName system;
 
-        public AthenzRoleResolver(Optional<AthenzPrincipal> principal, AthenzFacade athenz, Controller controller, Path path) {
-            this.principal = principal;
+        public AthenzRoleResolver(AthenzFacade athenz, Controller controller, Path path) {
             this.athenz = athenz;
             this.tenants = controller.tenants();
             this.path = path;
@@ -136,25 +135,26 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         }
 
         @Override
-        public RoleMembership membership() {
+        public RoleMembership membership(Principal principal) {
+            if ( ! (principal instanceof AthenzPrincipal))
+                throw new IllegalStateException("Expected an AthenzPrincipal to be set on the request.");
+
+            AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
             Optional<Tenant> tenant = tenant(path);
             Context context = context(tenant);
             Set<Context> contexts = Set.of(context);
-            if (principal.isEmpty()) {
-                return new RoleMembership(Map.of(Role.everyone, contexts));
-            }
-            if (isHostedOperator(principal.get().getIdentity())) {
+            if (isHostedOperator(identity)) {
                 return new RoleMembership(Map.of(Role.hostedOperator, contexts));
             }
-            if (tenant.isPresent() && isTenantAdmin(principal.get().getIdentity(), tenant.get())) {
+            if (tenant.isPresent() && isTenantAdmin(identity, tenant.get())) {
                 return new RoleMembership(Map.of(Role.tenantAdmin, contexts));
             }
-            AthenzDomain principalDomain = principal.get().getIdentity().getDomain();
+            AthenzDomain principalDomain = identity.getDomain();
             if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
                 // NOTE: Only fine-grained deploy authorization for Athenz tenants
                 if (context.application().isPresent() && tenant.isPresent() && tenant.get() instanceof AthenzTenant) {
                     AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
-                    if (hasDeployerAccess(principal.get().getIdentity(), tenantDomain, context.application().get())) {
+                    if (hasDeployerAccess(identity, tenantDomain, context.application().get())) {
                         return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
                     }
                 } else {
@@ -173,7 +173,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
         // TODO: Currently there's only one context for each role, but this will change
         private Context context(Optional<Tenant> tenant) {
-            if (principal.isEmpty() || tenant.isEmpty()) {
+            if (tenant.isEmpty()) {
                 return Context.unlimitedIn(system);
             }
             // TODO: Remove this. Current behaviour always allows tenant full access to all its applications, but with

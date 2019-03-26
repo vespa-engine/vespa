@@ -1,8 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.role;
 
+import com.yahoo.config.provision.SystemName;
+
+import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A list of roles and their associated contexts. This defines the role membership of a tenant, and in which contexts
@@ -12,11 +17,18 @@ import java.util.Set;
  */
 public class RoleMembership {
 
+    private static final RoleMembership everyone = new RoleMembership(Map.of(Role.everyone,
+                                                                             Stream.of(SystemName.values())
+                                                                                   .map(Context::unlimitedIn)
+                                                                                   .collect(Collectors.toUnmodifiableSet())));
+
     private final Map<Role, Set<Context>> roles;
 
     public RoleMembership(Map<Role, Set<Context>> roles) {
         this.roles = Map.copyOf(roles);
     }
+
+    public static RoleMembership everyone() { return everyone; }
 
     /** Returns whether any role in this allows action to take place in path */
     public boolean allows(Action action, String path) {
@@ -37,7 +49,7 @@ public class RoleMembership {
      * membership to a {@link RoleMembership}.
      */
     public interface Resolver {
-        RoleMembership membership();
+        RoleMembership membership(Principal user);
     }
 
 }
