@@ -5,6 +5,9 @@
 
 namespace ns_log {
 
+/*
+ * Exception thrown when parsing a log line into a LogMessage fails.
+ */
 class BadLogLineException : public std::exception
 {
     std::string _message;
