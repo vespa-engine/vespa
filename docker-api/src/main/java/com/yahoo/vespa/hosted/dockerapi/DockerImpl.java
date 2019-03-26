@@ -276,17 +276,15 @@ public class DockerImpl implements Docker {
 
     private Stream<Container> asContainer(String container) {
         return inspectContainerCmd(container)
-                .map(response ->
-                        new Container(
-                                response.getConfig().getHostName(),
-                                DockerImage.fromString(response.getConfig().getImage()),
-                                containerResourcesFromHostConfig(response.getHostConfig()),
-                                new ContainerName(decode(response.getName())),
-                                Container.State.valueOf(response.getState().getStatus().toUpperCase()),
-                                response.getState().getPid()
-                        ))
-                .map(Stream::of)
-                .orElse(Stream.empty());
+                .map(response -> new Container(
+                        response.getConfig().getHostName(),
+                        DockerImage.fromString(response.getConfig().getImage()),
+                        containerResourcesFromHostConfig(response.getHostConfig()),
+                        new ContainerName(decode(response.getName())),
+                        Container.State.valueOf(response.getState().getStatus().toUpperCase()),
+                        response.getState().getPid()
+                ))
+                .stream();
     }
 
     private static ContainerResources containerResourcesFromHostConfig(HostConfig hostConfig) {

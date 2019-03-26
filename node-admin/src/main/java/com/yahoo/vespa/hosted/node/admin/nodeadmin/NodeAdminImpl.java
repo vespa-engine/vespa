@@ -154,9 +154,9 @@ public class NodeAdminImpl implements NodeAdmin {
     public void stopNodeAgentServices(List<String> hostnames) {
         // Each container may spend 1-1:30 minutes stopping
         hostnames.parallelStream()
-                .filter(nodeAgentWithSchedulerByHostname::containsKey)
-                .map(nodeAgentWithSchedulerByHostname::get)
-                .forEach(NodeAgentWithScheduler::stopForHostSuspension);
+                 .filter(nodeAgentWithSchedulerByHostname::containsKey)
+                 .map(nodeAgentWithSchedulerByHostname::get)
+                 .forEach(NodeAgentWithScheduler::stopForHostSuspension);
     }
 
     @Override
@@ -171,8 +171,8 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     // Set-difference. Returns minuend minus subtrahend.
-    private static <T> Set<T> diff(final Set<T> minuend, final Set<T> subtrahend) {
-        final HashSet<T> result = new HashSet<>(minuend);
+    private static <T> Set<T> diff(Set<T> minuend, Set<T> subtrahend) {
+        var result = new HashSet<>(minuend);
         result.removeAll(subtrahend);
         return result;
     }

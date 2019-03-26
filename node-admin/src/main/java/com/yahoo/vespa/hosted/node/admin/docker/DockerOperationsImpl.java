@@ -150,7 +150,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 "ff02::1\tip6-allnodes\n" +
                 "ff02::2\tip6-allrouters\n" +
         ipV6Local.getHostAddress() + '\t' + hostname + '\n');
-        ipV4Local.ifPresent(ipv4 -> etcHosts.append(ipv4.getHostAddress() + '\t' + hostname + '\n'));
+        ipV4Local.ifPresent(ipv4 -> etcHosts.append(ipv4.getHostAddress()).append('\t').append(hostname).append('\n'));
 
         containerData.addFile(Paths.get("/etc/hosts"), etcHosts.toString());
     }
@@ -199,16 +199,17 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public ProcessResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
-        final int containerPid = docker.getContainer(context.containerName())
+        int containerPid = docker.getContainer(context.containerName())
                 .filter(container -> container.state.isRunning())
                 .orElseThrow(() -> new RuntimeException(
                         "Found no running container named " + context.containerName().asString()))
                 .pid;
 
-        final String[] wrappedCommand = Stream.concat(
-                Stream.of("nsenter", String.format("--net=/proc/%d/ns/net", containerPid), "--"),
-                Stream.of(command))
-                .toArray(String[]::new);
+        String[] wrappedCommand = Stream.concat(Stream.of("nsenter",
+                                                          String.format("--net=/proc/%d/ns/net", containerPid),
+                                                          "--"),
+                                                Stream.of(command))
+                                        .toArray(String[]::new);
 
         try {
             Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
@@ -267,7 +268,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
-        final Path varLibSia = Paths.get("/var/lib/sia");
+        Path varLibSia = Paths.get("/var/lib/sia");
 
         // Paths unique to each container
         List<Path> paths = new ArrayList<>(Arrays.asList(
