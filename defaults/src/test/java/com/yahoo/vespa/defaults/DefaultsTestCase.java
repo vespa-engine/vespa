@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.defaults;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author arnej27959
@@ -25,14 +27,20 @@ public class DefaultsTestCase {
     @Test
     public void testPortsArePositive() {
         Defaults d = Defaults.getDefaults();
-        assertEquals(true, d.vespaPortBase() > 0);
-        assertEquals(true, d.vespaWebServicePort() > 0);
-        assertEquals(true, d.vespaConfigServerRpcPort() > 0);
-        assertEquals(true, d.vespaConfigServerHttpPort() > 0);
-        assertEquals(true, d.vespaConfigProxyRpcPort() > 0);
+        assertTrue(d.vespaPortBase() > 0);
+        assertTrue(d.vespaWebServicePort() > 0);
+        assertTrue(d.vespaConfigServerRpcPort() > 0);
+        assertTrue(d.vespaConfigServerHttpPort() > 0);
+        assertTrue(d.vespaConfigProxyRpcPort() > 0);
     }
 
     @Test
+    public void testTemporaryApplicationStorage() {
+        assertEquals("/opt/vespa/var/vespa/application", Defaults.getDefaults().temporaryApplicationStorage());
+    }
+
+    @Test
+    @Ignore // This is run manually for human inspection. Contains no assertions
     public void dumpAllVars() {
         Defaults d = Defaults.getDefaults();
         System.out.println("vespa user = '" + d.vespaUser() + "'");

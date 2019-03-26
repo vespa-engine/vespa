@@ -8,6 +8,7 @@
     "methods": [
       "public java.lang.String vespaUser()",
       "public java.lang.String vespaHostname()",
+      "public java.lang.String temporaryApplicationStorage()",
       "public java.lang.String vespaHome()",
       "public java.lang.String underVespaHome(java.lang.String)",
       "public int vespaWebServicePort()",
