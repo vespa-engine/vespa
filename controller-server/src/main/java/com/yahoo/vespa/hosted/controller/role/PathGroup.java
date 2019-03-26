@@ -26,16 +26,18 @@ public enum PathGroup {
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}"),
 
-    /** Paths used when onboarding and creating a new tenants */
+    /** Paths used for creating user tenants */
     onboardingUser("/application/v4/user"),
 
-    // Tenant parameter is ignored here as context for the role is not defined until after a tenant has been created
-    onboardingTenant("/application/v4/tenant/{ignored}"),
+    /** Paths used for creating tenants with access control */
+    onboardingTenant("/application/v4/tenant/{tenant}"),
 
     /** Read-only paths used when onboarding tenants */
     onboardingTenantInformation("/athenz/v1/",
                                 "/athenz/v1/domains"),
 
+    /** Paths used for user management */
+    userManagement("/user/v1/{*}"),
 
     /** Paths used by tenant/application administrators */
     tenant("/application/v4/",
