@@ -7,10 +7,8 @@ vespa_add_executable(vdstestlib_testrunner_app TEST
     vdstestlib
 )
 
-# TODO: Test with a larger chunk size to parallelize test suite runs 
 vespa_add_test(
     NAME vdstestlib_testrunner_app
     NO_VALGRIND
-    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:vdstestlib_testrunner_app>
-    DEPENDS vdstestlib_testrunner_app
+    COMMAND vdstestlib_testrunner_app
 )
