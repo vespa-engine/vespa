@@ -35,6 +35,7 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.WebApplicationException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -139,15 +140,16 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             if ( ! (principal instanceof AthenzPrincipal))
                 throw new IllegalStateException("Expected an AthenzPrincipal to be set on the request.");
 
+            Map<Role, Set<Context>> memberships = new HashMap<>();
             AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
-            Optional<Tenant> tenant = tenant(path);
+            Optional<Tenant> tenant = tenant();
             Context context = context(tenant);
             Set<Context> contexts = Set.of(context);
             if (isHostedOperator(identity)) {
-                return new RoleMembership(Map.of(Role.hostedOperator, contexts));
+                memberships.put(Role.hostedOperator, contexts);
             }
             if (tenant.isPresent() && isTenantAdmin(identity, tenant.get())) {
-                return new RoleMembership(Map.of(Role.tenantAdmin, contexts));
+                memberships.put(Role.tenantAdmin, contexts);
             }
             AthenzDomain principalDomain = identity.getDomain();
             if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
@@ -155,16 +157,17 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                 if (context.application().isPresent() && tenant.isPresent() && tenant.get() instanceof AthenzTenant) {
                     AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
                     if (hasDeployerAccess(identity, tenantDomain, context.application().get())) {
-                        return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
+                        memberships.put(Role.tenantPipelineOperator, contexts);
                     }
                 } else {
-                    return new RoleMembership(Map.of(Role.tenantPipelineOperator, contexts));
+                    memberships.put(Role.tenantPipelineOperator, contexts);
                 }
             }
-            return new RoleMembership(Map.of(Role.everyone, contexts));
+            memberships.put(Role.everyone, contexts);
+            return new RoleMembership(memberships);
         }
 
-        private Optional<Tenant> tenant(Path path) {
+        private Optional<Tenant> tenant() {
             if (!path.matches("/application/v4/tenant/{tenant}/{*}")) {
                 return Optional.empty();
             }
