@@ -4,6 +4,9 @@
 
 buildscript {
   repositories {
+	maven {
+            url uri('/tmp/repo2')
+        }
         mavenLocal()
         maven {
             url = 'http://repo.maven.apache.org/maven2'
@@ -20,12 +23,11 @@ buildscript {
 
   dependencies {
     classpath 'com.yahoo.vespa:configgen:7.28.21'
+        classpath group: 'vespa.ca.coglinc',
+                  name: 'javacc-gradle-plugin',
+                  version: '3.0.2'
   }
 }
-
-plugins {
-      id "ca.coglinc.javacc" version "2.4.0"
-    }
 
 allprojects {
     group = 'com.yahoo.vespa'
@@ -51,6 +53,10 @@ subprojects {
         maven {
             url = 'https://repository.apache.org/content/groups/public'
         }
+    }
+
+    dependencies {
+	javacc 'com.helger:parser-generator-cc:1.1.1'
     }
 
     sourceCompatibility = JavaVersion.VERSION_11
@@ -89,7 +95,6 @@ subprojects {
 }
 
 ext {
-  javacc = 'net.java.dev.javacc:javacc:5.0'
 
 }
 

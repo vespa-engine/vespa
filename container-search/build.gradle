@@ -6,6 +6,8 @@ plugins {
   id 'antlr'
 }
 
+apply plugin: 'ca.coglinc.javacc'
+
 dependencies {
     compile 'commons-collections:commons-collections:3.2.1'
     compile 'commons-lang:commons-lang:2.6'
@@ -35,6 +37,7 @@ dependencies {
     compileOnly 'com.google.protobuf:protobuf-java:3.7.0'
 
     antlr "org.antlr:antlr4:4.5"
+    javacc 'com.helger:parser-generator-cc:1.1.1'
 }
 
 generateGrammarSource {
@@ -49,3 +52,7 @@ sourceSets {
     }
 }
 
+compileJavacc {
+    inputDirectory = file("${projectDir}/src/main/javacc")
+    outputDirectory = file("${buildDir}/generated/javacc")
+}

@@ -48,6 +48,7 @@ install_manifest.txt
 .gradle
 /build/
 **/build/
+**/bin/
 gradle-app.setting
 !gradle-wrapper.jar
 .gradletasknamecache

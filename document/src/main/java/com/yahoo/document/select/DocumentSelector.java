@@ -5,7 +5,7 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.SelectInput;
 import com.yahoo.document.select.parser.SelectParser;
-import com.yahoo.document.select.parser.TokenMgrError;
+import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.document.select.rule.ExpressionNode;
 
 /**
@@ -32,7 +32,7 @@ public class DocumentSelector {
         try {
             SelectParser parser = new SelectParser(input);
             expression = parser.expression();
-        } catch (TokenMgrError e) {
+        } catch (TokenMgrException e) {
             ParseException t = new ParseException("Tokenization error parsing document selector '" + selector + "'");
             throw (ParseException)t.initCause(e);
         } catch (RuntimeException | ParseException e) {

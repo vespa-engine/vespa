@@ -8,7 +8,7 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.grouping.request.parser.TokenMgrError;
+import com.yahoo.search.grouping.request.parser.TokenMgrException;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
@@ -57,7 +57,7 @@ public class BooleanSearcher extends Searcher {
                 if (query.isTraceable(4)) {
                     query.trace("BooleanSearcher: Added boolean operator", true, 4);
                 }
-            } catch (TokenMgrError e) {
+            } catch (TokenMgrException e) {
                 return new Result(query, ErrorMessage.createInvalidQueryParameter(toMessageString(e)));
             }
         } else {

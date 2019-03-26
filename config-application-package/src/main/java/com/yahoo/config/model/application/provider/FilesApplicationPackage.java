@@ -2,7 +2,7 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
-//import com.yahoo.component.Vtag;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.XmlPreProcessor;
@@ -646,7 +646,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public void validateXMLFor(Optional<Version> vespaVersion) throws IOException {
-        Version modelVersion = vespaVersion.orElse(/*Vtag.currentVersion*/null);
+        Version modelVersion = vespaVersion.orElse(Vtag.currentVersion);
         ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.create(appDir, modelVersion);
         validator.checkApplication();
         validator.checkIncludedDirs(this);

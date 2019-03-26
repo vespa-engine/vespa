@@ -4,7 +4,7 @@ package com.yahoo.searchlib.rankingexpression;
 import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
-import com.yahoo.searchlib.rankingexpression.parser.TokenMgrError;
+import com.yahoo.searchlib.rankingexpression.parser.TokenMgrException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
 import java.io.*;
@@ -65,7 +65,7 @@ public class FeatureList implements Iterable<ReferenceNode> {
         try {
             lst = new RankingExpressionParser(reader).featureList();
         }
-        catch (TokenMgrError e) {
+        catch (TokenMgrException e) {
             ParseException t = new ParseException();
             throw (ParseException)t.initCause(e);
         }

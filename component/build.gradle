@@ -10,3 +10,25 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:config')
     compileOnly 'com.google.guava:guava:20.0'
 }
+
+task generateVtag(type: JavaExec) {
+	dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
+	workingDir = file(buildDir)
+	outputs.dir "${buildDir}"
+
+	classpath = files([
+		"${rootDir}/vespajlib/build/classes/java/main"
+	])
+	main = "com.yahoo.vespa.VersionTagger"
+	args = [ "${rootDir}/dist/vtag.map", "com.yahoo.component", "${buildDir}/generated-sources/vtag", "vtag"  ]
+}
+
+compileJava.dependsOn generateVtag
+
+sourceSets {
+	main{
+		java {
+			srcDir "${buildDir}/generated-sources/vtag/"
+		}
+	}
+}

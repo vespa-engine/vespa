@@ -3,7 +3,8 @@
  */
 
 plugins {
-  id "com.google.protobuf" version "0.8.8"
+  id "com.google.protobuf" version "0.8.7"
+//  id 'ca.coglinc.javacc'
 }
 
 dependencies {
@@ -16,7 +17,8 @@ dependencies {
     providedCompile project(':container-dependency-versions:parent:vespajlib')
     providedCompile project(':container-dependency-versions:parent:config-model-api')
 
-   javacc
+   //javacc 'net.java.dev.javacc:javacc:7.0.3'
+   //javacc 'com.helger:parser-generator-cc:1.0.2'
 }
 
 description = 'searchlib'
@@ -26,17 +28,17 @@ compileJava.dependsOn generateConfigurationsTask(
         "${buildDir}/generated-sources/configgen/")
 
 
-compileJavacc {
-    inputDirectory = file("${projectDir}/src/main/javacc")
-    outputDirectory = file("${buildDir}/generated/javacc")
-}
+//compileJavacc {
+//    inputDirectory = file("${projectDir}/src/main/javacc")
+//    outputDirectory = file("${buildDir}/generated/javacc")
+//}
 
 sourceSets {
   main {
     proto {
-      srcDir 'src/protobuf'
+     srcDir 'src/protobuf'
     }
   }
 }
 
-compileJava.dependsOn compileJavacc
+//compileJava.dependsOn compileJavacc

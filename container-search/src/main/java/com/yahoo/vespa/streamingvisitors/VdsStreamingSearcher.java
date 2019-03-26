@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.document.select.parser.TokenMgrError;
+import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
@@ -137,7 +137,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         } catch (ParseException e) {
             return new Result(query, ErrorMessage.createBackendCommunicationError(
                     "Failed to parse document selection string: " + e.getMessage() + "'."));
-        } catch (TokenMgrError e) {
+        } catch (TokenMgrException e) {
             return new Result(query, ErrorMessage.createBackendCommunicationError(
                     "Failed to tokenize document selection string: " + e.getMessage() + "'."));
         } catch (TimeoutException e) {
