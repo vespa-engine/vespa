@@ -172,6 +172,14 @@ BucketDBUpdater::completeTransitionTimer()
 }
 
 void
+BucketDBUpdater::clearReadOnlyBucketRepoDatabases()
+{
+    for (auto& space : _distributorComponent.getReadOnlyBucketSpaceRepo()) {
+        space.second->getBucketDatabase().clear();
+    }
+}
+
+void
 BucketDBUpdater::storageDistributionChanged()
 {
     ensureTransitionTimerStarted();
@@ -195,9 +203,7 @@ BucketDBUpdater::storageDistributionChanged()
 void
 BucketDBUpdater::replyToPreviousPendingClusterStateIfAny()
 {
-    if (_pendingClusterState.get() &&
-        _pendingClusterState->getCommand().get())
-    {
+    if (_pendingClusterState.get() && _pendingClusterState->hasCommand()) {
         _distributorComponent.sendUp(
                 std::make_shared<api::SetSystemStateReply>(*_pendingClusterState->getCommand()));
     }
@@ -276,10 +282,13 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
             replyToActivationWithActualVersion(*cmd, pending_version);
             return true;
         }
-    } else {
+    } else if (shouldDeferStateEnabling()) {
         // Likely just a resend, but log warn for now to get a feel of how common it is.
         LOG(warning, "Received cluster state activation command for version %u, which "
                      "has no corresponding pending state. Likely resent operation.", cmd->version());
+    } else {
+        LOG(debug, "Received cluster state activation command for version %u, but distributor "
+                   "config does not have deferred activation enabled. Treating as no-op.", cmd->version());
     }
     // Fall through to next link in call chain that cares about this message.
     return false;
@@ -591,9 +600,7 @@ BucketDBUpdater::activatePendingClusterState()
     _outdatedNodesMap.clear();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
-    for (auto& space : _distributorComponent.getReadOnlyBucketSpaceRepo()) {
-        space.second->getBucketDatabase().clear();
-    }
+    clearReadOnlyBucketRepoDatabases();
 }
 
 void

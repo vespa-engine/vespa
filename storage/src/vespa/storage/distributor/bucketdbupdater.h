@@ -145,6 +145,7 @@ private:
                               BucketListMerger::BucketList& existing) const;
     void ensureTransitionTimerStarted();
     void completeTransitionTimer();
+    void clearReadOnlyBucketRepoDatabases();
     /**
      * Adds all buckets contained in the bucket database
      * that are either contained
