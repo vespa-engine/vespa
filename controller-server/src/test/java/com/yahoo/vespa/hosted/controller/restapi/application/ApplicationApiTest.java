@@ -321,6 +321,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("application2.json"));
 
+        // GET application having both change and outstanding change
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              new File("application2.json"));
+
+
         // PATCH in a major version override
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
                                       .userIdentity(USER_ID)
