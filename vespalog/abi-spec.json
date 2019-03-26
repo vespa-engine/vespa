@@ -121,6 +121,8 @@
       "public long getTime()",
       "public long getTimeInSeconds()",
       "public java.lang.String getHost()",
+      "public long getProcessId()",
+      "public java.util.OptionalLong getThreadId()",
       "public java.lang.String getThreadProcess()",
       "public java.lang.String getService()",
       "public java.lang.String getComponent()",

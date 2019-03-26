@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.event.Event;
+import com.yahoo.log.event.MalformedEventException;
+
+import java.util.OptionalLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.yahoo.log.event.Event;
-import com.yahoo.log.event.MalformedEventException;
 
 /**
  * This class implements the common ground log message used by
@@ -34,7 +35,8 @@ public class LogMessage
     private long     time;
     private String   timeStr;
     private String   host;
-    private String   threadProcess;
+    private long     processId;
+    private long     threadId;
     private String   service;
     private String   component;
     private Level    level;
@@ -45,14 +47,15 @@ public class LogMessage
      * Private constructor.  Log messages should never be instantiated
      * directly; only as the result of a static factory method.
      */
-    private LogMessage (String timeStr, Long time, String host, String threadProcess,
+    private LogMessage (String timeStr, Long time, String host, long processId, long threadId,
                         String service, String component, Level level,
                         String payload)
     {
         this.timeStr = timeStr;
         this.time = time;
         this.host = host;
-        this.threadProcess = threadProcess;
+        this.processId = processId;
+        this.threadId = threadId;
         this.service = service;
         this.component = component;
         this.level = level;
@@ -62,7 +65,13 @@ public class LogMessage
     public long     getTime ()          {return time;}
     public long     getTimeInSeconds () {return time / 1000;}
     public String   getHost ()          {return host;}
-    public String   getThreadProcess () {return threadProcess;}
+    public long     getProcessId()      {return processId;}
+    public OptionalLong getThreadId()      {return threadId != -1 ? OptionalLong.of(threadId) : OptionalLong.empty();}
+    /**
+     * @deprecated Use {@link #getProcessId()} / {@link #getThreadId()}
+     */
+    @Deprecated(since = "7", forRemoval = true)
+    public String   getThreadProcess () {return VespaFormat.formatThreadProcess(processId, threadId);}
     public String   getService ()       {return service;}
     public String   getComponent ()     {return component;}
     public Level    getLevel ()         {return level;}
@@ -86,8 +95,9 @@ public class LogMessage
 
         Level msgLevel = LogLevel.parse(m.group(6));
         Long timestamp = parseTimestamp(m.group(1));
+        String threadProcess = m.group(3);
 
-        return new LogMessage(m.group(1), timestamp, m.group(2), m.group(3),
+        return new LogMessage(m.group(1), timestamp, m.group(2), parseProcessId(threadProcess), parseThreadId(threadProcess),
                               m.group(4), m.group(5), msgLevel,
                               m.group(7));
     }
@@ -98,6 +108,22 @@ public class LogMessage
         } catch (NumberFormatException e) {
             throw new InvalidLogFormatException("Invalid time string:" + timeStr);
         }
+    }
+
+    private static long parseProcessId(String threadProcess) {
+        int slashIndex = threadProcess.indexOf('/');
+        if (slashIndex == -1) {
+            return Long.parseLong(threadProcess);
+        }
+        return Long.parseLong(threadProcess.substring(0, slashIndex));
+    }
+
+    private static long parseThreadId(String threadProcess) {
+        int slashIndex = threadProcess.indexOf('/');
+        if (slashIndex == -1) {
+            return -1;
+        }
+        return Long.parseLong(threadProcess.substring(slashIndex + 1));
     }
 
     /**
@@ -131,6 +157,7 @@ public class LogMessage
      * Return valid representation of log message.
      */
     public String toString () {
+        String threadProcess = VespaFormat.formatThreadProcess(processId, threadId);
         return new StringBuilder(timeStr.length()
                                 + host.length()
                                 + threadProcess.length()
