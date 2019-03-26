@@ -13,7 +13,7 @@ import java.util.Set;
  * The persistence layer for metrics. Both CPU and memory hungry, but
  * it runs in its own little world.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 class DimensionCache {
 
@@ -74,10 +74,8 @@ class DimensionCache {
 
     private static final long MAX_AGE_MILLIS = 4 * 3600 * 1000;
 
-    private void padMetric(String metric,
-            Bucket toPresent,
-            int currentDataPoints) {
-        final LinkedHashMap<Point, TimeStampedMetric> cachedPoints = getCachedMetric(metric);
+    private void padMetric(String metric, Bucket toPresent, int currentDataPoints) {
+        LinkedHashMap<Point, TimeStampedMetric> cachedPoints = getCachedMetric(metric);
         int toAdd = pointsToKeep - currentDataPoints;
         @SuppressWarnings({"unchecked","rawtypes"})
             Entry<Point, TimeStampedMetric>[] cachedEntries = cachedPoints.entrySet().toArray(new Entry[0]);
@@ -87,8 +85,8 @@ class DimensionCache {
             if (leastOld.getValue().millis + MAX_AGE_MILLIS  < nowMillis) {
                 continue;
             }
-            final Identifier id = new Identifier(metric, leastOld.getKey());
-            if (!toPresent.hasIdentifier(id)) {
+            Identifier id = new Identifier(metric, leastOld.getKey());
+            if ( ! toPresent.hasIdentifier(id)) {
                 toPresent.put(id, leastOld.getValue().metric.pruneData());
                 --toAdd;
             }
@@ -99,7 +97,7 @@ class DimensionCache {
     private LinkedHashMap<Point, TimeStampedMetric> getCachedMetric(String metricName) {
         LinkedHashMap<Point, TimeStampedMetric> points = persistentData.get(metricName);
         if (points == null) {
-            points = new LinkedHashMap<Point, TimeStampedMetric>(16, 0.75f, false) {
+            points = new LinkedHashMap<>(16, 0.75f, false) {
                 protected @Override boolean removeEldestEntry(Map.Entry<Point, TimeStampedMetric> eldest) {
                     return size() > pointsToKeep;
                 }

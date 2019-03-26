@@ -12,7 +12,7 @@ import com.yahoo.metrics.ManagerConfig;
  * snapshots for external consumption. Using the correct executor gives the
  * necessary guarantuees for this being invoked from only a single thread.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 class MetricAggregator implements Runnable {
 
@@ -44,7 +44,7 @@ class MetricAggregator implements Runnable {
     }
 
     private void createSnapshot(Bucket toDelete) {
-        final Bucket toPresent = new Bucket();
+        Bucket toPresent = new Bucket();
         for (Bucket b : buffer) {
             if (b == null) {
                 continue;
@@ -57,8 +57,8 @@ class MetricAggregator implements Runnable {
 
     private Bucket updateBuffer() {
         List<Bucket> buckets = metricsCollection.fetch();
-        final long toMillis = System.currentTimeMillis();
-        final int bucketIndex = generation++ % buffer.length;
+        long toMillis = System.currentTimeMillis();
+        int bucketIndex = generation++ % buffer.length;
         Bucket bucketToDelete = buffer[bucketIndex];
         Bucket latest = new Bucket(fromMillis, toMillis);
         for (Bucket b : buckets) {

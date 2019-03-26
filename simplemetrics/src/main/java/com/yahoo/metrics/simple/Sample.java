@@ -7,9 +7,10 @@ import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
  * A single metric measurement and all the meta data needed to route it
  * correctly.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Sample {
+
     private final Identifier identifier;
     private final Measurement measurement;
     private final AssumedType metricType;

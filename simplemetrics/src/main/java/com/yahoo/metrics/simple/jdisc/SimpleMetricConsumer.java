@@ -16,7 +16,7 @@ import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 /**
  * The single user facing part of the JDisc interfaces of simple metrics.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SimpleMetricConsumer implements MetricConsumer {
 
