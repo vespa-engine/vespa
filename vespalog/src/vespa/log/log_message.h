@@ -22,6 +22,14 @@ class LogMessage {
 
 public:
     LogMessage();
+    LogMessage(int64_t time_nanos_in,
+               const std::string& hostname_in,
+               int32_t process_id_in,
+               int32_t thread_id_in,
+               const std::string& service_in,
+               const std::string& component_in,
+               Logger::LogLevel level_in,
+               const std::string& payload_in);
     ~LogMessage();
     void parse_log_line(std::string_view log_line);
     int64_t           time_nanos() const { return _time_nanos; }

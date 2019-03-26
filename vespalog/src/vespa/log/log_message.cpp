@@ -90,6 +90,25 @@ LogMessage::LogMessage()
 {
 }
 
+LogMessage::LogMessage(int64_t time_nanos_in,
+                       const std::string& hostname_in,
+                       int32_t process_id_in,
+                       int32_t thread_id_in,
+                       const std::string& service_in,
+                       const std::string& component_in,
+                       Logger::LogLevel level_in,
+                       const std::string& payload_in)
+    : _time_nanos(time_nanos_in),
+      _hostname(hostname_in),
+      _process_id(process_id_in),
+      _thread_id(thread_id_in),
+      _service(service_in),
+      _component(component_in),
+      _level(level_in),
+      _payload(payload_in)
+{
+}
+
 LogMessage::~LogMessage() = default;
 
 
