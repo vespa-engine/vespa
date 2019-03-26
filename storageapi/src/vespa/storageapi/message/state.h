@@ -93,4 +93,27 @@ public:
     DECLARE_STORAGEREPLY(SetSystemStateReply, onSetSystemStateReply)
 };
 
+class ActivateClusterStateVersionCommand : public StorageCommand {
+    uint32_t _version;
+public:
+    explicit ActivateClusterStateVersionCommand(uint32_t version);
+    uint32_t version() const noexcept { return _version; }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    DECLARE_STORAGECOMMAND(ActivateClusterStateVersionCommand, onActivateClusterStateVersion);
+};
+
+class ActivateClusterStateVersionReply : public StorageReply {
+    uint32_t _activateVersion;
+    uint32_t _actualVersion;
+public:
+    explicit ActivateClusterStateVersionReply(const ActivateClusterStateVersionCommand&);
+    uint32_t activateVersion() const noexcept { return _activateVersion; }
+    void setActualVersion(uint32_t version) noexcept { _actualVersion = version; }
+    uint32_t actualVersion() const noexcept { return _actualVersion; }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    DECLARE_STORAGEREPLY(ActivateClusterStateVersionReply, onActivateClusterStateVersionReply);
+};
+
 }

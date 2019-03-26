@@ -132,6 +132,8 @@ public:
     const BucketDatabase& getBucketDatabase(document::BucketSpace space) const;
     DistributorBucketSpaceRepo &getBucketSpaceRepo();
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const;
+    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo();
+    const DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() const;
 
     const lib::Distribution& getDistribution() const;
     // "End to end" distribution change trigger, which will invoke the bucket

@@ -20,11 +20,12 @@ using document::BucketSpace;
 namespace storage::distributor {
 
 BucketDBUpdater::BucketDBUpdater(Distributor& owner,
-                                 DistributorBucketSpaceRepo &bucketSpaceRepo,
+                                 DistributorBucketSpaceRepo& bucketSpaceRepo,
+                                 DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                  DistributorMessageSender& sender,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, bucketSpaceRepo, compReg, "Bucket DB Updater"),
+      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
       _sender(sender),
       _transitionTimer(_distributorComponent.getClock())
 {
@@ -50,6 +51,13 @@ BucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& inden
 {
     (void) verbose; (void) indent;
     out << "BucketDBUpdater";
+}
+
+bool
+BucketDBUpdater::shouldDeferStateEnabling() const noexcept
+{
+    return _distributorComponent.getDistributor().getConfig()
+            .allowStaleReadsDuringClusterStateTransitions();
 }
 
 bool
@@ -113,25 +121,35 @@ void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState)
 {
+    const bool move_to_read_only_db = shouldDeferStateEnabling();
     for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
         const auto &newDistribution(elem.second->getDistribution());
         const auto &oldClusterState(elem.second->getClusterState());
         auto &bucketDb(elem.second->getBucketDatabase());
+        auto& readOnlyDb(_distributorComponent.getReadOnlyBucketSpaceRepo().get(elem.first).getBucketDatabase());
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
         NodeRemover proc(
                 oldClusterState,
                 *newState.getDerivedClusterState(elem.first),
-                _distributorComponent.getBucketIdFactory(),
                 _distributorComponent.getIndex(),
                 newDistribution,
                 _distributorComponent.getDistributor().getStorageNodeUpStates());
         bucketDb.forEach(proc);
 
-        for (const auto & entry :proc.getBucketsToRemove()) {
-            bucketDb.remove(entry);
+        for (const auto & bucket : proc.getBucketsToRemove()) {
+            bucketDb.remove(bucket);
         }
+        // TODO vec of Entry instead to avoid lookup and remove? Uses more transient memory...
+        for (const auto& bucket : proc.getNonOwnedBuckets()) {
+            if (move_to_read_only_db) {
+                auto db_entry = bucketDb.get(bucket);
+                readOnlyDb.update(db_entry); // TODO Entry move support
+            }
+            bucketDb.remove(bucket);
+        }
+
     }
 }
 
@@ -154,6 +172,14 @@ BucketDBUpdater::completeTransitionTimer()
 }
 
 void
+BucketDBUpdater::clearReadOnlyBucketRepoDatabases()
+{
+    for (auto& space : _distributorComponent.getReadOnlyBucketSpaceRepo()) {
+        space.second->getBucketDatabase().clear();
+    }
+}
+
+void
 BucketDBUpdater::storageDistributionChanged()
 {
     ensureTransitionTimerStarted();
@@ -169,6 +195,7 @@ BucketDBUpdater::storageDistributionChanged()
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
+            _distributorComponent.getReadOnlyBucketSpaceRepo(),
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 }
@@ -176,12 +203,20 @@ BucketDBUpdater::storageDistributionChanged()
 void
 BucketDBUpdater::replyToPreviousPendingClusterStateIfAny()
 {
-    if (_pendingClusterState.get() &&
-        _pendingClusterState->getCommand().get())
-    {
+    if (_pendingClusterState.get() && _pendingClusterState->hasCommand()) {
         _distributorComponent.sendUp(
                 std::make_shared<api::SetSystemStateReply>(*_pendingClusterState->getCommand()));
     }
+}
+
+void
+BucketDBUpdater::replyToActivationWithActualVersion(
+        const api::ActivateClusterStateVersionCommand& cmd,
+        uint32_t actualVersion)
+{
+    auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(cmd);
+    reply->setActualVersion(actualVersion);
+    _distributorComponent.sendUp(reply); // TODO let API accept rvalues
 }
 
 bool
@@ -214,6 +249,7 @@ BucketDBUpdater::onSetSystemState(
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
+            _distributorComponent.getReadOnlyBucketSpaceRepo(),
             cmd,
             _outdatedNodesMap,
             _distributorComponent.getUniqueTimestamp());
@@ -223,6 +259,39 @@ BucketDBUpdater::onSetSystemState(
         processCompletedPendingClusterState();
     }
     return true;
+}
+
+bool
+BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
+{
+    if (hasPendingClusterState() && _pendingClusterState->isVersionedTransition()) {
+        const auto pending_version = _pendingClusterState->clusterStateVersion();
+        if (pending_version == cmd->version()) {
+            if (isPendingClusterStateCompleted()) {
+                assert(_pendingClusterState->isDeferred());
+                activatePendingClusterState();
+            } else {
+                LOG(error, "Received cluster state activation for pending version %u "
+                           "without pending state being complete yet. This is not expected, "
+                           "as no activation should be sent before all distributors have "
+                           "reported that state processing is complete.", pending_version);
+                replyToActivationWithActualVersion(*cmd, 0);  // Invalid version, will cause re-send (hopefully when completed).
+                return true;
+            }
+        } else {
+            replyToActivationWithActualVersion(*cmd, pending_version);
+            return true;
+        }
+    } else if (shouldDeferStateEnabling()) {
+        // Likely just a resend, but log warn for now to get a feel of how common it is.
+        LOG(warning, "Received cluster state activation command for version %u, which "
+                     "has no corresponding pending state. Likely resent operation.", cmd->version());
+    } else {
+        LOG(debug, "Received cluster state activation command for version %u, but distributor "
+                   "config does not have deferred activation enabled. Treating as no-op.", cmd->version());
+    }
+    // Fall through to next link in call chain that cares about this message.
+    return false;
 }
 
 BucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
@@ -485,14 +554,45 @@ BucketDBUpdater::isPendingClusterStateCompleted() const
 void
 BucketDBUpdater::processCompletedPendingClusterState()
 {
-    _pendingClusterState->mergeIntoBucketDatabases();
-
-    if (_pendingClusterState->getCommand().get()) {
-        enableCurrentClusterStateBundleInDistributor();
+    if (_pendingClusterState->isDeferred()) {
+        LOG(debug, "Deferring completion of pending cluster state version %u until explicitly activated",
+                   _pendingClusterState->clusterStateVersion());
+        assert(_pendingClusterState->hasCommand()); // Deferred transitions should only ever be created by state commands.
+        // Sending down SetSystemState command will reach the state manager and a reply
+        // will be auto-sent back to the cluster controller in charge. Once this happens,
+        // it will send an explicit activation command once all distributors have reported
+        // that their pending cluster states have completed.
+        // A booting distributor will treat itself as "system Up" before the state has actually
+        // taken effect via activation. External operation handler will keep operations from
+        // actually being scheduled until state has been activated. The external operation handler
+        // needs to be explicitly aware of the case where no state has yet to be activated.
         _distributorComponent.getDistributor().getMessageSender().sendDown(
                 _pendingClusterState->getCommand());
+        _pendingClusterState->clearCommand();
+        return;
+    }
+    // Distribution config change or non-deferred cluster state. Immediately activate
+    // the pending state without being told to do so explicitly.
+    activatePendingClusterState();
+}
+
+void
+BucketDBUpdater::activatePendingClusterState()
+{
+    _pendingClusterState->mergeIntoBucketDatabases();
+
+    if (_pendingClusterState->isVersionedTransition()) {
+        LOG(debug, "Activating pending cluster state version %u", _pendingClusterState->clusterStateVersion());
+        enableCurrentClusterStateBundleInDistributor();
+        if (_pendingClusterState->hasCommand()) {
+            _distributorComponent.getDistributor().getMessageSender().sendDown(
+                    _pendingClusterState->getCommand());
+        }
         addCurrentStateToClusterStateHistory();
     } else {
+        LOG(debug, "Activating pending distribution config");
+        // TODO distribution changes cannot currently be deferred as they are not
+        // initiated by the cluster controller!
         _distributorComponent.getDistributor().notifyDistributionChangeEnabled();
     }
 
@@ -500,13 +600,14 @@ BucketDBUpdater::processCompletedPendingClusterState()
     _outdatedNodesMap.clear();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
+    clearReadOnlyBucketRepoDatabases();
 }
 
 void
 BucketDBUpdater::enableCurrentClusterStateBundleInDistributor()
 {
     const lib::ClusterStateBundle& state(
-            _pendingClusterState->getCommand()->getClusterStateBundle());
+            _pendingClusterState->getNewClusterStateBundle());
 
     LOG(debug,
         "BucketDBUpdater finished processing state %s",
@@ -688,7 +789,7 @@ BucketDBUpdater::NodeRemover::process(BucketDatabase::Entry& e)
         return true;
     }
     if (!distributorOwnsBucket(bucketId)) {
-        _removedBuckets.push_back(bucketId);
+        _nonOwnedBuckets.push_back(bucketId);
         return true;
     }
 

@@ -514,6 +514,19 @@ StateManager::onSetSystemState(
     return true;
 }
 
+bool
+StateManager::onActivateClusterStateVersion(
+        const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
+{
+    auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(*cmd);
+    {
+        vespalib::LockGuard lock(_stateLock);
+        reply->setActualVersion(_systemState ? _systemState->getVersion() : 0);
+    }
+    sendUp(reply);
+    return true;
+}
+
 void
 StateManager::run(framework::ThreadHandle& thread)
 {

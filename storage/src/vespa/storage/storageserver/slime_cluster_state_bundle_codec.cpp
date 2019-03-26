@@ -53,6 +53,9 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(
 {
     vespalib::Slime slime;
     Cursor& root = slime.setObject();
+    if (bundle.deferredActivation()) {
+        root.setBool("deferred-activation", bundle.deferredActivation());
+    }
     Cursor& states = root.setObject("states");
     states.setString("baseline", serialize_state(*bundle.getBaselineClusterState()));
     Cursor& spaces = states.setObject("spaces");
@@ -79,6 +82,7 @@ namespace {
 static const Memory StatesField("states");
 static const Memory BaselineField("baseline");
 static const Memory SpacesField("spaces");
+static const Memory DeferredActivationField("deferred-activation");
 
 struct StateInserter : vespalib::slime::ObjectTraverser {
     lib::ClusterStateBundle::BucketSpaceStateMapping& _space_states;
@@ -118,8 +122,11 @@ std::shared_ptr<const lib::ClusterStateBundle> SlimeClusterStateBundleCodec::dec
     lib::ClusterStateBundle::BucketSpaceStateMapping space_states;
     StateInserter inserter(space_states);
     spaces.traverse(inserter);
+
+    const bool deferred_activation = root[DeferredActivationField].asBool(); // Defaults to false if not set.
+
     // TODO add shared_ptr constructor for baseline?
-    return std::make_shared<lib::ClusterStateBundle>(baseline, std::move(space_states));
+    return std::make_shared<lib::ClusterStateBundle>(baseline, std::move(space_states), deferred_activation);
 }
 
 }

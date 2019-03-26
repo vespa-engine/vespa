@@ -95,7 +95,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void testNormalStartup() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxInitProgressTime = 50000;
 
         initialize(options);
@@ -167,10 +167,13 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void testNodeGoingDownAndUp() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.nodeStateRequestTimeoutMS = 60 * 60 * 1000;
         options.minTimeBetweenNewSystemStates = 0;
         options.maxInitProgressTime = 50000;
+        // This test makes very specific assumptions about the amount of work done in a single tick.
+        // Two-phase cluster state activation changes this quite a bit, so disable it. At least for now.
+        options.enableTwoPhaseClusterStateActivation = false;
 
         initialize(options);
 
@@ -254,7 +257,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testNodeGoingDownAndUpNotifying() throws Exception {
         // Same test as above, but node manages to notify why it is going down first.
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.nodeStateRequestTimeoutMS = 60 * 60 * 1000;
         options.maxSlobrokDisconnectGracePeriod = 100000;
 
@@ -325,7 +328,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void testNodeGoingDownAndUpFast() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
 
         initialize(options);
@@ -366,7 +369,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void testMaintenanceWhileNormalStorageNodeRestart() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
 
         initialize(options);
@@ -426,7 +429,7 @@ public class StateChangeTest extends FleetControllerTest {
             nodes.add(new ConfiguredNode(i, retired));
         }
 
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", nodes);
+        FleetControllerOptions options = defaultOptions("mycluster", nodes);
         options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
 
         initialize(options);
@@ -485,7 +488,7 @@ public class StateChangeTest extends FleetControllerTest {
             nodes.add(new ConfiguredNode(i, retired));
         }
 
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", nodes);
+        FleetControllerOptions options = defaultOptions("mycluster", nodes);
         options.maxSlobrokDisconnectGracePeriod = 60 * 1000;
 
         initialize(options);
@@ -508,7 +511,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testDownNodeInitializing() throws Exception {
         // Actually report initializing state if node has been down steadily for a while
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 5000);
         options.maxInitProgressTime = 5000;
         options.stableStateTimePeriod = 20000;
@@ -571,7 +574,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testNodeInitializationStalled() throws Exception {
         // Node should eventually be marked down, and not become initializing next time, but stay down until up
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 5000);
         options.maxInitProgressTime = 5000;
         options.stableStateTimePeriod = 1000000;
@@ -657,7 +660,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testBackwardsInitializationProgress() throws Exception {
         // Same as stalled. Mark down, keep down until up
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 5000);
         options.maxInitProgressTime = 5000;
         options.stableStateTimePeriod = 1000000;
@@ -700,7 +703,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testNodeGoingDownWhileInitializing() throws Exception {
         // Same as stalled. Mark down, keep down until up
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 5000);
         options.maxInitProgressTime = 5000;
         options.stableStateTimePeriod = 1000000;
@@ -759,7 +762,7 @@ public class StateChangeTest extends FleetControllerTest {
     public void testContinuousCrashRightAfterInit() throws Exception {
         startingTest("StateChangeTest::testContinuousCrashRightAfterInit");
         // If node does this too many times, take it out of service
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 5000);
         options.maxInitProgressTime = 5000;
         options.maxPrematureCrashes = 2;
@@ -813,7 +816,7 @@ public class StateChangeTest extends FleetControllerTest {
     public void testClusterStateMinNodes() throws Exception {
         startingTest("StateChangeTest::testClusterStateMinNodes");
         // If node does this too many times, take it out of service
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 0);
         options.maxInitProgressTime = 0;
         options.minDistributorNodesUp = 6;
@@ -868,7 +871,7 @@ public class StateChangeTest extends FleetControllerTest {
     public void testClusterStateMinFactor() throws Exception {
         startingTest("StateChangeTest::testClusterStateMinFactor");
         // If node does this too many times, take it out of service
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 0);
         options.maxInitProgressTime = 0;
         options.minDistributorNodesUp = 0;
@@ -941,7 +944,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testNoSystemStateBeforeInitialTimePeriod() throws Exception {
         startingTest("StateChangeTest::testNoSystemStateBeforeInitialTimePeriod()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.minTimeBeforeFirstSystemStateBroadcast = 3 * 60 * 1000;
         setUpSystem(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), true);
@@ -982,7 +985,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testSystemStateSentWhenNodesReplied() throws Exception {
         startingTest("StateChangeTest::testSystemStateSentWhenNodesReplied()");
-        final FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        final FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.minTimeBeforeFirstSystemStateBroadcast = 300 * 60 * 1000;
 
         setUpSystem(true, options);
@@ -1016,7 +1019,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testDontTagFailingSetSystemStateOk() throws Exception {
         startingTest("StateChangeTest::testDontTagFailingSetSystemStateOk()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
@@ -1035,7 +1038,7 @@ public class StateChangeTest extends FleetControllerTest {
         // Assert that the failed node has not acknowledged the latest version.
         // (The version may still be larger than versionBeforeChange if the fleet controller sends a
         // "stable system" update without timestamps in the meantime
-        assertTrue(fleetController.getCluster().getNodeInfo(nodes.get(1).getNode()).getSystemStateVersionAcknowledged() < versionAfterChange);
+        assertTrue(fleetController.getCluster().getNodeInfo(nodes.get(1).getNode()).getClusterStateVersionBundleAcknowledged() < versionAfterChange);
 
         // Ensure non-concurrent access to getNewestSystemStateVersionSent
         synchronized(timer) {
@@ -1047,7 +1050,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testAlteringDistributionSplitCount() throws Exception {
         startingTest("StateChangeTest::testAlteringDistributionSplitCount");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.distributionBits = 17;
 
         initialize(options);
@@ -1094,7 +1097,7 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     public void testSetAllTimestampsAfterDowntime() throws Exception {
         startingTest("StateChangeTest::testSetAllTimestampsAfterDowntime");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
@@ -1143,7 +1146,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void consolidated_cluster_state_reflects_node_changes_when_cluster_is_down() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 0);
         options.minStorageNodesUp = 10;
         options.minDistributorNodesUp = 10;
@@ -1177,7 +1180,7 @@ public class StateChangeTest extends FleetControllerTest {
     // of previous timer invocations (with subsequent state generation) would not be visible.
     @Test
     public void timer_events_during_cluster_down_observe_most_recent_node_changes() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 1000);
         options.minStorageNodesUp = 10;
         options.minDistributorNodesUp = 10;
@@ -1209,7 +1212,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void do_not_emit_multiple_events_when_node_state_does_not_match_versioned_state() throws Exception {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         initialize(options);
 
         ctrl.tick();
@@ -1343,11 +1346,19 @@ public class StateChangeTest extends FleetControllerTest {
 
         void sendAllDeferredDistributorClusterStateAcks() throws Exception {
             communicator.sendAllDeferredDistributorClusterStateAcks();
-            ctrl.tick();
+            ctrl.tick(); // Process cluster state bundle ACKs
+            if (ctrl.getOptions().enableTwoPhaseClusterStateActivation) {
+                ctrl.tick(); // Send activations
+                ctrl.tick(); // Process activation ACKs
+            }
         }
 
         void processScheduledTask() throws Exception {
             ctrl.tick(); // Cluster state recompute iteration and send
+            if (ctrl.getOptions().enableTwoPhaseClusterStateActivation) {
+                ctrl.tick(); // Send activations
+                ctrl.tick(); // Process activation ACKs
+            }
             ctrl.tick(); // Iff ACKs were received, process version dependent task(s)
         }
 
@@ -1373,11 +1384,11 @@ public class StateChangeTest extends FleetControllerTest {
     }
 
     private static FleetControllerOptions defaultOptions() {
-        return new FleetControllerOptions("mycluster", createNodes(10));
+        return defaultOptions("mycluster", createNodes(10));
     }
 
     private static FleetControllerOptions optionsWithZeroTransitionTime() {
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        FleetControllerOptions options = defaultOptions("mycluster", createNodes(10));
         options.maxTransitionTime.put(NodeType.STORAGE, 0);
         return options;
     }
@@ -1440,7 +1451,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void no_op_synchronous_remote_task_waits_until_current_state_is_acked() throws Exception {
-         RemoteTaskFixture fixture = createFixtureWith(optionsWithZeroTransitionTime());
+        RemoteTaskFixture fixture = createFixtureWith(optionsWithZeroTransitionTime());
 
         communicator.setShouldDeferDistributorClusterStateAcks(true);
         fixture.markStorageNodeDown(0);
@@ -1524,6 +1535,7 @@ public class StateChangeTest extends FleetControllerTest {
         FleetControllerOptions options = defaultOptions();
         options.minTimeBetweenNewSystemStates = 10_000;
         RemoteTaskFixture fixture = createFixtureWith(options);
+
         // Have to increment timer here to be able to send state generated by the scheduled task
         timer.advanceTime(10_000);
 

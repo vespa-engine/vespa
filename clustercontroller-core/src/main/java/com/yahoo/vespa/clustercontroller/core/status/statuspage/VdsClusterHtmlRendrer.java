@@ -64,7 +64,7 @@ public class VdsClusterHtmlRendrer {
                 final TreeMap<Integer, NodeInfo> storageNodeInfos,
                 final TreeMap<Integer, NodeInfo> distributorNodeInfos,
                 final Timer timer,
-                final ClusterState state,
+                final ClusterStateBundle state,
                 final ClusterStatsAggregator statsAggregator,
                 final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
@@ -161,7 +161,7 @@ public class VdsClusterHtmlRendrer {
                 final TreeMap<Integer, NodeInfo> nodeInfos,
                 final NodeType nodeType,
                 final Timer timer,
-                final ClusterState state,
+                final ClusterStateBundle stateBundle,
                 final ClusterStatsAggregator statsAggregator,
                 final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
@@ -169,143 +169,178 @@ public class VdsClusterHtmlRendrer {
                 final String pathPrefix,
                 final String dominantVtag,
                 final String name) {
+            final ClusterState state = stateBundle.getBaselineClusterState();
             final long currentTime = timer.getCurrentTimeInMillis();
             addTableHeader(name, nodeType);
             for (final NodeInfo nodeInfo : nodeInfos.values()) {
                 HtmlTable.Row row = new HtmlTable.Row();
-
-                // Add node index
-                row.addCell(new HtmlTable.Cell("<a href=\"" + pathPrefix + "/node=" + nodeInfo.getNode()
-                        + "\">" + nodeInfo.getNodeIndex() + "</a>"));
-
-                // Add reported state
-                NodeState reportedState = nodeInfo.getReportedState().clone().setStartTimestamp(0);
-                row.addCell(new HtmlTable.Cell(HtmlTable.escape(reportedState.toString(true))));
-                if (!nodeInfo.getReportedState().getState().equals(State.UP)) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
-
-                // Add wanted state
-                if (nodeInfo.getWantedState() == null || nodeInfo.getWantedState().getState().equals(State.UP)) {
-                    row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
-                } else {
-                    row.addCell(new HtmlTable.Cell(HtmlTable.escape(nodeInfo.getWantedState().toString(true))));
-                    if (nodeInfo.getWantedState().toString(true).indexOf("Disabled by fleet controller") != -1) {
-                        row.getLastCell().addProperties(ERROR_PROPERTY);
-                    } else {
-                        row.getLastCell().addProperties(WARNING_PROPERTY);
-                    }
-                }
-
-                // Add current state
-                NodeState ns = state.getNodeState(nodeInfo.getNode()).clone().setDescription("").setMinUsedBits(16);
-                if (state.getClusterState().oneOf("uir")) {
-                    row.addCell(new HtmlTable.Cell(HtmlTable.escape(ns.toString(true))));
-                    if (ns.getState().equals(State.DOWN)) {
-                        row.getLastCell().addProperties(ERROR_PROPERTY);
-                    } else if (ns.getState().oneOf("mi")) {
-                        row.getLastCell().addProperties(WARNING_PROPERTY);
-                    }
-                } else {
-                    row.addCell(new HtmlTable.Cell("Cluster " +
-                            state.getClusterState().name().toLowerCase()).addProperties(ERROR_PROPERTY));
-                }
-
-                // Add build tag version.
-                final String buildTagText =
-                        nodeInfo.getVtag() != null
-                                ? nodeInfo.getVtag()
-                                : TAG_NOT_SET;
-                row.addCell(new HtmlTable.Cell(buildTagText));
-                if (! dominantVtag.equals(nodeInfo.getVtag())) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
-
-                // Add failed connection attempt count
-                row.addCell(new HtmlTable.Cell("" + nodeInfo.getConnectionAttemptCount()));
                 long timeSinceContact = nodeInfo.getTimeOfFirstFailingConnectionAttempt() == 0
                         ? 0 : currentTime - nodeInfo.getTimeOfFirstFailingConnectionAttempt();
-                if (timeSinceContact > 60 * 1000) {
-                    row.getLastCell().addProperties(ERROR_PROPERTY);
-                } else if (nodeInfo.getConnectionAttemptCount() > 0) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
 
-                // Add time since first failing
-                row.addCell(new HtmlTable.Cell((timeSinceContact / 1000) + " s"));
-                if (timeSinceContact > 60 * 1000) {
-                    row.getLastCell().addProperties(ERROR_PROPERTY);
-                } else if (nodeInfo.getConnectionAttemptCount() > 0) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
+                addNodeIndex(pathPrefix, nodeInfo, row);
+                addReportedState(nodeInfo, row);
+                addWantedState(nodeInfo, row);
+                addCurrentState(state, nodeInfo, row);
+                addBuildTagVersion(dominantVtag, nodeInfo, row);
+                addFailedConnectionAttemptCount(nodeInfo, row, timeSinceContact);
+                addTimeSinceFirstFailing(nodeInfo, row, timeSinceContact);
+                addStatePendingTime(currentTime, nodeInfo, row);
+                addClusterStateVersion(stateBundle, nodeInfo, row);
+                addPrematureCrashes(maxPrematureCrashes, nodeInfo, row);
+                addEventsLastWeek(eventLog, currentTime, nodeInfo, row);
+                addBucketSpacesStats(nodeType, statsAggregator, minMergeCompletionRatio, nodeInfo, row);
+                addStartTime(nodeInfo, row);
+                addRpcAddress(nodeInfo, row);
 
-                // State pending time
-                if (nodeInfo.getLatestNodeStateRequestTime() == null) {
-                    row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
-                } else {
-                    row.addCell(new HtmlTable.Cell(HtmlTable.escape(RealTimer.printDuration(
-                            currentTime - nodeInfo.getLatestNodeStateRequestTime()))));
-                }
-
-                // System state version
-                row.addCell(new HtmlTable.Cell("" + nodeInfo.getSystemStateVersionAcknowledged()));
-                if (nodeInfo.getSystemStateVersionAcknowledged() < state.getVersion() - 2) {
-                    row.getLastCell().addProperties(ERROR_PROPERTY);
-                } else if (nodeInfo.getSystemStateVersionAcknowledged() < state.getVersion()) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
-
-                // Premature crashes
-                row.addCell(new HtmlTable.Cell("" + nodeInfo.getPrematureCrashCount()));
-                if (nodeInfo.getPrematureCrashCount() >= maxPrematureCrashes) {
-                    row.getLastCell().addProperties(ERROR_PROPERTY);
-                } else if (nodeInfo.getPrematureCrashCount() > 0) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
-
-                // Events last week
-                int nodeEvents = eventLog.getNodeEventsSince(nodeInfo.getNode(),
-                        currentTime - eventLog.getRecentTimePeriod());
-                row.addCell(new HtmlTable.Cell("" + nodeEvents));
-                if (nodeEvents > 20) {
-                    row.getLastCell().addProperties(ERROR_PROPERTY);
-                } else if (nodeEvents > 3) {
-                    row.getLastCell().addProperties(WARNING_PROPERTY);
-                }
-
-                // Bucket stats for 'default' and 'global' spaces
-                if (nodeType.equals(NodeType.STORAGE)) {
-                    addBucketStats(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()),
-                            minMergeCompletionRatio);
-                    addBucketStats(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
-                            minMergeCompletionRatio);
-                } else {
-                    addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()),
-                            minMergeCompletionRatio);
-                    addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
-                            minMergeCompletionRatio);
-                }
-
-                // Start time
-                if (nodeInfo.getStartTimestamp() == 0) {
-                    row.addCell(new HtmlTable.Cell("-").addProperties(ERROR_PROPERTY).addProperties(CENTERED_PROPERTY));
-                } else {
-                    String startTime = RealTimer.printDateNoMilliSeconds(
-                            1000 * nodeInfo.getStartTimestamp(), utcTimeZone);
-                    row.addCell(new HtmlTable.Cell(HtmlTable.escape(startTime)));
-                }
-
-                // RPC address
-                if (nodeInfo.getRpcAddress() == null) {
-                    row.addCell(new HtmlTable.Cell("-").addProperties(ERROR_PROPERTY));
-                } else {
-                    row.addCell(new HtmlTable.Cell(HtmlTable.escape(nodeInfo.getRpcAddress())));
-                    if (nodeInfo.isRpcAddressOutdated()) {
-                        row.getLastCell().addProperties(WARNING_PROPERTY);
-                    }
-                }
                 table.addRow(row);
             }
+        }
+
+        private void addRpcAddress(NodeInfo nodeInfo, HtmlTable.Row row) {
+            if (nodeInfo.getRpcAddress() == null) {
+                row.addCell(new HtmlTable.Cell("-").addProperties(ERROR_PROPERTY));
+            } else {
+                row.addCell(new HtmlTable.Cell(HtmlTable.escape(nodeInfo.getRpcAddress())));
+                if (nodeInfo.isRpcAddressOutdated()) {
+                    row.getLastCell().addProperties(WARNING_PROPERTY);
+                }
+            }
+        }
+
+        private void addStartTime(NodeInfo nodeInfo, HtmlTable.Row row) {
+            if (nodeInfo.getStartTimestamp() == 0) {
+                row.addCell(new HtmlTable.Cell("-").addProperties(ERROR_PROPERTY).addProperties(CENTERED_PROPERTY));
+            } else {
+                String startTime = RealTimer.printDateNoMilliSeconds(
+                        1000 * nodeInfo.getStartTimestamp(), utcTimeZone);
+                row.addCell(new HtmlTable.Cell(HtmlTable.escape(startTime)));
+            }
+        }
+
+        private void addBucketSpacesStats(NodeType nodeType, ClusterStatsAggregator statsAggregator, double minMergeCompletionRatio, NodeInfo nodeInfo, HtmlTable.Row row) {
+            if (nodeType.equals(NodeType.STORAGE)) {
+                addBucketStats(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()),
+                        minMergeCompletionRatio);
+                addBucketStats(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
+                        minMergeCompletionRatio);
+            } else {
+                addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()),
+                        minMergeCompletionRatio);
+                addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
+                        minMergeCompletionRatio);
+            }
+        }
+
+        private void addEventsLastWeek(EventLog eventLog, long currentTime, NodeInfo nodeInfo, HtmlTable.Row row) {
+            int nodeEvents = eventLog.getNodeEventsSince(nodeInfo.getNode(),
+                    currentTime - eventLog.getRecentTimePeriod());
+            row.addCell(new HtmlTable.Cell("" + nodeEvents));
+            if (nodeEvents > 20) {
+                row.getLastCell().addProperties(ERROR_PROPERTY);
+            } else if (nodeEvents > 3) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addPrematureCrashes(int maxPrematureCrashes, NodeInfo nodeInfo, HtmlTable.Row row) {
+            row.addCell(new HtmlTable.Cell("" + nodeInfo.getPrematureCrashCount()));
+            if (nodeInfo.getPrematureCrashCount() >= maxPrematureCrashes) {
+                row.getLastCell().addProperties(ERROR_PROPERTY);
+            } else if (nodeInfo.getPrematureCrashCount() > 0) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addClusterStateVersion(ClusterStateBundle state, NodeInfo nodeInfo, HtmlTable.Row row) {
+            String cellContent = (nodeInfo.getClusterStateVersionActivationAcked() == state.getVersion() || !state.deferredActivation())
+                    ? String.format("%d", nodeInfo.getClusterStateVersionBundleAcknowledged())
+                    : String.format("%d (%d)", nodeInfo.getClusterStateVersionBundleAcknowledged(),
+                                               nodeInfo.getClusterStateVersionActivationAcked());
+            row.addCell(new HtmlTable.Cell(cellContent));
+            if (nodeInfo.getClusterStateVersionBundleAcknowledged() < state.getVersion() - 2) {
+                row.getLastCell().addProperties(ERROR_PROPERTY);
+            } else if (nodeInfo.getClusterStateVersionBundleAcknowledged() < state.getVersion()) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addStatePendingTime(long currentTime, NodeInfo nodeInfo, HtmlTable.Row row) {
+            if (nodeInfo.getLatestNodeStateRequestTime() == null) {
+                row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
+            } else {
+                row.addCell(new HtmlTable.Cell(HtmlTable.escape(RealTimer.printDuration(
+                        currentTime - nodeInfo.getLatestNodeStateRequestTime()))));
+            }
+        }
+
+        private void addTimeSinceFirstFailing(NodeInfo nodeInfo, HtmlTable.Row row, long timeSinceContact) {
+            row.addCell(new HtmlTable.Cell((timeSinceContact / 1000) + " s"));
+            if (timeSinceContact > 60 * 1000) {
+                row.getLastCell().addProperties(ERROR_PROPERTY);
+            } else if (nodeInfo.getConnectionAttemptCount() > 0) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addFailedConnectionAttemptCount(NodeInfo nodeInfo, HtmlTable.Row row, long timeSinceContact) {
+            row.addCell(new HtmlTable.Cell("" + nodeInfo.getConnectionAttemptCount()));
+            if (timeSinceContact > 60 * 1000) {
+                row.getLastCell().addProperties(ERROR_PROPERTY);
+            } else if (nodeInfo.getConnectionAttemptCount() > 0) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addBuildTagVersion(String dominantVtag, NodeInfo nodeInfo, HtmlTable.Row row) {
+            final String buildTagText =
+                    nodeInfo.getVtag() != null
+                            ? nodeInfo.getVtag()
+                            : TAG_NOT_SET;
+            row.addCell(new HtmlTable.Cell(buildTagText));
+            if (! dominantVtag.equals(nodeInfo.getVtag())) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addCurrentState(ClusterState state, NodeInfo nodeInfo, HtmlTable.Row row) {
+            NodeState ns = state.getNodeState(nodeInfo.getNode()).clone().setDescription("").setMinUsedBits(16);
+            if (state.getClusterState().oneOf("uir")) {
+                row.addCell(new HtmlTable.Cell(HtmlTable.escape(ns.toString(true))));
+                if (ns.getState().equals(State.DOWN)) {
+                    row.getLastCell().addProperties(ERROR_PROPERTY);
+                } else if (ns.getState().oneOf("mi")) {
+                    row.getLastCell().addProperties(WARNING_PROPERTY);
+                }
+            } else {
+                row.addCell(new HtmlTable.Cell("Cluster " +
+                        state.getClusterState().name().toLowerCase()).addProperties(ERROR_PROPERTY));
+            }
+        }
+
+        private void addWantedState(NodeInfo nodeInfo, HtmlTable.Row row) {
+            if (nodeInfo.getWantedState() == null || nodeInfo.getWantedState().getState().equals(State.UP)) {
+                row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
+            } else {
+                row.addCell(new HtmlTable.Cell(HtmlTable.escape(nodeInfo.getWantedState().toString(true))));
+                if (nodeInfo.getWantedState().toString(true).indexOf("Disabled by fleet controller") != -1) {
+                    row.getLastCell().addProperties(ERROR_PROPERTY);
+                } else {
+                    row.getLastCell().addProperties(WARNING_PROPERTY);
+                }
+            }
+        }
+
+        private void addReportedState(NodeInfo nodeInfo, HtmlTable.Row row) {
+            NodeState reportedState = nodeInfo.getReportedState().clone().setStartTimestamp(0);
+            row.addCell(new HtmlTable.Cell(HtmlTable.escape(reportedState.toString(true))));
+            if (!nodeInfo.getReportedState().getState().equals(State.UP)) {
+                row.getLastCell().addProperties(WARNING_PROPERTY);
+            }
+        }
+
+        private void addNodeIndex(String pathPrefix, NodeInfo nodeInfo, HtmlTable.Row row) {
+            row.addCell(new HtmlTable.Cell("<a href=\"" + pathPrefix + "/node=" + nodeInfo.getNode()
+                    + "\">" + nodeInfo.getNodeIndex() + "</a>"));
         }
 
         private static ContentNodeStats.BucketSpaceStats getStatsForContentNode(ClusterStatsAggregator statsAggregator,
@@ -355,7 +390,7 @@ public class VdsClusterHtmlRendrer {
                     .append("3) SPT - State pending time - Time the current getNodeState request has been " +
                             "pending.<br>\n")
                     .append("4) SSV - System state version - The latest system state version the node has " +
-                            "acknowledged.<br>\n")
+                            "acknowledged (last <em>activated</em> state version in parentheses if this is not equal to SSV).<br>\n")
                     .append("5) PC - Premature crashes - Number of times node has crashed since last time it had " +
                             "been stable in up or down state for more than "
                             + RealTimer.printDuration(stableStateTimePeriode) + ".<br>\n")

@@ -65,7 +65,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                     new VdsClusterHtmlRendrer(),
                     content,
                     timer,
-                    stateVersionTracker.getVersionedClusterState(),
+                    stateVersionTracker.getVersionedClusterStateBundle(),
                     stateVersionTracker.getAggregatedClusterStats(),
                     data.getOptions().storageDistribution,
                     data.getOptions(),

@@ -34,6 +34,9 @@ public:
 
     bool hasConsistentCopies() const;
 
+    // Exposed for unit testing. TODO feels a bit dirty :I
+    const DistributorBucketSpace& bucketSpace() const noexcept { return _bucketSpace; }
+
 private:
     class GroupId {
     public:

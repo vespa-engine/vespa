@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketspace.h>
 #include <unordered_map>
 #include <iosfwd>
+#include <string>
 
 namespace storage::lib {
 
@@ -24,10 +25,14 @@ public:
     >;
     std::shared_ptr<const ClusterState> _baselineClusterState;
     BucketSpaceStateMapping _derivedBucketSpaceStates;
+    bool _deferredActivation;
 public:
     explicit ClusterStateBundle(const ClusterState &baselineClusterState);
     ClusterStateBundle(const ClusterState& baselineClusterState,
                        BucketSpaceStateMapping derivedBucketSpaceStates);
+    ClusterStateBundle(const ClusterState& baselineClusterState,
+                       BucketSpaceStateMapping derivedBucketSpaceStates,
+                       bool deferredActivation);
     ~ClusterStateBundle();
     const std::shared_ptr<const ClusterState> &getBaselineClusterState() const;
     const std::shared_ptr<const ClusterState> &getDerivedClusterState(document::BucketSpace bucketSpace) const;
@@ -35,6 +40,8 @@ public:
         return _derivedBucketSpaceStates;
     }
     uint32_t getVersion() const;
+    bool deferredActivation() const noexcept { return _deferredActivation; }
+    std::string toString() const;
     bool operator==(const ClusterStateBundle &rhs) const;
     bool operator!=(const ClusterStateBundle &rhs) const { return !operator==(rhs); }
 };

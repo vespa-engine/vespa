@@ -77,6 +77,8 @@ const MessageType MessageType::SETSYSTEMSTATE("Set system state", SETSYSTEMSTATE
 const MessageType MessageType::SETSYSTEMSTATE_REPLY("Set system state reply", SETSYSTEMSTATE_REPLY_ID, &MessageType::SETSYSTEMSTATE);
 const MessageType MessageType::GETSYSTEMSTATE("Get system state", GETSYSTEMSTATE_ID);
 const MessageType MessageType::GETSYSTEMSTATE_REPLY("get system state reply", GETSYSTEMSTATE_REPLY_ID, &MessageType::GETSYSTEMSTATE);
+const MessageType MessageType::ACTIVATE_CLUSTER_STATE_VERSION("Activate cluster state version", ACTIVATE_CLUSTER_STATE_VERSION_ID);
+const MessageType MessageType::ACTIVATE_CLUSTER_STATE_VERSION_REPLY("Activate cluster state version reply", ACTIVATE_CLUSTER_STATE_VERSION_REPLY_ID, &MessageType::ACTIVATE_CLUSTER_STATE_VERSION);
 const MessageType MessageType::GETBUCKETDIFF("GetBucketDiff", GETBUCKETDIFF_ID);
 const MessageType MessageType::GETBUCKETDIFF_REPLY("GetBucketDiff reply", GETBUCKETDIFF_REPLY_ID, &MessageType::GETBUCKETDIFF);
 const MessageType MessageType::APPLYBUCKETDIFF("ApplyBucketDiff", APPLYBUCKETDIFF_ID);
