@@ -85,6 +85,33 @@ subprojects {
       }
     }
 
+    //def xyz = generateConfigurationsTask(
+      //  "${projectDir}/src/test/resources/configdefinitions",
+        //"${buildDir}/generated-sources/configgen-default-test/")
+
+   task hello {
+     doLast {
+       if( !new File("${buildDir}/generated-sources/configgen-default/").exists() ) {
+	new File("${buildDir}/generated-sources/configgen-default/").mkdirs()
+         FileTree tree = fileTree("${projectDir}/src/main/resources/configdefinitions").include('**/*.def')
+           tree.each {File file ->
+              executeCodegen("${buildDir}/generated-sources/configgen-default/", "${file}")
+           }
+       }
+     }
+   }
+
+   task helloTest {
+     doLast {
+       if( !new File("${buildDir}/generated-sources/configgen-default-test/").exists() ) {
+        new File("${buildDir}/generated-sources/configgen-default-test/").mkdirs() 
+	FileTree tree = fileTree("${projectDir}/src/test/resources/configdefinitions").include('**/*.def')
+           tree.each {File file ->
+              executeCodegen("${buildDir}/generated-sources/configgen-default-test/", "${file}")
+           }
+       }
+     }
+   }
     compileJava.dependsOn generateConfigurationsTask(
 	"${projectDir}/src/main/resources/configdefinitions", 
 	"${buildDir}/generated-sources/configgen-default/")
@@ -135,4 +162,20 @@ def codegenSpec(dest, spec) {
         jvmArgs = [ "-Dconfig.dest=${dest}", "-Dconfig.spec=${spec}" ]
       }
     }
+}
+
+def executeCodegen(dest, spec) {
+      if( !new File(dest).exists() ) {
+        println "creating " + dest 
+        new File(dest).mkdirs()
+      }
+	println "executing " + spec +" , " + dest
+
+      javaexec {
+        workingDir = file(buildDir)
+
+        classpath = buildscript.configurations.classpath
+        main = "com.yahoo.config.codegen.MakeConfig"
+        jvmArgs = [ "-Dconfig.dest=" + dest, "-Dconfig.spec=" + spec ]
+      }
 }
