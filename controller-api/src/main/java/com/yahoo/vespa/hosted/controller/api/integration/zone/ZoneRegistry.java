@@ -40,9 +40,6 @@ public interface ZoneRegistry {
     /** Returns all possible API endpoints of all known config servers and config server VIPs in the given zone */
     List<URI> getConfigServerApiUris(ZoneId zoneId);
 
-    /** Returns a URL with the logs for the given deployment, if logging is configured for its zone */
-    default Optional<URI> getLogServerUri(DeploymentId deploymentId)  { return Optional.empty(); };
-
     /** Returns the time to live for deployments in the given zone, or empty if this is infinite */
     Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId);
 
