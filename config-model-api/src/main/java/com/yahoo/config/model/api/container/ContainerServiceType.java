@@ -10,7 +10,7 @@ public enum ContainerServiceType {
     QRSERVER("qrserver"),
     CLUSTERCONTROLLER_CONTAINER("container-clustercontroller"),
     LOGSERVER_CONTAINER("logserver-container"),
-    METRICS_PROXY_CONTAINER("metrics-proxy-container");
+    METRICS_PROXY_CONTAINER("metricsproxy-container");
 
     public final String serviceName;
 

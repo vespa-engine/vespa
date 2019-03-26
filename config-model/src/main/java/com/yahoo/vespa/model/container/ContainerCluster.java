@@ -323,9 +323,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addContainers(Collection<CONTAINER> containers) {
-        for (var container : containers) {
-            addContainer(container);
-        }
+        containers.forEach(this::addContainer);
     }
 
     public void setProcessingChains(ProcessingChains processingChains, String... serverBindings) {
@@ -676,7 +674,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     boolean messageBusEnabled() { return messageBusEnabled; }
 
-    public void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
+    public final void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
 
     boolean rpcServerEnabled() { return rpcServerEnabled; }
 
