@@ -576,7 +576,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"user\":\"other_user\",\"tenants\":[],\"tenantExists\":false}");
 
         // OPTIONS return 200 OK
-        tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS),
+        tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS)
+                                      .userIdentity(USER_ID),
                               "");
 
         // Promote from pipeline

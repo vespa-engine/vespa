@@ -75,11 +75,12 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     @Override
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
+            Principal principal = request.getUserPrincipal();
+            if (principal == null) throw new ForbiddenException("Access denied.");
+
             Path path = new Path(request.getRequestURI());
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
-            RoleMembership roles = Optional.ofNullable(request.getUserPrincipal())
-                                           .map(new AthenzRoleResolver(athenz, controller, path)::membership)
-                                           .orElse(RoleMembership.everyone());
+            RoleMembership roles = new AthenzRoleResolver(athenz, controller, path).membership(principal);
             if (!roles.allows(action, request.getRequestURI())) {
                 throw new ForbiddenException("Access denied");
             }
@@ -143,7 +144,8 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             Map<Role, Set<Context>> memberships = new HashMap<>();
             AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
             Optional<Tenant> tenant = tenant();
-            Context context = context(tenant);
+            Context context = context(tenant); // TODO this way of computing a context is wrong, but we must
+                                               // do it until we ask properly for roles based on token.
             Set<Context> contexts = Set.of(context);
             if (isHostedOperator(identity)) {
                 memberships.put(Role.hostedOperator, contexts);
