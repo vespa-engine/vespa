@@ -23,7 +23,7 @@ public class GeminiTestCase extends AbstractExportingTestCase {
         Map<String, String> ranking = removePartKeySuffixes(asMap(p.configProperties()));
         assertEquals("attribute(right)", resolve(lookup("toplevel", ranking), ranking));
     }
-    
+
     private Map<String, String> asMap(List<Pair<String, String>> properties) {
         Map<String, String> map = new HashMap<>();
         for (Pair<String, String> property : properties)
@@ -45,7 +45,7 @@ public class GeminiTestCase extends AbstractExportingTestCase {
     }
 
     /**
-     * Recurively resolves references to other ranking expressions - rankingExpression(name) -
+     * Recursively resolves references to other ranking expressions - rankingExpression(name) -
      * and replaces the reference by the expression
      */
     private String resolve(String expression, Map<String, String> ranking) {
