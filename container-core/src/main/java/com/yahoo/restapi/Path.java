@@ -54,7 +54,7 @@ public class Path {
         values.clear();
         String[] specElements = pathSpec.split("/");
         boolean matchPrefix = false;
-        if (specElements[specElements.length-1].equals("{*}")) {
+        if (specElements.length > 1 && specElements[specElements.length-1].equals("{*}")) {
             matchPrefix = true;
             specElements = Arrays.copyOf(specElements, specElements.length-1);
         }

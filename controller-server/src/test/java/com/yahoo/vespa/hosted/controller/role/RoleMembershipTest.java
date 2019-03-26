@@ -82,6 +82,8 @@ public class RoleMembershipTest {
         assertTrue(roles.allows(Action.create, "/application/v4/tenant/t1/application/a1/jobreport"));
         assertTrue(roles.allows(Action.update, "/application/v4/tenant/t1/application/a1"));
         assertTrue("Global read access", roles.allows(Action.read, "/controller/v1/foo"));
+        assertTrue("Dashboard read access", roles.allows(Action.read, "/"));
+        assertTrue("Dashboard read access", roles.allows(Action.read, "/d/nodes"));
     }
 
 }
