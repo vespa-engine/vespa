@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.fail;
 
@@ -20,7 +21,7 @@ public class PathGroupTest {
                 if (pg == pg2) continue;
                 Set<String> overlapping = new LinkedHashSet<>(pg.pathSpecs);
                 overlapping.retainAll(pg2.pathSpecs);
-                if (!overlapping.isEmpty()) {
+                if ( ! overlapping.isEmpty()) {
                     fail("The following path specs overlap in " + pg + " and " + pg2 + ": " + overlapping);
                 }
             }
@@ -53,6 +54,23 @@ public class PathGroupTest {
 
                     if (i == end) fail("Paths '" + path1 + "' and '" + path2 + "' overlap.");
                 }
+    }
+
+    @Test
+    public void contextMatches() {
+        for (PathGroup group : PathGroup.values())
+            for (String spec : group.pathSpecs) {
+                for (PathGroup.Matcher matcher : PathGroup.Matcher.values()) {
+                    if (group.matchers.contains(matcher)) {
+                        if ( ! spec.contains(matcher.pattern))
+                            fail("Spec '" + spec + "' in '" + group.name() + "' should contain matcher '" + matcher.pattern + "'.");
+                        if (spec.replaceFirst(Pattern.quote(matcher.pattern), "").contains(matcher.pattern))
+                            fail("Spec '" + spec + "' in '" + group.name() + "' contains more than one instance of '" + matcher.pattern + "'.");
+                    }
+                    else if (spec.contains(matcher.pattern))
+                        fail("Spec '" + spec + "' in '" + group.name() + "' should not contain matcher '" + matcher.pattern + "'.");
+                }
+            }
     }
 
 }

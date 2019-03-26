@@ -22,7 +22,7 @@ public enum Policy {
      * selected systems
      */
     tenant(Privilege.grant(Action.all())
-                    .on(PathGroup.tenant)
+                    .on(PathGroup.tenantInfo, PathGroup.tenant, PathGroup.application)
                     .in(SystemName.all())),
 
     /** Build service policy only allows access relevant for build service(s) */
