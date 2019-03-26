@@ -4,6 +4,7 @@
 #include "exceptions.h"
 #include <locale>
 #include <sstream>
+#include <iostream>
 
 namespace ns_log {
 
@@ -41,17 +42,6 @@ parse_time_field(std::string time_field)
         os << "Bad time field: " << time_field;
         throw BadLogLineException(os.str());
     }
-    time_t now = time(nullptr);
-    if (logtime - 864000 > now) {
-        std::ostringstream os;
-        os << "time > 10 days in the future: " << time_field;
-        throw BadLogLineException(os.str());
-    }
-    if (logtime + 8640000 < now) {
-        std::ostringstream os;
-        os << "time > 100 days in the past: " << time_field;
-        throw BadLogLineException(os.str());
-    }
     return logtime * 1000000000;
 }
 
@@ -70,11 +60,16 @@ PidFieldParser::PidFieldParser(std::string pid_field)
     std::istringstream pid_stream(pid_field);
     pid_stream.imbue(clocale);
     pid_stream >> _process_id;
+    bool badField = false;
     if (!pid_stream.eof() && pid_stream.good() && pid_stream.peek() == '/') {
         pid_stream.get();
-        pid_stream >> _thread_id;
+        if (pid_stream.eof()) {
+            badField = true;
+        } else {
+            pid_stream >> _thread_id;
+        }
     }
-    if (!pid_stream.eof() || pid_stream.fail() || pid_stream.bad()) {
+    if (!pid_stream.eof() || pid_stream.fail() || pid_stream.bad() || badField) {
         std::ostringstream os;
         os << "Bad pid field: " << pid_field;
         throw BadLogLineException(os.str());
