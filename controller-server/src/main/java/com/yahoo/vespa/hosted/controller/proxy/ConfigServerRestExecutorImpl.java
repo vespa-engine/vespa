@@ -81,7 +81,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
         List<URI> allServers = zoneRegistry.getConfigServerVipUri(zoneId)
                 // TODO: Use config server VIP for all zones that have one
-                .filter(zone -> zoneId.region().value().startsWith("aws-") || zoneId.region().value().startsWith("cd-aws-"))
+                .filter(zone -> zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-"))
 
                 .map(Collections::singletonList)
                 .orElseGet(() -> new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId)));
