@@ -37,6 +37,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
+    private final Map<Reference, TensorType> resolvedTypes = new HashMap<>();
+
     /** For invocation loop detection */
     private final Deque<Reference> currentResolutionCallStack;
 
@@ -63,8 +65,24 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         throw new UnsupportedOperationException("Not able to parse gereral references from string form");
     }
 
+    public void forgetResolvedTypes() {
+        resolvedTypes.clear();
+    }
+
     @Override
     public TensorType getType(Reference reference) {
+        // computeIfAbsent without concurrent modification due to resolve adding more resolved entries:
+        TensorType resolvedType = resolvedTypes.get(reference);
+        if (resolvedType != null) return resolvedType;
+
+        resolvedType = resolveType(reference);
+        if (resolvedType == null)
+            return defaultTypeOf(reference); // Don't store fallback to default as we may know more later
+        resolvedTypes.put(reference, resolvedType);
+        return resolvedType;
+    }
+
+    private TensorType resolveType(Reference reference) {
         if (currentResolutionCallStack.contains(reference))
             throw new IllegalArgumentException("Invocation loop: " +
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
@@ -90,7 +108,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 // The argument may be a local identifier bound to the actual value
                 String argument = reference.simpleArgument().get();
                 reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
-                return featureTypes.getOrDefault(reference, defaultTypeOf(reference));
+                return featureTypes.get(reference);
             }
 
             // A reference to a function?

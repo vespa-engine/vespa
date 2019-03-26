@@ -12,6 +12,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.FeatureNames;
+import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
@@ -371,7 +372,7 @@ public class ConvertedModel {
      */
     private static void reduceBatchDimensions(RankingExpression expression, ImportedMlModel model,
                                               RankProfile profile, QueryProfileRegistry queryProfiles) {
-        TypeContext<Reference> typeContext = profile.typeContext(queryProfiles);
+        MapEvaluationTypeContext typeContext = profile.typeContext(queryProfiles);
         TensorType typeBeforeReducing = expression.getRoot().type(typeContext);
 
         // Check generated functions for inputs to reduce
@@ -398,7 +399,7 @@ public class ConvertedModel {
     }
 
     private static ExpressionNode reduceBatchDimensionsAtInput(ExpressionNode node, ImportedMlModel model,
-                                                               TypeContext<Reference> typeContext) {
+                                                               MapEvaluationTypeContext typeContext) {
         if (node instanceof TensorFunctionNode) {
             TensorFunction tensorFunction = ((TensorFunctionNode) node).function();
             if (tensorFunction instanceof Rename) {
@@ -428,7 +429,7 @@ public class ConvertedModel {
         return node;
     }
 
-    private static ExpressionNode reduceBatchDimensionExpression(TensorFunction function, TypeContext<Reference> context) {
+    private static ExpressionNode reduceBatchDimensionExpression(TensorFunction function, MapEvaluationTypeContext context) {
         TensorFunction result = function;
         TensorType type = function.type(context);
         if (type.dimensions().size() > 1) {
@@ -440,6 +441,7 @@ public class ConvertedModel {
             }
             if (reduceDimensions.size() > 0) {
                 result = new Reduce(function, Reduce.Aggregator.sum, reduceDimensions);
+                context.forgetResolvedTypes(); // We changed types
             }
         }
         return new TensorFunctionNode(result);
