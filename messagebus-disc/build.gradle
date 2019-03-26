@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:jdisc_messagebus_service')
+    compile project(':jdisc_messagebus_service')
 }
 
 task javadocJar(type: Jar) {

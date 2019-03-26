@@ -3,8 +3,8 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:fat-model-dependencies')
-    providedCompile project(':container-dependency-versions:parent:config-model-api')
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
-    providedCompile project(':container-dependency-versions:parent:model-integration')
+    compile project(':fat-model-dependencies')
+    providedCompile project(':config-model-api')
+    providedCompile project(':config-provisioning')
+    providedCompile project(':model-integration')
 }

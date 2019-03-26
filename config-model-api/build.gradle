@@ -8,15 +8,15 @@ configurations {
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    testCompile project(':container-dependency-versions:parent:testutil')
+    testCompile project(':testutil')
     testCompile 'com.google.guava:guava-testlib:20.0'
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:defaults')
-    providedCompile project(':container-dependency-versions:parent:config')
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
-    providedCompile project(':container-dependency-versions:parent:jdisc_core')
+    providedCompile project(':config-bundle')
+    providedCompile project(':vespajlib')
+    providedCompile project(':component')
+    providedCompile project(':defaults')
+    providedCompile project(':config')
+    providedCompile project(':config-provisioning')
+    providedCompile project(':jdisc_core')
 }
 
 task testsJar(type: Jar) {

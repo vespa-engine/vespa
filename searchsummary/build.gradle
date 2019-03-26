@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:config-lib')
+    compile project(':config-lib')
 }
 
 description = 'searchsummary'

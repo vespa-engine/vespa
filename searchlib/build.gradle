@@ -7,14 +7,14 @@ plugins {
 }
 
 dependencies {
-    compile project(':container-dependency-versions:parent:document')
+    compile project(':document')
     testCompile 'junit:junit:4.12'
     compileOnly 'com.google.guava:guava:20.0'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compileOnly 'com.google.protobuf:protobuf-java:3.7.0'
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:config-model-api')
+    providedCompile project(':vespajlib')
+    providedCompile project(':config-model-api')
 
 }
 

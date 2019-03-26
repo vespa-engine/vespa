@@ -14,13 +14,13 @@ dependencies {
     testCompile 'org.bouncycastle:bcpkix-jdk15on:1.58'
     compileOnly 'com.google.inject:guice:3.0'
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
-    providedCompile project(':container-dependency-versions:parent:jdisc_jetty')
-    providedCompile project(':container-dependency-versions:parent:config-lib')
-    providedCompile project(':container-dependency-versions:parent:defaults')
-    providedCompile project(':container-dependency-versions:parent:jdisc_core')
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:container-accesslogging')
-    providedCompile project(':container-dependency-versions:parent:security-utils')
+    providedCompile project(':jdisc_jetty')
+    providedCompile project(':config-lib')
+    providedCompile project(':defaults')
+    providedCompile project(':jdisc_core')
+    providedCompile project(':component')
+    providedCompile project(':container-accesslogging')
+    providedCompile project(':security-utils')
 }
 
 description = 'jdisc_http_service'

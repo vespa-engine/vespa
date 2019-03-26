@@ -7,9 +7,9 @@ dependencies {
     compile 'org.slf4j:slf4j-jdk14:1.7.5'
     testCompile 'junit:junit:4.12'
     testCompile 'org.apache.curator:curator-test:2.9.1'
-    providedCompile project(':container-dependency-versions:parent:defaults')
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:vespalog')
+    providedCompile project(':defaults')
+    providedCompile project(':container-dev')
+    providedCompile project(':vespajlib')
+    providedCompile project(':vespalog')
     compileOnly 'com.google.guava:guava:20.0'
 }

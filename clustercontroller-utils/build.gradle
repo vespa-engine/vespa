@@ -7,6 +7,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.google.guava:guava:20.0'
-    providedCompile project(':container-dependency-versions:parent:vespalog')
-    providedCompile project(':container-dependency-versions:parent:yolean')
+    providedCompile project(':vespalog')
+    providedCompile project(':yolean')
 }

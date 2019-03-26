@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    testCompile project(':container-dependency-versions:parent:container-search-gui')
-    testCompile project(':container-dependency-versions:parent:application')
+    testCompile project(':container-search-gui')
+    testCompile project(':application')
     testCompile 'junit:junit:4.12'
 }

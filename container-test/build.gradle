@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:application')
+    compile project(':application')
     compile 'com.ibm.icu:icu4j:57.1'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.8.11'
     compile 'commons-collections:commons-collections:3.2.1'

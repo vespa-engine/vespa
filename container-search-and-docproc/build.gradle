@@ -3,27 +3,27 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:container-search')
+    compile project(':container-search')
     compile 'com.google.protobuf:protobuf-java:3.7.0'
-    compile project(':container-dependency-versions:parent:docproc')
-    compile project(':container-dependency-versions:parent:searchlib')
+    compile project(':docproc')
+    compile project(':searchlib')
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    providedCompile project(':container-dependency-versions:parent:simplemetrics')
-    providedCompile project(':container-dependency-versions:parent:provided-dependencies')
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:configdefinitions')
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:vespalog')
-    providedCompile project(':container-dependency-versions:parent:documentapi')
-    providedCompile project(':container-dependency-versions:parent:messagebus')
-    providedCompile project(':container-dependency-versions:parent:document')
-    providedCompile project(':container-dependency-versions:parent:container-core')
-    providedCompile project(':container-dependency-versions:parent:jrt')
-    providedCompile project(':container-dependency-versions:parent:messagebus-disc')
-    providedCompile project(':container-dependency-versions:parent:container-messagebus')
-    providedCompile project(':container-dependency-versions:parent:container-disc')
+    providedCompile project(':simplemetrics')
+    providedCompile project(':provided-dependencies')
+    providedCompile project(':component')
+    providedCompile project(':configdefinitions')
+    providedCompile project(':config-bundle')
+    providedCompile project(':vespajlib')
+    providedCompile project(':vespalog')
+    providedCompile project(':documentapi')
+    providedCompile project(':messagebus')
+    providedCompile project(':document')
+    providedCompile project(':container-core')
+    providedCompile project(':jrt')
+    providedCompile project(':messagebus-disc')
+    providedCompile project(':container-messagebus')
+    providedCompile project(':container-disc')
     compileOnly 'org.json:json:20090211'
 }

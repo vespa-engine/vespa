@@ -3,14 +3,14 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:vespaclient-core')
-    compile project(':container-dependency-versions:parent:defaults')
-    compile project(':container-dependency-versions:parent:container-dev')
-    compile project(':container-dependency-versions:parent:document')
-    compile project(':container-dependency-versions:parent:documentapi')
-    compile project(':container-dependency-versions:parent:jdisc_http_service')
-    compile project(':container-dependency-versions:parent:predicate-search-core')
-    compile project(':container-dependency-versions:parent:vespajlib')
+    compile project(':vespaclient-core')
+    compile project(':defaults')
+    compile project(':container-dev')
+    compile project(':document')
+    compile project(':documentapi')
+    compile project(':jdisc_http_service')
+    compile project(':predicate-search-core')
+    compile project(':vespajlib')
     compile 'commons-cli:commons-cli:1.3.1'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'

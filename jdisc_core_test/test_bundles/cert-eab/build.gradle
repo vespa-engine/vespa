@@ -3,8 +3,8 @@
  */
 
 dependencies {
-    providedCompile project(':container-dependency-versions:parent:integration-test-parent:test_bundles:cert-a')
-    providedCompile project(':container-dependency-versions:parent:integration-test-parent:test_bundles:cert-b')
+    providedCompile project(':integration-test-parent:test_bundles:cert-a')
+    providedCompile project(':integration-test-parent:test_bundles:cert-b')
 }
 
 group = 'com.yahoo.vespa.jdisc_core'

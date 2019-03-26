@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:vespajlib')
+    compile project(':vespajlib')
     testCompile 'junit:junit:4.12'
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
 }

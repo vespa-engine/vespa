@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:metrics')
+    compile project(':metrics')
     testCompile 'junit:junit:4.12'
-    providedCompile project(':container-dependency-versions:parent:container-dev')
+    providedCompile project(':container-dev')
 }

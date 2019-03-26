@@ -6,8 +6,8 @@ dependencies {
     compile 'org.ow2.asm:asm:7.0'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    providedCompile project(':container-dependency-versions:parent:vespa_jersey2')
-    providedCompile project(':container-dependency-versions:parent:provided-dependencies')
-    providedCompile project(':container-dependency-versions:parent:container-disc')
+    providedCompile project(':vespa_jersey2')
+    providedCompile project(':provided-dependencies')
+    providedCompile project(':container-disc')
     compileOnly 'org.eclipse.jetty:jetty-servlet:9.4.15.v20190215'
 }

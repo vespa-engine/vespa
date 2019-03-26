@@ -6,20 +6,20 @@ dependencies {
     compile 'commons-fileupload:commons-fileupload:1.3.3'
     compile 'org.apache.httpcomponents:httpcore:4.4.1'
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
-    compile project(':container-dependency-versions:parent:config-model-api')
+    compile project(':config-model-api')
     testCompile 'junit:junit:4.12'
-    testCompile project(':container-dependency-versions:parent:application')
-    testCompile project(':container-dependency-versions:parent:testutil')
+    testCompile project(':application')
+    testCompile project(':testutil')
     testCompile 'org.apache.httpcomponents:httpmime:4.3.6'
     testCompile 'com.github.tomakehurst:wiremock-standalone:2.6.0'
-    providedCompile project(':container-dependency-versions:parent:controller-api')
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:jdisc_http_service')
-    providedCompile project(':container-dependency-versions:parent:zkfacade')
-    providedCompile project(':container-dependency-versions:parent:serviceview')
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
-    providedCompile project(':container-dependency-versions:parent:vespa-athenz')
-    providedCompile project(':container-dependency-versions:parent:jdisc-security-filters')
+    providedCompile project(':controller-api')
+    providedCompile project(':container-dev')
+    providedCompile project(':jdisc_http_service')
+    providedCompile project(':zkfacade')
+    providedCompile project(':serviceview')
+    providedCompile project(':config-provisioning')
+    providedCompile project(':vespa-athenz')
+    providedCompile project(':jdisc-security-filters')
     compileOnly 'com.google.guava:guava:20.0'
     compileOnly 'com.google.inject:guice:3.0'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'

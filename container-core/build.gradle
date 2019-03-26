@@ -4,29 +4,29 @@
 
 dependencies {
     compile 'org.json:json:20090211'
-    compile project(':container-dependency-versions:parent:container-accesslogging')
-    compile project(':container-dependency-versions:parent:processing')
+    compile project(':container-accesslogging')
+    compile project(':processing')
     compile 'com.yahoo.vespa:annotations:7.28.21'
-    compile project(':container-dependency-versions:parent:linguistics')
-    compile project(':container-dependency-versions:parent:messagebus')
-    compile project(':container-dependency-versions:parent:document')
-    compile project(':container-dependency-versions:parent:documentapi')
-    compile project(':container-dependency-versions:parent:vespajlib')
-    compile project(':container-dependency-versions:parent:fileacquirer')
-    compile project(':container-dependency-versions:parent:statistics')
+    compile project(':linguistics')
+    compile project(':messagebus')
+    compile project(':document')
+    compile project(':documentapi')
+    compile project(':vespajlib')
+    compile project(':fileacquirer')
+    compile project(':statistics')
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    testCompile project(':container-dependency-versions:parent:testutil')
+    testCompile project(':testutil')
     compileOnly 'com.google.guava:guava:20.0'
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
     compileOnly 'javax.xml.bind:jaxb-api:2.3.0'
     compileOnly 'org.eclipse.jetty:jetty-servlet:9.4.15.v20190215'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    providedCompile project(':container-dependency-versions:parent:defaults')
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:provided-dependencies')
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
-    providedCompile project(':container-dependency-versions:parent:config')
+    providedCompile project(':defaults')
+    providedCompile project(':component')
+    providedCompile project(':provided-dependencies')
+    providedCompile project(':config-bundle')
+    providedCompile project(':config')
 }
 

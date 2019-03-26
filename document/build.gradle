@@ -6,13 +6,13 @@ dependencies {
     compile 'commons-codec:commons-codec:1.4'
     compile 'commons-collections:commons-collections:3.2.1'
     compile 'net.jpountz.lz4:lz4:1.3.0'
-    compile project(':container-dependency-versions:parent:config')
-    compile project(':container-dependency-versions:parent:predicate-search-core')
-    compile project(':container-dependency-versions:parent:vespajlib')
+    compile project(':config')
+    compile project(':predicate-search-core')
+    compile project(':vespajlib')
     compile 'com.yahoo.vespa:annotations:7.28.21'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    testCompile project(':container-dependency-versions:parent:testutil')
+    testCompile project(':testutil')
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compileOnly 'com.google.guava:guava:20.0'

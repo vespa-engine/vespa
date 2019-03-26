@@ -4,20 +4,20 @@
 
 dependencies {
     compile 'org.json:json:20090211'
-    compile project(':container-dependency-versions:parent:container-core')
-    compile project(':container-dependency-versions:parent:container-messagebus')
-    compile project(':container-dependency-versions:parent:messagebus-disc')
-    compile project(':container-dependency-versions:parent:vespajlib')
-    compile project(':container-dependency-versions:parent:vespalog')
+    compile project(':container-core')
+    compile project(':container-messagebus')
+    compile project(':messagebus-disc')
+    compile project(':vespajlib')
+    compile project(':vespalog')
     testCompile 'junit:junit:4.12'
-    testCompile project(':container-dependency-versions:parent:testutil')
+    testCompile project(':testutil')
     testCompile 'org.mockito:mockito-core:1.9.5'
-    providedCompile project(':container-dependency-versions:parent:config-lib')
-    providedCompile project(':container-dependency-versions:parent:provided-dependencies')
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:simplemetrics')
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
-    providedCompile project(':container-dependency-versions:parent:configdefinitions')
+    providedCompile project(':config-lib')
+    providedCompile project(':provided-dependencies')
+    providedCompile project(':component')
+    providedCompile project(':simplemetrics')
+    providedCompile project(':config-bundle')
+    providedCompile project(':configdefinitions')
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
     compileOnly 'org.eclipse.jetty:jetty-servlet:9.4.15.v20190215'
 }

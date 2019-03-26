@@ -4,22 +4,22 @@
 
 dependencies {
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
-    testCompile project(':container-dependency-versions:parent:application')
-    testCompile project(':container-dependency-versions:parent:testutil')
+    testCompile project(':application')
+    testCompile project(':testutil')
     testCompile 'junit:junit:4.12'
     testCompile 'org.apache.curator:curator-test:2.9.1'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:vespa_jersey2')
-    providedCompile project(':container-dependency-versions:parent:container-jersey2')
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
-    providedCompile project(':container-dependency-versions:parent:service-monitor')
-    providedCompile project(':container-dependency-versions:parent:application-model')
-    providedCompile project(':container-dependency-versions:parent:zkfacade')
-    providedCompile project(':container-dependency-versions:parent:orchestrator')
-    providedCompile project(':container-dependency-versions:parent:vespa-athenz')
-    providedCompile project(':container-dependency-versions:parent:jdisc-security-filters')
-    providedCompile project(':container-dependency-versions:parent:flags')
+    providedCompile project(':container-dev')
+    providedCompile project(':vespa_jersey2')
+    providedCompile project(':container-jersey2')
+    providedCompile project(':config-provisioning')
+    providedCompile project(':service-monitor')
+    providedCompile project(':application-model')
+    providedCompile project(':zkfacade')
+    providedCompile project(':orchestrator')
+    providedCompile project(':vespa-athenz')
+    providedCompile project(':jdisc-security-filters')
+    providedCompile project(':flags')
     compileOnly 'com.google.guava:guava:20.0'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
 }

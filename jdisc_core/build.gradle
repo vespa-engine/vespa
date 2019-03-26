@@ -21,12 +21,12 @@ dependencies {
     compile 'org.slf4j:jcl-over-slf4j:1.7.5'
     compile 'org.slf4j:log4j-over-slf4j:1.7.5'
     compile 'org.slf4j:slf4j-jdk14:1.7.5'
-    compile project(':container-dependency-versions:parent:config-lib')
-    compile project(':container-dependency-versions:parent:yolean')
-    compile project(':container-dependency-versions:parent:vespajlib')
+    compile project(':config-lib')
+    compile project(':yolean')
+    compile project(':vespajlib')
     testCompile 'org.mockito:mockito-all:1.9.5'
-    testCompile project(':container-dependency-versions:parent:testutil')
-    testCompile project(':container-dependency-versions:parent:defaults')
+    testCompile project(':testutil')
+    testCompile project(':defaults')
 }
 
 description = 'jdisc_core'

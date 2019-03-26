@@ -3,11 +3,11 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:container-dev')
-    compile project(':container-dependency-versions:parent:linguistics')
-    compile project(':container-dependency-versions:parent:config-model-api')
-    compile project(':container-dependency-versions:parent:config-model')
-    compile project(':container-dependency-versions:parent:searchlib')
+    compile project(':container-dev')
+    compile project(':linguistics')
+    compile project(':config-model-api')
+    compile project(':config-model')
+    compile project(':searchlib')
     compile 'org.apache.maven:maven-project:2.2.1'
     testCompile 'junit:junit:4.12'
     testCompile 'org.apache.maven:maven-plugin-api:3.5.0'

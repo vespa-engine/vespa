@@ -10,9 +10,9 @@ dependencies {
     compile 'org.apache.httpcomponents:httpclient:4.5'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    testCompile project(':container-dependency-versions:parent:testutil')
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
+    testCompile project(':testutil')
+    providedCompile project(':container-dev')
+    providedCompile project(':config-provisioning')
 }
 
 description = 'docker-api'

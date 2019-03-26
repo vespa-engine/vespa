@@ -8,7 +8,7 @@ plugins {
 
 dependencies {
     compile 'org.antlr:antlr-runtime:3.5.2'
-    compile project(':container-dependency-versions:parent:vespajlib')
+    compile project(':vespajlib')
     compile 'com.yahoo.vespa:annotations:7.28.21'
     testCompile 'junit:junit:4.12'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'

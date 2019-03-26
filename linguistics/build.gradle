@@ -3,15 +3,15 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:configdefinitions')
-    compile project(':container-dependency-versions:parent:vespajlib')
+    compile project(':configdefinitions')
+    compile project(':vespajlib')
     compile 'org.apache.opennlp:opennlp-tools:1.8.4'
     compile 'com.optimaize.languagedetector:language-detector:0.6'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
+    providedCompile project(':component')
+    providedCompile project(':config-bundle')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.google.inject:guice:3.0'
 }

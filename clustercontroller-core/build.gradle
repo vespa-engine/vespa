@@ -12,10 +12,10 @@ dependencies {
     compileOnly 'org.slf4j:slf4j-api:1.7.5'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    providedCompile project(':container-dependency-versions:parent:clustercontroller-utils')
-    providedCompile project(':container-dependency-versions:parent:defaults')
-    providedCompile project(':container-dependency-versions:parent:vdslib')
-    providedCompile project(':container-dependency-versions:parent:zkfacade')
+    providedCompile project(':clustercontroller-utils')
+    providedCompile project(':defaults')
+    providedCompile project(':vdslib')
+    providedCompile project(':zkfacade')
 }
 
 description = 'clustercontroller-core'

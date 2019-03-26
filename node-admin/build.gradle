@@ -3,24 +3,24 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:orchestrator-restapi')
+    compile project(':orchestrator-restapi')
     compile 'org.apache.httpcomponents:httpcore:4.4.1'
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
     compile 'org.apache.velocity:velocity:1.7'
     testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'
     testCompile 'org.mockito:mockito-core:2.23.0'
     testCompile 'junit:junit:4.12'
-    testCompile project(':container-dependency-versions:parent:application')
-    testCompile project(':container-dependency-versions:parent:application-model')
-    testCompile project(':container-dependency-versions:parent:orchestrator')
-    testCompile project(':container-dependency-versions:parent:node-repository')
-    testCompile project(':container-dependency-versions:parent:service-monitor')
-    testCompile project(':container-dependency-versions:parent:testutil')
-    providedCompile project(':container-dependency-versions:parent:docker-api')
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:vespa-athenz')
-    providedCompile project(':container-dependency-versions:parent:flags')
+    testCompile project(':application')
+    testCompile project(':application-model')
+    testCompile project(':orchestrator')
+    testCompile project(':node-repository')
+    testCompile project(':service-monitor')
+    testCompile project(':testutil')
+    providedCompile project(':docker-api')
+    providedCompile project(':config-provisioning')
+    providedCompile project(':container-dev')
+    providedCompile project(':vespa-athenz')
+    providedCompile project(':flags')
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compileOnly 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
 }

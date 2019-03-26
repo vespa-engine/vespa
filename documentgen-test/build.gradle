@@ -7,15 +7,15 @@ configurations {
 }
 
 dependencies {
-    compile project(':container-dependency-versions:parent:container-dev')
-    compile project(':container-dependency-versions:parent:linguistics')
-    compile project(':container-dependency-versions:parent:config-model')
-    compile project(':container-dependency-versions:parent:config-model-api')
+    compile project(':container-dev')
+    compile project(':linguistics')
+    compile project(':config-model')
+    compile project(':config-model-api')
     testCompile 'org.apache.maven:maven-plugin-api:3.5.0'
     compileOnly 'org.apache.maven:maven-plugin-api:3.5.0'
     testCompile 'junit:junit:4.12'
 
-    documentgen project(':container-dependency-versions:parent:vespa-documentgen-plugin')
+    documentgen project(':vespa-documentgen-plugin')
     documentgen 'org.apache.maven:maven-plugin-api:3.5.0'
 }
 

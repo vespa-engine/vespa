@@ -3,8 +3,8 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:component')
-    compile project(':container-dependency-versions:parent:messagebus')
+    compile project(':component')
+    compile project(':messagebus')
     testCompile 'junit:junit:4.12'
-    providedCompile project(':container-dependency-versions:parent:jdisc_core')
+    providedCompile project(':jdisc_core')
 }

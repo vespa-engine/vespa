@@ -3,9 +3,9 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:defaults')
-    compile project(':container-dependency-versions:parent:vespajlib')
-    compile project(':container-dependency-versions:parent:config')
+    compile project(':defaults')
+    compile project(':vespajlib')
+    compile project(':config')
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compile 'io.airlift:airline:0.6'

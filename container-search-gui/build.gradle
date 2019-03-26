@@ -4,10 +4,10 @@
 
 dependencies {
     compileOnly 'com.google.inject:guice:3.0'
-    providedCompile project(':container-dependency-versions:parent:yolean')
-    providedCompile project(':container-dependency-versions:parent:jdisc_http_service')
-    providedCompile project(':container-dependency-versions:parent:jdisc_core')
-    providedCompile project(':container-dependency-versions:parent:container-core')
-    providedCompile project(':container-dependency-versions:parent:container-search-and-docproc')
-    providedCompile project(':container-dependency-versions:parent:configdefinitions')
+    providedCompile project(':yolean')
+    providedCompile project(':jdisc_http_service')
+    providedCompile project(':jdisc_core')
+    providedCompile project(':container-core')
+    providedCompile project(':container-search-and-docproc')
+    providedCompile project(':configdefinitions')
 }

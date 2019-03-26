@@ -3,6 +3,6 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:container-dev')
-    compile project(':container-dependency-versions:parent:vespaclient-container-plugin')
+    compile project(':container-dev')
+    compile project(':vespaclient-container-plugin')
 }

@@ -3,8 +3,8 @@
  */
 
 dependencies {
-    providedCompile project(':container-dependency-versions:parent:container-test-jars:jersey-resources')
-    providedCompile project(':container-dependency-versions:parent:vespa_jersey2')
+    providedCompile project(':container-test-jars:jersey-resources')
+    providedCompile project(':vespa_jersey2')
 }
 
 group = 'com.yahoo.vespa.container-test-jars'

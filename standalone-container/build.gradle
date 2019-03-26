@@ -5,12 +5,12 @@
 dependencies {
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     testCompile 'junit:junit:4.12'
-    providedCompile project(':container-dependency-versions:parent:config-provisioning')
-    providedCompile project(':container-dependency-versions:parent:config-model')
-    providedCompile project(':container-dependency-versions:parent:config-model-api')
-    providedCompile project(':container-dependency-versions:parent:config-application-package')
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:model-integration')
-    providedCompile project(':container-dependency-versions:parent:defaults')
-    providedCompile project(':container-dependency-versions:parent:zkfacade')
+    providedCompile project(':config-provisioning')
+    providedCompile project(':config-model')
+    providedCompile project(':config-model-api')
+    providedCompile project(':config-application-package')
+    providedCompile project(':container-dev')
+    providedCompile project(':model-integration')
+    providedCompile project(':defaults')
+    providedCompile project(':zkfacade')
 }

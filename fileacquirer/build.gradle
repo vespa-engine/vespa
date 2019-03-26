@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:config')
+    compile project(':config')
     testCompile 'junit:junit:4.12'
 }
 

@@ -7,6 +7,6 @@ dependencies {
     compile 'commons-io:commons-io:2.4'
     testCompile 'junit:junit:4.12'
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:clustercontroller-utils')
+    providedCompile project(':container-dev')
+    providedCompile project(':clustercontroller-utils')
 }

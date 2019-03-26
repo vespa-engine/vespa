@@ -3,16 +3,16 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:searchcore')
+    compile project(':searchcore')
     testCompile 'junit:junit:4.12'
-    testCompile project(':container-dependency-versions:parent:jdisc_jetty')
-    providedCompile project(':container-dependency-versions:parent:component')
-    providedCompile project(':container-dependency-versions:parent:jdisc_core')
-    providedCompile project(':container-dependency-versions:parent:container-core')
-    providedCompile project(':container-dependency-versions:parent:config')
-    providedCompile project(':container-dependency-versions:parent:configdefinitions')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:searchlib')
-    providedCompile project(':container-dependency-versions:parent:jdisc_http_service')
+    testCompile project(':jdisc_jetty')
+    providedCompile project(':component')
+    providedCompile project(':jdisc_core')
+    providedCompile project(':container-core')
+    providedCompile project(':config')
+    providedCompile project(':configdefinitions')
+    providedCompile project(':vespajlib')
+    providedCompile project(':searchlib')
+    providedCompile project(':jdisc_http_service')
     compileOnly 'com.google.guava:guava:20.0'
 }

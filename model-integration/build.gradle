@@ -13,9 +13,9 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.google.guava:guava:20.0'
-    providedCompile project(':container-dependency-versions:parent:config-model-api')
-    providedCompile project(':container-dependency-versions:parent:searchlib')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
+    providedCompile project(':config-model-api')
+    providedCompile project(':searchlib')
+    providedCompile project(':vespajlib')
 }
 
 

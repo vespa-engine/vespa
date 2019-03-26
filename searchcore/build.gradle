@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    providedCompile project(':container-dependency-versions:parent:config-lib')
+    providedCompile project(':config-lib')
 }
 
 description = 'searchcore'

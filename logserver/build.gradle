@@ -6,10 +6,10 @@ plugins {
 }
 
 dependencies {
-    compile project(':container-dependency-versions:parent:vespajlib')
-    compile project(':container-dependency-versions:parent:yolean')
-    compile project(':container-dependency-versions:parent:vespalog')
-    compile project(':container-dependency-versions:parent:jrt')
+    compile project(':vespajlib')
+    compile project(':yolean')
+    compile project(':vespalog')
+    compile project(':jrt')
     compile 'com.google.protobuf:protobuf-java:3.7.0'
     testCompile 'junit:junit:4.12'
 }

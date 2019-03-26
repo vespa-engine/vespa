@@ -3,14 +3,14 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:indexinglanguage')
+    compile project(':indexinglanguage')
     testCompile 'junit:junit:4.12'
-    providedCompile project(':container-dependency-versions:parent:document')
-    providedCompile project(':container-dependency-versions:parent:predicate-search-core')
-    providedCompile project(':container-dependency-versions:parent:docproc')
-    providedCompile project(':container-dependency-versions:parent:container-dev')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
-    providedCompile project(':container-dependency-versions:parent:configdefinitions')
-    providedCompile project(':container-dependency-versions:parent:linguistics')
+    providedCompile project(':document')
+    providedCompile project(':predicate-search-core')
+    providedCompile project(':docproc')
+    providedCompile project(':container-dev')
+    providedCompile project(':vespajlib')
+    providedCompile project(':config-bundle')
+    providedCompile project(':configdefinitions')
+    providedCompile project(':linguistics')
 }

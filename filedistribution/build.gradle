@@ -3,17 +3,17 @@
  */
 
 dependencies {
-    compile project(':container-dependency-versions:parent:vespajlib')
-    compile project(':container-dependency-versions:parent:jrt')
-    compile project(':container-dependency-versions:parent:vespalog')
+    compile project(':vespajlib')
+    compile project(':jrt')
+    compile project(':vespalog')
     compile 'com.google.guava:guava:20.0'
     compile 'org.apache.commons:commons-compress:1.18'
     compile 'io.airlift:airline:0.7'
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     testCompile 'junit:junit:4.12'
-    providedCompile project(':container-dependency-versions:parent:config')
-    providedCompile project(':container-dependency-versions:parent:config-lib')
+    providedCompile project(':config')
+    providedCompile project(':config-lib')
 }
 
 description = 'filedistribution'

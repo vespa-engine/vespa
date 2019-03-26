@@ -4,10 +4,10 @@
 
 dependencies {
     compile 'com.yahoo.vespa:annotations:7.28.21'
-    compile project(':container-dependency-versions:parent:security-utils')
+    compile project(':security-utils')
     testCompile 'junit:junit:4.12'
     testCompile 'org.bouncycastle:bcpkix-jdk15on:1.58'
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
+    providedCompile project(':vespajlib')
 }
 
 description = 'jrt'

@@ -4,15 +4,15 @@
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    providedCompile project(':container-dependency-versions:parent:config-bundle')
-    providedCompile project(':container-dependency-versions:parent:vespajlib')
-    providedCompile project(':container-dependency-versions:parent:config-lib')
-    providedCompile project(':container-dependency-versions:parent:config')
+    providedCompile project(':config-bundle')
+    providedCompile project(':vespajlib')
+    providedCompile project(':config-lib')
+    providedCompile project(':config')
     compileOnly 'com.google.guava:guava:20.0'
 }
 
 task generateVtag(type: JavaExec) {
-	dependsOn ":container-dependency-versions:parent:vespajlib:compileJava"
+	dependsOn ":vespajlib:compileJava"
 	workingDir = file(buildDir)
 	outputs.dir "${buildDir}"
 
