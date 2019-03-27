@@ -26,6 +26,12 @@ import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 
+/**
+ * Translates Athenz principals to role memberships for use in access control.
+ *
+ * @author tokle
+ * @author mpolden
+ */
 public class AthenzRoleResolver implements RoleMembership.Resolver {
 
     private final AthenzFacade athenz;

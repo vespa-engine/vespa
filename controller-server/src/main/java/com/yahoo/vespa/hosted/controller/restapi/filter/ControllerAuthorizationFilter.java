@@ -65,15 +65,11 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             RoleMembership roles = this.roleResolver.membership(principal, Optional.of(request.getRequestURI()));
             if (roles.allows(action, request.getRequestURI()))
                 return Optional.empty();
-
-            return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
         }
-        catch (WebApplicationException e) { // TODO move to resolver.
-            int statusCode = e.getResponse().getStatus();
-            String errorMessage = e.getMessage();
-            log.log(LogLevel.WARNING, String.format("Access denied (%d): %s", statusCode, errorMessage));
-            return Optional.of(new ErrorResponse(statusCode, errorMessage));
+        catch (Exception e) {
+            log.log(LogLevel.WARNING, "Exception evaluating access control: ", e);
         }
+        return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
     }
 
 }
