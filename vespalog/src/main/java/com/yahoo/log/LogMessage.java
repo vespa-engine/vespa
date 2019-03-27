@@ -81,7 +81,7 @@ public class LogMessage
     public long     getTimeInSeconds () {return time.getEpochSecond();}
     public String   getHost ()          {return host;}
     public long     getProcessId()      {return processId;}
-    public OptionalLong getThreadId()      {return threadId != -1 ? OptionalLong.of(threadId) : OptionalLong.empty();}
+    public OptionalLong getThreadId()      {return threadId > 0 ? OptionalLong.of(threadId) : OptionalLong.empty();}
     /**
      * @deprecated Use {@link #getProcessId()} / {@link #getThreadId()}
      */
@@ -137,7 +137,7 @@ public class LogMessage
     private static long parseThreadId(String threadProcess) {
         int slashIndex = threadProcess.indexOf('/');
         if (slashIndex == -1) {
-            return -1;
+            return 0;
         }
         return Long.parseLong(threadProcess.substring(slashIndex + 1));
     }

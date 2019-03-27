@@ -201,9 +201,6 @@ public class VespaFormat {
     }
 
     static String formatThreadProcess(long processId, long threadId) {
-        if (processId == 0) {
-            return "";
-        }
         if (threadId == 0) {
             return Long.toString(processId);
         }
