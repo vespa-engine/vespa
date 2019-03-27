@@ -95,7 +95,7 @@ public class AdminTestCase {
         assertEquals(lc.logserver().host(), localhost);
 
         Service logserver = vespaModel.getService("admin/logserver").get();
-        assertEquals(logserver.getRelativePort(0), lc.logserver().rpcPort());
+        assertEquals(logserver.getRelativePort(0), lc.logserver().rpcport());
 
         // Verify services in the sentinel config
         SentinelConfig.Builder b = new SentinelConfig.Builder();

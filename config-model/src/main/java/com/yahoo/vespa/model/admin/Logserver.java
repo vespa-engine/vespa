@@ -71,7 +71,7 @@ public class Logserver extends AbstractService {
 
     @Override
     public String[] getPortSuffixes() {
-        return new String[]{ "logtp/rpc", "logtp/legacy", "unused/1", "unused/2" };
+        return new String[]{ "rpc", "legacy", "unused/1", "unused/2" };
     }
 
 }
