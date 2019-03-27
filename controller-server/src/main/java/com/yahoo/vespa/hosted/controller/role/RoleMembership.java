@@ -80,35 +80,33 @@ public class RoleMembership {
 
         @Override
         public BuilderWithRole add(Role role) {
-            if (current != null) {
-                roles.putIfAbsent(current, new HashSet<>());
-                roles.get(current).add(Context.unlimitedIn(system));
-            }
+            consumeCurrent(Context.unlimitedIn(system));
             current = role;
             return this;
         }
 
         public Builder limitedTo(TenantName tenant) {
-            roles.putIfAbsent(current, new HashSet<>());
-            roles.get(current).add(Context.limitedTo(tenant, system));
-            current = null;
+            consumeCurrent(Context.limitedTo(tenant, system));
             return this;
         }
 
         public Builder limitedTo(TenantName tenant, ApplicationName application) {
-            roles.putIfAbsent(current, new HashSet<>());
-            roles.get(current).add(Context.limitedTo(tenant, application, system));
-            current = null;
+            consumeCurrent(Context.limitedTo(tenant, application, system));
             return this;
         }
 
         @Override
         public RoleMembership build() {
+            consumeCurrent(Context.unlimitedIn(system));
+            return new RoleMembership(roles);
+        }
+
+        private void consumeCurrent(Context context) {
             if (current != null) {
                 roles.putIfAbsent(current, new HashSet<>());
-                roles.get(current).add(Context.unlimitedIn(system));
+                roles.get(current).add(context);
             }
-            return new RoleMembership(roles);
+            current = null;
         }
 
     }
