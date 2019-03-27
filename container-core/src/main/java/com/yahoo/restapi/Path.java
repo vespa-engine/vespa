@@ -49,7 +49,7 @@ public class Path {
         this.elements = path.split("/");
     }
 
-    private boolean matches_inner(String pathSpec) {
+    private boolean matchesInner(String pathSpec) {
         values.clear();
         String[] specElements = pathSpec.split("/");
         boolean matchPrefix = false;
@@ -97,9 +97,9 @@ public class Path {
      * @return true if the string matches, false otherwise
      */
     public boolean matches(String pathSpec) {
-        if (matches_inner(pathSpec)) return true;
+        if (matchesInner(pathSpec)) return true;
         if (optionalPrefix.isEmpty()) return false;
-        return  matches_inner(optionalPrefix + pathSpec);
+        return matchesInner(optionalPrefix + pathSpec);
     }
 
     /**
