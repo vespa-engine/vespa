@@ -27,12 +27,12 @@ public class AthenzApiTest extends ControllerContainerTest {
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/domains"),
                               new File("athensDomain-list.json"));
 
-        // GET root — nothing set up there
+        // GET root — nothing set up here
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/"),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"No 'GET' handler at '/athenz/v1/'\"}",
                               404);
 
-        // GET OpsDB properties
+        // GET properties
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/properties/"),
                               new File("property-list.json"));
     }
