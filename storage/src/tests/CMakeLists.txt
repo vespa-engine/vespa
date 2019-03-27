@@ -32,6 +32,5 @@ vespa_add_executable(storage_testrunner_app TEST
 
 vespa_add_test(
     NAME storage_testrunner_app
-    NO_VALGRIND
     COMMAND storage_testrunner_app
 )
