@@ -1,10 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
@@ -12,9 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapsh
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -23,15 +19,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * @author olaa
  * Creates a ResourceSnapshot per application, which is then passed on to a ResourceSnapshotConsumer
- * Also write to file the raw data used to create the ResourceSnapshot.
+ * TODO: Write JSON blob of node repo somewhere
+ * @author olaa
  */
 public class ResourceMeterMaintainer extends Maintainer {
 
@@ -64,7 +59,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                         e -> new ResourceSnapshot(e.getValue(), timeStamp))
                 );
 
-        writeRawData(nodes, timeStamp);
+
         resourceSnapshotConsumer.consume(resourceSnapshots);
     }
 
@@ -91,16 +86,7 @@ public class ResourceMeterMaintainer extends Maintainer {
     }
 
     private ApplicationId applicationIdFromNodeOwner(NodeOwner owner) {
-        return new ApplicationId(String.join(".", owner.getTenant(), owner.getApplication(), owner.getInstance()));
-    }
-
-    private void writeRawData(List<NodeRepositoryNode> nodes, Instant timeStamp) {
-        try {
-            new ObjectMapper().writeValue(new File(String.format("/path/to/file-%s", timeStamp.toString())), nodes);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Unable to write nodes to file", e);
-        }
-
+        return ApplicationId.from(owner.getTenant(), owner.getApplication(), owner.getInstance());
     }
 
 }
