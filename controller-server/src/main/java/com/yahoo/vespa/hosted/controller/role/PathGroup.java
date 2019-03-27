@@ -19,13 +19,14 @@ public enum PathGroup {
 
     /** Paths used for system management by operators */
     operator("/controller/v1/{*}",
-             "/provision/v2/{*}",
-             "/flags/v1/{*}",
-             "/os/v1/{*}",
              "/cost/v1/{*}",
-             "/zone/v2/{*}",
+             "/deployment/v1/{*}",
+             "/flags/v1/{*}",
              "/nodes/v2/{*}",
-             "/orchestrator/v1/{*}"),
+             "/orchestrator/v1/{*}",
+             "/os/v1/{*}",
+             "/provision/v2/{*}",
+             "/zone/v2/{*}"),
 
     /** Paths used for creating user tenants */
     onboardingUser("/application/v4/user"),
@@ -73,7 +74,6 @@ public enum PathGroup {
 
     /** Read-only paths providing information related to deployments */
     deploymentStatus("/badge/v1/{*}",
-                     "/deployment/v1/{*}", // TODO Move this?
                      "/zone/v1/{*}"),
 
     /** Paths used by some dashboard */
