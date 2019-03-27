@@ -50,6 +50,7 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
+      <version>2.25.1</version>
     </dependency>
   </dependencies>
   <build>
