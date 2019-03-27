@@ -132,7 +132,9 @@
       "public java.lang.String getPayload()",
       "public static com.yahoo.log.LogMessage parseNativeFormat(java.lang.String)",
       "public com.yahoo.log.event.Event getEvent()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },

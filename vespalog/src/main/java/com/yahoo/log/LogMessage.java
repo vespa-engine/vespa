@@ -5,6 +5,7 @@ import com.yahoo.log.event.Event;
 import com.yahoo.log.event.MalformedEventException;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -191,5 +192,26 @@ public class LogMessage
             .append(level.toString().toLowerCase()).append("\t")
             .append(payload).append("\n")
             .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LogMessage that = (LogMessage) o;
+        return processId == that.processId &&
+                threadId == that.threadId &&
+                Objects.equals(time, that.time) &&
+                Objects.equals(host, that.host) &&
+                Objects.equals(service, that.service) &&
+                Objects.equals(component, that.component) &&
+                Objects.equals(level, that.level) &&
+                Objects.equals(payload, that.payload) &&
+                Objects.equals(event, that.event);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(time, host, processId, threadId, service, component, level, payload, event);
     }
 }
