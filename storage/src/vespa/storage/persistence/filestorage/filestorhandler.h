@@ -71,7 +71,7 @@ public:
         CLOSED
     };
 
-    FileStorHandler(uint32_t numStripes, MessageSender&, FileStorMetrics&,
+    FileStorHandler(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
                     const spi::PartitionStateList&, ServiceLayerComponentRegister&);
     FileStorHandler(MessageSender&, FileStorMetrics&,
                     const spi::PartitionStateList&, ServiceLayerComponentRegister&);

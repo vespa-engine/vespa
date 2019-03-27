@@ -22,7 +22,23 @@ using document::BucketSpace;
 
 namespace storage {
 
-FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numStripes, MessageSender& sender, FileStorMetrics& metrics,
+namespace {
+
+uint32_t merge_soft_limit_from_thread_count(uint32_t num_threads) noexcept {
+    // Rationale: to avoid starving client ops we want to ensure that not all persistence
+    // threads can be blocked by processing merges all at the same time. We therefore allocate
+    // half of the threads to non-merge operations.
+    // This a _soft_ limit since the current operation locking design means there is a small
+    // window of time between when the limit is checked and when its updated. There are no
+    // correctness violations as a consequence of this, but non-merge liveness may be impacted.
+    // There must always be at least 1 thread that can process merges, or the system would stall.
+    return std::max(1u, num_threads / 2);
+}
+
+}
+
+FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender& sender,
+                                         FileStorMetrics& metrics,
                                          [[maybe_unused]] const spi::PartitionStateList& partitions,
                                          ServiceLayerComponentRegister& compReg)
     : _component(compReg, "filestorhandlerimpl"),
@@ -30,6 +46,8 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numStripes, MessageSender& sen
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _getNextMessageTimeout(100),
+      _activeMergesSoftLimit(merge_soft_limit_from_thread_count(numThreads)),
+      _activeMerges(0),
       _paused(false)
 {
     _diskInfo.reserve(_component.getDiskCount());
@@ -926,7 +944,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
         PriorityIdx& idx(bmi::get<1>(_queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
-        while (iter != end && isLocked(guard, iter->_bucket, iter->_command->lockingRequirements())) {
+        while (iter != end && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
             iter++;
         }
         if (iter != end) {
@@ -1105,6 +1123,10 @@ void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
+        if (entry._exclusiveLock->msgType == api::MessageType::MERGEBUCKET_ID) {
+            auto before = _owner._activeMerges.fetch_sub(1, std::memory_order_relaxed);
+            assert(before > 0);
+        }
         entry._exclusiveLock.reset();
     } else {
         assert(!entry._exclusiveLock);
@@ -1125,6 +1147,9 @@ void FileStorHandlerImpl::Stripe::lock(const vespalib::MonitorGuard &, const doc
     assert(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
         assert(entry._sharedLocks.empty());
+        if (lockEntry.msgType == api::MessageType::MERGEBUCKET_ID) {
+            _owner._activeMerges.fetch_add(1, std::memory_order_relaxed);
+        }
         entry._exclusiveLock = lockEntry;
     } else {
         // TODO use a hash set with a custom comparator/hasher instead...?
@@ -1152,6 +1177,18 @@ FileStorHandlerImpl::Stripe::isLocked(const vespalib::MonitorGuard &, const docu
     // require that no shared locks are currently present.
     return ((lockReq == api::LockingRequirements::Exclusive)
             && !iter->second._sharedLocks.empty());
+}
+
+bool
+FileStorHandlerImpl::Stripe::operationIsInhibited(const vespalib::MonitorGuard& guard, const document::Bucket& bucket,
+                                                  const api::StorageMessage& msg) const noexcept
+{
+    if ((msg.getType() == api::MessageType::MERGEBUCKET)
+        && (_owner._activeMerges.load(std::memory_order_relaxed) > _owner._activeMergesSoftLimit))
+    {
+        return true;
+    }
+    return isLocked(guard, bucket, msg.lockingRequirements());
 }
 
 uint32_t
