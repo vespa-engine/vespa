@@ -149,11 +149,15 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             if ( ! (principal instanceof AthenzPrincipal))
                 throw new IllegalStateException("Expected an AthenzPrincipal to be set on the request.");
 
-            RoleMembership.Builder memberships = RoleMembership.in(system);
+            path.matches("/application/v4/tenant/{tenant}/{*}");
+            Optional<Tenant> tenant = Optional.ofNullable(path.get("tenant")).map(TenantName::from).flatMap(tenants::get);
+
+            path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}");
+            Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
+
             AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
-            Optional<Tenant> tenant = tenant();
-            Context context = context(tenant); // TODO this way of computing a context is wrong, but we must
-                                               // do it until we ask properly for roles based on token.
+
+            RoleMembership.Builder memberships = RoleMembership.in(system);
             if (isHostedOperator(identity)) {
                 memberships.add(Role.hostedOperator);
             }
@@ -162,16 +166,16 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             }
             AthenzDomain principalDomain = identity.getDomain();
             if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
-                if (context.application().isPresent() && tenant.isPresent()) {
+                if (application.isPresent() && tenant.isPresent()) {
                     // NOTE: Only fine-grained deploy authorization for Athenz tenants
                     if (tenant.get() instanceof AthenzTenant) {
                         AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
-                        if (hasDeployerAccess(identity, tenantDomain, context.application().get())) {
-                            memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), context.application().get());
+                        if (hasDeployerAccess(identity, tenantDomain, application.get())) {
+                            memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), application.get());
                         }
                     }
                     else {
-                        memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), context.application().get());
+                        memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), application.get());
                     }
                 }
             }
@@ -179,25 +183,6 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             return memberships.build();
         }
 
-        private Optional<Tenant> tenant() {
-            if (!path.matches("/application/v4/tenant/{tenant}/{*}")) {
-                return Optional.empty();
-            }
-            return tenants.get(TenantName.from(path.get("tenant")));
-        }
-
-        // TODO: Currently there's only one context for each role, but this will change
-        private Context context(Optional<Tenant> tenant) {
-            if (tenant.isEmpty()) {
-                return Context.unlimitedIn(system);
-            }
-            // TODO: Remove this. Current behaviour always allows tenant full access to all its applications, but with
-            //       the new role setup, each role will include a complete context (tenant + app)
-            if (path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}")) {
-                return Context.limitedTo(tenant.get().name(), ApplicationName.from(path.get("application")), system);
-            }
-            return Context.limitedTo(tenant.get().name(), system);
-        }
     }
 
     private static Optional<AthenzPrincipal> principalFrom(DiscFilterRequest request) {
