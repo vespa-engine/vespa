@@ -36,7 +36,6 @@ public class FS4Connection implements Connection
 
     private static int idCounter = 1;
     private int idNumber;
-    private int maxInitialSize = 1024;
 
     // outbound data
     private ByteBuffer writeBuffer;
@@ -69,7 +68,7 @@ public class FS4Connection implements Connection
      * Packet sending interface.
      */
     public void sendPacket (BasicPacket packet, Integer channelId) throws IOException {
-        ByteBuffer buffer = packet.grantEncodingBuffer(channelId.intValue(), ByteBuffer.allocate(maxInitialSize));
+        ByteBuffer buffer = packet.grantEncodingBuffer(channelId.intValue(), backend.getBufferPool().alloc());
         ByteBuffer viewForPacketListener = buffer.slice();
         synchronized (this) {
             if (!(valid && channel.isOpen())) {
@@ -79,9 +78,6 @@ public class FS4Connection implements Connection
                         ", isOpen = " + channel.isOpen());
             }
 
-            if (buffer.capacity() > maxInitialSize) {
-                maxInitialSize = buffer.limit();
-            }
             if (writeBuffer == null) {
                 writeBuffer = buffer;
             } else {
@@ -131,6 +127,8 @@ public class FS4Connection implements Connection
                 // buffer drained so we forget it and see what happens when we
                 // go around.  if indeed we go around
                 if (!writeBuffer.hasRemaining()) {
+                    writeBuffer.clear();
+                    backend.getBufferPool().free(writeBuffer);
                     writeBuffer = null;
                 }
             } while (bytesWritten > 0);

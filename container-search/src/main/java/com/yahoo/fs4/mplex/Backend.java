@@ -1,19 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.fs4.mplex;
 
-
-import com.yahoo.fs4.*;
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.Packet;
+import com.yahoo.fs4.PacketDumper;
+import com.yahoo.fs4.PacketListener;
+import com.yahoo.fs4.PacketNotificationsBroadcaster;
+import com.yahoo.fs4.PacketQueryTracer;
 import com.yahoo.io.Connection;
 import com.yahoo.io.ConnectionFactory;
 import com.yahoo.io.Listener;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
+import com.yahoo.yolean.concurrent.ResourceFactory;
+import com.yahoo.yolean.concurrent.ResourcePool;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +32,8 @@ import java.util.logging.Logger;
  * @author Bjorn Borud
  */
 public class Backend implements ConnectionFactory {
+
+    private static int DEFAULT_BUFFER_SIZE = 0x8000;
 
     public static final class BackendStatistics {
 
@@ -61,6 +73,12 @@ public class Backend implements ConnectionFactory {
     private final ConnectionPool connectionPool;
     private final PacketDumper packetDumper;
     private final AtomicInteger connectionCount = new AtomicInteger(0);
+    private final ConcurrentResourcePool<ByteBuffer> byteBufferResourcePool = new ConcurrentResourcePool<>(new ResourceFactory<>() {
+        @Override
+        public ByteBuffer create() {
+            return ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
+        }
+    });
 
     /**
      * For unit testing.  do not use
@@ -114,6 +132,10 @@ public class Backend implements ConnectionFactory {
             connection = createConnection();
         }
         return connection;
+    }
+
+    ConcurrentResourcePool<ByteBuffer> getBufferPool() {
+        return byteBufferResourcePool;
     }
 
     /**
@@ -414,10 +436,6 @@ public class Backend implements ConnectionFactory {
         synchronized (connectionPool) { //ensure consistent values
             return new BackendStatistics(connectionPool.activeConnections(), connectionPool.passiveConnections());
         }
-    }
-
-    public void dumpPackets(final PacketDumper.PacketType packetType, final boolean on) throws IOException {
-        packetDumper.dumpPackets(packetType, on);
     }
 
     public String getHost() {
