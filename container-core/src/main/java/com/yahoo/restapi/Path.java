@@ -4,7 +4,6 @@ package com.yahoo.restapi;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A path which is able to match strings containing bracketed placeholders and return the
@@ -123,7 +122,7 @@ public class Path {
 
     @Override
     public String toString() {
-        return "path '" + Arrays.stream(elements).collect(Collectors.joining("/")) + "'";
+        return "path '" + String.join("/", elements) + "'";
     }
     
 }
