@@ -26,9 +26,9 @@ public abstract class BasicPacket {
     private static int DEFAULT_WRITE_BUFFER_SIZE = (10 * 1024);
     public static final int CODE_MASK = 0x00ff_ffff;  // Reserve upper byte for flags.
 
-    protected byte[] encodedBody;
+    private byte[] encodedBody;
 
-    protected ByteBuffer encodingBuffer;
+    private ByteBuffer encodingBuffer;
 
     /** The length of this packet in bytes or -1 if not known */
     protected int length = -1;
@@ -199,7 +199,7 @@ public abstract class BasicPacket {
         throw new UnsupportedOperationException("Encoding of " + this + " is not implemented");
     }
 
-    protected void setEncodedBody(ByteBuffer b, int start, int length) {
+    private void setEncodedBody(ByteBuffer b, int start, int length) {
         encodedBody = new byte[length];
         b.position(start);
         b.get(encodedBody);
