@@ -1,3 +1,0 @@
-1096639280.524133	malfunction	26851	-	logtest	info	Starting up, called as ./log/logtest
-1096639280.524164	malfunction	26851	-	logtest	info	backslash: \\
-1096639280.524133	malfunction	26851	-	logtest	fatal	Starting up, called as ./log/logtest

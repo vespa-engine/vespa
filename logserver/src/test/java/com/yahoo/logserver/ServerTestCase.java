@@ -7,8 +7,6 @@ import com.yahoo.logserver.handlers.logmetrics.LogMetricsPlugin;
 import com.yahoo.logserver.test.LogDispatcherTestCase;
 import org.junit.Test;
 
-import java.io.IOException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -21,10 +19,10 @@ import static org.junit.Assert.fail;
 public class ServerTestCase {
 
     @Test
-    public void testStartupAndRegHandlers() throws IOException, InterruptedException {
+    public void testStartupAndRegHandlers() {
         Server.help();
         Server server = Server.getInstance();
-        server.initialize(18322, 18323); // TODO Stop using hardcoded ports
+        server.initialize(0);
         LogSetup.clearHandlers();
         Thread serverThread = new Thread(server);
         serverThread.start();
