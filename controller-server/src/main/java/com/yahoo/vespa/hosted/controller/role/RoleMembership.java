@@ -6,6 +6,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,6 +45,11 @@ public class RoleMembership {
             Set<Context> contexts = kv.getValue();
             return contexts.stream().anyMatch(context -> role.allows(action, path, context));
         });
+    }
+
+    /** Returns the set of contexts for which the given role is valid. */
+    public Set<Context> contextsFor(Role role) {
+        return roles.getOrDefault(role, Collections.emptySet());
     }
 
     @Override

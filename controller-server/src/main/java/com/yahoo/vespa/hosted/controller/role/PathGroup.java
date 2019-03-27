@@ -73,7 +73,7 @@ public enum PathGroup {
 
     /** Read-only paths providing information related to deployments */
     deploymentStatus("/badge/v1/{*}",
-                     "/deployment/v1/{*}",
+                     "/deployment/v1/{*}", // TODO Move this?
                      "/zone/v1/{*}"),
 
     /** Paths used by some dashboard */
