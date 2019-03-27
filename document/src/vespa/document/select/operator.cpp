@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operator.h"
-#include <vespa/vespalib/util/regexp.h>
+#include <regex>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
@@ -127,8 +127,12 @@ RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) cons
 {
         // Should we catch this in parsing?
     if (expr.size() == 0) return ResultList(Result::True);
-    vespalib::Regexp expression(expr);
-    return ResultList(Result::get(expression.match(val)));
+    try {
+        std::basic_regex<char> expression(expr.data(), expr.size());
+        return ResultList(Result::get(std::regex_search(val.c_str(), val.c_str() + val.size(), expression)));
+    } catch (std::regex_error &) {
+        return ResultList(Result::False);
+    }
 }
 
 const RegexOperator RegexOperator::REGEX("=~");
