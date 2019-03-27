@@ -6,11 +6,11 @@ import com.yahoo.text.XMLWriter;
 import java.util.*;
 import java.util.logging.Logger;
 
-public abstract class MetricSet extends Metric
-{
+public abstract class MetricSet extends Metric {
+
     private static Logger log = Logger.getLogger(MetricSet.class.getName());
 
-    List<Metric> metricOrder = new ArrayList<Metric>();    // Keep added order for reporting
+    List<Metric> metricOrder = new ArrayList<>();    // Keep added order for reporting
     boolean registrationAltered; // Set to true if metrics have been
                                  // registered/unregistered since last time
                                  // it was reset

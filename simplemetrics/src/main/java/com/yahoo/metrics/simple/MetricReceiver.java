@@ -15,7 +15,7 @@ import com.yahoo.concurrent.ThreadLocalDirectory;
  * in constructors for declaring instances of {@link Counter} and {@link Gauge}
  * for the actual measurement of metrics.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Beta
 public class MetricReceiver {

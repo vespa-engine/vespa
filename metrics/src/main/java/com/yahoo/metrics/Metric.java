@@ -65,7 +65,7 @@ public abstract class Metric {
     }
 
     public List<String> getPathVector() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         result.add(getName());
         MetricSet owner = this.owner;
         while (owner != null) {

@@ -21,7 +21,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 /**
  * An aggregation of data which is only written to from a single thread.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Bucket {
 

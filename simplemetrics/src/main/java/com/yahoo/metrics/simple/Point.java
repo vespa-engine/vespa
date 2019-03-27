@@ -129,4 +129,5 @@ public final class Point implements Context {
     Value[] getLocation() {
         return location;
     }
+
 }
