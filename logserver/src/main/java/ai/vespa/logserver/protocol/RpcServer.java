@@ -38,7 +38,9 @@ public class RpcServer implements AutoCloseable {
 
     @Override
     public void close() {
-        acceptor.shutdown().join();
+        if (acceptor != null) {
+            acceptor.shutdown().join();
+        }
         supervisor.transport().shutdown().join();
     }
 }
