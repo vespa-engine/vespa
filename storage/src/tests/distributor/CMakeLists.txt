@@ -4,7 +4,6 @@ vespa_add_library(storage_testdistributor TEST
     blockingoperationstartertest.cpp
     bucketdatabasetest.cpp
     bucketdbmetricupdatertest.cpp
-    bucketdbupdatertest.cpp
     bucketgctimecalculatortest.cpp
     bucketstateoperationtest.cpp
     distributor_host_info_reporter_test.cpp
@@ -45,4 +44,17 @@ vespa_add_library(storage_testdistributor TEST
     storage_distributor
     storage_testcommon
     storage_testhostreporter
+)
+
+vespa_add_library(storage_gtestdistributor TEST
+    SOURCES
+    bucketdbupdatertest.cpp
+    # Fixture etc. dupes with non-gtest runner :
+    distributortestutil.cpp
+    messagesenderstub.cpp
+    DEPENDS
+    storage_distributor
+    storage_testcommon
+    storage_testhostreporter
+    gtest
 )
