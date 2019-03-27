@@ -12,16 +12,34 @@ import java.util.Set;
  */
 public enum Role {
 
+    /** Deus ex machina. */
     hostedOperator(Policy.operator),
 
-    tenantAdmin(Policy.tenant,
-                Policy.application,
-                Policy.development),
+    /** Tenant administrator with full access to all child resources. */
+    tenantAdmin(Policy.manager,
+                Policy.tenant,
+                Policy.application),
 
+    /** Build and continuous delivery service. */
     tenantPipelineOperator(Policy.buildService,
                            Policy.submission,
-                           Policy.deployment),
+                           Policy.production),
 
+    /** Application administrator with full access to an already existing application. */
+    applicationAdmin(Policy.tenantRead,
+                     Policy.applicationModify,
+                     Policy.development,
+                     Policy.production),
+
+    /** Application operator with read access to all information about an application. */
+    applicationOperator(Policy.tenantRead,
+                        Policy.applicationRead,
+                        Policy.deploymentRead),
+
+    /** Build service which may submit new applications for continuous deployment. */
+    buildService(Policy.submission),
+
+    /** Base role which everyone is part of. */
     everyone(Policy.classifiedRead,
              Policy.publicRead,
              Policy.onboardUser,

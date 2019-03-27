@@ -47,6 +47,11 @@ public enum Policy {
                          .on(PathGroup.application)
                          .in(SystemName.all())),
 
+    /** Full access to application information, settings and jobs. */
+    applicationModify(Privilege.grant(Action.update)
+                               .on(PathGroup.application)
+                               .in(SystemName.all())),
+
     /** Read access to application information and settings. */
     applicationRead(Privilege.grant(Action.read)
                              .on(PathGroup.application)
@@ -58,9 +63,14 @@ public enum Policy {
                          .in(SystemName.all())),
 
     /** Full access to application production deployments. */
-    deployment(Privilege.grant(Action.all())
-                         .on(PathGroup.deployment)
-                         .in(SystemName.all())),
+    production(Privilege.grant(Action.all())
+                        .on(PathGroup.deployment)
+                        .in(SystemName.all())),
+
+    /** Read access to allapplication deployments. */
+    deploymentRead(Privilege.grant(Action.read)
+                            .on(PathGroup.development, PathGroup.deployment)
+                            .in(SystemName.all())),
 
     /** Full access to submissions for continuous deployment. */
     submission(Privilege.grant(Action.all())
