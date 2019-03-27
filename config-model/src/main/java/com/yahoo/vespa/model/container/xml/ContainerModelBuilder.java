@@ -96,7 +96,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     /**
      * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
      */
-    private static final String HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING = "cloudconfig_server__tenant_vip_status_file";
+    private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_VIP_STATUS_FILE";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     public enum Networking { disable, enable }
@@ -268,7 +268,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addStatusHandlers(ApplicationContainerCluster cluster, boolean isHostedVespa) {
         if (isHostedVespa) {
             String name = "status.html";
-            Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING));
+            Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_SETTING));
             cluster.addComponent(
                     new FileStatusHandlerComponent(name + "-status-handler", statusFile.orElse(HOSTED_VESPA_STATUS_FILE),
                             "http://*/" + name, "https://*/" + name));
