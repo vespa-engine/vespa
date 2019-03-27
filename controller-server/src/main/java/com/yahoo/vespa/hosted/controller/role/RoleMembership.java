@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -55,7 +56,7 @@ public class RoleMembership {
      * membership to a {@link RoleMembership}.
      */
     public interface Resolver {
-        RoleMembership membership(Principal user);
+        RoleMembership membership(Principal user, Optional<String> path); // TODO get rid of path.
     }
 
     public interface Builder {

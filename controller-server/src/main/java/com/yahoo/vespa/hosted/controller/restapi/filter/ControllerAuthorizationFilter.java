@@ -80,14 +80,14 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             if (principal == null)
                 return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
 
-            Path path = new Path(request.getRequestURI());
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
             // Avoid expensive lookups when request is always legal.
             if (RoleMembership.everyoneIn(controller.system()).allows(action, request.getRequestURI()))
                 return Optional.empty();
 
-            RoleMembership roles = new AthenzRoleResolver(athenz, controller, path).membership(principal);
+            RoleMembership roles = new AthenzRoleResolver(athenz, controller).membership(principal,
+                                                                                         Optional.of(request.getRequestURI()));
             if (roles.allows(action, request.getRequestURI()))
                 return Optional.empty();
 
@@ -106,13 +106,11 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
         private final AthenzFacade athenz;
         private final TenantController tenants;
-        private final Path path;
         private final SystemName system;
 
-        public AthenzRoleResolver(AthenzFacade athenz, Controller controller, Path path) {
+        public AthenzRoleResolver(AthenzFacade athenz, Controller controller) {
             this.athenz = athenz;
             this.tenants = controller.tenants();
-            this.path = path;
             this.system = controller.system();
         }
 
@@ -145,9 +143,11 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         }
 
         @Override
-        public RoleMembership membership(Principal principal) {
+        public RoleMembership membership(Principal principal, Optional<String> uriPath) {
             if ( ! (principal instanceof AthenzPrincipal))
                 throw new IllegalStateException("Expected an AthenzPrincipal to be set on the request.");
+
+            Path path = new Path(uriPath.orElseThrow(() -> new IllegalArgumentException("This resolver needs the request path.")));
 
             path.matches("/application/v4/tenant/{tenant}/{*}");
             Optional<Tenant> tenant = Optional.ofNullable(path.get("tenant")).map(TenantName::from).flatMap(tenants::get);
