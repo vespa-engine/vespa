@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
+import ai.vespa.logserver.protocol.RpcServer;
 import com.yahoo.io.FatalErrorHandler;
 import com.yahoo.io.Listener;
 import com.yahoo.log.LogLevel;
@@ -39,6 +40,7 @@ public class Server implements Runnable {
         LogSetup.initVespaLogging("ADM");
     }
 
+    private static final int DEFAULT_RPC_LISTEN_PORT = 19080;
     // the port is a String because we want to use it as the default
     // value of a System.getProperty().
     private static final String LISTEN_PORT = "19081";
@@ -46,6 +48,7 @@ public class Server implements Runnable {
     private int listenPort;
     private Listener listener;
     private final LogDispatcher dispatch;
+    private RpcServer rpcServer;
 
     private final boolean isInitialized;
 
@@ -108,8 +111,9 @@ public class Server implements Runnable {
      *
      * @param listenPort The port on which the logserver accepts log
      *                   messages.
+     * @param rpcListenPort
      */
-    public void initialize(int listenPort) {
+    public void initialize(int listenPort, int rpcListenPort) {
         if (isInitialized) {
             throw new IllegalStateException(APPNAME + " already initialized");
         }
@@ -123,6 +127,7 @@ public class Server implements Runnable {
         listener = new Listener(APPNAME);
         listener.addSelectLoopPostHook(dispatch);
         listener.setFatalErrorHandler(fatalErrorHandler);
+        rpcServer = new RpcServer(rpcListenPort, dispatch);
     }
 
     /**
@@ -140,6 +145,8 @@ public class Server implements Runnable {
 
         log.fine("Starting listener...");
         listener.start();
+        log.fine("Starting rpc server...");
+        rpcServer.start();
         Event.started(APPNAME);
         try {
             listener.join();
@@ -164,6 +171,7 @@ public class Server implements Runnable {
             }
         }
         Event.stopping(APPNAME, "shutdown");
+        rpcServer.close();
         dispatch.close();
         Event.stopped(APPNAME, 0, 0);
         System.exit(0);
@@ -176,6 +184,7 @@ public class Server implements Runnable {
     static void help() {
         System.out.println();
         System.out.println("System properties:");
+        System.out.println(" - " + APPNAME + ".rpcListenPort (" + DEFAULT_RPC_LISTEN_PORT + ")");
         System.out.println(" - " + APPNAME + ".listenport (" + LISTEN_PORT + ")");
         System.out.println(" - " + APPNAME + ".queue.size (" + HandlerThread.DEFAULT_QUEUESIZE + ")");
         System.out.println();
@@ -188,9 +197,10 @@ public class Server implements Runnable {
         }
 
         String portString = System.getProperty(APPNAME + ".listenport", LISTEN_PORT);
+        int rpcPort = Integer.parseInt(System.getProperty(APPNAME + ".rpcListenPort", Integer.toString(DEFAULT_RPC_LISTEN_PORT)));
         Server server = Server.getInstance();
         server.setupSignalHandler();
-        server.initialize(Integer.parseInt(portString));
+        server.initialize(Integer.parseInt(portString), rpcPort);
 
         Thread t = new Thread(server, "logserver main");
         t.start();

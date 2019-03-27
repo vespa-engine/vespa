@@ -5,12 +5,13 @@ import com.yahoo.log.LogSetup;
 import com.yahoo.logserver.handlers.LogHandler;
 import com.yahoo.logserver.handlers.logmetrics.LogMetricsPlugin;
 import com.yahoo.logserver.test.LogDispatcherTestCase;
+import org.junit.Test;
 
 import java.io.IOException;
 
-import org.junit.*;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for the Server class.
@@ -23,7 +24,7 @@ public class ServerTestCase {
     public void testStartupAndRegHandlers() throws IOException, InterruptedException {
         Server.help();
         Server server = Server.getInstance();
-        server.initialize(18322);
+        server.initialize(18322, 18323); // TODO Stop using hardcoded ports
         LogSetup.clearHandlers();
         Thread serverThread = new Thread(server);
         serverThread.start();
