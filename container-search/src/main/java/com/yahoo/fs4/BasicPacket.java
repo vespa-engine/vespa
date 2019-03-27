@@ -28,8 +28,6 @@ public abstract class BasicPacket {
 
     private byte[] encodedBody;
 
-    private ByteBuffer encodingBuffer;
-
     /** The length of this packet in bytes or -1 if not known */
     protected int length = -1;
 
@@ -222,16 +220,11 @@ public abstract class BasicPacket {
      *
      * If this packet does not use a channel ID, the ID will be ignored.
      */
-    public final void allocateAndEncode(int channelId) {
-        allocateAndEncode(channelId, DEFAULT_WRITE_BUFFER_SIZE);
+    public final ByteBuffer allocateAndEncode(int channelId) {
+        return allocateAndEncode(channelId, DEFAULT_WRITE_BUFFER_SIZE);
     }
 
-    private void allocateAndEncode(int channelId, int initialSize) {
-        if (encodingBuffer != null) {
-            patchChannelId(encodingBuffer, channelId);
-            return;
-        }
-
+    private ByteBuffer allocateAndEncode(int channelId, int initialSize) {
         int size = initialSize;
         ByteBuffer buffer = ByteBuffer.allocate(size);
         while (true) {
@@ -242,7 +235,6 @@ public abstract class BasicPacket {
                     encode(buffer);
                 }
                 buffer.flip();
-                encodingBuffer = buffer;
                 break;
             }
             catch (BufferTooSmallException e) {
@@ -250,35 +242,19 @@ public abstract class BasicPacket {
                 buffer = ByteBuffer.allocate(size);
             }
         }
+        return buffer;
     }
-
-    // No channel ID for BasicPacket instances, so it's a NOP
-    protected void patchChannelId(ByteBuffer buf, int channelId) {}
 
     /**
      * Return buffer containing the encoded form of this package and
      * remove internal reference to it.
      */
     public final ByteBuffer grantEncodingBuffer(int channelId) {
-        if (encodingBuffer == null) {
-            allocateAndEncode(channelId);
-        } else {
-            patchChannelId(encodingBuffer, channelId);
-        }
-        ByteBuffer b = encodingBuffer;
-        encodingBuffer = null;
-        return b;
+        return allocateAndEncode(channelId);
     }
 
     public final ByteBuffer grantEncodingBuffer(int channelId, int initialSize) {
-        if (encodingBuffer == null) {
-            allocateAndEncode(channelId, initialSize);
-        } else {
-            patchChannelId(encodingBuffer, channelId);
-        }
-        ByteBuffer b = encodingBuffer;
-        encodingBuffer = null;
-        return b;
+        return allocateAndEncode(channelId, initialSize);
     }
 
     /** Returns the code of this package */
