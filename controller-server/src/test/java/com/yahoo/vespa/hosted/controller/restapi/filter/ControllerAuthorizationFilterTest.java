@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
@@ -170,7 +171,8 @@ public class ControllerAuthorizationFilterTest {
     }
 
     private static ControllerAuthorizationFilter createFilter(ControllerTester controllerTester) {
-        return new ControllerAuthorizationFilter(new AthenzClientFactoryMock(controllerTester.athenzDb()),
+        return new ControllerAuthorizationFilter(new AthenzRoleResolver(new AthenzFacade(new AthenzClientFactoryMock(controllerTester.athenzDb())),
+                                                                        controllerTester.controller()),
                                                  controllerTester.controller(),
                                                  Set.of("http://localhost"));
     }
