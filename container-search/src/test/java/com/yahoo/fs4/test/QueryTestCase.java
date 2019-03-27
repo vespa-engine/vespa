@@ -258,7 +258,6 @@ public class QueryTestCase {
 
         assertEqualArrays(correctBuffer,encoded);
 
-        packet.allocateAndEncode(0x07070707);
         buffer = packet.grantEncodingBuffer(0x09090909);
         correctBuffer = new byte[] {0,0,0,46,0,0,0,-38,9,9,9,9, // Header
                                     0,0,0,6, // Features

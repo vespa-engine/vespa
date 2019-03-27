@@ -69,7 +69,7 @@ public class FS4Connection implements Connection
      * Packet sending interface.
      */
     public void sendPacket (BasicPacket packet, Integer channelId) throws IOException {
-        ByteBuffer buffer = packet.grantEncodingBuffer(channelId.intValue(), maxInitialSize);
+        ByteBuffer buffer = packet.grantEncodingBuffer(channelId.intValue(), ByteBuffer.allocate(maxInitialSize));
         ByteBuffer viewForPacketListener = buffer.slice();
         synchronized (this) {
             if (!(valid && channel.isOpen())) {

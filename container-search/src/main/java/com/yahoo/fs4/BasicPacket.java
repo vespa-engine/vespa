@@ -220,13 +220,7 @@ public abstract class BasicPacket {
      *
      * If this packet does not use a channel ID, the ID will be ignored.
      */
-    public final ByteBuffer allocateAndEncode(int channelId) {
-        return allocateAndEncode(channelId, DEFAULT_WRITE_BUFFER_SIZE);
-    }
-
-    private ByteBuffer allocateAndEncode(int channelId, int initialSize) {
-        int size = initialSize;
-        ByteBuffer buffer = ByteBuffer.allocate(size);
+    private ByteBuffer allocateAndEncode(int channelId, ByteBuffer buffer) {
         while (true) {
             try {
                 if (hasChannelId()) {
@@ -238,8 +232,7 @@ public abstract class BasicPacket {
                 break;
             }
             catch (BufferTooSmallException e) {
-                size *= 2;
-                buffer = ByteBuffer.allocate(size);
+                buffer = ByteBuffer.allocate(buffer.capacity());
             }
         }
         return buffer;
@@ -250,11 +243,11 @@ public abstract class BasicPacket {
      * remove internal reference to it.
      */
     public final ByteBuffer grantEncodingBuffer(int channelId) {
-        return allocateAndEncode(channelId);
+        return allocateAndEncode(channelId, ByteBuffer.allocate(DEFAULT_WRITE_BUFFER_SIZE));
     }
 
-    public final ByteBuffer grantEncodingBuffer(int channelId, int initialSize) {
-        return allocateAndEncode(channelId, initialSize);
+    public final ByteBuffer grantEncodingBuffer(int channelId, ByteBuffer buffer) {
+        return allocateAndEncode(channelId, buffer);
     }
 
     /** Returns the code of this package */
