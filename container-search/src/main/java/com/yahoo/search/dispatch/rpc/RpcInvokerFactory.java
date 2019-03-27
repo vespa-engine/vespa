@@ -6,6 +6,7 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
@@ -36,8 +37,15 @@ public class RpcInvokerFactory extends InvokerFactory {
     @Override
     public Optional<FillInvoker> createFillInvoker(VespaBackEndSearcher searcher, Result result) {
         Query query = result.getQuery();
+
+        boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
+
+        if(query.properties().getBoolean(Dispatcher.dispatchProtobuf, false)) {
+            return Optional.of(new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(),
+                    summaryNeedsQuery));
+        }
         if (query.properties().getBoolean(dispatchSummaries, true)
-                && ! searcher.summaryNeedsQuery(query)
+                && ! summaryNeedsQuery
                 && query.getRanking().getLocation() == null)
         {
             return Optional.of(new RpcFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query)));

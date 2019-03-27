@@ -13,6 +13,7 @@ import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
+import com.yahoo.search.dispatch.rpc.Client.GetDocsumsResponse;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -102,7 +103,7 @@ public class RpcFillInvoker extends FillInvoker {
         Client.NodeConnection node = resourcePool.nodeConnections().get(nodeId);
         if (node == null) {
             String error = "Could not fill hits from unknown node " + nodeId;
-            responseReceiver.receive(Client.GetDocsumsResponseOrError.fromError(error));
+            responseReceiver.receive(Client.ResponseOrError.fromError(error));
             result.hits().addError(ErrorMessage.createEmptyDocsums(error));
             log.warning("Got hits with partid " + nodeId + ", which is not included in the current dispatch config");
             return;
@@ -143,7 +144,7 @@ public class RpcFillInvoker extends FillInvoker {
     /** Receiver of the responses to a set of getDocsums requests */
     public static class GetDocsumsResponseReceiver {
 
-        private final BlockingQueue<Client.GetDocsumsResponseOrError> responses;
+        private final BlockingQueue<Client.ResponseOrError<GetDocsumsResponse>> responses;
         private final Compressor compressor;
         private final Result result;
 
@@ -161,7 +162,7 @@ public class RpcFillInvoker extends FillInvoker {
         }
 
         /** Called by a thread belonging to the client when a valid response becomes available */
-        public void receive(Client.GetDocsumsResponseOrError response) {
+        public void receive(Client.ResponseOrError<GetDocsumsResponse> response) {
             responses.add(response);
         }
 
@@ -181,7 +182,7 @@ public class RpcFillInvoker extends FillInvoker {
                     if (timeLeftMs <= 0) {
                         throwTimeout();
                     }
-                    Client.GetDocsumsResponseOrError response = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
+                    Client.ResponseOrError<GetDocsumsResponse> response = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
                     if (response == null)
                         throwTimeout();
                     skippedHits += processResponse(response, summaryClass, documentDb);
@@ -197,7 +198,7 @@ public class RpcFillInvoker extends FillInvoker {
             }
         }
 
-        private int processResponse(Client.GetDocsumsResponseOrError responseOrError,
+        private int processResponse(Client.ResponseOrError<GetDocsumsResponse> responseOrError,
                                     String summaryClass,
                                     DocumentDatabase documentDb) {
             if (responseOrError.error().isPresent()) {

@@ -48,7 +48,7 @@ public class Dispatcher extends AbstractComponent {
     private static final CompoundName dispatchInternal = new CompoundName("dispatch.internal");
 
     /** If enabled, search queries will use protobuf rpc */
-    private static final CompoundName dispatchProtobuf = new CompoundName("dispatch.protobuf");
+    public static final CompoundName dispatchProtobuf = new CompoundName("dispatch.protobuf");
 
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;

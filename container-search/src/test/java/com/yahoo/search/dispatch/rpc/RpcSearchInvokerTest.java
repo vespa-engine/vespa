@@ -54,8 +54,8 @@ public class RpcSearchInvokerTest {
             AtomicInteger lengthHolder) {
         return new Client() {
             @Override
-            public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-                    RpcSearchInvoker responseReceiver, double timeoutSeconds) {
+            public void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength,
+                    byte[] compressedPayload, ResponseReceiver responseReceiver, double timeoutSeconds) {
                 compressionTypeHolder.set(compression);
                 payloadHolder.set(compressedPayload);
                 lengthHolder.set(uncompressedLength);

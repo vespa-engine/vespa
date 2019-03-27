@@ -7,9 +7,6 @@ import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.rpc.Client;
-import com.yahoo.search.dispatch.rpc.RpcFillInvoker;
-import com.yahoo.search.dispatch.rpc.RpcSearchInvoker;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
@@ -44,7 +41,7 @@ public class MockClient implements Client {
                            int uncompressedSize, byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver,
                            double timeoutSeconds) {
         if (malfunctioning) {
-            responseReceiver.receive(GetDocsumsResponseOrError.fromError("Malfunctioning"));
+            responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
             return;
         }
 
@@ -74,25 +71,25 @@ public class MockClient implements Client {
         Compressor.Compression compressionResult = compressor.compress(compression, slimeBytes);
         GetDocsumsResponse response = new GetDocsumsResponse(compressionResult.type().getCode(), slimeBytes.length,
                                                              compressionResult.data(), hitsContext);
-        responseReceiver.receive(GetDocsumsResponseOrError.fromResponse(response));
+        responseReceiver.receive(ResponseOrError.fromResponse(response));
     }
 
     @Override
-    public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-            RpcSearchInvoker responseReceiver, double timeoutSeconds) {
+    public void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
+            ResponseReceiver responseReceiver, double timeoutSeconds) {
         if (malfunctioning) {
-            responseReceiver.receive(SearchResponseOrError.fromError("Malfunctioning"));
+            responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
             return;
         }
 
         if(searchResult == null) {
-            responseReceiver.receive(SearchResponseOrError.fromError("No result defined"));
+            responseReceiver.receive(ResponseOrError.fromError("No result defined"));
             return;
         }
         var payload = ProtobufSerialization.serializeResult(searchResult);
         var compressionResult = compressor.compress(compression, payload);
-        var response = new SearchResponse(compressionResult.type().getCode(), payload.length, compressionResult.data());
-        responseReceiver.receive(SearchResponseOrError.fromResponse(response));
+        var response = new ProtobufResponse(compressionResult.type().getCode(), payload.length, compressionResult.data());
+        responseReceiver.receive(ResponseOrError.fromResponse(response));
     }
 
     public void setDocsumReponse(String nodeId, int docId, String docsumClass, Map<String, Object> docsumValues) {
