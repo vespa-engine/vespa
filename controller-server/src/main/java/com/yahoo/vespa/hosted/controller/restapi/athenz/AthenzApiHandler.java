@@ -9,11 +9,15 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
+import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,10 +32,12 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     private final static Logger log = Logger.getLogger(AthenzApiHandler.class.getName());
 
     private final AthenzFacade athenz;
+    private final EntityService properties;
 
-    public AthenzApiHandler(Context parentCtx, AthenzFacade athenz) {
+    public AthenzApiHandler(Context parentCtx, AthenzFacade athenz, EntityService properties) {
         super(parentCtx);
         this.athenz = athenz;
+        this.properties = properties;
     }
 
     @Override
@@ -55,9 +61,22 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/athenz/v1/domains")) return domainList(request);
+        if (path.matches("/athenz/v1/properties")) return properties();
 
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
+    }
+
+    private HttpResponse properties() {
+        Slime slime = new Slime();
+        Cursor response = slime.setObject();
+        Cursor array = response.setArray("properties");
+        for (Map.Entry<PropertyId, Property> entry : properties.listProperties().entrySet()) {
+            Cursor propertyObject = array.addObject();
+            propertyObject.setString("propertyid", entry.getKey().id());
+            propertyObject.setString("property", entry.getValue().id());
+        }
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse domainList(HttpRequest request) {

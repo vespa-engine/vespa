@@ -40,8 +40,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
@@ -168,7 +166,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
-        if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
@@ -255,7 +252,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse root(HttpRequest request) {
         return recurseOverTenants(request)
                 ? recursiveRoot(request)
-                : new ResourceResponse(request, "user", "tenant", "property");
+                : new ResourceResponse(request, "user", "tenant");
     }
 
     private HttpResponse authenticatedUser(HttpRequest request) {
@@ -282,18 +279,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor response = slime.setArray();
         for (Tenant tenant : controller.tenants().asList())
             tenantInTenantsListToSlime(tenant, request.getUri(), response.addObject());
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse properties() {
-        Slime slime = new Slime();
-        Cursor response = slime.setObject();
-        Cursor array = response.setArray("properties");
-        for (Map.Entry<PropertyId, Property> entry : controller.fetchPropertyList().entrySet()) {
-            Cursor propertyObject = array.addObject();
-            propertyObject.setString("propertyid", entry.getKey().id());
-            propertyObject.setString("property", entry.getValue().id());
-        }
         return new SlimeJsonResponse(slime);
     }
 

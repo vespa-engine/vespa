@@ -36,15 +36,15 @@ public enum PathGroup {
 
     /** Read-only paths used when onboarding tenants */
     onboardingInfo("/athenz/v1/",
-                   "/athenz/v1/domains"),
+                   "/athenz/v1/domains",
+                   "/athenz/v1/properties"),
 
     /** Paths used for user management */
     userManagement("/user/v1/{*}"), // TODO probably add tenant and application levels.
 
     /** Paths used by tenant administrators */
-    tenantInfo("/application/v4/",
-               "/application/v4/property/",
-               "/application/v4/tenant/"),
+    tenantInfo("/application/v4/", // TODO move
+               "/application/v4/tenant/"), // TODO move
 
     /** Paths used by tenant administrators */
     tenant(Matcher.tenant,
