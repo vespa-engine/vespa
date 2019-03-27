@@ -17,10 +17,9 @@ import java.util.Set;
  */
 public enum PathGroup {
 
-    /** Paths used for system management by operators */
+    /** Paths used for system management by operators. */
     operator("/controller/v1/{*}",
              "/cost/v1/{*}",
-             "/deployment/v1/{*}",
              "/flags/v1/{*}",
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}",
@@ -28,57 +27,65 @@ public enum PathGroup {
              "/provision/v2/{*}",
              "/zone/v2/{*}"),
 
-    /** Paths used for creating user tenants */
-    onboardingUser("/application/v4/user"),
-
-    /** Paths used for creating tenants with access control */
-    onboarding("/application/v4/tenant/{ignored}"),
-
-    /** Read-only paths used when onboarding tenants */
-    onboardingInfo("/athenz/v1/",
-                   "/athenz/v1/domains",
-                   "/athenz/v1/properties"),
-
-    /** Paths used for user management */
+    /** Paths used for user management. */
     userManagement("/user/v1/{*}"), // TODO probably add tenant and application levels.
 
-    /** Paths used by tenant administrators */
-    tenantInfo("/application/v4/", // TODO move
-               "/application/v4/tenant/"), // TODO move
+    /** Paths used for creating user tenants. */
+    onboardingUser("/application/v4/user"),
 
-    /** Paths used by tenant administrators */
+    /** Paths used for creating tenants with proper access control. */
+    onboarding("/application/v4/tenant/{ignored}"),
+
+    /** Paths used by tenant administrators. */
     tenant(Matcher.tenant,
            "/application/v4/tenant/{tenant}",
            "/application/v4/tenant/{tenant}/application/"),
 
-    /** Paths used by application administrators */
+    /** Paths used by application administrators. */
     application(Matcher.tenant,
                 Matcher.application,
                 "/application/v4/tenant/{tenant}/application/{application}",
                 "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}",
                 "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/override"),
 
-    /** Paths used for deployments by build service(s) */
+    /** Paths used for direct deployment to development zones. */
+    development(Matcher.tenant,
+                Matcher.application,
+                "/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}",
+                "/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}"),
+
+    /** Paths used for direct deployment to production zones. */
+    deployment(Matcher.tenant,
+               Matcher.application,
+               "/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}",
+               "/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}",
+               "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
+
+    /** Paths used for continuous deployment to production. */
+    submission(Matcher.tenant,
+                 Matcher.application,
+                 "/application/v4/tenant/{tenant}/application/{application}/submit"),
+
+    /** Paths used for other tasks by build services. */ // TODO: This will vanish.
     buildService(Matcher.tenant,
                  Matcher.application,
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
-                 "/application/v4/tenant/{tenant}/application/{application}/submit",
-                 "/application/v4/tenant/{tenant}/application/{application}/promote",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
+                 "/application/v4/tenant/{tenant}/application/{application}/promote"),
 
-    /** Read-only paths providing information related to deployments */
-    deploymentStatus("/badge/v1/{*}",
-                     "/zone/v1/{*}"),
+    /** Paths which contain (not very strictly) classified information about, e.g., customers. */
+    classifiedInfo("/athenz/v1/{*}",
+                   "/deployment/v1/{*}",
+                   "/application/v4/",
+                   "/application/v4/tenant/",
+                   "/",
+                   "/d/{*}",
+                   "/statuspage/v1/{*}"
+    ),
 
-    /** Paths used by some dashboard */
-    dashboard("/",
-              "/d/{*}",
-              "/statuspage/v1/{*}");
+    /** Paths providing public information. */
+    publicInfo("/badge/v1/{*}",
+               "/zone/v1/{*}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;

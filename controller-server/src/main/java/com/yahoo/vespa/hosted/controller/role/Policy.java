@@ -12,40 +12,75 @@ import java.util.Set;
  */
 public enum Policy {
 
-    /** Operator policy allows access to everything in all systems */
+    /** Full access to everything. */
     operator(Privilege.grant(Action.all())
                       .on(PathGroup.all())
                       .in(SystemName.all())),
 
-    /**
-     * Tenant policy allows tenants to access their own tenant, in all systems, and allows global read access in
-     * selected systems
-     */
+    /** Full access to user management in select systems. */
+    manager(Privilege.grant(Action.all())
+                     .on(PathGroup.userManagement)
+                     .in(SystemName.Public)),
+
+    /** Access to create a user tenant in select systems. */
+    onboardUser(Privilege.grant(Action.update)
+                         .on(PathGroup.onboardingUser)
+                         .in(SystemName.main, SystemName.cd, SystemName.dev)),
+
+    /** Access to create a user tenant in select systems. */
+    onboardTenant(Privilege.grant(Action.create)
+                           .on(PathGroup.onboarding)
+                           .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
+
+    /** Full access to tenant information and settings. */
     tenant(Privilege.grant(Action.all())
-                    .on(PathGroup.tenantInfo, PathGroup.tenant, PathGroup.application)
+                    .on(PathGroup.tenant)
                     .in(SystemName.all())),
 
-    /** Build service policy only allows access relevant for build service(s) */
+    /** Read access to tenant information and settings. */
+    tenantRead(Privilege.grant(Action.read)
+                        .on(PathGroup.tenant)
+                        .in(SystemName.all())),
+
+    /** Full access to application information, settings and jobs. */
+    application(Privilege.grant(Action.all())
+                         .on(PathGroup.application)
+                         .in(SystemName.all())),
+
+    /** Read access to application information and settings. */
+    applicationRead(Privilege.grant(Action.read)
+                             .on(PathGroup.application)
+                             .in(SystemName.all())),
+
+    /** Full access to application development deployments. */
+    development(Privilege.grant(Action.all())
+                         .on(PathGroup.development)
+                         .in(SystemName.all())),
+
+    /** Full access to application production deployments. */
+    deployment(Privilege.grant(Action.all())
+                         .on(PathGroup.deployment)
+                         .in(SystemName.all())),
+
+    /** Full access to submissions for continuous deployment. */
+    submission(Privilege.grant(Action.all())
+                        .on(PathGroup.submission)
+                        .in(SystemName.all())),
+
+    /** Full access to the additional tasks needed for continuous deployment. */
     buildService(Privilege.grant(Action.all())
                           .on(PathGroup.buildService)
                           .in(SystemName.all())),
 
-    /** Unauthorized policy allows creation of tenants and read of everything in selected systems */
-    unauthorized(Privilege.grant(Action.update)
-                          .on(PathGroup.onboardingUser)
-                          .in(SystemName.main, SystemName.cd, SystemName.dev),
-                 Privilege.grant(Action.create)
-                          .on(PathGroup.onboarding)
-                          .in(SystemName.main, SystemName.cd, SystemName.dev), // TODO System.all()
-                 Privilege.grant(Action.read)
-                          .on(PathGroup.onboardingInfo)
-                          .in(SystemName.main, SystemName.cd, SystemName.dev),
-                 Privilege.grant(Action.read)
-                          .on(PathGroup.all())
-                          .in(SystemName.main, SystemName.cd, SystemName.dev),
-                 Privilege.grant(Action.read)
-                          .on(PathGroup.deploymentStatus)
-                          .in(SystemName.all()));
+    /** Read access to all information in select systems. */
+    classifiedRead(Privilege.grant(Action.read)
+                            .on(PathGroup.all())
+                            .in(SystemName.main, SystemName.cd, SystemName.dev)),
+
+    /** Read access to public info. */
+    publicRead(Privilege.grant(Action.read)
+                        .on(PathGroup.publicInfo)
+                        .in(SystemName.all()));
 
     private final Set<Privilege> privileges;
 

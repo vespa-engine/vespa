@@ -13,9 +13,19 @@ import java.util.Set;
 public enum Role {
 
     hostedOperator(Policy.operator),
-    tenantAdmin(Policy.tenant),
-    tenantPipelineOperator(Policy.buildService),
-    everyone(Policy.unauthorized);
+
+    tenantAdmin(Policy.tenant,
+                Policy.application,
+                Policy.development),
+
+    tenantPipelineOperator(Policy.buildService,
+                           Policy.submission,
+                           Policy.deployment),
+
+    everyone(Policy.classifiedRead,
+             Policy.publicRead,
+             Policy.onboardUser,
+             Policy.onboardTenant);
 
     private final Set<Policy> policies;
 
