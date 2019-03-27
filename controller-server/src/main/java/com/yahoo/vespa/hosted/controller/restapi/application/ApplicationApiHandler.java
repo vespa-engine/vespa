@@ -168,7 +168,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
-        if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
         if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
@@ -256,7 +255,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse root(HttpRequest request) {
         return recurseOverTenants(request)
                 ? recursiveRoot(request)
-                : new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain", "property");
+                : new ResourceResponse(request, "user", "tenant", "property");
     }
 
     private HttpResponse authenticatedUser(HttpRequest request) {
@@ -283,24 +282,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor response = slime.setArray();
         for (Tenant tenant : controller.tenants().asList())
             tenantInTenantsListToSlime(tenant, request.getUri(), response.addObject());
-        return new SlimeJsonResponse(slime);
-    }
-
-    /** Lists the screwdriver project id for each application */
-    private HttpResponse tenantPipelines() {
-        Slime slime = new Slime();
-        Cursor response = slime.setObject();
-        Cursor pipelinesArray = response.setArray("tenantPipelines");
-        for (Application application : controller.applications().asList()) {
-            if ( ! application.deploymentJobs().projectId().isPresent()) continue;
-
-            Cursor pipelineObject = pipelinesArray.addObject();
-            pipelineObject.setString("screwdriverId", String.valueOf(application.deploymentJobs().projectId().getAsLong()));
-            pipelineObject.setString("tenant", application.id().tenant().value());
-            pipelineObject.setString("application", application.id().application().value());
-            pipelineObject.setString("instance", application.id().instance().value());
-        }
-        response.setArray("brokenTenantPipelines"); // not used but may need to be present
         return new SlimeJsonResponse(slime);
     }
 

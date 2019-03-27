@@ -32,11 +32,11 @@ public enum PathGroup {
     onboardingUser("/application/v4/user"),
 
     /** Paths used for creating tenants with access control */
-    onboardingTenant("/application/v4/tenant/{ignored}"),
+    onboarding("/application/v4/tenant/{ignored}"),
 
     /** Read-only paths used when onboarding tenants */
-    onboardingTenantInformation("/athenz/v1/",
-                                "/athenz/v1/domains"),
+    onboardingInfo("/athenz/v1/",
+                   "/athenz/v1/domains"),
 
     /** Paths used for user management */
     userManagement("/user/v1/{*}"), // TODO probably add tenant and application levels.
@@ -44,8 +44,7 @@ public enum PathGroup {
     /** Paths used by tenant administrators */
     tenantInfo("/application/v4/",
                "/application/v4/property/",
-               "/application/v4/tenant/",
-               "/application/v4/tenant-pipeline/"),
+               "/application/v4/tenant/"),
 
     /** Paths used by tenant administrators */
     tenant(Matcher.tenant,
