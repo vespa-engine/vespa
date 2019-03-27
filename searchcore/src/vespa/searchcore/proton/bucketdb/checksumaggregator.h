@@ -7,6 +7,9 @@
 
 namespace proton::bucketdb {
 
+/**
+ * Interface for aggregating bucket checksums.
+ **/
 class ChecksumAggregator {
 public:
     enum class ChecksumType {LEGACY, XXHASH64};

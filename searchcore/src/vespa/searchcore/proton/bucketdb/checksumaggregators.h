@@ -4,6 +4,9 @@
 
 namespace proton::bucketdb {
 
+/**
+ * Implementations of the legacy bucket checksums.
+ **/
 class LegacyChecksumAggregator : public ChecksumAggregator {
 public:
     LegacyChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
@@ -18,6 +21,9 @@ private:
     uint32_t _checksum;
 };
 
+/**
+ * Implementations of the bucket checksums based on XXHASH64.
+ **/
 class XXHChecksumAggregator : public ChecksumAggregator {
 public:
     XXHChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
