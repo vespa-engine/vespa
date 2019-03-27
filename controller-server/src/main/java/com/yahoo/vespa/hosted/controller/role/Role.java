@@ -18,7 +18,8 @@ public enum Role {
     /** Tenant administrator with full access to all child resources. */
     tenantAdmin(Policy.manager,
                 Policy.tenant,
-                Policy.application),
+                Policy.application,
+                Policy.development), // TODO remove, as it is covered by applicationAdmin.
 
     /** Build and continuous delivery service. */
     tenantPipelineOperator(Policy.buildService,
