@@ -1,0 +1,10 @@
+{
+  "resources":[
+    {
+      "url":"http://localhost:8080/athenz/v1/domains/"
+    },
+    {
+      "url":"http://localhost:8080/athenz/v1/properties/"
+    }
+  ]
+}

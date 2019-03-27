@@ -23,14 +23,13 @@ public class AthenzApiTest extends ControllerContainerTest {
         ((AthenzClientFactoryMock) tester.container().components().getComponent(AthenzClientFactoryMock.class.getName()))
                 .getSetup().addDomain(new AthenzDbMock.Domain(new AthenzDomain("domain1")));
 
+        // GET root
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/"),
+                              new File("root.json"));
+
         // GET Athenz domains
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/domains"),
                               new File("athensDomain-list.json"));
-
-        // GET root — nothing set up here
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No 'GET' handler at '/athenz/v1/'\"}",
-                              404);
 
         // GET properties
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/properties/"),
