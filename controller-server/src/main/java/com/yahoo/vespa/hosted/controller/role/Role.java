@@ -5,9 +5,11 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * This declares all tenant roles known to the controller. A role contains one or more {@link Policy}'s which decide
- * what actions a member of a role can perform, and, optionally, a "lower ranking" role from which all policies are
- * inherited. Read the list of roles from everyone to tenantAdmin, in order, to see what policies such a role includes.
+ * This declares all tenant roles known to the controller. A role contains one or more {@link Policy}s which decide
+ * what actions a member of a role can perform.
+ *
+ * Optionally, some role definition also inherit all policies from a "lower ranking" role. Read the list of roles
+ * from {@code everyone} to {@code tenantAdmin}, in order, to see what policies these roles.
  *
  * @author mpolden
  * @author jonmv

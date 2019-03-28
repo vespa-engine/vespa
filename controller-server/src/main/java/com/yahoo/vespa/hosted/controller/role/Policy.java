@@ -1,12 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.role;
 
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 
 import java.util.Set;
 
 /**
  * Policies for REST APIs in the controller. A policy is only considered when defined in a {@link Role}.
+ * A policy describes a set of {@link Privilege}s, which are valid for a set of {@link SystemName}s.
+ * A policy is evaluated with a {@link Context}, which provides the {@link SystemName} the policy is
+ * evaluated in, and any limitations to a specific {@link TenantName} or {@link ApplicationName}.
  *
  * @author mpolden
  */
