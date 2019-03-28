@@ -6,9 +6,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Test;
 
-import java.util.Map;
-import java.util.Set;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -19,7 +16,9 @@ public class RoleMembershipTest {
 
     @Test
     public void operator_membership() {
-        RoleMembership roles = new RoleMembership(Map.of(Role.hostedOperator, Set.of(Context.unlimitedIn(SystemName.main))));
+        RoleMembership roles = RoleMembership.in(SystemName.main)
+                                             .add(Role.hostedOperator)
+                                             .build();
 
         // Operator actions
         assertFalse(roles.allows(Action.create, "/not/explicitly/defined"));
@@ -31,39 +30,34 @@ public class RoleMembershipTest {
 
     @Test
     public void tenant_membership() {
-        RoleMembership roles = new RoleMembership(Map.of(Role.tenantAdmin,
-                                                         Set.of(Context.limitedTo(TenantName.from("t1"),
-                                                                                  ApplicationName.from("a1"),
-                                                                                  SystemName.main))));
-
+        RoleMembership roles = RoleMembership.in(SystemName.main)
+                                             .add(Role.tenantAdmin).limitedTo(TenantName.from("t1"), ApplicationName.from("a1"))
+                                             .build();
         assertFalse(roles.allows(Action.create, "/not/explicitly/defined"));
         assertFalse("Deny access to operator API", roles.allows(Action.create, "/controller/v1/foo"));
         assertFalse("Deny access to other tenant and app", roles.allows(Action.update, "/application/v4/tenant/t2/application/a2"));
         assertFalse("Deny access to other app", roles.allows(Action.update, "/application/v4/tenant/t1/application/a2"));
         assertTrue(roles.allows(Action.update, "/application/v4/tenant/t1/application/a1"));
 
-        RoleMembership multiContext = new RoleMembership(Map.of(Role.tenantAdmin,
-                                                         Set.of(Context.limitedTo(TenantName.from("t1"),
-                                                                                  ApplicationName.from("a1"),
-                                                                                  SystemName.main),
-                                                                Context.limitedTo(TenantName.from("t2"),
-                                                                                  ApplicationName.from("a2"),
-                                                                                  SystemName.main))));
+        RoleMembership multiContext = RoleMembership.in(SystemName.main)
+                                                    .add(Role.tenantAdmin).limitedTo(TenantName.from("t1"), ApplicationName.from("a1"))
+                                                    .add(Role.tenantAdmin).limitedTo(TenantName.from("t2"), ApplicationName.from("a2"))
+                                                    .build();
         assertFalse("Deny access to other tenant and app", multiContext.allows(Action.update, "/application/v4/tenant/t3/application/a3"));
         assertTrue(multiContext.allows(Action.update, "/application/v4/tenant/t2/application/a2"));
         assertTrue(multiContext.allows(Action.update, "/application/v4/tenant/t1/application/a1"));
 
-        RoleMembership publicSystem = new RoleMembership(Map.of(Role.tenantAdmin,
-                                                                Set.of(Context.limitedTo(TenantName.from("t1"),
-                                                                                         ApplicationName.from("a1"),
-                                                                                         SystemName.vaas))));
+        RoleMembership publicSystem = RoleMembership.in(SystemName.vaas)
+                                                    .add(Role.tenantAdmin).limitedTo(TenantName.from("t1"), ApplicationName.from("a1"))
+                                                    .build();
         assertFalse(publicSystem.allows(Action.read, "/controller/v1/foo"));
         assertTrue(multiContext.allows(Action.update, "/application/v4/tenant/t1/application/a1"));
     }
 
     @Test
     public void build_service_membership() {
-        RoleMembership roles = new RoleMembership(Map.of(Role.tenantPipelineOperator, Set.of(Context.unlimitedIn(SystemName.main))));
+        RoleMembership roles = RoleMembership.in(SystemName.main)
+                                             .add(Role.tenantPipelineOperator).build();
         assertFalse(roles.allows(Action.create, "/not/explicitly/defined"));
         assertFalse(roles.allows(Action.update, "/application/v4/tenant/t1/application/a1"));
         assertTrue(roles.allows(Action.create, "/application/v4/tenant/t1/application/a1/jobreport"));
@@ -72,11 +66,11 @@ public class RoleMembershipTest {
 
     @Test
     public void multi_role_membership() {
-        RoleMembership roles = new RoleMembership(Map.of(Role.tenantAdmin, Set.of(Context.limitedTo(TenantName.from("t1"),
-                                                                                                    ApplicationName.from("a1"),
-                                                                                                    SystemName.main)),
-                                                         Role.tenantPipelineOperator, Set.of(Context.unlimitedIn(SystemName.main)),
-                                                         Role.everyone, Set.of(Context.unlimitedIn(SystemName.main))));
+        RoleMembership roles = RoleMembership.in(SystemName.main)
+                                             .add(Role.tenantAdmin).limitedTo(TenantName.from("t1"), ApplicationName.from("a1"))
+                                             .add(Role.tenantPipelineOperator)
+                                             .add(Role.everyone)
+                                             .build();
         assertFalse(roles.allows(Action.create, "/not/explicitly/defined"));
         assertFalse(roles.allows(Action.create, "/controller/v1/foo"));
         assertTrue(roles.allows(Action.create, "/application/v4/tenant/t1/application/a1/jobreport"));

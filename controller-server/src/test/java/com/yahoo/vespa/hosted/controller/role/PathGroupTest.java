@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.fail;
 
@@ -20,7 +21,7 @@ public class PathGroupTest {
                 if (pg == pg2) continue;
                 Set<String> overlapping = new LinkedHashSet<>(pg.pathSpecs);
                 overlapping.retainAll(pg2.pathSpecs);
-                if (!overlapping.isEmpty()) {
+                if ( ! overlapping.isEmpty()) {
                     fail("The following path specs overlap in " + pg + " and " + pg2 + ": " + overlapping);
                 }
             }
@@ -41,7 +42,7 @@ public class PathGroupTest {
                     int end = Math.min(parts1.length, parts2.length);
                     // If one path has more parts than the other ...
                     // and the other doesn't end with a wildcard matcher ...
-                    // and the longest one isn't just one part longer, which is a wildcard ...
+                    // and the longest one isn't just one wildcard longer ...
                     if (end < parts1.length && (end == 0 || ! parts2[end - 1].equals("{*}")) && ! parts1[end].equals("{*}")) continue;
                     if (end < parts2.length && (end == 0 || ! parts1[end - 1].equals("{*}")) && ! parts2[end].equals("{*}")) continue;
 
@@ -53,6 +54,23 @@ public class PathGroupTest {
 
                     if (i == end) fail("Paths '" + path1 + "' and '" + path2 + "' overlap.");
                 }
+    }
+
+    @Test
+    public void contextMatches() {
+        for (PathGroup group : PathGroup.values())
+            for (String spec : group.pathSpecs) {
+                for (PathGroup.Matcher matcher : PathGroup.Matcher.values()) {
+                    if (group.matchers.contains(matcher)) {
+                        if ( ! spec.contains(matcher.pattern))
+                            fail("Spec '" + spec + "' in '" + group.name() + "' should contain matcher '" + matcher.pattern + "'.");
+                        if (spec.replaceFirst(Pattern.quote(matcher.pattern), "").contains(matcher.pattern))
+                            fail("Spec '" + spec + "' in '" + group.name() + "' contains more than one instance of '" + matcher.pattern + "'.");
+                    }
+                    else if (spec.contains(matcher.pattern))
+                        fail("Spec '" + spec + "' in '" + group.name() + "' should not contain matcher '" + matcher.pattern + "'.");
+                }
+            }
     }
 
 }
