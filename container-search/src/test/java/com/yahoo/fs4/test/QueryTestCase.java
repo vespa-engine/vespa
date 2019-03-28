@@ -192,6 +192,15 @@ public class QueryTestCase {
     }
 
     @Test
+    public void testBufferExpands() throws BufferTooSmallException {
+        Query query = new Query("/?query=chain&sortspec=%2Ba+-b&timeout=0");
+        QueryPacket packet = QueryPacket.create("container.0", query);
+
+        ByteBuffer buffer = packet.grantEncodingBuffer(0, ByteBuffer.allocate(2));
+        assertEquals(64, buffer.capacity());
+    }
+
+    @Test
     public void testPhraseEqualsPhraseWithPhraseSegment() throws BufferTooSmallException {
         Query query = new Query();
         PhraseItem p = new PhraseItem();

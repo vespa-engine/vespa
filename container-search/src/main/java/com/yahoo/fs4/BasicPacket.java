@@ -232,7 +232,7 @@ public abstract class BasicPacket {
                 break;
             }
             catch (BufferTooSmallException e) {
-                buffer = ByteBuffer.allocate(buffer.capacity());
+                buffer = ByteBuffer.allocate(buffer.capacity()*2);
             }
         }
         return buffer;
