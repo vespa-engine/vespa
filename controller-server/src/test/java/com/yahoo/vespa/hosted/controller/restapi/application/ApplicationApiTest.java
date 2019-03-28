@@ -139,9 +139,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET API root
         tester.assertResponse(request("/application/v4/", GET).userIdentity(USER_ID),
                               new File("root.json"));
-        // GET OpsDB properties
-        tester.assertResponse(request("/application/v4/property/", GET).userIdentity(USER_ID),
-                              new File("property-list.json"));
         // POST (add) a tenant without property ID
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
@@ -351,10 +348,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT),
                               "");
 
-        // GET tenant screwdriver projects
-        tester.assertResponse(request("/application/v4/tenant-pipeline/", GET)
-                                      .userIdentity(USER_ID),
-                              new File("tenant-pipelines.json"));
         setDeploymentMaintainedInfo(controllerTester);
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)

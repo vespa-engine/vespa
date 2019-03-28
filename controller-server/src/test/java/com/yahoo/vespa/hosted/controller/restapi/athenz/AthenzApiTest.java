@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.restapi.application;
+package com.yahoo.vespa.hosted.controller.restapi.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
@@ -15,7 +15,7 @@ import java.io.File;
  */
 public class AthenzApiTest extends ControllerContainerTest {
 
-    private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
+    private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/athenz/responses/";
 
     @Test
     public void testAthenzApi() {
@@ -23,11 +23,17 @@ public class AthenzApiTest extends ControllerContainerTest {
         ((AthenzClientFactoryMock) tester.container().components().getComponent(AthenzClientFactoryMock.class.getName()))
                 .getSetup().addDomain(new AthenzDbMock.Domain(new AthenzDomain("domain1")));
 
+        // GET root
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/"),
+                              new File("root.json"));
+
+        // GET Athenz domains
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/domains"),
                               new File("athensDomain-list.json"));
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No 'GET' handler at '/athenz/v1/'\"}",
-                              404);
+
+        // GET properties
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/properties/"),
+                              new File("property-list.json"));
     }
 
 }

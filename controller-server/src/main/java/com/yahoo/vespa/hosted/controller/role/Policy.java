@@ -35,10 +35,10 @@ public enum Policy {
                           .on(PathGroup.onboardingUser)
                           .in(SystemName.main, SystemName.cd, SystemName.dev),
                  Privilege.grant(Action.create)
-                          .on(PathGroup.onboardingTenant)
+                          .on(PathGroup.onboarding)
                           .in(SystemName.main, SystemName.cd, SystemName.dev), // TODO System.all()
                  Privilege.grant(Action.read)
-                          .on(PathGroup.onboardingTenantInformation)
+                          .on(PathGroup.onboardingInfo)
                           .in(SystemName.main, SystemName.cd, SystemName.dev),
                  Privilege.grant(Action.read)
                           .on(PathGroup.all())
