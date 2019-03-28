@@ -7,6 +7,7 @@ vespa_add_executable(storageapi_gtest_runner_app TEST
     gtest_runner.cpp
     DEPENDS
     storageapi_testbuckets
+    storageapi_testmbusprot
     storageapi
     gtest
 )
@@ -22,7 +23,6 @@ vespa_add_executable(storageapi_testrunner_app TEST
     testrunner.cpp
     DEPENDS
     storageapi_testmessageapi
-    storageapi_testmbusprot
     storageapi
 )
 
