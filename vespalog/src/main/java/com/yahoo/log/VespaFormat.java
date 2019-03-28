@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,6 +106,12 @@ public class VespaFormat {
         sbuffer.append(timeString.substring(len - 3));
     }
 
+    static String formatTime(Instant instant) {
+        StringBuilder builder = new StringBuilder();
+        VespaFormat.formatTime(instant.toEpochMilli(), builder);
+        return builder.toString();
+    }
+
     public static String format(String levelName,
                                 String component,
                                 String componentPrefix,
@@ -191,6 +198,13 @@ public class VespaFormat {
             depth++;
         }
         sbuf.append(" nesting=").append(depth);
+    }
+
+    static String formatThreadProcess(long processId, long threadId) {
+        if (threadId == 0) {
+            return Long.toString(processId);
+        }
+        return processId + "/" + threadId;
     }
 
 }

@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.event.Event;
+import com.yahoo.log.event.MalformedEventException;
+
+import java.time.Instant;
+import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.yahoo.log.event.Event;
-import com.yahoo.log.event.MalformedEventException;
 
 /**
  * This class implements the common ground log message used by
@@ -16,6 +19,7 @@ import com.yahoo.log.event.MalformedEventException;
  * which is used in java.util.logging.
  *
  * @author  Bjorn Borud
+ * @author bjorncs
  */
 public class LogMessage
 {
@@ -31,10 +35,10 @@ public class LogMessage
                         "(.+)$"         // payload
                         );
 
-    private long     time;
-    private String   timeStr;
+    private Instant time;
     private String   host;
-    private String   threadProcess;
+    private long     processId;
+    private long     threadId;
     private String   service;
     private String   component;
     private Level    level;
@@ -45,24 +49,45 @@ public class LogMessage
      * Private constructor.  Log messages should never be instantiated
      * directly; only as the result of a static factory method.
      */
-    private LogMessage (String timeStr, Long time, String host, String threadProcess,
+    private LogMessage (Instant time, String host, long processId, long threadId,
                         String service, String component, Level level,
                         String payload)
     {
-        this.timeStr = timeStr;
         this.time = time;
         this.host = host;
-        this.threadProcess = threadProcess;
+        this.processId = processId;
+        this.threadId = threadId;
         this.service = service;
         this.component = component;
         this.level = level;
         this.payload = payload;
     }
 
-    public long     getTime ()          {return time;}
-    public long     getTimeInSeconds () {return time / 1000;}
+    public static LogMessage of(
+            Instant time, String host, long processId, long threadId,
+            String service, String component, Level level, String payload) {
+        return new LogMessage(time, host, processId, threadId, service, component, level, payload);
+    }
+
+    public Instant  getTimestamp()       {return time;}
+    /**
+     * @deprecated Use {@link #getTimestamp()}
+     */
+    @Deprecated(since = "7", forRemoval = true)
+    public long     getTime ()          {return time.toEpochMilli();}
+    /**
+     * @deprecated Use {@link #getTimestamp()}
+     */
+    @Deprecated(since = "7", forRemoval = true)
+    public long     getTimeInSeconds () {return time.getEpochSecond();}
     public String   getHost ()          {return host;}
-    public String   getThreadProcess () {return threadProcess;}
+    public long     getProcessId()      {return processId;}
+    public OptionalLong getThreadId()      {return threadId > 0 ? OptionalLong.of(threadId) : OptionalLong.empty();}
+    /**
+     * @deprecated Use {@link #getProcessId()} / {@link #getThreadId()}
+     */
+    @Deprecated(since = "7", forRemoval = true)
+    public String   getThreadProcess () {return VespaFormat.formatThreadProcess(processId, threadId);}
     public String   getService ()       {return service;}
     public String   getComponent ()     {return component;}
     public Level    getLevel ()         {return level;}
@@ -85,19 +110,37 @@ public class LogMessage
         }
 
         Level msgLevel = LogLevel.parse(m.group(6));
-        Long timestamp = parseTimestamp(m.group(1));
+        Instant timestamp = parseTimestamp(m.group(1));
+        String threadProcess = m.group(3);
 
-        return new LogMessage(m.group(1), timestamp, m.group(2), m.group(3),
+        return new LogMessage(timestamp, m.group(2), parseProcessId(threadProcess), parseThreadId(threadProcess),
                               m.group(4), m.group(5), msgLevel,
                               m.group(7));
     }
 
-    private static long parseTimestamp(String timeStr) throws InvalidLogFormatException {
+    private static Instant parseTimestamp(String timeStr) throws InvalidLogFormatException {
         try {
-            return (long) (Double.parseDouble(timeStr) * 1000);
+            long nanoseconds = (long) (Double.parseDouble(timeStr) * 1_000_000_000L);
+            return Instant.ofEpochSecond(0, nanoseconds);
         } catch (NumberFormatException e) {
-            throw new InvalidLogFormatException("Invalid time string:" + timeStr);
+            throw new InvalidLogFormatException("Invalid time string: " + timeStr);
         }
+    }
+
+    private static long parseProcessId(String threadProcess) {
+        int slashIndex = threadProcess.indexOf('/');
+        if (slashIndex == -1) {
+            return Long.parseLong(threadProcess);
+        }
+        return Long.parseLong(threadProcess.substring(0, slashIndex));
+    }
+
+    private static long parseThreadId(String threadProcess) {
+        int slashIndex = threadProcess.indexOf('/');
+        if (slashIndex == -1) {
+            return 0;
+        }
+        return Long.parseLong(threadProcess.substring(slashIndex + 1));
     }
 
     /**
@@ -117,7 +160,7 @@ public class LogMessage
         if ((level == LogLevel.EVENT) && (event == null)) {
             try {
                 event = Event.parse(getPayload());
-                event.setTime(time);
+                event.setTime(time.toEpochMilli());
             }
             catch (MalformedEventException e) {
                 log.log(LogLevel.DEBUG, "Got malformed event: " + getPayload());
@@ -131,6 +174,8 @@ public class LogMessage
      * Return valid representation of log message.
      */
     public String toString () {
+        String threadProcess = VespaFormat.formatThreadProcess(processId, threadId);
+        String timeStr = VespaFormat.formatTime(time);
         return new StringBuilder(timeStr.length()
                                 + host.length()
                                 + threadProcess.length()
@@ -147,5 +192,26 @@ public class LogMessage
             .append(level.toString().toLowerCase()).append("\t")
             .append(payload).append("\n")
             .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LogMessage that = (LogMessage) o;
+        return processId == that.processId &&
+                threadId == that.threadId &&
+                Objects.equals(time, that.time) &&
+                Objects.equals(host, that.host) &&
+                Objects.equals(service, that.service) &&
+                Objects.equals(component, that.component) &&
+                Objects.equals(level, that.level) &&
+                Objects.equals(payload, that.payload) &&
+                Objects.equals(event, that.event);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(time, host, processId, threadId, service, component, level, payload, event);
     }
 }
