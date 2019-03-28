@@ -13,4 +13,4 @@ install_config_definition(src/main/resources/configdefinitions/servlet-config.de
 install_config_definition(src/main/resources/configdefinitions/threadpool.def container.handler.threadpool.def)
 install_config_definition(src/main/resources/configdefinitions/vip-status.def container.core.vip-status.def)
 
-vespa_install_script(src/main/sh/vespa-load-balancer-status.sh libexec/vespa)
+vespa_install_script(src/main/sh/vespa-load-balancer-status libexec/vespa)
