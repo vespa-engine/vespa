@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import java.util.Map;
 
 /**
+ * Consumes a snapshot of resourses allocated/used per application.
+ *
  * @author olaa
  */
 public interface ResourceSnapshotConsumer {

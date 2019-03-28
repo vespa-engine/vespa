@@ -5,11 +5,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 
 import java.util.List;
 
+/**
+ * Stores the total amount of resources allocated to a list of nodes
+ *
+ * @author leandroalves
+ */
 public class ResourceAllocation {
 
-    final double cpuCores;
-    final double memoryGb;
-    final double diskGb;
+    private final double cpuCores;
+    private final double memoryGb;
+    private final double diskGb;
 
     private ResourceAllocation(double cpuCores, double memoryGb, double diskGb) {
         this.cpuCores = cpuCores;

@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
  */
 public class ResourceMeterMaintainerTest {
 
-    private final double DELTA = 0.00001;
+    private final double DELTA = Double.MIN_VALUE;
     NodeRepositoryClientMock nodeRepository = new NodeRepositoryClientMock();
     MockResourceSnapshotConsumer snapshotConsumer = new MockResourceSnapshotConsumer();
 
