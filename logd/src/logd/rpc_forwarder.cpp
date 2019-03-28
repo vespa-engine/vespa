@@ -23,7 +23,8 @@ RpcForwarder::RpcForwarder(const vespalib::string &hostname, int rpc_port,
       _max_messages_per_request(max_messages_per_request),
       _supervisor(),
       _target(),
-      _messages()
+      _messages(),
+      _bad_lines(0)
 {
     _supervisor.Start();
     _target = _supervisor.GetTarget(_connection_spec.c_str());
@@ -69,6 +70,7 @@ RpcForwarder::forwardLine(std::string_view line)
         message.parse_log_line(line);
     } catch (BadLogLineException &e) {
         LOG(spam, "Skipping bad logline: %s", e.what());
+        ++_bad_lines;
         return;
     }
     _messages.push_back(std::move(message));
@@ -107,12 +109,13 @@ RpcForwarder::flush()
 int
 RpcForwarder::badLines() const
 {
-    return 0;
+    return _bad_lines;
 }
 
 void
 RpcForwarder::resetBadLines()
 {
+    _bad_lines = 0;
 }
 
 }

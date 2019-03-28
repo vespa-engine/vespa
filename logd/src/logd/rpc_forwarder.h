@@ -21,6 +21,7 @@ private:
     FRT_Supervisor _supervisor;
     FRT_Target* _target;
     std::vector<ns_log::LogMessage> _messages;
+    int _bad_lines;
 
 public:
     RpcForwarder(const vespalib::string& logserver_host, int logserver_rpc_port,

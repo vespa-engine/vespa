@@ -93,6 +93,9 @@ struct RpcForwarderTest : public ::testing::Test {
     void forward_line(const std::string& payload) {
         forwarder.forwardLine(make_log_line(payload));
     }
+    void forward_bad_line() {
+        forwarder.forwardLine("badline");
+    }
     void flush() {
         forwarder.flush();
     }
@@ -142,6 +145,23 @@ TEST_F(RpcForwarderTest, automatically_sends_rpc_when_max_messages_limit_is_reac
     expect_messages(1, {"a", "b", "c"});
     forward_line("f");
     expect_messages(2, {"a", "b", "c", "d", "e", "f"});
+}
+
+TEST_F(RpcForwarderTest, bad_log_lines_are_counted_but_not_sent)
+{
+    forward_line("a");
+    forward_bad_line();
+    EXPECT_EQ(1, forwarder.badLines());
+    flush();
+    expect_messages(1, {"a"});
+}
+
+TEST_F(RpcForwarderTest, bad_log_lines_count_can_be_reset)
+{
+    forward_bad_line();
+    EXPECT_EQ(1, forwarder.badLines());
+    forwarder.resetBadLines();
+    EXPECT_EQ(0, forwarder.badLines());
 }
 
 TEST_F(RpcForwarderTest, throws_when_rpc_reply_contains_errors)
