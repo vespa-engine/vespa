@@ -52,7 +52,6 @@ import java.util.logging.Logger;
  *
  * @author  baldersheim
  */
-@SuppressWarnings("deprecation")
 public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
