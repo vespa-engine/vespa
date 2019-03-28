@@ -2,6 +2,8 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
+import com.yahoo.compress.Compressor;
+import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.FastHit;
 
 import java.util.List;

@@ -29,7 +29,7 @@ public class LoadBalancerTest {
     @Test
     public void requireThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new Node(0, "test-node1", 0, 0);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1), null, 1, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1), 1, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -43,7 +43,7 @@ public class LoadBalancerTest {
     public void requireThatLoadBalancerServesMultiGroupSetups() {
         Node n1 = new Node(0, "test-node1", 0, 0);
         Node n2 = new Node(1, "test-node2", 1, 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, 1, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), 1, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -59,7 +59,7 @@ public class LoadBalancerTest {
         Node n2 = new Node(1, "test-node2", 1, 0);
         Node n3 = new Node(0, "test-node3", 0, 1);
         Node n4 = new Node(1, "test-node4", 1, 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2, n3, n4), null, 2, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2, n3, n4), 2, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -70,7 +70,7 @@ public class LoadBalancerTest {
     public void requireThatLoadBalancerReturnsDifferentGroups() {
         Node n1 = new Node(0, "test-node1", 0, 0);
         Node n2 = new Node(1, "test-node2", 1, 1);
-        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), null, 1, null);
+        SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), 1, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
         // get first group

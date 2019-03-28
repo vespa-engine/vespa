@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
+import com.yahoo.fs4.PongPacket;
+import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.statistics.ElapsedTime;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import com.yahoo.fs4.PongPacket;
-import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.statistics.ElapsedTime;
 
 /**
  * An answer from Ping.
@@ -21,20 +21,29 @@ public class Pong {
     private final List<ErrorMessage> errors = new ArrayList<>(1);
     private final Optional<PongPacket> pongPacket;
     private ElapsedTime elapsed = new ElapsedTime();
+    private final Optional<Long> activeDocuments;
 
     public Pong() {
         this.pongPacket = Optional.empty();
+        this.activeDocuments = Optional.empty();
     }
-    
+
     public Pong(ErrorMessage error) {
         errors.add(error);
         this.pongPacket = Optional.empty();
+        this.activeDocuments = Optional.empty();
     }
-    
+
     public Pong(PongPacket pongPacket) {
         this.pongPacket = Optional.of(pongPacket);
+        this.activeDocuments = Optional.empty();
     }
-    
+
+    public Pong(long activeDocuments) {
+        this.pongPacket = Optional.empty();
+        this.activeDocuments = Optional.of(activeDocuments);
+    }
+
     public void addError(ErrorMessage error) {
         errors.add(error);
     }
@@ -49,6 +58,7 @@ public class Pong {
 
     /** Returns the number of active documents in the backend responding in this Pong, if available */
     public Optional<Long> activeDocuments() {
+        if (activeDocuments.isPresent()) return activeDocuments;
         if ( ! pongPacket.isPresent()) return Optional.empty();
         return pongPacket.get().getActiveDocuments();
     }

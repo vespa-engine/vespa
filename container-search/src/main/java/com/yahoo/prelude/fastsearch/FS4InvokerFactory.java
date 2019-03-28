@@ -3,13 +3,16 @@ package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.fs4.mplex.Backend;
+import com.yahoo.prelude.Pong;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InterleavedFillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.Pinger;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Hit;
 
@@ -20,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * FS4InvokerFactory constructs {@link FillInvoker} and {@link SearchInvoker} objects that communicate with
@@ -97,4 +101,8 @@ public class FS4InvokerFactory extends InvokerFactory {
         return requiredNodes;
     }
 
+    @Override
+    public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
+        return new Pinger(node, monitor, fs4ResourcePool);
+    }
 }

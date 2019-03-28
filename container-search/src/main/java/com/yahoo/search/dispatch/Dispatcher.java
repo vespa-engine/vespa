@@ -56,6 +56,7 @@ public class Dispatcher extends AbstractComponent {
     private final LoadBalancer loadBalancer;
     private final boolean multilevelDispatch;
     private final boolean internalDispatchByDefault;
+    private final boolean dispatchWithProtobuf;
 
     private final FS4InvokerFactory fs4InvokerFactory;
     private final RpcInvokerFactory rpcInvokerFactory;
@@ -65,14 +66,12 @@ public class Dispatcher extends AbstractComponent {
 
     public Dispatcher(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize,
             VipStatus vipStatus, Metric metric) {
-        this(new SearchCluster(clusterId, dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus), dispatchConfig,
-                fs4ResourcePool, new RpcResourcePool(dispatchConfig), metric);
+        this(new SearchCluster(clusterId, dispatchConfig, containerClusterSize, vipStatus), dispatchConfig, fs4ResourcePool, metric);
     }
 
-    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
-            RpcResourcePool rpcResourcePool, Metric metric) {
+    public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, Metric metric) {
         this(searchCluster, dispatchConfig, new FS4InvokerFactory(fs4ResourcePool, searchCluster),
-                new RpcInvokerFactory(rpcResourcePool, searchCluster), metric);
+                new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster, dispatchConfig.dispatchWithProtobuf()), metric);
     }
 
     public Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4InvokerFactory fs4InvokerFactory,
@@ -82,12 +81,15 @@ public class Dispatcher extends AbstractComponent {
                 dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.multilevelDispatch = dispatchConfig.useMultilevelDispatch();
         this.internalDispatchByDefault = !dispatchConfig.useFdispatchByDefault();
+        this.dispatchWithProtobuf = dispatchConfig.dispatchWithProtobuf();
 
         this.fs4InvokerFactory = fs4InvokerFactory;
         this.rpcInvokerFactory = rpcInvokerFactory;
 
         this.metric = metric;
         this.metricContext = metric.createContext(null);
+
+        searchCluster.startClusterMonitoring(dispatchWithProtobuf ? rpcInvokerFactory : fs4InvokerFactory);
     }
 
     /** Returns the search cluster this dispatches to */
@@ -120,7 +122,8 @@ public class Dispatcher extends AbstractComponent {
             return Optional.empty();
         }
 
-        InvokerFactory factory = query.properties().getBoolean(dispatchProtobuf, false) ? rpcInvokerFactory : fs4InvokerFactory;
+        InvokerFactory factory = query.properties().getBoolean(dispatchProtobuf, dispatchWithProtobuf)
+                ? rpcInvokerFactory : fs4InvokerFactory;
 
         Optional<SearchInvoker> invoker = getSearchPathInvoker(query, factory, searcher);
 

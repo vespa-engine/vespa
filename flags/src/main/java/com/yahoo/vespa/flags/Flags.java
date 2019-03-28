@@ -95,6 +95,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DISPATCH_WITH_PROTOBUF = defineFeatureFlag(
+            "dispatch-with-protobuf", false,
+            "Should the java dispatcher use protobuf/jrt as the default",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
             "Provision a new docker host when we otherwise can't allocate a docker node",
