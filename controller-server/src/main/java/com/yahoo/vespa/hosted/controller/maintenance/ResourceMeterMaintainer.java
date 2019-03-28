@@ -40,7 +40,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                                    NodeRepositoryClientInterface nodeRepository,
                                    Clock clock,
                                    ResourceSnapshotConsumer resourceSnapshotConsumer) {
-        super(controller, interval, jobControl, ResourceMeterMaintainer.class.getSimpleName(), Set.of(SystemName.cd, SystemName.vaas));
+        super(controller, interval, jobControl, ResourceMeterMaintainer.class.getSimpleName(), Set.of(SystemName.cd));
         this.clock = clock;
         this.nodeRepository = nodeRepository;
         this.resourceSnapshotConsumer = resourceSnapshotConsumer;
