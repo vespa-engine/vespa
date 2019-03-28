@@ -69,14 +69,6 @@ public class LogReaderTest {
     @Test
     public void testZippedStreaming() throws IOException {
 
-        // Add some more files
-        Files.setLastModifiedTime(
-                Files.write(logDirectory.resolve("log3.gz"), compress("Three\n")),
-                FileTime.from(Instant.ofEpochMilli(324)));
-        Files.setLastModifiedTime(
-                Files.write(logDirectory.resolve("log4"), "Four\n".getBytes()),
-                FileTime.from(Instant.ofEpochMilli(432)));
-
         ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(zippedBaos, Instant.ofEpochMilli(21), Instant.now());
@@ -85,7 +77,7 @@ public class LogReaderTest {
         Scanner s = new Scanner(unzippedIs).useDelimiter("\\A");
         String actual = s.hasNext() ? s.next() : "";
 
-        String expected = "This is one log file\nThis is another log file\nThree\nFour\n";
+        String expected = "This is one log file\nThis is another log file\n";
         assertEquals(expected, actual);
     }
 
