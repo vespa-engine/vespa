@@ -96,7 +96,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     /**
      * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
      */
-    private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_VIP_STATUS_FILE";
+    private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     public enum Networking { disable, enable }
