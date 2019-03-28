@@ -91,9 +91,9 @@ public:
  **/
 class EnumVector : public VectorBase<search::attribute::EnumHandle, search::attribute::EnumHandle, feature_t> {
 private:
-    const search::attribute::IAttributeVector * _attribute;
+    const attribute::IAttributeVector * _attribute;
 public:
-    EnumVector(const search::attribute::IAttributeVector * attribute) : _attribute(attribute) {}
+    EnumVector(const attribute::IAttributeVector * attribute) : _attribute(attribute) {}
     void insert(vespalib::stringref label, vespalib::stringref value) {
         search::attribute::EnumHandle e;
         if (_attribute->findEnum(label.data(), e)) {
@@ -115,7 +115,7 @@ private:
     Buffer                                         _buffer;
 
 public:
-    DotProductExecutor(const search::attribute::IAttributeVector * attribute, const Vector & queryVector);
+    DotProductExecutor(const attribute::IAttributeVector * attribute, const Vector & queryVector);
     void execute(uint32_t docId) override;
 };
 
@@ -262,6 +262,8 @@ class DotProductBlueprint : public fef::Blueprint {
 private:
     vespalib::string _defaultAttribute;
     vespalib::string _queryVector;
+
+    mutable const attribute::IAttributeVector * _attribute;
 
     vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
 
