@@ -46,10 +46,10 @@ public:
           reply_with_proto_response(true)
     {
         supervisor.Listen(0);
-        supervisor.Start();
         FRT_ReflectionBuilder builder(&supervisor);
         builder.DefineMethod("vespa.logserver.archiveLogMessages", "bix", "bix",
                              FRT_METHOD(RpcServer::rpc_archive_log_messages), this);
+        supervisor.Start();
     }
     ~RpcServer() {
         supervisor.ShutDown(true);
