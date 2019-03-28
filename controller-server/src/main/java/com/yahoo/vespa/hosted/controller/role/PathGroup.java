@@ -30,47 +30,65 @@ public enum PathGroup {
     userManagement("/user/v1/{*}"), // TODO probably add tenant and application levels.
 
     /** Paths used for creating user tenants. */
-    onboardingUser("/application/v4/user"),
+    user("/application/v4/user"),
 
     /** Paths used for creating tenants with proper access control. */
-    onboarding("/application/v4/tenant/{ignored}"),
+    tenant(Matcher.tenant,
+           "/application/v4/tenant/{tenant}"),
 
     /** Paths used by tenant administrators. */
-    tenant(Matcher.tenant,
-           "/application/v4/tenant/{tenant}",
-           "/application/v4/tenant/{tenant}/application/"),
+    tenantInfo(Matcher.tenant,
+               "/application/v4/tenant/{tenant}/application/"),
 
-    /** Paths used by application administrators. */
+    /** Path for the base application resource. */
     application(Matcher.tenant,
                 Matcher.application,
-                "/application/v4/tenant/{tenant}/application/{application}",
-                "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/override"),// TODO add restart path?
+                "/application/v4/tenant/{tenant}/application/{application}"),
 
-    /** Paths used for direct deployment to development zones. */
-    development(Matcher.tenant,
-                Matcher.application,
-                "/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}"),
+    /** Paths used by application administrators. */
+    applicationInfo(Matcher.tenant,
+                    Matcher.application,
+                    "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/logs",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/suspended",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/service/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/{*}"),
 
-    /** Paths used for direct deployment to production zones. */
-    deployment(Matcher.tenant,
-               Matcher.application,
-               "/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}",
-               "/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}",
-               "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
+    /** Path used to restart application nodes. */ // TODO move to the above when everyone is on new pipeline.
+    applicationRestart(Matcher.tenant,
+                       Matcher.application,
+                       "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{ignored}/restart"),
+
+    /** Paths used for development deployments. */
+    developmentDeployment(Matcher.tenant,
+                          Matcher.application,
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}",
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}/deploy",
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}",
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}/deploy"),
+
+    /** Paths used for production deployments. */
+    productionDeployment(Matcher.tenant,
+                         Matcher.application,
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/deploy",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{instance}",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{instance}/deploy",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/staging/region/{region}/instance/{instance}",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/staging/region/{region}/instance/{instance}/deploy"),
 
     /** Paths used for continuous deployment to production. */
     submission(Matcher.tenant,
-                 Matcher.application,
-                 "/application/v4/tenant/{tenant}/application/{application}/submit"),
+               Matcher.application,
+               "/application/v4/tenant/{tenant}/application/{application}/submit"),
 
     /** Paths used for other tasks by build services. */ // TODO: This will vanish.
     buildService(Matcher.tenant,
                  Matcher.application,
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
-                 "/application/v4/tenant/{tenant}/application/{application}/promote"),
+                 "/application/v4/tenant/{tenant}/application/{application}/promote",
+                 "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote"),
 
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
     classifiedInfo("/athenz/v1/{*}",

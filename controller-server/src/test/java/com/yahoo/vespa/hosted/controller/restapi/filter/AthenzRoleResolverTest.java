@@ -92,29 +92,29 @@ public class AthenzRoleResolverTest {
 
         // Operators and tenant admins are tenant admins of their tenants.
         assertEquals(Set.of(Context.limitedTo(TENANT, tester.controller().system())),
-                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantAdmin));
+                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(), // TODO this is wrong, but we can't do better until we ask ZMS for roles.
-                     resolver.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.tenantAdmin));
+                     resolver.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(Set.of(Context.limitedTo(TENANT, tester.controller().system())),
-                     resolver.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.tenantAdmin));
+                     resolver.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.tenantAdmin));
+                     resolver.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantAdmin));
+                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(),
-                     resolver.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.tenantAdmin));
+                     resolver.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
 
         // Only build services are pipeline operators of their applications.
         assertEquals(emptySet(),
-                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipelineOperator));
+                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_ADMIN, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipelineOperator));
+                     resolver.membership(TENANT_ADMIN, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(Set.of(Context.limitedTo(TENANT, APPLICATION, tester.controller().system())),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipelineOperator));
+                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH).contextsFor(Role.tenantPipelineOperator));
+                     resolver.membership(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(emptySet(),
-                     resolver.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipelineOperator));
+                     resolver.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
     }
 
 }

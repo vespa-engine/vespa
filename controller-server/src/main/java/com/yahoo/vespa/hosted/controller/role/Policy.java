@@ -23,53 +23,63 @@ public enum Policy {
                      .in(SystemName.Public)),
 
     /** Access to create a user tenant in select systems. */
-    onboardUser(Privilege.grant(Action.update)
-                         .on(PathGroup.onboardingUser)
-                         .in(SystemName.main, SystemName.cd, SystemName.dev)),
+    userCreate(Privilege.grant(Action.update)
+                        .on(PathGroup.user)
+                        .in(SystemName.main, SystemName.cd, SystemName.dev)),
 
-    /** Access to create a user tenant in select systems. */
-    onboardTenant(Privilege.grant(Action.create)
-                           .on(PathGroup.onboarding)
-                           .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
+    /** Access to create a tenant in select systems. */
+    tenantCreate(Privilege.grant(Action.create)
+                          .on(PathGroup.tenant)
+                          .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
 
     /** Full access to tenant information and settings. */
-    tenant(Privilege.grant(Action.all())
-                    .on(PathGroup.tenant)
-                    .in(SystemName.all())),
+    tenantWrite(Privilege.grant(Action.write())
+                         .on(PathGroup.tenant)
+                         .in(SystemName.all())),
 
     /** Read access to tenant information and settings. */
     tenantRead(Privilege.grant(Action.read)
-                        .on(PathGroup.tenant)
+                        .on(PathGroup.tenant, PathGroup.tenantInfo)
                         .in(SystemName.all())),
 
-    /** Full access to application information, settings and jobs. */
-    application(Privilege.grant(Action.all())
-                         .on(PathGroup.application)
-                         .in(SystemName.all())),
-
-    /** Full access to application information, settings and jobs. */
-    applicationModify(Privilege.grant(Action.update)
+    /** Access to create application under a certain tenant. */
+    applicationCreate(Privilege.grant(Action.create)
                                .on(PathGroup.application)
                                .in(SystemName.all())),
 
     /** Read access to application information and settings. */
     applicationRead(Privilege.grant(Action.read)
-                             .on(PathGroup.application)
+                             .on(PathGroup.application, PathGroup.applicationInfo)
                              .in(SystemName.all())),
 
+    /** Read access to application information and settings. */
+    applicationUpdate(Privilege.grant(Action.update)
+                               .on(PathGroup.application, PathGroup.applicationInfo)
+                               .in(SystemName.all())),
+
+    /** Access to delete a certain application. */
+    applicationDelete(Privilege.grant(Action.delete)
+                               .on(PathGroup.application)
+                               .in(SystemName.all())),
+
+    /** Full access to application information and settings. */
+    applicationOperations(Privilege.grant(Action.write())
+                                   .on(PathGroup.applicationInfo, PathGroup.applicationRestart)
+                                   .in(SystemName.all())),
+
     /** Full access to application development deployments. */
-    development(Privilege.grant(Action.all())
-                         .on(PathGroup.development)
-                         .in(SystemName.all())),
+    developmentDeployment(Privilege.grant(Action.all())
+                                   .on(PathGroup.developmentDeployment)
+                                   .in(SystemName.all())),
 
     /** Full access to application production deployments. */
-    production(Privilege.grant(Action.all())
-                        .on(PathGroup.deployment)
-                        .in(SystemName.all())),
+    productionDeployment(Privilege.grant(Action.all())
+                                  .on(PathGroup.productionDeployment)
+                                  .in(SystemName.all())),
 
-    /** Read access to allapplication deployments. */
+    /** Read access to all application deployments. */
     deploymentRead(Privilege.grant(Action.read)
-                            .on(PathGroup.development, PathGroup.deployment)
+                            .on(PathGroup.developmentDeployment, PathGroup.productionDeployment)
                             .in(SystemName.all())),
 
     /** Full access to submissions for continuous deployment. */
@@ -78,9 +88,9 @@ public enum Policy {
                         .in(SystemName.all())),
 
     /** Full access to the additional tasks needed for continuous deployment. */
-    buildService(Privilege.grant(Action.all())
-                          .on(PathGroup.buildService)
-                          .in(SystemName.all())),
+    deploymentPipeline(Privilege.grant(Action.all()) // TODO remove when everyone is on new pipeline.
+                                .on(PathGroup.buildService, PathGroup.applicationRestart)
+                                .in(SystemName.all())),
 
     /** Read access to all information in select systems. */
     classifiedRead(Privilege.grant(Action.read)
