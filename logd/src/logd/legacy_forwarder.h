@@ -2,14 +2,8 @@
 #pragma once
 
 #include "forwarder.h"
-#include <vespa/log/log.h>
-#include <map>
-#include <unordered_set>
 
 namespace logdemon {
-
-// Mapping saying if a level should be forwarded or not
-using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
 
 struct Metrics;
 

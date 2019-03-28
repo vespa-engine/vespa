@@ -81,9 +81,9 @@ public:
 };
 
 std::string
-make_log_line(const std::string& payload)
+make_log_line(const std::string& level, const std::string& payload)
 {
-    return "1234.5678\tmy_host\t10/20\tmy_service\tmy_component\tinfo\t" + payload;
+    return "1234.5678\tmy_host\t10/20\tmy_service\tmy_component\t" + level + "\t" + payload;
 }
 
 struct MockMetricsManager : public DummyMetricsManager {
@@ -105,9 +105,18 @@ struct RpcForwarderTest : public ::testing::Test {
           metrics(metrics_mgr),
           forwarder(metrics, "localhost", server.get_listen_port(), 60.0, 3)
     {
+        ForwardMap forward_filter;
+        forward_filter[ns_log::Logger::error] = true;
+        forward_filter[ns_log::Logger::warning] = false;
+        forward_filter[ns_log::Logger::info] = true;
+        // all other log levels are implicit false
+        forwarder.set_forward_filter(forward_filter);
     }
     void forward_line(const std::string& payload) {
-        forwarder.forwardLine(make_log_line(payload));
+        forwarder.forwardLine(make_log_line("info", payload));
+    }
+    void forward_line(const std::string& level, const std::string& payload) {
+        forwarder.forwardLine(make_log_line(level, payload));
     }
     void forward_bad_line() {
         forwarder.forwardLine("badline");
@@ -186,6 +195,22 @@ TEST_F(RpcForwarderTest, metrics_are_updated_for_each_log_message)
     EXPECT_EQ(1, metrics_mgr->add_count);
     forward_line("b");
     EXPECT_EQ(2, metrics_mgr->add_count);
+}
+
+TEST_F(RpcForwarderTest, log_messages_are_filtered_on_log_level)
+{
+    forward_line("fatal",   "a");
+    forward_line("error",   "b");
+    forward_line("warning", "c");
+    forward_line("config",  "d");
+    forward_line("info",    "e");
+    forward_line("event",   "f");
+    forward_line("debug",   "g");
+    forward_line("spam",    "h");
+    forward_line("null",    "i");
+    flush();
+    expect_messages(1, {"b", "e"});
+    EXPECT_EQ(9, metrics_mgr->add_count);
 }
 
 TEST_F(RpcForwarderTest, throws_when_rpc_reply_contains_errors)

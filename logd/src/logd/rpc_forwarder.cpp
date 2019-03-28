@@ -26,7 +26,8 @@ RpcForwarder::RpcForwarder(Metrics& metrics, const vespalib::string &hostname, i
       _supervisor(),
       _target(),
       _messages(),
-      _bad_lines(0)
+      _bad_lines(0),
+      _forward_filter()
 {
     _supervisor.Start();
     _target = _supervisor.GetTarget(_connection_spec.c_str());
@@ -62,6 +63,16 @@ decode_log_response(FRT_RPCRequest& src, ProtoConverter::ProtoLogResponse& dst)
     return dst.ParseFromArray(values[2]._data._buf, values[2]._data._len);
 }
 
+bool
+should_forward_log_message(const LogMessage& message, const ForwardMap& filter)
+{
+    auto found = filter.find(message.level());
+    if (found != filter.end()) {
+        return found->second;
+    }
+    return false;
+}
+
 }
 
 void
@@ -76,9 +87,11 @@ RpcForwarder::forwardLine(std::string_view line)
         return;
     }
     _metrics.countLine(ns_log::Logger::logLevelNames[message.level()], message.service());
-    _messages.push_back(std::move(message));
-    if (_messages.size() == _max_messages_per_request) {
-        flush();
+    if (should_forward_log_message(message, _forward_filter)) {
+        _messages.push_back(std::move(message));
+        if (_messages.size() == _max_messages_per_request) {
+            flush();
+        }
     }
 }
 
