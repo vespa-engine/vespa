@@ -173,8 +173,8 @@ source %{_devtoolset_enable} || true
 source %{_rhmaven35_enable} || true
 %endif
 
-export PATH="/usr/lib/jvm/java-11-openjdk/bin:$PATH"
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
 
 sh bootstrap.sh java
