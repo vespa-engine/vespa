@@ -1,10 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <logd/exceptions.h>
+#include <logd/metrics.h>
 #include <logd/rpc_forwarder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/metrics/dummy_metrics_manager.h>
 
 using namespace logdemon;
+using vespalib::metrics::DummyMetricsManager;
 
 void
 encode_log_response(const ProtoConverter::ProtoLogResponse& src, FRT_Values& dst)
@@ -83,11 +86,24 @@ make_log_line(const std::string& payload)
     return "1234.5678\tmy_host\t10/20\tmy_service\tmy_component\tinfo\t" + payload;
 }
 
+struct MockMetricsManager : public DummyMetricsManager {
+    int add_count;
+    MockMetricsManager() : DummyMetricsManager(), add_count(0) {}
+    void add(Counter::Increment) override {
+        ++add_count;
+    }
+};
+
 struct RpcForwarderTest : public ::testing::Test {
     RpcServer server;
+    std::shared_ptr<MockMetricsManager> metrics_mgr;
+    Metrics metrics;
     RpcForwarder forwarder;
     RpcForwarderTest()
-        : forwarder("localhost", server.get_listen_port(), 60.0, 3)
+        : server(),
+          metrics_mgr(std::make_shared<MockMetricsManager>()),
+          metrics(metrics_mgr),
+          forwarder(metrics, "localhost", server.get_listen_port(), 60.0, 3)
     {
     }
     void forward_line(const std::string& payload) {
@@ -162,6 +178,14 @@ TEST_F(RpcForwarderTest, bad_log_lines_count_can_be_reset)
     EXPECT_EQ(1, forwarder.badLines());
     forwarder.resetBadLines();
     EXPECT_EQ(0, forwarder.badLines());
+}
+
+TEST_F(RpcForwarderTest, metrics_are_updated_for_each_log_message)
+{
+    forward_line("a");
+    EXPECT_EQ(1, metrics_mgr->add_count);
+    forward_line("b");
+    EXPECT_EQ(2, metrics_mgr->add_count);
 }
 
 TEST_F(RpcForwarderTest, throws_when_rpc_reply_contains_errors)

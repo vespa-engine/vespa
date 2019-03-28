@@ -10,11 +10,14 @@
 
 namespace logdemon {
 
+struct Metrics;
+
 /**
  * Implementation of the Forwarder interface that uses RPC to send protobuf encoded log messages to the logserver.
  */
 class RpcForwarder : public Forwarder {
 private:
+    Metrics& _metrics;
     vespalib::string _connection_spec;
     double _rpc_timeout_secs;
     size_t _max_messages_per_request;
@@ -24,7 +27,7 @@ private:
     int _bad_lines;
 
 public:
-    RpcForwarder(const vespalib::string& logserver_host, int logserver_rpc_port,
+    RpcForwarder(Metrics& metrics, const vespalib::string& logserver_host, int logserver_rpc_port,
                  double rpc_timeout_secs, size_t max_messages_per_request);
     ~RpcForwarder() override;
 

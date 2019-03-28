@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "exceptions.h"
+#include "metrics.h"
 #include "proto_converter.h"
 #include "rpc_forwarder.h"
 #include <vespa/log/exceptions.h>
@@ -16,9 +17,10 @@ using vespalib::make_string;
 
 namespace logdemon {
 
-RpcForwarder::RpcForwarder(const vespalib::string &hostname, int rpc_port,
+RpcForwarder::RpcForwarder(Metrics& metrics, const vespalib::string &hostname, int rpc_port,
                            double rpc_timeout_secs, size_t max_messages_per_request)
-    : _connection_spec(make_string("tcp/%s:%d", hostname.c_str(), rpc_port)),
+    : _metrics(metrics),
+      _connection_spec(make_string("tcp/%s:%d", hostname.c_str(), rpc_port)),
       _rpc_timeout_secs(rpc_timeout_secs),
       _max_messages_per_request(max_messages_per_request),
       _supervisor(),
@@ -73,6 +75,7 @@ RpcForwarder::forwardLine(std::string_view line)
         ++_bad_lines;
         return;
     }
+    _metrics.countLine(ns_log::Logger::logLevelNames[message.level()], message.service());
     _messages.push_back(std::move(message));
     if (_messages.size() == _max_messages_per_request) {
         flush();
