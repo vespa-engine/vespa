@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.rules.TemporaryFolder;
 
@@ -93,7 +94,8 @@ public class RpcTester implements AutoCloseable {
                                                                new SuperModelManager(
                                                                        configserverConfig,
                                                                        emptyNodeFlavors(),
-                                                                       generationCounter)),
+                                                                       generationCounter,
+                                                                       new InMemoryFlagSource())),
                                   Metrics.createTestMetrics(), new HostRegistries(),
                                   hostLivenessTracker, new FileServer(temporaryFolder.newFolder()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
