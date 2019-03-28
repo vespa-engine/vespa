@@ -19,7 +19,6 @@ public enum PathGroup {
 
     /** Paths used for system management by operators. */
     operator("/controller/v1/{*}",
-             "/cost/v1/{*}",
              "/flags/v1/{*}",
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}",
@@ -75,6 +74,7 @@ public enum PathGroup {
 
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
     classifiedInfo("/athenz/v1/{*}",
+                   "/cost/v1/{*}",
                    "/deployment/v1/{*}",
                    "/application/v4/",
                    "/application/v4/tenant/",
