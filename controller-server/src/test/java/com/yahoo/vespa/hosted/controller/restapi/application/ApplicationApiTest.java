@@ -453,6 +453,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/restart", POST)
+                                      .userIdentity(USER_ID),
+                              "Requested restart of tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default");
+
+        // POST a 'restart application' command
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default");
 
