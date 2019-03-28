@@ -132,6 +132,7 @@ JsonWriter::visitValueMetric(const AbstractValueMetric& m, bool)
         _stream << (values->getDoubleValue("total")
                     / values->getDoubleValue("count"));
     }
+    _stream << "sum" << values->getDoubleValue("total");
     _stream << "count";
     values->output("count", _stream);
     if (_period > 0) {

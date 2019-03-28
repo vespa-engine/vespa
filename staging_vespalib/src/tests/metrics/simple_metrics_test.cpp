@@ -84,6 +84,9 @@ fprintf(stderr, "bad json a:\n>>>%s\n<<<\n", a.c_str());
 fprintf(stderr, "bad json b\n");
         return false;
     }
+    if (!(slimeA == slimeB)) {
+fprintf(stderr, "compares unequal:\n[A]\n%s\n[B]\n%s\n", a.c_str(), b.c_str());
+    }
     return slimeA == slimeB;
 }
 
@@ -99,15 +102,15 @@ void check_json(const vespalib::string &actual)
     "       values: { count: 4, rate: 1.14286 }"
     "   }, {"
     "       name: 'bar',"
-    "       values: { count: 4, rate: 1.14286, average: 42, min: 41, max: 43, last: 42 }"
+    "       values: { count: 4, rate: 1.14286, average: 42, sum: 168, min: 41, max: 43, last: 42 }"
     "   }, {"
     "       name: 'bar',"
     "       dimensions: { chain: 'vespa', documenttype: 'blogpost', thread: '1' },"
-    "       values: { count: 1, rate: 0.285714, average: 14, min: 14, max: 14, last: 14 }"
+    "       values: { count: 1, rate: 0.285714, average: 14, sum: 14, min: 14, max: 14, last: 14 }"
     "   }, {"
     "       name: 'bar',"
     "       dimensions: { chain: 'vespa', documenttype: 'blogpost', thread: '2' },"
-    "       values: { count: 1, rate: 0.285714, average: 11, min: 11, max: 11, last: 11 }"
+    "       values: { count: 1, rate: 0.285714, average: 11, sum: 11, min: 11, max: 11, last: 11 }"
     "   } ]"
     "}";
     EXPECT_TRUE(compare_json(expect, actual));

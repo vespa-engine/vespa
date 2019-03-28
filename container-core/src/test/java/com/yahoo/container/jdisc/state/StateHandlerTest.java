@@ -162,7 +162,8 @@ public class StateHandlerTest extends StateHandlerTestBase {
                      "                    \"last\": 5,\n" +
                      "                    \"max\": 5,\n" +
                      "                    \"min\": 2,\n" +
-                     "                    \"rate\": 0.013333333333333334\n" +
+                     "                    \"rate\": 0.013333333333333334,\n" +
+                     "                    \"sum\": 14\n" +
                      "                }\n" +
                      "            }\n" +
                      "        ]\n" +

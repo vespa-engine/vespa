@@ -140,6 +140,7 @@ public class VisitorParameters extends Parameters {
 
     public boolean getVisitRemoves() { return visitRemoves; }
 
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean getVisitHeadersOnly() { return false; }
 
     /** @return The field set to use. */
