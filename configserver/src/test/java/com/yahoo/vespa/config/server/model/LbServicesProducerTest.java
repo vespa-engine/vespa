@@ -16,6 +16,7 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -96,7 +97,7 @@ public class LbServicesProducerTest {
     }
 
     private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Set<ApplicationInfo>> testModel) {
-        LbServicesProducer producer = new LbServicesProducer(testModel, zone);
+        LbServicesProducer producer = new LbServicesProducer(testModel, zone, new InMemoryFlagSource());
         LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
         producer.getConfig(builder);
         return new LbServicesConfig(builder);
