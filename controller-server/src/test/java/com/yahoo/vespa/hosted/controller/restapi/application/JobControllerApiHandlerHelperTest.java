@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  * @author jonmv
  * @author freva
  */
-public class JobControllerApiHandlerHelperTest {
+public class JobControllerApiHandlerHelperTest { // TODO jvenstad: Integrate into ApplicationApiTest
 
     @Test
     public void testResponses() {

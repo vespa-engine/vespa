@@ -47,7 +47,7 @@ public enum PathGroup {
                 "/application/v4/tenant/{tenant}/application/{application}",
                 "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/override"),
+                "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/override"),// TODO add restart path?
 
     /** Paths used for direct deployment to development zones. */
     development(Matcher.tenant,

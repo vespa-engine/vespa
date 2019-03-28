@@ -62,7 +62,7 @@ import static java.util.stream.Collectors.toMap;
  * @see JobController
  * @see ApplicationApiHandler
  */
-class JobControllerApiHandlerHelper {
+class JobControllerApiHandlerHelper { // TODO jvenstad: Integrate into ApplicationApiHandler
 
     /**
      * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
