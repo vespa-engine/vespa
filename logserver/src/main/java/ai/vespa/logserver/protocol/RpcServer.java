@@ -3,10 +3,10 @@ package ai.vespa.logserver.protocol;
 
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.logserver.LogDispatcher;
 
 /**
  * A JRT based RPC server for handling log requests
@@ -19,9 +19,12 @@ public class RpcServer implements AutoCloseable {
     private final int listenPort;
     private Acceptor acceptor;
 
-    public RpcServer(int listenPort, LogDispatcher logDispatcher) {
+    public RpcServer(int listenPort) {
         this.listenPort = listenPort;
-        supervisor.addMethod(new ArchiveLogMessagesMethod(logDispatcher).methodDefinition());
+    }
+
+    public void addMethod(Method method) {
+        supervisor.addMethod(method);
     }
 
     public void start() {

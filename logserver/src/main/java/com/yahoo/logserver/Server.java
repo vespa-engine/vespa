@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
+import ai.vespa.logserver.protocol.ArchiveLogMessagesMethod;
 import ai.vespa.logserver.protocol.RpcServer;
 import com.yahoo.io.FatalErrorHandler;
 import com.yahoo.io.Listener;
@@ -127,7 +128,8 @@ public class Server implements Runnable {
         listener = new Listener(APPNAME);
         listener.addSelectLoopPostHook(dispatch);
         listener.setFatalErrorHandler(fatalErrorHandler);
-        rpcServer = new RpcServer(rpcListenPort, dispatch);
+        rpcServer = new RpcServer(rpcListenPort);
+        rpcServer.addMethod(new ArchiveLogMessagesMethod(dispatch).methodDefinition());
     }
 
     /**

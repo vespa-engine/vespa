@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author bjorncs
  */
-public class RpcServerTest {
+public class ArchiveLogMessagesMethodTest {
 
     private static final LogMessage MESSAGE_1 =
             LogMessage.of(Instant.EPOCH.plus(1000, ChronoUnit.DAYS), "localhost", 12, 3456, "my-service", "my-component", LogLevel.ERROR, "My error message");
@@ -39,7 +39,8 @@ public class RpcServerTest {
     public void server_dispatches_log_messages_from_log_request() {
         List<LogMessage> messages = List.of(MESSAGE_1, MESSAGE_2);
         LogDispatcher logDispatcher = mock(LogDispatcher.class);
-        try (RpcServer server = new RpcServer(0, logDispatcher)) {
+        try (RpcServer server = new RpcServer(0)) {
+            server.addMethod(new ArchiveLogMessagesMethod(logDispatcher).methodDefinition());
             server.start();
             try (TestClient client = new TestClient(server.listenPort())) {
                 client.logMessages(messages);

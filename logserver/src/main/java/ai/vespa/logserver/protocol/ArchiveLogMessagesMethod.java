@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-class ArchiveLogMessagesMethod {
+public class ArchiveLogMessagesMethod {
 
     static final String METHOD_NAME = "vespa.logserver.archiveLogMessages";
 
@@ -29,7 +29,7 @@ class ArchiveLogMessagesMethod {
     private final LogDispatcher logDispatcher;
     private final Method method;
 
-    ArchiveLogMessagesMethod(LogDispatcher logDispatcher) {
+    public ArchiveLogMessagesMethod(LogDispatcher logDispatcher) {
         this.logDispatcher = logDispatcher;
         this.method = new Method(METHOD_NAME, "bix", "bix", this::log)
                 .methodDesc("Archive log messages")
@@ -41,7 +41,7 @@ class ArchiveLogMessagesMethod {
                 .returnDesc(2, "logResponse", "Log response encoded with protobuf");
     }
 
-    Method methodDefinition() {
+    public Method methodDefinition() {
         return method;
     }
 
