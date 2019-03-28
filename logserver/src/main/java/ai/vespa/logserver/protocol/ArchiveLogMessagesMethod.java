@@ -81,7 +81,10 @@ class ArchiveLogMessagesMethod {
                 rpcRequest.returnValues().add(new DataValue(responsePayload));
                 rpcRequest.returnRequest();
             } catch (Exception e) {
-                log.log(Level.WARNING, e, () -> "Failed to handle log request: " + e.getMessage());
+                String errorMessage = "Failed to handle log request: " + e.getMessage();
+                log.log(Level.WARNING, e, () -> errorMessage);
+                rpcRequest.setError(2, errorMessage);
+                rpcRequest.returnRequest();
             }
         }
     }
