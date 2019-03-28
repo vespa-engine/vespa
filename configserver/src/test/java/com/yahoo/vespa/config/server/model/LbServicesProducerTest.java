@@ -16,6 +16,7 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -45,6 +46,7 @@ public class LbServicesProducerTest {
     private static final String rotation2 = "rotation-2";
     private static final String rotationString = rotation1 + "," + rotation2;
     private static final Set<Rotation> rotations = Collections.singleton(new Rotation(rotationString));
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Test
     public void testDeterministicGetConfig() throws IOException, SAXException {
@@ -88,6 +90,22 @@ public class LbServicesProducerTest {
         }
     }
 
+    @Test
+    public void https_upstream_is_configured_from_feature_flag() throws IOException, SAXException {
+        {
+            flagSource.withBooleanFlag(Flags.USE_HTTPS_LOAD_BALANCER_UPSTREAM.id(), true);
+            RegionName regionName = RegionName.from("us-east-1");
+            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+            assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").upstreamHttps());
+        }
+        {
+            flagSource.withBooleanFlag(Flags.USE_HTTPS_LOAD_BALANCER_UPSTREAM.id(), false);
+            RegionName regionName = RegionName.from("us-east-2");
+            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+            assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").upstreamHttps());
+        }
+    }
+
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) throws IOException, SAXException {
         Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
@@ -97,7 +115,7 @@ public class LbServicesProducerTest {
     }
 
     private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Set<ApplicationInfo>> testModel) {
-        LbServicesProducer producer = new LbServicesProducer(testModel, zone, new InMemoryFlagSource());
+        LbServicesProducer producer = new LbServicesProducer(testModel, zone, flagSource);
         LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
         producer.getConfig(builder);
         return new LbServicesConfig(builder);
