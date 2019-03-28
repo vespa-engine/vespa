@@ -119,6 +119,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_LB_STATUS_FILE = defineFeatureFlag(
+            "use-lb-status-file", false,
+            "Serve status.html from the new path",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID, HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
