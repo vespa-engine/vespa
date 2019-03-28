@@ -23,7 +23,10 @@ while getopts "uh" opt; do
 done
 shift $((OPTIND-1))
 
-if [[ $# -eq 1 ]]; then
+if [[ $# -eq 0 ]]; then
+    SOURCE_DIR=$(dirname "$0")
+    EXTRA_CMAKE_ARGS=""
+elif [[ $# -eq 1 ]]; then
     SOURCE_DIR=$1
     EXTRA_CMAKE_ARGS=""
 elif [ $# -eq 2 ]; then
@@ -49,7 +52,7 @@ fi
 
 cmake3 \
     -DCMAKE_INSTALL_PREFIX=${VESPA_INSTALL_PREFIX} \
-    -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
+    -DJAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-openjdk} \
     -DCMAKE_PREFIX_PATH="/opt/vespa-deps" \
     -DEXTRA_LINK_DIRECTORY="/opt/vespa-deps/lib64;/opt/vespa-gtest/lib64;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
     -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-deps/include;/opt/vespa-gtest/include;/opt/vespa-boost/include;/opt/vespa-cppunit/include;/usr/include/llvm$VESPA_LLVM_VERSION" \
