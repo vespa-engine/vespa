@@ -33,10 +33,10 @@ class ArchiveLogMessagesMethod {
         this.method = new Method(METHOD_NAME, "bix", "bix", this::log)
                 .methodDesc("Archive log messages")
                 .paramDesc(0, "compressionType", "Compression type (0=raw)")
-                .paramDesc(1, "uncompressedSize", "Uncompressed size (0 if compression type 'raw')")
+                .paramDesc(1, "uncompressedSize", "Uncompressed size")
                 .paramDesc(2, "logRequest", "Log request encoded with protobuf")
                 .returnDesc(0, "compressionType", "Compression type (0=raw)")
-                .returnDesc(1, "uncompressedSize", "Uncompressed size (0 if compression type 'raw')")
+                .returnDesc(1, "uncompressedSize", "Uncompressed size")
                 .returnDesc(2, "logResponse", "Log response encoded with protobuf");
     }
 
