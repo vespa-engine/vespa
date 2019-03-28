@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * @author ollivir
  */
 public class RpcProtobufFillInvoker extends FillInvoker {
-    private final String RPC_METHOD = "vespa.searchprotocol.getDocsums";
+    private static final String RPC_METHOD = "vespa.searchprotocol.getDocsums";
 
     private static final Logger log = Logger.getLogger(RpcProtobufFillInvoker.class.getName());
 

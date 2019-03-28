@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @author ollivir
  */
 public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseReceiver {
-    private final String RPC_METHOD = "vespa.searchprotocol.search";
+    private static final String RPC_METHOD = "vespa.searchprotocol.search";
 
     private final VespaBackEndSearcher searcher;
     private final Node node;
