@@ -22,7 +22,6 @@ import java.util.List;
  * @author bratseth
  */
 class RpcClient implements Client {
-
     private final Supervisor supervisor = new Supervisor(new Transport());
 
     @Override
@@ -44,15 +43,15 @@ class RpcClient implements Client {
     }
 
     @Override
-    public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-            RpcSearchInvoker responseReceiver, double timeoutSeconds) {
-        Request request = new Request("vespa.searchprotocol.search");
+    public void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
+            ResponseReceiver responseReceiver, double timeoutSeconds) {
+        Request request = new Request(rpcMethod);
         request.parameters().add(new Int8Value(compression.getCode()));
         request.parameters().add(new Int32Value(uncompressedLength));
         request.parameters().add(new DataValue(compressedPayload));
 
         RpcNodeConnection rpcNode = ((RpcNodeConnection) node);
-        rpcNode.invokeAsync(request, timeoutSeconds, new RpcSearchResponseWaiter(rpcNode, responseReceiver));
+        rpcNode.invokeAsync(request, timeoutSeconds, new RpcProtobufResponseWaiter(rpcNode, responseReceiver));
     }
 
     private static class RpcNodeConnection implements NodeConnection {
@@ -111,40 +110,37 @@ class RpcClient implements Client {
         @Override
         public void handleRequestDone(Request requestWithResponse) {
             if (requestWithResponse.isError()) {
-                handler.receive(GetDocsumsResponseOrError.fromError("Error response from " + node + ": " +
-                                                                    requestWithResponse.errorMessage()));
+                handler.receive(ResponseOrError.fromError("Error response from " + node + ": " + requestWithResponse.errorMessage()));
                 return;
             }
 
             Values returnValues = requestWithResponse.returnValues();
             if (returnValues.size() < 3) {
-                handler.receive(GetDocsumsResponseOrError.fromError("Invalid getDocsums response from " + node +
-                                                                    ": Expected 3 return arguments, got " +
-                                                                    returnValues.size()));
+                handler.receive(ResponseOrError.fromError(
+                        "Invalid getDocsums response from " + node + ": Expected 3 return arguments, got " + returnValues.size()));
                 return;
             }
 
             byte compression = returnValues.get(0).asInt8();
             int uncompressedSize = returnValues.get(1).asInt32();
             byte[] compressedSlimeBytes = returnValues.get(2).asData();
+            @SuppressWarnings("unchecked") // TODO: Non-protobuf rpc docsums to be removed soon
             List<FastHit> hits = (List<FastHit>) requestWithResponse.getContext();
-            handler.receive(GetDocsumsResponseOrError.fromResponse(new GetDocsumsResponse(compression,
-                                                                                          uncompressedSize,
-                                                                                          compressedSlimeBytes,
-                                                                                          hits)));
+            handler.receive(
+                    ResponseOrError.fromResponse(new GetDocsumsResponse(compression, uncompressedSize, compressedSlimeBytes, hits)));
         }
 
     }
 
-    private static class RpcSearchResponseWaiter implements RequestWaiter {
+    private static class RpcProtobufResponseWaiter implements RequestWaiter {
 
         /** The node to which we made the request we are waiting for - for error messages only */
         private final RpcNodeConnection node;
 
         /** The handler to which the response is forwarded */
-        private final RpcSearchInvoker handler;
+        private final ResponseReceiver handler;
 
-        public RpcSearchResponseWaiter(RpcNodeConnection node, RpcSearchInvoker handler) {
+        public RpcProtobufResponseWaiter(RpcNodeConnection node, ResponseReceiver handler) {
             this.node = node;
             this.handler = handler;
         }
@@ -152,13 +148,13 @@ class RpcClient implements Client {
         @Override
         public void handleRequestDone(Request requestWithResponse) {
             if (requestWithResponse.isError()) {
-                handler.receive(SearchResponseOrError.fromError("Error response from " + node + ": " + requestWithResponse.errorMessage()));
+                handler.receive(ResponseOrError.fromError("Error response from " + node + ": " + requestWithResponse.errorMessage()));
                 return;
             }
 
             Values returnValues = requestWithResponse.returnValues();
             if (returnValues.size() < 3) {
-                handler.receive(SearchResponseOrError.fromError(
+                handler.receive(ResponseOrError.fromError(
                         "Invalid getDocsums response from " + node + ": Expected 3 return arguments, got " + returnValues.size()));
                 return;
             }
@@ -166,7 +162,7 @@ class RpcClient implements Client {
             byte compression = returnValues.get(0).asInt8();
             int uncompressedSize = returnValues.get(1).asInt32();
             byte[] compressedPayload = returnValues.get(2).asData();
-            handler.receive(SearchResponseOrError.fromResponse(new SearchResponse(compression, uncompressedSize, compressedPayload)));
+            handler.receive(ResponseOrError.fromResponse(new ProtobufResponse(compression, uncompressedSize, compressedPayload)));
         }
 
     }

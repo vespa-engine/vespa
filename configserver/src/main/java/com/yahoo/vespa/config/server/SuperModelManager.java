@@ -14,6 +14,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class SuperModelManager implements SuperModelProvider {
     private final Zone zone;
 
     private final Object monitor = new Object();
+    private final FlagSource flagSource;
     private SuperModelConfigProvider superModelConfigProvider;  // Guarded by 'this' monitor
     private final List<SuperModelListener> listeners = new ArrayList<>();  // Guarded by 'this' monitor
 
@@ -39,7 +41,9 @@ public class SuperModelManager implements SuperModelProvider {
     @Inject
     public SuperModelManager(ConfigserverConfig configserverConfig,
                              NodeFlavors nodeFlavors,
-                             GenerationCounter generationCounter) {
+                             GenerationCounter generationCounter,
+                             FlagSource flagSource) {
+        this.flagSource = flagSource;
         this.zone = new Zone(configserverConfig, nodeFlavors);
         this.generationCounter = generationCounter;
         this.masterGeneration = configserverConfig.masterGeneration();
@@ -107,6 +111,6 @@ public class SuperModelManager implements SuperModelProvider {
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {
         generation = masterGeneration + generationCounter.get();
-        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone);
+        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone, flagSource);
     }
 }

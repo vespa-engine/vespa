@@ -18,42 +18,46 @@ interface Client {
                     int uncompressedLength, byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver,
                     double timeoutSeconds);
 
-    void search(NodeConnection node, CompressionType compression,
-            int uncompressedLength, byte[] compressedPayload, RpcSearchInvoker responseReceiver,
-            double timeoutSeconds);
+    void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength,
+            byte[] compressedPayload, ResponseReceiver responseReceiver, double timeoutSeconds);
 
     /** Creates a connection to a particular node in this */
     NodeConnection createConnection(String hostname, int port);
 
-    class GetDocsumsResponseOrError {
+    interface ResponseReceiver {
+        void receive(ResponseOrError<ProtobufResponse> response);
+    }
 
-        // One of these will be non empty and the other not
-        private Optional<GetDocsumsResponse> response;
-        private Optional<String> error;
+    class ResponseOrError<T> {
+        final Optional<T> response;
+        final Optional<String> error;
 
-        public static GetDocsumsResponseOrError fromResponse(GetDocsumsResponse response) {
-            return new GetDocsumsResponseOrError(Optional.of(response), Optional.empty());
+        public static <T> ResponseOrError<T> fromResponse(T response) {
+            return new ResponseOrError<>(response);
         }
 
-        public static GetDocsumsResponseOrError fromError(String error) {
-            return new GetDocsumsResponseOrError(Optional.empty(), Optional.of(error));
+        public static <T> ResponseOrError<T> fromError(String error) {
+            return new ResponseOrError<T>(error);
         }
 
-        private GetDocsumsResponseOrError(Optional<GetDocsumsResponse> response, Optional<String> error) {
-            this.response = response;
-            this.error = error;
+        ResponseOrError(T response) {
+            this.response = Optional.of(response);
+            this.error = Optional.empty();
+        }
+
+        ResponseOrError(String error) {
+            this.response = Optional.empty();
+            this.error = Optional.of(error);
         }
 
         /** Returns the response, or empty if there is an error */
-        public Optional<GetDocsumsResponse> response() { return response; }
+        public Optional<T> response() { return response; }
 
         /** Returns the error or empty if there is a response */
         public Optional<String> error() { return error; }
-
     }
 
     class GetDocsumsResponse {
-
         private final byte compression;
         private final int uncompressedSize;
         private final byte[] compressedSlimeBytes;
@@ -91,38 +95,12 @@ interface Client {
 
     }
 
-    class SearchResponseOrError {
-        // One of these will be non empty and the other not
-        private Optional<SearchResponse> response;
-        private Optional<String> error;
-
-        public static SearchResponseOrError fromResponse(SearchResponse response) {
-            return new SearchResponseOrError(Optional.of(response), Optional.empty());
-        }
-
-        public static SearchResponseOrError fromError(String error) {
-            return new SearchResponseOrError(Optional.empty(), Optional.of(error));
-        }
-
-        private SearchResponseOrError(Optional<SearchResponse> response, Optional<String> error) {
-            this.response = response;
-            this.error = error;
-        }
-
-        /** Returns the response, or empty if there is an error */
-        public Optional<SearchResponse> response() { return response; }
-
-        /** Returns the error or empty if there is a response */
-        public Optional<String> error() { return error; }
-
-    }
-
-    class SearchResponse {
+    class ProtobufResponse {
         private final byte compression;
         private final int uncompressedSize;
         private final byte[] compressedPayload;
 
-        public SearchResponse(byte compression, int uncompressedSize, byte[] compressedPayload) {
+        public ProtobufResponse(byte compression, int uncompressedSize, byte[] compressedPayload) {
             this.compression = compression;
             this.uncompressedSize = uncompressedSize;
             this.compressedPayload = compressedPayload;
