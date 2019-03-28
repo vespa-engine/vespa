@@ -2,6 +2,7 @@
 package ai.vespa.logserver.protocol;
 
 import com.yahoo.jrt.DataValue;
+import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Int8Value;
 import com.yahoo.jrt.Method;
@@ -63,14 +64,14 @@ class ArchiveLogMessagesMethod {
             try {
                 byte compressionType = rpcRequest.parameters().get(0).asInt8();
                 if (compressionType != 0) {
-                    rpcRequest.setError(0, "Invalid compression type: " + compressionType);
+                    rpcRequest.setError(ErrorCode.METHOD_FAILED, "Invalid compression type: " + compressionType);
                     rpcRequest.returnRequest();
                     return;
                 }
                 int uncompressedSize = rpcRequest.parameters().get(1).asInt32();
                 byte[] logRequestPayload = rpcRequest.parameters().get(2).asData();
                 if (uncompressedSize != logRequestPayload.length) {
-                    rpcRequest.setError(1, String.format("Invalid uncompressed size: got %d while data is of size %d ", uncompressedSize, logRequestPayload.length));
+                    rpcRequest.setError(ErrorCode.METHOD_FAILED, String.format("Invalid uncompressed size: got %d while data is of size %d ", uncompressedSize, logRequestPayload.length));
                     rpcRequest.returnRequest();
                     return;
                 }
@@ -83,7 +84,7 @@ class ArchiveLogMessagesMethod {
             } catch (Exception e) {
                 String errorMessage = "Failed to handle log request: " + e.getMessage();
                 log.log(Level.WARNING, e, () -> errorMessage);
-                rpcRequest.setError(2, errorMessage);
+                rpcRequest.setError(ErrorCode.METHOD_FAILED, errorMessage);
                 rpcRequest.returnRequest();
             }
         }
