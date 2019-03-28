@@ -19,8 +19,6 @@ public abstract class Packet extends BasicPacket {
      */
     protected int channel = -1;
 
-    private static final int CHANNEL_ID_OFFSET = 8;
-
     /**
      * Fills this package from a byte buffer positioned at the first
      * byte of the package
@@ -107,17 +105,6 @@ public abstract class Packet extends BasicPacket {
     /** Informs that this packets needs a channel ID. */
     public boolean hasChannelId() {
         return true;
-    }
-
-    /**
-     * Only for use with encodingBuffer magic.
-     *
-     * This is only called from allocateAndEncode and grantEncodingBuffer,
-     * therefore an assumption about the packet starting at the beginning of the
-     * buffer is made.
-     */
-    protected void patchChannelId(ByteBuffer buf, int channelId) {
-        buf.putInt(CHANNEL_ID_OFFSET, channelId);
     }
 
     public String toString() {
