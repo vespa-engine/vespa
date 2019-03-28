@@ -37,7 +37,7 @@ using vespalib::string;
 
 namespace storage::api {
 
-struct StorageProtocolTest : Test {
+struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     document::TestDocMan _docMan;
     document::Document::SP _testDoc;
     document::DocumentId _testDocId;
@@ -62,15 +62,35 @@ struct StorageProtocolTest : Test {
     {
         _loadTypes.addLoadType(34, "foo", documentapi::Priority::PRI_NORMAL_2);
     }
+    ~StorageProtocolTest();
 
     template<typename Command>
-    std::shared_ptr<Command> copyCommand(const std::shared_ptr<Command>&, vespalib::Version);
+    std::shared_ptr<Command> copyCommand(const std::shared_ptr<Command>&);
     template<typename Reply>
     std::shared_ptr<Reply> copyReply(const std::shared_ptr<Reply>&);
     void recordOutput(const api::StorageMessage& msg);
 
     void recordSerialization50();
 };
+
+StorageProtocolTest::~StorageProtocolTest() = default;
+
+namespace {
+
+std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
+    std::ostringstream ss;
+    auto& p = info.param;
+    // Dots are not allowed in test names, so convert to underscores.
+    ss << p.getMajor() << '_' << p.getMinor() << '_' << p.getMicro();
+    return ss.str();
+}
+
+}
+
+// TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
+INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
+                        Values(vespalib::Version(6, 240, 0)),
+                        version_as_gtest_string);
 
 std::vector<std::string> StorageProtocolTest::_nonVerboseMessageStrings;
 std::vector<std::string> StorageProtocolTest::_verboseMessageStrings;
@@ -101,9 +121,10 @@ TEST_F(StorageProtocolTest, testAddress50) {
 }
 
 template<typename Command> std::shared_ptr<Command>
-StorageProtocolTest::copyCommand(const std::shared_ptr<Command>& m, vespalib::Version version)
+StorageProtocolTest::copyCommand(const std::shared_ptr<Command>& m)
 {
     auto mbusMessage = std::make_unique<mbusprot::StorageCommand>(m);
+    auto version = GetParam();
     mbus::Blob blob = _protocol.encode(version, *mbusMessage);
     mbus::Routable::UP copy(_protocol.decode(version, blob));
     assert(copy.get());
@@ -121,20 +142,22 @@ template<typename Reply> std::shared_ptr<Reply>
 StorageProtocolTest::copyReply(const std::shared_ptr<Reply>& m)
 {
     auto mbusMessage = std::make_unique<mbusprot::StorageReply>(m);
-    mbus::Blob blob = _protocol.encode(_version5_1, *mbusMessage);
-    mbus::Routable::UP copy(_protocol.decode(_version5_1, blob));
+    auto version = GetParam();
+    mbus::Blob blob = _protocol.encode(version, *mbusMessage);
+    mbus::Routable::UP copy(_protocol.decode(version, blob));
     assert(copy.get());
 
     auto* copy2 = dynamic_cast<mbusprot::StorageReply*>(copy.get());
     assert(copy2 != nullptr);
 
     copy2->setMessage(std::move(lastCommand));
-    StorageReply::SP internalMessage(copy2->getReply());
+    auto internalMessage = copy2->getReply();
     lastReply = std::move(mbusMessage);
     lastCommand = copy2->getMessage();
     return std::dynamic_pointer_cast<Reply>(internalMessage);
 }
 
+// TODO remove whatever this thing might be
 void StorageProtocolTest::recordSerialization50() {
     assert(lastCommand.get());
     assert(lastReply.get());
@@ -160,11 +183,11 @@ void StorageProtocolTest::recordSerialization50() {
     }
 }
 
-TEST_F(StorageProtocolTest, testPut51) {
+TEST_P(StorageProtocolTest, testPut) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->setUpdateTimestamp(Timestamp(13));
     cmd->setLoadType(_loadTypes["foo"]);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(*_testDoc, *cmd2->getDocument());
     EXPECT_EQ(vespalib::string("foo"), cmd2->getLoadType().getName());
     EXPECT_EQ(Timestamp(14), cmd2->getTimestamp());
@@ -184,7 +207,7 @@ TEST_F(StorageProtocolTest, testPut51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testUpdate51) {
+TEST_P(StorageProtocolTest, testUpdate) {
     auto update = std::make_shared<document::DocumentUpdate>(
             _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
     auto assignUpdate = std::make_shared<document::AssignValueUpdate>(document::IntFieldValue(17));
@@ -198,7 +221,7 @@ TEST_F(StorageProtocolTest, testUpdate51) {
     auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
     EXPECT_EQ(Timestamp(0), cmd->getOldTimestamp());
     cmd->setOldTimestamp(10);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_testDocId, cmd2->getDocumentId());
     EXPECT_EQ(Timestamp(14), cmd2->getTimestamp());
     EXPECT_EQ(Timestamp(10), cmd2->getOldTimestamp());
@@ -215,9 +238,9 @@ TEST_F(StorageProtocolTest, testUpdate51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testGet51) {
+TEST_P(StorageProtocolTest, testGet) {
     auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_testDocId, cmd2->getDocumentId());
     EXPECT_EQ(Timestamp(123), cmd2->getBeforeTimestamp());
     EXPECT_EQ(vespalib::string("foo,bar,vekterli"), cmd2->getFieldSet());
@@ -236,9 +259,9 @@ TEST_F(StorageProtocolTest, testGet51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testRemove51) {
+TEST_P(StorageProtocolTest, testRemove) {
     auto cmd = std::make_shared<RemoveCommand>(_bucket, _testDocId, 159);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_testDocId, cmd2->getDocumentId());
     EXPECT_EQ(Timestamp(159), cmd2->getTimestamp());
 
@@ -256,11 +279,11 @@ TEST_F(StorageProtocolTest, testRemove51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testRevert51) {
+TEST_P(StorageProtocolTest, testRevert) {
     std::vector<Timestamp> tokens;
     tokens.push_back(59);
     auto cmd = std::make_shared<RevertCommand>(_bucket, tokens);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(tokens, cmd2->getRevertTokens());
 
     auto reply = std::make_shared<RevertReply>(*cmd2);
@@ -275,13 +298,13 @@ TEST_F(StorageProtocolTest, testRevert51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testRequestBucketInfo51) {
+TEST_P(StorageProtocolTest, testRequestBucketInfo) {
     {
         std::vector<document::BucketId> ids;
         ids.push_back(document::BucketId(3));
         ids.push_back(document::BucketId(7));
         auto cmd = std::make_shared<RequestBucketInfoCommand>(makeBucketSpace(), ids);
-        auto cmd2 = copyCommand(cmd, _version5_1);
+        auto cmd2 = copyCommand(cmd);
         EXPECT_EQ(ids, cmd2->getBuckets());
         EXPECT_FALSE(cmd2->hasSystemState());
 
@@ -290,7 +313,7 @@ TEST_F(StorageProtocolTest, testRequestBucketInfo51) {
     {
         ClusterState state("distributor:3 .1.s:d");
         auto cmd = std::make_shared<RequestBucketInfoCommand>(makeBucketSpace(), 3, state, "14");
-        auto cmd2 = copyCommand(cmd, _version5_1);
+        auto cmd2 = copyCommand(cmd);
         ASSERT_TRUE(cmd2->hasSystemState());
         EXPECT_EQ(uint16_t(3), cmd2->getDistributor());
         EXPECT_EQ(state, cmd2->getSystemState());
@@ -316,12 +339,12 @@ TEST_F(StorageProtocolTest, testRequestBucketInfo51) {
     }
 }
 
-TEST_F(StorageProtocolTest, testNotifyBucketChange51) {
+TEST_P(StorageProtocolTest, testNotifyBucketChange) {
     BucketInfo info(2, 3, 4);
     document::BucketId modifiedBucketId(20, 1000);
     document::Bucket modifiedBucket(makeDocumentBucket(modifiedBucketId));
     auto cmd = std::make_shared<NotifyBucketChangeCommand>(modifiedBucket, info);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(document::BucketId(20, 1000), cmd2->getBucketId());
     EXPECT_EQ(info, cmd2->getBucketInfo());
 
@@ -333,12 +356,12 @@ TEST_F(StorageProtocolTest, testNotifyBucketChange51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testCreateBucket51) {
+TEST_P(StorageProtocolTest, testCreateBucket) {
     document::BucketId bucketId(623);
     document::Bucket bucket(makeDocumentBucket(bucketId));
 
     auto cmd = std::make_shared<CreateBucketCommand>(bucket);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(bucketId, cmd2->getBucketId());
 
     auto reply = std::make_shared<CreateBucketReply>(*cmd);
@@ -350,14 +373,14 @@ TEST_F(StorageProtocolTest, testCreateBucket51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testDeleteBucket51) {
+TEST_P(StorageProtocolTest, testDeleteBucket) {
     document::BucketId bucketId(623);
     document::Bucket bucket(makeDocumentBucket(bucketId));
 
     auto cmd = std::make_shared<DeleteBucketCommand>(bucket);
     BucketInfo info(0x100, 200, 300);
     cmd->setBucketInfo(info);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(bucketId, cmd2->getBucketId());
     EXPECT_EQ(info, cmd2->getBucketInfo());
 
@@ -373,7 +396,7 @@ TEST_F(StorageProtocolTest, testDeleteBucket51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testMergeBucket51) {
+TEST_P(StorageProtocolTest, testMergeBucket) {
     document::BucketId bucketId(623);
     document::Bucket bucket(makeDocumentBucket(bucketId));
 
@@ -389,7 +412,7 @@ TEST_F(StorageProtocolTest, testMergeBucket51) {
     chain.push_back(14);
 
     auto cmd = std::make_shared<MergeBucketCommand>(bucket, nodes, Timestamp(1234), 567, chain);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(bucketId, cmd2->getBucketId());
     EXPECT_EQ(nodes, cmd2->getNodes());
     EXPECT_EQ(Timestamp(1234), cmd2->getMaxTimestamp());
@@ -409,7 +432,7 @@ TEST_F(StorageProtocolTest, testMergeBucket51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testSplitBucket51) {
+TEST_P(StorageProtocolTest, testSplitBucket) {
     document::BucketId bucketId(16, 0);
     document::Bucket bucket(makeDocumentBucket(bucketId));
     auto cmd = std::make_shared<SplitBucketCommand>(bucket);
@@ -421,7 +444,7 @@ TEST_F(StorageProtocolTest, testSplitBucket51) {
     cmd->setMinDocCount(5);
     cmd->setMaxSplitBits(40);
     cmd->setMinSplitBits(20);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(20u, cmd2->getMinSplitBits());
     EXPECT_EQ(40u, cmd2->getMaxSplitBits());
     EXPECT_EQ(1000u, cmd2->getMinByteSize());
@@ -444,7 +467,7 @@ TEST_F(StorageProtocolTest, testSplitBucket51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testJoinBuckets51) {
+TEST_P(StorageProtocolTest, testJoinBuckets) {
     document::BucketId bucketId(16, 0);
     document::Bucket bucket(makeDocumentBucket(bucketId));
     std::vector<document::BucketId> sources;
@@ -453,7 +476,7 @@ TEST_F(StorageProtocolTest, testJoinBuckets51) {
     auto cmd = std::make_shared<JoinBucketsCommand>(bucket);
     cmd->getSourceBuckets() = sources;
     cmd->setMinJoinBits(3);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
 
     auto reply = std::make_shared<JoinBucketsReply>(*cmd2);
     reply->setBucketInfo(BucketInfo(3,4,5));
@@ -468,9 +491,9 @@ TEST_F(StorageProtocolTest, testJoinBuckets51) {
     recordOutput(*reply2);
 }
 
-TEST_F(StorageProtocolTest, testDestroyVisitor51) {
+TEST_P(StorageProtocolTest, testDestroyVisitor) {
     auto cmd = std::make_shared<DestroyVisitorCommand>("instance");
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("instance", cmd2->getInstanceId());
 
     auto reply = std::make_shared<DestroyVisitorReply>(*cmd2);
@@ -481,12 +504,12 @@ TEST_F(StorageProtocolTest, testDestroyVisitor51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testRemoveLocation51) {
+TEST_P(StorageProtocolTest, testRemoveLocation) {
     document::BucketId bucketId(16, 1234);
     document::Bucket bucket(makeDocumentBucket(bucketId));
 
     auto cmd = std::make_shared<RemoveLocationCommand>("id.group == \"mygroup\"", bucket);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
     EXPECT_EQ(bucketId, cmd2->getBucketId());
 
@@ -498,7 +521,7 @@ TEST_F(StorageProtocolTest, testRemoveLocation51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testCreateVisitor51) {
+TEST_P(StorageProtocolTest, testCreateVisitor) {
     std::vector<document::BucketId> buckets;
     buckets.push_back(document::BucketId(16, 1));
     buckets.push_back(document::BucketId(16, 2));
@@ -519,7 +542,7 @@ TEST_F(StorageProtocolTest, testCreateVisitor51) {
     cmd->setQueueTimeout(100);
     cmd->setVisitorOrdering(document::OrderingSpecification::DESCENDING);
     cmd->setPriority(149);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("library", cmd2->getLibraryName());
     EXPECT_EQ("id", cmd2->getInstanceId());
     EXPECT_EQ("doc selection", cmd2->getDocumentSelection());
@@ -542,7 +565,7 @@ TEST_F(StorageProtocolTest, testCreateVisitor51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testGetBucketDiff51) {
+TEST_P(StorageProtocolTest, testGetBucketDiff) {
     document::BucketId bucketId(623);
     document::Bucket bucket(makeDocumentBucket(bucketId));
 
@@ -564,7 +587,7 @@ TEST_F(StorageProtocolTest, testGetBucketDiff51) {
 
     auto cmd = std::make_shared<GetBucketDiffCommand>(bucket, nodes, 1056);
     cmd->getDiff() = entries;
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
 
     auto reply = std::make_shared<GetBucketDiffReply>(*cmd2);
     EXPECT_EQ(entries, reply->getDiff());
@@ -579,7 +602,7 @@ TEST_F(StorageProtocolTest, testGetBucketDiff51) {
     recordSerialization50();
 }
 
-TEST_F(StorageProtocolTest, testApplyBucketDiff51) {
+TEST_P(StorageProtocolTest, testApplyBucketDiff) {
     document::BucketId bucketId(16, 623);
     document::Bucket bucket(makeDocumentBucket(bucketId));
 
@@ -591,7 +614,7 @@ TEST_F(StorageProtocolTest, testApplyBucketDiff51) {
 
     auto cmd = std::make_shared<ApplyBucketDiffCommand>(bucket, nodes, 1234);
     cmd->getDiff() = entries;
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
 
     auto reply = std::make_shared<ApplyBucketDiffReply>(*cmd2);
     auto reply2 = copyReply(reply);
@@ -637,7 +660,7 @@ namespace {
     }
 }
 
-TEST_F(StorageProtocolTest, testInternalMessage) {
+TEST_P(StorageProtocolTest, testInternalMessage) {
     MyCommand cmd;
     MyReply reply(cmd);
 
@@ -645,11 +668,11 @@ TEST_F(StorageProtocolTest, testInternalMessage) {
     recordOutput(reply);
 }
 
-TEST_F(StorageProtocolTest, testSetBucketState51) {
+TEST_P(StorageProtocolTest, set_bucket_state) {
     document::BucketId bucketId(16, 0);
     document::Bucket bucket(makeDocumentBucket(bucketId));
     auto cmd = std::make_shared<SetBucketStateCommand>(bucket, SetBucketStateCommand::ACTIVE);
-    auto cmd2 = copyCommand(cmd, _version5_1);
+    auto cmd2 = copyCommand(cmd);
 
     auto reply = std::make_shared<SetBucketStateReply>(*cmd2);
     auto reply2 = copyReply(reply);
@@ -662,63 +685,63 @@ TEST_F(StorageProtocolTest, testSetBucketState51) {
     recordOutput(*reply2);
 }
 
-TEST_F(StorageProtocolTest, testPutCommand52) {
+TEST_P(StorageProtocolTest, put_command_with_condition) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
 
-    auto cmd2 = copyCommand(cmd, _version5_2);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
 }
 
-TEST_F(StorageProtocolTest, testUpdateCommand52) {
+TEST_P(StorageProtocolTest, update_command_with_condition) {
     auto update = std::make_shared<document::DocumentUpdate>(
             _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
     auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
     cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
 
-    auto cmd2 = copyCommand(cmd, _version5_2);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
 }
 
-TEST_F(StorageProtocolTest, testRemoveCommand52) {
+TEST_P(StorageProtocolTest, remove_command_with_condition) {
     auto cmd = std::make_shared<RemoveCommand>(_bucket, _testDocId, 159);
     cmd->setCondition(TestAndSetCondition(CONDITION_STRING));
 
-    auto cmd2 = copyCommand(cmd, _version5_2);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
 }
 
-TEST_F(StorageProtocolTest, testPutCommandWithBucketSpace6_0) {
+TEST_P(StorageProtocolTest, testPutCommandWithBucketSpace) {
     document::Bucket bucket(document::BucketSpace(5), _bucket.getBucketId());
     auto cmd = std::make_shared<PutCommand>(bucket, _testDoc, 14);
 
-    auto cmd2 = copyCommand(cmd, _version6_0);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(bucket, cmd2->getBucket());
 }
 
-TEST_F(StorageProtocolTest, testCreateVisitorWithBucketSpace6_0) {
+TEST_P(StorageProtocolTest, testCreateVisitorWithBucketSpace) {
     document::BucketSpace bucketSpace(5);
     auto cmd = std::make_shared<CreateVisitorCommand>(bucketSpace, "library", "id", "doc selection");
 
-    auto cmd2 = copyCommand(cmd, _version6_0);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(bucketSpace, cmd2->getBucketSpace());
 }
 
-TEST_F(StorageProtocolTest, testRequestBucketInfoWithBucketSpace6_0) {
+TEST_P(StorageProtocolTest, testRequestBucketInfoWithBucketSpace) {
     document::BucketSpace bucketSpace(5);
     std::vector<document::BucketId> ids = {document::BucketId(3)};
     auto cmd = std::make_shared<RequestBucketInfoCommand>(bucketSpace, ids);
 
-    auto cmd2 = copyCommand(cmd, _version6_0);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(bucketSpace, cmd2->getBucketSpace());
     EXPECT_EQ(ids, cmd2->getBuckets());
 }
 
-TEST_F(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storage_message) {
+TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storage_message) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     EXPECT_EQ(50u, cmd->getApproxByteSize());
 
-    auto cmd2 = copyCommand(cmd, _version6_0);
+    auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(181u, cmd2->getApproxByteSize());
 }
 
