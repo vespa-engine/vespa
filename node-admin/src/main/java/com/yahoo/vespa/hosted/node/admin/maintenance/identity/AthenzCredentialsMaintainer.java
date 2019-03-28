@@ -17,8 +17,8 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
+import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -51,7 +51,7 @@ import static java.util.Collections.singleton;
  *
  * @author bjorncs
  */
-public class AthenzCredentialsMaintainer {
+public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private static final Logger logger = Logger.getLogger(AthenzCredentialsMaintainer.class.getName());
 
@@ -89,7 +89,7 @@ public class AthenzCredentialsMaintainer {
         this.clock = Clock.systemUTC();
     }
 
-    public void converge(NodeAgentContext context) {
+    public boolean converge(NodeAgentContext context) {
         try {
             context.log(logger, LogLevel.DEBUG, "Checking certificate");
             Path containerSiaDirectory = context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY);
@@ -102,7 +102,7 @@ public class AthenzCredentialsMaintainer {
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
-                return;
+                return true;
             }
 
             X509Certificate certificate = readCertificateFromFile(certificateFile);
@@ -111,7 +111,7 @@ public class AthenzCredentialsMaintainer {
             if (isCertificateExpired(expiry, now)) {
                 context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
-                return;
+                return true;
             }
 
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
@@ -121,14 +121,15 @@ public class AthenzCredentialsMaintainer {
                     context.log(logger, LogLevel.WARNING, String.format(
                             "Skipping refresh attempt as last refresh was on %s (less than %s ago)",
                             lastRefreshAttempt.get(context.containerName()).toString(), REFRESH_BACKOFF.toString()));
-                    return;
+                    return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
                     refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
-                    return;
+                    return true;
                 }
             }
             context.log(logger, LogLevel.DEBUG, "Certificate is still valid");
+            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
