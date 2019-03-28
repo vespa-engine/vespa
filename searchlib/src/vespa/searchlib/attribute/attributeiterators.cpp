@@ -23,13 +23,6 @@ AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tfmd.docId", _matchData->getDocId());
 }
 
-FilterAttributeIterator::FilterAttributeIterator(const attribute::ISearchContext &baseSearchCtx,
-                                                 fef::TermFieldMatchData *matchData)
-    : AttributeIteratorBase(baseSearchCtx, matchData)
-{
-    _matchPosition->setElementWeight(1);
-}
-
 void
 AttributeIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
@@ -42,20 +35,6 @@ void
 FlagAttributeIterator::doUnpack(uint32_t docId)
 {
     _matchData->resetOnlyDocId(docId);
-}
-
-AttributePostingListIterator::AttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx,
-                                                           bool hasWeight,
-                                                           TermFieldMatchData *matchData)
-    : AttributeIteratorBase(baseSearchCtx, matchData),
-      _hasWeight(hasWeight)
-{
-}
-
-FilterAttributePostingListIterator::
-FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, TermFieldMatchData *matchData)
-    : AttributeIteratorBase(baseSearchCtx, matchData)
-{
 }
 
 void

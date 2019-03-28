@@ -67,7 +67,11 @@ class FilterAttributeIterator : public AttributeIteratorBase
 {
 public:
     FilterAttributeIterator(const attribute::ISearchContext &baseSearchCtx,
-                            fef::TermFieldMatchData *matchData);
+                            fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData)
+    {
+        _matchPosition->setElementWeight(1);
+    }
 protected:
     void doUnpack(uint32_t docId) override;
 };
@@ -167,7 +171,10 @@ class AttributePostingListIterator : public AttributeIteratorBase
 {
 public:
     AttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx,
-                                 bool hasWeight, fef::TermFieldMatchData *matchData);
+                                 bool hasWeight, fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData),
+          _hasWeight(hasWeight)
+    {}
     Trinary is_strict() const override { return Trinary::True; }
 protected:
     bool  _hasWeight;
@@ -177,7 +184,9 @@ protected:
 class FilterAttributePostingListIterator : public AttributeIteratorBase
 {
 public:
-    FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData);
+    FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData)
+    {}
     Trinary is_strict() const override { return Trinary::True; }
 };
 
