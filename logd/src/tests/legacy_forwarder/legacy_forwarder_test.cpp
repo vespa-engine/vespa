@@ -40,13 +40,12 @@ struct ForwardFixture {
     }
 
     void verifyForward(bool doForward) {
-        const std::string & line(logLine);
-        forwarder.forwardLine(line.c_str(), line.c_str() + line.length());
+        forwarder.forwardLine(logLine);
         fsync(fd);
         int rfd = open(fname.c_str(), O_RDONLY);
         char *buffer[2048];
         ssize_t bytes = read(rfd, buffer, 2048);
-        ssize_t expected = doForward ? line.length() : 0;
+        ssize_t expected = doForward ? logLine.length() : 0;
         EXPECT_EQUAL(expected, bytes);
         close(rfd);
     }

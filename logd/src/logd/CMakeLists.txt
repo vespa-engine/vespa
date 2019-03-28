@@ -16,6 +16,7 @@ vespa_add_library(logd STATIC
     legacy_forwarder.cpp
     metrics.cpp
     proto_converter.cpp
+    rpc_forwarder.cpp
     state_reporter.cpp
     watcher.cpp
     ${logd_PROTOBUF_SRCS}

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <string_view>
+
 namespace logdemon {
 
 /**
@@ -11,7 +13,8 @@ class Forwarder {
 public:
     virtual ~Forwarder() {}
     virtual void sendMode() = 0;
-    virtual void forwardLine(const char *line, const char *eol) = 0;
+    virtual void forwardLine(std::string_view log_line) = 0;
+    virtual void flush() = 0;
     virtual int badLines() const = 0;
     virtual void resetBadLines() = 0;
 };
