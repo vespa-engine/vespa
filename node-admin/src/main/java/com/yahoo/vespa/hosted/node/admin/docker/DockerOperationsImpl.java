@@ -271,12 +271,12 @@ public class DockerOperationsImpl implements DockerOperations {
         Path varLibSia = Paths.get("/var/lib/sia");
 
         // Paths unique to each container
-        List<Path> paths = new ArrayList<>(Arrays.asList(
+        List<Path> paths = new ArrayList<>(List.of(
                 Paths.get("/etc/vespa/flags"),
                 Paths.get("/etc/yamas-agent"),
                 context.pathInNodeUnderVespaHome("logs/daemontools_y"),
                 context.pathInNodeUnderVespaHome("logs/jdisc_core"),
-                context.pathInNodeUnderVespaHome("logs/langdetect/"),
+                context.pathInNodeUnderVespaHome("logs/langdetect"),
                 context.pathInNodeUnderVespaHome("logs/nginx"),
                 context.pathInNodeUnderVespaHome("logs/vespa"),
                 context.pathInNodeUnderVespaHome("logs/yca"),
@@ -288,14 +288,16 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("logs/ysar"),
                 context.pathInNodeUnderVespaHome("logs/ystatus"),
                 context.pathInNodeUnderVespaHome("logs/zpu"),
+                context.pathInNodeUnderVespaHome("tmp"),
                 context.pathInNodeUnderVespaHome("var/cache"),
                 context.pathInNodeUnderVespaHome("var/crash"),
+                context.pathInNodeUnderVespaHome("var/container-data"),
                 context.pathInNodeUnderVespaHome("var/db/jdisc"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
                 context.pathInNodeUnderVespaHome("var/jdisc_core"),
                 context.pathInNodeUnderVespaHome("var/maven"),
-                context.pathInNodeUnderVespaHome("var/mediasearch"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when vespa-routing is no more
                 context.pathInNodeUnderVespaHome("var/run"),
                 context.pathInNodeUnderVespaHome("var/scoreboards"),
                 context.pathInNodeUnderVespaHome("var/service"),
@@ -305,9 +307,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/yca"),
                 context.pathInNodeUnderVespaHome("var/ycore++"),
                 context.pathInNodeUnderVespaHome("var/yinst/tmp"),
-                context.pathInNodeUnderVespaHome("var/zookeeper"),
-                context.pathInNodeUnderVespaHome("tmp"),
-                context.pathInNodeUnderVespaHome("var/container-data")));
+                context.pathInNodeUnderVespaHome("var/zookeeper")
+        ));
 
         if (context.nodeType() == NodeType.proxy)
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
@@ -320,9 +321,6 @@ public class DockerOperationsImpl implements DockerOperations {
         // Shared paths
         if (isInfrastructureHost(context.nodeType()))
             command.withSharedVolume(varLibSia, varLibSia);
-
-        if (context.nodeType() == NodeType.proxy || context.nodeType() == NodeType.controller)
-            command.withSharedVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
 
         if (context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
