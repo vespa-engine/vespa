@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "conn.h"
 #include "exceptions.h"
 #include "legacy_forwarder.h"
 #include "metrics.h"
@@ -7,6 +8,8 @@
 #include <vespa/log/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -17,21 +20,82 @@ using ns_log::BadLogLineException;
 using ns_log::LogMessage;
 using ns_log::Logger;
 using LogLevel = Logger::LogLevel;
+using vespalib::make_string;
 
 namespace logdemon {
 
+void
+LegacyForwarder::connect_to_logserver(const vespalib::string& logserver_host, int logserver_port)
+{
+    int new_fd = makeconn(logserver_host.c_str(), logserver_port);
+    if (new_fd >= 0) {
+        LOG(debug, "Connected to logserver at %s:%d", logserver_host.c_str(), logserver_port);
+        _logserver_fd = new_fd;
+    } else {
+        auto error_msg = make_string("Could not connect to %s:%d", logserver_host.c_str(), logserver_port);
+        LOG(debug, "%s", error_msg.c_str());
+        throw ConnectionException(error_msg);
+    }
+}
+
+void
+LegacyForwarder::connect_to_dev_null()
+{
+    int new_fd = open("/dev/null", O_RDWR);
+    if (new_fd >= 0) {
+        LOG(debug, "Opened /dev/null for read/write");
+        _logserver_fd = new_fd;
+    } else {
+        auto error_msg = make_string("Error opening /dev/null (%d): %s", new_fd, strerror(new_fd));
+        LOG(debug, "%s", error_msg.c_str());
+        throw ConnectionException(error_msg);
+    }
+}
+
 LegacyForwarder::LegacyForwarder(Metrics &metrics)
-    : _logserverfd(-1),
+    :
       _metrics(metrics),
+      _logserver_fd(-1),
       _forwardMap(),
       _badLines(0)
-{}
-LegacyForwarder::~LegacyForwarder() = default;
+{
+}
+
+LegacyForwarder::UP
+LegacyForwarder::to_logserver(Metrics& metrics, const vespalib::string& logserver_host, int logserver_port)
+{
+    LegacyForwarder::UP result(new LegacyForwarder(metrics));
+    result->connect_to_logserver(logserver_host, logserver_port);
+    return result;
+}
+
+LegacyForwarder::UP
+LegacyForwarder::to_dev_null(Metrics& metrics)
+{
+    LegacyForwarder::UP result(new LegacyForwarder(metrics));
+    result->connect_to_dev_null();
+    return result;
+}
+
+LegacyForwarder::UP
+LegacyForwarder::to_open_file(Metrics& metrics, int file_desc)
+{
+    LegacyForwarder::UP result(new LegacyForwarder(metrics));
+    result->_logserver_fd = file_desc;
+    return result;
+}
+
+LegacyForwarder::~LegacyForwarder()
+{
+    if (_logserver_fd >= 0) {
+        close(_logserver_fd);
+    }
+}
 
 void
 LegacyForwarder::forwardText(const char *text, int len)
 {
-    int wsize = write(_logserverfd, text, len);
+    int wsize = write(_logserver_fd, text, len);
 
     if (wsize != len) {
         if (wsize > 0) {
@@ -60,7 +124,7 @@ LegacyForwarder::sendMode()
 void
 LegacyForwarder::forwardLine(std::string_view line)
 {
-    assert(_logserverfd >= 0);
+    assert(_logserver_fd >= 0);
     assert (line.size() > 0);
     assert (line.size() < 1024*1024);
     assert (line[line.size() - 1] == '\n');

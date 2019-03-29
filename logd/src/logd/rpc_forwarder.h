@@ -26,6 +26,7 @@ private:
     int _bad_lines;
     ForwardMap _forward_filter;
 
+
 public:
     RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
                  const vespalib::string& logserver_host, int logserver_rpc_port,

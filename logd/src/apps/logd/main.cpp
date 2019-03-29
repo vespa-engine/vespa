@@ -21,7 +21,6 @@ int main(int, char**)
 {
     StateReporter stateReporter;
     Metrics metrics(stateReporter.metrics());
-    LegacyForwarder fwd(metrics);
 
     EV_STARTED("logdemon");
 
@@ -30,26 +29,27 @@ int main(int, char**)
     const char *cfid = getenv("VESPA_CONFIG_ID");
 
     try {
-        ConfigSubscriber subscriber(fwd, config::ConfigUri(cfid));
+        config::ConfigUri config_uri(cfid);
+        ConfigSubscriber subscriber(config_uri);
+        Forwarder::UP forwarder;
 
         int sleepcount = 0;
         while (true) {
-            Watcher watcher(subscriber, fwd);
-
             try {
                 subscriber.latch();
+                if (!forwarder || subscriber.need_new_forwarder()) {
+                    forwarder = subscriber.make_forwarder(metrics);
+                }
+                Watcher watcher(subscriber, *forwarder);
+
                 stateReporter.setStatePort(subscriber.getStatePort());
                 stateReporter.gotConf(subscriber.generation());
-                int fd = subscriber.getservfd();
-                if (fd >= 0) {
-                    sleepcount = 0 ; // connection OK, reset sleep time
-                    watcher.watchfile();
-                } else {
-                    LOG(spam, "bad fd in subscriber");
-                }
+
+                sleepcount = 0 ; // connection OK, reset sleep time
+                watcher.watchfile();
             } catch (ConnectionException& ex) {
                 LOG(debug, "connection exception: %s", ex.what());
-                subscriber.closeConn();
+                forwarder.reset();
             }
             if (catcher.receivedStopSignal()) {
                 throw SigTermException("caught signal");

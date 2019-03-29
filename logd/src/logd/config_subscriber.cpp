@@ -18,15 +18,15 @@ void
 ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
 {
     const LogdConfig &newconf(*cfg);
-    if (newconf.logserver.host != _logServer) {
-        _logServer = newconf.logserver.host;
-        _needToConnect = true;
+    if (newconf.logserver.host != _logserver_host) {
+        _logserver_host = newconf.logserver.host;
+        _need_new_forwarder = true;
     }
     if (newconf.logserver.use != _use_logserver) {
         _use_logserver = newconf.logserver.use;
-        _needToConnect = true;
+        _need_new_forwarder = true;
     }
-    _statePort = newconf.stateport;
+    _state_port = newconf.stateport;
 
     ForwardMap forwardMap;
     forwardMap[Logger::fatal] = newconf.loglevel.fatal.forward;
@@ -37,11 +37,14 @@ ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
     forwardMap[Logger::event] = newconf.loglevel.event.forward;
     forwardMap[Logger::debug] = newconf.loglevel.debug.forward;
     forwardMap[Logger::spam] = newconf.loglevel.spam.forward;
-    _fw.setForwardMap(forwardMap);
+    if (forwardMap != _forward_filter) {
+        _forward_filter = forwardMap;
+        _need_new_forwarder = true;
+    }
 
-    if (newconf.logserver.port != _logPort) {
-        _logPort = newconf.logserver.port;
-        _needToConnect = true;
+    if (newconf.logserver.port != _logserver_port) {
+        _logserver_port = newconf.logserver.port;
+        _need_new_forwarder = true;
     }
     if (newconf.rotate.size > 0) {
         _rotate_size = newconf.rotate.size;
@@ -69,9 +72,9 @@ bool
 ConfigSubscriber::checkAvailable()
 {
     if (_subscriber.nextGeneration(0)) {
-        _hasAvailable = true;
+        _has_available = true;
     }
-    return _hasAvailable;
+    return _has_available;
 }
 
 void
@@ -79,88 +82,48 @@ ConfigSubscriber::latch()
 {
     if (checkAvailable()) {
         configure(_handle->getConfig());
-        _hasAvailable = false;
-    }
-    if (_needToConnect) {
-        if (_use_logserver) {
-            connectToLogserver();
-        } else {
-            connectToDevNull();
-        }
+        _has_available = false;
     }
 }
 
-void
-ConfigSubscriber::connectToLogserver()
-{
-    int newfd = makeconn(_logServer.c_str(), _logPort);
-    if (newfd >= 0) {
-        resetFileDescriptor(newfd);
-        LOG(debug, "connected to logserver at %s:%d", _logServer.c_str(), _logPort);
-    } else {
-        LOG(debug, "could not connect to %s:%d", _logServer.c_str(), _logPort);
-    }
-}
-
-void
-ConfigSubscriber::connectToDevNull()
-{
-    int newfd = open("/dev/null", O_RDWR);
-    if (newfd >= 0) {
-        resetFileDescriptor(newfd);
-        LOG(debug, "opened /dev/null for read/write");
-    } else {
-        LOG(debug, "error opening /dev/null (%d): %s", newfd, strerror(newfd));
-    }
-}
-
-void
-ConfigSubscriber::resetFileDescriptor(int newfd)
-{
-    if (_logserverfd >= 0) {
-        close(_logserverfd);
-    }
-    _logserverfd = newfd;
-    _fw.setLogserverFD(newfd);
-    _needToConnect = false;
-}
-
-void
-ConfigSubscriber::closeConn()
-{
-    close(_logserverfd);
-    _logserverfd = -1;
-    _needToConnect = true;
-}
-
-ConfigSubscriber::ConfigSubscriber(LegacyForwarder &fw, const config::ConfigUri &configUri)
-    : _logServer(),
-      _logPort(0),
-      _logserverfd(-1),
-      _statePort(0),
+ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
+    : _logserver_host(),
+      _logserver_port(0),
+      _state_port(0),
+      _forward_filter(),
       _rotate_size(INT_MAX),
       _rotate_age(INT_MAX),
       _remove_meg(INT_MAX),
       _remove_age(3650),
       _use_logserver(true),
-      _fw(fw),
       _subscriber(configUri.getContext()),
       _handle(),
-      _hasAvailable(false),
-      _needToConnect(true)
+      _has_available(false),
+      _need_new_forwarder(true)
 {
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
     _subscriber.nextConfig(0);
     configure(_handle->getConfig());
 
-    LOG(debug, "got logServer %s", _logServer.c_str());
+    LOG(debug, "got logServer %s", _logserver_host.c_str());
     LOG(debug, "got handle %p", _handle.get());
 }
 
 ConfigSubscriber::~ConfigSubscriber()
 {
-    LOG(debug, "forget logServer %s", _logServer.c_str());
+    LOG(debug, "forget logServer %s", _logserver_host.c_str());
     LOG(debug, "done ~ConfSub()");
+}
+
+std::unique_ptr<Forwarder>
+ConfigSubscriber::make_forwarder(Metrics& metrics)
+{
+    LegacyForwarder::UP result = _use_logserver ?
+                                 LegacyForwarder::to_logserver(metrics, _logserver_host, _logserver_port) :
+                                 LegacyForwarder::to_dev_null(metrics);
+    result->setForwardMap(_forward_filter);
+    _need_new_forwarder = false;
+    return result;
 }
 
 }
