@@ -78,11 +78,12 @@ Watcher::~Watcher()
 
 
 struct donecache {
-    donecache() : st_dev(0), st_ino(0), offset(0), valid(false) {}
+    donecache() : st_dev(0), st_ino(0), offset(0), valid(false) { memset(pad, 0, sizeof(pad)); }
     dev_t st_dev; /* device */
     ino_t st_ino; /* inode number */
     off_t offset;
     bool  valid;
+    char pad[7];
 };
 
 class StateSaver {
