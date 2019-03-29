@@ -412,7 +412,7 @@ class ApacheGatewayConnection implements GatewayConnection {
 
             }
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
-            clientBuilder.setDefaultHeaders(List.of(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
+            clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
