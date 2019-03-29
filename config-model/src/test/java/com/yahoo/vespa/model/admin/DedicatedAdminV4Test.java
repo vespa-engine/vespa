@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.junit.Assert.assertEquals;
@@ -77,7 +78,7 @@ public class DedicatedAdminV4Test {
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd");
         assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd");
         // Note: A container is always added on logserver host
-        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd", CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd", LOGSERVER_CONTAINER.serviceName);
 
         Monitoring monitoring = model.getAdmin().getMonitoring();
         assertEquals("vespa.routing", monitoring.getClustername());
@@ -157,7 +158,7 @@ public class DedicatedAdminV4Test {
         assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok");
         assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok");
         // Note: A container is always added on logserver host
-        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver", CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver", LOGSERVER_CONTAINER.serviceName);
 
         Set<String> configIds = model.getConfigIds();
         // 1 logforwarder on each host
@@ -200,7 +201,7 @@ public class DedicatedAdminV4Test {
                 .properties(new TestProperties().setHostedVespa(true)));
         assertEquals(1, model.getHosts().size());
         // Should create a container on the same node as logserver
-        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", CONTAINER.serviceName);
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", LOGSERVER_CONTAINER.serviceName);
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {

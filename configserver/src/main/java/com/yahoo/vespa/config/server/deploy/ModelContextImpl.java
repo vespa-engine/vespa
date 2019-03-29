@@ -132,7 +132,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useFdispatchByDefault;
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
-        private final boolean useSeparateServiceTypeForLogserverContainer;
         private final boolean enableMetricsProxyContainer;
 
         public Properties(ApplicationId applicationId,
@@ -165,8 +164,6 @@ public class ModelContextImpl implements ModelContext {
             this.dispatchWithProtobuf = Flags.DISPATCH_WITH_PROTOBUF.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.useSeparateServiceTypeForLogserverContainer = Flags.USE_SEPARATE_SERVICE_TYPE_FOR_LOGSERVER_CONTAINER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.enableMetricsProxyContainer = Flags.ENABLE_METRICS_PROXY_CONTAINER.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -220,9 +217,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
-
-        @Override
-        public boolean useSeparateServiceTypeForLogserverContainer() { return useSeparateServiceTypeForLogserverContainer; }
 
         @Override
         public boolean enableMetricsProxyContainer() { return enableMetricsProxyContainer; }

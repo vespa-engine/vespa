@@ -26,9 +26,7 @@ public abstract class BasicPacket {
     private static int DEFAULT_WRITE_BUFFER_SIZE = (10 * 1024);
     public static final int CODE_MASK = 0x00ff_ffff;  // Reserve upper byte for flags.
 
-    protected byte[] encodedBody;
-
-    protected ByteBuffer encodingBuffer;
+    private byte[] encodedBody;
 
     /** The length of this packet in bytes or -1 if not known */
     protected int length = -1;
@@ -199,7 +197,7 @@ public abstract class BasicPacket {
         throw new UnsupportedOperationException("Encoding of " + this + " is not implemented");
     }
 
-    protected void setEncodedBody(ByteBuffer b, int start, int length) {
+    private void setEncodedBody(ByteBuffer b, int start, int length) {
         encodedBody = new byte[length];
         b.position(start);
         b.get(encodedBody);
@@ -222,18 +220,7 @@ public abstract class BasicPacket {
      *
      * If this packet does not use a channel ID, the ID will be ignored.
      */
-    public final void allocateAndEncode(int channelId) {
-        allocateAndEncode(channelId, DEFAULT_WRITE_BUFFER_SIZE);
-    }
-
-    private void allocateAndEncode(int channelId, int initialSize) {
-        if (encodingBuffer != null) {
-            patchChannelId(encodingBuffer, channelId);
-            return;
-        }
-
-        int size = initialSize;
-        ByteBuffer buffer = ByteBuffer.allocate(size);
+    private ByteBuffer allocateAndEncode(int channelId, ByteBuffer buffer) {
         while (true) {
             try {
                 if (hasChannelId()) {
@@ -242,43 +229,25 @@ public abstract class BasicPacket {
                     encode(buffer);
                 }
                 buffer.flip();
-                encodingBuffer = buffer;
                 break;
             }
             catch (BufferTooSmallException e) {
-                size *= 2;
-                buffer = ByteBuffer.allocate(size);
+                buffer = ByteBuffer.allocate(buffer.capacity()*2);
             }
         }
+        return buffer;
     }
-
-    // No channel ID for BasicPacket instances, so it's a NOP
-    protected void patchChannelId(ByteBuffer buf, int channelId) {}
 
     /**
      * Return buffer containing the encoded form of this package and
      * remove internal reference to it.
      */
     public final ByteBuffer grantEncodingBuffer(int channelId) {
-        if (encodingBuffer == null) {
-            allocateAndEncode(channelId);
-        } else {
-            patchChannelId(encodingBuffer, channelId);
-        }
-        ByteBuffer b = encodingBuffer;
-        encodingBuffer = null;
-        return b;
+        return allocateAndEncode(channelId, ByteBuffer.allocate(DEFAULT_WRITE_BUFFER_SIZE));
     }
 
-    public final ByteBuffer grantEncodingBuffer(int channelId, int initialSize) {
-        if (encodingBuffer == null) {
-            allocateAndEncode(channelId, initialSize);
-        } else {
-            patchChannelId(encodingBuffer, channelId);
-        }
-        ByteBuffer b = encodingBuffer;
-        encodingBuffer = null;
-        return b;
+    public final ByteBuffer grantEncodingBuffer(int channelId, ByteBuffer buffer) {
+        return allocateAndEncode(channelId, buffer);
     }
 
     /** Returns the code of this package */

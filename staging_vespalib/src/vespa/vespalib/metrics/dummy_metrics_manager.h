@@ -20,7 +20,7 @@ namespace metrics {
  **/
 class DummyMetricsManager : public MetricsManager
 {
-private:
+protected:
     DummyMetricsManager() {}
 public:
     ~DummyMetricsManager();

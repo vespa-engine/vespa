@@ -16,6 +16,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
         addDefaultHandlersWithVip();
         addLogHandler();
+        addDefaultSearchAccessLog();
     }
 
     @Override

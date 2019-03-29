@@ -46,6 +46,9 @@
       "name": "ReadyJobsTrigger"
     },
     {
+      "name": "ResourceMeterMaintainer"
+    },
+    {
       "name": "RoutingPolicyMaintainer"
     },
     {

@@ -1,0 +1,214 @@
+#!/bin/bash
+#
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# BEGIN environment bootstrap section
+# Do not edit between here and END as this section should stay identical in all scripts
+
+findpath () {
+    myname=${0}
+    mypath=${myname%/*}
+    myname=${myname##*/}
+    if [ "$mypath" ] && [ -d "$mypath" ]; then
+        return
+    fi
+    mypath=$(pwd)
+    if [ -f "${mypath}/${myname}" ]; then
+        return
+    fi
+    echo "FATAL: Could not figure out the path where $myname lives from $0"
+    exit 1
+}
+
+COMMON_ENV=libexec/vespa/common-env.sh
+
+source_common_env () {
+    if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
+        export VESPA_HOME
+        common_env=$VESPA_HOME/$COMMON_ENV
+        if [ -f "$common_env" ]; then
+            . $common_env
+            return
+        fi
+    fi
+    return 1
+}
+
+findroot () {
+    source_common_env && return
+    if [ "$VESPA_HOME" ]; then
+        echo "FATAL: bad VESPA_HOME value '$VESPA_HOME'"
+        exit 1
+    fi
+    if [ "$ROOT" ] && [ -d "$ROOT" ]; then
+        VESPA_HOME="$ROOT"
+        source_common_env && return
+    fi
+    findpath
+    while [ "$mypath" ]; do
+        VESPA_HOME=${mypath}
+        source_common_env && return
+        mypath=${mypath%/*}
+    done
+    echo "FATAL: missing VESPA_HOME environment variable"
+    echo "Could not locate $COMMON_ENV anywhere"
+    exit 1
+}
+
+findhost () {
+    if [ "${VESPA_HOSTNAME}" = "" ]; then
+        VESPA_HOSTNAME=$(vespa-detect-hostname || hostname -f || hostname || echo "localhost") || exit 1
+    fi
+    validate="${VESPA_HOME}/bin/vespa-validate-hostname"
+    if [ -f "$validate" ]; then
+        "$validate" "${VESPA_HOSTNAME}" || exit 1
+    fi
+    export VESPA_HOSTNAME
+}
+
+findroot
+findhost
+
+# END environment bootstrap section
+
+set -eu
+
+declare LB_STATUS_DIR="$VESPA_HOME"/var/vespa/load-balancer
+declare LB_STATUS_FILE="$LB_STATUS_DIR"/status.html
+declare LB_OPERATOR_LOG="$LB_STATUS_DIR"/operator.log
+
+function Usage {
+    cat <<EOF
+Usage: ${0##*/} COMMAND [-u USER] [-f]
+Make jdisc container stop serving /status.html.
+
+Useful when jdisc container is behind a load balancer: The load balancer can be
+set up to monitor the health of /status.html requests, and remove bad backends
+from serving.
+
+Command:
+  get   Return info on the current in/out status.
+  in    Undo 'out'. This command is a no-op if 1. status is already in, or 2.
+        if the the user that set it out is different from USER and -f was NOT
+        specified.
+  out   Stop answering OK on /status.html requests against jdisc container.
+        Note: The jdisc container may not answer OK for other reasons too.
+
+Options:
+  -u USER  Set the user agent. The user setting the status in, must match
+           the user that set it out. Defaults to current user.
+  -f       Force-set status: Ignore any mismatch on user.
+EOF
+
+    exit 0
+}
+
+function PrintPair {
+    printf "%-19s %s\n" "$1:" "$2"
+}
+
+function IsIn {
+    if [ -r "$LB_STATUS_FILE" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function DifferentUserSetOut {
+    local user="$1"
+
+    if [ -r "$LB_OPERATOR_LOG" ]; then
+        local out_user
+        out_user=$(< "$LB_OPERATOR_LOG")
+        if [ "$user" != "$out_user" ]; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+function GetCommand {
+    if IsIn; then
+        PrintPair "VIP status" IN
+    else
+        PrintPair "VIP status" OUT
+    fi
+    PrintPair "Status file" "$LB_STATUS_FILE"
+
+    if [ -r "$LB_OPERATOR_LOG" ]; then
+        PrintPair "Last modified" "$(stat -c %y "$LB_OPERATOR_LOG")"
+        PrintPair "Last modified by" "$(< "$LB_OPERATOR_LOG")"
+    fi
+}
+
+function InCommand {
+    local user="$1"
+    local force="$2"
+
+    if ! $force; then
+        if IsIn || DifferentUserSetOut "$user"; then
+            return
+        fi
+    fi
+
+    mkdir -p "$LB_STATUS_DIR"
+    echo "$user" > "$LB_OPERATOR_LOG"
+    echo OK > "$LB_STATUS_FILE"
+}
+
+function OutCommand {
+    local user="$1"
+    local force="$2"
+
+    if ! $force && ! IsIn; then
+        return
+    fi
+
+    mkdir -p "$LB_STATUS_DIR"
+    echo "$user" > "$LB_OPERATOR_LOG"
+    rm -f "$LB_STATUS_FILE"
+}
+
+function Main {
+    if (($# == 0)); then
+        Usage
+    fi
+
+    local command=
+    local user="${SUDO_USER:-${USER:-$(id -nu)}}"
+    local force=false
+
+    # Supports placement of options both before and after command.
+    while (($# > 0)); do
+        case "$1" in
+            -f)
+                force=true
+                shift
+                ;;
+            -u)
+                user="$2"
+                shift 2
+                ;;
+            -*) Usage "Unknown option '$1'" ;;
+            *)
+                case "$1" in
+                    get) command="GetCommand" ;;
+                    in) command="InCommand" ;;
+                    out) command="OutCommand" ;;
+                    *) Usage ;;
+                esac
+                shift
+                ;;
+        esac
+    done
+
+    if [ -z "$command" ]; then
+        Usage
+    fi
+
+    "$command" "$user" "$force"
+}
+
+Main "$@"

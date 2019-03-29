@@ -27,7 +27,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorE
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
-import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 
@@ -63,7 +63,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final StorageMaintainer storageMaintainer;
-    private final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer;
+    private final Optional<CredentialsMaintainer> credentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
     private final Optional<HealthChecker> healthChecker;
 
@@ -105,7 +105,7 @@ public class NodeAgentImpl implements NodeAgent {
             final DockerOperations dockerOperations,
             final StorageMaintainer storageMaintainer,
             final FlagSource flagSource,
-            final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer,
+            final Optional<CredentialsMaintainer> credentialsMaintainer,
             final Optional<AclMaintainer> aclMaintainer,
             final Optional<HealthChecker> healthChecker) {
         this.contextSupplier = contextSupplier;
@@ -113,7 +113,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.orchestrator = orchestrator;
         this.dockerOperations = dockerOperations;
         this.storageMaintainer = storageMaintainer;
-        this.athenzCredentialsMaintainer = athenzCredentialsMaintainer;
+        this.credentialsMaintainer = credentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
         this.healthChecker = healthChecker;
 
@@ -443,7 +443,7 @@ public class NodeAgentImpl implements NodeAgent {
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
-                athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+                credentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 if (! container.isPresent()) {
                     containerState = STARTING;
                     startContainer(context);
@@ -481,7 +481,7 @@ public class NodeAgentImpl implements NodeAgent {
             case dirty:
                 removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.getState() + ", will delete application storage and mark node as ready");
-                athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
+                credentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context);
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);

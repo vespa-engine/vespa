@@ -570,6 +570,7 @@ void bodycfg(SDDocumentType document) : { }
  */
 void compression(SDDocumentType document, String name) :
 {
+    deployLogger.log(Level.WARNING, "'compression' for a document is deprecated and ignored");
     CompressionConfig cfg = new CompressionConfig(CompressionType.LZ4);
 }
 {

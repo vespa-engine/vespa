@@ -34,8 +34,8 @@ public class CostReportMaintainerTest {
                 .build();
 
 
-        tester.createTenant("lsbe", "local-search", 1L);
-        tester.createTenant("mediasearch", "msbe", 2L);
+        tester.createTenant("tenant1", "app1", 1L);
+        tester.createTenant("tenant2", "app2", 2L);
         CostReportMaintainer maintainer = new CostReportMaintainer(
                 tester.controller(),
                 Duration.ofDays(1),

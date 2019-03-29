@@ -18,7 +18,12 @@ public:
 class ConnectionException : public MsgException
 {
 public:
-    ConnectionException(const char *s) : MsgException(s) {}
+    ConnectionException(const std::string& msg) : MsgException(msg) {}
+};
+
+class DecodeException : public MsgException {
+public:
+    DecodeException(const std::string& msg) : MsgException(msg) {}
 };
 
 class SigTermException : public MsgException
