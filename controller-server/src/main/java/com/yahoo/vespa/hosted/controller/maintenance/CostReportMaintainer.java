@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
@@ -46,6 +47,6 @@ public class CostReportMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        consumer.Consume(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, selfHostedCostConfig));
+        consumer.Consume(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, selfHostedCostConfig, CloudName.from("yahoo")));
     }
 }

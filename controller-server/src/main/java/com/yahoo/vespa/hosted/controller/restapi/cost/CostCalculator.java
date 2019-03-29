@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.cost;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
@@ -14,9 +13,7 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,30 +26,32 @@ public class CostCalculator {
     private static final double SELF_HOSTED_DISCOUNT = .5;
 
     public static String resourceShareByPropertyToCsv(NodeRepositoryClientInterface nodeRepository,
-                                                                  Controller controller,
-                                                                  Clock clock,
-                                                                  SelfHostedCostConfig selfHostedCostConfig) {
+                                                      Controller controller,
+                                                      Clock clock,
+                                                      SelfHostedCostConfig selfHostedCostConfig,
+                                                      CloudName cloudName) {
 
         String date = LocalDate.now(clock).toString();
 
         List<NodeRepositoryNode> nodes = controller.zoneRegistry().zones()
-                .reachable().in(Environment.prod).ofCloud(CloudName.from("yahoo")).ids().stream()
+                .reachable().in(Environment.prod).ofCloud(cloudName).ids().stream()
                 .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId, true).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .collect(Collectors.toList());
 
-        selfHostedCostConfig.properties().stream().map(property -> {
-            NodeRepositoryNode selfHostedNode = new NodeRepositoryNode();
+        if (cloudName.equals(CloudName.from("yahoo")))
+            selfHostedCostConfig.properties().stream().map(property -> {
+                NodeRepositoryNode selfHostedNode = new NodeRepositoryNode();
 
-            NodeOwner owner = new NodeOwner();
-            owner.tenant = property.name();
-            selfHostedNode.setOwner(owner);
-            selfHostedNode.setMinCpuCores(property.cpuCores() * SELF_HOSTED_DISCOUNT);
-            selfHostedNode.setMinMainMemoryAvailableGb(property.memoryGb() * SELF_HOSTED_DISCOUNT);
-            selfHostedNode.setMinDiskAvailableGb(property.diskGb() * SELF_HOSTED_DISCOUNT);
+                NodeOwner owner = new NodeOwner();
+                owner.tenant = property.name();
+                selfHostedNode.setOwner(owner);
+                selfHostedNode.setMinCpuCores(property.cpuCores() * SELF_HOSTED_DISCOUNT);
+                selfHostedNode.setMinMainMemoryAvailableGb(property.memoryGb() * SELF_HOSTED_DISCOUNT);
+                selfHostedNode.setMinDiskAvailableGb(property.diskGb() * SELF_HOSTED_DISCOUNT);
 
-            return selfHostedNode;
-        }).forEach(nodes::add);
+                return selfHostedNode;
+            }).forEach(nodes::add);
 
         ResourceAllocation totalResourceAllocation = ResourceAllocation.from(nodes);
 
@@ -73,7 +72,7 @@ public class CostCalculator {
                         node -> propertyByTenantName.get(node.getOwner().tenant),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
-                                (tenantNodes) -> ResourceAllocation.from(tenantNodes)
+                                ResourceAllocation::from
                         )
                 ));
 
