@@ -3,6 +3,7 @@
 
 #include "compressionconfig.h"
 #include "buffer.h"
+#include "alloc.h"
 
 namespace vespalib { class DataBuffer; }
 
@@ -42,5 +43,43 @@ CompressionConfig::Type compress(const CompressionConfig & compression, const ve
 void decompress(const CompressionConfig::Type & compression, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
 
 size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompressedSize);
+
+//-----------------------------------------------------------------------------
+
+/**
+ * Simple utility used to compress data according to a compression
+ * configuration.
+ **/
+class Compress {
+private:
+    alloc::Alloc _space;
+    CompressionConfig::Type _type;
+    const char *_data;
+    size_t _size;
+public:
+    Compress(const CompressionConfig &config,
+             const char *uncompressed_data, size_t uncompressed_size);
+    const CompressionConfig::Type &type() const { return _type; }
+    const char *data() const { return _data; }
+    size_t size() const { return _size; }
+};
+
+/**
+ * Simple utility used to decompress data using additional information
+ * about compression type and uncompressed size.
+ **/
+class Decompress {
+private:
+    alloc::Alloc _space;
+    const char *_data;
+    size_t _size;
+public:
+    Decompress(const CompressionConfig::Type &type, size_t uncompressed_size,
+               const char *compressed_data, size_t compressed_size);
+    const char *data() const { return _data; }
+    size_t size() const { return _size; }
+};
+
+//-----------------------------------------------------------------------------
 
 }
