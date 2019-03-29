@@ -14,6 +14,7 @@
   <name>${project.artifactId}</name>
   <description>Independent external feeding API towards Vespa.</description>
 
+  <!-- This is a client jar and should be compilable with jdk8 -->
   <profiles>
     <profile>
       <id>jdk11</id>

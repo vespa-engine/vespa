@@ -21,6 +21,7 @@
         <pig.version>0.14.0</pig.version>
     </properties>
 
+    <!-- This is a client jar and should be compilable with jdk8 -->
     <profiles>
         <profile>
             <id>jdk11</id>
