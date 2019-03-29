@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_scorer.h"
+#include <cassert>
 
 using search::feature_t;
 using search::fef::FeatureResolver;
@@ -8,8 +9,7 @@ using search::fef::RankProgram;
 using search::fef::LazyValue;
 using search::queryeval::SearchIterator;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -36,5 +36,4 @@ DocumentScorer::score(uint32_t docId)
     return doScore(docId);
 }
 
-} // namespace proton::matching
-} // namespace proton
+}

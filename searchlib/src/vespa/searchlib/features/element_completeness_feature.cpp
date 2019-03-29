@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/locale/c.h>
+#include <cassert>
 
 namespace search::features {
 

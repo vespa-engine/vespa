@@ -2,9 +2,9 @@
 
 #include "utils.h"
 #include <vector>
+#include <cassert>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 feature_t
 Utils::getScoreFeature(const RankProgram &rankProgram, uint32_t docid)
@@ -55,5 +55,4 @@ Utils::getAllFeatures(const RankProgram &rankProgram, uint32_t docid)
     return resolveFeatures(resolver, docid);
 }
 
-} // namespace fef
-} // namespace search
+}

@@ -3,14 +3,14 @@
 #include "blueprintresolver.h"
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
-#include <stack>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <stack>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprintresolver");
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 namespace {
 
@@ -230,6 +230,4 @@ BlueprintResolver::getSeedMap() const
     return _seedMap;
 }
 
-
-} // namespace fef
-} // namespace search
+}

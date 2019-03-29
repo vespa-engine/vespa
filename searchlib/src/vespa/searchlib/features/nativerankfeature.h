@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/table.h>
+#include <cassert>
 
 namespace search::features {
 

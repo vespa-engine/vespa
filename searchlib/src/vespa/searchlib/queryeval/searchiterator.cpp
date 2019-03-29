@@ -11,18 +11,6 @@
 
 namespace search::queryeval {
 
-SearchIterator::SearchIterator() :
-    _docid(0),
-    _endid(0)
-{ }
-
-void
-SearchIterator::initRange(uint32_t beginid, uint32_t endid)
-{
-    _docid = beginid - 1;
-    _endid = endid;
-}
-
 BitVector::UP
 SearchIterator::get_hits(uint32_t begin_id)
 {
