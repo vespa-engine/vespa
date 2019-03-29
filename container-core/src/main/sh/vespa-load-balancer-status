@@ -155,7 +155,7 @@ function InCommand {
 
     mkdir -p "$LB_STATUS_DIR"
     echo "$user" > "$LB_OPERATOR_LOG"
-    printf "OK\n" > "$LB_STATUS_FILE"
+    echo OK > "$LB_STATUS_FILE"
 }
 
 function OutCommand {
