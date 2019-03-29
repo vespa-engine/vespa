@@ -167,18 +167,6 @@
           </jdkToolchain>
           <source>${java.version}</source>
           <target>${java.version}</target>
-          <showWarnings>true</showWarnings>
-          <optimize>true</optimize>
-          <showDeprecation>false</showDeprecation>
-          <compilerArgs>
-            <arg>-Xlint:all</arg>
-            <arg>-Xlint:-serial</arg>
-            <arg>-Xlint:-try</arg>
-            <arg>-Xlint:-processing</arg>
-            <arg>-Xlint:-varargs</arg>
-            <arg>-Xlint:-options</arg>
-            <arg>-Werror</arg>
-          </compilerArgs>
         </configuration>
       </plugin>
     </plugins>
