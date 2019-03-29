@@ -1,0 +1,1000 @@
+1102982406.589640	old-14	85650	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102982407.045211	old-14	85650	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102982407.130004	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85646 exitcode=0
+1102982407.239571	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982407.323975	old-14	85683	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102982400.042864	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=9821 exitcode=0
+1102982412.734608	old-14	85683	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102982412.779968	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85679 exitcode=0
+1102982412.921861	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102982413.429655	old-14	85710	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102982424.087331	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102982424.265538	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=77878 exitcode=0
+1102982424.568381	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102982424.579411	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982424.692296	old-14	85730	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982425.173218	old-14	85710	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982425.230195	old-14	85726	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102982426.160344	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=85706 exitcode=0
+1102982445.460313	old-13	9793	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982445.688144	old-13	9794	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982445.782239	old-15	4164	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982446.443455	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=9785 exitcode=0
+1102982446.158143	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4160 exitcode=0
+1102982446.563421	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=9789 exitcode=0
+1102982456.658567	old-15	3729	rtc	nc	event	stopped/1 name="rtc.rtc" pid=3733 exitcode=1
+1102982456.672370	old-15	3729	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982456.780566	old-15	4254	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982535.958015	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982536.103631	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=85760 exitcode=0
+1102982536.212355	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982536.463648	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=85768 exitcode=0
+1102982536.653810	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102982536.770666	old-13	9879	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102982537.481511	old-13	9879	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102982537.496441	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=9875 exitcode=0
+1102982537.684866	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102982537.811158	old-13	9887	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102982544.271835	old-13	9887	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102982544.645652	old-13	9887	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102982544.695930	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=9883 exitcode=0
+1102982544.906921	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102982545.023312	old-13	9895	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102982550.832069	old-13	9895	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102982550.925676	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=9891 exitcode=0
+1102982572.525854	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102982572.842537	old-13	9923	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102982585.262447	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102982585.437289	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=77994 exitcode=0
+1102982585.518023	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982585.836419	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102982585.880747	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982585.613681	old-15	4310	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982585.958543	old-13	9923	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982586.029369	old-13	9961	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982586.486119	old-13	9960	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102982586.826370	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=9919 exitcode=0
+1102982610.719714	old-14	85726	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982610.727868	old-14	85730	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982611.596130	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=85721 exitcode=0
+1102982611.601210	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=85722 exitcode=0
+1102982673.173296	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982673.258095	old-14	85816	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102982673.946359	old-14	85816	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102982673.977956	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85812 exitcode=0
+1102982675.009671	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982675.269398	old-14	85824	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102982681.717402	old-14	85824	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102982682.533746	old-14	85824	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102982682.588357	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85820 exitcode=0
+1102982682.699180	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982682.800393	old-14	85832	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102982673.966494	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982674.138157	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=9982 exitcode=0
+1102982674.329387	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982674.728210	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=9990 exitcode=0
+1102982690.094891	old-14	85832	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102982690.138429	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85828 exitcode=0
+1102982690.447176	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102982690.958106	old-14	85856	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102982701.422425	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102982701.608896	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78142 exitcode=0
+1102982701.918709	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102982701.927503	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982702.035645	old-14	85892	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982702.578492	old-14	85890	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102982702.747752	old-14	85856	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982703.728761	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=85852 exitcode=0
+1102982716.582993	old-16	55656	shmproxyctl	shmproxyctl	event	started/1 name="shmproxyctl"
+1102982717.580214	old-16	55665	config-sentinel	config-sentinel	event	started/1 name="config-sentinel"
+1102982717.598933	old-16	55666	config-sentinel	config-sentinel.service	event	starting/1 name="logd"
+1102982717.602403	old-16	55667	config-sentinel	config-sentinel.service	event	starting/1 name="rtc"
+1102982717.657837	old-16	55666	logd	logdemon	event	started/1 name="logdemon"
+1102982718.826568	old-16	55670	rtc	nc	event	started/1 name="nc"
+1102982718.826739	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982719.336948	old-16	55674	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982719.467483	old-16	55670	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982719.570918	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55674 exitcode=1
+1102982720.197551	old-16	55686	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982722.181453	old-15	4310	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982723.056917	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4306 exitcode=0
+1102982722.405949	old-13	9960	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982722.634184	old-13	9961	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982723.389279	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=9952 exitcode=0
+1102982723.509234	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=9956 exitcode=0
+1102982724.863213	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982724.968323	old-16	55697	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982725.206288	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55697 exitcode=1
+1102982731.043379	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982731.160847	old-16	55708	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982731.384286	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55708 exitcode=1
+1102982737.223616	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982737.330245	old-16	55720	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982737.554893	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55720 exitcode=1
+1102982743.303764	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982743.416716	old-16	55732	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982743.646516	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55732 exitcode=1
+1102982749.373950	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982749.478850	old-16	55743	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982749.704083	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55743 exitcode=1
+1102982755.544146	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982755.649328	old-16	55754	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982755.874368	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55754 exitcode=1
+1102982761.714360	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982761.826571	old-16	55771	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982762.066762	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55771 exitcode=1
+1102982811.986296	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982812.132062	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=85923 exitcode=0
+1102982812.240676	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982812.685942	old-16	55863	shmproxyctl	shmproxyctl	event	started/1 name="shmproxyctl"
+1102982812.770916	old-16	55871	config-sentinel	config-sentinel	event	started/1 name="config-sentinel"
+1102982812.815735	old-16	55872	config-sentinel	config-sentinel.service	event	starting/1 name="logd"
+1102982812.819836	old-16	55873	config-sentinel	config-sentinel.service	event	starting/1 name="rtc"
+1102982812.824176	old-16	55872	logd	logdemon	event	started/1 name="logdemon"
+1102982812.492082	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=85931 exitcode=0
+1102982813.898220	old-16	55875	rtc	nc	event	started/1 name="nc"
+1102982813.898362	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982813.999915	old-16	55879	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982814.135036	old-16	55875	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982814.233205	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55879 exitcode=1
+1102982814.234523	old-16	55889	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982819.966141	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982820.076415	old-16	55903	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982820.306584	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55903 exitcode=1
+1102982812.063891	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102982812.179396	old-13	10041	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102982812.890163	old-13	10041	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102982812.901371	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10037 exitcode=0
+1102982813.093295	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102982813.224163	old-13	10050	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102982819.668043	old-13	10050	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102982820.046033	old-13	10050	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102982820.121741	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10046 exitcode=0
+1102982820.346273	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102982820.461338	old-13	10061	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102982825.967150	old-13	10061	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102982826.071375	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10057 exitcode=0
+1102982826.146307	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982826.256089	old-16	55916	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982826.486409	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55916 exitcode=1
+1102982832.326494	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982832.431560	old-16	55926	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982832.666406	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55926 exitcode=1
+1102982838.506686	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982838.619376	old-16	55937	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982838.852607	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55937 exitcode=1
+1102982844.586864	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982844.699178	old-16	55947	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982844.934354	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55947 exitcode=1
+1102982847.304723	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102982847.851465	old-13	10085	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102982850.667058	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982850.780872	old-16	55958	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982851.012416	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55958 exitcode=1
+1102982856.747231	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982856.854879	old-16	55968	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982857.087378	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55968 exitcode=1
+1102982859.925635	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102982860.100099	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78345 exitcode=0
+1102982860.175193	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982860.270961	old-15	4448	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982860.490413	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102982860.532069	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982860.656080	old-13	10102	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982860.716739	old-13	10085	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982861.091956	old-13	10101	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102982861.592103	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10081 exitcode=0
+1102982862.927426	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982863.042250	old-16	55997	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982863.272976	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55997 exitcode=1
+1102982869.107687	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982869.222275	old-16	56012	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982869.453743	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56012 exitcode=1
+1102982875.177910	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982875.329312	old-16	56023	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982875.565147	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56023 exitcode=1
+1102982881.348005	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982881.460052	old-16	56036	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982881.694862	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56036 exitcode=1
+1102982884.649620	old-14	85890	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982884.759568	old-14	85892	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982885.634538	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=85884 exitcode=0
+1102982885.639725	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=85883 exitcode=0
+1102982887.538177	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982887.650412	old-16	56046	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982887.883805	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56046 exitcode=1
+1102982893.728380	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982893.884473	old-16	56057	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982894.118747	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56057 exitcode=1
+1102982899.848557	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982899.959879	old-16	56067	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982900.194038	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56067 exitcode=1
+1102982906.028740	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982906.141670	old-16	56079	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982906.375579	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56079 exitcode=1
+1102982912.218938	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982912.334612	old-16	56090	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982912.566858	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56090 exitcode=1
+1102982918.349124	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982918.498975	old-16	56100	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982918.734700	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56100 exitcode=1
+1102982924.459348	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982924.567161	old-16	56111	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982924.801296	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56111 exitcode=1
+1102982925.443676	old-16	55889	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982926.429705	old-16	55875	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=55885 exitcode=0
+1102982930.629580	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982930.760908	old-16	56122	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982930.994941	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56122 exitcode=1
+1102982936.719689	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982936.828027	old-16	56132	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982937.057394	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56132 exitcode=1
+1102982942.899894	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982943.003827	old-16	56145	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982943.235301	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56145 exitcode=1
+1102984733.241083	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102984733.358818	old-13	11115	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102984734.069252	old-13	11115	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102984734.081433	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11111 exitcode=0
+1102984734.271226	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102984734.387265	old-13	11123	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102984740.886626	old-13	11123	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102984741.278794	old-13	11123	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102984741.381524	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11119 exitcode=0
+1102984741.595428	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102984741.718477	old-13	11134	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102984747.050183	old-13	11134	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102984747.091693	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11130 exitcode=0
+1102984764.751727	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102984765.291600	old-13	11160	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102984777.152236	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102984777.330102	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=80596 exitcode=0
+1102984777.735043	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102984777.781644	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102984777.402397	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102984777.498183	old-15	7190	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102984777.913693	old-13	11182	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102984778.059907	old-13	11160	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102984778.351858	old-13	11181	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102984779.042265	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11156 exitcode=0
+1102984801.999193	old-14	86959	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102984802.008047	old-14	86963	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102984802.872560	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86954 exitcode=0
+1102984802.882530	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86955 exitcode=0
+1102984805.631482	old-16	59311	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102984806.087444	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59307 exitcode=0
+1102984870.706385	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102984870.790934	old-14	87051	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102984871.469516	old-14	87051	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102984871.514652	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87047 exitcode=0
+1102984871.623200	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102984871.715134	old-14	87060	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102984878.117055	old-14	87060	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102984878.556118	old-14	87060	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102984878.625103	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87056 exitcode=0
+1102984878.735764	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102984878.820656	old-14	87075	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102984871.123939	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102984871.304319	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11230 exitcode=0
+1102984871.504178	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102984872.014300	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11238 exitcode=0
+1102984883.937063	old-14	87075	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102984883.965178	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87071 exitcode=0
+1102984900.645263	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102984901.145213	old-14	87099	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102984913.507989	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102984913.223075	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102984913.401871	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=80829 exitcode=0
+1102984913.670821	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102984913.683526	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102984913.797198	old-14	87116	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102984913.979101	old-14	87099	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102984913.989465	old-14	87112	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102984913.613733	old-16	59443	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102984914.965980	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87095 exitcode=0
+1102984937.512157	old-13	11181	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102984937.528481	old-13	11182	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102984938.385574	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11173 exitcode=0
+1102984938.423498	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11177 exitcode=0
+1102984946.290883	old-15	7190	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102984946.836599	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7186 exitcode=0
+1102985007.942647	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985008.088765	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87160 exitcode=0
+1102985008.197078	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985008.448821	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87168 exitcode=0
+1102985008.393284	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985008.514758	old-13	11278	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985009.209383	old-13	11278	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985009.237283	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11274 exitcode=0
+1102985009.451705	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985009.568200	old-13	11286	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985016.001520	old-13	11286	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985016.381552	old-13	11286	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985016.457643	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11282 exitcode=0
+1102985016.746945	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985016.869091	old-13	11294	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985022.248388	old-13	11294	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985022.327460	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11290 exitcode=0
+1102985039.737230	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102985040.277473	old-13	11318	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985052.439380	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985052.535221	old-15	7300	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985052.185871	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985052.365617	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=80930 exitcode=0
+1102985052.750320	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102985052.778439	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985052.903049	old-13	11338	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985053.081624	old-13	11318	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985053.347641	old-13	11337	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985054.068022	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11314 exitcode=0
+1102985076.567887	old-14	87112	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985076.593279	old-14	87116	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985077.550922	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87107 exitcode=0
+1102985077.570977	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87108 exitcode=0
+1102985081.929791	old-16	59443	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985082.946038	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59439 exitcode=0
+1102985145.952973	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985146.038260	old-14	87206	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985146.713064	old-14	87206	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985146.762951	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87202 exitcode=0
+1102985146.871425	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985146.957190	old-14	87214	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985153.340315	old-14	87214	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985153.796033	old-14	87214	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985153.833371	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87210 exitcode=0
+1102985154.232499	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985154.317678	old-14	87222	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985146.358897	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985146.529943	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11385 exitcode=0
+1102985146.757565	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985147.140065	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11393 exitcode=0
+1102985158.586904	old-14	87222	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985158.663565	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87218 exitcode=0
+1102985175.431778	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102985175.943593	old-14	87257	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985188.025607	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985188.204403	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81171 exitcode=0
+1102985188.494004	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102985188.508392	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985188.618695	old-14	87274	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985188.780877	old-14	87257	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985188.313370	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985188.419471	old-16	59566	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985189.143927	old-14	87270	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985189.764318	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87253 exitcode=0
+1102985212.527157	old-13	11337	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985212.543364	old-13	11338	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985213.401420	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11329 exitcode=0
+1102985213.426389	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11333 exitcode=0
+1102985221.549425	old-15	7300	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985221.865258	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7296 exitcode=0
+1102985283.672312	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985283.817178	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87311 exitcode=0
+1102985283.945662	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985284.197132	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87320 exitcode=0
+1102985284.157859	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985284.273774	old-13	11434	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985284.976967	old-13	11434	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985284.993043	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11430 exitcode=0
+1102985285.193061	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985285.309089	old-13	11442	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985291.788864	old-13	11442	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985292.266820	old-13	11442	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985292.323518	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11438 exitcode=0
+1102985292.862896	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985293.100929	old-13	11450	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985305.862135	old-13	11450	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985306.264645	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11446 exitcode=0
+1102985325.425581	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102985325.963456	old-13	11476	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985338.258960	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985338.354738	old-15	7432	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985338.599275	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102985338.645855	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985338.776413	old-13	11493	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985338.007689	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985338.186794	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81272 exitcode=0
+1102985338.819496	old-13	11476	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985339.203747	old-13	11492	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985339.804418	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11472 exitcode=0
+1102985362.416626	old-14	87270	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985362.524282	old-14	87274	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985363.399656	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87265 exitcode=0
+1102985363.509611	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87266 exitcode=0
+1102985368.448703	old-16	59566	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985368.694694	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59562 exitcode=0
+1102985422.540132	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985422.648022	old-14	87362	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985423.325676	old-14	87362	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985423.371365	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87358 exitcode=0
+1102985423.500370	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985423.585903	old-14	87370	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985429.971274	old-14	87370	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985430.347578	old-14	87370	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985430.461996	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87366 exitcode=0
+1102985430.582825	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985430.668279	old-14	87378	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985422.992077	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985423.186016	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11534 exitcode=0
+1102985423.397156	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985423.805961	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11542 exitcode=0
+1102985435.886345	old-14	87378	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985435.901864	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87374 exitcode=0
+1102985450.905111	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102985451.411910	old-14	87402	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985463.886153	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985463.992395	old-16	59696	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985463.602049	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985463.777789	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81510 exitcode=0
+1102985464.051579	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102985464.061606	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985464.180789	old-14	87422	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985464.278631	old-14	87402	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985464.612377	old-14	87418	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985465.252739	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87398 exitcode=0
+1102985488.331150	old-13	11492	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985488.339190	old-13	11493	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985489.317280	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11484 exitcode=0
+1102985489.351467	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11488 exitcode=0
+1102985495.337998	old-15	7432	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985495.583781	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7428 exitcode=0
+1102985559.980099	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985560.125488	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87451 exitcode=0
+1102985560.233434	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985560.485668	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87459 exitcode=0
+1102985560.547235	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985560.683079	old-13	11571	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985561.398741	old-13	11571	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985561.508804	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11567 exitcode=0
+1102985561.695398	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985561.805260	old-13	11579	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985568.256768	old-13	11579	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985568.621202	old-13	11579	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985568.689535	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11575 exitcode=0
+1102985568.900698	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985569.019398	old-13	11587	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985573.971827	old-13	11587	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985574.049155	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11583 exitcode=0
+1102985592.039227	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102985592.769319	old-13	11633	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985604.499469	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985604.759895	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985604.861837	old-15	7559	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985604.679525	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81615 exitcode=0
+1102985605.093908	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102985605.140522	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985605.272289	old-13	11650	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985605.636678	old-13	11633	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985605.699630	old-13	11649	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985606.509778	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11629 exitcode=0
+1102985629.241620	old-14	87418	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985629.247103	old-14	87422	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985630.117778	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87413 exitcode=0
+1102985630.227676	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87414 exitcode=0
+1102985632.886825	old-16	59696	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985633.322757	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59692 exitcode=0
+1102985697.173221	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985697.256604	old-14	87500	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985697.938416	old-14	87500	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985697.979769	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87496 exitcode=0
+1102985698.087279	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985698.171827	old-14	87508	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985704.812000	old-14	87508	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985705.169381	old-14	87508	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985705.190263	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87504 exitcode=0
+1102985705.321038	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985705.406741	old-14	87535	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985698.381492	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985698.561694	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11671 exitcode=0
+1102985698.768697	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985699.281757	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11679 exitcode=0
+1102985710.983388	old-14	87535	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985710.990126	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87531 exitcode=0
+1102985727.572242	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102985728.080322	old-14	87561	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985740.452074	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985740.558202	old-16	59825	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985740.161408	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985740.340832	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81861 exitcode=0
+1102985740.597833	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102985740.608385	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985740.734989	old-14	87578	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985740.914042	old-14	87561	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985741.160724	old-14	87574	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985741.901075	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87557 exitcode=0
+1102985764.916422	old-13	11649	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985764.924985	old-13	11650	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985765.793179	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11641 exitcode=0
+1102985765.830252	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11645 exitcode=0
+1102985772.886691	old-15	7559	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985773.162542	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7555 exitcode=0
+1102985834.098801	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985834.243854	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87608 exitcode=0
+1102985834.351677	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985834.493850	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87616 exitcode=0
+1102985834.705587	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985834.815657	old-13	11729	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985835.510735	old-13	11729	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985835.534660	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11725 exitcode=0
+1102985835.729104	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985835.860093	old-13	11737	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985842.327650	old-13	11737	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985842.747974	old-13	11737	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985842.775194	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11733 exitcode=0
+1102985842.994535	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102985843.123950	old-13	11745	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985848.796926	old-13	11745	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985848.825283	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=11741 exitcode=0
+1102985866.108600	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102985866.644956	old-13	11769	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102985878.804002	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102985878.992074	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81960 exitcode=0
+1102985879.082822	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985879.178672	old-15	7688	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985879.459680	old-13	11769	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985879.479439	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102985879.515248	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102985879.641363	old-13	11805	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102985880.105424	old-13	11804	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102985880.445670	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11765 exitcode=0
+1102985903.567758	old-14	87578	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985904.556172	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87570 exitcode=0
+1102985904.560190	old-14	87574	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102985905.546045	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87569 exitcode=0
+1102985908.625243	old-16	59825	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102985908.761216	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59821 exitcode=0
+1102985971.929848	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985972.015182	old-14	87656	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102985972.720329	old-14	87656	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102985972.738162	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87652 exitcode=0
+1102985972.846416	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985972.940244	old-14	87664	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102985979.414278	old-14	87664	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102985979.978198	old-14	87664	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102985980.038660	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87660 exitcode=0
+1102985980.258349	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102985981.790680	old-14	87672	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102985972.166138	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985972.337645	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11827 exitcode=0
+1102985972.505027	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102985972.887576	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=11835 exitcode=0
+1102985990.060647	old-14	87672	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102985990.098669	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=87668 exitcode=0
+1102982948.970070	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982949.080398	old-16	56158	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982949.320075	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982949.404653	old-14	85972	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102982949.308351	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56158 exitcode=1
+1102982950.080212	old-14	85972	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102982950.126244	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85968 exitcode=0
+1102982950.234244	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982950.319381	old-14	85980	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102982955.150286	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
+1102982955.281546	old-16	56222	rtc.rtc	rtc	event	started/1 name="rtc"
+1102982955.516251	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56222 exitcode=1
+1102982956.684648	old-14	85980	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102982957.096875	old-14	85980	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102982957.196652	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85976 exitcode=0
+1102982957.307143	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102982957.391752	old-14	85988	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102982949.822489	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982950.003962	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10143 exitcode=0
+1102982950.191359	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102982950.584000	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10151 exitcode=0
+1102982962.117402	old-14	85988	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102982962.196768	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=85984 exitcode=0
+1102982962.319884	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102982962.826327	old-14	86014	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102982974.014246	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102982974.191387	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78445 exitcode=0
+1102982974.580826	old-14	86014	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982974.791879	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102982974.869852	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102982974.986256	old-14	86031	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102982975.272076	old-14	86030	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102982975.457015	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86010 exitcode=0
+1102982994.921631	old-13	10101	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102982994.929122	old-13	10102	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982995.790031	old-15	4448	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102982995.794897	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10093 exitcode=0
+1102982995.915047	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10097 exitcode=0
+1102982996.665560	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4444 exitcode=0
+1102982961.026957	old-16	55872	logd	logdemon	event	stopping/1 name="logdemon" why="done ok."
+1102982961.029599	old-16	55871	config-sentinel	config-sentinel.service	event	stopped/1 name="logd" pid=55872 exitcode=0
+1102982961.047236	old-16	55875	rtc	nc	event	stopping/1 name="nc" why="clean shutdown"
+1102982962.051316	old-16	55871	config-sentinel	config-sentinel.service	event	stopped/1 name="rtc" pid=55873 exitcode=0
+1102982962.052822	old-16	55871	config-sentinel	config-sentinel	event	stopping/1 name="" why="normal exit"
+1102982964.020970	old-16	55863	shmproxyctl	shmproxyctl	event	stopping/1 name="shmproxyctl" why="exit on signal"
+1102983028.992573	old-16	56645	shmproxyctl	shmproxyctl	event	started/1 name="shmproxyctl"
+1102983029.002934	old-16	56653	config-sentinel	config-sentinel	event	started/1 name="config-sentinel"
+1102983029.015458	old-16	56654	config-sentinel	config-sentinel.service	event	starting/1 name="logd"
+1102983029.023274	old-16	56654	logd	logdemon	event	started/1 name="logdemon"
+1102983029.025514	old-16	56655	config-sentinel	config-sentinel.service	event	starting/1 name="rtc"
+1102983030.105659	old-16	56657	rtc	nc	event	started/1 name="nc"
+1102983030.105820	old-16	56657	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983030.206947	old-16	56661	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983030.443279	old-16	56657	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56661 exitcode=1
+1102983036.172836	old-16	56657	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983036.280909	old-16	56675	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983036.511986	old-16	56657	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56675 exitcode=1
+1102983042.352928	old-16	56657	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983042.472684	old-16	56687	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983042.707596	old-16	56657	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56687 exitcode=1
+1102983087.205914	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983087.350400	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86079 exitcode=0
+1102983087.474675	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983087.643885	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86087 exitcode=0
+1102983043.328573	old-16	56654	logd	logdemon	event	stopping/1 name="logdemon" why="done ok."
+1102983043.330382	old-16	56653	config-sentinel	config-sentinel.service	event	stopped/1 name="logd" pid=56654 exitcode=0
+1102983043.357416	old-16	56657	rtc	nc	event	stopping/1 name="nc" why="clean shutdown"
+1102983044.363817	old-16	56653	config-sentinel	config-sentinel.service	event	stopped/1 name="rtc" pid=56655 exitcode=0
+1102983044.366101	old-16	56653	config-sentinel	config-sentinel	event	stopping/1 name="" why="normal exit"
+1102983050.183553	old-16	56645	shmproxyctl	shmproxyctl	event	stopping/1 name="shmproxyctl" why="exit on signal"
+1102983091.174465	old-16	56755	shmproxyctl	shmproxyctl	event	started/1 name="shmproxyctl"
+1102983092.003201	old-16	56765	config-sentinel	config-sentinel	event	started/1 name="config-sentinel"
+1102983092.014431	old-16	56766	config-sentinel	config-sentinel.service	event	starting/1 name="logd"
+1102983092.018412	old-16	56767	config-sentinel	config-sentinel.service	event	starting/1 name="rtc"
+1102983092.022856	old-16	56766	logd	logdemon	event	started/1 name="logdemon"
+1102983093.098623	old-16	56769	rtc	nc	event	started/1 name="nc"
+1102983093.098787	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983093.201413	old-16	56773	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983093.442337	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56773 exitcode=1
+1102983099.164677	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983087.586747	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983087.708507	old-13	10198	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983088.409778	old-13	10198	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983088.426836	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10194 exitcode=0
+1102983088.616294	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983088.732202	old-13	10206	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983095.172256	old-13	10206	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983095.537231	old-13	10206	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983095.627274	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10202 exitcode=0
+1102983095.839917	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983095.955599	old-13	10214	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983099.313958	old-16	56793	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983099.536419	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56793 exitcode=1
+1102983101.897804	old-13	10214	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983101.967195	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10210 exitcode=0
+1102983105.264857	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983105.373502	old-16	56804	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983105.605434	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56804 exitcode=1
+1102983111.345068	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983111.464977	old-16	56815	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983111.624631	old-16	56769	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983111.694912	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56815 exitcode=1
+1102983111.718760	old-16	56825	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983117.535240	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983117.644597	old-16	56837	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983117.872760	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56837 exitcode=1
+1102983123.702522	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102983124.247225	old-13	10242	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983123.595416	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983123.698320	old-16	56851	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983123.934634	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56851 exitcode=1
+1102983129.665605	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983129.772254	old-16	56864	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983130.003836	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56864 exitcode=1
+1102983135.745793	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983135.853114	old-16	56876	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983136.077472	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56876 exitcode=1
+1102983136.195702	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983136.372805	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78699 exitcode=0
+1102983136.446910	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983136.542716	old-15	4602	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983136.816766	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102983136.857452	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983136.985730	old-13	10261	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983137.044120	old-13	10242	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983137.447497	old-13	10260	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983138.027972	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10238 exitcode=0
+1102983141.805989	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983141.910201	old-16	56887	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983142.145902	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56887 exitcode=1
+1102983147.876181	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983147.999268	old-16	56897	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983148.236306	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56897 exitcode=1
+1102983153.866373	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983153.976052	old-16	56914	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983154.207841	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56914 exitcode=1
+1102983159.946557	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983160.058334	old-16	56939	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983160.304685	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56939 exitcode=1
+1102983161.016507	old-14	86030	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983161.021332	old-14	86031	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983161.892728	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86022 exitcode=0
+1102983162.002790	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86026 exitcode=0
+1102983166.146748	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983166.255746	old-16	56958	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983166.476156	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56958 exitcode=1
+1102983172.206908	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983172.319003	old-16	56969	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983172.544562	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56969 exitcode=1
+1102983178.277106	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983178.387795	old-16	56979	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983178.616290	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56979 exitcode=1
+1102983184.347305	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983184.456607	old-16	56993	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983184.679021	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56993 exitcode=1
+1102983190.407474	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983190.524484	old-16	57003	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983190.749262	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57003 exitcode=1
+1102983196.477666	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983196.581827	old-16	57013	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983196.809604	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57013 exitcode=1
+1102983202.647952	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983202.757027	old-16	57024	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983202.988627	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57024 exitcode=1
+1102983208.828062	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983208.933536	old-16	57036	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983209.161874	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57036 exitcode=1
+1102983214.998232	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983215.102898	old-16	57048	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983215.326228	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57048 exitcode=1
+1102983221.058412	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983221.171691	old-16	57059	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983221.398558	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57059 exitcode=1
+1102983224.754373	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983224.838669	old-14	86127	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983225.524844	old-14	86127	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983225.554680	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86123 exitcode=0
+1102983225.663185	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983225.747426	old-14	86135	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983227.238597	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983227.412925	old-16	57071	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983227.638745	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57071 exitcode=1
+1102983232.114737	old-14	86135	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983232.490017	old-14	86135	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983232.515154	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86131 exitcode=0
+1102983233.258802	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983232.646661	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983233.380164	old-16	57081	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983232.731438	old-14	86143	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983233.613352	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57081 exitcode=1
+1102983225.499852	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983225.679841	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10299 exitcode=0
+1102983225.881354	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983226.279768	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10307 exitcode=0
+1102983237.248832	old-14	86143	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983237.335016	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86139 exitcode=0
+1102983237.463391	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102983237.792181	old-14	86167	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983239.449047	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983239.562786	old-16	57092	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983239.787958	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57092 exitcode=1
+1102983245.629201	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983245.738009	old-16	57105	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983245.969098	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57105 exitcode=1
+1102983248.767259	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983248.944256	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78766 exitcode=0
+1102983249.227183	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102983249.237161	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983249.348837	old-14	86188	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983249.785138	old-14	86184	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983249.851043	old-14	86167	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983250.725373	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86163 exitcode=0
+1102983251.739344	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983251.848322	old-16	57115	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983252.078368	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57115 exitcode=1
+1102983257.919544	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
+1102983258.028820	old-16	57127	rtc.rtc	rtc	event	started/1 name="rtc"
+1102983258.257644	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57127 exitcode=1
+1102983269.137311	old-13	10260	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983269.144791	old-13	10261	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983270.010666	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10252 exitcode=0
+1102983270.042184	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10256 exitcode=0
+1102983272.118338	old-15	4602	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983272.854135	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4598 exitcode=0
+1102983362.503050	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983362.649049	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86230 exitcode=0
+1102983362.757930	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983363.018821	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86238 exitcode=0
+1102983363.116463	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983363.299450	old-13	10356	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983364.002039	old-13	10356	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983364.062677	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10352 exitcode=0
+1102983364.264649	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983364.380346	old-13	10364	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983370.808126	old-13	10364	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983371.164359	old-13	10364	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983371.272832	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10360 exitcode=0
+1102983371.577182	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983371.711793	old-13	10372	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983377.039166	old-13	10372	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983377.083077	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10368 exitcode=0
+1102983399.178353	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102983399.842965	old-13	10396	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983411.758105	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983412.015933	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983411.938135	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79018 exitcode=0
+1102983412.352170	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102983412.392827	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983412.555009	old-13	10413	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983412.666661	old-13	10396	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983412.115149	old-15	4729	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983412.953280	old-13	10412	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983413.543584	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10392 exitcode=0
+1102983434.184986	old-14	86184	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983434.189809	old-14	86188	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983435.171112	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86180 exitcode=0
+1102983435.176508	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86179 exitcode=0
+1102983499.729687	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983499.811709	old-14	86284	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983500.496340	old-14	86284	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983500.532997	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86280 exitcode=0
+1102983500.640241	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983500.725590	old-14	86292	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983507.107602	old-14	86292	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983507.459151	old-14	86292	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983507.493486	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86288 exitcode=0
+1102983507.604456	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983507.690181	old-14	86302	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983500.560153	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983500.745525	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10457 exitcode=0
+1102983500.934950	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983501.335433	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10465 exitcode=0
+1102983512.679159	old-14	86302	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983512.713432	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86298 exitcode=0
+1102983512.836195	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102983513.343030	old-14	86326	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983524.101303	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983524.277311	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79105 exitcode=0
+1102983524.618894	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102983524.626268	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983524.735847	old-14	86343	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983525.150609	old-14	86326	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983525.183478	old-14	86342	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983526.023732	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86322 exitcode=0
+1102983544.521213	old-13	10413	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983544.621272	old-13	10412	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983545.486398	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10404 exitcode=0
+1102983545.518155	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10408 exitcode=0
+1102983637.471193	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983637.617143	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86383 exitcode=0
+1102983637.725622	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983637.877143	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86391 exitcode=0
+1102983638.158022	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983638.282765	old-13	10501	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983638.979171	old-13	10501	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983638.998357	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10497 exitcode=0
+1102983639.252384	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983639.390808	old-13	10509	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983645.972435	old-13	10509	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983646.329891	old-13	10509	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983646.408673	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10505 exitcode=0
+1102983646.618210	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983646.753052	old-13	10525	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983651.717937	old-13	10525	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983651.768761	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10521 exitcode=0
+1102983651.985059	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102983652.528240	old-13	10549	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983663.229603	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983663.408294	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79347 exitcode=0
+1102983663.802410	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102983663.847086	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983663.970470	old-13	10569	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983664.245161	old-13	10549	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983664.418499	old-13	10568	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983665.228936	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10545 exitcode=0
+1102983684.194271	old-14	86342	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983684.413550	old-14	86343	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983685.178577	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86334 exitcode=0
+1102983685.288749	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86335 exitcode=0
+1102983775.331147	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983775.415311	old-14	86419	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983776.088728	old-14	86419	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983776.131334	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86415 exitcode=0
+1102983776.240111	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983776.325198	old-14	86427	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983782.692711	old-14	86427	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983783.142712	old-14	86427	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983783.211930	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86423 exitcode=0
+1102983783.324763	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102983783.415394	old-14	86442	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983775.827903	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983776.001220	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10610 exitcode=0
+1102983787.879727	old-14	86442	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983776.244260	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983776.641195	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10618 exitcode=0
+1102983787.891805	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86438 exitcode=0
+1102983788.018535	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102983788.541423	old-14	86478	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983799.374859	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983799.550019	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79445 exitcode=0
+1102983799.815919	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102983799.825466	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983799.933088	old-14	86499	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983800.124646	old-14	86495	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983800.349296	old-14	86478	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983801.222147	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86474 exitcode=0
+1102983820.147150	old-13	10569	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983820.248595	old-13	10568	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983821.122118	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10560 exitcode=0
+1102983821.155033	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10564 exitcode=0
+1102983912.670622	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983912.815582	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86541 exitcode=0
+1102983912.923233	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102983913.065607	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86549 exitcode=0
+1102983913.456737	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983913.588425	old-13	10659	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102983914.282688	old-13	10659	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102983914.294108	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10655 exitcode=0
+1102983914.503085	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983914.618896	old-13	10667	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102983921.069201	old-13	10667	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102983921.466460	old-13	10667	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102983921.514458	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10663 exitcode=0
+1102983921.726339	old-13	9277	rtc	nc	event	starting/1 name="rtc.index0"
+1102983921.841095	old-13	10675	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102983926.941783	old-13	10675	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102983927.004503	old-13	9277	rtc	nc	event	stopped/1 name="rtc.index0" pid=10671 exitcode=0
+1102983927.652585	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
+1102983928.304074	old-13	10699	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102983938.387950	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102983938.820963	old-13	10699	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983938.571920	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79691 exitcode=0
+1102983939.111733	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
+1102983939.146855	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102983939.269781	old-13	10716	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102983939.714359	old-13	10715	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983939.914719	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10695 exitcode=0
+1102983959.590654	old-14	86495	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102983959.598406	old-14	86499	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102983960.467110	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86490 exitcode=0
+1102983960.472296	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86491 exitcode=0
+1102984050.398552	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102984050.483992	old-14	86577	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
+1102984051.175721	old-14	86577	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.init" why="done"
+1102984051.199683	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86573 exitcode=0
+1102984051.307708	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102984051.393362	old-14	86585	rtc.index0	flexindexer	event	started/1 name="flexindexer.index"
+1102984057.777873	old-14	86585	rtc.index0	flexindexer	event	progress/1 name="indexing complete" value=10001 total=10001
+1102984058.163669	old-14	86585	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.index" why="done"
+1102984058.270117	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86581 exitcode=0
+1102984058.382601	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
+1102984058.466701	old-14	86593	rtc.index0	flexindexer	event	started/1 name="flexindexer.autoindex"
+1102984050.816751	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102984050.997048	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10749 exitcode=0
+1102984051.184978	old-13	9277	rtc	nc	event	starting/1 name="rtc.indexremove0"
+1102984051.587130	old-13	9277	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=10757 exitcode=0
+1102984062.999666	old-14	86593	rtc.index0	flexindexer	event	stopping/1 name="flexindexer.autoindex" why="done"
+1102984063.080124	old-14	85124	rtc	nc	event	stopped/1 name="rtc.index0" pid=86589 exitcode=0
+1102984063.725659	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
+1102984064.279918	old-14	86617	rtc.search2	fsearch	event	started/1 name="fsearch"
+1102984074.313189	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
+1102984074.734111	old-14	86617	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102984074.492915	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79788 exitcode=0
+1102984075.655564	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86613 exitcode=0
+1102984075.660995	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
+1102984075.670714	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102984075.780693	old-14	86634	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102984076.220183	old-14	86630	rtc.search0	fsearch	event	started/1 name="fsearch"
+1102983417.075842	old-15	3726	logd	logdemon	event	stopping/1 name="logdemon" why="done ok."
+1102983417.084537	old-15	3725	config-sentinel	config-sentinel.service	event	stopped/1 name="logd" pid=3726 exitcode=0
+1102983417.130768	old-15	3729	rtc	nc	event	stopped/1 name="rtc.rtc" pid=4254 exitcode=1
+1102983417.328660	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4725 exitcode=-1
+1102983417.346529	old-15	3729	rtc	nc	event	stopping/1 name="nc" why="clean shutdown"
+1102983418.359267	old-15	3725	config-sentinel	config-sentinel.service	event	stopped/1 name="rtc" pid=3727 exitcode=0
+1102983418.361863	old-15	3725	config-sentinel	config-sentinel	event	stopping/1 name="" why="normal exit"
+1102983420.078741	old-15	3718	shmproxyctl	shmproxyctl	event	stopping/1 name="shmproxyctl" why="exit on signal"
+1102984082.420714	old-15	6630	shmproxyctl	shmproxyctl	event	started/1 name="shmproxyctl"
+1102984082.447865	old-15	6644	config-sentinel	config-sentinel	event	started/1 name="config-sentinel"
+1102984082.460014	old-15	6645	config-sentinel	config-sentinel.service	event	starting/1 name="logd"
+1102984082.466892	old-15	6645	logd	logdemon	event	started/1 name="logdemon"
+1102984082.469055	old-15	6646	config-sentinel	config-sentinel.service	event	starting/1 name="rtc"
+1102984083.556099	old-15	6648	rtc	nc	event	started/1 name="nc"
+1102984083.556253	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"
+1102984083.718924	old-15	6652	rtc.rtc	rtc	event	started/1 name="rtc"
+1102984083.897858	old-15	6648	rtc	nc	event	starting/1 name="rtc.dispatch0"
+1102984084.017068	old-15	6663	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
+1102984085.385198	old-15	6648	rtc	nc	event	stopped/1 name="rtc.rtc" pid=6652 exitcode=1
+1102984089.589460	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"
+1102984089.731154	old-15	6676	rtc.rtc	rtc	event	started/1 name="rtc"
+1102984090.244728	old-15	6648	rtc	nc	event	stopped/1 name="rtc.rtc" pid=6676 exitcode=1
+1102984095.669627	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"
+1102984095.494894	old-13	10715	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
+1102984095.639737	old-13	10716	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
+1102984095.807128	old-15	6688	rtc.rtc	rtc	event	started/1 name="rtc"
+1102984096.335289	old-15	6648	rtc	nc	event	stopped/1 name="rtc.rtc" pid=6688 exitcode=1
+1102984096.477880	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10707 exitcode=0
+1102984096.517947	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10711 exitcode=0
+1102984101.749813	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"

@@ -13,6 +13,10 @@ public class InvalidLogFormatException extends Exception
         super(msg);
     }
 
+    public InvalidLogFormatException (String msg, Throwable cause) {
+        super(msg, cause);
+    }
+
     public InvalidLogFormatException () {
     }
 }
