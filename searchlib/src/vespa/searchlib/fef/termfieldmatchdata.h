@@ -6,7 +6,6 @@
 #include "fieldinfo.h"
 #include <vespa/searchlib/common/feature.h>
 #include <cstring>
-#include <cassert>
 
 class MatchDataHeapTest;
 
@@ -92,14 +91,7 @@ public:
      **/
     void swap(TermFieldMatchData &rhs);
 
-    MutablePositionsIterator populate_fixed() {
-        assert(!allocated());
-        if (_sz == 0) {
-            new (_data._position) TermFieldMatchDataPosition();
-            _sz = 1;
-        }
-        return getFixed();
-    }
+    MutablePositionsIterator populate_fixed();
 
     /**
      * Set which field this object has match information for.
@@ -107,15 +99,7 @@ public:
      * @return this object (for chaining)
      * @param fieldId field id
      **/
-    TermFieldMatchData &setFieldId(uint32_t fieldId) {
-        if (fieldId == IllegalFieldId) {
-            fieldId = FIELDID_MASK;
-        } else {
-            assert(fieldId < FIELDID_MASK);
-        }
-        _fieldId = (_fieldId & ~FIELDID_MASK) | fieldId;
-        return *this;
-    }
+    TermFieldMatchData &setFieldId(uint32_t fieldId);
 
     /**
      * Obtain the field id

@@ -8,13 +8,6 @@ namespace search {
 using queryeval::MinMaxPostingInfo;
 using fef::TermFieldMatchData;
 
-AttributeIteratorBase::AttributeIteratorBase(const attribute::ISearchContext &baseSearchCtx,
-                                             TermFieldMatchData *matchData)
-    : _baseSearchCtx(baseSearchCtx),
-      _matchData(matchData),
-      _matchPosition(_matchData->populate_fixed())
-{ }
-
 void
 AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
@@ -30,7 +23,6 @@ AttributeIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "weight", _weight);
 }
 
-
 void
 FlagAttributeIterator::doUnpack(uint32_t docId)
 {
@@ -43,7 +35,6 @@ AttributeIterator::doUnpack(uint32_t docId)
     _matchData->resetOnlyDocId(docId);
     _matchPosition->setElementWeight(_weight);
 }
-
 
 void
 FilterAttributeIterator::doUnpack(uint32_t docId)
@@ -60,7 +51,6 @@ doUnpack(uint32_t docId)
     _matchPosition->setElementWeight(getWeight());
 }
 
-
 template <>
 void
 AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
@@ -70,7 +60,6 @@ doUnpack(uint32_t docId)
     _matchPosition->setElementWeight(getWeight());
 }
 
-
 template <>
 void
 FilterAttributePostingListIteratorT<InnerAttributePostingListIterator>::
@@ -79,7 +68,6 @@ doUnpack(uint32_t docId)
     _matchData->resetOnlyDocId(docId);
 }
 
-
 template <>
 void
 FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
@@ -87,7 +75,6 @@ doUnpack(uint32_t docId)
 {
     _matchData->resetOnlyDocId(docId);
 }
-
 
 template <>
 void
@@ -99,7 +86,6 @@ setupPostingInfo()
         _postingInfoValid = true;
     }
 }
-
 
 template <>
 void
@@ -113,7 +99,6 @@ setupPostingInfo()
     }
 }
 
-
 template <>
 void
 AttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::
@@ -124,7 +109,6 @@ setupPostingInfo()
         _postingInfoValid = true;
     }
 }
-
 
 template <>
 void
@@ -149,7 +133,6 @@ setupPostingInfo()
     }
 }
 
-
 template <>
 void
 FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
@@ -160,7 +143,6 @@ setupPostingInfo()
         _postingInfoValid = true;
     }
 }
-
 
 template <>
 void
@@ -173,7 +155,6 @@ setupPostingInfo()
     }
 }
 
-
 template <>
 void
 FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::
@@ -184,6 +165,5 @@ setupPostingInfo()
         _postingInfoValid = true;
     }
 }
-
 
 } // namespace search

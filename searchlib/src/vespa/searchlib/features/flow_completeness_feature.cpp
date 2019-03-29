@@ -7,6 +7,8 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/locale/c.h>
+#include <cassert>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".features.flowcompleteness");
 

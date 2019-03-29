@@ -4,6 +4,7 @@
 #include "featureoverrider.h"
 #include <vespa/vespalib/locale/c.h>
 #include <algorithm>
+#include <cassert>
 
 using vespalib::Stash;
 

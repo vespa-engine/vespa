@@ -5,7 +5,6 @@
 #include "attributeiterators.h"
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>

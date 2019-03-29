@@ -6,24 +6,22 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <cassert>
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
-
-TermFieldMdExecutor::TermFieldMdExecutor(const search::fef::IQueryEnvironment &env,
-                                         uint32_t fieldId)
+TermFieldMdExecutor::TermFieldMdExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId)
     : _terms(),
       _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
-        const search::fef::ITermData *td = env.getTerm(i);
+        const fef::ITermData *td = env.getTerm(i);
         assert(td != 0);
-        const search::fef::ITermFieldData *tfd = td->lookupField(fieldId);
+        const fef::ITermFieldData *tfd = td->lookupField(fieldId);
         if (tfd != 0) {
-            assert(tfd->getHandle() != search::fef::IllegalHandle);
+            assert(tfd->getHandle() != fef::IllegalHandle);
             _terms.push_back(std::make_pair(tfd->getHandle(), td->getWeight()));
         }
     }
@@ -113,6 +111,4 @@ TermFieldMdBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::St
     return stash.create<TermFieldMdExecutor>(env, _field->id());
 }
 
-
-} // namespace features
-} // namespace search
+}

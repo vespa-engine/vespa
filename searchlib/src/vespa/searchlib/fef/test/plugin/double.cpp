@@ -3,10 +3,9 @@
 #include "double.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 void
 DoubleExecutor::execute(uint32_t)
@@ -57,6 +56,4 @@ DoubleBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Sta
     return stash.create<DoubleExecutor>(_cnt);
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}
