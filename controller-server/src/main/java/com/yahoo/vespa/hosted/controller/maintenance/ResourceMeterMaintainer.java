@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
@@ -14,11 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAlloca
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -26,23 +23,31 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 /**
  * Creates a ResourceSnapshot per application, which is then passed on to a ResourceSnapshotConsumer
  * TODO: Write JSON blob of node repo somewhere
+ *
  * @author olaa
  */
 public class ResourceMeterMaintainer extends Maintainer {
 
     private final Clock clock;
+    private final Metric metric;
     private final NodeRepositoryClientInterface nodeRepository;
     private final ResourceSnapshotConsumer resourceSnapshotConsumer;
 
+    private static final String metering_last_reported = "metering_last_reported";
+    private static final String metering_total_reported = "metering_total_reported";
+
+    @SuppressWarnings("WeakerAccess")
     public ResourceMeterMaintainer(Controller controller,
                                    Duration interval,
                                    JobControl jobControl,
                                    NodeRepositoryClientInterface nodeRepository,
                                    Clock clock,
+                                   Metric metric,
                                    ResourceSnapshotConsumer resourceSnapshotConsumer) {
         super(controller, interval, jobControl, ResourceMeterMaintainer.class.getSimpleName(), Set.of(SystemName.cd));
         this.clock = clock;
         this.nodeRepository = nodeRepository;
+        this.metric = metric;
         this.resourceSnapshotConsumer = resourceSnapshotConsumer;
     }
 
@@ -61,6 +66,13 @@ public class ResourceMeterMaintainer extends Maintainer {
 
 
         resourceSnapshotConsumer.consume(resourceSnapshots);
+
+        metric.set(metering_last_reported, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
+        metric.set(metering_total_reported, resourceSnapshots.values().stream()
+                        .map(ResourceSnapshot::getResourceAllocation)
+                        .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()) // total metered resource usage, for alerting on drastic changes
+                        .sum()
+                , metric.createContext(Collections.emptyMap()));
     }
 
     private List<NodeRepositoryNode> getNodes() {
