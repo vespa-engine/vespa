@@ -94,16 +94,33 @@ struct MockMetricsManager : public DummyMetricsManager {
     }
 };
 
+class ClientSupervisor {
+private:
+    FRT_Supervisor _supervisor;
+public:
+    ClientSupervisor()
+        : _supervisor()
+    {
+        _supervisor.Start();
+    }
+    ~ClientSupervisor() {
+        _supervisor.ShutDown(true);
+    }
+    FRT_Supervisor& get() { return _supervisor; }
+
+};
+
 struct RpcForwarderTest : public ::testing::Test {
     RpcServer server;
     std::shared_ptr<MockMetricsManager> metrics_mgr;
     Metrics metrics;
+    ClientSupervisor supervisor;
     RpcForwarder forwarder;
     RpcForwarderTest()
         : server(),
           metrics_mgr(std::make_shared<MockMetricsManager>()),
           metrics(metrics_mgr),
-          forwarder(metrics, "localhost", server.get_listen_port(), 60.0, 3)
+          forwarder(metrics, supervisor.get(), "localhost", server.get_listen_port(), 60.0, 3)
     {
         ForwardMap forward_filter;
         forward_filter[ns_log::Logger::error] = true;

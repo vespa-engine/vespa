@@ -17,26 +17,24 @@ using vespalib::make_string;
 
 namespace logdemon {
 
-RpcForwarder::RpcForwarder(Metrics& metrics, const vespalib::string &hostname, int rpc_port,
+RpcForwarder::RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
+                           const vespalib::string &hostname, int rpc_port,
                            double rpc_timeout_secs, size_t max_messages_per_request)
     : _metrics(metrics),
       _connection_spec(make_string("tcp/%s:%d", hostname.c_str(), rpc_port)),
       _rpc_timeout_secs(rpc_timeout_secs),
       _max_messages_per_request(max_messages_per_request),
-      _supervisor(),
       _target(),
       _messages(),
       _bad_lines(0),
       _forward_filter()
 {
-    _supervisor.Start();
-    _target = _supervisor.GetTarget(_connection_spec.c_str());
+    _target = supervisor.GetTarget(_connection_spec.c_str());
 }
 
 RpcForwarder::~RpcForwarder()
 {
     _target->SubRef();
-    _supervisor.ShutDown(true);
 }
 
 namespace {

@@ -21,14 +21,14 @@ private:
     vespalib::string _connection_spec;
     double _rpc_timeout_secs;
     size_t _max_messages_per_request;
-    FRT_Supervisor _supervisor;
     FRT_Target* _target;
     std::vector<ns_log::LogMessage> _messages;
     int _bad_lines;
     ForwardMap _forward_filter;
 
 public:
-    RpcForwarder(Metrics& metrics, const vespalib::string& logserver_host, int logserver_rpc_port,
+    RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
+                 const vespalib::string& logserver_host, int logserver_rpc_port,
                  double rpc_timeout_secs, size_t max_messages_per_request);
     ~RpcForwarder() override;
     void set_forward_filter(const ForwardMap& forward_filter) { _forward_filter = forward_filter; }
