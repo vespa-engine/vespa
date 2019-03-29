@@ -143,11 +143,11 @@ public enum PathGroup {
     public boolean matches(String path, Context context) {
         return get(path).map(p -> {
             boolean match = true;
-            String tenant = p.get("tenant");
+            String tenant = p.get(Matcher.tenant.name);
             if (tenant != null && context.tenant().isPresent()) {
                 match = context.tenant().get().value().equals(tenant);
             }
-            String application = p.get("application");
+            String application = p.get(Matcher.application.name);
             if (application != null && context.application().isPresent()) {
                 match &= context.application().get().value().equals(application);
             }
@@ -163,8 +163,12 @@ public enum PathGroup {
         application("{application}");
 
         final String pattern;
+        final String name;
 
-        Matcher(String pattern) { this.pattern = pattern; }
+        Matcher(String pattern) {
+            this.pattern = pattern;
+            this.name = pattern.substring(1, pattern.length() - 1);
+        }
 
     }
 
