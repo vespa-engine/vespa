@@ -163,7 +163,11 @@ Provides: libc.so.6(GLIBC_PRIVATE)(64bit)
 Vespa - The open big data serving engine
 
 %prep
+%if 0%{?installdir:1}
+%setup -D -T
+%else
 %setup -q
+%endif
 
 %build
 %if ! 0%{?installdir:1}
