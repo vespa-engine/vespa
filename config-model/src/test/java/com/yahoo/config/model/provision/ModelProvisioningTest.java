@@ -956,27 +956,7 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
         boolean useDedicatedNodeForLogserver = false;
-        boolean useSeparateServiceTypeForLogserverContainer = false;
-        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver, useSeparateServiceTypeForLogserverContainer);
-    }
-
-    @Test
-    public void testLogserverContainerWhenDedicatedLogserverSeparateServiceType() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services>" +
-                        "  <admin version='4.0'>" +
-                        "    <logservers>" +
-                        "      <nodes count='1' dedicated='true'/>" +
-                        "    </logservers>" +
-                        "  </admin>" +
-                        "  <container version='1.0' id='foo'>" +
-                        "     <nodes count='1'/>" +
-                        "  </container>" +
-                        "</services>";
-        boolean useDedicatedNodeForLogserver = false;
-        boolean useSeparateServiceTypeForLogserverContainer = true;
-        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver, useSeparateServiceTypeForLogserverContainer);
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
     }
 
     @Test
@@ -989,8 +969,7 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
         boolean useDedicatedNodeForLogserver = true;
-        boolean useSeparateServiceTypeForLogserverContainer = false;
-        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver, useSeparateServiceTypeForLogserverContainer);
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
     }
 
     @Test
@@ -1833,11 +1812,10 @@ public class ModelProvisioningTest {
 
     // Tests that a container is allocated on logserver host and that
     // it is able to get config
-    private void testContainerOnLogserverHost(String services, boolean useDedicatedNodeForLogserver, boolean useSeparateServiceTypeForLogserverContainer) {
+    private void testContainerOnLogserverHost(String services, boolean useDedicatedNodeForLogserver) {
         int numberOfHosts = 2;
         VespaModelTester tester = new VespaModelTester();
         tester.useDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
-        tester.useSeparateServiceTypeForLogserverContainer(useSeparateServiceTypeForLogserverContainer);
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
@@ -1847,9 +1825,7 @@ public class ModelProvisioningTest {
         Logserver logserver = admin.getLogserver();
         HostResource hostResource = logserver.getHostResource();
         assertNotNull(hostResource.getService("logserver"));
-        String containerServiceType = useSeparateServiceTypeForLogserverContainer
-                ? ContainerServiceType.LOGSERVER_CONTAINER.serviceName
-                : ContainerServiceType.CONTAINER.serviceName;
+        String containerServiceType = ContainerServiceType.LOGSERVER_CONTAINER.serviceName;
         assertNotNull(hostResource.getService(containerServiceType));
 
         // Test that the container gets config

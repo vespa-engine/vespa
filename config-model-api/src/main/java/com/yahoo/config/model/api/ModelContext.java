@@ -55,7 +55,8 @@ public interface ModelContext {
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault();
         boolean useAdaptiveDispatch();
-        boolean useSeparateServiceTypeForLogserverContainer();
+        // TODO: Remove when 7.33 is the oldest model in use
+        default boolean useSeparateServiceTypeForLogserverContainer() { return true; }
         boolean enableMetricsProxyContainer();
     }
 
