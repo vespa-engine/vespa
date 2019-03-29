@@ -44,8 +44,7 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight)
 
 
 SearchIterator::UP
-WeightedSetTermBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                                           bool) const
+WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
     assert(tfmda.size() == 1);
     fef::MatchData::UP md = _layout.createMatchData();
