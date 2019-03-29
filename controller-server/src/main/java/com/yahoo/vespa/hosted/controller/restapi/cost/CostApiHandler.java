@@ -36,7 +36,7 @@ public class CostApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
 
         if (path.matches("/cost/v1/csv")) {
-            return new StringResponse(CostCalculator.toCsv(CostCalculator.calculateCost(nodeRepository, controller, Clock.systemUTC(), selfHostedCostConfig)));
+            return new StringResponse(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller, Clock.systemUTC(), selfHostedCostConfig));
         }
 
         return ErrorResponse.notFoundError("Nothing at " + path);

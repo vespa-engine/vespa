@@ -56,8 +56,8 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
         node.setMinDiskAvailableGb(500d);
         node.setMinMainMemoryAvailableGb(24d);
         NodeOwner owner = new NodeOwner();
-        owner.tenant = "lsbe";
-        owner.application = "local-search";
+        owner.tenant = "tenant1";
+        owner.application = "app1";
         owner.instance = "default";
         node.setOwner(owner);
         NodeMembership membership = new NodeMembership();
@@ -76,8 +76,8 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
         node.setMinDiskAvailableGb(500d);
         node.setMinMainMemoryAvailableGb(24d);
         NodeOwner owner = new NodeOwner();
-        owner.tenant = "mediasearch";
-        owner.application = "imagesearch";
+        owner.tenant = "tenant2";
+        owner.application = "app2";
         owner.instance = "default";
         node.setOwner(owner);
         NodeMembership membership = new NodeMembership();
