@@ -54,6 +54,7 @@ public interface ModelContext {
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault();
+        boolean dispatchWithProtobuf();
         boolean useAdaptiveDispatch();
         // TODO: Remove when 7.33 is the oldest model in use
         default boolean useSeparateServiceTypeForLogserverContainer() { return true; }

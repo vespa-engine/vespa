@@ -39,7 +39,7 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -76,7 +76,7 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -116,7 +116,7 @@ public class FillTestCase {
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -134,7 +134,7 @@ public class FillTestCase {
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
         Result result = new Result(query);

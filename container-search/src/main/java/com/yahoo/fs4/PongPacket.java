@@ -28,7 +28,7 @@ public class PongPacket extends BasicPacket {
 
     /** For testing */
     public PongPacket(long activeDocuments) {
-        this.activeDocuments = Optional.of(activeDocuments);      
+        this.activeDocuments = Optional.of(activeDocuments);
     }
 
     private int code;

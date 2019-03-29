@@ -1,11 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
+import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
@@ -14,6 +16,7 @@ import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 /**
  * @author ollivir
@@ -23,10 +26,12 @@ public class RpcInvokerFactory extends InvokerFactory {
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     private final RpcResourcePool rpcResourcePool;
+    private final boolean dispatchWithProtobuf;
 
-    public RpcInvokerFactory(RpcResourcePool rpcResourcePool, SearchCluster searchCluster) {
+    public RpcInvokerFactory(RpcResourcePool rpcResourcePool, SearchCluster searchCluster, boolean dispatchWithProtobuf) {
         super(searchCluster);
         this.rpcResourcePool = rpcResourcePool;
+        this.dispatchWithProtobuf = dispatchWithProtobuf;
     }
 
     @Override
@@ -40,7 +45,7 @@ public class RpcInvokerFactory extends InvokerFactory {
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
 
-        if(query.properties().getBoolean(Dispatcher.dispatchProtobuf, false)) {
+        if(query.properties().getBoolean(Dispatcher.dispatchProtobuf, dispatchWithProtobuf)) {
             return Optional.of(new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(),
                     summaryNeedsQuery));
         }
@@ -61,5 +66,10 @@ public class RpcInvokerFactory extends InvokerFactory {
 
     public void release() {
         rpcResourcePool.release();
+    }
+
+    @Override
+    public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
+        return new RpcPing(node, monitor, rpcResourcePool);
     }
 }

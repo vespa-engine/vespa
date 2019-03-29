@@ -107,6 +107,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
     private final boolean useFdispatchByDefault;
+    private final boolean dispatchWithProtobuf;
     private final boolean useAdaptiveDispatch;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
@@ -126,6 +127,7 @@ public class IndexedSearchCluster extends SearchCluster
         dispatchParent = new SimpleConfigProducer(this, "dispatchers");
         rootDispatch =  new DispatchGroup(this);
         useFdispatchByDefault = deployState.getProperties().useFdispatchByDefault();
+        dispatchWithProtobuf = deployState.getProperties().dispatchWithProtobuf();
         useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
     }
 
@@ -437,6 +439,7 @@ public class IndexedSearchCluster extends SearchCluster
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.useMultilevelDispatch(useMultilevelDispatchSetup());
         builder.useFdispatchByDefault(useFdispatchByDefault);
+        builder.dispatchWithProtobuf(dispatchWithProtobuf);
         builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {

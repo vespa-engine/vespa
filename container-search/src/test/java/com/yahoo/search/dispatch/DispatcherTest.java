@@ -137,7 +137,7 @@ public class DispatcherTest {
 
     public class MockRpcInvokerFactory extends RpcInvokerFactory {
         public MockRpcInvokerFactory() {
-            super(null, null);
+            super(null, null, true);
         }
 
         @Override
