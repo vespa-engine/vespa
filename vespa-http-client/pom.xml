@@ -14,6 +14,29 @@
   <name>${project.artifactId}</name>
   <description>Independent external feeding API towards Vespa.</description>
 
+  <!-- This is a client jar and should be compilable with jdk8 -->
+  <profiles>
+    <profile>
+      <id>jdk11</id>
+      <activation>
+        <jdk>11</jdk>
+      </activation>
+      <properties>
+        <java.version>11</java.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>jdk1.8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <java.version>8</java.version>
+      </properties>
+    </profile>
+  </profiles>
+
+
   <dependencies>
 
     <!-- NOTE: Adding dependencies here may break clients because this is used outside an OSGi container with
@@ -135,8 +158,16 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>abi-check-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <jdkToolchain>
+            <version>${java.version}</version>
+          </jdkToolchain>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
       </plugin>
     </plugins>
   </build>
