@@ -544,10 +544,28 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "to the old pipeline, please file a ticket at yo/vespa-support and request this.\"}",
                               400);
 
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1", DELETE)
+        // GET deployment job overview, after triggering system and staging test jobs.
+        assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job", GET)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Nothing to abort.\"}");
+                              new File("jobs.json"));
 
+        // GET system test job overview.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test", GET)
+                                      .userIdentity(USER_ID),
+                              new File("system-test-job.json"));
+
+        // GET system test run 1 details.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test/run/1", GET)
+                                      .userIdentity(USER_ID),
+                              new File("system-test-details.json"));
+
+        // DELETE a running job to have it aborted.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/staging-test", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Aborting run 1 of stagingTest for tenant1.application1\"}");
+
+        // DELETE submission to unsubscribe from continuous deployment.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"message\":\"Unregistered 'tenant1.application1' from internal deployment pipeline.\"}");

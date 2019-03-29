@@ -1,0 +1,32 @@
+{
+  "1": {
+    "id": 1,
+    "status": "running",
+    "start": (ignore),
+    "wantedPlatform": "6.1",
+    "wantedApplication": {
+      "hash": "1.0.44-d00d",
+      "build": 44,
+      "source": {
+        "gitRepository": "repo",
+        "gitBranch": "master",
+        "gitCommit": "d00d"
+      }
+    },
+    "steps": {
+      "deployReal": "unfinished",
+      "installReal": "unfinished",
+      "deployTester": "unfinished",
+      "installTester": "unfinished",
+      "startTests": "unfinished",
+      "endTests": "unfinished",
+      "deactivateReal": "unfinished",
+      "deactivateTester": "unfinished",
+      "report": "unfinished"
+    },
+    "tasks": {
+      "deploy": "running"
+    },
+    "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test/run/1"
+  }
+}

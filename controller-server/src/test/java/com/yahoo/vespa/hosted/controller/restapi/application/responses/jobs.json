@@ -1,0 +1,130 @@
+{
+  "lastVersions": {
+    "platform": {
+      "platform": "6.1",
+      "at": 0,
+      "pending": "Waiting for current deployment to complete"
+    },
+    "application": {
+      "application": {
+        "hash": "1.0.44-d00d",
+        "build": 44,
+        "source": {
+          "gitRepository": "repo",
+          "gitBranch": "master",
+          "gitCommit": "d00d"
+        }
+      },
+      "at": (ignore),
+      "deploying": "0 of 1 complete"
+    }
+  },
+  "deploying": {
+    "application": {
+      "hash": "1.0.44-d00d",
+      "build": 44,
+      "source": {
+        "gitRepository": "repo",
+        "gitBranch": "master",
+        "gitCommit": "d00d"
+      }
+    }
+  },
+  "deployments": [
+    {}
+  ],
+  "jobs": {
+    "system-test": {
+      "runs": [
+        {
+          "id": 1,
+          "status": "running",
+          "start": (ignore),
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.44-d00d",
+            "build": 44,
+            "source": {
+              "gitRepository": "repo",
+              "gitBranch": "master",
+              "gitCommit": "d00d"
+            }
+          },
+          "steps": {
+            "deployReal": "unfinished",
+            "installReal": "unfinished",
+            "deployTester": "unfinished",
+            "installTester": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateReal": "unfinished",
+            "deactivateTester": "unfinished",
+            "report": "unfinished"
+          },
+          "tasks": {
+            "deploy": "running"
+          },
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test/run/1"
+        }
+      ],
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test"
+    },
+    "staging-test": {
+      "runs": [
+        {
+          "id": 1,
+          "status": "running",
+          "start": (ignore),
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.44-d00d",
+            "build": 44,
+            "source": {
+              "gitRepository": "repo",
+              "gitBranch": "master",
+              "gitCommit": "d00d"
+            }
+          },
+          "steps": {
+            "deployInitialReal": "unfinished",
+            "installInitialReal": "unfinished",
+            "deployReal": "unfinished",
+            "installReal": "unfinished",
+            "deployTester": "unfinished",
+            "installTester": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateReal": "unfinished",
+            "deactivateTester": "unfinished",
+            "report": "unfinished"
+          },
+          "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/staging-test/run/1"
+        }
+      ],
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/staging-test"
+    },
+    "us-west-1": {
+      "runs": [
+        {
+          "status": "pending",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.44-d00d",
+            "build": 44,
+            "source": {
+              "gitRepository": "repo",
+              "gitBranch": "master",
+              "gitCommit": "d00d"
+            }
+          },
+          "tasks": {
+            "system-test": "running",
+            "staging-test": "running"
+          }
+        }
+      ],
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1"
+    }
+  }
+}
