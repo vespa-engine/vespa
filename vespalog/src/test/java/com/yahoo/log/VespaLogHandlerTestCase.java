@@ -5,19 +5,28 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
-import java.time.Instant;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
-import static java.time.Instant.ofEpochMilli;
+import static java.time.Instant.ofEpochSecond;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author  Bjorn Borud
@@ -43,8 +52,8 @@ public class VespaLogHandlerTestCase {
         pid = Util.getPID();
 
         record1 = new LogRecord(Level.INFO, "This is a test");
-        record1.setInstant(ofEpochMilli(1100011348029L));
-        record1String = "1100011348.029\t"
+        record1.setInstant(ofEpochSecond(1100011348L, 29_123_543));
+        record1String = "1100011348.029123\t"
             + hostname
             + "\t"
 	    + pid
@@ -53,9 +62,9 @@ public class VespaLogHandlerTestCase {
             + "\tmy-test-config-id\tTST\tinfo\tThis is a test";
 
         record2 = new LogRecord(Level.FINE, "This is a test too");
-        record2.setInstant(ofEpochMilli(1100021348029L));
+        record2.setInstant(ofEpochSecond(1100021348L, 29_987_654));
         record2.setLoggerName("com.yahoo.log.test");
-        record2String = "1100021348.029\t"
+        record2String = "1100021348.029987\t"
             + hostname
             + "\t"
 	    + pid
@@ -63,8 +72,8 @@ public class VespaLogHandlerTestCase {
 
         record3 = new LogRecord(Level.WARNING, "another test");
         record3.setLoggerName("com.yahoo.log.test");
-        record3.setInstant(ofEpochMilli(1107011348029L));
-        record3String = "1107011348.029\t"
+        record3.setInstant(ofEpochSecond(1107011348L, 29_000_000L));
+        record3String = "1107011348.029000\t"
             + hostname
             + "\t"
 	    + pid
@@ -73,8 +82,8 @@ public class VespaLogHandlerTestCase {
 
         record4 = new LogRecord(Level.WARNING, "unicode \u00E6\u00F8\u00E5 test \u7881 unicode");
         record4.setLoggerName("com.yahoo.log.test");
-        record4.setInstant(ofEpochMilli(1107011348029L));
-        record4String = "1107011348.029\t"
+        record4.setInstant(ofEpochSecond(1107011348, 29_000_001L));
+        record4String = "1107011348.029000\t"
             + hostname
             + "\t"
 	    + pid

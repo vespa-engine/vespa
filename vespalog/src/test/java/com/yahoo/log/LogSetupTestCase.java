@@ -1,20 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.File;
-
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.Before;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.*;
+import java.io.File;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Make sure we can install the logging stuff properly.
@@ -52,7 +56,7 @@ public class LogSetupTestCase {
         hostname = Util.getHostName();
         pid = Util.getPID();
 
-        zookeeperLogRecordString = "1107011348.029\t"
+        zookeeperLogRecordString = "1107011348.029000\t"
                 + hostname
                 + "\t"
                 + pid
