@@ -12,22 +12,24 @@
 using ns_log::Logger;
 using namespace logdemon;
 
+std::shared_ptr<vespalib::metrics::MetricsManager> dummy = vespalib::metrics::DummyMetricsManager::create();
+Metrics m(dummy);
+
 struct ForwardFixture {
-    LegacyForwarder &forwarder;
+    LegacyForwarder::UP forwarder;
     int fd;
     const std::string fname;
     const std::string logLine;
-    ForwardFixture(LegacyForwarder &fw, const std::string &fileName)
-        : forwarder(fw),
+    ForwardFixture(const std::string& fileName)
+        : forwarder(),
           fd(-1),
           fname(fileName),
           logLine(createLogLine())
     {
         fd = open(fileName.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
-        forwarder.setLogserverFD(fd);
+        forwarder = LegacyForwarder::to_open_file(m, fd);
     }
     ~ForwardFixture() {
-        close(fd);
     }
 
     const std::string createLogLine() {
@@ -40,7 +42,7 @@ struct ForwardFixture {
     }
 
     void verifyForward(bool doForward) {
-        forwarder.forwardLine(logLine);
+        forwarder->forwardLine(logLine);
         fsync(fd);
         int rfd = open(fname.c_str(), O_RDONLY);
         char *buffer[2048];
@@ -51,21 +53,19 @@ struct ForwardFixture {
     }
 };
 
-std::shared_ptr<vespalib::metrics::MetricsManager> dummy = vespalib::metrics::DummyMetricsManager::create();
-Metrics m(dummy);
 
-TEST_FF("require that forwarder forwards if set", LegacyForwarder(m), ForwardFixture(f1, "forward.txt")) {
+TEST_F("require that forwarder forwards if set", ForwardFixture("forward.txt")) {
     ForwardMap forwardMap;
     forwardMap[Logger::event] = true;
-    f1.setForwardMap(forwardMap);
-    f2.verifyForward(true);
+    f1.forwarder->setForwardMap(forwardMap);
+    f1.verifyForward(true);
 }
 
-TEST_FF("require that forwarder does not forward if not set", LegacyForwarder(m), ForwardFixture(f1, "forward.txt")) {
+TEST_F("require that forwarder does not forward if not set", ForwardFixture("forward.txt")) {
     ForwardMap forwardMap;
     forwardMap[Logger::event] = false;
-    f1.setForwardMap(forwardMap);
-    f2.verifyForward(false);
+    f1.forwarder->setForwardMap(forwardMap);
+    f1.verifyForward(false);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

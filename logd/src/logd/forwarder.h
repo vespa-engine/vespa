@@ -4,6 +4,7 @@
 
 #include <vespa/log/log.h>
 #include <map>
+#include <memory>
 #include <string_view>
 
 namespace logdemon {
@@ -16,6 +17,7 @@ using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
  */
 class Forwarder {
 public:
+    using UP = std::unique_ptr<Forwarder>;
     virtual ~Forwarder() {}
     virtual void sendMode() = 0;
     virtual void forwardLine(std::string_view log_line) = 0;
