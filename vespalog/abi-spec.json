@@ -264,6 +264,7 @@
       "public void <init>()",
       "public static java.lang.String escape(java.lang.String)",
       "public static void formatTime(long, java.lang.StringBuilder)",
+      "public static java.lang.String formatTime(java.time.Instant)",
       "public static java.lang.String format(java.lang.String, java.lang.String, java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, java.lang.Throwable)",
       "public static void formatException(java.lang.Throwable, java.lang.StringBuilder)"
     ],

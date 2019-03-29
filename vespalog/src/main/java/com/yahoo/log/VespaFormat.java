@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
  * written by Bjørn Borud, licensed under the Apache 2.0 license.
  * 
  * @author arnej27959
+ * @author bjorncs
  */
 public class VespaFormat {
 
@@ -87,31 +88,18 @@ public class VespaFormat {
 
 
     /**
-     * It is easier to slice and dice strings in Java than formatting
-     * numbers...
+     * @deprecated Use {@link #formatTime(Instant)} ()}
      */
+    @Deprecated(since = "7", forRemoval = true)
     public static void formatTime (long time, StringBuilder sbuffer) {
-        String timeString = Long.toString(time);
-        int len = timeString.length();
-
-        // something wrong.  handle it by just returning the input
-        // long as a string.  we prefer this to just crashing in
-        // the substring handling.
-        if (len < 3) {
-            sbuffer.append(timeString);
-            return;
-        }
-        sbuffer.append(timeString.substring(0, len - 3));
-        sbuffer.append('.');
-        sbuffer.append(timeString.substring(len - 3));
+        sbuffer.append(formatTime(Instant.ofEpochMilli(time)));
     }
 
-    static String formatTime(Instant instant) {
-        StringBuilder builder = new StringBuilder();
-        VespaFormat.formatTime(instant.toEpochMilli(), builder);
-        return builder.toString();
+    public static String formatTime(Instant instant) {
+        return String.format("%d.%06d", instant.getEpochSecond(), instant.getNano() / 1000);
     }
 
+    @Deprecated(since = "7", forRemoval = true) // Unused - this is not the format used by the Vespa log handler
     public static String format(String levelName,
                                 String component,
                                 String componentPrefix,
@@ -165,6 +153,7 @@ public class VespaFormat {
      * @param sbuf The stringbuffer into which we wish to
      *             format the Throwable
      */
+    @Deprecated(since = "7", forRemoval = true) // Unused - this is not the format used by the Vespa log handler
     public static void formatException (Throwable t, StringBuilder sbuf) {
         Throwable last = t;
         int depth = 0;

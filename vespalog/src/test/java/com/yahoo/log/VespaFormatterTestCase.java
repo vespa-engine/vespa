@@ -40,7 +40,7 @@ public class VespaFormatterTestCase {
         testRecord1.setInstant(Instant.ofEpochMilli(1098709021843L));
         testRecord1.setThreadID(123);
 
-        expected1 = "1098709021.843\t"
+        expected1 = "1098709021.843000\t"
             + hostname + "\t"
             + pid
             + "/123" + "\t"
@@ -49,7 +49,7 @@ public class VespaFormatterTestCase {
             + "info\t"
             + "this is a test\n";
 
-        expected2 = "1098709021.843\t"
+        expected2 = "1098709021.843000\t"
             + hostname + "\t"
             + pid
             + "/123" + "\t"
@@ -64,7 +64,7 @@ public class VespaFormatterTestCase {
         testRecord2.setThreadID(123);
         testRecord2.setLoggerName("org.foo");
 
-        expected3 = "1098709021.843\t"
+        expected3 = "1098709021.843000\t"
             + hostname + "\t"
             + pid
             + "/123" + "\t"
@@ -73,7 +73,7 @@ public class VespaFormatterTestCase {
             + "info\t"
             + "this is a test\n";
 
-        expected4 = "1098709021.843\t"
+        expected4 = "1098709021.843000\t"
             + hostname + "\t"
             + pid
             + "/123" + "\t"
@@ -112,7 +112,7 @@ public class VespaFormatterTestCase {
         Object[] params = { "a small", "message" };
         testRecord.setParameters(params);
 
-        String expected = "1098709021.843\t"
+        String expected = "1098709021.843000\t"
                           + hostname + "\t"
                           + pid
                           + "/123" + "\t"
@@ -232,6 +232,7 @@ public class VespaFormatterTestCase {
      * of runtime errors. -bb
      */
     @Test
+    @SuppressWarnings("removal") // for VespaFormat.formatException
     public void testExceptionFormatting () {
         StringBuilder sb = new StringBuilder(128);
         Exception e = new Exception("testing", new Exception("nested"));
@@ -240,9 +241,10 @@ public class VespaFormatterTestCase {
 
 
     @Test
-    public void testGeneralFormat() {
+    @SuppressWarnings("removal")
+    public void testGeneralFormat() { // for VespaFormat.format
         String[] expected = new String[] {
-                "54.321",
+                "54.321000",
                 "hostname",
                 "26019/UnitTest-Thread-37",
                 "UnitTestRunner",

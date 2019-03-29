@@ -2,14 +2,14 @@
 // $Id$
 package com.yahoo.log;
 
+import com.yahoo.log.event.Event;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.yahoo.log.event.Event;
 
 /**
  * This class implements a log formatter which takes care of
@@ -98,7 +98,7 @@ public class VespaFormatter extends SimpleFormatter {
         String component = r.getLoggerName();
 
         // format the time
-        VespaFormat.formatTime(r.getMillis(), sbuf);
+        sbuf.append(VespaFormat.formatTime(r.getInstant()));
         sbuf.append("\t");
 
         sbuf.append(hostname).append("\t")

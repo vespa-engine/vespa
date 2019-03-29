@@ -28,10 +28,10 @@ import static org.junit.Assert.fail;
 public class ArchiverHandlerTestCase {
 
     private static final String[] mStrings = {
-            "1095159244.095\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
-            "1095206399.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
-            "1095206400.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
-            "1095206401.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
+            "1095159244.095000\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
+            "1095206399.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
+            "1095206400.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
+            "1095206401.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
     };
 
     private static final LogMessage[] msg = new LogMessage[mStrings.length];
