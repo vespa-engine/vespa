@@ -2,14 +2,8 @@
 #pragma once
 
 #include "forwarder.h"
-#include <vespa/log/log.h>
-#include <map>
-#include <unordered_set>
 
 namespace logdemon {
-
-// Mapping saying if a level should be forwarded or not
-using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
 
 struct Metrics;
 
@@ -29,12 +23,13 @@ private:
         ret[len] = '\0';
         return ret;
     }
-    bool parseline(const char *linestart, const char *lineend);
+    bool parseLine(std::string_view line);
 public:
     LegacyForwarder(Metrics &metrics);
     ~LegacyForwarder();
     void forwardText(const char *text, int len);
-    void forwardLine(const char *line, const char *eol) override;
+    void forwardLine(std::string_view line) override;
+    void flush() override {}
     void setForwardMap(const ForwardMap & forwardMap) { _forwardMap = forwardMap; }
     void setLogserverFD(int fd) { _logserverfd = fd; }
     int  getLogserverFD() { return _logserverfd; }

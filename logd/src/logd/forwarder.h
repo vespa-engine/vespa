@@ -2,7 +2,14 @@
 
 #pragma once
 
+#include <vespa/log/log.h>
+#include <map>
+#include <string_view>
+
 namespace logdemon {
+
+// Mapping saying if a level should be forwarded or not
+using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
 
 /**
  * Interface used to forward log lines to something.
@@ -11,7 +18,8 @@ class Forwarder {
 public:
     virtual ~Forwarder() {}
     virtual void sendMode() = 0;
-    virtual void forwardLine(const char *line, const char *eol) = 0;
+    virtual void forwardLine(std::string_view log_line) = 0;
+    virtual void flush() = 0;
     virtual int badLines() const = 0;
     virtual void resetBadLines() = 0;
 };

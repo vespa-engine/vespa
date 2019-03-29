@@ -58,26 +58,24 @@ LegacyForwarder::sendMode()
 }
 
 void
-LegacyForwarder::forwardLine(const char *line, const char *eol)
+LegacyForwarder::forwardLine(std::string_view line)
 {
-    int linelen = eol - line;
-
     assert(_logserverfd >= 0);
-    assert (linelen > 0);
-    assert (linelen < 1024*1024);
-    assert (line[linelen - 1] == '\n');
+    assert (line.size() > 0);
+    assert (line.size() < 1024*1024);
+    assert (line[line.size() - 1] == '\n');
 
-    if (parseline(line, eol)) {
-        forwardText(line, linelen);
+    if (parseLine(line)) {
+        forwardText(line.data(), line.size());
     }
 }
 
 bool
-LegacyForwarder::parseline(const char *linestart, const char *lineend)
+LegacyForwarder::parseLine(std::string_view line)
 {
     LogMessage message;
     try {
-        message.parse_log_line(std::string_view(linestart, lineend - linestart));
+        message.parse_log_line(line);
     } catch (BadLogLineException &e) {
         LOG(spam, "bad logline: %s", e.what());
         ++_badLines;
