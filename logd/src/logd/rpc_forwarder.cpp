@@ -95,6 +95,25 @@ RpcForwarder::forwardLine(std::string_view line)
     }
 }
 
+namespace {
+
+class GuardedRequest {
+private:
+    FRT_RPCRequest* _request;
+public:
+    GuardedRequest()
+        : _request(new FRT_RPCRequest())
+    {}
+    ~GuardedRequest() {
+        _request->SubRef();
+    }
+    FRT_RPCRequest& operator*() const { return *_request; }
+    FRT_RPCRequest* get() const { return _request; }
+    FRT_RPCRequest* operator->() const { return get(); }
+};
+
+}
+
 void
 RpcForwarder::flush()
 {
@@ -103,22 +122,19 @@ RpcForwarder::flush()
     }
     ProtoConverter::ProtoLogRequest proto_request;
     ProtoConverter::log_messages_to_proto(_messages, proto_request);
-    auto request = new FRT_RPCRequest();
+    GuardedRequest request;
     encode_log_request(proto_request, *request);
-    _target->InvokeSync(request, _rpc_timeout_secs);
+    _target->InvokeSync(request.get(), _rpc_timeout_secs);
     if (!request->CheckReturnTypes("bix")) {
         auto error_msg = make_string("Error in rpc reply from '%s': '%s'",
                                      _connection_spec.c_str(), request->GetErrorMessage());
-        request->SubRef();
         throw ConnectionException(error_msg);
     }
     ProtoConverter::ProtoLogResponse proto_response;
     if (!decode_log_response(*request, proto_response)) {
         auto error_msg = make_string("Error during decoding of protobuf response from '%s'", _connection_spec.c_str());
-        request->SubRef();
         throw DecodeException(error_msg);
     }
-    request->SubRef();
     _messages.clear();
 }
 
