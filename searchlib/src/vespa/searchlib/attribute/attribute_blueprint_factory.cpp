@@ -115,6 +115,13 @@ public:
         return _search_context->createIterator(tfmda[0], strict);
     }
 
+    SearchIterator::UP
+    createSearch(fef::MatchData &md, bool strict) const override {
+        const State &state = getState();
+        assert(state.numFields() == 1);
+        return _search_context->createIterator(state.field(0).resolve(md), strict);
+    }
+
     void
     fetchPostings(bool strict) override {
         _search_context->fetchPostings(strict);
