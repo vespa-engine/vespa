@@ -104,7 +104,6 @@ if ( $opthelp || $bad ) {
 	"  -c REGEX\t--component=REGEX\tselect components matching REGEX\n",
 	"  -m REGEX\t--message=REGEX\t\tselect message text matching REGEX\n",
 	"  -f\t\t--follow\t\tinvoke tail -F to follow input file\n",
-        "  -L\t\t--livestream\t\tfollow log stream from logserver\n",
 	"  -N\t\t--nldequote\t\tdequote newlines in message text field\n",
 	"  -t\t--tc\t--truncatecomponent\tchop component to 15 chars\n",
 	"  --ts\t\t--truncateservice\tchop service to 9 chars\n",
