@@ -27,6 +27,7 @@ include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
 
 add_subdirectory(application-model)
 add_subdirectory(application-preprocessor)
+add_subdirectory(athenz-identity-provider-service)
 add_subdirectory(chain)
 add_subdirectory(component)
 add_subdirectory(config-bundle)
