@@ -271,12 +271,12 @@ public class DockerOperationsImpl implements DockerOperations {
         Path varLibSia = Paths.get("/var/lib/sia");
 
         // Paths unique to each container
-        List<Path> paths = new ArrayList<>(Arrays.asList(
+        List<Path> paths = new ArrayList<>(List.of(
                 Paths.get("/etc/vespa/flags"),
                 Paths.get("/etc/yamas-agent"),
                 context.pathInNodeUnderVespaHome("logs/daemontools_y"),
                 context.pathInNodeUnderVespaHome("logs/jdisc_core"),
-                context.pathInNodeUnderVespaHome("logs/langdetect/"),
+                context.pathInNodeUnderVespaHome("logs/langdetect"),
                 context.pathInNodeUnderVespaHome("logs/nginx"),
                 context.pathInNodeUnderVespaHome("logs/vespa"),
                 context.pathInNodeUnderVespaHome("logs/yca"),
@@ -288,8 +288,10 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("logs/ysar"),
                 context.pathInNodeUnderVespaHome("logs/ystatus"),
                 context.pathInNodeUnderVespaHome("logs/zpu"),
+                context.pathInNodeUnderVespaHome("tmp"),
                 context.pathInNodeUnderVespaHome("var/cache"),
                 context.pathInNodeUnderVespaHome("var/crash"),
+                context.pathInNodeUnderVespaHome("var/container-data"),
                 context.pathInNodeUnderVespaHome("var/db/jdisc"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
@@ -305,9 +307,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/yca"),
                 context.pathInNodeUnderVespaHome("var/ycore++"),
                 context.pathInNodeUnderVespaHome("var/yinst/tmp"),
-                context.pathInNodeUnderVespaHome("var/zookeeper"),
-                context.pathInNodeUnderVespaHome("tmp"),
-                context.pathInNodeUnderVespaHome("var/container-data")));
+                context.pathInNodeUnderVespaHome("var/zookeeper")
+        ));
 
         if (context.nodeType() == NodeType.proxy)
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
