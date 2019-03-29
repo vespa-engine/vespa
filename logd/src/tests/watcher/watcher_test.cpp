@@ -2,11 +2,8 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <logd/config_subscriber.h>
-#include <logd/legacy_forwarder.h>
-#include <logd/metrics.h>
 #include <logd/watcher.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/metrics/dummy_metrics_manager.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <fstream>
@@ -21,7 +18,6 @@ using config::ConfigSet;
 using config::ConfigUri;
 using config::IConfigContext;
 using config::ConfigContext;
-using vespalib::metrics::DummyMetricsManager;
 using vespalib::ThreadStackExecutor;
 using vespalib::makeLambdaTask;
 using namespace std::chrono_literals;
@@ -94,8 +90,6 @@ struct DummyForwarder : public Forwarder {
 
 struct WatcherFixture
 {
-    Metrics metrics;
-    LegacyForwarder legacy_fwd;
     DummyForwarder fwd;
     ConfigSubscriber subscriber;
     Watcher watcher;
@@ -105,10 +99,8 @@ struct WatcherFixture
 };
 
 WatcherFixture::WatcherFixture(ConfigFixture &cfg)
-    : metrics(DummyMetricsManager::create()),
-      legacy_fwd(metrics),
-      fwd(),
-      subscriber(legacy_fwd, config::ConfigUri(cfg.configId, cfg.context)),
+    : fwd(),
+      subscriber(config::ConfigUri(cfg.configId, cfg.context)),
       watcher(subscriber, fwd)
 {
     subscriber.latch();
