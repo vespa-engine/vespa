@@ -76,6 +76,7 @@ public class ArchiveLogMessagesMethod {
                     return;
                 }
                 logDispatcher.handle(ProtobufSerialization.fromLogRequest(logRequestPayload));
+                logDispatcher.flush();
                 rpcRequest.returnValues().add(new Int8Value((byte)0));
                 byte[] responsePayload = ProtobufSerialization.toLogResponse();
                 rpcRequest.returnValues().add(new Int32Value(responsePayload.length));

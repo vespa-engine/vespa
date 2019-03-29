@@ -47,6 +47,7 @@ public class ArchiveLogMessagesMethodTest {
             }
         }
         verify(logDispatcher).handle(new ArrayList<>(messages));
+        verify(logDispatcher).flush();
     }
 
     private static class TestClient implements AutoCloseable {
