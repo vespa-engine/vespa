@@ -295,7 +295,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
                 context.pathInNodeUnderVespaHome("var/jdisc_core"),
                 context.pathInNodeUnderVespaHome("var/maven"),
-                context.pathInNodeUnderVespaHome("var/mediasearch"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when vespa-routing is no more
                 context.pathInNodeUnderVespaHome("var/run"),
                 context.pathInNodeUnderVespaHome("var/scoreboards"),
                 context.pathInNodeUnderVespaHome("var/service"),
@@ -320,9 +320,6 @@ public class DockerOperationsImpl implements DockerOperations {
         // Shared paths
         if (isInfrastructureHost(context.nodeType()))
             command.withSharedVolume(varLibSia, varLibSia);
-
-        if (context.nodeType() == NodeType.proxy || context.nodeType() == NodeType.controller)
-            command.withSharedVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
 
         if (context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
