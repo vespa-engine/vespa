@@ -436,7 +436,15 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
+    // size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
+    size_t numCores = 4;
+    const std::shared_ptr<proton::ProtonConfigSnapshot> pcsp = _protonConfigurer.getActiveConfigSnapshot();
+    if (pcsp) {
+        const std::shared_ptr<proton::BootstrapConfig> bcp = pcsp->getBootstrapConfig();
+        if (bcp) {
+            numCores = bcp->getHwInfo().cpu().cores();
+        }
+    }
     vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000, close_executor);
     closeDocumentDBs(closePool);
     _documentDBMap.clear();
