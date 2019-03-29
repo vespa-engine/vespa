@@ -125,6 +125,12 @@ public class Flags {
             "Takes effect on restart of Docker container",
             APPLICATION_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_NEW_LOGROTATE_CONFIGURATION = defineFeatureFlag(
+            "use-new-logrotate-configuration", false,
+            "Set up logrotate configuration without using any proprietary software",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID, HOSTNAME);
+
     public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
             "use-https-load-balancer-upstream", false,
             "Use https between load balancer and upstream containers",
