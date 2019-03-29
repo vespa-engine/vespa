@@ -23,6 +23,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>()"
     ],
     "fields": []

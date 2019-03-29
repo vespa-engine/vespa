@@ -120,10 +120,15 @@ public class LogMessage
 
     private static Instant parseTimestamp(String timeStr) throws InvalidLogFormatException {
         try {
-            long nanoseconds = (long) (Double.parseDouble(timeStr) * 1_000_000_000L);
-            return Instant.ofEpochSecond(0, nanoseconds);
+            int decimalSeparator = timeStr.indexOf('.');
+            if (decimalSeparator == -1) {
+                return Instant.ofEpochSecond(Long.parseLong(timeStr));
+            }
+            long seconds = Long.parseLong(timeStr.substring(0, decimalSeparator));
+            long nanoseconds = Long.parseLong(String.format("%1$-9s", timeStr.substring(decimalSeparator + 1)).replace(' ', '0')); // right pad with zeros
+            return Instant.ofEpochSecond(seconds, nanoseconds);
         } catch (NumberFormatException e) {
-            throw new InvalidLogFormatException("Invalid time string: " + timeStr);
+            throw new InvalidLogFormatException(String.format("Failed to parse timestamp: %s. Timestamp string: '%s'", e.getMessage(), timeStr), e);
         }
     }
 

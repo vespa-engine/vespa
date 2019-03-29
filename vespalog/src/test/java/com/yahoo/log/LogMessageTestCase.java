@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -45,6 +46,22 @@ public class LogMessageTestCase {
             }
         }
 
+    }
+
+    @Test
+    public void testParsingTimestampAndRendering() throws InvalidLogFormatException {
+        {
+            LogMessage message = LogMessage.parseNativeFormat("1096639280.524133935\tmalfunction\t26851\t-\tlogtest\tinfo\tStarting up, called as ./log/logtest");
+            assertEquals(1096639280L, message.getTimestamp().getEpochSecond());
+            assertEquals(524133935L, message.getTimestamp().getNano());
+            assertEquals("1096639280.524133\tmalfunction\t26851\t-\tlogtest\tinfo\tStarting up, called as ./log/logtest\n", message.toString());
+        }
+        {
+            LogMessage message = LogMessage.parseNativeFormat("1096639280.524\tmalfunction\t26851\t-\tlogtest\tinfo\tbackslash: \\\\");
+            assertEquals(1096639280L, message.getTimestamp().getEpochSecond());
+            assertEquals(524_000_000L, message.getTimestamp().getNano());
+            assertEquals("1096639280.524000\tmalfunction\t26851\t-\tlogtest\tinfo\tbackslash: \\\\\n", message.toString());
+        }
     }
 }
 
