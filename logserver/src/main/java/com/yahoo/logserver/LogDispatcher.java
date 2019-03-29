@@ -88,7 +88,9 @@ public class LogDispatcher implements LogHandler, SelectLoopHook {
     }
 
     public void handle(List<LogMessage> messages) {
-        throw new IllegalStateException("method not supported");
+        for (var message : messages) {
+            handle(message);
+        }
     }
 
     /**
