@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <iostream>
 #include <vector>
+#include <thread>
 
 using namespace vespalib;
 using vespalib::hwaccelrated::IAccelrated;
@@ -15,12 +16,24 @@ public:
 };
 
 void
-runBenchmark(size_t count, size_t docs, const Benchmark & benchmark)
+runThread(size_t count, size_t docs, const Benchmark & benchmark, size_t stride)
 {
     for (size_t i(0); i < count; i++) {
         for (size_t docId(0); docId < docs; docId++) {
-            benchmark.compute(docId);
+            benchmark.compute((docId*stride)%docs);
         }
+    }
+}
+
+void
+runBenchmark(size_t numThreads, size_t count, size_t docs, const Benchmark & benchmark, size_t stride) {
+    std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+    for (size_t i(0); i < numThreads; i++) {
+        threads.emplace_back(runThread, count, docs, benchmark, stride);
+    }
+    for (auto & thread : threads) {
+        thread.join();
     }
 }
 
@@ -56,7 +69,7 @@ FullBenchmark<T>::FullBenchmark(size_t numDocs, size_t numValues)
 }
 
 template <typename T>
-FullBenchmark<T>::~FullBenchmark() { }
+FullBenchmark<T>::~FullBenchmark() = default;
 
 class SparseBenchmark : public Benchmark
 {
@@ -87,7 +100,7 @@ SparseBenchmark::SparseBenchmark(size_t numDocs, size_t numValues, size_t numQue
         }
     }
 }
-SparseBenchmark::~SparseBenchmark() { }
+SparseBenchmark::~SparseBenchmark() = default;
 
 class UnorderedSparseBenchmark : public SparseBenchmark
 {
@@ -118,7 +131,7 @@ UnorderedSparseBenchmark::UnorderedSparseBenchmark(size_t numDocs, size_t numVal
         _query[j] = j;
     }
 }
-UnorderedSparseBenchmark::~UnorderedSparseBenchmark() {}
+UnorderedSparseBenchmark::~UnorderedSparseBenchmark() = default;
 
 class OrderedSparseBenchmark : public SparseBenchmark
 {
@@ -150,45 +163,46 @@ OrderedSparseBenchmark::OrderedSparseBenchmark(size_t numDocs, size_t numValues,
         _query[j] = P(k, k);
     }
 }
-OrderedSparseBenchmark::~OrderedSparseBenchmark() { }
+OrderedSparseBenchmark::~OrderedSparseBenchmark() = default;
 
 int main(int argc, char *argv[])
 {
     size_t numDocs(1);
     size_t numValues(1000);
-    size_t numQueryValues(1000);
     size_t numQueries(1000000);
+    size_t stride(1);
     string type("full");
     if ( argc > 1) {
         type = argv[1];
     }
     if ( argc > 2) {
-        numQueries = strtoul(argv[2], NULL, 0);
+        numQueries = strtoul(argv[2], nullptr, 0);
     }
     if ( argc > 3) {
-        numDocs = strtoul(argv[3], NULL, 0);
+        numDocs = strtoul(argv[3], nullptr, 0);
     }
     if ( argc > 4) {
-        numValues = strtoul(argv[4], NULL, 0);
+        numValues = strtoul(argv[4], nullptr, 0);
     }
-    if ( argc > 5) {
-        numQueryValues = strtoul(argv[5], NULL, 0);
+    if (argc > 5) {
+        stride = strtoul(argv[5], nullptr, 0);
     }
-
+    size_t numQueryValues = ( argc > 6) : numQueryValues = strtoul(argv[6], nullptr, 0) : numValues;
     std::cout << "type = " << type << std::endl;
     std::cout << "numQueries = " << numQueries << std::endl;
     std::cout << "numDocs = " << numDocs << std::endl;
     std::cout << "numValues = " << numValues << std::endl;
     std::cout << "numQueryValues = " << numQueryValues << std::endl;
+    std::cout << "stride =" << stride << std::endl;
     if (type == "full") {
         FullBenchmark<int32_t> bm(numDocs, numValues);
-        runBenchmark(numQueries, numDocs, bm);
+        runBenchmark(numQueries, numDocs, bm, stride);
     } else if (type == "sparse-ordered") {
         OrderedSparseBenchmark bm(numDocs, numValues, numQueryValues);
-        runBenchmark(numQueries, numDocs, bm);
+        runBenchmark(numQueries, numDocs, bm, stride);
     } else if (type == "sparse-unordered") {
         UnorderedSparseBenchmark bm(numDocs, numValues, numQueryValues);
-        runBenchmark(numQueries, numDocs, bm);
+        runBenchmark(numQueries, numDocs, bm, stride);
     } else {
         std::cerr << "type '" << type << "' is unknown." << std::endl;
     }
