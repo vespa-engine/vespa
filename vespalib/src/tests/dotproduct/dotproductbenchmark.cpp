@@ -16,11 +16,11 @@ public:
 };
 
 void
-runThread(size_t count, size_t docs, const Benchmark & benchmark, size_t stride)
+runThread(size_t count, size_t docs, const Benchmark * benchmark, size_t stride)
 {
     for (size_t i(0); i < count; i++) {
         for (size_t docId(0); docId < docs; docId++) {
-            benchmark.compute((docId*stride)%docs);
+            benchmark->compute((docId*stride)%docs);
         }
     }
 }
@@ -30,7 +30,7 @@ runBenchmark(size_t numThreads, size_t count, size_t docs, const Benchmark & ben
     std::vector<std::thread> threads;
     threads.reserve(numThreads);
     for (size_t i(0); i < numThreads; i++) {
-        threads.emplace_back(runThread, count, docs, benchmark, stride);
+        threads.emplace_back(runThread, count, docs, &benchmark, stride);
     }
     for (auto & thread : threads) {
         thread.join();
@@ -167,6 +167,7 @@ OrderedSparseBenchmark::~OrderedSparseBenchmark() = default;
 
 int main(int argc, char *argv[])
 {
+    size_t numThreads(1);
     size_t numDocs(1);
     size_t numValues(1000);
     size_t numQueries(1000000);
@@ -176,18 +177,21 @@ int main(int argc, char *argv[])
         type = argv[1];
     }
     if ( argc > 2) {
-        numQueries = strtoul(argv[2], nullptr, 0);
+        numThreads = strtoul(argv[2], nullptr, 0);
     }
     if ( argc > 3) {
-        numDocs = strtoul(argv[3], nullptr, 0);
+        numQueries = strtoul(argv[3], nullptr, 0);
     }
     if ( argc > 4) {
-        numValues = strtoul(argv[4], nullptr, 0);
+        numDocs = strtoul(argv[4], nullptr, 0);
     }
-    if (argc > 5) {
-        stride = strtoul(argv[5], nullptr, 0);
+    if ( argc > 5) {
+        numValues = strtoul(argv[5], nullptr, 0);
     }
-    size_t numQueryValues = ( argc > 6) : numQueryValues = strtoul(argv[6], nullptr, 0) : numValues;
+    if (argc > 6) {
+        stride = strtoul(argv[6], nullptr, 0);
+    }
+    size_t numQueryValues = ( argc > 7) ? strtoul(argv[7], nullptr, 0) : numValues;
     std::cout << "type = " << type << std::endl;
     std::cout << "numQueries = " << numQueries << std::endl;
     std::cout << "numDocs = " << numDocs << std::endl;
@@ -195,14 +199,14 @@ int main(int argc, char *argv[])
     std::cout << "numQueryValues = " << numQueryValues << std::endl;
     std::cout << "stride =" << stride << std::endl;
     if (type == "full") {
-        FullBenchmark<int32_t> bm(numDocs, numValues);
-        runBenchmark(numQueries, numDocs, bm, stride);
+        FullBenchmark<float> bm(numDocs, numValues);
+        runBenchmark(numThreads, numQueries, numDocs, bm, stride);
     } else if (type == "sparse-ordered") {
         OrderedSparseBenchmark bm(numDocs, numValues, numQueryValues);
-        runBenchmark(numQueries, numDocs, bm, stride);
+        runBenchmark(numThreads, numQueries, numDocs, bm, stride);
     } else if (type == "sparse-unordered") {
         UnorderedSparseBenchmark bm(numDocs, numValues, numQueryValues);
-        runBenchmark(numQueries, numDocs, bm, stride);
+        runBenchmark(numThreads, numQueries, numDocs, bm, stride);
     } else {
         std::cerr << "type '" << type << "' is unknown." << std::endl;
     }
