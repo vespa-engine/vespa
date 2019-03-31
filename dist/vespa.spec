@@ -163,9 +163,14 @@ Provides: libc.so.6(GLIBC_PRIVATE)(64bit)
 Vespa - The open big data serving engine
 
 %prep
+%if 0%{?installdir:1}
+%setup -D -T
+%else
 %setup -q
+%endif
 
 %build
+%if ! 0%{?installdir:1}
 %if 0%{?_devtoolset_enable:1}
 source %{_devtoolset_enable} || true
 %endif
@@ -189,10 +194,16 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        .
 
 make %{_smp_mflags}
+%endif
 
 %install
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
+
+%if 0%{?installdir:1}
+cp -r %{installdir} %{buildroot}
+%else
 make install DESTDIR=%{buildroot}
+%endif
 
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib/systemd/system
