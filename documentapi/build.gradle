@@ -11,7 +11,8 @@ dependencies {
     compile project(':document')
     compile project(':configdefinitions')
     compile 'com.yahoo.vespa:annotations:7.28.21'
+	testCompile 'org.hamcrest:hamcrest-all:1.3'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
-    compileOnly 'com.google.guava:guava:20.0'
+    compile 'com.google.guava:guava:20.0'
 }

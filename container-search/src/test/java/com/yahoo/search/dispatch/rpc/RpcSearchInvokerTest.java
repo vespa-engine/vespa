@@ -43,11 +43,11 @@ public class RpcSearchInvokerTest {
         invoker.sendSearchRequest(q, null);
 
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
-//        var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
-//
-//        assertThat(request.getHits(), equalTo(10));
-//        assertThat(request.getOffset(), equalTo(3));
-//        assertThat(request.getQueryTreeBlob().size(), greaterThan(0));
+        var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
+
+        assertThat(request.getHits(), equalTo(10));
+        assertThat(request.getOffset(), equalTo(3));
+        assertThat(request.getQueryTreeBlob().size(), greaterThan(0));
     }
 
     private Client parameterCollectorClient(AtomicReference<CompressionType> compressionTypeHolder, AtomicReference<byte[]> payloadHolder,

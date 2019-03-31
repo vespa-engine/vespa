@@ -22,6 +22,22 @@ dependencies {
     providedCompile project(':configdefinitions')
     providedCompile project(':zkfacade')
     compileOnly 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
+
+    testRuntime files("target/test-classes")
 }
 
 description = 'orchestrator'
+
+task copyTestResources {
+  doLast {
+    mkdir "${projectDir}/target/test-classes/"
+  }
+}
+
+clean.doFirst {
+    delete "${projectDir}/target/"
+}
+
+test {
+    dependsOn copyTestResources
+}

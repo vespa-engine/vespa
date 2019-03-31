@@ -11,7 +11,7 @@ dependencies {
     compile project(':vespajlib')
     compile 'com.yahoo.vespa:annotations:7.28.21'
     testCompile 'junit:junit:4.12'
-    compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
 	
     antlr 'org.antlr:antlr:3.4'
 }

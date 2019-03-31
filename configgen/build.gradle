@@ -17,3 +17,20 @@ jar {
     )
   }
 }
+
+task copyTestResources {
+  doLast {
+    copy {
+      from "${buildDir}/resources/test/"
+      into "${projectDir}/target/test-classes/"
+    }
+  }
+}
+
+clean.doFirst {
+    delete "${projectDir}/target/"
+}
+
+test {
+    dependsOn copyTestResources
+}

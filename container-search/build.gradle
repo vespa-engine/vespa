@@ -32,7 +32,7 @@ dependencies {
     providedCompile project(':container-core')
     compileOnly 'org.json:json:20090211'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
-    compileOnly 'com.google.protobuf:protobuf-java:3.7.0'
+    compile 'com.google.protobuf:protobuf-java:3.7.0'
 
     antlr "org.antlr:antlr4:4.5"
 }
