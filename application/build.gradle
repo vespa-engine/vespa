@@ -30,12 +30,30 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile project(':container-test-jars:jersey-resources')
     testCompile 'org.apache.httpcomponents:httpclient:4.4.1'
+
+    testRuntime files("target/test-classes")
+}
+
+
+task copyJerseyResourcesJar {
+  dependsOn ':container-test-jars:jersey-resources:jar'
+  doLast {
+    def sourceFile =  project(':container-test-jars:jersey-resources').buildDir.toString() +   "/libs/jersey-resources-" + version + ".jar"
+    copy {
+      from file(sourceFile)
+      into "${projectDir}/target/test-jars/"
+      rename { String fileName ->
+	return "jersey-resources.jar"
+      }
+    }
+    mkdir "${projectDir}/target/test-classes/"
+  }
+}
+
+clean.doFirst {
+    delete "${projectDir}/target/"
 }
 
 test {
-    testLogging {
-        showStandardStreams = true
-    }
-
-  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.net=ALL-UNNAMED', '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--illegal-access=warn'
+    dependsOn copyJerseyResourcesJar
 }

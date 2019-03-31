@@ -94,6 +94,16 @@ subprojects {
         "${buildDir}/generated-sources/configgen-default-test/")
 
     compileJava.dependsOn compileJavacc
+ 
+    
+    test {
+      //testLogging {
+      //  showStandardStreams = true
+      //}
+
+      jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.net=ALL-UNNAMED', '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--illegal-access=warn'
+    }
+
 }
 
 ext {

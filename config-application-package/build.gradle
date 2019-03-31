@@ -3,7 +3,9 @@
  */
 
 dependencies {
-    compile 'com.thaiopensource:jing:20091111'
+    compile('com.thaiopensource:jing:20091111') {
+		exclude group:'net.sf.saxon', module:'saxon'
+	}
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     testCompile project(':config-model-api')
     testCompile project(path: ':config-model-api', configuration: 'tests' )
