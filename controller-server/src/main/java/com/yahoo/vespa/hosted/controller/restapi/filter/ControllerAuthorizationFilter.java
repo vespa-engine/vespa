@@ -10,11 +10,11 @@ import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.role.Action;
+import com.yahoo.vespa.hosted.controller.role.Role;
 import com.yahoo.vespa.hosted.controller.role.RoleMembership;
 import com.yahoo.yolean.chain.After;
 import com.yahoo.yolean.chain.Provides;
 
-import javax.ws.rs.WebApplicationException;
 import java.security.Principal;
 import java.util.Optional;
 import java.util.Set;
@@ -59,7 +59,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
             // Avoid expensive lookups when request is always legal.
-            if (RoleMembership.everyoneIn(controller.system()).allows(action, request.getUri()))
+            if (Role.everyone.limitedTo(controller.system()).allows(action, request.getUri()))
                 return Optional.empty();
 
             RoleMembership roles = this.roleResolver.membership(principal, Optional.of(request.getRequestURI()));

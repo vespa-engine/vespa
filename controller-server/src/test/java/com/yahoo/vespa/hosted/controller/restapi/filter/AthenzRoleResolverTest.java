@@ -70,11 +70,13 @@ public class AthenzRoleResolverTest {
     @Test
     public void testTranslations() {
 
-        // Everyone is member of the everyone role.
-        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
+        // Only unprivileged users are members of the everyone role.
+        assertEquals(emptySet(),
                      resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
-        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
+        assertEquals(emptySet(),
                      resolver.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.everyone));
+        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
+                     resolver.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.everyone));
         assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
                      resolver.membership(TENANT_PIPELINE, NO_CONTEXT_PATH).contextsFor(Role.everyone));
         assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
@@ -90,8 +92,8 @@ public class AthenzRoleResolverTest {
         assertEquals(emptySet(),
                      resolver.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
 
-        // Operators and tenant admins are tenant admins of their tenants.
-        assertEquals(Set.of(Context.limitedTo(TENANT, tester.controller().system())),
+        // Only tenant admins are tenant admins of their tenants.
+        assertEquals(emptySet(),
                      resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(), // TODO this is wrong, but we can't do better until we ask ZMS for roles.
                      resolver.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
