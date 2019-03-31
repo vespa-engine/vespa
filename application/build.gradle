@@ -31,3 +31,11 @@ dependencies {
     testCompile project(':container-test-jars:jersey-resources')
     testCompile 'org.apache.httpcomponents:httpclient:4.4.1'
 }
+
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.net=ALL-UNNAMED', '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--illegal-access=warn'
+}

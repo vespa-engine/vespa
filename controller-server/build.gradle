@@ -7,6 +7,7 @@ dependencies {
     compile 'org.apache.httpcomponents:httpcore:4.4.1'
     compile 'org.apache.httpcomponents:httpclient:4.4.1'
     compile project(':config-model-api')
+    testCompile 'commons-io:commons-io:2.5' // jarhell : IOUtils.toString in ZipBuilderTest
     testCompile 'junit:junit:4.12'
     testCompile project(':application')
     testCompile project(':testutil')
