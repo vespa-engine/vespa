@@ -38,9 +38,7 @@ public class ControllerAuthorizationFilterTest {
     @Test
     public void operator() {
         ControllerTester tester = new ControllerTester();
-        RoleMembership.Resolver operatorResolver = (user, path) -> RoleMembership.in(tester.controller().system())
-                                                                                 .add(Role.hostedOperator)
-                                                                                 .build();
+        RoleMembership.Resolver operatorResolver = (user, path) -> Role.hostedOperator.limitedTo(tester.controller().system());
         ControllerAuthorizationFilter filter = createFilter(tester, operatorResolver);
         assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
         assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
@@ -50,7 +48,7 @@ public class ControllerAuthorizationFilterTest {
     @Test
     public void unprivileged() {
         ControllerTester tester = new ControllerTester();
-        RoleMembership.Resolver emptyResolver = (user, path) -> RoleMembership.in(tester.controller().system()).build();
+        RoleMembership.Resolver emptyResolver = (user, path) -> Role.everyone.limitedTo(tester.controller().system());
         ControllerAuthorizationFilter filter = createFilter(tester, emptyResolver);
         assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
         assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
@@ -61,7 +59,7 @@ public class ControllerAuthorizationFilterTest {
     public void unprivilegedInPublic() {
         ControllerTester tester = new ControllerTester();
         tester.zoneRegistry().setSystemName(SystemName.Public);
-        RoleMembership.Resolver emptyResolver = (user, path) -> RoleMembership.in(tester.controller().system()).build();
+        RoleMembership.Resolver emptyResolver = (user, path) -> Role.everyone.limitedTo(tester.controller().system());
         ControllerAuthorizationFilter filter = createFilter(tester, emptyResolver);
         assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
         assertIsForbidden(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
