@@ -2,10 +2,6 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/types.h>
-#include <vespa/eval/eval/value_type.h>
-#include "dense_tensor_cells_iterator.h"
 #include "dense_tensor_view.h"
 
 namespace vespalib::tensor {
@@ -26,7 +22,7 @@ private:
 
 public:
     DenseTensor();
-    ~DenseTensor() {}
+    ~DenseTensor() override;
     DenseTensor(const eval::ValueType &type_in, const Cells &cells_in);
     DenseTensor(const eval::ValueType &type_in, Cells &&cells_in);
     DenseTensor(eval::ValueType &&type_in, Cells &&cells_in);
