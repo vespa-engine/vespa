@@ -93,7 +93,7 @@ public class AthenzRoleResolver implements RoleMembership.Resolver {
             memberships.add(Role.hostedOperator);
         }
         if (tenant.isPresent() && isTenantAdmin(identity, tenant.get())) {
-            memberships.add(Role.tenantAdmin).limitedTo(tenant.get().name());
+            memberships.add(Role.athenzTenantAdmin).limitedTo(tenant.get().name());
         }
         AthenzDomain principalDomain = identity.getDomain();
         if (principalDomain.equals(SCREWDRIVER_DOMAIN)) {
@@ -102,11 +102,11 @@ public class AthenzRoleResolver implements RoleMembership.Resolver {
                 if (tenant.get() instanceof AthenzTenant) {
                     AthenzDomain tenantDomain = ((AthenzTenant) tenant.get()).domain();
                     if (hasDeployerAccess(identity, tenantDomain, application.get())) {
-                        memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), application.get());
+                        memberships.add(Role.tenantPipeline).limitedTo(tenant.get().name(), application.get());
                     }
                 }
                 else {
-                    memberships.add(Role.tenantPipelineOperator).limitedTo(tenant.get().name(), application.get());
+                    memberships.add(Role.tenantPipeline).limitedTo(tenant.get().name(), application.get());
                 }
             }
         }

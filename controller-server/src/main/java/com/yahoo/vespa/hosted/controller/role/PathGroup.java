@@ -17,10 +17,8 @@ import java.util.Set;
  */
 public enum PathGroup {
 
-    /** Paths used for system management by operators */
+    /** Paths used for system management by operators. */
     operator("/controller/v1/{*}",
-             "/cost/v1/{*}",
-             "/deployment/v1/{*}",
              "/flags/v1/{*}",
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}",
@@ -28,57 +26,84 @@ public enum PathGroup {
              "/provision/v2/{*}",
              "/zone/v2/{*}"),
 
-    /** Paths used for creating user tenants */
-    onboardingUser("/application/v4/user"),
-
-    /** Paths used for creating tenants with access control */
-    onboarding("/application/v4/tenant/{ignored}"),
-
-    /** Read-only paths used when onboarding tenants */
-    onboardingInfo("/athenz/v1/",
-                   "/athenz/v1/domains",
-                   "/athenz/v1/properties"),
-
-    /** Paths used for user management */
+    /** Paths used for user management. */
     userManagement("/user/v1/{*}"), // TODO probably add tenant and application levels.
 
-    /** Paths used by tenant administrators */
-    tenantInfo("/application/v4/", // TODO move
-               "/application/v4/tenant/"), // TODO move
+    /** Paths used for creating user tenants. */
+    user("/application/v4/user"),
 
-    /** Paths used by tenant administrators */
+    /** Paths used for creating tenants with proper access control. */
     tenant(Matcher.tenant,
-           "/application/v4/tenant/{tenant}",
-           "/application/v4/tenant/{tenant}/application/"),
+           "/application/v4/tenant/{tenant}"),
 
-    /** Paths used by application administrators */
+    /** Paths used by tenant administrators. */
+    tenantInfo(Matcher.tenant,
+               "/application/v4/tenant/{tenant}/application/"),
+
+    /** Path for the base application resource. */
     application(Matcher.tenant,
                 Matcher.application,
-                "/application/v4/tenant/{tenant}/application/{application}",
-                "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}",
-                "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/override"),
+                "/application/v4/tenant/{tenant}/application/{application}"),
 
-    /** Paths used for deployments by build service(s) */
+    /** Paths used by application administrators. */
+    applicationInfo(Matcher.tenant,
+                    Matcher.application,
+                    "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/logs",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/suspended",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/service/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/{*}"),
+
+    /** Path used to restart application nodes. */ // TODO move to the above when everyone is on new pipeline.
+    applicationRestart(Matcher.tenant,
+                       Matcher.application,
+                       "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{ignored}/restart"),
+
+    /** Paths used for development deployments. */
+    developmentDeployment(Matcher.tenant,
+                          Matcher.application,
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}",
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}/deploy",
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}",
+                          "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}/deploy"),
+
+    /** Paths used for production deployments. */
+    productionDeployment(Matcher.tenant,
+                         Matcher.application,
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/deploy",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{instance}",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{instance}/deploy",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/staging/region/{region}/instance/{instance}",
+                         "/application/v4/tenant/{tenant}/application/{application}/environment/staging/region/{region}/instance/{instance}/deploy"),
+
+    /** Paths used for continuous deployment to production. */
+    submission(Matcher.tenant,
+               Matcher.application,
+               "/application/v4/tenant/{tenant}/application/{application}/submit"),
+
+    /** Paths used for other tasks by build services. */ // TODO: This will vanish.
     buildService(Matcher.tenant,
                  Matcher.application,
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
-                 "/application/v4/tenant/{tenant}/application/{application}/submit",
                  "/application/v4/tenant/{tenant}/application/{application}/promote",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}"),
+                 "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote"),
 
-    /** Read-only paths providing information related to deployments */
-    deploymentStatus("/badge/v1/{*}",
-                     "/zone/v1/{*}"),
+    /** Paths which contain (not very strictly) classified information about, e.g., customers. */
+    classifiedInfo("/athenz/v1/{*}",
+                   "/cost/v1/{*}",
+                   "/deployment/v1/{*}",
+                   "/application/v4/",
+                   "/application/v4/tenant/",
+                   "/",
+                   "/d/{*}",
+                   "/statuspage/v1/{*}"
+    ),
 
-    /** Paths used by some dashboard */
-    dashboard("/",
-              "/d/{*}",
-              "/statuspage/v1/{*}");
+    /** Paths providing public information. */
+    publicInfo("/badge/v1/{*}",
+               "/zone/v1/{*}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;
@@ -118,11 +143,11 @@ public enum PathGroup {
     public boolean matches(String path, Context context) {
         return get(path).map(p -> {
             boolean match = true;
-            String tenant = p.get("tenant");
+            String tenant = p.get(Matcher.tenant.name);
             if (tenant != null && context.tenant().isPresent()) {
                 match = context.tenant().get().value().equals(tenant);
             }
-            String application = p.get("application");
+            String application = p.get(Matcher.application.name);
             if (application != null && context.application().isPresent()) {
                 match &= context.application().get().value().equals(application);
             }
@@ -138,8 +163,12 @@ public enum PathGroup {
         application("{application}");
 
         final String pattern;
+        final String name;
 
-        Matcher(String pattern) { this.pattern = pattern; }
+        Matcher(String pattern) {
+            this.pattern = pattern;
+            this.name = pattern.substring(1, pattern.length() - 1);
+        }
 
     }
 
