@@ -16,12 +16,20 @@ bool validAlignment16(const void * a, const void * b) {
 
 }
 
+#define PREFETCH_DISTANCE 16
+#define L1_DIST 4
 float
 Sse2Accelrator::dotProduct(const float * af, const float * bf, size_t sz) const
 {
     if ( ! validAlignment16(af, bf)) {
         return GenericAccelrator::dotProduct(af, bf, sz);
     }
+
+#if PREFETCH_DISTANCE > 0
+    for (int i(0); i < PREFETCH_DISTANCE; i++) {
+        __builtin_prefetch(&bf[i*16], 0, 0);
+    }
+#endif
     typedef float v4sf __attribute__ ((vector_size (16)));
     const size_t ChunkSize(16);
     const size_t VectorsPerChunk(ChunkSize/4);
@@ -31,6 +39,10 @@ Sse2Accelrator::dotProduct(const float * af, const float * bf, size_t sz) const
 
     const size_t numChunks(sz/ChunkSize);
     for (size_t i(0); i < numChunks; i++) {
+#if PREFETCH_DISTANCE > 0
+        __builtin_prefetch(&bf[(i+PREFETCH_DISTANCE)*16], 0, 0);
+        __builtin_prefetch(&af[((i+L1_DIST)&0xf)*16], 0, 3);
+#endif
         for (size_t j(0); j < VectorsPerChunk; j++) {
             partial[j] += a[VectorsPerChunk*i+j] * b[VectorsPerChunk*i+j];
         }

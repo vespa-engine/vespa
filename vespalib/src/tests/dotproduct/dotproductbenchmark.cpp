@@ -27,13 +27,17 @@ runThread(size_t count, size_t docs, const Benchmark * benchmark, size_t stride)
 
 void
 runBenchmark(size_t numThreads, size_t count, size_t docs, const Benchmark & benchmark, size_t stride) {
-    std::vector<std::thread> threads;
-    threads.reserve(numThreads);
-    for (size_t i(0); i < numThreads; i++) {
-        threads.emplace_back(runThread, count, docs, &benchmark, stride);
-    }
-    for (auto & thread : threads) {
-        thread.join();
+    if (numThreads > 1) {
+        std::vector<std::thread> threads;
+        threads.reserve(numThreads);
+        for (size_t i(0); i < numThreads; i++) {
+            threads.emplace_back(runThread, count, docs, &benchmark, stride);
+        }
+        for (auto & thread : threads) {
+            thread.join();
+        }
+    } else {
+        runThread(count, docs, &benchmark, stride);
     }
 }
 
