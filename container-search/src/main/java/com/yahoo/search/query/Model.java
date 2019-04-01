@@ -156,7 +156,7 @@ public class Model implements Cloneable {
      * @see #setLocale(String)
      */
     public void setLanguage(String language) {
-        //setLocale(language.replace("_", "-"));
+        setLocale(language.replace("_", "-"));
     }
 
     /**
