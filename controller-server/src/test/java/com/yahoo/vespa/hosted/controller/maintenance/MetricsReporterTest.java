@@ -71,7 +71,7 @@ public class MetricsReporterTest {
         assertDimension(metricContext, "tenantName", "ciintegrationtests");
         assertDimension(metricContext, "app", "restart.default");
         assertDimension(metricContext, "zone", "prod.cd-us-east-1");
-        assertEquals(727, metricEntry.getValue().get(MetricsReporter.convergeMetric).longValue());
+        assertEquals(727, metricEntry.getValue().get(MetricsReporter.CONVERGENCE_METRIC).longValue());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class MetricsReporterTest {
         MetricsReporter metricsReporter = createReporter(tester.controller(), metrics, SystemName.main);
 
         metricsReporter.maintain();
-        assertEquals(0.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
+        assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // Deploy all apps successfully
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
@@ -97,14 +97,14 @@ public class MetricsReporterTest {
         tester.deployCompletely(app4, applicationPackage);
 
         metricsReporter.maintain();
-        assertEquals(0.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
+        assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // 1 app fails system-test
         tester.jobCompletion(component).application(app4).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app4, applicationPackage, false, systemTest);
 
         metricsReporter.maintain();
-        assertEquals(25.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
+        assertEquals(25.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
     }
 
     @Test
@@ -234,19 +234,19 @@ public class MetricsReporterTest {
         MetricsReporter reporter = createReporter(tester.tester().controller(), metrics, SystemName.main);
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
-                     getMetric(MetricsReporter.deploymentBuildAgeSeconds, tester.app()));
+                     getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, tester.app()));
     }
 
     private Duration getAverageDeploymentDuration(Application application) {
-        return Duration.ofSeconds(getMetric(MetricsReporter.deploymentAverageDuration, application).longValue());
+        return Duration.ofSeconds(getMetric(MetricsReporter.DEPLOYMENT_AVERAGE_DURATION, application).longValue());
     }
 
     private int getDeploymentsFailingUpgrade(Application application) {
-        return getMetric(MetricsReporter.deploymentFailingUpgrades, application).intValue();
+        return getMetric(MetricsReporter.DEPLOYMENT_FAILING_UPGRADES, application).intValue();
     }
 
     private int getDeploymentWarnings(Application application) {
-        return getMetric(MetricsReporter.deploymentWarnings, application).intValue();
+        return getMetric(MetricsReporter.DEPLOYMENT_WARNINGS, application).intValue();
     }
 
     private Number getMetric(String name, Application application) {

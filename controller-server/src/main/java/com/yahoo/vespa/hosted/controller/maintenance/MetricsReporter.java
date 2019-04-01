@@ -36,13 +36,13 @@ import java.util.stream.Collectors;
  */
 public class MetricsReporter extends Maintainer {
 
-    public static final String convergeMetric = "seconds.since.last.chef.convergence";
-    public static final String deploymentFailMetric = "deployment.failurePercentage";
-    public static final String deploymentAverageDuration = "deployment.averageDuration";
-    public static final String deploymentFailingUpgrades = "deployment.failingUpgrades";
-    public static final String deploymentBuildAgeSeconds = "deployment.buildAgeSeconds";
-    public static final String deploymentWarnings = "deployment.warnings";
-    public static final String remainingRotations = "remaining_rotations";
+    public static final String CONVERGENCE_METRIC = "seconds.since.last.chef.convergence";
+    public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
+    public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
+    public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
+    public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
+    public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
+    public static final String REMAINING_ROTATIONS = "remaining_rotations";
 
     private final Metric metric;
     private final Chef chefClient;
@@ -73,7 +73,7 @@ public class MetricsReporter extends Maintainer {
     private void reportRemainingRotations() {
         try (RotationLock lock = controller().applications().rotationRepository().lock()) {
             int availableRotations = controller().applications().rotationRepository().availableRotations(lock).size();
-            metric.set(remainingRotations, availableRotations, metric.createContext(Collections.emptyMap()));
+            metric.set(REMAINING_ROTATIONS, availableRotations, metric.createContext(Collections.emptyMap()));
         }
     }
 
@@ -116,7 +116,7 @@ public class MetricsReporter extends Maintainer {
             Optional<String> application = node.getValue("application");
             application.ifPresent(app -> dimensions.put("app", String.format("%s.%s", app, node.getValue("instance").orElse("default"))));
             Metric.Context context = metric.createContext(dimensions);
-            metric.set(convergeMetric, secondsSinceConverge, context);
+            metric.set(CONVERGENCE_METRIC, secondsSinceConverge, context);
         }
     }
 
@@ -124,25 +124,25 @@ public class MetricsReporter extends Maintainer {
         ApplicationList applications = ApplicationList.from(controller().applications().asList())
                                                       .hasProductionDeployment();
 
-        metric.set(deploymentFailMetric, deploymentFailRatio(applications) * 100, metric.createContext(Collections.emptyMap()));
+        metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(applications) * 100, metric.createContext(Collections.emptyMap()));
 
         averageDeploymentDurations(applications, clock.instant()).forEach((application, duration) -> {
-            metric.set(deploymentAverageDuration, duration.getSeconds(), metric.createContext(dimensions(application)));
+            metric.set(DEPLOYMENT_AVERAGE_DURATION, duration.getSeconds(), metric.createContext(dimensions(application)));
         });
 
         deploymentsFailingUpgrade(applications).forEach((application, failingJobs) -> {
-            metric.set(deploymentFailingUpgrades, failingJobs, metric.createContext(dimensions(application)));
+            metric.set(DEPLOYMENT_FAILING_UPGRADES, failingJobs, metric.createContext(dimensions(application)));
         });
 
         deploymentWarnings(applications).forEach((application, warnings) -> {
-            metric.set(deploymentWarnings, warnings, metric.createContext(dimensions(application)));
+            metric.set(DEPLOYMENT_WARNINGS, warnings, metric.createContext(dimensions(application)));
         });
 
         for (Application application : applications.asList())
             application.deploymentJobs().statusOf(JobType.component)
                        .flatMap(JobStatus::lastSuccess)
                        .flatMap(run -> run.application().buildTime())
-                       .ifPresent(buildTime -> metric.set(deploymentBuildAgeSeconds,
+                       .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
                                                           metric.createContext(dimensions(application.id()))));
     }
