@@ -63,7 +63,7 @@ public class RotationRepository {
         if (application.rotation().isPresent()) {
             return allRotations.get(application.rotation().get());
         }
-        if (!application.deploymentSpec().globalServiceId().isPresent()) {
+        if (application.deploymentSpec().globalServiceId().isEmpty()) {
             throw new IllegalArgumentException("global-service-id is not set in deployment spec");
         }
         long productionZones = application.deploymentSpec().zones().stream()

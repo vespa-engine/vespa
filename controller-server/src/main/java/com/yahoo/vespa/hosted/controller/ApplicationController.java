@@ -231,14 +231,14 @@ public class ApplicationController {
                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
             Optional<Tenant> tenant = controller.tenants().get(id.tenant());
-            if ( ! tenant.isPresent())
+            if (tenant.isEmpty())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
             if (get(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (tenant.get().type() != Tenant.Type.user) {
-                if ( ! credentials.isPresent())
+                if (credentials.isEmpty())
                     throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
 
                 if (id.instance().isDefault()) // Only store the application permits for non-user applications.
@@ -269,7 +269,7 @@ public class ApplicationController {
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
         Tenant tenant = controller.tenants().require(applicationId.tenant());
-        if (tenant.type() == Tenant.Type.user && ! get(applicationId).isPresent())
+        if (tenant.type() == Tenant.Type.user && get(applicationId).isEmpty())
             createApplication(applicationId, Optional.empty());
 
         try (Lock deploymentLock = lockForDeployment(applicationId, zone)) {
@@ -292,15 +292,15 @@ public class ApplicationController {
                             () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
                     platformVersion = options.vespaVersion.map(Version::new).orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                                                       .flatMap(this::lastCompatibleVersion)
-                                                                                                      .orElse(controller.systemVersion()));
+                                                                                                      .orElseGet(controller::systemVersion));
                 }
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
                                              .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
                     Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
-                    if (   ! job.isPresent()
-                        || ! job.get().lastTriggered().isPresent()
-                        ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
+                    if (   job.isEmpty()
+                        || job.get().lastTriggered().isEmpty()
+                        || job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
                         return unexpectedDeployment(applicationId, zone);
                     JobRun triggered = job.get().lastTriggered().get();
                     platformVersion = preferOldestVersion ? triggered.sourcePlatform().orElse(triggered.platform())
@@ -382,7 +382,7 @@ public class ApplicationController {
         application = withoutUnreferencedDeploymentJobs(application);
 
         store(application);
-        return(application);
+        return application;
     }
 
     /** Deploy a system application to given zone */
@@ -440,12 +440,11 @@ public class ApplicationController {
         return application;
     }
 
-    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone) {
-
+    private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
-        logEntry.message = "Ignoring deployment of " + require(applicationId) + " to " + zone +
+        logEntry.message = "Ignoring deployment of application '" + application + "' to " + zone +
                            " as a deployment is not currently expected";
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = Collections.singletonList(logEntry);

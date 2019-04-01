@@ -72,7 +72,7 @@ public class DnsMaintainer extends Maintainer {
     private Optional<Rotation> rotationToCheckOf(Collection<Rotation> rotations) {
         if (rotations.isEmpty()) return Optional.empty();
         List<Rotation> rotationList = new ArrayList<>(rotations);
-        int index = rotationIndex.getAndUpdate((i)-> {
+        int index = rotationIndex.getAndUpdate((i) -> {
             if (i < rotationList.size() - 1) {
                 return ++i;
             }
