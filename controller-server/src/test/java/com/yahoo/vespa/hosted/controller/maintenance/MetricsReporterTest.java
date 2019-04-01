@@ -6,12 +6,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -29,7 +32,6 @@ import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Map;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
@@ -56,7 +58,7 @@ public class MetricsReporterTest {
 
     @Test
     public void test_chef_metrics() {
-        Clock clock = Clock.fixed(Instant.ofEpochSecond(1475497913), ZoneId.systemDefault());
+        Clock clock = new ManualClock(Instant.ofEpochSecond(1475497913));
         ControllerTester tester = new ControllerTester();
         MetricsReporter metricsReporter = createReporter(clock, tester.controller(), metrics, SystemName.cd);
         metricsReporter.maintain();
@@ -207,7 +209,24 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void testBuildTimeReporting() {
+    public void test_deployment_warnings_metric() {
+        DeploymentTester tester = new DeploymentTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        Application application = tester.createApplication("app1", "tenant1", 1, 11L);
+        tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")), 3);
+        tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-east-3")), 4);
+        tester.deployCompletely(application, applicationPackage);
+        reporter.maintain();
+        assertEquals(4, getDeploymentWarnings(application));
+    }
+
+    @Test
+    public void test_build_time_reporting() {
         InternalDeploymentTester tester = new InternalDeploymentTester();
         ApplicationVersion version = tester.deployNewSubmission();
         assertEquals(1000, version.buildTime().get().toEpochMilli());
@@ -224,6 +243,10 @@ public class MetricsReporterTest {
 
     private int getDeploymentsFailingUpgrade(Application application) {
         return getMetric(MetricsReporter.deploymentFailingUpgrades, application).intValue();
+    }
+
+    private int getDeploymentWarnings(Application application) {
+        return getMetric(MetricsReporter.deploymentWarnings, application).intValue();
     }
 
     private Number getMetric(String name, Application application) {

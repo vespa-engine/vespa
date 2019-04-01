@@ -13,6 +13,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -20,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +41,7 @@ public class MetricsReporter extends Maintainer {
     public static final String deploymentAverageDuration = "deployment.averageDuration";
     public static final String deploymentFailingUpgrades = "deployment.failingUpgrades";
     public static final String deploymentBuildAgeSeconds = "deployment.buildAgeSeconds";
+    public static final String deploymentWarnings = "deployment.warnings";
     public static final String remainingRotations = "remaining_rotations";
 
     private final Metric metric;
@@ -104,7 +108,7 @@ public class MetricsReporter extends Maintainer {
             Optional<String> environment = node.getValue("environment");
             Optional<String> region = node.getValue("region");
 
-            if(environment.isPresent() && region.isPresent()) {
+            if (environment.isPresent() && region.isPresent()) {
                 dimensions.put("zone", String.format("%s.%s", environment.get(), region.get()));
             }
 
@@ -128,6 +132,10 @@ public class MetricsReporter extends Maintainer {
 
         deploymentsFailingUpgrade(applications).forEach((application, failingJobs) -> {
             metric.set(deploymentFailingUpgrades, failingJobs, metric.createContext(dimensions(application)));
+        });
+
+        deploymentWarnings(applications).forEach((application, warnings) -> {
+            metric.set(deploymentWarnings, warnings, metric.createContext(dimensions(application)));
         });
 
         for (Application application : applications.asList())
@@ -179,6 +187,21 @@ public class MetricsReporter extends Maintainer {
                            .reduce(Duration::plus)
                            .map(totalDuration -> totalDuration.dividedBy(jobDurations.size()))
                            .orElse(Duration.ZERO);
+    }
+
+    private static Map<ApplicationId, Integer> deploymentWarnings(ApplicationList applications) {
+        return applications.asList().stream()
+                           .collect(Collectors.toMap(Application::id, a -> maxWarningCountOf(a.deployments().values())));
+    }
+
+    private static int maxWarningCountOf(Collection<Deployment> deployments) {
+        return deployments.stream()
+                          .map(Deployment::metrics)
+                          .map(DeploymentMetrics::warnings)
+                          .map(Map::values)
+                          .flatMap(Collection::stream)
+                          .max(Integer::compareTo)
+                          .orElse(0);
     }
     
     private static void keepNodesWithSystem(PartialNodeResult nodeResult, SystemName system) {
