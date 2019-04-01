@@ -1,0 +1,158 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+option cc_enable_arenas = true;
+
+package storage.mbusprot.protobuf;
+
+// Note: we use a *Request/*Response naming convention rather than *Command/*Reply,
+// as the former is the gRPC convention and that's where we intend to move.
+
+// Next tag to use: 2
+message BucketSpace {
+   uint64 space_id = 1;
+}
+
+// Next tag to use: 2
+message BucketId {
+   fixed64 raw_id = 1;
+}
+
+// Next tag to use: 3
+message Bucket {
+    uint64  space_id      = 1;
+    fixed64 raw_bucket_id = 2;
+}
+
+// Next tag to use: 9
+message BucketInfoV1 {
+    uint64  last_modified_timestamp = 1;
+    // TODO version the checksum instead?
+    fixed32 checksum       = 2;
+    uint32  doc_count      = 3;
+    uint32  total_doc_size = 4;
+    uint32  meta_count     = 5;
+    uint32  used_file_size = 6;
+    bool    ready          = 7;
+    bool    active         = 8;
+}
+
+// Next tag to use: 10
+message BucketInfoV2 {
+    uint64  last_modified_timestamp = 1;
+    // TODO version the checksum instead?
+    fixed64 checksum_lo    = 2;
+    fixed64 checksum_hi    = 3;
+    uint32  doc_count      = 4;
+    uint32  total_doc_size = 5;
+    uint32  meta_count     = 6;
+    uint32  used_file_size = 7;
+    bool    ready          = 8;
+    bool    active         = 9;
+}
+
+// Next tag to use: 3
+message BucketInfo {
+    BucketInfoV1 info_v1 = 1;
+    BucketInfoV2 info_v2 = 2;
+}
+
+// TODO these should ideally be gRPC headers..
+message RequestHeader {
+    uint64  message_id   = 1;
+    uint32  priority     = 2; // Always in range [0, 255]
+    uint32  source_index = 3; // Always in range [0, 65535]
+    fixed32 loadtype_id  = 4;
+}
+
+// TODO these should ideally be gRPC headers..
+message ResponseHeader {
+    // TODO this should ideally be gRPC Status...
+    uint32 return_code_id = 1;
+    bytes  return_code_message = 2; // FIXME it's `bytes` since `string` will check for UTF-8... might not hold...
+    uint64 message_id = 3;
+    uint32 priority   = 4; // Always in range [0, 255]
+}
+
+// Next tag to use: 3
+message DeleteBucketRequest {
+    Bucket bucket = 1;
+    BucketInfo expected_bucket_info = 2;
+}
+
+// Next tag to use: 3
+message DeleteBucketResponse {
+    BucketInfo bucket_info = 1;
+    BucketId remapped_bucket_id = 2;
+}
+
+message Document {
+    bytes payload = 1;
+}
+
+message DocumentId {
+    bytes id = 1;
+}
+
+message TestAndSetCondition {
+    bytes selection = 1;
+}
+
+message PutRequest {
+    Bucket bucket = 1;
+    Document document = 2;
+    uint64 new_timestamp = 3;
+    uint64 expected_old_timestamp = 4; // If zero; no expectation.
+    TestAndSetCondition condition = 5;
+}
+
+message PutResponse {
+    BucketInfo bucket_info = 1;
+    BucketId remapped_bucket_id = 2;
+    bool was_found = 3;
+}
+
+message Update {
+    bytes payload = 1;
+}
+
+message UpdateRequest {
+    Bucket bucket = 1;
+    Update update = 2;
+    uint64 new_timestamp = 3;
+    uint64 expected_old_timestamp = 4; // If zero; no expectation.
+    TestAndSetCondition condition = 5;
+}
+
+message UpdateResponse {
+    BucketInfo bucket_info = 1;
+    BucketId remapped_bucket_id = 2;
+    uint64 updated_timestamp = 3;
+}
+
+message RemoveRequest {
+    Bucket bucket = 1;
+    bytes document_id = 2;
+    uint64 new_timestamp = 3;
+    TestAndSetCondition condition = 4;
+}
+
+message RemoveResponse {
+    BucketInfo bucket_info = 1;
+    BucketId remapped_bucket_id = 2;
+    uint64 removed_timestamp = 3;
+}
+
+message GetRequest {
+    Bucket bucket = 1;
+    bytes document_id = 2;
+    bytes field_set = 3;
+    uint64 before_timestamp = 4;
+}
+
+message GetResponse {
+    Document document = 1;
+    uint64 last_modified_timestamp = 2;
+    BucketInfo bucket_info = 3;
+    BucketId remapped_bucket_id = 4;
+}

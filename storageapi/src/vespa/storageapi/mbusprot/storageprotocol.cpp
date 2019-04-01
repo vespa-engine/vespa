@@ -20,7 +20,8 @@ StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentT
     : _serializer5_0(repo, loadTypes),
       _serializer5_1(repo, loadTypes),
       _serializer5_2(repo, loadTypes),
-      _serializer6_0(repo, loadTypes)
+      _serializer6_0(repo, loadTypes),
+      _serializer7_0(repo, loadTypes)
 {
 }
 
@@ -33,6 +34,7 @@ StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const
 }
 
 namespace {
+    vespalib::Version version7_0(7, 0, 0); // FIXME
     vespalib::Version version6_0(6, 240, 0);
     vespalib::Version version5_2(5, 93, 30);
     vespalib::Version version5_1(5, 1, 0);
@@ -106,8 +108,10 @@ StorageProtocol::encode(const vespalib::Version& version,
         } else {
             if (version < version6_0) {
                 return encodeMessage(_serializer5_2, routable, message, version5_2, version);
-            } else {
+            } else if (version < version7_0) {
                 return encodeMessage(_serializer6_0, routable, message, version6_0, version);
+            } else {
+                return encodeMessage(_serializer7_0, routable, message, version7_0, version);
             }
         }
 
@@ -180,8 +184,10 @@ StorageProtocol::decode(const vespalib::Version & version,
         } else {
             if (version < version6_0) {
                 return decodeMessage(_serializer5_2, data, type, version5_2, version);
-            } else {
+            } else if (version < version7_0) {
                 return decodeMessage(_serializer6_0, data, type, version6_0, version);
+            } else {
+                return decodeMessage(_serializer7_0, data, type, version7_0, version);
             }
         }
     } catch (std::exception & e) {

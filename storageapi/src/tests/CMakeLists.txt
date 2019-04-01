@@ -24,6 +24,7 @@ vespa_add_executable(storageapi_testrunner_app TEST
     DEPENDS
     storageapi_testmessageapi
     storageapi
+    vdstestlib
 )
 
 vespa_add_test(

@@ -46,6 +46,7 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     vespalib::Version _version5_1{5, 1, 0};
     vespalib::Version _version5_2{5, 93, 30};
     vespalib::Version _version6_0{6, 240, 0};
+    vespalib::Version _version7_0{7, 0, 0}; // FIXME
     documentapi::LoadTypeSet _loadTypes;
     mbusprot::StorageProtocol _protocol;
     static std::vector<std::string> _nonVerboseMessageStrings;
@@ -89,7 +90,8 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 
 // TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
 INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
-                        Values(vespalib::Version(6, 240, 0)),
+                        Values(vespalib::Version(6, 240, 0),
+                               vespalib::Version(7, 0, 0)), // TODO proper 7 version
                         version_as_gtest_string);
 
 std::vector<std::string> StorageProtocolTest::_nonVerboseMessageStrings;
@@ -196,11 +198,13 @@ TEST_P(StorageProtocolTest, testPut) {
     auto reply = std::make_shared<PutReply>(*cmd2);
     ASSERT_TRUE(reply->hasDocument());
     EXPECT_EQ(*_testDoc, *reply->getDocument());
+    reply->setBucketInfo(BucketInfo(1,2,3,4,5, true, false, 48));
     auto reply2 = copyReply(reply);
     ASSERT_TRUE(reply2->hasDocument());
     EXPECT_EQ(*_testDoc, *reply->getDocument());
     EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
     EXPECT_EQ(Timestamp(14), reply2->getTimestamp());
+    EXPECT_EQ(BucketInfo(1,2,3,4,5, true, false, 48), reply2->getBucketInfo());
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
@@ -228,10 +232,12 @@ TEST_P(StorageProtocolTest, testUpdate) {
     EXPECT_EQ(*update, *cmd2->getUpdate());
 
     auto reply = std::make_shared<UpdateReply>(*cmd2, 8);
+    reply->setBucketInfo(BucketInfo(1,2,3,4,5, true, false, 48));
     auto reply2 = copyReply(reply);
     EXPECT_EQ(_testDocId, reply2->getDocumentId());
     EXPECT_EQ(Timestamp(14), reply2->getTimestamp());
     EXPECT_EQ(Timestamp(8), reply->getOldTimestamp());
+    EXPECT_EQ(BucketInfo(1,2,3,4,5, true, false, 48), reply2->getBucketInfo());
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
@@ -246,6 +252,7 @@ TEST_P(StorageProtocolTest, testGet) {
     EXPECT_EQ(vespalib::string("foo,bar,vekterli"), cmd2->getFieldSet());
 
     auto reply = std::make_shared<GetReply>(*cmd2, _testDoc, 100);
+    reply->setBucketInfo(BucketInfo(1,2,3,4,5, true, false, 48));
     auto reply2 = copyReply(reply);
     ASSERT_TRUE(reply2.get() != nullptr);
     ASSERT_TRUE(reply2->getDocument().get() != nullptr);
@@ -253,6 +260,7 @@ TEST_P(StorageProtocolTest, testGet) {
     EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
     EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
     EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp());
+    EXPECT_EQ(BucketInfo(1,2,3,4,5, true, false, 48), reply2->getBucketInfo());
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
@@ -742,7 +750,12 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
     EXPECT_EQ(50u, cmd->getApproxByteSize());
 
     auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(181u, cmd2->getApproxByteSize());
+    auto version = GetParam();
+    if (version.getMajor() == 7) { // Protobuf encoding
+        EXPECT_EQ(158u, cmd2->getApproxByteSize());
+    } else { // Legacy encoding
+        EXPECT_EQ(181u, cmd2->getApproxByteSize());
+    }
 }
 
 } // storage::api

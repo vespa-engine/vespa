@@ -5,3 +5,6 @@
 .deps
 .libs
 Makefile
+*.pb.h
+*.pb.cc
+
