@@ -774,7 +774,7 @@ TEST("requireThatWeCanSortGids")
     }
 }
 
-template <typename T>
+template <typename ChecksumType>
 void
 requireThatBasicBucketInfoWorks()
 {
@@ -813,7 +813,7 @@ requireThatBasicBucketInfoWorks()
         m.erase(std::make_pair(bucketId, gid));
     }
     assert(!m.empty());
-    T cksum(BucketChecksum(0));
+    ChecksumType cksum(BucketChecksum(0));
     BucketId prevBucket = m.begin()->first.first;
     uint32_t cnt = 0u;
     uint32_t maxcnt = 0u;

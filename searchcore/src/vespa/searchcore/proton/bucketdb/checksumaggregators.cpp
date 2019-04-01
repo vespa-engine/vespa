@@ -12,14 +12,10 @@ using GlobalId = ChecksumAggregator::GlobalId;
 namespace {
 
 uint32_t
-gidChecksum(const document::GlobalId &gid)
+gidChecksum(const GlobalId &gid)
 {
-    union {
-        const unsigned char *_c;
-        const uint32_t *_i;
-    } u;
-    u._c = gid.get();
-    const uint32_t *i = u._i;
+    uint32_t i[3];
+    memcpy(i, gid.get(), GlobalId::LENGTH);
     return i[0] + i[1] + i[2];
 }
 
@@ -106,8 +102,9 @@ XXH64ChecksumAggregator::empty() const { return _checksum == 0; }
 uint64_t
 XXH64ChecksumAggregator::compute(const GlobalId &gid, const Timestamp &timestamp) {
     char buffer[20];
-    memcpy(&buffer[0], gid.get(), 12);
-    reinterpret_cast<uint64_t *>(&buffer[12])[0] = timestamp.getValue();
+    memcpy(&buffer[0], gid.get(), GlobalId::LENGTH);
+    uint64_t tmp = timestamp.getValue();
+    memcpy(&buffer[GlobalId::LENGTH], &tmp, sizeof(tmp));
     return XXH64(buffer, sizeof(buffer), 0);
 }
 

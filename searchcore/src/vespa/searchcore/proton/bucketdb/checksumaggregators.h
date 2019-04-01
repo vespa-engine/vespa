@@ -9,7 +9,7 @@ namespace proton::bucketdb {
  **/
 class LegacyChecksumAggregator : public ChecksumAggregator {
 public:
-    LegacyChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
+    explicit LegacyChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
     LegacyChecksumAggregator * clone() const override;
     LegacyChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) override;
     LegacyChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) override;
@@ -26,7 +26,7 @@ private:
  **/
 class XXH64ChecksumAggregator : public ChecksumAggregator {
 public:
-    XXH64ChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
+    explicit XXH64ChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
     XXH64ChecksumAggregator * clone() const override;
     XXH64ChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) override;
     XXH64ChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) override;
