@@ -218,8 +218,8 @@ TEST("require that bucket db can be explored")
 
 BucketChecksum
 verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
-    GlobalId gid1("a");
-    GlobalId gid2("b");
+    GlobalId gid1("aaaaaaaaaaaa");
+    GlobalId gid2("bbbbbbbbbbbb");
     Timestamp t1(0);
     Timestamp t2(1);
     auto ckaggr = ChecksumAggregator::create(type, BucketChecksum(0));
@@ -267,12 +267,12 @@ verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
 
 TEST("test that legacy checksum complies") {
     BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::LEGACY);
-    EXPECT_EQUAL(0x61u, cksum);
+    EXPECT_EQUAL(0x24242423u, cksum);
 }
 
 TEST("test that xxhash64 checksum complies") {
     BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::XXHASH64);
-    EXPECT_EQUAL(0xc34cd5c3u, cksum);
+    EXPECT_EQUAL(0xd26fca9au, cksum);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
