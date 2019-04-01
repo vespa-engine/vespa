@@ -14,7 +14,7 @@ import java.io.PrintStream;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:vikasp@yahoo-inc.com">Vikas Panwar</a>
+ * @author Vikas Panwar
  */
 public class ConsoleLogListenerTestCase {
 
@@ -61,12 +61,12 @@ public class ConsoleLogListenerTestCase {
             listener.logged(new MyEntry(0, i, "message"));
         }
         // TODO: Should use ConsoleLogFormatter.ABSENCE_REPLACEMENT instead of literal '-'. See ticket 7128315.
-        assertEquals("0.000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n" +
-                     "0.000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\terror\tmessage\n" +
-                     "0.000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\twarning\tmessage\n" +
-                     "0.000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tinfo\tmessage\n" +
-                     "0.000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tdebug\tmessage\n" +
-                     "0.000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n",
+        assertEquals("0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n" +
+                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\terror\tmessage\n" +
+                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\twarning\tmessage\n" +
+                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tinfo\tmessage\n" +
+                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tdebug\tmessage\n" +
+                     "0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n",
                      out.toString());
     }
 
