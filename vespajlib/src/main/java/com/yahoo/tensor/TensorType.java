@@ -27,16 +27,17 @@ public class TensorType {
     public enum ValueType { DOUBLE, FLOAT};
 
     /** The empty tensor type - which is the same as a double */
-    public static final TensorType empty = new TensorType(Collections.emptyList());
+    public static final TensorType empty = new TensorType(ValueType.DOUBLE, Collections.emptyList());
 
-    private final ValueType valueType = ValueType.DOUBLE;
+    private final ValueType valueType;
 
     public final ValueType valueType() { return valueType; }
 
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
-    private TensorType(Collection<Dimension> dimensions) {
+    private TensorType(ValueType valueType, Collection<Dimension> dimensions) {
+        this.valueType = valueType;
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
         this.dimensions = ImmutableList.copyOf(dimensionList);
@@ -379,8 +380,15 @@ public class TensorType {
 
         private final Map<String, Dimension> dimensions = new LinkedHashMap<>();
 
-        /** Creates an empty builder */
+        private final ValueType valueType;
+
+        /** Creates an empty builder with cells of type double*/
         public Builder() {
+            this(ValueType.DOUBLE);
+        }
+
+        public Builder(ValueType valueType) {
+            this.valueType = valueType;
         }
 
         /**
@@ -391,6 +399,10 @@ public class TensorType {
          * If it is indexed in one and mapped in the other it will become mapped.
          */
         public Builder(TensorType ... types) {
+            this(ValueType.DOUBLE, types);
+        }
+        public Builder(ValueType valueType, TensorType ... types) {
+            this.valueType = valueType;
             for (TensorType type : types)
                 addDimensionsOf(type);
         }
@@ -399,6 +411,10 @@ public class TensorType {
          * Creates a builder from the given dimensions.
          */
         public Builder(Iterable<Dimension> dimensions) {
+            this(ValueType.DOUBLE, dimensions);
+        }
+        public Builder(ValueType valueType, Iterable<Dimension> dimensions) {
+            this.valueType = valueType;
             for (TensorType.Dimension dimension : dimensions) {
                 dimension(dimension);
             }
@@ -497,7 +513,7 @@ public class TensorType {
         }
 
         public TensorType build() {
-            return new TensorType(dimensions.values());
+            return new TensorType(valueType, dimensions.values());
         }
 
     }
