@@ -24,8 +24,14 @@ import java.util.stream.Collectors;
  */
 public class TensorType {
 
+    public enum ValueType { DOUBLE, FLOAT};
+
     /** The empty tensor type - which is the same as a double */
     public static final TensorType empty = new TensorType(Collections.emptyList());
+
+    private final ValueType valueType = ValueType.DOUBLE;
+
+    public final ValueType valueType() { return valueType; }
 
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;

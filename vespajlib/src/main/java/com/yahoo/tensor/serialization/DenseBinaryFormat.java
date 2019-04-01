@@ -22,12 +22,38 @@ import java.util.Optional;
  */
 public class DenseBinaryFormat implements BinaryFormat {
 
+    static private final int DOUBLE_VALUE_TYPE = 0; // Not encoded as it is default, and you know the type when deserializing
+    static private final int FLOAT_VALUE_TYPE = 1;
+
+    enum EncodeType {NO_DEFAULT, DOUBLE_IS_DEFAULT}
+    private final EncodeType encodeType;
+    DenseBinaryFormat() {
+        encodeType = EncodeType.DOUBLE_IS_DEFAULT;
+    }
+    DenseBinaryFormat(EncodeType encodeType) {
+        this.encodeType = encodeType;
+    }
+
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {
         if ( ! ( tensor instanceof IndexedTensor))
             throw new RuntimeException("The dense format is only supported for indexed tensors");
+        encodeValueType(buffer, tensor.type().valueType());
         encodeDimensions(buffer, (IndexedTensor)tensor);
         encodeCells(buffer, tensor);
+    }
+
+    private void encodeValueType(GrowableByteBuffer buffer, TensorType.ValueType valueType) {
+        switch (valueType) {
+            case DOUBLE:
+                if (encodeType != EncodeType.DOUBLE_IS_DEFAULT) {
+                    buffer.putInt1_4Bytes(DOUBLE_VALUE_TYPE);
+                }
+                break;
+            case FLOAT:
+                buffer.putInt1_4Bytes(FLOAT_VALUE_TYPE);
+                break;
+        }
     }
 
     private void encodeDimensions(GrowableByteBuffer buffer, IndexedTensor tensor) {
@@ -39,9 +65,26 @@ public class DenseBinaryFormat implements BinaryFormat {
     }
 
     private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
+        switch (tensor.type().valueType()) {
+            case DOUBLE:
+                encodeCellsAsDouble(buffer, tensor);
+                break;
+            case FLOAT:
+                encodeCellsAsFloat(buffer, tensor);
+                break;
+        }
+    }
+
+    private void encodeCellsAsDouble(GrowableByteBuffer buffer, Tensor tensor) {
         Iterator<Double> i = tensor.valueIterator();
         while (i.hasNext())
             buffer.putDouble(i.next());
+    }
+
+    private void encodeCellsAsFloat(GrowableByteBuffer buffer, Tensor tensor) {
+        Iterator<Double> i = tensor.valueIterator();
+        while (i.hasNext())
+            buffer.putFloat(i.next().floatValue());
     }
 
     @Override
