@@ -1509,7 +1509,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, 2, 4, 50, ClusterSpec.Type.content, hostnames));
                     Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
                     clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
-                    DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5, Optional.of(Instant.ofEpochMilli(123123)));
+                    DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
+                                                                      Optional.of(Instant.ofEpochMilli(123123)), Map.of());
 
                     lockedApplication = lockedApplication
                             .withClusterInfo(deployment.zone(), clusterInfo)

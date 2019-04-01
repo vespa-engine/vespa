@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -50,11 +51,11 @@ import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
-import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -72,6 +73,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -336,7 +338,8 @@ public class ApplicationController {
             ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
 
             lockOrThrow(applicationId, application ->
-                    store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant())));
+                    store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
+                                                        warningsFrom(result))));
             return result;
         }
     }
@@ -759,6 +762,19 @@ public class ApplicationController {
                          .map(VespaVersion::versionNumber)
                          .filter(version -> version.getMajor() == targetMajorVersion)
                          .max(naturalOrder());
+    }
+
+    /** Extract deployment warnings metric from deployment result */
+    private static Map<DeploymentMetrics.Warning, Integer> warningsFrom(ActivateResult result) {
+        if (result.prepareResponse().log == null) return Map.of();
+        Map<DeploymentMetrics.Warning, Integer> warnings = new HashMap<>();
+        for (Log log : result.prepareResponse().log) {
+            // TODO: Categorize warnings. Response from config server should be updated to include the appropriate
+            //  category and typed log level
+            if (!"warn".equalsIgnoreCase(log.level) && !"warning".equalsIgnoreCase(log.level)) continue;
+            warnings.merge(DeploymentMetrics.Warning.all, 1, Integer::sum);
+        }
+        return Collections.unmodifiableMap(warnings);
     }
 
 }
