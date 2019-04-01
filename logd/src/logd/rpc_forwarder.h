@@ -26,6 +26,7 @@ private:
     int _bad_lines;
     ForwardMap _forward_filter;
 
+    void ping_logserver();
 
 public:
     RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
