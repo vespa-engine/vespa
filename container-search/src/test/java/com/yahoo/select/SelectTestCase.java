@@ -621,6 +621,12 @@ public class SelectTestCase {
     }
 
     @Test
+    public void testEquals() {
+        assertParse("{\"equals\": [\"public\",true]}","public:true");
+        assertParse("{\"equals\": [\"public\",5]}","public:5");
+    }
+
+    @Test
     public void testRegexp() {
         QueryTree x = parseWhere("{ \"matches\" : [\"foo\", \"a b\"]}");
         Item root = x.getRoot();
