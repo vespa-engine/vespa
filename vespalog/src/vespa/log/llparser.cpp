@@ -332,7 +332,7 @@ LLParser::makeMessage(const char *tmf, const char *hsf, const char *pdf,
     if (tmf[0] == '\0') {
         struct timeval tv;
         gettimeofday(&tv, NULL);
-        snprintf(tmbuffer, 24, "%u.%u",
+        snprintf(tmbuffer, 24, "%u.%06u",
                  static_cast<unsigned int>(tv.tv_sec),
                  static_cast<unsigned int>(tv.tv_usec));
         tmf = tmbuffer;
