@@ -209,8 +209,8 @@
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
       "public boolean active()",
-      "public java.util.Optional athenzService()",
       "public java.util.Optional testerFlavor()",
+      "public java.util.Optional athenzService()",
       "public java.util.List zones()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public int hashCode()",
@@ -487,16 +487,17 @@
     ],
     "methods": [
       "public void <init>(java.util.List)",
-      "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
-      "public boolean allows(java.lang.String, java.time.Instant)",
+      "public final void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
+      "public final boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
-      "public static java.lang.String toAllowMessage(com.yahoo.config.application.api.ValidationId)",
       "public java.lang.String xmlForm()",
+      "public static java.lang.String toAllowMessage(com.yahoo.config.application.api.ValidationId)",
       "public static com.yahoo.config.application.api.ValidationOverrides fromXml(java.io.Reader)",
       "public static com.yahoo.config.application.api.ValidationOverrides fromXml(java.lang.String)"
     ],
     "fields": [
-      "public static final com.yahoo.config.application.api.ValidationOverrides empty"
+      "public static final com.yahoo.config.application.api.ValidationOverrides empty",
+      "public static final com.yahoo.config.application.api.ValidationOverrides all"
     ]
   }
 }
