@@ -13,3 +13,15 @@ dependencies {
 }
 
 description = 'vespa_feed_perf'
+
+
+task copyTestDependencies {
+  doFirst {
+    copy {
+      from "${buildDir}/resources/test/"
+      into "${projectDir}/target/test-classes/"
+    }
+  }
+}
+
+test.dependsOn copyTestDependencies
