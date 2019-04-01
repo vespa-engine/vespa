@@ -5,8 +5,7 @@
 #include "tensor_builder.h"
 #include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 std::unique_ptr<Tensor>
 TensorFactory::create(const TensorCells &cells,
@@ -71,5 +70,4 @@ TensorFactory::createDense(const DenseTensorCells &cells)
 }
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

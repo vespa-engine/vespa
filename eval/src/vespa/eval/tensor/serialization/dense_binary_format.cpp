@@ -7,8 +7,7 @@
 
 using vespalib::nbostream;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -60,10 +59,8 @@ DenseBinaryFormat::deserialize(nbostream &stream)
         stream >> cellValue;
         cells.emplace_back(cellValue);
     }
-    return std::make_unique<DenseTensor>(makeValueType(std::move(dimensions)),
-                                         std::move(cells));
+    return std::make_unique<DenseTensor>(makeValueType(std::move(dimensions)), std::move(cells));
 }
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

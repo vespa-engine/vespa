@@ -3,11 +3,9 @@
 #pragma once
 
 #include <memory>
-namespace vespalib {
+namespace vespalib { class nbostream; }
 
-class nbostream;
-
-namespace tensor {
+namespace vespalib::tensor {
 
 class DenseTensor;
 class DenseTensorView;
@@ -22,5 +20,4 @@ public:
     static std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

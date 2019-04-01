@@ -10,8 +10,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/memory.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 using slime::Inserter;
@@ -58,13 +57,10 @@ SlimeBinaryFormatSerializer::SlimeBinaryFormatSerializer(Inserter &inserter)
 }
 
 
-SlimeBinaryFormatSerializer::~SlimeBinaryFormatSerializer()
-{
-}
+SlimeBinaryFormatSerializer::~SlimeBinaryFormatSerializer() = default;
 
 void
-SlimeBinaryFormatSerializer::visit(const TensorAddress &address,
-                                     double value)
+SlimeBinaryFormatSerializer::visit(const TensorAddress &address, double value)
 {
     Cursor &cellCursor = _cells.addObject();
     writeTensorAddress(cellCursor, address);
@@ -101,5 +97,4 @@ SlimeBinaryFormat::serialize(const Tensor &tensor)
 }
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

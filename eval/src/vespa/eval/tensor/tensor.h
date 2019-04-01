@@ -9,9 +9,8 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
 
-namespace vespalib {
-namespace eval { struct BinaryOperation; }
-namespace tensor {
+namespace vespalib::eval { struct BinaryOperation; }
+namespace vespalib::tensor {
 
 class TensorVisitor;
 class CellValues;
@@ -66,5 +65,4 @@ public:
 
 std::ostream &operator<<(std::ostream &out, const Tensor &value);
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

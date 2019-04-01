@@ -5,11 +5,9 @@
 #include <memory>
 #include <cstdint>
 
-namespace vespalib {
+namespace vespalib { class nbostream; }
 
-class nbostream;
-
-namespace tensor {
+namespace vespalib::tensor {
 
 class Tensor;
 class TensorBuilder;
@@ -27,5 +25,4 @@ public:
     static std::unique_ptr<Tensor> deserialize(nbostream &stream);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

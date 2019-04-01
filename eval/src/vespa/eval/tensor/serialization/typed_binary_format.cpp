@@ -15,8 +15,7 @@ LOG_SETUP(".eval.tensor.serialization.typed_binary_format");
 
 using vespalib::nbostream;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 void
@@ -55,5 +54,4 @@ TypedBinaryFormat::deserialize(nbostream &stream)
 }
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

@@ -4,13 +4,11 @@
 
 #include <memory>
 
-namespace vespalib {
+namespace vespalib { class Slime; }
 
-class Slime;
+namespace vespalib::slime { struct Inserter; }
 
-namespace slime { struct Inserter; }
-
-namespace tensor {
+namespace vespalib::tensor {
 
 class Tensor;
 class TensorBuilder;
@@ -25,5 +23,4 @@ public:
     static std::unique_ptr<Slime> serialize(const Tensor &tensor);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

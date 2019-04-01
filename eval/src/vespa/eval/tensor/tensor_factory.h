@@ -4,8 +4,7 @@
 
 #include "types.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 class Tensor;
@@ -26,5 +25,4 @@ public:
     createDense(const DenseTensorCells &cells);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

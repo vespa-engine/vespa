@@ -53,9 +53,7 @@ SparseTensorMapper(const ValueType &type)
 }
 
 template <class TensorT>
-SparseTensorMapper<TensorT>::~SparseTensorMapper()
-{
-}
+SparseTensorMapper<TensorT>::~SparseTensorMapper() = default;
 
 template <class TensorT>
 std::unique_ptr<Tensor>

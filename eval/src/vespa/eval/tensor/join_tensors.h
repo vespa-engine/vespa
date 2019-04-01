@@ -5,8 +5,7 @@
 #include "tensor.h"
 #include "direct_tensor_builder.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /*
  * Join the cells of two tensors.
@@ -44,5 +43,4 @@ joinTensorsNegated(const TensorImplType &lhs,
     return builder.build();
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

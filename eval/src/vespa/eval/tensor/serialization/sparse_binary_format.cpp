@@ -11,8 +11,7 @@
 
 using vespalib::nbostream;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -59,13 +58,10 @@ SparseBinaryFormatSerializer::SparseBinaryFormatSerializer()
 }
 
 
-SparseBinaryFormatSerializer::~SparseBinaryFormatSerializer()
-{
-}
+SparseBinaryFormatSerializer::~SparseBinaryFormatSerializer() = default;
 
 void
-SparseBinaryFormatSerializer::visit(const TensorAddress &address,
-                                     double value)
+SparseBinaryFormatSerializer::visit(const TensorAddress &address, double value)
 {
     ++_numCells;
     writeTensorAddress(_cells, _type, address);
@@ -74,8 +70,7 @@ SparseBinaryFormatSerializer::visit(const TensorAddress &address,
 
 
 void
-SparseBinaryFormatSerializer::serialize(nbostream &stream,
-                                         const Tensor &tensor)
+SparseBinaryFormatSerializer::serialize(nbostream &stream, const Tensor &tensor)
 {
     _type = tensor.type();
     tensor.accept(*this);
@@ -121,5 +116,4 @@ SparseBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
 }
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

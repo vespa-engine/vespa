@@ -4,19 +4,18 @@
 #include <algorithm>
 #include <ostream>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 const vespalib::string TensorAddress::Element::UNDEFINED_LABEL = "(undefined)";
 
-TensorAddress::Element::~Element() {}
+TensorAddress::Element::~Element() = default;
 
 TensorAddress::TensorAddress()
     : _elements()
 {
 }
 
-TensorAddress::~TensorAddress() {}
+TensorAddress::~TensorAddress() = default;
 
 TensorAddress::TensorAddress(const Elements &elements_in)
     : _elements(elements_in)
@@ -87,5 +86,4 @@ operator<<(std::ostream &out, const TensorAddress &value)
     return out;
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
