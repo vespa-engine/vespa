@@ -20,11 +20,10 @@ using namespace search::fef;
 using vespalib::hwaccelrated::IAccelrated;
 
 namespace search::features {
-namespace dotproduct {
-namespace wset {
+namespace dotproduct::wset {
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
-VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::VectorBase() { }
+VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::VectorBase() = default;
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
 VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() = default;
@@ -70,7 +69,7 @@ StringVector::~StringVector() = default;
 
 }
 
-namespace array {
+namespace dotproduct::array {
 
 template <typename BaseType>
 DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
@@ -257,9 +256,7 @@ size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint3
 }
 
 
-} // namespace array
-
-} // namespace dotproduct
+}
 
 DotProductBlueprint::DotProductBlueprint() :
     Blueprint("dotProduct"),
