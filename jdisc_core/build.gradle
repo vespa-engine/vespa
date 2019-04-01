@@ -84,12 +84,12 @@ task exportPackages(type: JavaExec) {
 	jvmArgs = [ "--add-opens=java.base/java.net=ALL-UNNAMED" ]
 }
 
-compileTestJava.dependsOn exportPackages
+test.dependsOn exportPackages
 
 sourceSets {
-	main{
-	  resources {
-		 srcDir "${buildDir}/generated-resources/"
-	  }
-	}
+        test {
+          resources {
+                 srcDir "${buildDir}/generated-resources/"
+          }
+        }
 }

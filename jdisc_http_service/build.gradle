@@ -28,3 +28,13 @@ description = 'jdisc_http_service'
 test {
     useTestNG()
 }
+
+test.dependsOn ":jdisc_core:exportPackages"
+
+sourceSets {
+  test {
+    resources {
+      srcDir "${rootDir}/jdisc_core/build/generated-resources/"
+    }
+  }
+}

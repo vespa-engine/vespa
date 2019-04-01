@@ -8,3 +8,13 @@ dependencies {
     testCompile 'junit:junit:4.12'
     providedCompile project(':jdisc_core')
 }
+
+test.dependsOn ":jdisc_core:exportPackages"
+
+sourceSets {
+  test {
+    resources {
+      srcDir "${rootDir}/jdisc_core/build/generated-resources/"
+    }
+  }
+}
