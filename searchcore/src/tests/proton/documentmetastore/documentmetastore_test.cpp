@@ -24,7 +24,7 @@ LOG_SETUP("documentmetastore_test");
 using namespace document;
 using proton::bucketdb::BucketState;
 using proton::bucketdb::LegacyChecksumAggregator;
-using proton::bucketdb::XXHChecksumAggregator;
+using proton::bucketdb::XXH64ChecksumAggregator;
 using proton::bucketdb::IBucketCreateListener;
 using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
@@ -845,7 +845,7 @@ TEST("requireThatBasicBucketInfoWorks")
     BucketState::setChecksumType(BucketState::ChecksumType::LEGACY);
     requireThatBasicBucketInfoWorks<LegacyChecksumAggregator>();
     BucketState::setChecksumType(BucketState::ChecksumType::XXHASH64);
-    requireThatBasicBucketInfoWorks<XXHChecksumAggregator>();
+    requireThatBasicBucketInfoWorks<XXH64ChecksumAggregator>();
 }
 
 TEST("requireThatWeCanRetrieveListOfLidsFromBucketId")

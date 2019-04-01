@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "checksumaggregators.h"
 #include <xxhash.h>
@@ -72,39 +72,39 @@ LegacyChecksumAggregator::empty() const { return _checksum == 0; }
 
 
 
-XXHChecksumAggregator *
-XXHChecksumAggregator::clone() const {
-    return new XXHChecksumAggregator(*this);
+XXH64ChecksumAggregator *
+XXH64ChecksumAggregator::clone() const {
+    return new XXH64ChecksumAggregator(*this);
 }
-XXHChecksumAggregator &
-XXHChecksumAggregator::addDoc(const GlobalId &gid, const Timestamp &timestamp) {
+XXH64ChecksumAggregator &
+XXH64ChecksumAggregator::addDoc(const GlobalId &gid, const Timestamp &timestamp) {
     _checksum ^= compute(gid, timestamp);
     return *this;
 }
-XXHChecksumAggregator &
-XXHChecksumAggregator::removeDoc(const GlobalId &gid, const Timestamp &timestamp) {
+XXH64ChecksumAggregator &
+XXH64ChecksumAggregator::removeDoc(const GlobalId &gid, const Timestamp &timestamp) {
     _checksum ^= compute(gid, timestamp);
     return *this;
 }
-XXHChecksumAggregator &
-XXHChecksumAggregator::addChecksum(const ChecksumAggregator & rhs) {
-    _checksum ^= dynamic_cast<const XXHChecksumAggregator &>(rhs)._checksum;
+XXH64ChecksumAggregator &
+XXH64ChecksumAggregator::addChecksum(const ChecksumAggregator & rhs) {
+    _checksum ^= dynamic_cast<const XXH64ChecksumAggregator &>(rhs)._checksum;
     return *this;
 }
-XXHChecksumAggregator &
-XXHChecksumAggregator::removeChecksum(const ChecksumAggregator & rhs) {
-    _checksum ^= dynamic_cast<const XXHChecksumAggregator &>(rhs)._checksum;
+XXH64ChecksumAggregator &
+XXH64ChecksumAggregator::removeChecksum(const ChecksumAggregator & rhs) {
+    _checksum ^= dynamic_cast<const XXH64ChecksumAggregator &>(rhs)._checksum;
     return *this;
 }
 BucketChecksum
-XXHChecksumAggregator::getChecksum() const {
+XXH64ChecksumAggregator::getChecksum() const {
     return BucketChecksum((_checksum >> 32) ^ (_checksum & 0xffffffffL));
 }
 bool
-XXHChecksumAggregator::empty() const { return _checksum == 0; }
+XXH64ChecksumAggregator::empty() const { return _checksum == 0; }
 
 uint64_t
-XXHChecksumAggregator::compute(const GlobalId &gid, const Timestamp &timestamp) {
+XXH64ChecksumAggregator::compute(const GlobalId &gid, const Timestamp &timestamp) {
     char buffer[20];
     memcpy(&buffer[0], gid.get(), 12);
     reinterpret_cast<uint64_t *>(&buffer[12])[0] = timestamp.getValue();

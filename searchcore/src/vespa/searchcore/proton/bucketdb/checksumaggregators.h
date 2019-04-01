@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "checksumaggregator.h"
 
@@ -24,14 +24,14 @@ private:
 /**
  * Implementations of the bucket checksums based on XXHASH64.
  **/
-class XXHChecksumAggregator : public ChecksumAggregator {
+class XXH64ChecksumAggregator : public ChecksumAggregator {
 public:
-    XXHChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
-    XXHChecksumAggregator * clone() const override;
-    XXHChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) override;
-    XXHChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) override;
-    XXHChecksumAggregator & addChecksum(const ChecksumAggregator & rhs) override;
-    XXHChecksumAggregator & removeChecksum(const ChecksumAggregator & rhs) override;
+    XXH64ChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
+    XXH64ChecksumAggregator * clone() const override;
+    XXH64ChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) override;
+    XXH64ChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) override;
+    XXH64ChecksumAggregator & addChecksum(const ChecksumAggregator & rhs) override;
+    XXH64ChecksumAggregator & removeChecksum(const ChecksumAggregator & rhs) override;
     BucketChecksum getChecksum() const override;
     bool empty() const override;
 private:
