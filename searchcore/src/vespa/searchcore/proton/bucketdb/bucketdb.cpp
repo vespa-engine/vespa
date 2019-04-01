@@ -129,11 +129,8 @@ BucketDB::hasBucket(const BucketId &bucketId) const
 bool
 BucketDB::isActiveBucket(const BucketId &bucketId) const
 {
-    Map::const_iterator itr = _map.find(bucketId);
-    if (itr != _map.end()) {
-        return itr->second.isActive();
-    }
-    return false;
+    auto itr = _map.find(bucketId);
+    return (itr != _map.end()) && itr->second.isActive();
 }
 
 void
@@ -187,7 +184,7 @@ BucketDB::createBucket(const BucketId &bucketId)
 void
 BucketDB::deleteEmptyBucket(const BucketId &bucketId)
 {
-    Map::iterator itr = _map.find(bucketId);
+    auto itr = _map.find(bucketId);
     if (itr == _map.end()) {
         return;
     }
@@ -208,8 +205,7 @@ BucketDB::getActiveBuckets(BucketId::List &buckets) const
 }
 
 void
-BucketDB::populateActiveBuckets(const BucketId::List &buckets,
-                                BucketId::List &fixupBuckets)
+BucketDB::populateActiveBuckets(const BucketId::List &buckets, BucketId::List &fixupBuckets)
 {
     typedef BucketId::List BIV;
     BIV sorted(buckets);
@@ -233,7 +229,7 @@ BucketDB::populateActiveBuckets(const BucketId::List &buckets,
     BucketState activeState;
     activeState.setActive(true);
     for (const BucketId & bucketId : toAdd) {
-        InsertResult ins(_map.insert(std::make_pair(bucketId, activeState)));
+        InsertResult ins(_map.emplace(bucketId, activeState));
         assert(ins.second);
     }
 }
