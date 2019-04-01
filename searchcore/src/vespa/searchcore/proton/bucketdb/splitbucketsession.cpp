@@ -41,13 +41,11 @@ SplitBucketSession::setup()
 
     if (_target1.valid()) {
         BucketState *target1State = _bucketDB->getBucketStatePtr(_target1);
-        _adjustTarget1ActiveLids = calcFixupNeed(target1State, _sourceActive,
-                                                 true);
+        _adjustTarget1ActiveLids = calcFixupNeed(target1State, _sourceActive, true);
     }
     if (_target2.valid()) {
         BucketState *target2State = _bucketDB->getBucketStatePtr(_target2);
-        _adjustTarget2ActiveLids = calcFixupNeed(target2State, _sourceActive,
-                                                 true);
+        _adjustTarget2ActiveLids = calcFixupNeed(target2State, _sourceActive, true);
     }
 }
 

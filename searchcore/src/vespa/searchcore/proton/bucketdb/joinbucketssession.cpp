@@ -38,20 +38,16 @@ JoinBucketsSession::setup()
     bool source2Active = extractInfo(_source2, source2State);
     _wantTargetActive = source1Active || source2Active;
 
-    _adjustSource1ActiveLids = calcFixupNeed(source1State, _wantTargetActive,
-                                             false);
-    _adjustSource2ActiveLids = calcFixupNeed(source2State, _wantTargetActive,
-                                             false);
+    _adjustSource1ActiveLids = calcFixupNeed(source1State, _wantTargetActive, false);
+    _adjustSource2ActiveLids = calcFixupNeed(source2State, _wantTargetActive, false);
     BucketState *targetState = nullptr;
     (void) extractInfo(_target, targetState);
-    _adjustTargetActiveLids = calcFixupNeed(targetState, _wantTargetActive,
-                                            true);
+    _adjustTargetActiveLids = calcFixupNeed(targetState, _wantTargetActive, true);
 }
 
 
 bool
-JoinBucketsSession::mustFixupTargetActiveLids(bool movedSource1Docs,
-                                              bool movedSource2Docs) const
+JoinBucketsSession::mustFixupTargetActiveLids(bool movedSource1Docs, bool movedSource2Docs) const
 {
     return _adjustTargetActiveLids ||
         (_adjustSource1ActiveLids && movedSource1Docs) ||
@@ -68,8 +64,7 @@ JoinBucketsSession::applyDeltas(const BucketDeltaPair &deltas)
 
 
 bool
-JoinBucketsSession::applyDelta(const BucketState &delta, BucketId &srcBucket,
-                              BucketState *dst)
+JoinBucketsSession::applyDelta(const BucketState &delta, BucketId &srcBucket, BucketState *dst)
 {
     if (!srcBucket.valid()) {
         assert(delta.empty());

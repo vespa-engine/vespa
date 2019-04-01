@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -22,6 +23,8 @@ LOG_SETUP("documentmetastore_test");
 
 using namespace document;
 using proton::bucketdb::BucketState;
+using proton::bucketdb::LegacyChecksumAggregator;
+using proton::bucketdb::XXH64ChecksumAggregator;
 using proton::bucketdb::IBucketCreateListener;
 using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
@@ -771,7 +774,9 @@ TEST("requireThatWeCanSortGids")
     }
 }
 
-TEST("requireThatBasicBucketInfoWorks")
+template <typename ChecksumType>
+void
+requireThatBasicBucketInfoWorks()
 {
     DocumentMetaStore dms(createBucketDB());
     typedef std::pair<BucketId, GlobalId> Elem;
@@ -808,24 +813,22 @@ TEST("requireThatBasicBucketInfoWorks")
         m.erase(std::make_pair(bucketId, gid));
     }
     assert(!m.empty());
-    BucketChecksum cksum;
+    ChecksumType cksum(BucketChecksum(0));
     BucketId prevBucket = m.begin()->first.first;
     uint32_t cnt = 0u;
     uint32_t maxcnt = 0u;
     BucketDBOwner::Guard bucketDB = dms.getBucketDB().takeGuard();
     for (Map::const_iterator i = m.begin(), ie = m.end(); i != ie; ++i) {
         if (i->first.first == prevBucket) {
-            cksum = BucketChecksum(cksum +
-                                   BucketState::calcChecksum(i->first.second,
-                                                             i->second));
+            cksum.addDoc(i->first.second, i->second);
             ++cnt;
         } else {
             BucketInfo bi = bucketDB->get(prevBucket);
             EXPECT_EQUAL(cnt, bi.getDocumentCount());
-            EXPECT_EQUAL(cksum, bi.getChecksum());
+            EXPECT_EQUAL(cksum.getChecksum(), bi.getChecksum());
             prevBucket = i->first.first;
-            cksum = BucketState::calcChecksum(i->first.second,
-                                              i->second);
+            cksum = T(BucketChecksum(0));
+            cksum.addDoc(i->first.second, i->second);
             maxcnt = std::max(maxcnt, cnt);
             cnt = 1u;
         }
@@ -833,8 +836,16 @@ TEST("requireThatBasicBucketInfoWorks")
     maxcnt = std::max(maxcnt, cnt);
     BucketInfo bi = bucketDB->get(prevBucket);
     EXPECT_EQUAL(cnt, bi.getDocumentCount());
-    EXPECT_EQUAL(cksum, bi.getChecksum());
+    EXPECT_EQUAL(cksum.getChecksum(), bi.getChecksum());
     LOG(info, "Largest bucket: %u elements", maxcnt);
+}
+
+TEST("requireThatBasicBucketInfoWorks")
+{
+    BucketState::setChecksumType(BucketState::ChecksumType::LEGACY);
+    requireThatBasicBucketInfoWorks<LegacyChecksumAggregator>();
+    BucketState::setChecksumType(BucketState::ChecksumType::XXHASH64);
+    requireThatBasicBucketInfoWorks<XXH64ChecksumAggregator>();
 }
 
 TEST("requireThatWeCanRetrieveListOfLidsFromBucketId")
