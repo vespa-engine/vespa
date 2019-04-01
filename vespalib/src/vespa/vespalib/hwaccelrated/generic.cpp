@@ -10,11 +10,6 @@ template <typename ACCUM, typename T, size_t UNROLL>
 ACCUM
 multiplyAdd(const T * a, const T * b, size_t sz)
 {
-#if 1
-    for (int i(0); i < 16; i++) {
-        __builtin_prefetch(&b[(4+i)*(64/sizeof(T))], 0, 0);
-    }
-#endif
     ACCUM partial[UNROLL];
     for (size_t i(0); i < UNROLL; i++) {
         partial[i] = 0;
