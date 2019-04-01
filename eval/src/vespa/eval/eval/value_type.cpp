@@ -199,13 +199,13 @@ ValueType::rename(const std::vector<vespalib::string> &from,
 }
 
 ValueType
-ValueType::tensor_type(std::vector<Dimension> dimensions_in)
+ValueType::tensor_type(CellType cellType, std::vector<Dimension> dimensions_in)
 {
     sort_dimensions(dimensions_in);
     if (has_duplicates(dimensions_in)) {
         return error_type();
     }
-    return ValueType(Type::TENSOR, std::move(dimensions_in));
+    return ValueType(Type::TENSOR, cellType, std::move(dimensions_in));
 }
 
 ValueType
