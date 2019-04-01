@@ -827,7 +827,7 @@ requireThatBasicBucketInfoWorks()
             EXPECT_EQUAL(cnt, bi.getDocumentCount());
             EXPECT_EQUAL(cksum.getChecksum(), bi.getChecksum());
             prevBucket = i->first.first;
-            cksum = T(BucketChecksum(0));
+            cksum = ChecksumType(BucketChecksum(0));
             cksum.addDoc(i->first.second, i->second);
             maxcnt = std::max(maxcnt, cnt);
             cnt = 1u;
