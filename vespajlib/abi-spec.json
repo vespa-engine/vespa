@@ -1295,6 +1295,7 @@
     ],
     "methods": [
       "public final com.yahoo.tensor.TensorType$ValueType valueType()",
+      "public final com.yahoo.tensor.TensorType valueType(com.yahoo.tensor.TensorType$ValueType)",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public int rank()",
       "public java.util.List dimensions()",

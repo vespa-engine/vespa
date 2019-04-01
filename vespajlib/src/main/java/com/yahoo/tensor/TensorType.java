@@ -29,9 +29,15 @@ public class TensorType {
     /** The empty tensor type - which is the same as a double */
     public static final TensorType empty = new TensorType(ValueType.DOUBLE, Collections.emptyList());
 
-    private final ValueType valueType;
+    private ValueType valueType;
 
     public final ValueType valueType() { return valueType; }
+
+    //TODO Remove once value type is wired in were it should.
+    public final TensorType valueType(ValueType valueType) {
+        this.valueType = valueType;
+        return this;
+    }
 
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
