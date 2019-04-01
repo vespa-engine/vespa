@@ -110,7 +110,8 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
       _subscriber(configUri.getContext()),
       _handle(),
       _has_available(false),
-      _need_new_forwarder(true)
+      _need_new_forwarder(true),
+      _supervisor()
 {
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
     _subscriber.nextConfig(0);
