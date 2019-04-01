@@ -121,7 +121,12 @@ public class DeployState implements ConfigDefinitionStore {
         this.importedModels = new ImportedMlModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
                                                    modelImporters);
 
-        this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
+        this.validationOverrides =
+                zone.environment().isManuallyDeployed()
+                ? ValidationOverrides.all // Don't protect manually deployed zones
+                : applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
+                                    .orElse(ValidationOverrides.empty);
+
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
     }

@@ -9,6 +9,11 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
@@ -43,10 +48,14 @@ public class ValidationTester {
      *
      * @param previousModel the previous model, or null if no previous
      * @param services the services file content
+     * @param environment the environment this delpoys to
      * @param validationOverrides the validation overrides file content, or null if none
      * @return the new model and any change actions
      */
-    public Pair<VespaModel, List<ConfigChangeAction>> deploy(VespaModel previousModel, String services, String validationOverrides) {
+    public Pair<VespaModel, List<ConfigChangeAction>> deploy(VespaModel previousModel,
+                                                             String services,
+                                                             Environment environment,
+                                                             String validationOverrides) {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
@@ -55,6 +64,10 @@ public class ValidationTester {
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
+                                                             .zone(new Zone(CloudName.defaultName(),
+                                                                            SystemName.defaultSystem(),
+                                                                            environment,
+                                                                            RegionName.defaultName()))
                                                              .applicationPackage(newApp)
                                                              .properties(new TestProperties().setHostedVespa(true))
                                                              .modelHostProvisioner(new InMemoryProvisioner(nodeCount))

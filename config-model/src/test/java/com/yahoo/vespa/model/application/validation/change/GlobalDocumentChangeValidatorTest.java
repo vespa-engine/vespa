@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import org.junit.Test;
@@ -33,9 +34,9 @@ public class GlobalDocumentChangeValidatorTest {
 
     private void testChangeGlobalAttribute(boolean allowed, boolean oldGlobal, boolean newGlobal, String validationOverrides) {
         ValidationTester tester = new ValidationTester();
-        VespaModel oldModel = tester.deploy(null, getServices(oldGlobal), validationOverrides).getFirst();
+        VespaModel oldModel = tester.deploy(null, getServices(oldGlobal), Environment.prod, validationOverrides).getFirst();
         try {
-            tester.deploy(oldModel, getServices(newGlobal), validationOverrides).getSecond();
+            tester.deploy(oldModel, getServices(newGlobal), Environment.prod, validationOverrides).getSecond();
             assertTrue(allowed);
         } catch (IllegalStateException e) {
             assertFalse(allowed);
