@@ -1162,8 +1162,11 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(com.yahoo.tensor.TensorType$ValueType)",
       "public varargs void <init>(com.yahoo.tensor.TensorType[])",
+      "public varargs void <init>(com.yahoo.tensor.TensorType$ValueType, com.yahoo.tensor.TensorType[])",
       "public void <init>(java.lang.Iterable)",
+      "public void <init>(com.yahoo.tensor.TensorType$ValueType, java.lang.Iterable)",
       "public int rank()",
       "public com.yahoo.tensor.TensorType$Builder set(com.yahoo.tensor.TensorType$Dimension)",
       "public com.yahoo.tensor.TensorType$Builder indexed(java.lang.String, long)",
@@ -1292,6 +1295,7 @@
     ],
     "methods": [
       "public final com.yahoo.tensor.TensorType$ValueType valueType()",
+      "public final com.yahoo.tensor.TensorType valueType(com.yahoo.tensor.TensorType$ValueType)",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public int rank()",
       "public java.util.List dimensions()",

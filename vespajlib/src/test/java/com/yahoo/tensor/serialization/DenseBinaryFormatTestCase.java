@@ -41,7 +41,7 @@ public class DenseBinaryFormatTestCase {
     }
 
     @Test
-    public void requireThatSerializationFormatDoNotChange() {
+    public void requireThatDefaultSerializationFormatDoNotChange() {
         byte[] encodedTensor = new byte[]{2, // binary format type
                                           2, // dimension count
                                           2, (byte) 'x', (byte) 'y', 2, // dimension xy with size
@@ -53,11 +53,31 @@ public class DenseBinaryFormatTestCase {
                      Arrays.toString(TypedBinaryFormat.encode(Tensor.from("tensor(xy[],z[]):{{xy:0,z:0}:2.0,{xy:1,z:0}:3.0}"))));
     }
 
-    private void assertSerialization(String tensorString) {
-        assertSerialization(Tensor.from(tensorString));
+    @Test
+    public void requireThatFloatSerializationFormatDoNotChange() {
+        byte[] encodedTensor = new byte[]{4, // binary format type
+                1, // float type
+                2, // dimension count
+                2, (byte) 'x', (byte) 'y', 2, // dimension xy with size
+                1, (byte) 'z', 1, // dimension z with size
+                64, 0, 0, 0, // value 1
+                64, 64, 0, 0,  // value 2
+        };
+        Tensor tensor = Tensor.from("tensor(xy[],z[]):{{xy:0,z:0}:2.0,{xy:1,z:0}:3.0}");
+        tensor.type().valueType(TensorType.ValueType.FLOAT);
+        assertEquals(Arrays.toString(encodedTensor),
+                Arrays.toString(TypedBinaryFormat.encode(tensor)));
     }
 
-    private void assertSerialization(Tensor tensor) {
+    private void assertSerialization(String tensorString) {
+        assertSerialization(TensorType.ValueType.DOUBLE, Tensor.from(tensorString));
+    }
+    private void assertSerialization(TensorType.ValueType valueType, String tensorString) {
+        assertSerialization(valueType, Tensor.from(tensorString));
+    }
+
+    private void assertSerialization(TensorType.ValueType valueType, Tensor tensor) {
+        tensor.type().valueType(valueType);
         assertSerialization(tensor, tensor.type());
     }
 
