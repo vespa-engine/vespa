@@ -12,7 +12,7 @@ ChecksumAggregator::create(ChecksumType type, BucketChecksum seed) {
     case ChecksumType::XXHASH64:
         return std::make_unique<XXH64ChecksumAggregator>(seed);
     }
-    return std::unique_ptr<ChecksumAggregator>();
+    abort();
 }
 
 }
