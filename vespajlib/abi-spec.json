@@ -1267,6 +1267,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.TensorType$ValueType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.tensor.TensorType$ValueType[] values()",
+      "public static com.yahoo.tensor.TensorType$ValueType valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.tensor.TensorType$ValueType DOUBLE",
+      "public static final enum com.yahoo.tensor.TensorType$ValueType FLOAT"
+    ]
+  },
   "com.yahoo.tensor.TensorType": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -1274,6 +1291,7 @@
       "public"
     ],
     "methods": [
+      "public final com.yahoo.tensor.TensorType$ValueType valueType()",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public int rank()",
       "public java.util.List dimensions()",
