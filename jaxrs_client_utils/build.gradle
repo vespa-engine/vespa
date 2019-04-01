@@ -10,9 +10,9 @@ dependencies {
     testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':vespajlib')
     providedCompile project(':application-model')
-    compileOnly 'javax.ws.rs:javax.ws.rs-api:2.0'
-    compileOnly 'org.glassfish.jersey.core:jersey-client:2.25'
-    compileOnly 'org.glassfish.jersey.ext:jersey-proxy-client:2.25'
+    compile 'javax.ws.rs:javax.ws.rs-api:2.0'
+    compile 'org.glassfish.jersey.core:jersey-client:2.25'
+    compile 'org.glassfish.jersey.ext:jersey-proxy-client:2.25'
 }
 
 description = 'jaxrs_client_utils'

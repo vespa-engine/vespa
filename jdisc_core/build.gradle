@@ -30,3 +30,66 @@ dependencies {
 }
 
 description = 'jdisc_core'
+
+def String stripVersion(String fileNameWithVersion) {
+	String ext = fileNameWithVersion.substring(fileNameWithVersion.lastIndexOf("."),fileNameWithVersion.length())
+	int end = fileNameWithVersion.lastIndexOf("-"); //assumes that: name-version.ext. Will not work with name-version-SNAPSHOT.ext
+	String fileNameWithoutVersion = fileNameWithVersion.substring(0, end) + ext
+	return fileNameWithoutVersion
+}
+
+task copyDependencyResources(type: Copy) {
+	from configurations.runtime
+	into "${buildDir}/dependency/"
+	rename { fileName ->
+		stripVersion(fileName)
+	}	
+}
+
+task createGeneratedResourcesDir {
+	doFirst {
+		mkdir "${buildDir}/generated-resources/"
+	}
+}
+
+task exportPackages(type: JavaExec) {
+	dependsOn compileJava, createGeneratedResourcesDir, copyDependencyResources
+	workingDir = file(buildDir)
+	outputs.dir "${buildDir}/generated-resources/"
+
+	classpath = sourceSets.main.runtimeClasspath
+	
+	main = "com.yahoo.jdisc.core.ExportPackages"
+	args = [ 
+		"${buildDir}/generated-resources/exportPackages.properties",
+		"${buildDir}/dependency/commons-daemon.jar",
+		"${buildDir}/dependency/guava.jar",
+		"${buildDir}/dependency/guice.jar",
+		"${buildDir}/dependency/guice-assistedinject.jar",
+		"${buildDir}/dependency/guice-multibindings.jar",
+		"${buildDir}/dependency/javax.annotation-api.jar",
+		"${buildDir}/dependency/org.apache.felix.log.jar",
+		"${buildDir}/dependency/slf4j-api.jar",
+		"${buildDir}/dependency/slf4j-jdk14.jar",
+		"${buildDir}/dependency/jcl-over-slf4j.jar",
+		"${buildDir}/dependency/log4j-over-slf4j.jar",
+		"${buildDir}/dependency/config-lib.jar",
+		"${buildDir}/dependency/yolean.jar",
+		"${buildDir}/dependency/jaxb-api.jar",
+		"${buildDir}/dependency/jaxb-core.jar",
+		"${buildDir}/dependency/jaxb-impl.jar",
+		"${buildDir}/dependency/javax.activation.jar",
+		]
+		
+	jvmArgs = [ "--add-opens=java.base/java.net=ALL-UNNAMED" ]
+}
+
+compileTestJava.dependsOn exportPackages
+
+sourceSets {
+	main{
+	  resources {
+		 srcDir "${buildDir}/generated-resources/"
+	  }
+	}
+}
