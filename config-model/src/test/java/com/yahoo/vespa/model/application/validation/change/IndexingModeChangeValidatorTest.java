@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -26,9 +27,9 @@ public class IndexingModeChangeValidatorTest {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
-                tester.deploy(null, getServices(AbstractSearchCluster.IndexingMode.REALTIME), validationOverrides).getFirst();
+                tester.deploy(null, getServices(AbstractSearchCluster.IndexingMode.REALTIME), Environment.prod, validationOverrides).getFirst();
         List<ConfigChangeAction> changeActions =
-                tester.deploy(oldModel, getServices(AbstractSearchCluster.IndexingMode.STREAMING), validationOverrides).getSecond();
+                tester.deploy(oldModel, getServices(AbstractSearchCluster.IndexingMode.STREAMING), Environment.prod, validationOverrides).getSecond();
 
         assertRefeedChange(true, // allowed=true due to validation override
                            "Cluster 'default' changed indexing mode from 'indexed' to 'streaming'",

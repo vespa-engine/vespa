@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
@@ -20,9 +21,9 @@ public class ContentClusterRemovalValidatorTest {
     public void testContentRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
-        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
         try {
-            tester.deploy(previous, getServices("newContentClusterId"), null);
+            tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, null);
             fail("Expected exception due to content cluster id change");
         }
         catch (IllegalArgumentException expected) {
@@ -36,8 +37,8 @@ public class ContentClusterRemovalValidatorTest {
     public void testOverridingContentRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
-        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), null).getFirst();
-        tester.deploy(previous, getServices("newContentClusterId"), removalOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride); // Allowed due to override
     }
 
     private static String getServices(String contentClusterId) {

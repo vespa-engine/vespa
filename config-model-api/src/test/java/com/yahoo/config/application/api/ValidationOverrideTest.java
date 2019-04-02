@@ -8,10 +8,12 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -19,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class ValidationOverrideTest {
 
     @Test
-    public void testValidationOverridesInIsolation() throws IOException, SAXException {
+    public void testValidationOverridesInIsolation() {
         String validationOverrides =
                 "<validation-overrides>" +
                 "  <allow until='2000-01-01'>indexing-change</allow>" +
@@ -55,7 +57,7 @@ public class ValidationOverrideTest {
     }
 
     @Test
-    public void testInvalidOverridePeriod() throws IOException, SAXException {
+    public void testInvalidOverridePeriod() {
         String validationOverrides =
                 "<validation-overrides>" +
                 "  <allow until='2000-02-02'>indexing-change</allow>" +
@@ -78,6 +80,15 @@ public class ValidationOverrideTest {
         ValidationOverrides empty = ValidationOverrides.empty;
         ValidationOverrides emptyReserialized = ValidationOverrides.fromXml(empty.xmlForm());
         assertEquals(empty.xmlForm(), emptyReserialized.xmlForm());
+    }
+
+    @Test
+    public void testAll() {
+        ValidationOverrides all = ValidationOverrides.all;
+        assertTrue(all.allows(ValidationId.deploymentRemoval, Clock.systemUTC().instant()));
+        assertTrue(all.allows(ValidationId.contentClusterRemoval, Clock.systemUTC().instant()));
+        assertTrue(all.allows(ValidationId.indexModeChange, Clock.systemUTC().instant()));
+        assertTrue(all.allows(ValidationId.fieldTypeChange, Clock.systemUTC().instant()));
     }
 
     private void assertOverridden(String validationId, ValidationOverrides overrides, Instant now) {

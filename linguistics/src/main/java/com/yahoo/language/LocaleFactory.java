@@ -18,7 +18,7 @@ public final class LocaleFactory {
      * Implements a simple parser for RFC5646 language tags. The language tag is parsed into a Locale.
      *
      * @param tag The language tag to parse.
-     * @return The corrseponding Locale.
+     * @return The corresponding Locale.
      */
     @SuppressWarnings("ConstantConditions")
     public static Locale fromLanguageTag(String tag) {

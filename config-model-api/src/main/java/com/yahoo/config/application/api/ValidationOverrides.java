@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * A set of allows which suppresses specific validations in limited time periods.
@@ -27,7 +28,12 @@ import java.util.Optional;
  */
 public class ValidationOverrides {
 
-    public static final ValidationOverrides empty = new ValidationOverrides(ImmutableList.of(), "<deployment version='1.0'/>");
+    private static final Logger log = Logger.getLogger(ValidationOverrides.class.getName());
+
+    public static final ValidationOverrides empty = new ValidationOverrides(ImmutableList.of(), "<validation-overrides/>");
+
+    /** A special instance which behaves as if it contained a valid allow override for every (valid) validation id */
+    public static final ValidationOverrides all = new AllowAllValidationOverrides();
 
     private final List<Allow> overrides;
 
@@ -44,12 +50,12 @@ public class ValidationOverrides {
     }
 
     /** Throws a ValidationException unless this validation is overridden at this time */
-    public void invalid(ValidationId validationId, String message, Instant now) {
+    public final void invalid(ValidationId validationId, String message, Instant now) {
         if ( ! allows(validationId, now))
             throw new ValidationException(validationId, message);
     }
 
-    public boolean allows(String validationIdString, Instant now) {
+    public final boolean allows(String validationIdString, Instant now) {
         Optional<ValidationId> validationId = ValidationId.from(validationIdString);
         if ( ! validationId.isPresent()) return false; // unknown id -> not allowed
         return allows(validationId.get(), now);
@@ -66,13 +72,13 @@ public class ValidationOverrides {
         return false;
     }
 
+    /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
+    public String xmlForm() { return xmlForm; }
+
     public static String toAllowMessage(ValidationId id) {
         return "To allow this add <allow until='yyyy-mm-dd'>" + id + "</allow> to validation-overrides.xml" +
                ", see https://docs.vespa.ai/documentation/reference/validation-overrides.html";
     }
-
-    /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
-    public String xmlForm() { return xmlForm; }
 
     /**
      * Returns a ValidationOverrides instance with the content of the given Reader.
@@ -163,6 +169,28 @@ public class ValidationOverrides {
         public String getMessage() {
             return validationId + ": " + super.getMessage() + ". " + toAllowMessage(validationId);
         }
+
+    }
+
+    private static class AllowAllValidationOverrides extends ValidationOverrides {
+
+        public AllowAllValidationOverrides() {
+            super(List.of());
+        }
+
+        /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
+        @Override
+        public boolean allows(ValidationId validationId, Instant now) {
+            log.warning("Possibly destructive change '" + validationId + "' allowed");
+            return true;
+        }
+
+        /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
+        @Override
+        public String xmlForm() { return null; }
+
+        @Override
+        public String toString() { return "(A validation override which allows everything)"; }
 
     }
 
