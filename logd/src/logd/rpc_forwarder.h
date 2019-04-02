@@ -29,11 +29,10 @@ private:
     void ping_logserver();
 
 public:
-    RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
+    RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, FRT_Supervisor& supervisor,
                  const vespalib::string& logserver_host, int logserver_rpc_port,
                  double rpc_timeout_secs, size_t max_messages_per_request);
     ~RpcForwarder() override;
-    void set_forward_filter(const ForwardMap& forward_filter) { _forward_filter = forward_filter; }
 
     // Implements Forwarder
     void sendMode() override {}

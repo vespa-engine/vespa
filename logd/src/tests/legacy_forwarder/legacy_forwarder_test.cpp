@@ -27,9 +27,12 @@ struct ForwardFixture {
           logLine(createLogLine())
     {
         fd = open(fileName.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
-        forwarder = LegacyForwarder::to_open_file(m, fd);
     }
     ~ForwardFixture() {
+    }
+
+    void make_forwarder(const ForwardMap& forwarder_filter) {
+        forwarder = LegacyForwarder::to_open_file(m, forwarder_filter, fd);
     }
 
     const std::string createLogLine() {
@@ -55,16 +58,16 @@ struct ForwardFixture {
 
 
 TEST_F("require that forwarder forwards if set", ForwardFixture("forward.txt")) {
-    ForwardMap forwardMap;
-    forwardMap[Logger::event] = true;
-    f1.forwarder->setForwardMap(forwardMap);
+    ForwardMap forward_filter;
+    forward_filter[Logger::event] = true;
+    f1.make_forwarder(forward_filter);
     f1.verifyForward(true);
 }
 
 TEST_F("require that forwarder does not forward if not set", ForwardFixture("forward.txt")) {
-    ForwardMap forwardMap;
-    forwardMap[Logger::event] = false;
-    f1.forwarder->setForwardMap(forwardMap);
+    ForwardMap forward_filter;
+    forward_filter[Logger::event] = false;
+    f1.make_forwarder(forward_filter);
     f1.verifyForward(false);
 }
 

@@ -50,7 +50,7 @@ RpcForwarder::ping_logserver()
     }
 }
 
-RpcForwarder::RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
+RpcForwarder::RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, FRT_Supervisor& supervisor,
                            const vespalib::string &hostname, int rpc_port,
                            double rpc_timeout_secs, size_t max_messages_per_request)
     : _metrics(metrics),
@@ -60,7 +60,7 @@ RpcForwarder::RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
       _target(),
       _messages(),
       _bad_lines(0),
-      _forward_filter()
+      _forward_filter(forward_filter)
 {
     _target = supervisor.GetTarget(_connection_spec.c_str());
     ping_logserver();

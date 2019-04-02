@@ -132,20 +132,17 @@ ConfigSubscriber::~ConfigSubscriber()
 std::unique_ptr<Forwarder>
 ConfigSubscriber::make_forwarder(Metrics& metrics)
 {
+    std::unique_ptr<Forwarder> result;
     if (_logserver_use_rpc) {
-        auto result = std::make_unique<RpcForwarder>(metrics, _supervisor, _logserver_host,
-                                                     _logserver_rpc_port, 60.0, 100);
-        result->set_forward_filter(_forward_filter);
-        _need_new_forwarder = false;
-        return result;
+        result = std::make_unique<RpcForwarder>(metrics, _forward_filter, _supervisor, _logserver_host,
+                                                _logserver_rpc_port, 60.0, 100);
     } else {
-        auto result = _use_logserver ?
-                      LegacyForwarder::to_logserver(metrics, _logserver_host, _logserver_port) :
-                      LegacyForwarder::to_dev_null(metrics);
-        result->setForwardMap(_forward_filter);
-        _need_new_forwarder = false;
-        return result;
+        result = _use_logserver ?
+                 LegacyForwarder::to_logserver(metrics, _forward_filter, _logserver_host, _logserver_port) :
+                 LegacyForwarder::to_dev_null(metrics);
     }
+    _need_new_forwarder = false;
+    return result;
 }
 
 }
