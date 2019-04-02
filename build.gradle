@@ -118,6 +118,8 @@ ext {
   bouncycastle = 'org.bouncycastle:bcpkix-jdk15on:1.58'
   findbugs_annotations = 'com.google.code.findbugs:annotations:1.3.9'
   findbugs_jsr = 'com.google.code.findbugs:jsr305:1.3.9'
+  jackson_core = 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+  protobuf_3 = 'com.google.protobuf:protobuf-java:3.7.0'
 }
 
 task testReport(type: TestReport) {

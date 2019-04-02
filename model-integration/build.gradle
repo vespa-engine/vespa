@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    compile 'com.google.protobuf:protobuf-java:3.7.0'
+    compile protobuf_3
     compile 'org.tensorflow:proto:1.12.0'
     compile 'org.tensorflow:tensorflow:1.12.0'
     testCompile junit_4

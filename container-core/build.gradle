@@ -21,7 +21,7 @@ dependencies {
     compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
     compileOnly jaxb_api
     compileOnly 'org.eclipse.jetty:jetty-servlet:9.4.15.v20190215'
-    compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compileOnly jackson_core
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     providedCompile project(':defaults')
     providedCompile project(':component')

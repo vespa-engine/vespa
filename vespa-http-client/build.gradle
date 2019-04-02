@@ -10,7 +10,7 @@ dependencies {
     compile 'com.yahoo.vespa:annotations:7.28.21'
     compile project(':vespajlib')
     compile project(':component')
-    compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compile jackson_core
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.8.11'
     compile 'io.airlift:airline:0.6'

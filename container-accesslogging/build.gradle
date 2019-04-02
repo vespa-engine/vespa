@@ -9,7 +9,7 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     compileOnly guice
     compileOnly findbugs_annotations
-    compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compileOnly jackson_core
     providedCompile project(':component')
     providedCompile project(':config-bundle')
     providedCompile project(':config-lib')

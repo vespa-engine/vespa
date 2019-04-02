@@ -4,7 +4,7 @@
 
 dependencies {
     compile project(':container-search')
-    compile 'com.google.protobuf:protobuf-java:3.7.0'
+    compile protobuf_3
     compile project(':docproc')
     compile project(':searchlib')
     testCompile junit_4

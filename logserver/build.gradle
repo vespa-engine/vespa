@@ -10,7 +10,7 @@ dependencies {
     compile project(':yolean')
     compile project(':vespalog')
     compile project(':jrt')
-    compile 'com.google.protobuf:protobuf-java:3.7.0'
+    compile protobuf_3
     testCompile junit_4
 }
 

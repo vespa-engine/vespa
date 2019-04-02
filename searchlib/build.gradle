@@ -10,9 +10,9 @@ dependencies {
     compile project(':document')
     testCompile junit_4
     compileOnly guava
-    compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compileOnly jackson_core
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    compileOnly 'com.google.protobuf:protobuf-java:3.7.0'
+    compileOnly protobuf_3
     providedCompile project(':vespajlib')
     providedCompile project(':config-model-api')
 

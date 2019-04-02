@@ -10,7 +10,7 @@ dependencies {
     testCompile junit_4
     testCompile mockito
     compileOnly 'org.slf4j:slf4j-api:1.7.5'
-    compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+    compileOnly jackson_core
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     providedCompile project(':clustercontroller-utils')
     providedCompile project(':defaults')
