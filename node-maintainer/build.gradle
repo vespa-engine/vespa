@@ -7,7 +7,7 @@ dependencies {
     compile project(':vespajlib')
     compile project(':config')
     compile http_client
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     compile 'io.airlift:airline:0.6'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.3'
     compile guava

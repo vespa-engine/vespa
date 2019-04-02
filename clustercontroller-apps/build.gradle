@@ -4,7 +4,7 @@
 
 dependencies {
     testCompile junit_4
-    testCompile 'org.codehaus.jettison:jettison:1.3.1'
+    testCompile jettison
     providedCompile project(':container-dev')
     providedCompile project(':clustercontroller-apputil')
     providedCompile project(':clustercontroller-core')

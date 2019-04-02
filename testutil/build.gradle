@@ -8,7 +8,7 @@ dependencies {
     compile 'uk.co.datumedge:hamcrest-json:0.2'
     compile junit_4
     compile 'com.google.jimfs:jimfs:1.1'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     compileOnly guava
     compileOnly guice
 }

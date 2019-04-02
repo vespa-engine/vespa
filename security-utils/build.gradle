@@ -4,7 +4,7 @@
 
 dependencies {
     compile bouncycastle
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     testCompile junit_4
     testCompile hamcrest_library
     testCompile project(':testutil')

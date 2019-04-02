@@ -10,7 +10,7 @@ dependencies {
     compile 'org.apache.commons:commons-compress:1.18'
     compile 'io.airlift:airline:0.7'
     compile http_client
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     testCompile junit_4
     providedCompile project(':config')
     providedCompile project(':config-lib')

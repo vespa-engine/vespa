@@ -112,6 +112,7 @@ ext {
   guava = 'com.google.guava:guava:20.0'
   http_client = 'org.apache.httpcomponents:httpclient:4.4.1'
   http_core = 'org.apache.httpcomponents:httpcore:4.4.1'
+  
   mockito = 'org.mockito:mockito-all:1.9.5'
   jaxb_api = 'javax.xml.bind:jaxb-api:2.3.0'
   guice = 'com.google.inject:guice:3.0'
@@ -119,7 +120,11 @@ ext {
   findbugs_annotations = 'com.google.code.findbugs:annotations:1.3.9'
   findbugs_jsr = 'com.google.code.findbugs:jsr305:1.3.9'
   jackson_core = 'com.fasterxml.jackson.core:jackson-core:2.8.11'
+  jackson_databind = 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+
   protobuf_3 = 'com.google.protobuf:protobuf-java:3.7.0'
+  jettison = 'org.codehaus.jettison:jettison:1.3.1'  
+  felix = 'org.apache.felix:org.apache.felix.framework:6.0.2'
 }
 
 task testReport(type: TestReport) {

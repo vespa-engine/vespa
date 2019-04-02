@@ -14,7 +14,7 @@ dependencies {
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':testutil')
     compileOnly jackson_core
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
     compileOnly guava
     compileOnly guice
 }

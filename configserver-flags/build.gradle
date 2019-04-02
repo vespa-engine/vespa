@@ -14,5 +14,5 @@ dependencies {
     providedCompile project(':yolean')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly guice
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
 }

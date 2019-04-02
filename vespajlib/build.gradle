@@ -11,7 +11,7 @@ dependencies {
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile junit_4
     testCompile project(':testutil')
-    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    testCompile jackson_databind
     compileOnly guava
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     providedCompile project(':yolean')

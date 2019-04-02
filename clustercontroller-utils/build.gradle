@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'org.codehaus.jettison:jettison:1.3.1'
+    compile jettison
     testCompile junit_4
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compile guava

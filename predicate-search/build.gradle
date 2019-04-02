@@ -8,7 +8,7 @@ dependencies {
     compile 'com.goldmansachs:gs-collections:6.1.0'
     compile 'io.airlift:airline:0.7'
     compile jackson_core
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
 }

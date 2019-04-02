@@ -15,7 +15,7 @@ dependencies {
     compile 'commons-codec:commons-codec:1.4'
     compile 'com.ibm.icu:icu4j:57.1'
     compile 'net.jcip:jcip-annotations:1.0'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     compile 'org.antlr:antlr4-runtime:4.5'
     testCompile junit_4
     testCompile http_client

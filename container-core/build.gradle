@@ -22,7 +22,7 @@ dependencies {
     compileOnly jaxb_api
     compileOnly 'org.eclipse.jetty:jetty-servlet:9.4.15.v20190215'
     compileOnly jackson_core
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
     providedCompile project(':defaults')
     providedCompile project(':component')
     providedCompile project(':provided-dependencies')

@@ -21,7 +21,7 @@ dependencies {
     providedCompile project(':container-dev')
     providedCompile project(':vespa-athenz')
     providedCompile project(':flags')
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
     compileOnly 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
 }
 

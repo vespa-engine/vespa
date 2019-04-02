@@ -11,7 +11,7 @@ dependencies {
     testCompile junit_4
     compileOnly guava
     compileOnly jackson_core
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
     compileOnly protobuf_3
     providedCompile project(':vespajlib')
     providedCompile project(':config-model-api')

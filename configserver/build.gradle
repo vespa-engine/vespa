@@ -39,7 +39,7 @@ dependencies {
     providedCompile project(':flags')
     compileOnly 'javax.ws.rs:javax.ws.rs-api:2.0'
     compileOnly guava
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
 }
 
 task generateVtag(type: JavaExec) {

@@ -23,6 +23,6 @@ dependencies {
     providedCompile project(':jdisc-security-filters')
     compileOnly guava
     compileOnly guice
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
     compileOnly 'javax.ws.rs:javax.ws.rs-api:2.0.1'
 }

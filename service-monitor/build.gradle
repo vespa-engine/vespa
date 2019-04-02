@@ -19,7 +19,7 @@ dependencies {
     compileOnly guice
     compileOnly 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
     compileOnly jackson_core
-    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compileOnly jackson_databind
 }
 
 description = 'service-monitor'

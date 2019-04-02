@@ -6,7 +6,7 @@ dependencies {
     compile('com.thaiopensource:jing:20091111') {
 		exclude group:'net.sf.saxon', module:'saxon'
 	}
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
+    compile jackson_databind
     testCompile project(':config-model-api')
     testCompile project(path: ':config-model-api', configuration: 'tests' )
     testCompile project(':configdefinitions')
@@ -20,7 +20,7 @@ dependencies {
     providedCompile project(':config')
     providedCompile project(':config-provisioning')
     compileOnly guava
-    compileOnly 'org.apache.felix:org.apache.felix.framework:6.0.2'
+    compileOnly felix
 }
 
 task testsJar(type: Jar) {
