@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'com.google.code.findbugs:annotations:1.3.9'
+    compile findbugs_annotations
     compile guava
     compile http_client
     compile 'org.apache.commons:commons-lang3:3.4'

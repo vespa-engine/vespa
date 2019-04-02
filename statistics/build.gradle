@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'com.google.code.findbugs:annotations:1.3.9'
+    compile findbugs_annotations
     compile 'com.google.code.findbugs:jsr305:1.3.9'
     compile project(':vespalog')
     testCompile junit_4

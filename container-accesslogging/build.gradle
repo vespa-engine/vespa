@@ -8,7 +8,7 @@ dependencies {
     testCompile junit_4
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     compileOnly guice
-    compileOnly 'com.google.code.findbugs:annotations:1.3.9'
+    compileOnly findbugs_annotations
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     providedCompile project(':component')
     providedCompile project(':config-bundle')
