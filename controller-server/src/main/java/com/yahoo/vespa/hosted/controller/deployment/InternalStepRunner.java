@@ -604,7 +604,7 @@ public class InternalStepRunner implements StepRunner {
                 "    </container>\n" +
                 "</services>\n";
 
-        return servicesXml.getBytes();
+        return servicesXml.getBytes(StandardCharsets.UTF_8);
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
