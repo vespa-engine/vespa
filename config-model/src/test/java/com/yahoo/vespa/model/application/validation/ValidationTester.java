@@ -48,7 +48,7 @@ public class ValidationTester {
      *
      * @param previousModel the previous model, or null if no previous
      * @param services the services file content
-     * @param environment the environment this delpoys to
+     * @param environment the environment this deploys to
      * @param validationOverrides the validation overrides file content, or null if none
      * @return the new model and any change actions
      */
