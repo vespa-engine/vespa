@@ -13,20 +13,16 @@ namespace vespalib::tensor {
 class DenseTensor : public DenseTensorView
 {
 public:
-    typedef std::unique_ptr<DenseTensor> UP;
-    using Cells = std::vector<double>;
-
-private:
-    eval::ValueType _type;
-    Cells           _cells;
-
-public:
     DenseTensor();
     ~DenseTensor() override;
     DenseTensor(const eval::ValueType &type_in, const Cells &cells_in);
     DenseTensor(const eval::ValueType &type_in, Cells &&cells_in);
     DenseTensor(eval::ValueType &&type_in, Cells &&cells_in);
     bool operator==(const DenseTensor &rhs) const;
+private:
+    eval::ValueType _type;
+    Cells           _cells;
+
 };
 
 }
