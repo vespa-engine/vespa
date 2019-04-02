@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
@@ -44,7 +43,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     }
 
     @Override
-    protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
+    protected void sendSearchRequest(Query query) throws IOException {
         this.query = query;
 
         CompressionType compression = CompressionType

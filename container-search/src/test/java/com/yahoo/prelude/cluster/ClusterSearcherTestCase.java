@@ -201,7 +201,7 @@ public class ClusterSearcherTestCase {
         }
 
         @Override
-        protected com.yahoo.search.Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
+        protected com.yahoo.search.Result doSearch2(Query query, Execution execution) {
             return null; // search() is overriden, this should never be called
         }
 

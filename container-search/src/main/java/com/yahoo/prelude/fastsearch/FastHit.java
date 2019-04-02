@@ -5,11 +5,13 @@ import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.net.URI;
+import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.data.access.Inspector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +46,9 @@ public class FastHit extends Hit {
     private URI indexUri = null;
 
     private transient QueryPacketData queryPacketData = null;
+
+    private transient byte[] sortData = null;
+    private transient Sorting sortDataSorting = null;
 
     /**
      * Summaries added to this hit which are not yet decoded into fields.
@@ -147,6 +152,33 @@ public class FastHit extends Hit {
 
     /** Returns a serial encoding of the query which produced this hit, ot null if not available. */
     public QueryPacketData getQueryPacketData() { return queryPacketData; }
+
+    public void setSortData(byte[] data, Sorting sorting) {
+        this.sortData = data;
+        this.sortDataSorting = sorting;
+    }
+
+    public boolean hasSortData(Sorting sorting) {
+        return sortData != null && sortDataSorting != null && sortDataSorting.equals(sorting);
+    }
+
+    public static int compareSortData(FastHit left, FastHit right, Sorting sorting) {
+        if (!left.hasSortData(sorting) || !right.hasSortData(sorting)) {
+            return 0; // cannot sort
+        }
+        int i = Arrays.mismatch(left.sortData, right.sortData);
+        if (i < 0) {
+            return 0;
+        }
+        int max = Integer.min(left.sortData.length, right.sortData.length);
+        if (i >= max) {
+            return left.sortData.length - right.sortData.length;
+        }
+        int vl = (int) left.sortData[i] & 0xFF;
+        int vr = (int) right.sortData[i] & 0xFF;
+        int diff = vl - vr;
+        return diff;
+    }
 
     /** For internal use */
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {

@@ -1,7 +1,6 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -25,7 +24,7 @@ class MockInvoker extends SearchInvoker {
     }
 
     @Override
-    protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
+    protected void sendSearchRequest(Query query) throws IOException {
         this.query = query;
     }
 

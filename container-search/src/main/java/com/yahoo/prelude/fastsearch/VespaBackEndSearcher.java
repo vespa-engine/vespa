@@ -24,6 +24,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
+import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
@@ -88,10 +89,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * This is an endpoint - searchers will never propagate the search to any nested searcher.
      *
      * @param query the query to search
-     * @param queryPacket the serialized query representation to pass to the search cluster
      * @param execution the query execution context
      */
-    protected abstract Result doSearch2(Query query, QueryPacket queryPacket, Execution execution);
+    protected abstract Result doSearch2(Query query, Execution execution);
 
     protected abstract void doPartialFill(Result result, String summaryClass);
 
@@ -184,15 +184,10 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
             return new Result(query);
 
-        QueryPacket queryPacket = createQueryPacket(serverId, query);
-
-        if (isLoggingFine())
-            getLogger().fine("made QueryPacket: " + queryPacket);
-
         Result result = null;
 
         if (result == null) {
-            result = doSearch2(query, queryPacket, execution);
+            result = doSearch2(query, execution);
             if (isLoggingFine())
                 getLogger().fine("Result NOT retrieved from cache");
 
@@ -209,6 +204,10 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         queryPacket.setCompressionLimit(compressionLimit);
         if (compressionLimit != 0)
             queryPacket.setCompressionType(query.properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
+
+        if (isLoggingFine())
+            getLogger().fine("made QueryPacket: " + queryPacket);
+
         return queryPacket;
     }
 
@@ -452,7 +451,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return new FillHitsResult(skippedHits, lastError);
     }
 
-    private void extractDocumentInfo(FastHit hit, DocumentInfo document) {
+    private void extractDocumentInfo(FastHit hit, DocumentInfo document, Sorting sorting) {
         hit.setSource(getName());
 
         Number rank = document.getMetric();
@@ -462,6 +461,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         hit.setDistributionKey(document.getDistributionKey());
         hit.setGlobalId(document.getGlobalId());
         hit.setPartId(document.getPartId());
+        hit.setSortData(document.getSortData(), sorting);
     }
 
     protected DocsumDefinitionSet getDocsumDefinitionSet(Query query) {
@@ -498,6 +498,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                             QueryPacketData queryPacketData,
                             Optional<Integer> channelDistributionKey) {
         Query myQuery = result.getQuery();
+        Sorting sorting = myQuery.getRanking().getSorting();
 
         for (DocumentInfo document : documents) {
 
@@ -510,7 +511,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 hit.setFillable();
                 hit.setCached(false);
 
-                extractDocumentInfo(hit, document);
+                extractDocumentInfo(hit, document, sorting);
                 channelDistributionKey.ifPresent(hit::setDistributionKey);
 
                 result.hits().add(hit);

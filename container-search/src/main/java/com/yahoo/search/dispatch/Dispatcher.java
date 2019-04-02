@@ -45,7 +45,7 @@ public class Dispatcher extends AbstractComponent {
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
-    private static final CompoundName dispatchInternal = new CompoundName("dispatch.internal");
+    public static final CompoundName dispatchInternal = new CompoundName("dispatch.internal");
 
     /** If enabled, search queries will use protobuf rpc */
     public static final CompoundName dispatchProtobuf = new CompoundName("dispatch.protobuf");
@@ -135,6 +135,8 @@ public class Dispatcher extends AbstractComponent {
             query.setOffset(0);
         }
         emitDispatchMetric(invoker);
+        query.properties().set(dispatchInternal, true);
+
         return invoker;
     }
 

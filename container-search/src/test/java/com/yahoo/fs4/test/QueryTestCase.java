@@ -310,5 +310,4 @@ public class QueryTestCase {
     }
 
     public static final byte ignored = -128;
-
 }

@@ -93,7 +93,7 @@ public abstract class InvokerFactory {
         if (invokers.size() == 1 && failed == null) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searcher, searchCluster, failed));
+            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster, failed));
         }
     }
 

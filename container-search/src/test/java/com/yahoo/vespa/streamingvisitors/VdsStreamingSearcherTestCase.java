@@ -136,9 +136,8 @@ public class VdsStreamingSearcherTestCase {
     }
 
     private static Result executeQuery(VdsStreamingSearcher searcher, Query query) {
-        QueryPacket queryPacket = QueryPacket.create("container.0", query);
         Execution execution = new Execution(new Execution.Context(null, null, null, null, null));
-        return searcher.doSearch2(query, queryPacket, execution);
+        return searcher.doSearch2(query, execution);
     }
 
     private static Query[] generateTestQueries(String queryString) {

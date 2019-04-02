@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListenableArrayList;
 import com.yahoo.net.URI;
+import com.yahoo.prelude.fastsearch.SortDataHitSorter;
 import com.yahoo.processing.response.ArrayDataList;
 import com.yahoo.processing.response.DataList;
 import com.yahoo.processing.response.DefaultIncomingData;
@@ -18,8 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.yahoo.collections.CollectionUtil.first;
 
 /**
  * <p>A group of ordered hits. Since hitGroup is itself a kind of Hit,
@@ -62,6 +61,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /** The current number of concrete (non-meta) hits in the result */
     private int concreteHitCount = 0;
+
+    /** Number of hits known to have sort data */
+    private int hitsWithSortData = 0;
 
     /** The class used to determine the ordering of the hits of this */
     transient private HitOrderer hitOrderer = null;
@@ -398,7 +400,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return errorHit;
     }
 
-    /** 
+    /**
      * Removes the error hit of this.
      * This removes all error messages of this and the query producing it.
      *
@@ -412,7 +414,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         errorHit = null;
         return removed;
     }
-    
+
     /**
      * Returns the first error in this result,
      * or null if no searcher has produced an error AND the query doesn't contain an error
@@ -451,9 +453,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             add(queryErrors);
     }
 
-    /** 
+    /**
      * Consumes errors from the query and returns them in a new error hit
-     * 
+     *
      * @return the error hit containing all query errors, or null if no query errors should be consumed
      */
     private DefaultErrorHit consumeAnyQueryErrors() {
@@ -469,9 +471,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /** Compatibility */
     private ErrorMessage toSearchError(com.yahoo.processing.request.ErrorMessage error) {
-        if (error instanceof ErrorMessage) 
+        if (error instanceof ErrorMessage)
             return (ErrorMessage)error;
-        else 
+        else
             return new ErrorMessage(error.getCode(), error.getMessage(), error.getDetailedMessage(), error.getCause());
     }
 
@@ -569,6 +571,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         if (hitOrderer == null) {
             Collections.sort(hits);
             hitsSorted = true;
+        } else if (sortableWithSortData()) {
+            SortDataHitSorter.sort(this, hits);
+            hitsSorted = true;
         } else {
             // This may or may not lead to a sorted result set, but it's a best effort
             hitOrderer.order(hits);
@@ -576,6 +581,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
                 hitsSorted = true;
             }
         }
+    }
+
+    private boolean sortableWithSortData() {
+        return hitsWithSortData > 0 && hitsWithSortData == concreteHitCount;
     }
 
     private boolean likelyHitsHaveCorrectValueForSortFields() {
@@ -620,7 +629,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /** Called before hit lists or positions are used */
     private void ensureSorted() {
-        if ( ! orderedHits && ! hitsSorted && likelyHitsHaveCorrectValueForSortFields()) {
+        if ( ! orderedHits && ! hitsSorted && (sortableWithSortData() || likelyHitsHaveCorrectValueForSortFields())) {
             sort();
         }
     }
@@ -678,6 +687,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             hit.setAddNumber(size());
         }
 
+        if (SortDataHitSorter.isSortable(hit, this)) {
+            hitsWithSortData++;
+        }
+
         hitsSorted = false;
         Set<String> hitFilled = hit.getFilled();
 
@@ -726,6 +739,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             errorHit = null;
         }
 
+        if (SortDataHitSorter.isSortable(hit, this)) {
+            hitsWithSortData--;
+        }
+
         if (deletionBreaksOrdering) {
             hitsSorted = false;
         }
@@ -740,6 +757,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
         if (!hit.isCached())
             notCachedCount++;
+
+        if (SortDataHitSorter.isSortable(hit, this)) {
+            hitsWithSortData++;
+        }
     }
 
     /**
@@ -747,9 +768,11 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * Recursively also update all subgroups.
      */
     public void analyze() {
-        concreteHitCount=0;
+        concreteHitCount = 0;
         setFilledInternal(null);
-        notCachedCount=0;
+        notCachedCount = 0;
+        hitsWithSortData = 0;
+
         Set<String> filled = getFilledInternal();
 
         Iterator<Hit> i = unorderedIterator();
