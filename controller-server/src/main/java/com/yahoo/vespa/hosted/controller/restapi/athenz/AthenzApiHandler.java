@@ -60,7 +60,7 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/athenz/v1")) return root(request);
         if (path.matches("/athenz/v1/domains")) return domainList(request);
         if (path.matches("/athenz/v1/properties")) return properties();

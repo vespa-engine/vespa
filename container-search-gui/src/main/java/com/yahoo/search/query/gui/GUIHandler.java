@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.querytransform.RecallSearcher;
+import com.yahoo.restapi.Path;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.Presentation;
@@ -69,7 +70,7 @@ public class GUIHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        com.yahoo.restapi.Path path = new com.yahoo.restapi.Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/querybuilder/")) {
             return new FileResponse("_includes/index.html", null, null);
         }

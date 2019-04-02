@@ -48,7 +48,7 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
 
             @Override
             public URI getUri() {
-                return URI.create(request.getUri());
+                return URI.create(request.getUri()).normalize(); // Consistent with what JDisc does.
             }
 
             @Override

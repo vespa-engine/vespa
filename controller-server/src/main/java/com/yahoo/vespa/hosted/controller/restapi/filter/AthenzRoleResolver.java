@@ -78,6 +78,7 @@ public class AthenzRoleResolver implements RoleMembership.Resolver {
         if ( ! (principal instanceof AthenzPrincipal))
             throw new IllegalStateException("Expected an AthenzPrincipal to be set on the request.");
 
+        @SuppressWarnings("deprecation") // TODO: Use URI when refactoring this.
         Path path = new Path(uriPath.orElseThrow(() -> new IllegalArgumentException("This resolver needs the request path.")));
 
         path.matches("/application/v4/tenant/{tenant}/{*}");

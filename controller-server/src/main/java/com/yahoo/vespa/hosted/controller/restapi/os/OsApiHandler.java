@@ -66,19 +66,19 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse patch(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/os/v1/")) return new SlimeJsonResponse(setOsVersion(request));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/os/v1/")) return new SlimeJsonResponse(osVersions());
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/os/v1/firmware/")) return requestFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/")) return requestFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/{region}/")) return requestFirmwareCheckResponse(path);
@@ -86,7 +86,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse delete(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/os/v1/firmware/")) return cancelFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/")) return cancelFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/{region}/")) return cancelFirmwareCheckResponse(path);

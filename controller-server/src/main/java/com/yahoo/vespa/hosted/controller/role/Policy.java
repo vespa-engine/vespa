@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 
+import java.net.URI;
 import java.util.Set;
 
 /**
@@ -114,11 +115,11 @@ public enum Policy {
     }
 
     /** Returns whether action is allowed on path in given context */
-    public boolean evaluate(Action action, String path, Context context) {
+    public boolean evaluate(Action action, URI uri, Context context) {
         return privileges.stream().anyMatch(privilege -> privilege.actions().contains(action) &&
                                                          privilege.systems().contains(context.system()) &&
                                                          privilege.pathGroups().stream()
-                                                                  .anyMatch(pg -> pg.matches(path, context)));
+                                                                  .anyMatch(pg -> pg.matches(uri, context)));
     }
 
 }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.role;
 
 import com.yahoo.restapi.Path;
 
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -127,8 +128,9 @@ public enum PathGroup {
     }
 
     /** Returns path if it matches any spec in this group, with match groups set by the match. */
-    private Optional<Path> get(String path) {
-        Path matcher = new Path(path);
+    @SuppressWarnings("deprecation")
+    private Optional<Path> get(URI uri) {
+        Path matcher = new Path(uri); // TODO Get URI down here.
         for (String spec : pathSpecs) // Iterate to be sure the Path's state is that of the match.
             if (matcher.matches(spec)) return Optional.of(matcher);
         return Optional.empty();
@@ -140,8 +142,8 @@ public enum PathGroup {
     }
 
     /** Returns whether this group matches path in given context */
-    public boolean matches(String path, Context context) {
-        return get(path).map(p -> {
+    public boolean matches(URI uri, Context context) {
+        return get(uri).map(p -> {
             boolean match = true;
             String tenant = p.get(Matcher.tenant.name);
             if (tenant != null && context.tenant().isPresent()) {

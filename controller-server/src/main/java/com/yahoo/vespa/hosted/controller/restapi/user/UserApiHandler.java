@@ -48,7 +48,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
 
 
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
@@ -56,7 +56,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
 
 
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
@@ -64,7 +64,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
 
 
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
@@ -72,7 +72,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleDELETE(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
 
 
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),

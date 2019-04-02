@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 
+import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,11 +40,11 @@ public class RoleMembership {
     public static Builder in(SystemName system) { return new BuilderWithRole(system); }
 
     /** Returns whether any role in this allows action to take place in path */
-    public boolean allows(Action action, String path) {
+    public boolean allows(Action action, URI uri) {
         return roles.entrySet().stream().anyMatch(kv -> {
             Role role = kv.getKey();
             Set<Context> contexts = kv.getValue();
-            return contexts.stream().anyMatch(context -> role.allows(action, path, context));
+            return contexts.stream().anyMatch(context -> role.allows(action, uri, context));
         });
     }
 

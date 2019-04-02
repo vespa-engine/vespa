@@ -1,17 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
+import java.net.URI;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * A path which is able to match strings containing bracketed placeholders and return the
- * values given at the placeholders.
+ * values given at the placeholders. The path is split on '/', and each part is then URL decoded.
  * 
- * E.g a path /a/1/bar/fuz
- * will match /a/{foo}/bar/{b}
- * and return foo=1 and b=fuz
+ * E.g a path /a/1/bar/fuz/baz/%62%2f
+ * will match /a/{foo}/bar/{b}/baz/{c}
+ * and return foo=1, b=fuz, and c=c/
  * 
  * Only full path elements may be placeholders, i.e /a{bar} is not interpreted as one.
  * 
@@ -21,7 +26,7 @@ import java.util.Map;
  * Note that for convenience in common use this has state which changes as a side effect of each matches
  * invocation. It is therefore for single thread use.
  *
- * A optional prefix can be used to match the path spec against an alternative path. This
+ * An optional prefix can be used to match the path spec against an alternative path. This
  * is used when you have alternative paths mapped to the same resource.
  *
  * @author bratseth
@@ -37,16 +42,34 @@ public class Path {
     private final Map<String, String> values = new HashMap<>();
     private String rest = "";
 
+    /**
+     * @deprecated use {@link #Path(URI)} for correct handling of URL encoded paths.
+     */
+    @Deprecated
     public Path(String path) {
-        this.optionalPrefix = "";
-        this.pathString = path;
-        this.elements = path.split("/");
+        this(path, "");
     }
 
+    /**
+     * @deprecated use {@link #Path(URI, String)} for correct handling of URL encoded paths.
+     */
+    @Deprecated
     public Path(String path, String optionalPrefix) {
         this.optionalPrefix = optionalPrefix;
         this.pathString = path;
         this.elements = path.split("/");
+    }
+
+    public Path(URI uri) {
+        this(uri, "");
+    }
+
+    public Path(URI uri, String optionalPrefix) {
+        this.optionalPrefix = optionalPrefix;
+        this.pathString = uri.getRawPath();
+        this.elements = Stream.of(this.pathString.split("/"))
+                              .map(part -> URLDecoder.decode(part, StandardCharsets.UTF_8))
+                              .toArray(String[]::new);
     }
 
     private boolean matchesInner(String pathSpec) {
