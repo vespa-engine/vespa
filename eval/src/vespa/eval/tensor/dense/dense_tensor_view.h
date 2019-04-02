@@ -7,8 +7,6 @@
 
 namespace vespalib::tensor {
 
-class DenseTensor;
-
 /**
  * A view to a dense tensor where all dimensions are indexed.
  * Tensor cells are stored in an underlying array according to the order of the dimensions.
@@ -32,7 +30,6 @@ protected:
     }
 
 public:
-    explicit DenseTensorView(const DenseTensor &rhs);
     DenseTensorView(const eval::ValueType &type_in, CellsRef cells_in)
         : _typeRef(type_in),
           _cellsRef(cells_in)

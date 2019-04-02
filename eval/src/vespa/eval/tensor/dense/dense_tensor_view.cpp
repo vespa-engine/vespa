@@ -134,14 +134,6 @@ bool sameCells(DenseTensorView::CellsRef lhs, DenseTensorView::CellsRef rhs)
 
 }
 
-
-DenseTensorView::DenseTensorView(const DenseTensor &rhs)
-    : _typeRef(rhs.fast_type()),
-      _cellsRef(rhs.cellsRef())
-{
-}
-
-
 bool
 DenseTensorView::operator==(const DenseTensorView &rhs) const
 {
