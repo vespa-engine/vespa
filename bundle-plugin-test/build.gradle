@@ -4,7 +4,7 @@
 
 dependencies {
     compile project(':jrt')
-    compile 'javax.xml.bind:jaxb-api:2.3.0'
+    compile jaxb_api
     testCompile junit_4
     providedCompile project(':container-dev')
     providedCompile project(':vespajlib')

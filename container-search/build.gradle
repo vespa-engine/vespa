@@ -20,7 +20,7 @@ dependencies {
     testCompile junit_4
     testCompile http_client
     testCompile hamcrest_library
-    testCompile 'javax.xml.bind:jaxb-api:2.3.0'
+    testCompile jaxb_api
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':testutil')
     providedCompile project(':provided-dependencies')

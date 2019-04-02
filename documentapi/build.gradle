@@ -13,6 +13,6 @@ dependencies {
     compile 'com.yahoo.vespa:annotations:7.28.21'
 	testCompile 'org.hamcrest:hamcrest-all:1.3'
     testCompile junit_4
-    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile mockito
     compile guava
 }

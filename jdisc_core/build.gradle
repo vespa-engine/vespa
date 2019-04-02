@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'javax.xml.bind:jaxb-api:2.3.0'
+    compile jaxb_api
     compile 'com.sun.xml.bind:jaxb-core:2.3.0'
     compile 'com.sun.xml.bind:jaxb-impl:2.3.0'
     compile 'com.sun.activation:javax.activation:1.2.0'
@@ -24,7 +24,7 @@ dependencies {
     compile project(':config-lib')
     compile project(':yolean')
     compile project(':vespajlib')
-    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile mockito
     testCompile project(':testutil')
     testCompile project(':defaults')
 }

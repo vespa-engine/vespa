@@ -8,7 +8,7 @@ dependencies {
     testCompile junit_4
     testCompile project(':container-test')
     testCompile project(':testutil')
-    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile mockito
     providedCompile project(':container-dev')
     providedCompile project(':node-repository')
     providedCompile project(':config-provisioning')

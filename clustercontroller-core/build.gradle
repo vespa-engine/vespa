@@ -8,7 +8,7 @@ dependencies {
     testCompile hamcrest_library
     testCompile hamcrest_core
     testCompile junit_4
-    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile mockito
     compileOnly 'org.slf4j:slf4j-api:1.7.5'
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'

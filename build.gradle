@@ -112,6 +112,8 @@ ext {
   guava = 'com.google.guava:guava:20.0'
   http_client = 'org.apache.httpcomponents:httpclient:4.4.1'
   http_core = 'org.apache.httpcomponents:httpcore:4.4.1'
+  mockito = 'org.mockito:mockito-all:1.9.5'
+  jaxb_api = 'javax.xml.bind:jaxb-api:2.3.0'
 }
 
 task testReport(type: TestReport) {

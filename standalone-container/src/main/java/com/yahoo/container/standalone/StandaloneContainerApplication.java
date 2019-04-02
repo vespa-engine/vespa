@@ -97,8 +97,10 @@ public class StandaloneContainerApplication implements Application {
             this.modelRoot = tpl.getFirst();
             this.container = tpl.getSecond();
         } catch (RuntimeException r) {
+        	r.printStackTrace();
             throw r;
         } catch (Exception e) {
+        	e.printStackTrace();
             throw new RuntimeException("Failed to create ContainerModel", e);
         }
         this.configuredApplication = createConfiguredApplication(container);
