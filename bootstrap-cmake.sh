@@ -54,9 +54,9 @@ cmake3 \
     -DCMAKE_INSTALL_PREFIX=${VESPA_INSTALL_PREFIX} \
     -DJAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-openjdk} \
     -DCMAKE_PREFIX_PATH="/opt/vespa-deps" \
-    -DEXTRA_LINK_DIRECTORY="/opt/vespa-deps/lib64;/opt/vespa-gtest/lib64;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
-    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-deps/include;/opt/vespa-gtest/include;/opt/vespa-boost/include;/opt/vespa-cppunit/include;/usr/include/llvm$VESPA_LLVM_VERSION" \
-    -DCMAKE_INSTALL_RPATH="${VESPA_INSTALL_PREFIX}/lib64;/opt/vespa-deps/lib64;/opt/vespa-gtest/lib64;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
+    -DEXTRA_LINK_DIRECTORY="/opt/vespa-deps/lib64;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
+    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-deps/include;/usr/include/llvm$VESPA_LLVM_VERSION" \
+    -DCMAKE_INSTALL_RPATH="${VESPA_INSTALL_PREFIX}/lib64;/opt/vespa-deps/lib64;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/lib64/llvm$VESPA_LLVM_VERSION/lib" \
     ${UNPRIVILEGED_ARGS} \
     ${EXTRA_CMAKE_ARGS} \
     -DVESPA_LLVM_VERSION=$VESPA_LLVM_VERSION \

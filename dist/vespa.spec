@@ -120,16 +120,14 @@ Requires: net-tools
 Requires: llvm5.0
 Requires: vespa-protobuf >= 3.7.0-4
 %define _vespa_llvm_version 5.0
-%define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib64;/opt/vespa-cppunit/lib;%{_vespa_deps_prefix}/lib64
-%define _extra_include_directory /usr/include/llvm5.0;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include;%{_vespa_deps_prefix}/include
+%define _extra_link_directory /usr/lib64/llvm5.0/lib;%{_vespa_deps_prefix}/lib64
+%define _extra_include_directory /usr/include/llvm5.0;%{_vespa_deps_prefix}/include
 %endif
 %if 0%{?fedora}
 Requires: vespa-protobuf >= 3.7.0-4
 %if 0%{?fc27}
 Requires: llvm-libs >= 5.0.2
 %define _vespa_llvm_version 5.0
-%define _vespa_gtest_link_directory /opt/vespa-gtest/lib64
-%define _vespa_gtest_include_directory /opt/vespa-gtest/include
 %endif
 %if 0%{?fc28}
 Requires: llvm-libs >= 6.0.1
@@ -147,8 +145,8 @@ Requires: llvm-libs >= 8.0.0
 Requires: llvm-libs >= 8.0.0
 %define _vespa_llvm_version 8
 %endif
-%define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}};%{_vespa_deps_prefix}/lib64
-%define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}};%{_vespa_deps_prefix}/include
+%define _extra_link_directory %{_vespa_deps_prefix}/lib64
+%define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 Requires: java-11-openjdk
 Requires: openssl
