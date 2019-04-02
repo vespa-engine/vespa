@@ -288,6 +288,7 @@ Watcher::watchfile()
             }
         }
 
+        _forwarder.flush();
         dcf.saveState(already);
 
         if (_confsubscriber.checkAvailable()) {

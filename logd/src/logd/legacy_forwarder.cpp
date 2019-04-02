@@ -52,19 +52,20 @@ LegacyForwarder::connect_to_dev_null()
     }
 }
 
-LegacyForwarder::LegacyForwarder(Metrics &metrics)
+LegacyForwarder::LegacyForwarder(Metrics &metrics, const ForwardMap& forward_filter)
     :
       _metrics(metrics),
       _logserver_fd(-1),
-      _forwardMap(),
+      _forward_filter(forward_filter),
       _badLines(0)
 {
 }
 
 LegacyForwarder::UP
-LegacyForwarder::to_logserver(Metrics& metrics, const vespalib::string& logserver_host, int logserver_port)
+LegacyForwarder::to_logserver(Metrics& metrics, const ForwardMap& forward_filter,
+                              const vespalib::string& logserver_host, int logserver_port)
 {
-    LegacyForwarder::UP result(new LegacyForwarder(metrics));
+    LegacyForwarder::UP result(new LegacyForwarder(metrics, forward_filter));
     result->connect_to_logserver(logserver_host, logserver_port);
     return result;
 }
@@ -72,15 +73,15 @@ LegacyForwarder::to_logserver(Metrics& metrics, const vespalib::string& logserve
 LegacyForwarder::UP
 LegacyForwarder::to_dev_null(Metrics& metrics)
 {
-    LegacyForwarder::UP result(new LegacyForwarder(metrics));
+    LegacyForwarder::UP result(new LegacyForwarder(metrics, ForwardMap()));
     result->connect_to_dev_null();
     return result;
 }
 
 LegacyForwarder::UP
-LegacyForwarder::to_open_file(Metrics& metrics, int file_desc)
+LegacyForwarder::to_open_file(Metrics& metrics, const ForwardMap& forward_filter, int file_desc)
 {
-    LegacyForwarder::UP result(new LegacyForwarder(metrics));
+    LegacyForwarder::UP result(new LegacyForwarder(metrics, forward_filter));
     result->_logserver_fd = file_desc;
     return result;
 }
@@ -155,8 +156,8 @@ LegacyForwarder::parseLine(std::string_view line)
     _metrics.countLine(logLevelName, message.service());
 
     // Check overrides
-    ForwardMap::iterator found = _forwardMap.find(message.level());
-    if (found != _forwardMap.end()) {
+    auto found = _forward_filter.find(message.level());
+    if (found != _forward_filter.end()) {
         return found->second;
     }
     return false; // Unknown log level

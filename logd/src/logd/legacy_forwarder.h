@@ -16,7 +16,7 @@ class LegacyForwarder : public Forwarder {
 private:
     Metrics &_metrics;
     int _logserver_fd;
-    ForwardMap _forwardMap;
+    ForwardMap _forward_filter;
     int _badLines;
     const char *copystr(const char *b, const char *e) {
         int len = e - b;
@@ -29,15 +29,15 @@ private:
     void connect_to_dev_null();
     bool parseLine(std::string_view line);
     void forwardText(const char *text, int len);
-    LegacyForwarder(Metrics &metrics);
+    LegacyForwarder(Metrics &metrics, const ForwardMap& forward_filter);
 
 public:
     using UP = std::unique_ptr<LegacyForwarder>;
-    static LegacyForwarder::UP to_logserver(Metrics& metrics, const vespalib::string& logserver_host, int logserver_port);
+    static LegacyForwarder::UP to_logserver(Metrics& metrics, const ForwardMap& forward_filter,
+                                            const vespalib::string& logserver_host, int logserver_port);
     static LegacyForwarder::UP to_dev_null(Metrics& metrics);
-    static LegacyForwarder::UP to_open_file(Metrics& metrics, int file_desc);
+    static LegacyForwarder::UP to_open_file(Metrics& metrics, const ForwardMap& forward_filter, int file_desc);
     ~LegacyForwarder();
-    void setForwardMap(const ForwardMap& forwardMap) { _forwardMap = forwardMap; }
 
     // Implements Forwarder
     void forwardLine(std::string_view line) override;

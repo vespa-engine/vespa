@@ -17,7 +17,40 @@ using vespalib::make_string;
 
 namespace logdemon {
 
-RpcForwarder::RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
+namespace {
+
+class GuardedRequest {
+private:
+    FRT_RPCRequest* _request;
+public:
+    GuardedRequest()
+        : _request(new FRT_RPCRequest())
+    {}
+    ~GuardedRequest() {
+        _request->SubRef();
+    }
+    FRT_RPCRequest& operator*() const { return *_request; }
+    FRT_RPCRequest* get() const { return _request; }
+    FRT_RPCRequest* operator->() const { return get(); }
+};
+
+}
+
+void
+RpcForwarder::ping_logserver()
+{
+    GuardedRequest request;
+    request->SetMethodName("frt.rpc.ping");
+    _target->InvokeSync(request.get(), _rpc_timeout_secs);
+    if (!request->CheckReturnTypes("")) {
+        auto error_msg = make_string("Error in rpc ping to logserver ('%s'): '%s'",
+                                     _connection_spec.c_str(), request->GetErrorMessage());
+        LOG(debug, "%s", error_msg.c_str());
+        throw ConnectionException(error_msg);
+    }
+}
+
+RpcForwarder::RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, FRT_Supervisor& supervisor,
                            const vespalib::string &hostname, int rpc_port,
                            double rpc_timeout_secs, size_t max_messages_per_request)
     : _metrics(metrics),
@@ -27,9 +60,10 @@ RpcForwarder::RpcForwarder(Metrics& metrics, FRT_Supervisor& supervisor,
       _target(),
       _messages(),
       _bad_lines(0),
-      _forward_filter()
+      _forward_filter(forward_filter)
 {
     _target = supervisor.GetTarget(_connection_spec.c_str());
+    ping_logserver();
 }
 
 RpcForwarder::~RpcForwarder()
@@ -93,25 +127,6 @@ RpcForwarder::forwardLine(std::string_view line)
     }
 }
 
-namespace {
-
-class GuardedRequest {
-private:
-    FRT_RPCRequest* _request;
-public:
-    GuardedRequest()
-        : _request(new FRT_RPCRequest())
-    {}
-    ~GuardedRequest() {
-        _request->SubRef();
-    }
-    FRT_RPCRequest& operator*() const { return *_request; }
-    FRT_RPCRequest* get() const { return _request; }
-    FRT_RPCRequest* operator->() const { return get(); }
-};
-
-}
-
 void
 RpcForwarder::flush()
 {
@@ -124,13 +139,15 @@ RpcForwarder::flush()
     encode_log_request(proto_request, *request);
     _target->InvokeSync(request.get(), _rpc_timeout_secs);
     if (!request->CheckReturnTypes("bix")) {
-        auto error_msg = make_string("Error in rpc reply from '%s': '%s'",
+        auto error_msg = make_string("Error in rpc reply from logserver ('%s'): '%s'",
                                      _connection_spec.c_str(), request->GetErrorMessage());
+        LOG(warning, "%s", error_msg.c_str());
         throw ConnectionException(error_msg);
     }
     ProtoConverter::ProtoLogResponse proto_response;
     if (!decode_log_response(*request, proto_response)) {
-        auto error_msg = make_string("Error during decoding of protobuf response from '%s'", _connection_spec.c_str());
+        auto error_msg = make_string("Error during decoding of protobuf response from logserver ('%s')", _connection_spec.c_str());
+        LOG(warning, "%s", error_msg.c_str());
         throw DecodeException(error_msg);
     }
     _messages.clear();

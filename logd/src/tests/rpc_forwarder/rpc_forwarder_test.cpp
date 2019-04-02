@@ -110,6 +110,17 @@ public:
 
 };
 
+ForwardMap
+make_forward_filter()
+{
+    ForwardMap result;
+    result[ns_log::Logger::error] = true;
+    result[ns_log::Logger::warning] = false;
+    result[ns_log::Logger::info] = true;
+    // all other log levels are implicit false
+    return result;
+}
+
 struct RpcForwarderTest : public ::testing::Test {
     RpcServer server;
     std::shared_ptr<MockMetricsManager> metrics_mgr;
@@ -120,14 +131,8 @@ struct RpcForwarderTest : public ::testing::Test {
         : server(),
           metrics_mgr(std::make_shared<MockMetricsManager>()),
           metrics(metrics_mgr),
-          forwarder(metrics, supervisor.get(), "localhost", server.get_listen_port(), 60.0, 3)
+          forwarder(metrics, make_forward_filter(), supervisor.get(), "localhost", server.get_listen_port(), 60.0, 3)
     {
-        ForwardMap forward_filter;
-        forward_filter[ns_log::Logger::error] = true;
-        forward_filter[ns_log::Logger::warning] = false;
-        forward_filter[ns_log::Logger::info] = true;
-        // all other log levels are implicit false
-        forwarder.set_forward_filter(forward_filter);
     }
     void forward_line(const std::string& payload) {
         forwarder.forwardLine(make_log_line("info", payload));
