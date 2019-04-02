@@ -11,7 +11,7 @@ class TensorParser {
     static Tensor tensorFrom(String tensorString, Optional<TensorType> type) {
         tensorString = tensorString.trim();
         try {
-            if (tensorString.startsWith("tensor(")) {
+            if (tensorString.startsWith("tensor")) {
                 int colonIndex = tensorString.indexOf(':');
                 String typeString = tensorString.substring(0, colonIndex);
                 String valueString = tensorString.substring(colonIndex + 1);

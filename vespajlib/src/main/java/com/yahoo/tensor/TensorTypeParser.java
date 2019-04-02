@@ -2,8 +2,10 @@
 package com.yahoo.tensor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,23 +16,32 @@ import java.util.regex.Pattern;
  */
 public class TensorTypeParser {
 
-    private final static String START_STRING = "tensor(";
+    private final static String START_STRING = "tensor";
     private final static String END_STRING = ")";
 
     private static final Pattern indexedPattern = Pattern.compile("(\\w+)\\[(\\d*)\\]");
     private static final Pattern mappedPattern = Pattern.compile("(\\w+)\\{\\}");
 
     public static TensorType fromSpec(String specString) {
-        return new TensorType.Builder(dimensionsFromSpec(specString)).build();
-    }
+        if ( ! specString.startsWith(START_STRING) || ! specString.endsWith(END_STRING))
+            throw formatException(specString);
+        String specBody = specString.substring(START_STRING.length(), specString.length() - END_STRING.length());
 
-    public static List<TensorType.Dimension> dimensionsFromSpec(String specString) {
-        if ( ! specString.startsWith(START_STRING) || !specString.endsWith(END_STRING)) {
-            throw new IllegalArgumentException("Tensor type spec must start with '" + START_STRING + "'" +
-                                               " and end with '" + END_STRING + "', but was '" + specString + "'");
+        String dimensionsSpec;
+        TensorType.Value valueType;
+        if (specBody.startsWith("(")) {
+            valueType = TensorType.Value.DOUBLE; // no value type spec: Use default
+            dimensionsSpec = specBody.substring(1);
         }
-        String dimensionsSpec = specString.substring(START_STRING.length(), specString.length() - END_STRING.length());
-        if (dimensionsSpec.isEmpty()) return Collections.emptyList();
+        else {
+            int parenthesisIndex = specBody.indexOf("(");
+            if (parenthesisIndex < 0)
+                throw formatException(specString);
+            valueType = parseValueTypeSpec(specBody.substring(0, parenthesisIndex), specString);
+            dimensionsSpec = specBody.substring(parenthesisIndex + 1);
+        }
+
+        if (dimensionsSpec.isEmpty()) return new TensorType.Builder(valueType, Collections.emptyList()).build();
 
         List<TensorType.Dimension> dimensions = new ArrayList<>();
         for (String element : dimensionsSpec.split(",")) {
@@ -38,10 +49,23 @@ public class TensorTypeParser {
             boolean success = tryParseIndexedDimension(trimmedElement, dimensions) ||
                               tryParseMappedDimension(trimmedElement, dimensions);
             if ( ! success)
-                throw new IllegalArgumentException("Failed parsing element '" + element +
-                                                   "' in type spec '" + specString + "'");
+                throw formatException(specString, "Dimension '" + element + "' is on the wrong format");
         }
-        return dimensions;
+        return new TensorType.Builder(valueType, dimensions).build();
+    }
+
+    private static TensorType.Value parseValueTypeSpec(String valueTypeSpec, String fullSpecString) {
+        if ( ! valueTypeSpec.startsWith("<") || ! valueTypeSpec.endsWith(">"))
+            throw formatException(fullSpecString, Optional.of("Value type spec must be enclosed in <>"));
+
+        String valueType = valueTypeSpec.substring(1, valueTypeSpec.length() - 1);
+        switch (valueType) {
+            case "double" : return TensorType.Value.DOUBLE;
+            case "float" : return TensorType.Value.FLOAT;
+            default : throw formatException(fullSpecString,
+                                            "Value type must be either 'double' or 'float'" +
+                                            " but was '" + valueType + "'");
+        }
     }
 
     private static boolean tryParseIndexedDimension(String element, List<TensorType.Dimension> dimensions) {
@@ -67,6 +91,22 @@ public class TensorTypeParser {
             return true;
         }
         return false;
+    }
+
+
+    private static IllegalArgumentException formatException(String spec) {
+        return formatException(spec, Optional.empty());
+    }
+
+    private static IllegalArgumentException formatException(String spec, String errorDetail) {
+        return formatException(spec, Optional.of(errorDetail));
+    }
+
+    private static IllegalArgumentException formatException(String spec, Optional<String> errorDetail) {
+        throw new IllegalArgumentException("A tensor type spec must be on the form " +
+                                           "tensor[<valuetype>]?(dimensionidentifier[{}|[length?]*), but was '" + spec + "'. " +
+                                           errorDetail.map(s -> s + ". ").orElse("") +
+                                           "Examples: tensor(x[]), tensor<float>(name{}, x[10])");
     }
 
 }

@@ -24,25 +24,19 @@ import java.util.stream.Collectors;
  */
 public class TensorType {
 
-    public enum ValueType { DOUBLE, FLOAT};
+    /** The permissible cell value types. Default is double. */
+    // Types added here must also be added to TensorTypeParser.parseValueTypeSpec
+    public enum Value { DOUBLE, FLOAT};
 
     /** The empty tensor type - which is the same as a double */
-    public static final TensorType empty = new TensorType(ValueType.DOUBLE, Collections.emptyList());
+    public static final TensorType empty = new TensorType(Value.DOUBLE, Collections.emptyList());
 
-    private ValueType valueType;
-
-    public final ValueType valueType() { return valueType; }
-
-    //TODO Remove once value type is wired in were it should.
-    public final TensorType valueType(ValueType valueType) {
-        this.valueType = valueType;
-        return this;
-    }
+    private final Value valueType;
 
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
-    private TensorType(ValueType valueType, Collection<Dimension> dimensions) {
+    private TensorType(Value valueType, Collection<Dimension> dimensions) {
         this.valueType = valueType;
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
@@ -63,6 +57,9 @@ public class TensorType {
     public static TensorType fromSpec(String specString) {
         return TensorTypeParser.fromSpec(specString);
     }
+
+    /** Returns the numeric type of the cell values of this */
+    public Value valueType() { return valueType; }
 
     /** Returns the number of dimensions of this: dimensions().size() */
     public int rank() { return dimensions.size(); }
@@ -386,14 +383,14 @@ public class TensorType {
 
         private final Map<String, Dimension> dimensions = new LinkedHashMap<>();
 
-        private final ValueType valueType;
+        private final Value valueType;
 
         /** Creates an empty builder with cells of type double*/
         public Builder() {
-            this(ValueType.DOUBLE);
+            this(Value.DOUBLE);
         }
 
-        public Builder(ValueType valueType) {
+        public Builder(Value valueType) {
             this.valueType = valueType;
         }
 
@@ -405,21 +402,21 @@ public class TensorType {
          * If it is indexed in one and mapped in the other it will become mapped.
          */
         public Builder(TensorType ... types) {
-            this(ValueType.DOUBLE, types);
+            this(Value.DOUBLE, types);
         }
-        public Builder(ValueType valueType, TensorType ... types) {
+        public Builder(Value valueType, TensorType ... types) {
             this.valueType = valueType;
             for (TensorType type : types)
                 addDimensionsOf(type);
         }
 
-        /**
-         * Creates a builder from the given dimensions.
-         */
+        /** Creates a builder from the given dimensions */
         public Builder(Iterable<Dimension> dimensions) {
-            this(ValueType.DOUBLE, dimensions);
+            this(Value.DOUBLE, dimensions);
         }
-        public Builder(ValueType valueType, Iterable<Dimension> dimensions) {
+
+        /** Creates a builder from the given value type and dimensions */
+        public Builder(Value valueType, Iterable<Dimension> dimensions) {
             this.valueType = valueType;
             for (TensorType.Dimension dimension : dimensions) {
                 dimension(dimension);

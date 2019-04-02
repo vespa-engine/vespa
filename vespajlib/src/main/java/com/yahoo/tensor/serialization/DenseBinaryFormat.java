@@ -43,7 +43,7 @@ public class DenseBinaryFormat implements BinaryFormat {
         encodeCells(buffer, tensor);
     }
 
-    private void encodeValueType(GrowableByteBuffer buffer, TensorType.ValueType valueType) {
+    private void encodeValueType(GrowableByteBuffer buffer, TensorType.Value valueType) {
         switch (valueType) {
             case DOUBLE:
                 if (encodeType != EncodeType.DOUBLE_IS_DEFAULT) {
@@ -100,7 +100,7 @@ public class DenseBinaryFormat implements BinaryFormat {
             sizes = sizesFromType(serializedType);
         }
         else {
-            type = decodeType(buffer, TensorType.ValueType.DOUBLE);
+            type = decodeType(buffer, TensorType.Value.DOUBLE);
             sizes = sizesFromType(type);
         }
         Tensor.Builder builder = Tensor.Builder.of(type, sizes);
@@ -108,16 +108,16 @@ public class DenseBinaryFormat implements BinaryFormat {
         return builder.build();
     }
 
-    private TensorType decodeType(GrowableByteBuffer buffer, TensorType.ValueType valueType) {
-        TensorType.ValueType serializedValueType = TensorType.ValueType.DOUBLE;
-        if ((valueType != TensorType.ValueType.DOUBLE) || (encodeType != EncodeType.DOUBLE_IS_DEFAULT)) {
+    private TensorType decodeType(GrowableByteBuffer buffer, TensorType.Value valueType) {
+        TensorType.Value serializedValueType = TensorType.Value.DOUBLE;
+        if ((valueType != TensorType.Value.DOUBLE) || (encodeType != EncodeType.DOUBLE_IS_DEFAULT)) {
             int type = buffer.getInt1_4Bytes();
             switch (type) {
                 case DOUBLE_VALUE_TYPE:
-                    serializedValueType = TensorType.ValueType.DOUBLE;
+                    serializedValueType = TensorType.Value.DOUBLE;
                     break;
                 case FLOAT_VALUE_TYPE:
-                    serializedValueType = TensorType.ValueType.FLOAT;
+                    serializedValueType = TensorType.Value.FLOAT;
                     break;
                 default:
                     throw new IllegalArgumentException("Received tensor value type '" + serializedValueType + "'. Only 0(double), or 1(float) are legal.");
@@ -141,7 +141,7 @@ public class DenseBinaryFormat implements BinaryFormat {
         return builder.build();
     }
 
-    private void decodeCells(TensorType.ValueType valueType, DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
+    private void decodeCells(TensorType.Value valueType, DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
         switch (valueType) {
             case DOUBLE:
                 decodeCellsAsDouble(sizes, buffer, builder);
