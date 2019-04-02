@@ -4,7 +4,7 @@
 
 dependencies {
     compile findbugs_annotations
-    compile 'com.google.code.findbugs:jsr305:1.3.9'
+    compile findbugs_jsr
     compile project(':vespalog')
     testCompile junit_4
     testCompile hamcrest_library

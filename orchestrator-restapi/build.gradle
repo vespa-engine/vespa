@@ -6,7 +6,7 @@ dependencies {
     compile project(':jaxrs_utils')
     compileOnly 'javax.ws.rs:javax.ws.rs-api:2.0'
     compileOnly 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
-    compileOnly 'com.google.code.findbugs:jsr305:1.3.9'
+    compileOnly findbugs_jsr
 }
 
 description = 'orchestrator-restapi'

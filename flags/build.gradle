@@ -9,7 +9,7 @@ dependencies {
     testCompile project(':testutil')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    compileOnly 'com.google.code.findbugs:jsr305:1.3.9'
+    compileOnly findbugs_jsr
     compileOnly guice
     providedCompile project(':defaults')
     providedCompile project(':yolean')
