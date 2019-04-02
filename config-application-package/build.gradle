@@ -10,7 +10,7 @@ dependencies {
     testCompile project(':config-model-api')
     testCompile project(path: ':config-model-api', configuration: 'tests' )
     testCompile project(':configdefinitions')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'xmlunit:xmlunit:1.5'
     providedCompile project(':config-model-api')
     providedCompile project(':component')
@@ -19,7 +19,7 @@ dependencies {
     providedCompile project(':vespalog')
     providedCompile project(':config')
     providedCompile project(':config-provisioning')
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     compileOnly 'org.apache.felix:org.apache.felix.framework:6.0.2'
 }
 

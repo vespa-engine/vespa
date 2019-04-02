@@ -4,7 +4,7 @@
 
 dependencies {
     compile project(':searchcore')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile project(':jdisc_jetty')
     providedCompile project(':component')
     providedCompile project(':jdisc_core')
@@ -14,5 +14,5 @@ dependencies {
     providedCompile project(':vespajlib')
     providedCompile project(':searchlib')
     providedCompile project(':jdisc_http_service')
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
 }

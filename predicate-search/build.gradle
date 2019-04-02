@@ -4,12 +4,12 @@
 
 dependencies {
     compile project(':predicate-search-core')
-    compile 'com.google.guava:guava:20.0'
+    compile guava
     compile 'com.goldmansachs:gs-collections:6.1.0'
     compile 'io.airlift:airline:0.7'
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
 }
 

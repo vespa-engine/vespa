@@ -11,7 +11,7 @@ dependencies {
     compile 'org.eclipse.jetty:jetty-http:9.4.15.v20190215'
     compile project(':config-lib')
     compile project(':defaults')
-    compile 'com.google.guava:guava:20.0'
+    compile guava
     compile 'com.google.inject:guice:3.0'
     compile 'org.apache.felix:org.apache.felix.main:6.0.2'
 }

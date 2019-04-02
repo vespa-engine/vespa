@@ -10,7 +10,7 @@ dependencies {
     compile 'xml-apis:xml-apis:1.4.01'
     compile 'javax.annotation:javax.annotation-api:1.2'
     compile 'aopalliance:aopalliance:1.0'
-    compile 'com.google.guava:guava:20.0'
+    compile guava
     compile 'com.google.inject:guice:3.0'
     compile 'com.google.inject.extensions:guice-assistedinject:3.0'
     compile 'com.google.inject.extensions:guice-multibindings:3.0'

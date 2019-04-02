@@ -10,7 +10,7 @@ dependencies {
     compile 'org.glassfish.jersey.ext:jersey-proxy-client:2.25'
     compile 'net.jpountz.lz4:lz4:1.3.0'
     testCompile 'org.hamcrest:hamcrest-all:1.3'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'com.github.tomakehurst:wiremock-standalone:2.6.0'
     testCompile project(':testutil')
     testCompile project(':config-model-api')
@@ -38,7 +38,7 @@ dependencies {
     providedCompile project(':configdefinitions')
     providedCompile project(':flags')
     compileOnly 'javax.ws.rs:javax.ws.rs-api:2.0'
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
 }
 

@@ -3,10 +3,10 @@
  */
 
 dependencies {
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
+    compile http_client
     testCompile project(':application')
     testCompile project(':testutil')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.apache.curator:curator-test:2.9.1'
     testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':container-dev')
@@ -20,6 +20,6 @@ dependencies {
     providedCompile project(':vespa-athenz')
     providedCompile project(':jdisc-security-filters')
     providedCompile project(':flags')
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
 }

@@ -3,12 +3,12 @@
  */
 
 dependencies {
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':config-bundle')
     providedCompile project(':vespajlib')
     providedCompile project(':config-lib')
     providedCompile project(':config')
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
 }
 
 task generateVtag(type: JavaExec) {

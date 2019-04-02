@@ -10,12 +10,12 @@ dependencies {
     compile project(':predicate-search-core')
     compile project(':vespajlib')
     compile 'com.yahoo.vespa:annotations:7.28.21'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':testutil')
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     compileOnly 'com.google.inject:guice:3.0'
 }
 

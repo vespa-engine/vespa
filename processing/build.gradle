@@ -4,7 +4,7 @@
 
 dependencies {
     compile project(':chain')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':provided-dependencies')
     providedCompile project(':component')
 }

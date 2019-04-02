@@ -4,12 +4,12 @@
 
 dependencies {
     compile project(':orchestrator-restapi')
-    compile 'org.apache.httpcomponents:httpcore:4.4.1'
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
+    compile http_core
+    compile http_client
     compile 'org.apache.velocity:velocity:1.7'
     testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'
     testCompile 'org.mockito:mockito-core:2.23.0'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile project(':application')
     testCompile project(':application-model')
     testCompile project(':orchestrator')

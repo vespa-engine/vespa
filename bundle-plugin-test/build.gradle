@@ -5,7 +5,7 @@
 dependencies {
     compile project(':jrt')
     compile 'javax.xml.bind:jaxb-api:2.3.0'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':container-dev')
     providedCompile project(':vespajlib')
     compileOnly 'org.json:json:20090211'

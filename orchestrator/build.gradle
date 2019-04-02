@@ -8,7 +8,7 @@ dependencies {
     compile 'commons-lang:commons-lang:2.6'
     compile 'org.glassfish.jersey.ext:jersey-proxy-client:2.25'
     testCompile project(':application')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile 'org.easytesting:fest-assert:1.4'
     testCompile project(':testutil')

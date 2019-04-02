@@ -12,6 +12,6 @@ dependencies {
     compile project(':clustercontroller-utils')
     compile project(':vdslib')
     compile project(':zkfacade')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':container-dev')
 }

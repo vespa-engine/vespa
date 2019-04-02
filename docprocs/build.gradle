@@ -4,7 +4,7 @@
 
 dependencies {
     compile project(':indexinglanguage')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':document')
     providedCompile project(':predicate-search-core')
     providedCompile project(':docproc')

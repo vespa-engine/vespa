@@ -9,8 +9,8 @@ dependencies {
     compile project(':container-di')
     compile project(':vespajlib')
     compile 'net.jcip:jcip-annotations:1.0'
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
+    testCompile junit_4
+    testCompile hamcrest_library
     testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':provided-dependencies')
     providedCompile project(':component')

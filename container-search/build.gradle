@@ -17,9 +17,9 @@ dependencies {
     compile 'net.jcip:jcip-annotations:1.0'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compile 'org.antlr:antlr4-runtime:4.5'
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.apache.httpcomponents:httpclient:4.4.1'
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
+    testCompile junit_4
+    testCompile http_client
+    testCompile hamcrest_library
     testCompile 'javax.xml.bind:jaxb-api:2.3.0'
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':testutil')

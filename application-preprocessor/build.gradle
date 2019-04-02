@@ -9,8 +9,8 @@ dependencies {
     compile project(':config-model')
     compile project(':config-provisioning')
     compile project(':vespajlib')
-    compile 'com.google.guava:guava:20.0'
+    compile guava
     compile project(':yolean')
     compile project(':vespalog')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
 }

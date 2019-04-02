@@ -5,10 +5,10 @@
 dependencies {
     compile 'com.yahoo.athenz:athenz-auth-core:1.8.12'
     compile 'com.yahoo.athenz:athenz-zpe-java-client:1.8.12'
-    compile 'org.apache.httpcomponents:httpcore:4.4.1'
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
+    compile http_core
+    compile http_client
     compile 'com.amazonaws:aws-java-sdk-core:1.11.289'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':testutil')
     providedCompile project(':container-dev')

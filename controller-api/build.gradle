@@ -4,7 +4,7 @@
 
 dependencies {
     compile 'com.intellij:annotations:9.0.4'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile project(':configdefinitions')
     providedCompile project(':container-dev')
     providedCompile project(':serviceview')

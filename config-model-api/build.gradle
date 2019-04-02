@@ -7,7 +7,7 @@ configurations {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile project(':testutil')
     testCompile 'com.google.guava:guava-testlib:20.0'
     providedCompile project(':config-bundle')

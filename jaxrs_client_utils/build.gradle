@@ -6,7 +6,7 @@ dependencies {
     testCompile project(':jaxrs_utils')
     testCompile project(':defaults')
     testCompile 'org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.25'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':vespajlib')
     providedCompile project(':application-model')

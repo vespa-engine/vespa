@@ -4,6 +4,6 @@
 
 dependencies {
     compile project(':config')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
 }
 

@@ -5,8 +5,8 @@
 dependencies {
     compile 'org.bouncycastle:bcpkix-jdk15on:1.58'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
+    testCompile junit_4
+    testCompile hamcrest_library
     testCompile project(':testutil')
     testCompile 'org.assertj:assertj-core:3.11.1'
     testCompile 'org.mockito:mockito-core:1.9.5'

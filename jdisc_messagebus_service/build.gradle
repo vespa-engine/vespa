@@ -5,7 +5,7 @@
 dependencies {
     compile project(':component')
     compile project(':messagebus')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':jdisc_core')
 }
 

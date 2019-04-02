@@ -3,9 +3,9 @@
  */
 
 dependencies {
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
-    compile 'org.apache.httpcomponents:httpcore:4.4.1'
-    testCompile 'junit:junit:4.12'
+    compile http_client
+    compile http_core
+    testCompile junit_4
     testCompile project(':container-test')
     testCompile project(':testutil')
     testCompile 'org.mockito:mockito-all:1.9.5'

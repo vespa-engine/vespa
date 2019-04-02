@@ -5,5 +5,5 @@
 dependencies {
     testCompile project(':container-search-gui')
     testCompile project(':application')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
 }

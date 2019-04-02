@@ -10,7 +10,7 @@ dependencies {
     compile 'org.antlr:antlr-runtime:3.5.2'
     compile project(':vespajlib')
     compile 'com.yahoo.vespa:annotations:7.28.21'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.11'
 	
     antlr 'org.antlr:antlr:3.4'

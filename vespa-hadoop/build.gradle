@@ -3,12 +3,12 @@
  */
 
 dependencies {
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
-    compile 'org.apache.httpcomponents:httpcore:4.4.1'
+    compile http_client
+    compile http_core
     compile project(':vespa-http-client')
     testCompile 'org.apache.hadoop:hadoop-minicluster:2.8.0'
     testCompile 'org.apache.pig:pig:0.14.0'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     compileOnly 'org.apache.hadoop:hadoop-common:2.8.0'
     compileOnly 'org.apache.hadoop:hadoop-client:2.8.0'
     compileOnly 'org.apache.pig:pig:0.14.0'

@@ -13,7 +13,7 @@ dependencies {
     compile project(':config-model-api')
     testCompile 'org.apache.maven:maven-plugin-api:3.5.0'
     compileOnly 'org.apache.maven:maven-plugin-api:3.5.0'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
 
     documentgen project(':vespa-documentgen-plugin')
     documentgen 'org.apache.maven:maven-plugin-api:3.5.0'

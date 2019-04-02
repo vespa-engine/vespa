@@ -4,7 +4,7 @@
 
 dependencies {
     testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'	// jarhell : needs to classload before junit
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile project(':testutil')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'

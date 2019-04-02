@@ -4,6 +4,6 @@
 
 dependencies {
     compile project(':vespajlib')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
 }

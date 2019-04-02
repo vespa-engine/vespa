@@ -3,9 +3,9 @@
  */
 
 dependencies {
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
+    compile http_client
     compile 'commons-io:commons-io:2.4'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     providedCompile project(':container-dev')
     providedCompile project(':clustercontroller-utils')

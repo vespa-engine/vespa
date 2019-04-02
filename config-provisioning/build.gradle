@@ -6,13 +6,13 @@ dependencies {
     compile 'com.yahoo.vespa:annotations:7.28.21'
     testCompile project(':testutil')
     testCompile 'org.hamcrest:hamcrest-all:1.3'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'com.google.guava:guava-testlib:20.0'
     providedCompile project(':vespajlib')
     providedCompile project(':component')
     providedCompile project(':configdefinitions')
     providedCompile project(':config-bundle')
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     compileOnly 'com.google.inject:guice:3.0'
 }
 

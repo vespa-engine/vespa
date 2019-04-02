@@ -6,13 +6,13 @@ dependencies {
     compile project(':defaults')
     compile project(':vespajlib')
     compile project(':config')
-    compile 'org.apache.httpcomponents:httpclient:4.4.1'
+    compile http_client
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compile 'io.airlift:airline:0.6'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.3'
-    compile 'com.google.guava:guava:20.0'
+    compile guava
     testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
 }
 

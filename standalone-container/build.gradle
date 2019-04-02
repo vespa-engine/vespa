@@ -4,7 +4,7 @@
 
 dependencies {
     testCompile 'org.hamcrest:hamcrest-all:1.3'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':config-provisioning')
     providedCompile project(':config-model')
     providedCompile project(':config-model-api')

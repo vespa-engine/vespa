@@ -10,9 +10,9 @@ dependencies {
     compile 'com.google.protobuf:protobuf-java:3.7.0'
     compile 'org.tensorflow:proto:1.12.0'
     compile 'org.tensorflow:tensorflow:1.12.0'
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     providedCompile project(':config-model-api')
     providedCompile project(':searchlib')
     providedCompile project(':vespajlib')

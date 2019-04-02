@@ -4,6 +4,6 @@
 
 dependencies {
     compile project(':metrics')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     providedCompile project(':container-dev')
 }

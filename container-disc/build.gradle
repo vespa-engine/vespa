@@ -9,7 +9,7 @@ dependencies {
     compile project(':messagebus-disc')
     compile project(':vespajlib')
     compile project(':vespalog')
-    testCompile 'junit:junit:4.12'
+    testCompile junit_4
     testCompile project(':testutil')
     testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':config-lib')

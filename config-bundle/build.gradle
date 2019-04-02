@@ -6,7 +6,7 @@ dependencies {
     compile project(':config')
     compile 'com.yahoo.vespa:configgen:7.28.21'
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
-    compileOnly 'com.google.guava:guava:20.0'
+    compileOnly guava
     compileOnly 'com.fasterxml.jackson.core:jackson-core:2.8.11'
     providedCompile project(':config-lib')
     providedCompile project(':jrt')
