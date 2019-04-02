@@ -117,7 +117,7 @@ public class DenseBinaryFormat implements BinaryFormat {
                     serializedValueType = TensorType.ValueType.DOUBLE;
                     break;
                 case FLOAT_VALUE_TYPE:
-                    serializedValueType = TensorType.ValueType.DOUBLE;
+                    serializedValueType = TensorType.ValueType.FLOAT;
                     break;
                 default:
                     throw new IllegalArgumentException("Received tensor value type '" + serializedValueType + "'. Only 0(double), or 1(float) are legal.");
