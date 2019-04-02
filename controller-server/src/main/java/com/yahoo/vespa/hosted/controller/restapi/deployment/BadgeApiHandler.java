@@ -54,7 +54,7 @@ public class BadgeApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/badge/v1/{tenant}/{application}/{instance}")) return badge(path.get("tenant"), path.get("application"), path.get("instance"));
         if (path.matches("/badge/v1/{tenant}/{application}/{instance}/{jobName}")) return badge(path.get("tenant"), path.get("application"), path.get("instance"), path.get("jobName"), request.getProperty("historyLength"));
 

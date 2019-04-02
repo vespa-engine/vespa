@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.role;
 
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -85,8 +86,8 @@ public enum Role {
      * Returns whether this role is allowed to perform action in given role context. Action is allowed if at least one
      * policy evaluates to true.
      */
-    public boolean allows(Action action, String path, Context context) {
-        return policies.stream().anyMatch(policy -> policy.evaluate(action, path, context));
+    public boolean allows(Action action, URI uri, Context context) {
+        return policies.stream().anyMatch(policy -> policy.evaluate(action, uri, context));
     }
 
 }

@@ -35,7 +35,7 @@ public class CostApiHandler extends LoggingRequestHandler {
             return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
         }
 
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
 
         if (path.matches("/cost/v1/csv")) {
             Optional<String> cloudProperty = Optional.ofNullable(request.getProperty("cloud"));

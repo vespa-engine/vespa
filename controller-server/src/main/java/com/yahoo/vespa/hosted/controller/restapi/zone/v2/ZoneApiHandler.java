@@ -66,7 +66,7 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/zone/v2")) {
             return root(request);
         }
@@ -74,7 +74,7 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse proxy(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if ( ! path.matches("/zone/v2/{environment}/{region}/{*}")) {
             return notFound(path);
         }

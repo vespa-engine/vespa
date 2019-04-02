@@ -54,7 +54,7 @@ public class StatusPageProxyHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (!path.matches("/statuspage/v1/{page}")) {
             return ErrorResponse.notFoundError("Nothing at " + path);
         }
