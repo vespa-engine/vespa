@@ -47,10 +47,8 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     protected void sendSearchRequest(Query query) throws IOException {
         log.finest("sending query packet");
 
-        var queryPacket = searcher.createQueryPacket(searcher.getServerId(), query);
-
         this.query = query;
-        this.queryPacket = queryPacket;
+        this.queryPacket = searcher.createQueryPacket(searcher.getServerId(), query);
 
         try {
             boolean couldSend = channel.sendPacket(queryPacket);
