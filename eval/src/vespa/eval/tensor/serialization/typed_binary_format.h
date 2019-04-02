@@ -20,6 +20,7 @@ class TypedBinaryFormat
     static constexpr uint32_t SPARSE_BINARY_FORMAT_TYPE = 1u;
     static constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
     static constexpr uint32_t MIXED_BINARY_FORMAT_TYPE = 3u;
+    static constexpr uint32_t TYPED_DENSE_BINARY_FORMAT_TYPE = 4u;
 public:
     static void serialize(nbostream &stream, const Tensor &tensor);
     static std::unique_ptr<Tensor> deserialize(nbostream &stream);

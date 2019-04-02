@@ -16,8 +16,12 @@ class DenseTensorView;
 class DenseBinaryFormat
 {
 public:
-    static void serialize(nbostream &stream, const DenseTensorView &tensor);
-    static std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
+    enum class EncodeType { NO_DEFAULT, DOUBLE_IS_DEFAULT};
+    DenseBinaryFormat(EncodeType encodeType) : _encodeType(encodeType) { }
+    void serialize(nbostream &stream, const DenseTensorView &tensor);
+    std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
+private:
+    EncodeType _encodeType;
 };
 
 }

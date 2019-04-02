@@ -17,6 +17,7 @@ public:
     using Dimension = TensorBuilder::Dimension;
 
 private:
+    eval::ValueType::CellType _cellType;
     vespalib::hash_map<vespalib::string, size_t> _dimensionsEnum;
     std::vector<eval::ValueType::Dimension> _dimensions;
     DenseTensor::Cells _cells;
@@ -28,7 +29,8 @@ private:
     size_t calculateCellAddress();
 
 public:
-    DenseTensorBuilder();
+    DenseTensorBuilder() : DenseTensorBuilder(eval::ValueType::CellType::DOUBLE) { }
+    DenseTensorBuilder(eval::ValueType::CellType cellType);
     ~DenseTensorBuilder();
 
     Dimension defineDimension(const vespalib::string &dimension, size_t dimensionSize);

@@ -22,8 +22,13 @@ void
 TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 {
     if (auto denseTensor = dynamic_cast<const DenseTensorView *>(&tensor)) {
-        stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
-        DenseBinaryFormat::serialize(stream, *denseTensor);
+        if (denseTensor->type().cell_type() != eval::ValueType::CellType::DOUBLE) {
+            stream.putInt1_4Bytes(TYPED_DENSE_BINARY_FORMAT_TYPE);
+            DenseBinaryFormat(DenseBinaryFormat::EncodeType::NO_DEFAULT).serialize(stream, *denseTensor);
+        } else {
+            stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
+            DenseBinaryFormat(DenseBinaryFormat::EncodeType::DOUBLE_IS_DEFAULT).serialize(stream, *denseTensor);
+        }
     } else if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(&tensor)) {
         eval::SimpleTensor::encode(wrapped->get(), stream);
     } else {
@@ -44,7 +49,10 @@ TypedBinaryFormat::deserialize(nbostream &stream)
         return builder.build();
     }
     if (formatId == DENSE_BINARY_FORMAT_TYPE) {
-        return DenseBinaryFormat::deserialize(stream);
+        return DenseBinaryFormat(DenseBinaryFormat::EncodeType::DOUBLE_IS_DEFAULT).deserialize(stream);
+    }
+    if (formatId == TYPED_DENSE_BINARY_FORMAT_TYPE) {
+        return DenseBinaryFormat(DenseBinaryFormat::EncodeType::NO_DEFAULT).deserialize(stream);
     }
     if (formatId == MIXED_BINARY_FORMAT_TYPE) {
         stream.adjustReadPos(read_pos - stream.rp());
