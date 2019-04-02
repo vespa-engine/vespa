@@ -69,6 +69,12 @@ public class DenseBinaryFormatTestCase {
                 Arrays.toString(TypedBinaryFormat.encode(tensor)));
     }
 
+    @Test
+    public void testSerializationOfDifferentValueTypes() {
+        assertSerialization(TensorType.ValueType.DOUBLE, "tensor(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization(TensorType.ValueType.FLOAT, "tensor(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+    }
+
     private void assertSerialization(String tensorString) {
         assertSerialization(TensorType.ValueType.DOUBLE, Tensor.from(tensorString));
     }
