@@ -10,7 +10,7 @@ dependencies {
     compile 'com.google.jimfs:jimfs:1.1'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compileOnly guava
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
 }
 
 description = 'testutil'

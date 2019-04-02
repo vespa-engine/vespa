@@ -22,7 +22,7 @@ dependencies {
     providedCompile project(':vespa-athenz')
     providedCompile project(':jdisc-security-filters')
     compileOnly guava
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     compileOnly 'javax.ws.rs:javax.ws.rs-api:2.0.1'
 }

@@ -13,7 +13,7 @@ dependencies {
     providedCompile project(':configdefinitions')
     providedCompile project(':config-bundle')
     compileOnly guava
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
 }
 
 description = 'config-provisioning'

@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
     providedCompile project(':yolean')
     providedCompile project(':jdisc_http_service')
     providedCompile project(':jdisc_core')

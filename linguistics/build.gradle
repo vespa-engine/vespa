@@ -13,5 +13,5 @@ dependencies {
     providedCompile project(':component')
     providedCompile project(':config-bundle')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
 }

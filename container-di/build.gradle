@@ -14,7 +14,7 @@ dependencies {
     providedCompile project(':config-bundle')
     providedCompile project(':config')
     providedCompile project(':component')
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
 }
 
 compileTestJava.dependsOn generateConfigurationsTask(

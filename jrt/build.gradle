@@ -6,7 +6,7 @@ dependencies {
     compile 'com.yahoo.vespa:annotations:7.28.21'
     compile project(':security-utils')
     testCompile junit_4
-    testCompile 'org.bouncycastle:bcpkix-jdk15on:1.58'
+    testCompile bouncycastle
     providedCompile project(':vespajlib')
 }
 

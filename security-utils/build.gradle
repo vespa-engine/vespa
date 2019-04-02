@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.58'
+    compile bouncycastle
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
     testCompile junit_4
     testCompile hamcrest_library

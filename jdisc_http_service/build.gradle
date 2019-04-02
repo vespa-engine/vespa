@@ -11,8 +11,8 @@ dependencies {
     testCompile hamcrest_library
     testCompile 'org.testng:testng:6.10'
     testCompile 'org.springframework:spring-test:4.0.6.RELEASE'
-    testCompile 'org.bouncycastle:bcpkix-jdk15on:1.58'
-    compileOnly 'com.google.inject:guice:3.0'
+    testCompile bouncycastle
+    compileOnly guice
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
     providedCompile project(':jdisc_jetty')
     providedCompile project(':config-lib')

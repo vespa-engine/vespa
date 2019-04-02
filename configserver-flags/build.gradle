@@ -13,6 +13,6 @@ dependencies {
     providedCompile project(':vespajlib')
     providedCompile project(':yolean')
     compileOnly 'com.yahoo.vespa:annotations:7.28.21'
-    compileOnly 'com.google.inject:guice:3.0'
+    compileOnly guice
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.8.11.2'
 }

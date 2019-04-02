@@ -11,7 +11,7 @@ dependencies {
     compile project(':vespajlib')
     compile project(':vespalog')
     compile project(':filedistribution')
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.58'
+    compile bouncycastle
     testCompile junit_4
     testCompile hamcrest_core
 }

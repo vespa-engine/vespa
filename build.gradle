@@ -114,6 +114,8 @@ ext {
   http_core = 'org.apache.httpcomponents:httpcore:4.4.1'
   mockito = 'org.mockito:mockito-all:1.9.5'
   jaxb_api = 'javax.xml.bind:jaxb-api:2.3.0'
+  guice = 'com.google.inject:guice:3.0'
+  bouncycastle = 'org.bouncycastle:bcpkix-jdk15on:1.58'
 }
 
 task testReport(type: TestReport) {
