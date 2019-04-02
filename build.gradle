@@ -27,6 +27,7 @@ buildscript {
                   name: 'javacc-gradle-plugin',
                   version: '3.0.2'
   }
+
 }
 
 allprojects {
@@ -97,9 +98,7 @@ subprojects {
  
     
     test {
-      //testLogging {
-      //  showStandardStreams = true
-      //}
+      reports.html.enabled = false
 
       jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.net=ALL-UNNAMED', '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--illegal-access=warn'
     }
@@ -108,6 +107,37 @@ subprojects {
 
 ext {
 
+}
+
+task testReport(type: TestReport) {
+    setDescription('Generates a test report from all subproject test tasks')
+    setGroup(JavaBasePlugin.DOCUMENTATION_GROUP)
+
+    def testFailures = 0
+    destinationDir = file("$buildDir/reports/allTests")
+    reportOn subprojects*.test
+
+    subprojects {
+        test {
+            ignoreFailures true
+            afterSuite { td, tr ->
+                if (td.getParent() == null) {
+                    testFailures += tr.getFailedTestCount()
+                }
+            }
+        }
+    }
+
+    doLast {
+        if (testFailures > 0) {
+           throw new Exception("There were ${testFailures} test failures")
+        }
+    }
+}
+
+task build {
+    println "lets build"
+    dependsOn testReport
 }
 
 def generateConfigurationsTask(source, dest) { 
