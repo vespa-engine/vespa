@@ -17,14 +17,20 @@ public class DocumentInfo implements Cloneable {
     private final double metric;
     private final int partId;
     private final int distributionKey;
+    private final byte[] sortData;
 
     DocumentInfo(ByteBuffer buffer, QueryResultPacket owner) {
+        this(buffer, owner, null);
+    }
+
+    DocumentInfo(ByteBuffer buffer, QueryResultPacket owner, byte[] sortData) {
         byte[] rawGid = new byte[GlobalId.LENGTH];
         buffer.get(rawGid);
         globalId = new GlobalId(rawGid);
         metric = decodeMetric(buffer);
         partId = owner.getMldFeature() ? buffer.getInt() : 0;
         distributionKey = owner.getMldFeature() ? buffer.getInt() : 0;
+        this.sortData = sortData;
     }
 
     public DocumentInfo(GlobalId globalId, int metric, int partId, int distributionKey) {
@@ -32,6 +38,7 @@ public class DocumentInfo implements Cloneable {
         this.metric = metric;
         this.partId = partId;
         this.distributionKey = distributionKey;
+        this.sortData = null;
     }
 
     private double decodeMetric(ByteBuffer buffer) {
@@ -48,6 +55,10 @@ public class DocumentInfo implements Cloneable {
 
     /** Unique key for the node this document resides on */
     public int getDistributionKey() { return distributionKey; }
+
+    public byte[] getSortData() {
+        return sortData;
+    }
 
     public String toString() {
         return "document info [globalId=" + globalId + ", metric=" + metric + "]";

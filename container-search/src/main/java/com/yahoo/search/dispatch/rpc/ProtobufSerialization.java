@@ -181,13 +181,14 @@ public class ProtobufSerialization {
             result.hits().add(hit);
         }
 
+        var sorting = query.getRanking().getSorting();
         for (var replyHit : protobuf.getHitsList()) {
             FastHit hit = new FastHit();
             hit.setQuery(query);
 
             hit.setRelevance(new Relevance(replyHit.getRelevance()));
             hit.setGlobalId(new GlobalId(replyHit.getGlobalId().toByteArray()));
-
+            hit.setSortData(replyHit.getSortData().toByteArray(), sorting);
             hit.setFillable();
             hit.setCached(false);
 

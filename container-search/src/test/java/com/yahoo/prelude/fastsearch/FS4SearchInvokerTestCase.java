@@ -3,7 +3,6 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.fs4.BasicPacket;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.search.Query;
@@ -31,10 +30,10 @@ public class FS4SearchInvokerTestCase {
         var searcher = mockSearcher();
         var cluster = new MockSearchCluster("?", 1, 1);
         var fs4invoker = new FS4SearchInvoker(searcher, query, mockFailingChannel(), Optional.empty());
-        var interleave = new InterleavedSearchInvoker(Collections.singleton(fs4invoker), searcher, cluster, null);
+        var interleave = new InterleavedSearchInvoker(Collections.singleton(fs4invoker), cluster, null);
 
         long start = System.currentTimeMillis();
-        interleave.search(query, QueryPacket.create(null, null), null);
+        interleave.search(query, null);
         long elapsed = System.currentTimeMillis() - start;
 
         assertThat("Connection error should fail fast", elapsed, Matchers.lessThan(500L));
@@ -43,7 +42,7 @@ public class FS4SearchInvokerTestCase {
     private static VespaBackEndSearcher mockSearcher() {
         return new VespaBackEndSearcher() {
             @Override
-            protected Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
+            protected Result doSearch2(Query query, Execution execution) {
                 return null;
             }
 

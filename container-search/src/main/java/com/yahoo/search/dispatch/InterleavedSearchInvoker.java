@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
@@ -37,7 +35,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private static final Logger log = Logger.getLogger(InterleavedSearchInvoker.class.getName());
 
     private final Set<SearchInvoker> invokers;
-    private final VespaBackEndSearcher searcher;
     private final SearchCluster searchCluster;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
@@ -49,6 +46,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private long deadline = 0;
 
     private Result result = null;
+
     private long answeredDocs = 0;
     private long answeredActiveDocs = 0;
     private long answeredSoonActiveDocs = 0;
@@ -60,11 +58,10 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private boolean trimResult = false;
 
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, VespaBackEndSearcher searcher, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
+    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
-        this.searcher = searcher;
         this.searchCluster = searchCluster;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
@@ -76,7 +73,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
      * will be adjusted accordingly.
      */
     @Override
-    protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
+    protected void sendSearchRequest(Query query) throws IOException {
         this.query = query;
         invokers.forEach(invoker -> invoker.setMonitor(this));
         deadline = currentTime() + query.getTimeLeft();
@@ -88,7 +85,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         trimResult = originalHits != query.getHits() || originalOffset != query.getOffset();
 
         for (SearchInvoker invoker : invokers) {
-            invoker.sendSearchRequest(query, null);
+            invoker.sendSearchRequest(query);
             askedNodes++;
         }
 
@@ -128,10 +125,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private void trimResult(Execution execution) {
         if (trimResult) {
-            if (result.getHitOrderer() != null) {
-                searcher.fill(result, Execution.ATTRIBUTEPREFETCH, execution);
-            }
-
             result.hits().trim(query.getOffset(), query.getHits());
         }
     }
@@ -209,7 +202,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             result = partialResult;
             return;
         }
-
         result.mergeWith(partialResult);
         result.hits().addAll(partialResult.hits().asUnorderedHits());
     }

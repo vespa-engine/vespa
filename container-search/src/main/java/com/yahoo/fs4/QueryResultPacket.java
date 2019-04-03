@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 /**
  * A query result packet (code 217). This packet can be decoded only.
  *
@@ -108,10 +107,9 @@ public class QueryResultPacket extends Packet {
             nodesReplied = buffer.getShort();
         }
 
-        if (sortData && documentCount > 0) { // sort data is not needed - skip
-            buffer.position(buffer.position() + (documentCount -1) * 4); // one sortIndex int per document
-            int sortDataLengthInBytes = buffer.getInt();
-            buffer.position(buffer.position() + sortDataLengthInBytes);
+        byte[][] documentSortData = null;
+        if (sortData && documentCount > 0) {
+            documentSortData = decodeSortData(buffer, documentCount);
         }
 
         if (groupDataFeature) {
@@ -125,7 +123,7 @@ public class QueryResultPacket extends Packet {
         soonActiveDocs = buffer.getLong();
         degradedReason = buffer.getInt();
 
-        decodeDocuments(buffer, documentCount);
+        decodeDocuments(buffer, documentCount, documentSortData);
         if (propsFeature) {
             int numMaps = buffer.getInt();
             propsArray = new FS4Properties[numMaps];
@@ -134,6 +132,25 @@ public class QueryResultPacket extends Packet {
                 propsArray[i].decode(buffer);
             }
         }
+    }
+
+    private byte[][] decodeSortData(ByteBuffer buffer, int documentCount) {
+        int[] indexes = new int[documentCount];
+        indexes[0] = 0;
+        for (int i = 1; i < documentCount; i++) {
+            indexes[i] = buffer.getInt();
+        }
+
+        int sortDataLengthInBytes = buffer.getInt();
+        byte[][] ret = new byte[indexes.length][];
+
+        for (int i = 0; i < indexes.length; i++) {
+            int end = i + 1 >= indexes.length ? sortDataLengthInBytes : indexes[i + 1];
+            int len = end - indexes[i];
+            ret[i] = new byte[len];
+            buffer.get(ret[i], 0, len);
+        }
+        return ret;
     }
 
     private Number decodeMaxRank(ByteBuffer buffer) {
@@ -161,9 +178,10 @@ public class QueryResultPacket extends Packet {
         propsFeature     = (QRF_PROPERTIES & features) != 0;
     }
 
-    private void decodeDocuments(ByteBuffer buffer, int documentCount) {
+    private void decodeDocuments(ByteBuffer buffer, int documentCount, byte[][] documentSortData) {
         for (int i = 0; i < documentCount; i++) {
-            documents.add(new DocumentInfo(buffer, this));
+            byte[] sort = documentSortData == null ? null : documentSortData[i];
+            documents.add(new DocumentInfo(buffer, this, sort));
         }
     }
 
