@@ -144,7 +144,7 @@ public class RankingExpressionWithTensorTestCase {
     @Test
     public void requireThatInvalidTensorTypeSpecThrowsException() throws ParseException {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For constant tensor 'my_tensor' in rank profile 'my_profile': Illegal tensor type spec: Failed parsing element 'x' in type spec 'tensor(x)'");
+        exception.expectMessage("For constant tensor 'my_tensor' in rank profile 'my_profile': Illegal tensor type spec: A tensor type spec must be on the form tensor[<valuetype>]?(dimensionidentifier[{}|[length?]*), but was 'tensor(x)'. Dimension 'x' is on the wrong format. Examples: tensor(x[]), tensor<float>(name{}, x[10])");
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
                 "    constants {\n" +

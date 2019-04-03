@@ -69,16 +69,6 @@ public class BoundingBoxParserTestCase {
         all1234(parser);
     }
 
-    /**
-     * Tests various legal inputs and print the output
-     */
-    @Test
-    public void testPrint() {
-        String here = "n=63.418417 E=10.433033 S=37.7 W=-122.02";
-        parser = new BoundingBoxParser(here);
-        System.out.println(here+" -> "+parser);
-    }
-
     @Test
     public void testGeoPlanetExample() {
         /* example XML:

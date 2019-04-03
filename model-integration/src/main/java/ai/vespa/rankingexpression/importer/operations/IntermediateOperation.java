@@ -9,6 +9,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.TensorFunction;
 
@@ -17,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Wraps an imported operation node and produces the respective Vespa tensor
@@ -158,6 +160,19 @@ public abstract class IntermediateOperation {
 
     boolean allInputFunctionsPresent(int expected) {
         return verifyInputs(expected, IntermediateOperation::function);
+    }
+
+    /**
+     * Returns the largest value type among the input value types.
+     * This should only be called after it has been verified that input types are available.
+     *
+     * @throws IllegalArgumentException if a type cannot be uniquely determined
+     * @throws RuntimeException if called when input types are not available
+     */
+    TensorType.Value resultValueType() {
+        return TensorType.Value.largestOf(inputs.stream()
+                                                .map(input -> input.type().get().type().valueType())
+                                                .collect(Collectors.toList()));
     }
 
     /**

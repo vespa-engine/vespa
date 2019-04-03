@@ -27,20 +27,15 @@ public class ExpandDims extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
 
         IntermediateOperation axisOperation = inputs().get(1);
         if (!axisOperation.getConstantValue().isPresent()) {
-            throw new IllegalArgumentException("ExpandDims in " + name + ": " +
-                    "axis must be a constant.");
+            throw new IllegalArgumentException("ExpandDims in " + name + ": Axis must be a constant.");
         }
         Tensor axis = axisOperation.getConstantValue().get().asTensor();
-        if (axis.type().rank() != 0) {
-            throw new IllegalArgumentException("ExpandDims in " + name + ": " +
-                    "axis argument must be a scalar.");
-        }
+        if (axis.type().rank() != 0)
+            throw new IllegalArgumentException("ExpandDims in " + name + ": Axis argument must be a scalar.");
 
         OrderedTensorType inputType = inputs.get(0).type().get();
         int dimensionToInsert = (int)axis.asDouble();
@@ -48,7 +43,7 @@ public class ExpandDims extends IntermediateOperation {
             dimensionToInsert = inputType.dimensions().size() - dimensionToInsert;
         }
 
-        OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder(resultValueType());
         expandDimensions = new ArrayList<>();
         int dimensionIndex = 0;
         for (TensorType.Dimension dimension : inputType.dimensions()) {
@@ -66,12 +61,10 @@ public class ExpandDims extends IntermediateOperation {
 
     @Override
     protected TensorFunction lazyGetFunction() {
-        if (!allInputFunctionsPresent(2)) {
-            return null;
-        }
+        if ( ! allInputFunctionsPresent(2)) return null;
 
         // multiply with a generated tensor created from the reduced dimensions
-        TensorType.Builder typeBuilder = new TensorType.Builder();
+        TensorType.Builder typeBuilder = new TensorType.Builder(resultValueType());
         for (String name : expandDimensions) {
             typeBuilder.indexed(name, 1);
         }

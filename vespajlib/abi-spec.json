@@ -947,7 +947,7 @@
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public long denseSubspaceSize()",
-      "public static com.yahoo.tensor.TensorType createPartialType(java.util.List)"
+      "public static com.yahoo.tensor.TensorType createPartialType(com.yahoo.tensor.TensorType$Value, java.util.List)"
     ],
     "fields": []
   },
@@ -1162,11 +1162,11 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void <init>(com.yahoo.tensor.TensorType$ValueType)",
+      "public void <init>(com.yahoo.tensor.TensorType$Value)",
       "public varargs void <init>(com.yahoo.tensor.TensorType[])",
-      "public varargs void <init>(com.yahoo.tensor.TensorType$ValueType, com.yahoo.tensor.TensorType[])",
+      "public varargs void <init>(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType[])",
       "public void <init>(java.lang.Iterable)",
-      "public void <init>(com.yahoo.tensor.TensorType$ValueType, java.lang.Iterable)",
+      "public void <init>(com.yahoo.tensor.TensorType$Value, java.lang.Iterable)",
       "public int rank()",
       "public com.yahoo.tensor.TensorType$Builder set(com.yahoo.tensor.TensorType$Dimension)",
       "public com.yahoo.tensor.TensorType$Builder indexed(java.lang.String, long)",
@@ -1270,7 +1270,7 @@
     ],
     "fields": []
   },
-  "com.yahoo.tensor.TensorType$ValueType": {
+  "com.yahoo.tensor.TensorType$Value": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
     "attributes": [
@@ -1279,12 +1279,14 @@
       "enum"
     ],
     "methods": [
-      "public static com.yahoo.tensor.TensorType$ValueType[] values()",
-      "public static com.yahoo.tensor.TensorType$ValueType valueOf(java.lang.String)"
+      "public static com.yahoo.tensor.TensorType$Value[] values()",
+      "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)",
+      "public static com.yahoo.tensor.TensorType$Value largestOf(java.util.List)",
+      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)"
     ],
     "fields": [
-      "public static final enum com.yahoo.tensor.TensorType$ValueType DOUBLE",
-      "public static final enum com.yahoo.tensor.TensorType$ValueType FLOAT"
+      "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
+      "public static final enum com.yahoo.tensor.TensorType$Value FLOAT"
     ]
   },
   "com.yahoo.tensor.TensorType": {
@@ -1294,9 +1296,8 @@
       "public"
     ],
     "methods": [
-      "public final com.yahoo.tensor.TensorType$ValueType valueType()",
-      "public final com.yahoo.tensor.TensorType valueType(com.yahoo.tensor.TensorType$ValueType)",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
+      "public com.yahoo.tensor.TensorType$Value valueType()",
       "public int rank()",
       "public java.util.List dimensions()",
       "public java.util.Set dimensionNames()",
@@ -1325,7 +1326,7 @@
     "methods": [
       "public void <init>()",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
-      "public static java.util.List dimensionsFromSpec(java.lang.String)"
+      "public static com.yahoo.tensor.TensorType$Value toValueType(java.lang.String)"
     ],
     "fields": []
   },

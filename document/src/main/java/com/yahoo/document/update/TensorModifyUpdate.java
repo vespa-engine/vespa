@@ -38,7 +38,7 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
      * Converts the given tensor type to a type that is compatible for being used in this update (has only mapped dimensions).
      */
     public static TensorType convertDimensionsToMapped(TensorType type) {
-        TensorType.Builder builder = new TensorType.Builder();
+        TensorType.Builder builder = new TensorType.Builder(type.valueType());
         type.dimensions().stream().forEach(dim -> builder.mapped(dim.name()));
         return builder.build();
     }

@@ -141,7 +141,11 @@ public class Concat extends PrimitiveTensorFunction {
             if (tensor.type().dimensions().stream().anyMatch(d -> ! d.isIndexed()))
                 throw new IllegalArgumentException("Concat requires an indexed tensor, " +
                                                    "but got a tensor with type " + tensor.type());
-            Tensor unitTensor = Tensor.Builder.of(new TensorType.Builder().indexed(dimensionName, 1).build()).cell(1,0).build();
+            Tensor unitTensor = Tensor.Builder.of(new TensorType.Builder(tensor.type().valueType())
+                                                          .indexed(dimensionName, 1)
+                                                          .build())
+                                              .cell(1,0)
+                                              .build();
             return tensor.multiply(unitTensor);
         }
 

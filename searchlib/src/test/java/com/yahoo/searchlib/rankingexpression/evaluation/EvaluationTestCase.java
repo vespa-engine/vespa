@@ -238,6 +238,8 @@ public class EvaluationTestCase {
                                "{{x:0}:1}", "{}", "{{y:0,z:0}:1}");
         tester.assertEvaluates("tensor(x{}):{}",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "tensor(x{}):{ {x:1}:5 }");
+        tester.assertEvaluates("tensor<float>(x{}):{}",
+                               "tensor0 * tensor1", "{ {x:0}:3 }", "tensor<float>(x{}):{ {x:1}:5 }");
         tester.assertEvaluates("{ {x:0}:15 }",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "{ {x:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:15 }",

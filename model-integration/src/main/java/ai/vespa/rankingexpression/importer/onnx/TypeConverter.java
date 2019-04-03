@@ -36,7 +36,7 @@ class TypeConverter {
 
     private static OrderedTensorType fromOnnxType(Onnx.TypeProto type, String dimensionPrefix) {
         Onnx.TensorShapeProto shape = type.getTensorType().getShape();
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(TensorType.Value.DOUBLE);
         for (int i = 0; i < shape.getDimCount(); ++ i) {
             String dimensionName = dimensionPrefix + i;
             Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(i);

@@ -25,8 +25,29 @@ import java.util.stream.Collectors;
 public class TensorType {
 
     /** The permissible cell value types. Default is double. */
-    // Types added here must also be added to TensorTypeParser.parseValueTypeSpec
-    public enum Value { DOUBLE, FLOAT};
+    public enum Value {
+
+        // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
+        DOUBLE, FLOAT;
+
+        public static Value largestOf(List<Value> values) {
+            if (values.isEmpty()) return Value.DOUBLE; // Default
+            Value largest = null;
+            for (Value value : values) {
+                if (largest == null)
+                    largest = value;
+                else
+                    largest = largestOf(largest, value);
+            }
+            return largest;
+        }
+
+        public static Value largestOf(Value value1, Value value2) {
+            if (value1 == DOUBLE || value2 == DOUBLE) return DOUBLE;
+            return FLOAT;
+        }
+
+    };
 
     /** The empty tensor type - which is the same as a double */
     public static final TensorType empty = new TensorType(Value.DOUBLE, Collections.emptyList());
@@ -170,7 +191,7 @@ public class TensorType {
         if (this.equals(other)) return Optional.of(this); // shortcut
         if (this.dimensions.size() != other.dimensions.size()) return Optional.empty();
 
-        Builder b = new Builder();
+        Builder b = new Builder(TensorType.Value.largestOf(valueType, other.valueType));
         for (int i = 0; i < dimensions.size(); i++) {
             Dimension thisDim = this.dimensions().get(i);
             Dimension otherDim = other.dimensions().get(i);

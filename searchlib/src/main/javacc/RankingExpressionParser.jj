@@ -598,14 +598,26 @@ Reduce.Aggregator tensorReduceAggregator() :
 
 TensorType tensorTypeArgument() :
 {
-    TensorType.Builder builder = new TensorType.Builder();
+    TensorType.Builder builder;
+    TensorType.Value valueType;
 }
 {
+    valueType = optionalTensorValueTypeParameter()
+    { builder = new TensorType.Builder(valueType); }
     <LBRACE>
     ( tensorTypeDimension(builder) ) ?
     ( <COMMA> tensorTypeDimension(builder) ) *
     <RBRACE>
     { return builder.build(); }
+}
+
+TensorType.Value optionalTensorValueTypeParameter() :
+{
+    String valueType = "double";
+}
+{
+    ( <LT> valueType = identifier() <GT> )?
+    { return TensorTypeParser.toValueType(valueType); }
 }
 
 // NOTE: Only indexed bound dimensions are parsed currently, as that is what we need

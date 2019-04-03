@@ -319,7 +319,7 @@ public class MixedTensor implements Tensor {
         }
 
         public TensorType createBoundType() {
-            TensorType.Builder typeBuilder = new TensorType.Builder();
+            TensorType.Builder typeBuilder = new TensorType.Builder(type().valueType());
             for (int i = 0; i < type.dimensions().size(); ++i) {
                 TensorType.Dimension dimension = type.dimensions().get(i);
                 if (!dimension.isIndexed()) {
@@ -355,8 +355,8 @@ public class MixedTensor implements Tensor {
             this.type = type;
             this.mappedDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
             this.indexedDimensions = type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList());
-            this.sparseType = createPartialType(mappedDimensions);
-            this.denseType = createPartialType(indexedDimensions);
+            this.sparseType = createPartialType(type.valueType(), mappedDimensions);
+            this.denseType = createPartialType(type.valueType(), indexedDimensions);
         }
 
         public long indexOf(TensorAddress address) {
@@ -476,8 +476,8 @@ public class MixedTensor implements Tensor {
 
     }
 
-    public static TensorType createPartialType(List<TensorType.Dimension> dimensions) {
-        TensorType.Builder builder = new TensorType.Builder();
+    public static TensorType createPartialType(TensorType.Value valueType, List<TensorType.Dimension> dimensions) {
+        TensorType.Builder builder = new TensorType.Builder(valueType);
         for (TensorType.Dimension dimension : dimensions) {
             builder.set(dimension);
         }

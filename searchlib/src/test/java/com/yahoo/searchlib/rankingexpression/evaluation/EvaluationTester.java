@@ -40,7 +40,7 @@ public class EvaluationTester {
         int argumentIndex = 0;
         for (String argumentString : tensorArgumentStrings) {
             Tensor argument;
-            if (argumentString.startsWith("tensor(")) // explicitly decided type
+            if (argumentString.startsWith("tensor")) // explicitly decided type
                 argument = Tensor.from(argumentString);
             else // use mappedTensors+dimensions in tensor to decide type
                 argument = Tensor.from(typeFrom(argumentString, mappedTensors), argumentString);
