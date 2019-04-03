@@ -13,7 +13,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
@@ -26,11 +25,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
-import javax.ws.rs.InternalServerErrorException;
 import java.net.URI;
-import java.security.Principal;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -114,7 +109,7 @@ public class AthenzRoleFilter extends CorsRequestFilterBase {
                                                tenantDomain,
                                                application);
         } catch (ZmsClientException e) {
-            throw new InternalServerErrorException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
+            throw new RuntimeException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
         }
     }
 

@@ -59,14 +59,4 @@ public class RoleMembership { // TODO replace with Set<RoleWithContext>
         return "roles " + roles;
     }
 
-    /**
-     * A role resolver. Identity providers can implement this to translate their internal representation of role
-     * membership to a {@link RoleMembership}.
-     */
-    public interface Resolver {
-
-        RoleMembership membership(Principal user, Optional<String> path); // TODO get rid of path.
-
-    }
-
 }

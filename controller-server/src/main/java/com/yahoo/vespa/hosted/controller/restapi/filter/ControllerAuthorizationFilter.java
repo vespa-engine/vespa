@@ -13,8 +13,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.role.Action;
 import com.yahoo.vespa.hosted.controller.role.Role;
 import com.yahoo.vespa.hosted.controller.role.RoleMembership;
-import com.yahoo.yolean.chain.After;
-import com.yahoo.yolean.chain.Provides;
 
 import java.security.Principal;
 import java.util.Optional;
@@ -26,7 +24,6 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-@Provides("ControllerAuthorizationFilter")
 public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
