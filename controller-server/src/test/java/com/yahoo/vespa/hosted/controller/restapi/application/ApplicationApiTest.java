@@ -461,6 +461,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default");
 
+        // POST a 'restart application' in staging environment command
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-central-1/instance/default/restart", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              "Requested restart of tenant/tenant1/application/application1/environment/staging/region/us-central-1/instance/default");
+
+        // POST a 'restart application' in staging test command
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-central-1/instance/default/restart", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              "Requested restart of tenant/tenant1/application/application1/environment/test/region/us-central-1/instance/default");
+
+        // POST a 'restart application' in staging dev command
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-central-1/instance/default/restart", POST)
+                                      .userIdentity(USER_ID),
+                              "Requested restart of tenant/tenant1/application/application1/environment/dev/region/us-central-1/instance/default");
+
         // POST a 'restart application' command with a host filter (other filters not supported yet)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/restart?hostname=host1", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),

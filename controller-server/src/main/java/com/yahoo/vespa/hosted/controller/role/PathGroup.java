@@ -59,8 +59,7 @@ public enum PathGroup {
     /** Path used to restart application nodes. */ // TODO move to the above when everyone is on new pipeline.
     applicationRestart(Matcher.tenant,
                        Matcher.application,
-                       "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{ignored}/restart"),
-
+                       "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/restart"),
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,
                           Matcher.application,
