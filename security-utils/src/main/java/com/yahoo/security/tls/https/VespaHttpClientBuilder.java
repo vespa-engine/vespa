@@ -7,6 +7,7 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -97,7 +98,7 @@ public class VespaHttpClientBuilder {
             int port = originalUri.getPort();
             int rewrittenPort = port != -1 ? port : 80;
             try {
-                URI rewrittenUri = new URI("https", originalUri.getUserInfo(), originalUri.getHost(), rewrittenPort, originalUri.getPath(), originalUri.getQuery(), originalUri.getFragment());
+                URI rewrittenUri = new URIBuilder(originalUri).setScheme("https").setPort(rewrittenPort).build();
                 log.log(Level.FINE, () -> String.format("Uri rewritten from '%s' to '%s'", originalUri, rewrittenUri));
                 return rewrittenUri;
             } catch (URISyntaxException e) {
