@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import static java.util.Objects.requireNonNull;
 
@@ -14,7 +15,7 @@ public abstract class TenantSpec {
     private final TenantName tenant;
 
     protected TenantSpec(TenantName tenant) {
-        this.tenant = requireNonNull(tenant);
+        this.tenant = Tenant.requireName(requireNonNull(tenant));
     }
 
     /** The name of the tenant. */

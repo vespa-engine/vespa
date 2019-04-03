@@ -49,7 +49,7 @@ public abstract class Tenant {
         return Objects.hash(name);
     }
 
-    static TenantName requireName(TenantName name) {
+    public static TenantName requireName(TenantName name) {
         if ( ! name.value().matches("^(?=.{1,20}$)[a-z](-?[a-z0-9]+)*$")) {
             throw new IllegalArgumentException("New tenant or application names must start with a letter, may " +
                                                "contain no more than 20 characters, and may only contain lowercase " +
