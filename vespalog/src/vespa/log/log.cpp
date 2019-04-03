@@ -379,7 +379,7 @@ Logger::doEventProgress(const char *name, double value, double total)
 void
 Logger::doEventCount(const char *name, uint64_t value)
 {
-    doLog(event, "", 0, "count/1 name=\"%s\" value=%lu", name, value);
+    doLog(event, "", 0, "count/1 name=\"%s\" value=%" PRIu64, name, value);
 }
 
 void
