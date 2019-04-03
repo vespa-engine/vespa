@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
-public class AthenzRoleFilter extends CorsRequestFilterBase {
+public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need for this super anyway.
 
     private static final Logger logger = Logger.getLogger(AthenzRoleFilter.class.getName());
 
