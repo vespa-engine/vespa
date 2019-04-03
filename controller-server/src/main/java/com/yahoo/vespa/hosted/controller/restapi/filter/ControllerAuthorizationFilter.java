@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -30,38 +31,34 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
-    private final RoleMembership.Resolver roleResolver;
-    private final Controller controller;
+    private final SystemName system;
 
     @Inject
-    public ControllerAuthorizationFilter(RoleMembership.Resolver roleResolver,
-                                         Controller controller,
+    public ControllerAuthorizationFilter(Controller controller,
                                          CorsFilterConfig corsConfig) {
-        this(roleResolver, controller, Set.copyOf(corsConfig.allowedUrls()));
+        this(controller.system(), Set.copyOf(corsConfig.allowedUrls()));
     }
 
-    ControllerAuthorizationFilter(RoleMembership.Resolver roleResolver,
-                                  Controller controller,
+    ControllerAuthorizationFilter(SystemName system,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
-        this.roleResolver = roleResolver;
-        this.controller = controller;
+        this.system = system;
     }
 
     @Override
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             Principal principal = request.getUserPrincipal();
-            if (principal == null)
+            if ( ! (principal instanceof RolePrincipal))
                 return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
 
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
             // Avoid expensive lookups when request is always legal.
-            if (Role.everyone.limitedTo(controller.system()).allows(action, request.getUri()))
+            if (Role.everyone.limitedTo(system).allows(action, request.getUri()))
                 return Optional.empty();
 
-            RoleMembership roles = this.roleResolver.membership(principal, Optional.of(request.getRequestURI()));
+            RoleMembership roles = ((RolePrincipal) principal).roles();
             if (roles.allows(action, request.getUri()))
                 return Optional.empty();
         }

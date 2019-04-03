@@ -32,7 +32,8 @@ public class RoleMembership { // TODO replace with Set<RoleWithContext>
                                                 other.roles.entrySet().stream())
                                         .collect(Collectors.toMap(Map.Entry::getKey,
                                                                   Map.Entry::getValue,
-                                                                  (set1, set2) -> Stream.concat(set1.stream(), set2.stream()).collect(Collectors.toUnmodifiableSet()))));
+                                                                  (set1, set2) -> Stream.concat(set1.stream(), set2.stream())
+                                                                                        .collect(Collectors.toUnmodifiableSet()))));
     }
 
     /**

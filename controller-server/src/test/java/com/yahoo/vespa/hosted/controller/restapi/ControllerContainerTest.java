@@ -96,7 +96,6 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.restapi.filter.AthenzRoleResolver'/>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +
             "  </handler>\n" +
@@ -134,6 +133,7 @@ public class ControllerContainerTest {
             "    <filtering>\n" +
             "      <request-chain id='default'>\n" +
             "        <filter id='com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock'/>\n" +
+            "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.AthenzRoleFilter'/>\n" +
             "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
             "        <binding>http://*/*</binding>\n" +
             "      </request-chain>\n" +

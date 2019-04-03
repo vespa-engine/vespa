@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.role.Role;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URI;
 import java.util.Optional;
 import java.util.Set;
 
@@ -29,9 +31,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author jonmv
  */
-public class AthenzRoleResolverTest {
-
-    private static final ObjectMapper mapper = new ObjectMapper();
+public class AthenzRoleFilterTest {
 
     private static final AthenzPrincipal USER = new AthenzPrincipal(new AthenzUser("john"));
     private static final AthenzPrincipal HOSTED_OPERATOR = new AthenzPrincipal(new AthenzUser("hosted-operator"));
@@ -42,20 +42,21 @@ public class AthenzRoleResolverTest {
     private static final TenantName TENANT = TenantName.from("mytenant");
     private static final TenantName TENANT2 = TenantName.from("othertenant");
     private static final ApplicationName APPLICATION = ApplicationName.from("myapp");
-    private static final Optional<String> NO_CONTEXT_PATH = Optional.of("/application/v4/");
-    private static final Optional<String> TENANT_CONTEXT_PATH = Optional.of("/application/v4/tenant/mytenant/");
-    private static final Optional<String> APPLICATION_CONTEXT_PATH = Optional.of("/application/v4/tenant/mytenant/application/myapp/");
-    private static final Optional<String> TENANT2_CONTEXT_PATH = Optional.of("/application/v4/tenant/othertenant/");
-    private static final Optional<String> APPLICATION2_CONTEXT_PATH = Optional.of("/application/v4/tenant/othertenant/application/myapp/");
+    private static final URI NO_CONTEXT_PATH = URI.create("/application/v4/");
+    private static final URI TENANT_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/");
+    private static final URI APPLICATION_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/");
+    private static final URI TENANT2_CONTEXT_PATH = URI.create("/application/v4/tenant/othertenant/");
+    private static final URI APPLICATION2_CONTEXT_PATH = URI.create("/application/v4/tenant/othertenant/application/myapp/");
 
     private ControllerTester tester;
-    private AthenzRoleResolver resolver;
+    private AthenzRoleFilter filter;
 
     @Before
     public void setup() {
         tester = new ControllerTester();
-        resolver = new AthenzRoleResolver(new AthenzFacade(new AthenzClientFactoryMock(tester.athenzDb())),
-                                          tester.controller());
+        filter = new AthenzRoleFilter(new CorsFilterConfig.Builder().build(),
+                                      new AthenzFacade(new AthenzClientFactoryMock(tester.athenzDb())),
+                                      tester.controller());
 
         tester.athenzDb().hostedOperators.add(HOSTED_OPERATOR.getIdentity());
         tester.createTenant(TENANT.value(), TENANT_DOMAIN.getName(), null);
@@ -72,51 +73,51 @@ public class AthenzRoleResolverTest {
 
         // Only unprivileged users are members of the everyone role.
         assertEquals(emptySet(),
-                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
+                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.everyone));
+                     filter.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.everyone));
         assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     resolver.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.everyone));
+                     filter.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.everyone));
         assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     resolver.membership(TENANT_PIPELINE, NO_CONTEXT_PATH).contextsFor(Role.everyone));
+                     filter.membership(TENANT_PIPELINE, NO_CONTEXT_PATH).contextsFor(Role.everyone));
         assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     resolver.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
+                     filter.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
 
         // Only operators are members of the operator role.
         assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     resolver.membership(HOSTED_OPERATOR, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
+                     filter.membership(HOSTED_OPERATOR, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.hostedOperator));
+                     filter.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.hostedOperator));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.hostedOperator));
+                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.hostedOperator));
         assertEquals(emptySet(),
-                     resolver.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
+                     filter.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
 
         // Only tenant admins are tenant admins of their tenants.
         assertEquals(emptySet(),
-                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(), // TODO this is wrong, but we can't do better until we ask ZMS for roles.
-                     resolver.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+                     filter.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(Set.of(Context.limitedTo(TENANT, tester.controller().system())),
-                     resolver.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+                     filter.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+                     filter.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
         assertEquals(emptySet(),
-                     resolver.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+                     filter.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
 
         // Only build services are pipeline operators of their applications.
         assertEquals(emptySet(),
-                     resolver.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
+                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_ADMIN, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
+                     filter.membership(TENANT_ADMIN, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(Set.of(Context.limitedTo(TENANT, APPLICATION, tester.controller().system())),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
+                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(emptySet(),
-                     resolver.membership(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
+                     filter.membership(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
         assertEquals(emptySet(),
-                     resolver.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
+                     filter.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
     }
 
 }

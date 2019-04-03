@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.security.Principal;
 import java.util.Optional;
 import java.util.Set;
 
@@ -33,37 +34,45 @@ import static org.junit.Assert.assertTrue;
 public class ControllerAuthorizationFilterTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static AthenzIdentity identity = new AthenzUser("user");
 
     @Test
     public void operator() {
         ControllerTester tester = new ControllerTester();
-        RoleMembership.Resolver operatorResolver = (user, path) -> Role.hostedOperator.limitedTo(tester.controller().system());
-        ControllerAuthorizationFilter filter = createFilter(tester, operatorResolver);
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", identity)));
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        RolePrincipal operatorPrincipal = new RolePrincipal() {
+            @Override public RoleMembership roles() { return Role.hostedOperator.limitedTo(tester.controller().system()); }
+            @Override public String getName() { return "operator"; }
+        };
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", operatorPrincipal)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", operatorPrincipal)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", operatorPrincipal)));
     }
 
     @Test
     public void unprivileged() {
         ControllerTester tester = new ControllerTester();
-        RoleMembership.Resolver emptyResolver = (user, path) -> Role.everyone.limitedTo(tester.controller().system());
-        ControllerAuthorizationFilter filter = createFilter(tester, emptyResolver);
-        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", identity)));
+        RolePrincipal everyonePrincipal = new RolePrincipal() {
+            @Override public RoleMembership roles() { return Role.everyone.limitedTo(tester.controller().system()); }
+            @Override public String getName() { return "user"; }
+        };
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", everyonePrincipal)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", everyonePrincipal)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", everyonePrincipal)));
     }
 
     @Test
     public void unprivilegedInPublic() {
         ControllerTester tester = new ControllerTester();
         tester.zoneRegistry().setSystemName(SystemName.Public);
-        RoleMembership.Resolver emptyResolver = (user, path) -> Role.everyone.limitedTo(tester.controller().system());
-        ControllerAuthorizationFilter filter = createFilter(tester, emptyResolver);
-        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
-        assertIsForbidden(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", identity)));
+        RolePrincipal everyonePrincipal = new RolePrincipal() {
+            @Override public RoleMembership roles() { return Role.everyone.limitedTo(tester.controller().system()); }
+            @Override public String getName() { return "user"; }
+        };
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", everyonePrincipal)));
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", everyonePrincipal)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", everyonePrincipal)));
     }
 
     private static void assertIsAllowed(Optional<AuthorizationResponse> response) {
@@ -77,8 +86,8 @@ public class ControllerAuthorizationFilterTest {
         assertEquals("Invalid status code", FORBIDDEN, response.get().statusCode);
     }
 
-    private static ControllerAuthorizationFilter createFilter(ControllerTester tester, RoleMembership.Resolver resolver) {
-        return new ControllerAuthorizationFilter(resolver, tester.controller(), Set.of("http://localhost"));
+    private static ControllerAuthorizationFilter createFilter(ControllerTester tester) {
+        return new ControllerAuthorizationFilter(tester.controller().system(), Set.of("http://localhost"));
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,
@@ -89,9 +98,8 @@ public class ControllerAuthorizationFilterTest {
                        .map(response -> new AuthorizationResponse(response.getStatus(), getErrorMessage(responseHandlerMock)));
     }
 
-    private static DiscFilterRequest createRequest(Method method, String path, AthenzIdentity identity) {
-        Request request = new Request(path, new byte[0], Request.Method.valueOf(method.name()),
-                                      new AthenzPrincipal(identity));
+    private static DiscFilterRequest createRequest(Method method, String path, Principal principal) {
+        Request request = new Request(path, new byte[0], Request.Method.valueOf(method.name()), principal);
         return new ApplicationRequestToDiscFilterRequestWrapper(request);
     }
 
