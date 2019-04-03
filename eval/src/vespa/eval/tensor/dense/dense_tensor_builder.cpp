@@ -6,7 +6,6 @@
 #include <limits>
 #include <algorithm>
 
-
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
@@ -37,10 +36,10 @@ validateLabelNotSpecified(size_t oldLabel, const vespalib::string &dimension)
 }
 
 eval::ValueType
-makeValueType(eval::ValueType::CellType cellType, std::vector<eval::ValueType::Dimension> &&dimensions) {
+makeValueType(std::vector<eval::ValueType::Dimension> &&dimensions) {
     return (dimensions.empty() ?
             eval::ValueType::double_type() :
-            eval::ValueType::tensor_type(cellType, std::move(dimensions)));
+            eval::ValueType::tensor_type(std::move(dimensions)));
 }
 
 }
@@ -83,8 +82,7 @@ DenseTensorBuilder::calculateCellAddress()
         const auto &dim = _dimensions[i];
         if (label == UNDEFINED_LABEL) {
             throw IllegalArgumentException(make_string("Label for dimension '%s' is undefined. "
-                    "Expected a value in the range [0, %u>",
-                    dim.name.c_str(), dim.size));
+                    "Expected a value in the range [0, %u>", dim.name.c_str(), dim.size));
         }
         result += (label * multiplier);
         multiplier *= dim.size;
@@ -93,9 +91,8 @@ DenseTensorBuilder::calculateCellAddress()
     return result;
 }
 
-DenseTensorBuilder::DenseTensorBuilder(eval::ValueType::CellType cellType)
-    : _cellType(cellType),
-      _dimensionsEnum(),
+DenseTensorBuilder::DenseTensorBuilder()
+    : _dimensionsEnum(),
       _dimensions(),
       _cells(),
       _addressBuilder(),
@@ -152,13 +149,13 @@ DenseTensorBuilder::addCell(double value)
     return *this;
 }
 
-Tensor::UP
+std::unique_ptr<DenseTensor>
 DenseTensorBuilder::build()
 {
     if (_cells.empty()) {
         allocateCellsStorage();
     }
-    Tensor::UP result = std::make_unique<DenseTensor>(makeValueType(_cellType, std::move(_dimensions)), std::move(_cells));
+    auto result = std::make_unique<DenseTensor>(makeValueType(std::move(_dimensions)), std::move(_cells));
     _dimensionsEnum.clear();
     _dimensions.clear();
     DenseTensor::Cells().swap(_cells);

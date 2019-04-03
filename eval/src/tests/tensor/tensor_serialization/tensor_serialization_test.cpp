@@ -11,11 +11,12 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <ostream>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 
 using namespace vespalib::tensor;
 using vespalib::nbostream;
 using ExpBuffer = std::vector<uint8_t>;
-using CellType = vespalib::eval::ValueType::CellType;
+using SerializeFormat = vespalib::tensor::DenseTensorView::SerializeFormat;
 
 namespace std {
 
@@ -33,16 +34,13 @@ std::ostream &operator<<(std::ostream &out, const std::vector<uint8_t> &rhs)
 
 }
 
-namespace vespalib {
-
-namespace tensor {
+namespace vespalib::tensor {
 
 static bool operator==(const Tensor &lhs, const Tensor &rhs)
 {
     return lhs.equals(rhs);
 }
 
-}
 }
 
 template <class BuilderType>
@@ -85,7 +83,7 @@ struct Fixture
         auto formatId = wrapStream.getInt1_4Bytes();
         ASSERT_EQUAL(formatId, 1u); // sparse format
         SparseBinaryFormat::deserialize(wrapStream, builder);
-        EXPECT_TRUE(wrapStream.size() == 0);
+        EXPECT_TRUE(wrapStream.empty());
         auto ret = builder.build();
         checkDeserialize<BuilderType>(stream, *ret);
         stream.adjustReadPos(stream.size());
@@ -147,8 +145,10 @@ TEST_F("test tensor serialization for SparseTensor", SparseFixture)
 
 struct DenseFixture
 {
-    Tensor::UP createTensor(CellType cellType, const DenseTensorCells &cells) {
-        return TensorFactory::createDense(cellType, cells);
+    Tensor::UP createTensor(SerializeFormat format, const DenseTensorCells &cells) {
+        auto tensor =  TensorFactory::createDense(cells);
+        dynamic_cast<DenseTensorView &>(*tensor).serializeAs(format);
+        return tensor;
     }
 
     void serialize(nbostream &stream, const Tensor &tensor) {
@@ -163,9 +163,9 @@ struct DenseFixture
         return ret;
     }
     void assertSerialized(const ExpBuffer &exp, const DenseTensorCells &rhs) {
-        assertSerialized(exp, CellType::DOUBLE, rhs);
+        assertSerialized(exp, SerializeFormat::DOUBLE, rhs);
     }
-    void assertSerialized(const ExpBuffer &exp, CellType cellType, const DenseTensorCells &rhs) {
+    void assertSerialized(const ExpBuffer &exp, SerializeFormat cellType, const DenseTensorCells &rhs) {
         Tensor::UP rhsTensor(createTensor(cellType, rhs));
         nbostream rhsStream;
         serialize(rhsStream, *rhsTensor);
@@ -272,7 +272,7 @@ TEST_F("test 'float' cells", DenseFixture) {
                                 0x00, 0x00, 0x00, 0x00,
                                 0x00, 0x00, 0x00, 0x00,
                                 0x40, 0x40, 0x00, 0x00 },
-                               CellType::FLOAT, { {{{"x",2}, {"y",4}}, 3} }));
+                               SerializeFormat::FLOAT, { {{{"x",2}, {"y",4}}, 3} }));
 }
 
 

@@ -138,7 +138,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
     if (is_dense && is_sparse) {
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
     } else if (is_dense) {
-        DenseTensorBuilder builder(ValueType::CellType::DOUBLE);
+        DenseTensorBuilder builder;
         std::map<vespalib::string,DenseTensorBuilder::Dimension> dimension_map;
         for (const auto &dimension: type.dimensions()) {
             dimension_map[dimension.name] = builder.defineDimension(dimension.name, dimension.size);

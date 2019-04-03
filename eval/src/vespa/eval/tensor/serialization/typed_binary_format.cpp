@@ -22,7 +22,7 @@ void
 TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 {
     if (auto denseTensor = dynamic_cast<const DenseTensorView *>(&tensor)) {
-        if (denseTensor->type().cell_type() != eval::ValueType::CellType::DOUBLE) {
+        if (denseTensor->serializeAs() != DenseTensorView::SerializeFormat::DOUBLE) {
             stream.putInt1_4Bytes(TYPED_DENSE_BINARY_FORMAT_TYPE);
             DenseBinaryFormat(DenseBinaryFormat::EncodeType::NO_DEFAULT).serialize(stream, *denseTensor);
         } else {

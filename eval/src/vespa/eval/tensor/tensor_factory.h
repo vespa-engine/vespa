@@ -21,11 +21,7 @@ public:
     static std::unique_ptr<Tensor>
     create(const TensorCells &cells, const TensorDimensions &dimensions, TensorBuilder &builder);
     static std::unique_ptr<Tensor>
-    createDense(eval::ValueType::CellType cellType, const DenseTensorCells &cells);
-    static std::unique_ptr<Tensor>
-    createDense(const DenseTensorCells &cells) {
-        return createDense(eval::ValueType::CellType::DOUBLE, cells);
-    }
+    createDense(const DenseTensorCells &cells);
 };
 
 }

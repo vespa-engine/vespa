@@ -10,7 +10,7 @@ using vespalib::nbostream;
 
 namespace vespalib::tensor {
 
-using CellType = eval::ValueType::CellType;
+using SerializationFormat = DenseTensorView::SerializeFormat;
 using Dimension = eval::ValueType::Dimension;
 
 
@@ -22,10 +22,10 @@ constexpr int DOUBLE_VALUE_TYPE = 0;
 constexpr int FLOAT_VALUE_TYPE = 1;
 
 eval::ValueType
-makeValueType(CellType cellType, std::vector<Dimension> &&dimensions) {
+makeValueType(std::vector<Dimension> &&dimensions) {
     return (dimensions.empty() ?
             eval::ValueType::double_type() :
-            eval::ValueType::tensor_type(cellType, std::move(dimensions)));
+            eval::ValueType::tensor_type(std::move(dimensions)));
 }
 
 size_t
@@ -49,14 +49,14 @@ encodeCells(nbostream &stream, DenseTensorView::CellsRef cells) {
 }
 
 void
-encodeValueType(nbostream & stream, CellType valueType, EncodeType encodeType) {
+encodeValueType(nbostream & stream, SerializationFormat valueType, EncodeType encodeType) {
     switch (valueType) {
-        case CellType::DOUBLE:
+        case SerializationFormat::DOUBLE:
             if (encodeType != EncodeType::DOUBLE_IS_DEFAULT) {
                 stream.putInt1_4Bytes(DOUBLE_VALUE_TYPE);
             }
             break;
-        case CellType::FLOAT:
+        case SerializationFormat::FLOAT:
             stream.putInt1_4Bytes(FLOAT_VALUE_TYPE);
             break;
     }
@@ -77,20 +77,20 @@ decodeDimensions(nbostream & stream, std::vector<Dimension> & dimensions) {
     return cellsSize;
 }
 
-CellType
+SerializationFormat
 decodeCellType(nbostream & stream, EncodeType encodeType) {
     if (encodeType != EncodeType::DOUBLE_IS_DEFAULT) {
         uint32_t serializedType = stream.getInt1_4Bytes();
         switch (serializedType) {
             case DOUBLE_VALUE_TYPE:
-                return CellType::DOUBLE;
+                return SerializationFormat::DOUBLE;
             case FLOAT_VALUE_TYPE:
-                return  CellType::FLOAT;
+                return  SerializationFormat::FLOAT;
             default:
                 throw IllegalArgumentException(make_string("Received unknown tensor value type = %u. Only 0(double), or 1(float) are legal.", serializedType));
         }
     } else {
-        return CellType::DOUBLE;
+        return SerializationFormat::DOUBLE;
     }
 }
 
@@ -110,16 +110,16 @@ void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 {
     const eval::ValueType & type = tensor.fast_type();
-    encodeValueType(stream, type.cell_type(), _encodeType);
+    encodeValueType(stream, tensor.serializeAs(), _encodeType);
     size_t cellsSize = encodeDimensions(stream, type);
 
     DenseTensorView::CellsRef cells = tensor.cellsRef();
     assert(cells.size() == cellsSize);
-    switch (type.cell_type()) {
-        case CellType::DOUBLE:
+    switch (tensor.serializeAs()) {
+        case SerializationFormat::DOUBLE:
             encodeCells<double>(stream, cells);
             break;
-        case CellType::FLOAT:
+        case SerializationFormat::FLOAT:
             encodeCells<float>(stream, cells);
             break;
     }
@@ -128,21 +128,21 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 std::unique_ptr<DenseTensor>
 DenseBinaryFormat::deserialize(nbostream &stream)
 {
-    CellType cellType = decodeCellType(stream, _encodeType);
+    SerializationFormat cellType = decodeCellType(stream, _encodeType);
     std::vector<Dimension> dimensions;
     size_t cellsSize = decodeDimensions(stream,dimensions);
     DenseTensor::Cells cells;
     cells.reserve(cellsSize);
     switch (cellType) {
-        case CellType::DOUBLE:
+        case SerializationFormat::DOUBLE:
             decodeCells<double>(stream, cellsSize,cells);
             break;
-        case CellType::FLOAT:
+        case SerializationFormat::FLOAT:
             decodeCells<float>(stream, cellsSize,cells);
             break;
     }
 
-    return std::make_unique<DenseTensor>(makeValueType(cellType, std::move(dimensions)), std::move(cells));
+    return std::make_unique<DenseTensor>(makeValueType(std::move(dimensions)), std::move(cells));
 }
 
 }

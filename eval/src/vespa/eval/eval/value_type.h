@@ -16,7 +16,6 @@ class ValueType
 {
 public:
     enum class Type { ANY, ERROR, DOUBLE, TENSOR };
-    enum class CellType {FLOAT, DOUBLE};
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
@@ -37,17 +36,13 @@ public:
 
 private:
     Type     _type;
-    CellType _cellType;
     std::vector<Dimension> _dimensions;
 
-    explicit ValueType(Type type_in)
-        : ValueType(type_in, CellType::DOUBLE) {}
-    ValueType(Type type_in, CellType cellType)
-        : _type(type_in), _cellType(cellType), _dimensions() {}
+    ValueType(Type type_in)
+        : _type(type_in), _dimensions() {}
+
     ValueType(Type type_in, std::vector<Dimension> &&dimensions_in)
-        : ValueType(type_in, CellType::DOUBLE, std::move(dimensions_in)) {}
-    ValueType(Type type_in, CellType cellType, std::vector<Dimension> &&dimensions_in)
-        : _type(type_in), _cellType(cellType), _dimensions(std::move(dimensions_in)) {}
+        : _type(type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
     ValueType(ValueType &&) = default;
@@ -56,7 +51,6 @@ public:
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     Type type() const { return _type; }
-    CellType cell_type() const { return _cellType; }
     bool is_any() const { return (_type == Type::ANY); }
     bool is_error() const { return (_type == Type::ERROR); }
     bool is_double() const { return (_type == Type::DOUBLE); }
@@ -88,8 +82,7 @@ public:
     static ValueType any_type() { return ValueType(Type::ANY); }
     static ValueType error_type() { return ValueType(Type::ERROR); };
     static ValueType double_type() { return ValueType(Type::DOUBLE); }
-    static ValueType tensor_type(std::vector<Dimension> dimensions_in) { return tensor_type(CellType::DOUBLE, dimensions_in); }
-    static ValueType tensor_type(CellType cellType, std::vector<Dimension> dimensions_in);
+    static ValueType tensor_type(std::vector<Dimension> dimensions_in);
     static ValueType from_spec(const vespalib::string &spec);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);

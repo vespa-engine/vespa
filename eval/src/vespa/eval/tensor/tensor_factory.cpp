@@ -37,10 +37,10 @@ TensorFactory::create(const TensorCells &cells, const TensorDimensions &dimensio
 
 
 std::unique_ptr<Tensor>
-TensorFactory::createDense(eval::ValueType::CellType cellType, const DenseTensorCells &cells)
+TensorFactory::createDense(const DenseTensorCells &cells)
 {
     std::map<std::string, size_t> dimensionSizes;
-    DenseTensorBuilder builder(cellType);
+    DenseTensorBuilder builder;
     for (const auto &cell : cells) {
         for (const auto &addressElem : cell.first) {
             dimensionSizes[addressElem.first] = std::max(dimensionSizes[addressElem.first], (addressElem.second + 1));

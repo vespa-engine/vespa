@@ -40,7 +40,7 @@ assertTensorSpec(const TensorSpec &expSpec, const Tensor &tensor)
 struct Fixture
 {
     Builder builder;
-    Fixture() : builder(ValueType::CellType::DOUBLE) {}
+    Fixture() : builder() {}
 };
 
 Tensor::UP
