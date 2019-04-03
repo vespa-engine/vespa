@@ -65,7 +65,7 @@ public class UriPattern implements Comparable<UriPattern> {
         if (!matcher.find()) {
             throw new IllegalArgumentException(uri);
         }
-        scheme = GlobPattern.compile(normalizeScheme(resolvePatternComponent(matcher.group(1))));
+        scheme = GlobPattern.compile(resolvePatternComponent(matcher.group(1)));
         host = GlobPattern.compile(resolvePatternComponent(matcher.group(2)));
         port = resolvePortPattern(matcher.group(4));
         path = GlobPattern.compile(resolvePatternComponent(matcher.group(7)));
@@ -91,7 +91,7 @@ public class UriPattern implements Comparable<UriPattern> {
             return null;
         }
         // Match scheme before host because it has a higher chance of differing (e.g. http versus https)
-        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(resolveUriComponent(uri.getScheme())));
+        GlobPattern.Match schemeMatch = scheme.match(resolveUriComponent(uri.getScheme()));
         if (schemeMatch == null) {
             return null;
         }
@@ -170,11 +170,6 @@ public class UriPattern implements Comparable<UriPattern> {
             case "https": return 443;
             default: return -1;
         }
-    }
-
-    private static String normalizeScheme(String scheme) {
-        if (scheme.equals("https")) return "http"; // handle 'https' in bindings and uris as 'http'
-        return scheme;
     }
 
     /**

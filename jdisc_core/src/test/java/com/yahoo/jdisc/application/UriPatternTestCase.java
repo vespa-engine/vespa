@@ -295,15 +295,6 @@ public class UriPatternTestCase {
         assertMatch(httpsPattern, "https://host/path", NO_GROUPS);
     }
 
-    @Test
-    public void requireThatHttpsSchemeIsHandledAsHttp() {
-        UriPattern httpPattern = new UriPattern("http://host:80/path");
-        assertMatch(httpPattern, "https://host:80/path", NO_GROUPS);
-
-        UriPattern httpsPattern = new UriPattern("https://host:443/path");
-        assertMatch(httpsPattern, "http://host:443/path", NO_GROUPS);
-    }
-
     private static void assertIllegalPattern(String uri) {
         try {
             new UriPattern(uri);
