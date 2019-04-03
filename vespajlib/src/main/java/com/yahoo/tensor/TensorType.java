@@ -167,10 +167,14 @@ public class TensorType {
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if (other == null || getClass() != other.getClass()) return false;
-        return dimensions.equals(((TensorType)other).dimensions);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TensorType other = (TensorType)o;
+        if ( this.valueType != other.valueType) return false;
+        if ( ! this.dimensions.equals(other.dimensions)) return false;
+        return true;
     }
 
     /** Returns whether the given type has the same dimension names as this */
