@@ -149,6 +149,7 @@ include(':vespalog')
 include(':vsm')
 include(':yolean')
 include(':zkfacade')
+include(':vespa-testrunner-components')
 
 // extras:
 include(':configgen')
@@ -214,6 +215,8 @@ project(':jaxrs_client_utils').projectDir = file('jaxrs_client_utils')
 project(':jaxrs_utils').projectDir = file('jaxrs_utils')
 project(':jdisc-security-filters').projectDir = file('jdisc-security-filters')
 project(':jdisc_core').projectDir = file('jdisc_core')
+project(':vespa-testrunner-components').projectDir = file('vespa-testrunner-components')
+
 /*
 project(':integration-test-parent:integration_test').projectDir = file('jdisc_core_test/integration_test')
 project(':integration-test-parent:test_bundles:app-a').projectDir = file('jdisc_core_test/test_bundles/app-a')

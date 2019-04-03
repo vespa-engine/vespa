@@ -12,6 +12,7 @@ dependencies {
     compile project(':jrt')
     compile protobuf_3
     testCompile junit_4
+    testCompile mockito
 }
 
 description = 'logserver'
