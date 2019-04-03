@@ -11,23 +11,61 @@
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
 
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
+
 LOG_SETUP(".eval.tensor.serialization.typed_binary_format");
 
 using vespalib::nbostream;
 
 namespace vespalib::tensor {
 
+namespace  {
+
+constexpr uint32_t SPARSE_BINARY_FORMAT_TYPE = 1u;
+constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
+constexpr uint32_t MIXED_BINARY_FORMAT_TYPE = 3u;
+constexpr uint32_t TYPED_DENSE_BINARY_FORMAT_TYPE = 4u;
+
+constexpr uint32_t DOUBLE_VALUE_TYPE = 0;
+constexpr uint32_t FLOAT_VALUE_TYPE = 1;
+
+uint32_t
+format2Encoding(SerializeFormat format) {
+    switch (format) {
+        case SerializeFormat::DOUBLE:
+            return DOUBLE_VALUE_TYPE;
+        case SerializeFormat::FLOAT:
+            return FLOAT_VALUE_TYPE;
+    }
+    abort();
+}
+
+SerializeFormat
+encoding2Format(uint32_t serializedType) {
+    switch (serializedType) {
+        case DOUBLE_VALUE_TYPE:
+            return SerializeFormat::DOUBLE;
+        case FLOAT_VALUE_TYPE:
+            return  SerializeFormat::FLOAT;
+        default:
+            throw IllegalArgumentException(make_string("Received unknown tensor value type = %u. Only 0(double), or 1(float) are legal.", serializedType));
+    }
+}
+
+}
 
 void
-TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
+TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor, SerializeFormat format)
 {
     if (auto denseTensor = dynamic_cast<const DenseTensorView *>(&tensor)) {
-        if (denseTensor->serializeAs() != DenseTensorView::SerializeFormat::DOUBLE) {
+        if (format != SerializeFormat::DOUBLE) {
             stream.putInt1_4Bytes(TYPED_DENSE_BINARY_FORMAT_TYPE);
-            DenseBinaryFormat(DenseBinaryFormat::EncodeType::NO_DEFAULT).serialize(stream, *denseTensor);
+            stream.putInt1_4Bytes(format2Encoding(format));
+            DenseBinaryFormat(format).serialize(stream, *denseTensor);
         } else {
             stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
-            DenseBinaryFormat(DenseBinaryFormat::EncodeType::DOUBLE_IS_DEFAULT).serialize(stream, *denseTensor);
+            DenseBinaryFormat(SerializeFormat::DOUBLE).serialize(stream, *denseTensor);
         }
     } else if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(&tensor)) {
         eval::SimpleTensor::encode(wrapped->get(), stream);
@@ -49,17 +87,16 @@ TypedBinaryFormat::deserialize(nbostream &stream)
         return builder.build();
     }
     if (formatId == DENSE_BINARY_FORMAT_TYPE) {
-        return DenseBinaryFormat(DenseBinaryFormat::EncodeType::DOUBLE_IS_DEFAULT).deserialize(stream);
+        return DenseBinaryFormat(SerializeFormat::DOUBLE).deserialize(stream);
     }
     if (formatId == TYPED_DENSE_BINARY_FORMAT_TYPE) {
-        return DenseBinaryFormat(DenseBinaryFormat::EncodeType::NO_DEFAULT).deserialize(stream);
+        return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserialize(stream);
     }
     if (formatId == MIXED_BINARY_FORMAT_TYPE) {
         stream.adjustReadPos(read_pos - stream.rp());
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::decode(stream));
     }
-    LOG_ABORT("should not be reached");
+    abort();
 }
-
 
 }

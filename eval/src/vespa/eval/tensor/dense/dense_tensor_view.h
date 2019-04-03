@@ -14,7 +14,6 @@ namespace vespalib::tensor {
 class DenseTensorView : public Tensor
 {
 public:
-    enum class SerializeFormat {FLOAT, DOUBLE};
     using Cells = std::vector<double>;
     using CellsRef = ConstArrayRef<double>;
     using CellsIterator = DenseTensorCellsIterator;
@@ -22,16 +21,13 @@ public:
 
     DenseTensorView(const eval::ValueType &type_in, CellsRef cells_in)
         : _typeRef(type_in),
-          _cellsRef(cells_in),
-          _serializeFormat(SerializeFormat::DOUBLE)
+          _cellsRef(cells_in)
     {}
     explicit DenseTensorView(const eval::ValueType &type_in)
         : _typeRef(type_in),
-          _cellsRef(),
-          _serializeFormat(SerializeFormat::DOUBLE)
+          _cellsRef()
     {}
-    SerializeFormat serializeAs() const { return _serializeFormat; }
-    void serializeAs(SerializeFormat format) { _serializeFormat = format; }
+
     const eval::ValueType &fast_type() const { return _typeRef; }
     const CellsRef &cellsRef() const { return _cellsRef; }
     bool operator==(const DenseTensorView &rhs) const;
@@ -58,8 +54,6 @@ private:
 
     const eval::ValueType &_typeRef;
     CellsRef               _cellsRef;
-    //TODO This is a temporary workaround until proper type support for tensors is in place.
-    SerializeFormat        _serializeFormat;
 };
 
 }

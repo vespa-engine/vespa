@@ -10,16 +10,10 @@ using vespalib::nbostream;
 
 namespace vespalib::tensor {
 
-using SerializationFormat = DenseTensorView::SerializeFormat;
 using Dimension = eval::ValueType::Dimension;
 
 
 namespace {
-
-using EncodeType = DenseBinaryFormat::EncodeType;
-
-constexpr int DOUBLE_VALUE_TYPE = 0;
-constexpr int FLOAT_VALUE_TYPE = 1;
 
 eval::ValueType
 makeValueType(std::vector<Dimension> &&dimensions) {
@@ -48,20 +42,6 @@ encodeCells(nbostream &stream, DenseTensorView::CellsRef cells) {
     }
 }
 
-void
-encodeValueType(nbostream & stream, SerializationFormat valueType, EncodeType encodeType) {
-    switch (valueType) {
-        case SerializationFormat::DOUBLE:
-            if (encodeType != EncodeType::DOUBLE_IS_DEFAULT) {
-                stream.putInt1_4Bytes(DOUBLE_VALUE_TYPE);
-            }
-            break;
-        case SerializationFormat::FLOAT:
-            stream.putInt1_4Bytes(FLOAT_VALUE_TYPE);
-            break;
-    }
-}
-
 size_t
 decodeDimensions(nbostream & stream, std::vector<Dimension> & dimensions) {
     vespalib::string dimensionName;
@@ -75,23 +55,6 @@ decodeDimensions(nbostream & stream, std::vector<Dimension> & dimensions) {
         cellsSize *= dimensionSize;
     }
     return cellsSize;
-}
-
-SerializationFormat
-decodeCellType(nbostream & stream, EncodeType encodeType) {
-    if (encodeType != EncodeType::DOUBLE_IS_DEFAULT) {
-        uint32_t serializedType = stream.getInt1_4Bytes();
-        switch (serializedType) {
-            case DOUBLE_VALUE_TYPE:
-                return SerializationFormat::DOUBLE;
-            case FLOAT_VALUE_TYPE:
-                return  SerializationFormat::FLOAT;
-            default:
-                throw IllegalArgumentException(make_string("Received unknown tensor value type = %u. Only 0(double), or 1(float) are legal.", serializedType));
-        }
-    } else {
-        return SerializationFormat::DOUBLE;
-    }
 }
 
 template<typename T>
@@ -109,17 +72,15 @@ decodeCells(nbostream &stream, size_t cellsSize, DenseTensor::Cells & cells) {
 void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 {
-    const eval::ValueType & type = tensor.fast_type();
-    encodeValueType(stream, tensor.serializeAs(), _encodeType);
-    size_t cellsSize = encodeDimensions(stream, type);
+    size_t cellsSize = encodeDimensions(stream, tensor.fast_type());
 
     DenseTensorView::CellsRef cells = tensor.cellsRef();
     assert(cells.size() == cellsSize);
-    switch (tensor.serializeAs()) {
-        case SerializationFormat::DOUBLE:
+    switch (_format) {
+        case SerializeFormat::DOUBLE:
             encodeCells<double>(stream, cells);
             break;
-        case SerializationFormat::FLOAT:
+        case SerializeFormat::FLOAT:
             encodeCells<float>(stream, cells);
             break;
     }
@@ -128,17 +89,16 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 std::unique_ptr<DenseTensor>
 DenseBinaryFormat::deserialize(nbostream &stream)
 {
-    SerializationFormat cellType = decodeCellType(stream, _encodeType);
     std::vector<Dimension> dimensions;
     size_t cellsSize = decodeDimensions(stream,dimensions);
     DenseTensor::Cells cells;
     cells.reserve(cellsSize);
-    switch (cellType) {
-        case SerializationFormat::DOUBLE:
+    switch (_format) {
+        case SerializeFormat::DOUBLE:
             decodeCells<double>(stream, cellsSize,cells);
             break;
-        case SerializationFormat::FLOAT:
-            decodeCells<float>(stream, cellsSize,cells);
+        case SerializeFormat::FLOAT:
+            decodeCells<float>(stream, cellsSize, cells);
             break;
     }
 

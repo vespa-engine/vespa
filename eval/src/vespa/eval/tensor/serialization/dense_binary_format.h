@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "common.h"
 #include <memory>
+
 namespace vespalib { class nbostream; }
 
 namespace vespalib::tensor {
@@ -16,12 +18,11 @@ class DenseTensorView;
 class DenseBinaryFormat
 {
 public:
-    enum class EncodeType { NO_DEFAULT, DOUBLE_IS_DEFAULT};
-    DenseBinaryFormat(EncodeType encodeType) : _encodeType(encodeType) { }
+    DenseBinaryFormat(SerializeFormat format) : _format(format) { }
     void serialize(nbostream &stream, const DenseTensorView &tensor);
     std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
 private:
-    EncodeType _encodeType;
+    SerializeFormat _format;
 };
 
 }

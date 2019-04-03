@@ -16,7 +16,6 @@
 using namespace vespalib::tensor;
 using vespalib::nbostream;
 using ExpBuffer = std::vector<uint8_t>;
-using SerializeFormat = vespalib::tensor::DenseTensorView::SerializeFormat;
 
 namespace std {
 
@@ -145,10 +144,8 @@ TEST_F("test tensor serialization for SparseTensor", SparseFixture)
 
 struct DenseFixture
 {
-    Tensor::UP createTensor(SerializeFormat format, const DenseTensorCells &cells) {
-        auto tensor =  TensorFactory::createDense(cells);
-        dynamic_cast<DenseTensorView &>(*tensor).serializeAs(format);
-        return tensor;
+    Tensor::UP createTensor(const DenseTensorCells &cells) {
+        return TensorFactory::createDense(cells);
     }
 
     void serialize(nbostream &stream, const Tensor &tensor) {
@@ -166,9 +163,9 @@ struct DenseFixture
         assertSerialized(exp, SerializeFormat::DOUBLE, rhs);
     }
     void assertSerialized(const ExpBuffer &exp, SerializeFormat cellType, const DenseTensorCells &rhs) {
-        Tensor::UP rhsTensor(createTensor(cellType, rhs));
+        Tensor::UP rhsTensor(createTensor(rhs));
         nbostream rhsStream;
-        serialize(rhsStream, *rhsTensor);
+        TypedBinaryFormat::serialize(rhsStream, *rhsTensor, cellType);
         EXPECT_EQUAL(exp, rhsStream);
         auto rhs2 = deserialize(rhsStream);
         EXPECT_EQUAL(*rhs2, *rhsTensor);
