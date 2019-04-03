@@ -85,7 +85,7 @@ public class RpcServerTest extends FleetControllerTest {
     public void testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork() {
         try{
             startingTest("RpcServerTest::testFailOccasionallyAndIgnoreToSeeIfOtherTestsThenWork");
-            setUpFleetController(true, new FleetControllerOptions("mycluster"));
+            setUpFleetController(true, defaultOptions("mycluster"));
             setUpVdsNodes(true, new DummyVdsNodeOptions());
             waitForStableSystem();
         } catch (Throwable t) {}
@@ -95,7 +95,7 @@ public class RpcServerTest extends FleetControllerTest {
     public void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
         startingTest("RpcServerTest::testGetSystemState");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
@@ -165,7 +165,7 @@ public class RpcServerTest extends FleetControllerTest {
         Set<ConfiguredNode> configuredNodes = new TreeSet<>();
         for (int i = 0; i < 10; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+        FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
         options.minRatioOfStorageNodesUp = 0;
         options.maxInitProgressTime = 30000;
         options.stableStateTimePeriod = 60000;
@@ -284,7 +284,7 @@ public class RpcServerTest extends FleetControllerTest {
         for (int i = 0; i < 9; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
         configuredNodes.add(new ConfiguredNode(9, true)); // Last node is configured retired
-        FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+        FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
         options.minRatioOfStorageNodesUp = 0;
         options.maxInitProgressTime = 30000;
         options.stableStateTimePeriod = 60000;
@@ -319,7 +319,7 @@ public class RpcServerTest extends FleetControllerTest {
             List<ConfiguredNode> configuredNodes = new ArrayList<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.maxInitProgressTime = 30000;
             options.stableStateTimePeriod = 60000;
             setUpFleetController(true, options);
@@ -343,7 +343,7 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
@@ -373,7 +373,7 @@ public class RpcServerTest extends FleetControllerTest {
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 7; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
@@ -400,7 +400,7 @@ public class RpcServerTest extends FleetControllerTest {
             List<ConfiguredNode> configuredNodes = new ArrayList<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.maxInitProgressTime = 30000;
             options.stableStateTimePeriod = 60000;
             setUpFleetController(true, options);
@@ -412,7 +412,7 @@ public class RpcServerTest extends FleetControllerTest {
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
@@ -427,7 +427,7 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
@@ -441,7 +441,7 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
+            FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
@@ -489,7 +489,7 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     public void testSetNodeState() throws Exception {
         startingTest("RpcServerTest::testSetNodeState");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         Set<Integer> nodeIndexes = new TreeSet<>(Arrays.asList(new Integer[]{4, 6, 9, 10, 14, 16, 21, 22, 23, 25}));
         options.setStorageDistribution(new Distribution(getDistConfig(nodeIndexes)));
         setUpFleetController(true, options);
@@ -535,7 +535,7 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     public void testSetNodeStateOutOfRange() throws Exception {
         startingTest("RpcServerTest::testSetNodeStateOutOfRange");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
@@ -572,7 +572,7 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     public void testGetMaster() throws Exception {
         startingTest("RpcServerTest::testGetMaster");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
@@ -594,7 +594,7 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     public void testGetNodeList() throws Exception {
         startingTest("RpcServerTest::testGetNodeList");
-        setUpFleetController(true, new FleetControllerOptions("mycluster"));
+        setUpFleetController(true, defaultOptions("mycluster"));
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 

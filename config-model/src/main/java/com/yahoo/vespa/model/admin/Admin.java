@@ -6,7 +6,6 @@ import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
-import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
@@ -17,10 +16,10 @@ import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Logd;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
-import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
@@ -29,7 +28,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -67,10 +65,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
      */
     private ClusterControllerContainerCluster clusterControllers;
 
-    /**
-     * Cluster for container that might be running on logserver hosts
-     */
+     // Cluster of logserver containers. If enabled, exactly one container is running on each logserver host.
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
+
+    // Cluster of metricsproxy containers. Exactly one container is set up on all hosts.
+    private MetricsProxyContainerCluster metricsProxyContainerCluster;
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private FileDistributionConfigProducer fileDistribution;
@@ -152,6 +151,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                 logserver(new LogdConfig.Logserver.Builder().
                         use(logServerContainerCluster.isPresent() || !isHostedVespa).
                         host(logserver.getHostName()).
+                        rpcport(logserver.getRelativePort(0)).
                         port(logserver.getRelativePort(1)));
         }
      }
@@ -191,12 +191,27 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
+
+        if (deployState.getProperties().enableMetricsProxyContainer())
+            addMetricsProxyCluster(hosts, deployState);
+
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
                 addCommonServices(host, deployState);
             }
         }
     }
+
+    private void addMetricsProxyCluster(List<HostResource> hosts, DeployState deployState) {
+        var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
+        int index = 0;
+        for (var host : hosts) {
+            var container = new MetricsProxyContainer(metricsProxyCluster, index++);
+            addAndInitializeService(deployState.getDeployLogger(), host, container);
+            metricsProxyCluster.addContainer(container);
+        }
+    }
+
     private void addCommonServices(HostResource host, DeployState deployState) {
         addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone());
         addLogd(deployState.getDeployLogger(), host);

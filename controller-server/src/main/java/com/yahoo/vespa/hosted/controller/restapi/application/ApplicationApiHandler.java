@@ -40,8 +40,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
@@ -112,6 +110,8 @@ import static java.util.stream.Collectors.joining;
 @SuppressWarnings("unused") // created by injection
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
+    private static final String OPTIONAL_PREFIX = "/api";
+
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
 
@@ -164,12 +164,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
-        if (path.matches("/application/v4/tenant-pipeline")) return tenantPipelines();
-        if (path.matches("/application/v4/property")) return properties();
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
@@ -189,7 +187,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
         if (path.matches("/application/v4/user")) return createUser(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
@@ -198,7 +196,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
@@ -217,14 +215,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePATCH(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}"))
             return setMajorVersion(path.get("tenant"), path.get("application"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse handleDELETE(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
@@ -256,7 +254,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse root(HttpRequest request) {
         return recurseOverTenants(request)
                 ? recursiveRoot(request)
-                : new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain", "property");
+                : new ResourceResponse(request, "user", "tenant");
     }
 
     private HttpResponse authenticatedUser(HttpRequest request) {
@@ -283,36 +281,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor response = slime.setArray();
         for (Tenant tenant : controller.tenants().asList())
             tenantInTenantsListToSlime(tenant, request.getUri(), response.addObject());
-        return new SlimeJsonResponse(slime);
-    }
-
-    /** Lists the screwdriver project id for each application */
-    private HttpResponse tenantPipelines() {
-        Slime slime = new Slime();
-        Cursor response = slime.setObject();
-        Cursor pipelinesArray = response.setArray("tenantPipelines");
-        for (Application application : controller.applications().asList()) {
-            if ( ! application.deploymentJobs().projectId().isPresent()) continue;
-
-            Cursor pipelineObject = pipelinesArray.addObject();
-            pipelineObject.setString("screwdriverId", String.valueOf(application.deploymentJobs().projectId().getAsLong()));
-            pipelineObject.setString("tenant", application.id().tenant().value());
-            pipelineObject.setString("application", application.id().application().value());
-            pipelineObject.setString("instance", application.id().instance().value());
-        }
-        response.setArray("brokenTenantPipelines"); // not used but may need to be present
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse properties() {
-        Slime slime = new Slime();
-        Cursor response = slime.setObject();
-        Cursor array = response.setArray("properties");
-        for (Map.Entry<PropertyId, Property> entry : controller.fetchPropertyList().entrySet()) {
-            Cursor propertyObject = array.addObject();
-            propertyObject.setString("propertyid", entry.getKey().id());
-            propertyObject.setString("property", entry.getValue().id());
-        }
         return new SlimeJsonResponse(slime);
     }
 
@@ -553,10 +521,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                   .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
-
-        controller.zoneRegistry().getLogServerUri(deploymentId)
-                .ifPresent(elkUrl -> response.setString("elkUrl", elkUrl.toString()));
-
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.applicationVersion().id());

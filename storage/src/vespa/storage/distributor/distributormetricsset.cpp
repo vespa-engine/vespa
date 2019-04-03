@@ -17,7 +17,7 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
       removelocations(lt, PersistenceOperationMetricSet("removelocations"), this),
       gets(lt, PersistenceOperationMetricSet("gets"), this),
       stats(lt, PersistenceOperationMetricSet("stats"), this),
-      multioperations(lt, PersistenceOperationMetricSet("multioperations"), this),
+      getbucketlists(lt, PersistenceOperationMetricSet("getbucketlists"), this),
       visits(lt, VisitorMetricSet(), this),
       stateTransitionTime("state_transition_time", {},
               "Time it takes to complete a cluster state transition. If a "

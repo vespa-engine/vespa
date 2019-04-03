@@ -21,6 +21,28 @@
         <pig.version>0.14.0</pig.version>
     </properties>
 
+    <!-- This is a client jar and should be compilable with jdk8 -->
+    <profiles>
+        <profile>
+            <id>jdk11</id>
+            <activation>
+                <jdk>11</jdk>
+            </activation>
+            <properties>
+                <java.version>11</java.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>jdk1.8</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <java.version>8</java.version>
+            </properties>
+        </profile>
+    </profiles>
+
     <dependencies>
         <!-- Hadoop dependencies -->
         <dependency>
@@ -95,18 +117,6 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <showDeprecation>true</showDeprecation>
-                    <compilerArgs>
-                        <arg>-Xlint:all</arg>
-                        <arg>-Werror</arg>
-                    </compilerArgs>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
@@ -145,8 +155,16 @@
             </plugin>
 
             <plugin>
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>abi-check-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <jdkToolchain>
+                        <version>${java.version}</version>
+                    </jdkToolchain>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
             </plugin>
         </plugins>
 

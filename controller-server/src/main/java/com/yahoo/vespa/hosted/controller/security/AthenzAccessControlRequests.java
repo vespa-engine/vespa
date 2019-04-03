@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.security.Principal;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 

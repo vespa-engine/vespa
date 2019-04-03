@@ -383,11 +383,6 @@
                 <artifactId>xml-apis</artifactId>
                 <version>1.4.01</version>
             </dependency>
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${protobuf.version}</version>
-            </dependency>
 
             <!--  NOTE: The dependencies below are not provided from the jdisc container runtime, but had to be moved
                         here from 'parent' because factorylib reads the text in parent/pom.xml and this pom file to
@@ -459,7 +454,6 @@
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.15.v20190215</jetty.version>
         <slf4j.version>1.7.5</slf4j.version>
-        <protobuf.version>3.7.0</protobuf.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
         <!-- MUST be updated each time jersey2 is upgraded! -->

@@ -139,6 +139,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
             case "qrserver":
             case "container":
             case "container-clustercontroller":
+            case "metricsproxy-container":
                 return Optional.of("vespa/service/" + configId.s());
 
             case "searchnode": //TODO: handle only as storagenode instead of both as searchnode/storagenode

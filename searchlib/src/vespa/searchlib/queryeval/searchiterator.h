@@ -4,6 +4,7 @@
 
 #include "posting_info.h"
 #include "begin_and_end_id.h"
+#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/trinary.h>
 #include <memory>
@@ -118,7 +119,10 @@ public:
      * @param beginId This is the first valid docId and the lowest that will be given to doSeek.
      * @param endId This is the first docid after the valid range.
      */ 
-    virtual void initRange(uint32_t begin_id, uint32_t end_id);
+    virtual void initRange(uint32_t begin_id, uint32_t end_id) {
+        _docid = begin_id - 1;
+        _endid = end_id;
+    }
 
     /**
      * Will initialize the full range.
@@ -177,7 +181,7 @@ public:
     /**
      * The constructor sets the current document id to @ref beginId.
      **/
-    SearchIterator();
+    SearchIterator() : _docid(0), _endid(0) { }
     SearchIterator(const SearchIterator &) = delete;
     SearchIterator &operator=(const SearchIterator &) = delete;
 

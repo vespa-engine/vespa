@@ -50,6 +50,8 @@ class NotifyBucketChangeCommand;
 class SetNodeStateCommand;
 class GetNodeStateCommand;
 class SetSystemStateCommand;
+class ActivateClusterStateVersionCommand;
+class ActivateClusterStateVersionReply;
 class GetSystemStateCommand;
 class GetBucketNodesCommand;
 class BucketsAddedCommand;
@@ -276,6 +278,12 @@ public:
     virtual bool onSetSystemStateReply(
             const std::shared_ptr<api::SetSystemStateReply>&)
         { return false; }
+    virtual bool onActivateClusterStateVersion(
+            const std::shared_ptr<api::ActivateClusterStateVersionCommand>&)
+    { return false; }
+    virtual bool onActivateClusterStateVersionReply(
+            const std::shared_ptr<api::ActivateClusterStateVersionReply>&)
+    { return false; }
     virtual bool onGetSystemState(
             const std::shared_ptr<api::GetSystemStateCommand>&)
         { return false; }

@@ -78,7 +78,7 @@ public class StatusPagesTest extends FleetControllerTest {
     @Test
     public void testStatusThroughContainer() throws Exception {
         startingTest("StatusPagesTest::testStatusThroughContainer()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(3, 10)));
         final StatusHandler.ContainerStatusPageServer statusServer = new StatusHandler.ContainerStatusPageServer();
         setUpFleetController(true, options, true, statusServer);
@@ -176,7 +176,7 @@ public class StatusPagesTest extends FleetControllerTest {
         // Set this to true temporary if you want to check status page from browser. Should be false in checked in code always.
         boolean haltTestToViewStatusPage = false;
         startingTest("StatusPagesTest::testSimpleConnectionWithSomeContent()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(3, 10)));
         //options.minRatioOfStorageNodesUp = 0.99;
         if (haltTestToViewStatusPage) {
@@ -211,7 +211,7 @@ public class StatusPagesTest extends FleetControllerTest {
     @Test
     public void testNodePage() throws Exception {
         startingTest("StatusPagesTest::testNodePage()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(3, 10)));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
@@ -231,7 +231,7 @@ public class StatusPagesTest extends FleetControllerTest {
     @Test
     public void testErrorResponseCode() throws Exception {
         startingTest("StatusPagesTest::testNodePage()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(3, 10)));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions());
@@ -348,7 +348,7 @@ public class StatusPagesTest extends FleetControllerTest {
     @Test
     public void testStateServing() throws Exception {
         startingTest("StatusPagesTest::testStateServing()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         setUpFleetController(true, options);
         fleetController.updateOptions(options, 5);
         waitForCompleteCycle();
@@ -376,7 +376,7 @@ public class StatusPagesTest extends FleetControllerTest {
     @Test
     public void testClusterStateServing() throws Exception {
         startingTest("StatusPagesTest::testClusterStateServing()");
-        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        FleetControllerOptions options = defaultOptions("mycluster");
         setUpFleetController(true, options);
         fleetController.updateOptions(options, 5);
         waitForCompleteCycle();

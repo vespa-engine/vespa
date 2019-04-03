@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -13,6 +14,9 @@ import java.util.Objects;
  * @author mpolden
  */
 public class OsVersion implements Comparable<OsVersion> {
+
+    private static final Comparator<OsVersion> comparator = Comparator.comparing(OsVersion::cloud)
+                                                                      .thenComparing(OsVersion::version);
 
     private final Version version;
     private final CloudName cloud;
@@ -52,12 +56,8 @@ public class OsVersion implements Comparable<OsVersion> {
     }
 
     @Override
-    public int compareTo(@NotNull OsVersion o) {
-        int cloudCmp = cloud.compareTo(o.cloud());
-        if (cloudCmp == 0) { // Same cloud, sort by version
-            return version.compareTo(o.version());
-        }
-        return cloudCmp;
+    public int compareTo(@NotNull OsVersion that) {
+        return comparator.compare(this, that);
     }
 
 }

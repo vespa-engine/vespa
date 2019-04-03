@@ -34,6 +34,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enableHostInfoReporting(true),
       _disableBucketActivation(false),
       _sequenceMutatingOperations(true),
+      _allowStaleReadsDuringClusterStateTransitions(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 { }
 
@@ -144,6 +145,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _enableHostInfoReporting = config.enableHostInfoReporting;
     _disableBucketActivation = config.disableBucketActivation;
     _sequenceMutatingOperations = config.sequenceMutatingOperations;
+    _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

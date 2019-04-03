@@ -75,6 +75,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
@@ -95,11 +96,15 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.restapi.filter.AthenzRoleResolver'/>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +
             "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.AthenzApiHandler'>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
             "    <binding>http://*/athenz/v1/*</binding>\n" +
+            "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
+            "    <binding>http://*/user/v1/*</binding>\n" +
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
             "    <binding>http://*/deployment/v1/*</binding>\n" +

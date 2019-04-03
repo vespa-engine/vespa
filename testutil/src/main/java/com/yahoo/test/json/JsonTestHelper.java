@@ -15,6 +15,7 @@ import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
  * @author Vegard Sjonfjell
  */
 public class JsonTestHelper {
+
     private static final ObjectMapper mapper = new ObjectMapper();
 
     /**

@@ -27,7 +27,8 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
-        DistributorBucketSpaceRepo &bucketSpaceRepo,
+        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
         const OutdatedNodesMap &outdatedNodesMap,
         api::Timestamp creationTimestamp)
@@ -40,6 +41,9 @@ PendingClusterState::PendingClusterState(
       _creationTimestamp(creationTimestamp),
       _sender(sender),
       _bucketSpaceRepo(bucketSpaceRepo),
+      _readOnlyBucketSpaceRepo(readOnlyBucketSpaceRepo),
+      _clusterStateVersion(_cmd->getClusterStateBundle().getVersion()),
+      _isVersionedTransition(true),
       _bucketOwnershipTransfer(false),
       _pendingTransitions()
 {
@@ -51,7 +55,8 @@ PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
-        DistributorBucketSpaceRepo &bucketSpaceRepo,
+        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         api::Timestamp creationTimestamp)
     : _requestedNodes(clusterInfo->getStorageNodeCount()),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
@@ -61,6 +66,9 @@ PendingClusterState::PendingClusterState(
       _creationTimestamp(creationTimestamp),
       _sender(sender),
       _bucketSpaceRepo(bucketSpaceRepo),
+      _readOnlyBucketSpaceRepo(readOnlyBucketSpaceRepo),
+      _clusterStateVersion(0),
+      _isVersionedTransition(false),
       _bucketOwnershipTransfer(true),
       _pendingTransitions()
 {

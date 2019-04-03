@@ -37,6 +37,7 @@ public:
 
     IdealStateManager(Distributor& owner,
                       DistributorBucketSpaceRepo& bucketSpaceRepo,
+                      DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                       DistributorComponentRegister& compReg,
                       bool manageActiveBucketCopies);
 

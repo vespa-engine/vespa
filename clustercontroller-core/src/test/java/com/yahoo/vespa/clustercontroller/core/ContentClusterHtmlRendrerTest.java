@@ -29,7 +29,10 @@ public class ContentClusterHtmlRendrerTest {
 
     @Before
     public void before() throws JSONException, ParseException {
-        final ClusterState state = new ClusterState("version:34633 bits:24 distributor:211 storage:211");
+        final ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
+                AnnotatedClusterState.withoutAnnotations(
+                        ClusterState.stateFromString("version:34633 bits:24 distributor:211 storage:211")));
+        final ClusterState state = stateBundle.getBaselineClusterState();
         final EventLog eventLog = new EventLog(new FakeTimer(), null);
 
         final VdsClusterHtmlRendrer.Table table = rendrer.createNewClusterHtmlTable(clusterName, slobrokGeneration);
@@ -55,7 +58,7 @@ public class ContentClusterHtmlRendrerTest {
                 storageNodeInfoByIndex,
                 distributorNodeInfoByIndex,
                 new FakeTimer(),
-                state,
+                stateBundle,
                 statsAggregator,
                 1.0,
                 10,

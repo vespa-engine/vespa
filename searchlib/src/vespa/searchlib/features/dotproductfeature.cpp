@@ -20,14 +20,13 @@ using namespace search::fef;
 using vespalib::hwaccelrated::IAccelrated;
 
 namespace search::features {
-namespace dotproduct {
-namespace wset {
+namespace dotproduct::wset {
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
-VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::VectorBase() { }
+VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::VectorBase() = default;
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
-VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() { }
+VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() = default;
 
 template <typename V>
 V copyAndSync(const V & v) {
@@ -70,7 +69,7 @@ StringVector::~StringVector() = default;
 
 }
 
-namespace array {
+namespace dotproduct::array {
 
 template <typename BaseType>
 DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
@@ -101,7 +100,7 @@ DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & queryVe
 }
 
 template <typename A>
-DotProductExecutor<A>::~DotProductExecutor() { }
+DotProductExecutor<A>::~DotProductExecutor() = default;
 
 template <typename A>
 size_t
@@ -119,7 +118,7 @@ SparseDotProductExecutor<A>::SparseDotProductExecutor(const A * attribute, const
 }
 
 template <typename A>
-SparseDotProductExecutor<A>::~SparseDotProductExecutor() { }
+SparseDotProductExecutor<A>::~SparseDotProductExecutor() = default;
 
 template <typename A>
 size_t
@@ -143,7 +142,7 @@ DotProductByCopyExecutor<A>::DotProductByCopyExecutor(const A * attribute, const
 }
 
 template <typename A>
-DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() { }
+DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() = default;
 
 template <typename A>
 size_t
@@ -166,7 +165,7 @@ SparseDotProductByCopyExecutor<A>::SparseDotProductByCopyExecutor(const A * attr
 }
 
 template <typename A>
-SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() { }
+SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() = default;
 
 template <typename A>
 size_t
@@ -197,8 +196,7 @@ DotProductByContentFillExecutor<BaseType>::DotProductByContentFillExecutor(
 }
 
 template <typename BaseType>
-DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() {
-}
+DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() = default;
 
 namespace {
 
@@ -239,8 +237,7 @@ SparseDotProductByContentFillExecutor<BaseType>::SparseDotProductByContentFillEx
 }
 
 template <typename BaseType>
-SparseDotProductByContentFillExecutor<BaseType>::~SparseDotProductByContentFillExecutor() {
-}
+SparseDotProductByContentFillExecutor<BaseType>::~SparseDotProductByContentFillExecutor() = default;
 
 template <typename BaseType>
 size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid, const AT * & values) {
@@ -259,17 +256,16 @@ size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint3
 }
 
 
-} // namespace array
-
-} // namespace dotproduct
+}
 
 DotProductBlueprint::DotProductBlueprint() :
     Blueprint("dotProduct"),
     _defaultAttribute(),
-    _queryVector()
+    _queryVector(),
+    _attribute(nullptr)
 { }
 
-DotProductBlueprint::~DotProductBlueprint() {}
+DotProductBlueprint::~DotProductBlueprint() = default;
 
 vespalib::string
 DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
@@ -305,7 +301,7 @@ DotProductBlueprint::getDescriptions() const {
 Blueprint::UP
 DotProductBlueprint::createInstance() const
 {
-    return Blueprint::UP(new DotProductBlueprint());
+    return std::make_unique<DotProductBlueprint>();
 }
 
 namespace {
@@ -616,7 +612,8 @@ fef::Anything::UP attemptParseArrayQueryVector(const IAttributeVector & attribut
 void
 DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
 {
-    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+    _attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+    const IAttributeVector * attribute = _attribute;
     if (attribute != nullptr) {
         if ((attribute->getCollectionType() == attribute::CollectionType::WSET) &&
             attribute->hasEnum() &&
@@ -654,7 +651,7 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
 FeatureExecutor &
 DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+    const IAttributeVector * attribute = (_attribute != nullptr) ? _attribute : env.getAttributeContext().getAttribute(getAttribute(env));
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             getAttribute(env).c_str());

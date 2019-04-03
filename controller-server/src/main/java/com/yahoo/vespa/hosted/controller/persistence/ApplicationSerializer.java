@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -140,6 +141,7 @@ public class ApplicationSerializer {
     private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
     private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
     private final String deploymentMetricsUpdateTime = "lastUpdated";
+    private final String deploymentMetricsWarningsField = "warnings";
 
     // ------------------ Serialization
 
@@ -192,6 +194,10 @@ public class ApplicationSerializer {
         root.setDouble(deploymentMetricsQueryLatencyField, metrics.queryLatencyMillis());
         root.setDouble(deploymentMetricsWriteLatencyField, metrics.writeLatencyMillis());
         metrics.instant().ifPresent(instant -> root.setLong(deploymentMetricsUpdateTime, instant.toEpochMilli()));
+        if (!metrics.warnings().isEmpty()) {
+            Cursor warningsObject = root.setObject(deploymentMetricsWarningsField);
+            metrics.warnings().forEach((warning, count) -> warningsObject.setLong(warning.name(), count));
+        }
     }
 
     private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
@@ -360,7 +366,15 @@ public class ApplicationSerializer {
                                      object.field(deploymentMetricsDocsField).asDouble(),
                                      object.field(deploymentMetricsQueryLatencyField).asDouble(),
                                      object.field(deploymentMetricsWriteLatencyField).asDouble(),
-                                     instant);
+                                     instant,
+                                     deploymentWarningsFrom(object.field(deploymentMetricsWarningsField)));
+    }
+
+    private Map<DeploymentMetrics.Warning, Integer> deploymentWarningsFrom(Inspector object) {
+        Map<DeploymentMetrics.Warning, Integer> warnings = new HashMap<>();
+        object.traverse((ObjectTraverser) (name, value) -> warnings.put(DeploymentMetrics.Warning.valueOf(name),
+                                                                        (int) value.asLong()));
+        return Collections.unmodifiableMap(warnings);
     }
 
     private Map<HostName, RotationStatus> rotationStatusFromSlime(Inspector object) {
@@ -376,9 +390,9 @@ public class ApplicationSerializer {
         return Collections.unmodifiableMap(rotationStatus);
     }
 
-    private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime(Inspector object) {
+    private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime   (Inspector object) {
         Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
-        object.traverse((String name, Inspector obect) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(obect)));
+        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(value)));
         return map;
     }
 

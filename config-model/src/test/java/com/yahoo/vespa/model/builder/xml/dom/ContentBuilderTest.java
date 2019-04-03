@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -34,6 +35,8 @@ import org.junit.rules.ExpectedException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -236,10 +239,9 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(1, cluster.getRoot().getHostSystem().getHosts().size());
         HostResource h = cluster.getRoot().getHostSystem().getHost("mockhost");
         String [] expectedServices = {
-                "logd", "configproxy",
-                "config-sentinel", "configserver", "logserver",
-                "slobrok", "container-clustercontroller",
-                "storagenode", "distributor","searchnode","transactionlogserver"
+                "logd", "configproxy", "config-sentinel", "configserver", "logserver",
+                "slobrok", "storagenode", "distributor","searchnode","transactionlogserver",
+                CLUSTERCONTROLLER_CONTAINER.serviceName
         };
         assertServices(h, expectedServices);
 

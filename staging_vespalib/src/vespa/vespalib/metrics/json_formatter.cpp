@@ -52,6 +52,7 @@ JsonFormatter::handle(const GaugeSnapshot &snapshot, vespalib::slime::Cursor &ta
     handle(snapshot.point(), target);
     Cursor& inner = target.setObject("values");
     inner.setDouble("average", snapshot.averageValue());
+    inner.setDouble("sum", snapshot.sumValue());
     inner.setDouble("min", snapshot.minValue());
     inner.setDouble("max", snapshot.maxValue());
     inner.setDouble("last", snapshot.lastValue());

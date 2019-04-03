@@ -235,6 +235,13 @@ public:
     void setSequenceMutatingOperations(bool sequenceMutations) noexcept {
         _sequenceMutatingOperations = sequenceMutations;
     }
+
+    bool allowStaleReadsDuringClusterStateTransitions() const noexcept {
+        return _allowStaleReadsDuringClusterStateTransitions;
+    }
+    void setAllowStaleReadsDuringClusterStateTransitions(bool allow) noexcept {
+        _allowStaleReadsDuringClusterStateTransitions = allow;
+    }
     
 private:
     DistributorConfiguration(const DistributorConfiguration& other);
@@ -274,6 +281,7 @@ private:
     bool _enableHostInfoReporting;
     bool _disableBucketActivation;
     bool _sequenceMutatingOperations;
+    bool _allowStaleReadsDuringClusterStateTransitions;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     

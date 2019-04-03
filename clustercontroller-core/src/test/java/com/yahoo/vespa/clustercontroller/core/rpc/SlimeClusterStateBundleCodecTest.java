@@ -72,4 +72,20 @@ public class SlimeClusterStateBundleCodecTest {
         assertThat(roundtripEncodeWithEnvelope(stateBundle), equalTo(stateBundle));
     }
 
+    @Test
+    public void can_roundtrip_encode_bundle_with_deferred_activation_enabled() {
+        var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
+                .deferredActivation(true)
+                .deriveAndBuild();
+        assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
+    }
+
+    @Test
+    public void can_roundtrip_encode_bundle_with_deferred_activation_disabled() {
+        var stateBundle = ClusterStateBundleUtil.makeBundleBuilder("distributor:2 storage:2")
+                .deferredActivation(false)
+                .deriveAndBuild();
+        assertThat(roundtripEncode(stateBundle), equalTo(stateBundle));
+    }
+
 }

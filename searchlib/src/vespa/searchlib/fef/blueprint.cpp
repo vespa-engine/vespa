@@ -2,12 +2,12 @@
 
 #include "blueprint.h"
 #include "parametervalidator.h"
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.blueprint");
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 const FeatureType &
 Blueprint::defineInput(vespalib::stringref inName,
@@ -34,9 +34,7 @@ Blueprint::Blueprint(vespalib::stringref baseName)
 {
 }
 
-Blueprint::~Blueprint()
-{
-}
+Blueprint::~Blueprint() = default;
 
 ParameterDescriptions
 Blueprint::getDescriptions() const
@@ -71,6 +69,4 @@ Blueprint::setup(const IIndexEnvironment &indexEnv,
     return false;
 }
 
-
-} // namespace fef
-} // namespace search
+}

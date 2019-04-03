@@ -41,43 +41,14 @@ public:
                        const BucketId &source2,
                        const BucketId &target);
 
-    void
-    applyDeltas(const BucketDeltaPair &deltas);
-
-    bool
-    getWantTargetActive() const
-    {
-        return _wantTargetActive;
-    }
-
-    bool
-    mustFixupTargetActiveLids(bool movedSource1Docs,
-                              bool movedSource2Docs) const;
-
-
-    void
-    setup();
-
-    void
-    finish();
-
-    const BucketId &
-    getSource1() const
-    {
-        return _source1;
-    }
-
-    const BucketId &
-    getSource2() const
-    {
-        return _source2;
-    }
-
-    const BucketId &
-    getTarget() const
-    {
-        return _target;
-    }
+    void applyDeltas(const BucketDeltaPair &deltas);
+    bool getWantTargetActive() const { return _wantTargetActive; }
+    bool mustFixupTargetActiveLids(bool movedSource1Docs, bool movedSource2Docs) const;
+    void setup();
+    void finish();
+    const BucketId & getSource1() const { return _source1; }
+    const BucketId & getSource2() const { return _source2; }
+    const BucketId & getTarget() const { return _target;}
 };
 
 }

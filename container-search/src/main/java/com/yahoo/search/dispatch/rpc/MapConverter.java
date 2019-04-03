@@ -10,46 +10,42 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @author ollivir
  */
 public class MapConverter {
-    @FunctionalInterface
-    public interface PropertyInserter<T> {
-        void add(T prop);
-    }
-
-    public static void convertMapTensors(Map<String, Object> map, PropertyInserter<TensorProperty.Builder> inserter) {
+    public static void convertMapTensors(Map<String, Object> map, Consumer<TensorProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var value = entry.getValue();
             if (value instanceof Tensor) {
                 byte[] tensor = TypedBinaryFormat.encode((Tensor) value);
-                inserter.add(TensorProperty.newBuilder().setName(entry.getKey()).setValue(ByteString.copyFrom(tensor)));
+                inserter.accept(TensorProperty.newBuilder().setName(entry.getKey()).setValue(ByteString.copyFrom(tensor)));
             }
         }
     }
 
-    public static void convertMapStrings(Map<String, Object> map, PropertyInserter<StringProperty.Builder> inserter) {
+    public static void convertMapStrings(Map<String, Object> map, Consumer<StringProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var value = entry.getValue();
             if (!(value instanceof Tensor)) {
-                inserter.add(StringProperty.newBuilder().setName(entry.getKey()).addValues(value.toString()));
+                inserter.accept(StringProperty.newBuilder().setName(entry.getKey()).addValues(value.toString()));
             }
         }
     }
 
-    public static void convertStringMultiMap(Map<String, List<String>> map, PropertyInserter<StringProperty.Builder> inserter) {
+    public static void convertStringMultiMap(Map<String, List<String>> map, Consumer<StringProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var values = entry.getValue();
             if (values != null) {
-                inserter.add(StringProperty.newBuilder().setName(entry.getKey()).addAllValues(values));
+                inserter.accept(StringProperty.newBuilder().setName(entry.getKey()).addAllValues(values));
             }
         }
     }
 
-    public static void convertMultiMap(Map<String, List<Object>> map, PropertyInserter<StringProperty.Builder> stringInserter,
-            PropertyInserter<TensorProperty.Builder> tensorInserter) {
+    public static void convertMultiMap(Map<String, List<Object>> map, Consumer<StringProperty.Builder> stringInserter,
+            Consumer<TensorProperty.Builder> tensorInserter) {
         for (var entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 var key = entry.getKey();
@@ -58,14 +54,14 @@ public class MapConverter {
                     if (value != null) {
                         if (value instanceof Tensor) {
                             byte[] tensor = TypedBinaryFormat.encode((Tensor) value);
-                            tensorInserter.add(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(tensor)));
+                            tensorInserter.accept(TensorProperty.newBuilder().setName(key).setValue(ByteString.copyFrom(tensor)));
                         } else {
                             stringValues.add(value.toString());
                         }
                     }
                 }
                 if (!stringValues.isEmpty()) {
-                    stringInserter.add(StringProperty.newBuilder().setName(key).addAllValues(stringValues));
+                    stringInserter.accept(StringProperty.newBuilder().setName(key).addAllValues(stringValues));
                 }
             }
         }

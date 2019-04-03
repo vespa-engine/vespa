@@ -77,7 +77,9 @@ public class ApplicationSerializerTest {
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        createClusterUtils(3, 0.2), createClusterInfo(3, 4),
-                                       new DeploymentMetrics(2, 3, 4, 5, 6, Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS))),
+                                       new DeploymentMetrics(2, 3, 4, 5, 6,
+                                                             Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
+                                                             Map.of(DeploymentMetrics.Warning.all, 3)),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
                                                                  OptionalDouble.of(200), OptionalDouble.of(10))));
 
@@ -178,6 +180,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.deployments().get(zone2).metrics().queryLatencyMillis(), serialized.deployments().get(zone2).metrics().queryLatencyMillis(), Double.MIN_VALUE);
         assertEquals(original.deployments().get(zone2).metrics().writeLatencyMillis(), serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
         assertEquals(original.deployments().get(zone2).metrics().instant(), serialized.deployments().get(zone2).metrics().instant());
+        assertEquals(original.deployments().get(zone2).metrics().warnings(), serialized.deployments().get(zone2).metrics().warnings());
         { // test more deployment serialization cases
             Application original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42))).get();
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));

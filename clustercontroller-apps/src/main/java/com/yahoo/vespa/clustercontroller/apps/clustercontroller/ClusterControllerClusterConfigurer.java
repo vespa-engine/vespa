@@ -75,6 +75,7 @@ public class ClusterControllerClusterConfigurer {
         options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
         options.clusterHasGlobalDocumentTypes = config.cluster_has_global_document_types();
         options.minMergeCompletionRatio = config.min_merge_completion_ratio();
+        options.enableTwoPhaseClusterStateActivation = config.enable_two_phase_cluster_state_transitions();
     }
 
     private void configure(SlobroksConfig config) {

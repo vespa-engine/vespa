@@ -39,7 +39,7 @@ public class LogMessageTimeComparator implements Comparator<LogMessage>, Seriali
 
 	public int compare(LogMessage message1, LogMessage message2) {
 		return ascending ?
-				Long.valueOf(message1.getTime()).compareTo(Long.valueOf(message2.getTime()))
-				: Long.valueOf(message2.getTime()).compareTo(Long.valueOf(message1.getTime()));
+				message1.getTimestamp().compareTo(message2.getTimestamp())
+				: message2.getTimestamp().compareTo(message1.getTimestamp());
 	}
 }

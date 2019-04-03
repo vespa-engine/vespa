@@ -67,15 +67,16 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _compReg(compReg),
       _component(compReg, "distributor"),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
+      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
       _pendingMessageTracker(compReg),
-      _bucketDBUpdater(*this, *_bucketSpaceRepo, *this, compReg),
+      _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
-      _idealStateManager(*this, *_bucketSpaceRepo, compReg, manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo, _idealStateManager, compReg),
+      _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
+      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, _idealStateManager, compReg),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
@@ -575,16 +576,20 @@ void
 Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
-    _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-    _bucketSpaceRepo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
+    for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
+        repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
+        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
+    }
 }
 
 void
 Distributor::propagateClusterStates()
 {
-    for (auto &iter : *_bucketSpaceRepo) {
-        iter.second->setClusterState(_clusterStateBundle.getDerivedClusterState(iter.first));
+    for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
+        for (auto& iter : *repo) {
+            iter.second->setClusterState(_clusterStateBundle.getDerivedClusterState(iter.first));
+        }
     }
 }
 

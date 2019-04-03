@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -29,9 +30,9 @@ public class ClusterSizeReductionValidatorTest {
     public void testSizeReductionValidation() throws IOException, SAXException {
         ValidationTester tester = new ValidationTester(30);
 
-        VespaModel previous = tester.deploy(null, getServices(30), null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
         try {
-            tester.deploy(previous, getServices(14), null);
+            tester.deploy(previous, getServices(14), Environment.prod, null);
             fail("Expected exception due to cluster size reduction");
         }
         catch (IllegalArgumentException expected) {
@@ -45,8 +46,8 @@ public class ClusterSizeReductionValidatorTest {
     public void testSizeReductionValidationMinimalDecreaseIsAllowed() throws IOException, SAXException {
         ValidationTester tester = new ValidationTester(30);
 
-        VespaModel previous = tester.deploy(null, getServices(3), null).getFirst();
-        tester.deploy(previous, getServices(2), null);
+        VespaModel previous = tester.deploy(null, getServices(3), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(2), Environment.prod, null);
     }
 
     /*
@@ -63,8 +64,8 @@ public class ClusterSizeReductionValidatorTest {
     public void testOverridingSizereductionValidation() throws IOException, SAXException {
         ValidationTester tester = new ValidationTester(30);
 
-        VespaModel previous = tester.deploy(null, getServices(30), null).getFirst();
-        tester.deploy(previous, getServices(14), sizeReductionOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices(14), Environment.prod, sizeReductionOverride); // Allowed due to override
     }
 
     private static String getServices(int size) {

@@ -1,9 +1,11 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * @author ollivir
@@ -29,6 +32,8 @@ public abstract class InvokerFactory {
     protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node);
 
     public abstract Optional<FillInvoker> createFillInvoker(VespaBackEndSearcher searcher, Result result);
+
+    public abstract Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor);
 
     /**
      * Create a {@link SearchInvoker} for a list of content nodes.
@@ -88,7 +93,7 @@ public abstract class InvokerFactory {
         if (invokers.size() == 1 && failed == null) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searcher, searchCluster, failed));
+            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster, failed));
         }
     }
 

@@ -15,7 +15,7 @@ import java.util.concurrent.Callable;
  * @author bratseth
  * @author ollivir
  */
-class Pinger implements Callable<Pong> {
+public class Pinger implements Callable<Pong> {
     private final Node node;
     private final ClusterMonitor<Node> clusterMonitor;
     private final FS4ResourcePool fs4ResourcePool;
@@ -30,8 +30,6 @@ class Pinger implements Callable<Pong> {
         try {
             Pong pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()),
                                           fs4ResourcePool.getBackend(node.hostname(), node.fs4port()), node.toString());
-            if (pong.activeDocuments().isPresent())
-                node.setActiveDocuments(pong.activeDocuments().get());
             return pong;
         } catch (RuntimeException e) {
             return new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": "

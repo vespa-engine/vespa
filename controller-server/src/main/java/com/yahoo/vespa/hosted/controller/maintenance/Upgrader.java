@@ -70,9 +70,10 @@ public class Upgrader extends Maintainer {
         cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTargets), reason);
 
         // Schedule the right upgrades
-        canaryTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.canary), target));
-        defaultTargets.forEach(target -> upgrade(applications().with(UpgradePolicy.defaultPolicy), target));
-        conservativeTargets.forEach(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
+        ApplicationList applications = applications();
+        canaryTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.canary), target));
+        defaultTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target));
+        conservativeTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.conservative), target));
     }
 
     /** Returns the target versions for given confidence, one per major version in the system */

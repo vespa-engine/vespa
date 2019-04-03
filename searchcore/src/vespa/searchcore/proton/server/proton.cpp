@@ -70,6 +70,19 @@ convert(InternalProtonType::Packetcompresstype type)
 }
 
 void
+setBucketCheckSumType(const ProtonConfig & proton)
+{
+    switch (proton.bucketdb.checksumtype) {
+    case InternalProtonType::Bucketdb::LEGACY:
+        bucketdb::BucketState::setChecksumType(bucketdb::BucketState::ChecksumType::LEGACY);
+        break;
+    case InternalProtonType::Bucketdb::XXHASH64:
+        bucketdb::BucketState::setChecksumType(bucketdb::BucketState::ChecksumType::XXHASH64);
+        break;
+    }
+}
+
+void
 setFS4Compression(const ProtonConfig & proton)
 {
     FS4PersistentPacketStreamer & fs4(FS4PersistentPacketStreamer::Instance);
@@ -241,6 +254,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
 
+    setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir,
                                                                  diskMemUsageSamplerConfig(protonConfig, hwInfo));
@@ -436,7 +450,15 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
+    // size_t numCores = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getHwInfo().cpu().cores();
+    size_t numCores = 4;
+    const std::shared_ptr<proton::ProtonConfigSnapshot> pcsp = _protonConfigurer.getActiveConfigSnapshot();
+    if (pcsp) {
+        const std::shared_ptr<proton::BootstrapConfig> bcp = pcsp->getBootstrapConfig();
+        if (bcp) {
+            numCores = bcp->getHwInfo().cpu().cores();
+        }
+    }
     vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000, close_executor);
     closeDocumentDBs(closePool);
     _documentDBMap.clear();
@@ -482,6 +504,23 @@ size_t Proton::getNumActiveDocs() const
     return numDocs;
 }
 
+search::engine::SearchServer &
+Proton::get_search_server()
+{
+    return *_matchEngine;
+}
+
+search::engine::DocsumServer &
+Proton::get_docsum_server()
+{
+    return *_summaryEngine;
+}
+
+search::engine::MonitorServer &
+Proton::get_monitor_server()
+{
+    return *this;
+}
 
 vespalib::string
 Proton::getDelayedConfigs() const
@@ -631,6 +670,7 @@ Proton::ping(MonitorRequest::UP request, MonitorClient & client)
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     ret.partid = protonConfig.partition;
+    ret.distribution_key = protonConfig.distributionkey;
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
     ret.activeDocs = getNumActiveDocs();
     ret.activeDocsRequested = request->reportActiveDocs;

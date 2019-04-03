@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * Systems in hosted Vespa
  *
@@ -37,6 +40,10 @@ public enum SystemName {
             case "vaas": return vaas;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         }
+    }
+
+    public static Set<SystemName> all() {
+        return EnumSet.allOf(SystemName.class);
     }
 
 }

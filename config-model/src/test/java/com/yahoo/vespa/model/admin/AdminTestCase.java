@@ -18,6 +18,7 @@ import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
+import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -37,9 +38,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 
-/**
- * @author gjoranv
- */
 public class AdminTestCase {
 
     private static final String TESTDIR = "src/test/cfg/admin/";
@@ -96,6 +94,9 @@ public class AdminTestCase {
         LogdConfig lc = new LogdConfig(lb);
         assertEquals(lc.logserver().host(), localhost);
 
+        Service logserver = vespaModel.getService("admin/logserver").get();
+        assertEquals(logserver.getRelativePort(0), lc.logserver().rpcport());
+
         // Verify services in the sentinel config
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
@@ -104,6 +105,7 @@ public class AdminTestCase {
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
         assertThat(sentinelConfig.service(2).name(), is("slobrok2"));
+        //assertThat(sentinelConfig.service(3).name(), is(METRICS_PROXY_CONTAINER.serviceName));
         assertThat(sentinelConfig.service(3).name(), is("logd"));
     }
 
@@ -138,6 +140,7 @@ public class AdminTestCase {
         assertThat(sentinelConfig.service().size(), is(3));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
+        //assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
         assertThat(sentinelConfig.service(2).name(), is("logd"));
         assertThat(sentinelConfig.service(0).affinity().cpuSocket(), is(-1));
         assertTrue(sentinelConfig.service(0).preShutdownCommand().isEmpty());
@@ -292,6 +295,7 @@ public class AdminTestCase {
         assertThat(sentinelConfig.service().size(), is(3));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
+        //assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
         assertThat(sentinelConfig.service(2).name(), is("logd"));
     }
 

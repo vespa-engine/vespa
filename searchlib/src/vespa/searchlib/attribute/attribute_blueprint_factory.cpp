@@ -83,19 +83,27 @@ private:
     ISearchContext::UP _search_context;
 
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            const string &query_stack, const attribute::SearchContextParams &params)
+                            QueryTermSimple::UP term, const attribute::SearchContextParams &params)
         : SimpleLeafBlueprint(field),
-          _search_context(attribute.createSearchContext(QueryTermDecoder::decodeTerm(query_stack), params))
+          _search_context(attribute.createSearchContext(std::move(term), params))
     {
         uint32_t estHits = _search_context->approximateHits();
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);
     }
 
+    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
+                            const string &query_stack, const attribute::SearchContextParams &params)
+        : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack), params)
+    { }
+
 public:
-    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const string &query_stack)
-        : AttributeFieldBlueprint(field, attribute, query_stack,
+    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute, QueryTermSimple::UP term)
+        : AttributeFieldBlueprint(field, attribute, std::move(term),
                                   attribute::SearchContextParams().useBitVector(field.isFilter()))
+    {}
+    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const string &query_stack)
+        : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack))
     {}
 
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
@@ -113,6 +121,13 @@ public:
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict);
+    }
+
+    SearchIterator::UP
+    createSearch(fef::MatchData &md, bool strict) const override {
+        const State &state = getState();
+        assert(state.numFields() == 1);
+        return _search_context->createIterator(state.field(0).resolve(md), strict);
     }
 
     void
@@ -505,15 +520,23 @@ public:
         setResult(std::move(result));
     }
 
+    static QueryTermSimple::UP
+    extractTerm(const query::Node &node, bool isInteger) {
+        vespalib::string term = queryeval::termAsString(node);
+        if (isInteger) {
+            return std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
+        }
+        return std::make_unique<QueryTermBase>(term, QueryTermSimple::WORD);
+    }
+
     template <typename WS, typename NODE>
-    void createShallowWeightedSet(WS *bp, NODE &n, const FieldSpec &fs) {
+    void createShallowWeightedSet(WS *bp, NODE &n, const FieldSpec &fs, bool isInteger) {
         Blueprint::UP result(bp);
         for (size_t i = 0; i < n.getChildren().size(); ++i) {
             const query::Node &node = *n.getChildren()[i];
             uint32_t weight = queryeval::getWeightFromNode(node).percent();
-            const string stack = StackDumpCreator::create(node);
             FieldSpec childfs = bp->getNextChildField(fs);
-            bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, stack), weight);
+            bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(node, isInteger)), weight);
         }
         setResult(std::move(result));
     }
@@ -527,14 +550,7 @@ public:
             for (size_t i = 0; i < n.getChildren().size(); ++i) {
                 const query::Node &node = *n.getChildren()[i];
                 uint32_t weight = queryeval::getWeightFromNode(node).percent();
-                vespalib::string term = queryeval::termAsString(node);
-                QueryTermSimple::UP qt;
-                if (isInteger) {
-                    qt = std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
-                } else {
-                    qt = std::make_unique<QueryTermBase>(term, QueryTermSimple::WORD);
-                }
-                ws->addToken(_attr.createSearchContext(std::move(qt), attribute::SearchContextParams()), weight);
+                ws->addToken(_attr.createSearchContext(extractTerm(node, isInteger), attribute::SearchContextParams()), weight);
             }
             setResult(std::move(ws));
         } else {
@@ -543,7 +559,7 @@ public:
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
-                createShallowWeightedSet(bp, n, _field);
+                createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
             }
         }
     }
@@ -554,7 +570,7 @@ public:
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
-            createShallowWeightedSet(bp, n, _field);
+            createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
         }
     }
 
@@ -569,7 +585,7 @@ public:
                     n.getTargetNumHits(),
                     n.getScoreThreshold(),
                     n.getThresholdBoostFactor());
-            createShallowWeightedSet(bp, n, _field);
+            createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
         }
     }
 };

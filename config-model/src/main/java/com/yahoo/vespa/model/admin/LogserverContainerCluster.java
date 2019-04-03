@@ -11,8 +11,8 @@ import com.yahoo.vespa.model.container.component.Handler;
  */
 public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> {
 
-    public LogserverContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        super(parent, subId, name, deployState);
+    public LogserverContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
+        super(parent, name, name, deployState);
 
         addDefaultHandlersWithVip();
         addLogHandler();

@@ -5,6 +5,7 @@ import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.search.Query;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.searchlib.aggregation.Grouping;
@@ -176,18 +177,7 @@ public class QueryPacket extends Packet {
     private int getFlagInt() {
         int flags = getQueryFlags(query);
         queryPacketData.setQueryFlags(flags);
-
-        /*
-         * QFLAG_DROP_SORTDATA
-         * SORTDATA is a mangling of data from the attribute vectors
-         * which were used in the search which is byte comparable in
-         * such a way the comparing SORTDATA for two different hits
-         * will reproduce the order in which the data were returned when
-         * using sortspec.  For now we simply drop these. If they
-         * become necessary, QueryResultPacket must be
-         * updated to be able to read the sort data.
-         */
-        flags |= QFLAG_DROP_SORTDATA;
+        flags |= query.properties().getBoolean(Dispatcher.dispatchInternal, false) ? 0 : QFLAG_DROP_SORTDATA;
         return flags;
     }
 

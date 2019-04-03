@@ -4,18 +4,30 @@
 #include "cluster_state_bundle.h"
 #include "clusterstate.h"
 #include <iostream>
+#include <sstream>
 
 namespace storage::lib {
 
 ClusterStateBundle::ClusterStateBundle(const ClusterState &baselineClusterState)
-    : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState))
+    : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
+      _deferredActivation(false)
 {
 }
 
 ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
                                        BucketSpaceStateMapping derivedBucketSpaceStates)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
-      _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates))
+      _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
+      _deferredActivation(false)
+{
+}
+
+ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
+                                       BucketSpaceStateMapping derivedBucketSpaceStates,
+                                       bool deferredActivation)
+        : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
+          _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
+          _deferredActivation(deferredActivation)
 {
 }
 
@@ -52,6 +64,9 @@ ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const
     if (_derivedBucketSpaceStates.size() != rhs._derivedBucketSpaceStates.size()) {
         return false;
     }
+    if (_deferredActivation != rhs._deferredActivation) {
+        return false;
+    }
     // Can't do a regular operator== comparison since we must check equality
     // of cluster state _values_, not their _pointers_.
     for (auto& lhs_ds : _derivedBucketSpaceStates) {
@@ -64,6 +79,14 @@ ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const
     return true;
 }
 
+std::string
+ClusterStateBundle::toString() const
+{
+    std::ostringstream os;
+    os << *this;
+    return os.str();
+}
+
 std::ostream& operator<<(std::ostream& os, const ClusterStateBundle& bundle) {
     os << "ClusterStateBundle('" << *bundle.getBaselineClusterState();
     if (!bundle.getDerivedClusterStates().empty()) {
@@ -74,7 +97,11 @@ std::ostream& operator<<(std::ostream& os, const ClusterStateBundle& bundle) {
             os << " '" << *ds.second;
         }
     }
-    os << "')";
+    os << '\'';
+    if (bundle.deferredActivation()) {
+        os << " (deferred activation)";
+    }
+    os << ")";
     return os;
 }
 

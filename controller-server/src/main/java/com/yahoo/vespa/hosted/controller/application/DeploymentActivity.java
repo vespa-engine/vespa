@@ -63,7 +63,7 @@ public class DeploymentActivity {
 
     public static DeploymentActivity create(Optional<Instant> queriedAt, Optional<Instant> writtenAt,
                                             OptionalDouble lastQueriesPerSecond, OptionalDouble lastWritesPerSecond) {
-        if (!queriedAt.isPresent() && !writtenAt.isPresent()) {
+        if (queriedAt.isEmpty() && writtenAt.isEmpty()) {
             return none;
         }
         return new DeploymentActivity(queriedAt, writtenAt, lastQueriesPerSecond, lastWritesPerSecond);

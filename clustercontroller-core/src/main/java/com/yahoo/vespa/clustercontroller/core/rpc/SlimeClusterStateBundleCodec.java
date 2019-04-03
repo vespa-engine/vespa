@@ -30,6 +30,9 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
     public EncodedClusterStateBundle encode(ClusterStateBundle stateBundle) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
+        if (stateBundle.deferredActivation()) {
+            root.setBool("deferred-activation", stateBundle.deferredActivation());
+        }
         Cursor states = root.setObject("states");
         // TODO add another function that is not toString for this..!
         states.setString("baseline", stateBundle.getBaselineClusterState().toString());
@@ -55,8 +58,9 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
         spaces.traverse(((ObjectTraverser)(key, value) -> {
             derivedStates.put(key, AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(value.asString())));
         }));
+        boolean deferredActivation = root.field("deferred-activation").asBool(); // defaults to false if not present
 
-        return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates);
+        return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates, deferredActivation);
     }
 
     // Technically the Slime enveloping could be its own class that is bundle codec independent, but

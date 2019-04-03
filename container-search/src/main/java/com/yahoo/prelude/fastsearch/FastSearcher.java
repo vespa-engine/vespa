@@ -142,11 +142,11 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     @Override
-    public Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
+    public Result doSearch2(Query query, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
         try(SearchInvoker invoker = getSearchInvoker(query)) {
-            Result result = invoker.search(query, queryPacket, execution);
+            Result result = invoker.search(query, execution);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
                 // There is currently no correct choice for which

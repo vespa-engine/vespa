@@ -15,16 +15,18 @@ namespace storage::distributor {
 
 DistributorComponent::DistributorComponent(
         DistributorInterface& distributor,
-        DistributorBucketSpaceRepo &bucketSpaceRepo,
+        DistributorBucketSpaceRepo& bucketSpaceRepo,
+        DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         DistributorComponentRegister& compReg,
         const std::string& name)
     : storage::DistributorComponent(compReg, name),
       _distributor(distributor),
-      _bucketSpaceRepo(bucketSpaceRepo)
+      _bucketSpaceRepo(bucketSpaceRepo),
+      _readOnlyBucketSpaceRepo(readOnlyBucketSpaceRepo)
 {
 }
 
-DistributorComponent::~DistributorComponent() {}
+DistributorComponent::~DistributorComponent() = default;
 
 void
 DistributorComponent::sendDown(const api::StorageMessage::SP& msg)

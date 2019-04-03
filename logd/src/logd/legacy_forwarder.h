@@ -2,36 +2,21 @@
 #pragma once
 
 #include "forwarder.h"
-#include <vespa/log/log.h>
-#include <map>
-#include <unordered_set>
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace logdemon {
 
-using SeenMap = std::unordered_set<std::string>;
-// Mapping saying if a level should be forwarded or not
-using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
-
 struct Metrics;
-
-class LevelParser
-{
-private:
-    SeenMap _seenLevelMap;
-public:
-    ns_log::Logger::LogLevel parseLevel(const char *level);
-    LevelParser() : _seenLevelMap() {}
-};
 
 /**
  * Class used to forward log lines to the logserver via a one-way text protocol.
  */
 class LegacyForwarder : public Forwarder {
 private:
-    int _logserverfd;
     Metrics &_metrics;
-    ForwardMap _forwardMap;
-    LevelParser _levelparser;
+    int _logserver_fd;
+    ForwardMap _forward_filter;
     int _badLines;
     const char *copystr(const char *b, const char *e) {
         int len = e - b;
@@ -40,15 +25,23 @@ private:
         ret[len] = '\0';
         return ret;
     }
-    bool parseline(const char *linestart, const char *lineend);
-public:
-    LegacyForwarder(Metrics &metrics);
-    ~LegacyForwarder();
+    void connect_to_logserver(const vespalib::string& logserver_host, int logserver_port);
+    void connect_to_dev_null();
+    bool parseLine(std::string_view line);
     void forwardText(const char *text, int len);
-    void forwardLine(const char *line, const char *eol) override;
-    void setForwardMap(const ForwardMap & forwardMap) { _forwardMap = forwardMap; }
-    void setLogserverFD(int fd) { _logserverfd = fd; }
-    int  getLogserverFD() { return _logserverfd; }
+    LegacyForwarder(Metrics &metrics, const ForwardMap& forward_filter);
+
+public:
+    using UP = std::unique_ptr<LegacyForwarder>;
+    static LegacyForwarder::UP to_logserver(Metrics& metrics, const ForwardMap& forward_filter,
+                                            const vespalib::string& logserver_host, int logserver_port);
+    static LegacyForwarder::UP to_dev_null(Metrics& metrics);
+    static LegacyForwarder::UP to_open_file(Metrics& metrics, const ForwardMap& forward_filter, int file_desc);
+    ~LegacyForwarder();
+
+    // Implements Forwarder
+    void forwardLine(std::string_view line) override;
+    void flush() override {}
     void sendMode() override;
     int badLines() const override { return _badLines; }
     void resetBadLines() override { _badLines = 0; }

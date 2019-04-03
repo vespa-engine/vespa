@@ -137,6 +137,7 @@ private:
 
     bool onGetNodeState(const std::shared_ptr<api::GetNodeStateCommand>&) override;
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
+    bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>&) override;
 
     /**
      * _stateLock MUST NOT be held while calling.

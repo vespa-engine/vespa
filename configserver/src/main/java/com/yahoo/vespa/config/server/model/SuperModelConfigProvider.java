@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,9 +27,9 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer, Rout
     private final LbServicesProducer lbProd;
     private final RoutingProducer zoneProd;
 
-    public SuperModelConfigProvider(SuperModel superModel, Zone zone) {
+    public SuperModelConfigProvider(SuperModel superModel, Zone zone, FlagSource flagSource) {
         this.superModel = superModel;
-        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()), zone);
+        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()), zone, flagSource);
         this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()));
     }
 

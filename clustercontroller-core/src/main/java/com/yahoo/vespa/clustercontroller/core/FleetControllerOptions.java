@@ -121,6 +121,8 @@ public class FleetControllerOptions implements Cloneable {
 
     public boolean clusterHasGlobalDocumentTypes = false;
 
+    public boolean enableTwoPhaseClusterStateActivation = false;
+
     // TODO: Choose a default value
     public double minMergeCompletionRatio = 1.0;
 
@@ -231,6 +233,7 @@ public class FleetControllerOptions implements Cloneable {
         sb.append("<tr><td><nobr>Wanted distribution bits</nobr></td><td align=\"right\">").append(distributionBits).append("</td></tr>");
         sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
         sb.append("<tr><td><nobr>Cluster has global document types configured</nobr></td><td align=\"right\">").append(clusterHasGlobalDocumentTypes).append("</td></tr>");
+        sb.append("<tr><td><nobr>Enable 2-phase cluster state activation protocol</nobr></td><td align=\"right\">").append(enableTwoPhaseClusterStateActivation).append("</td></tr>");
 
         sb.append("</table>");
     }

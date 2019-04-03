@@ -29,11 +29,20 @@ public interface WaitCondition {
     abstract class StateWait implements WaitCondition {
         private final Object monitor;
         protected ClusterState currentState;
+        protected ClusterState convergedState;
         private final SystemStateListener listener = new SystemStateListener() {
             @Override
             public void handleNewPublishedState(ClusterStateBundle state) {
                 synchronized (monitor) {
                     currentState = state.getBaselineClusterState();
+                    monitor.notifyAll();
+                }
+            }
+
+            @Override
+            public void handleStateConvergedInCluster(ClusterStateBundle states) {
+                synchronized (monitor) {
+                    currentState = convergedState = states.getBaselineClusterState();
                     monitor.notifyAll();
                 }
             }
@@ -90,8 +99,8 @@ public interface WaitCondition {
 
         @Override
         public String isConditionMet() {
-            if (currentState != null) {
-                lastCheckedState = currentState;
+            if (convergedState != null) {
+                lastCheckedState = convergedState;
                 Matcher m = pattern.matcher(lastCheckedState.toString());
                 if (m.matches() || !checkSpaceSubset.isEmpty()) {
                     if (nodesToCheck != null) {

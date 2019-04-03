@@ -14,9 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * A {@link FeedClientFactory} is provided to instantiate Sessions.
  *
+ * See com.yahoo.text.Text.stripInvalidCharacters(String) to remove invalid characters from string fields before feeding
+ *
  * @author dybis
  * @see FeedClientFactory
- * @see com.yahoo.text.Text#stripInvalidCharacters(String) to remove invalid characters from string fields before feeding
  */
 public interface FeedClient extends AutoCloseable {
 

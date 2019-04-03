@@ -20,7 +20,7 @@ public:
     metrics::LoadMetric<PersistenceOperationMetricSet> removelocations;
     metrics::LoadMetric<PersistenceOperationMetricSet> gets;
     metrics::LoadMetric<PersistenceOperationMetricSet> stats;
-    metrics::LoadMetric<PersistenceOperationMetricSet> multioperations;
+    metrics::LoadMetric<PersistenceOperationMetricSet> getbucketlists;
     metrics::LoadMetric<VisitorMetricSet> visits;
     metrics::DoubleAverageMetric stateTransitionTime;
     metrics::DoubleAverageMetric recoveryModeTime;

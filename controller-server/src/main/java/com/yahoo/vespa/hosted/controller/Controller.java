@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -71,7 +70,6 @@ public class Controller extends AbstractComponent {
     private final JobController jobController;
     private final Clock clock;
     private final GitHub gitHub;
-    private final EntityService entityService;
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
     private final MetricsService metricsService;
@@ -85,21 +83,19 @@ public class Controller extends AbstractComponent {
      * @param curator the curator instance storing the persistent state of the controller.
      */
     @Inject
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub, EntityService entityService,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
                       NameService nameService, RoutingGenerator routingGenerator, Chef chef,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
-        this(curator, rotationsConfig,
-             gitHub, entityService, zoneRegistry,
+        this(curator, rotationsConfig, gitHub, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
     }
 
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      GitHub gitHub, EntityService entityService,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
@@ -111,7 +107,6 @@ public class Controller extends AbstractComponent {
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
-        this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
@@ -149,15 +144,6 @@ public class Controller extends AbstractComponent {
 
     public Mailer mailer() {
         return mailer;
-    }
-
-    /**
-     * Fetch list of all active OpsDB properties.
-     *
-     * @return Hashed map with the property ID as key and property name as value
-     */
-    public Map<PropertyId, Property> fetchPropertyList() {
-        return entityService.listProperties();
     }
 
     public Clock clock() { return clock; }

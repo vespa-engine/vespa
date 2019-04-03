@@ -89,10 +89,7 @@ public class InternalDeploymentTester {
      * Submits a new application, and returns the version of the new submission.
      */
     public ApplicationVersion newSubmission() {
-        ApplicationVersion version = jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2, applicationPackage, new byte[0]);
-        tester.applicationStore().put(appId, version, applicationPackage.zippedContent());
-        tester.applicationStore().put(testerId, version, new byte[0]);
-        return version;
+        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2, applicationPackage, new byte[0]);
     }
 
     /**

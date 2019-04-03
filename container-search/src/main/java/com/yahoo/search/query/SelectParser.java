@@ -1,13 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
@@ -164,7 +164,6 @@ public class SelectParser implements Parser {
         Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
-
             switch (type) {
                 case AND:
                     item[0] = buildAnd(key, value);
@@ -277,7 +276,7 @@ public class SelectParser implements Parser {
         return null;
     }
 
-    private HashMap<Integer, Inspector> getChildrenMap(Inspector inspector){
+    private HashMap<Integer, Inspector> childMap(Inspector inspector){
         HashMap<Integer, Inspector> children = new HashMap<>();
         if (inspector.type() == ARRAY){
             inspector.traverse((ArrayTraverser) (index, new_value) -> {
@@ -517,9 +516,26 @@ public class SelectParser implements Parser {
         return hitLimit[0];
     }
 
-    @NonNull
+
+    private Item buildEquals(String key, Inspector value) {
+        Map<Integer, Inspector> children = childMap(value);
+        if ( children.size() != 2)
+            throw new IllegalArgumentException("The value of 'equals' should be an array containing a field name and " +
+                                               "a value, but was " + value);
+        if ( children.get(0).type() != STRING)
+            throw new IllegalArgumentException("The first array element under 'equals' should be a field name string " +
+                                               "but was " + children.get(0));
+        String field = children.get(0).asString();
+        switch (children.get(1).type()) {
+            case BOOL: return new BoolItem(children.get(1).asBool(), field);
+            case LONG: return new IntItem(children.get(1).asLong(), field);
+            default: throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
+                                                        "or int value but was " + children.get(1));
+        }
+    }
+
     private Item buildRange(String key, Inspector value) {
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        Map<Integer, Inspector> children = childMap(value);
         Inspector annotations = getAnnotations(value);
 
         boolean[] equals = {false};
@@ -533,7 +549,6 @@ public class SelectParser implements Parser {
             field = children.get(1).asString();
             boundInspector = children.get(0);
         }
-
         Number[] bounds = {null, null};
         String[] operators = {null, null};
         boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
@@ -555,10 +570,11 @@ public class SelectParser implements Parser {
 
         });
         IntItem range = null;
-        if (equals[0]){
+        if (equals[0]) {
             range = new IntItem(bounds[0].toString(), field);
-        } else if (operators[0]==null || operators[1]==null){
-            Integer index = (operators[0] == null) ? 1 : 0;
+        }
+        else if (operators[0] == null || operators[1] == null) {
+            int index = (operators[0] == null) ? 1 : 0;
             switch (operators[index]){
                 case ">=":
                     range = buildGreaterThanOrEquals(field, bounds[index].toString());
@@ -627,16 +643,9 @@ public class SelectParser implements Parser {
         }
     }
 
-
-    @NonNull
-    private Item buildEquals(String key, Inspector value) {
-         return buildRange(key, value);
-    }
-
-    @NonNull
     private Item buildWand(String key, Inspector value) {
         HashMap<String, Inspector> annotations = getAnnotationMap(value);
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
 
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
         Integer target_num_hits= getIntegerAnnotation(TARGET_NUM_HITS, annotations, DEFAULT_TARGET_NUM_HITS);
@@ -656,7 +665,6 @@ public class SelectParser implements Parser {
         return fillWeightedSet(value, children, out);
     }
 
-    @NonNull
     private WeightedSetItem fillWeightedSet(Inspector value, HashMap<Integer, Inspector> children, @NonNull WeightedSetItem out) {
         addItems(children, out);
 
@@ -702,7 +710,7 @@ public class SelectParser implements Parser {
     @NonNull
     private Item buildRegExpSearch(String key, Inspector value) {
         assertHasOperator(key, MATCHES);
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
         String wordData = children.get(1).asString();
         RegExpItem regExp = new RegExpItem(field, true, wordData);
@@ -711,7 +719,7 @@ public class SelectParser implements Parser {
 
     @NonNull
     private Item buildWeightedSet(String key, Inspector value) {
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
         return fillWeightedSet(value, children, new WeightedSetItem(field));
@@ -719,7 +727,7 @@ public class SelectParser implements Parser {
 
     @NonNull
     private Item buildDotProduct(String key, Inspector value) {
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
         return fillWeightedSet(value, children, new DotProductItem(field));
@@ -727,7 +735,7 @@ public class SelectParser implements Parser {
 
     @NonNull
     private Item buildPredicate(String key, Inspector value) {
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
         Inspector args = children.get(1);
 
@@ -763,7 +771,7 @@ public class SelectParser implements Parser {
 
     @NonNull
     private Item buildTermSearch(String key, Inspector value) {
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
 
         return instantiateLeafItem(field, key, value);
@@ -815,7 +823,7 @@ public class SelectParser implements Parser {
 
     @NonNull
     private Item instantiateWordItem(String field, String key, Inspector value) {
-        var children = getChildrenMap(value);
+        var children = childMap(value);
         if (children.size() < 2)
             throw new IllegalArgumentException("Expected at least 2 children of '" + key + "', but got " + children.size());
 
@@ -968,7 +976,7 @@ public class SelectParser implements Parser {
 
         PhraseItem phrase = new PhraseItem();
         phrase.setIndexName(field);
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
 
         for (Inspector word :  children.values()) {
             if (word.type() == STRING)
@@ -986,7 +994,7 @@ public class SelectParser implements Parser {
         NearItem near = new NearItem();
         near.setIndexName(field);
 
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
 
         for (Inspector word :  children.values()){
             near.addItem(new WordItem(word.asString(), field));
@@ -1006,7 +1014,7 @@ public class SelectParser implements Parser {
 
         NearItem onear = new ONearItem();
         onear.setIndexName(field);
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
 
         for (Inspector word :  children.values()){
             onear.addItem(new WordItem(word.asString(), field));
@@ -1023,7 +1031,7 @@ public class SelectParser implements Parser {
     @NonNull
     private Item instantiateEquivItem(String field, String key, Inspector value) {
 
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() >= 2, "Expected 2 or more arguments, got %s.", children.size());
 
         EquivItem equiv = new EquivItem();
@@ -1045,7 +1053,7 @@ public class SelectParser implements Parser {
     }
 
     private Item instantiateWordAlternativesItem(String field, String key, Inspector value) {
-        HashMap<Integer, Inspector> children = getChildrenMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() >= 1, "Expected 1 or more arguments, got %s.", children.size());
         Preconditions.checkArgument(children.get(0).type() == OBJECT, "Expected OBJECT, got %s.", children.get(0).type());
 

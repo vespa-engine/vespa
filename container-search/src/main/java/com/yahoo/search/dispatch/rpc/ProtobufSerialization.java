@@ -1,7 +1,8 @@
 package com.yahoo.search.dispatch.rpc;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
-import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.SearchRequest.Builder;
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
+import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.yahoo.document.GlobalId;
@@ -15,11 +16,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
+import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.Order;
-import com.yahoo.search.query.ranking.RankFeatures;
-import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.Grouping;
@@ -28,31 +28,24 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ProtobufSerialization {
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
-    public static byte[] serializeQuery(Query query, String serverId, boolean includeQueryData) {
-        return convertFromQuery(query, serverId, includeQueryData).toByteArray();
+    public static byte[] serializeSearchRequest(Query query, String serverId) {
+        return convertFromQuery(query, serverId).toByteArray();
     }
 
-    public static byte[] serializeResult(Result searchResult) {
-        return convertFromResult(searchResult).toByteArray();
-    }
-
-    public static Result deserializeToResult(byte[] payload, Query query, VespaBackEndSearcher searcher)
-            throws InvalidProtocolBufferException {
-        var protobuf = SearchProtocol.SearchReply.parseFrom(payload);
-        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query));
-        return result;
-    }
-
-    private static SearchProtocol.SearchRequest convertFromQuery(Query query, String serverId, boolean includeQueryData) {
+    private static SearchProtocol.SearchRequest convertFromQuery(Query query, String serverId) {
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(query.getHits()).setOffset(query.getOffset())
                 .setTimeout((int) query.getTimeLeft());
 
-        mergeToRequestFromRanking(query.getRanking(), builder, includeQueryData);
-        mergeToRequestFromModel(query.getModel(), builder);
+        var documentDb = query.getModel().getDocumentDb();
+        if (documentDb != null) {
+            builder.setDocumentType(documentDb);
+        }
+        builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree()));
 
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
@@ -71,71 +64,101 @@ public class ProtobufSerialization {
             gbuf.getBuf().flip();
             builder.setGroupingBlob(ByteString.copyFrom(gbuf.getBuf().getByteBuffer()));
         }
-
         if (query.getGroupingSessionCache()) {
             builder.setCacheGrouping(true);
         }
 
+        mergeToSearchRequestFromRanking(query.getRanking(), builder);
+
         return builder.build();
     }
 
-    private static void mergeToRequestFromModel(Model model, SearchProtocol.SearchRequest.Builder builder) {
-        if (model.getDocumentDb() != null) {
-            builder.setDocumentType(model.getDocumentDb());
+    private static void mergeToSearchRequestFromRanking(Ranking ranking, SearchProtocol.SearchRequest.Builder builder) {
+        builder.setRankProfile(ranking.getProfile());
+
+        if (ranking.getQueryCache()) {
+            builder.setCacheQuery(true);
         }
-        int bufferSize = INITIAL_SERIALIZATION_BUFFER_SIZE;
-        boolean success = false;
-        while (!success) {
-            try {
-                ByteBuffer treeBuffer = ByteBuffer.allocate(bufferSize);
-                model.getQueryTree().encode(treeBuffer);
-                treeBuffer.flip();
-                builder.setQueryTreeBlob(ByteString.copyFrom(treeBuffer));
-                success = true;
-            } catch (java.nio.BufferOverflowException e) {
-                bufferSize *= 2;
-            }
+        if (ranking.getSorting() != null) {
+            mergeToSearchRequestFromSorting(ranking.getSorting(), builder);
         }
+        if (ranking.getLocation() != null) {
+            builder.setGeoLocation(ranking.getLocation().toString());
+        }
+
+        var featureMap = ranking.getFeatures().asMap();
+        MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
+        MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
+        mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
 
-    private static void mergeToRequestFromSorting(Sorting sorting, SearchProtocol.SearchRequest.Builder builder, boolean includeQueryData) {
+    private static void mergeToSearchRequestFromSorting(Sorting sorting, SearchProtocol.SearchRequest.Builder builder) {
         for (var field : sorting.fieldOrders()) {
-            var sortField = SearchProtocol.SortField.newBuilder().setField(field.getSorter().getName())
+            var sortField = SearchProtocol.SortField.newBuilder()
+                    .setField(field.getSorter().getName())
                     .setAscending(field.getSortOrder() == Order.ASCENDING).build();
             builder.addSorting(sortField);
         }
     }
 
-    private static void mergeToRequestFromRanking(Ranking ranking, SearchProtocol.SearchRequest.Builder builder, boolean includeQueryData) {
-        builder.setRankProfile(ranking.getProfile());
+    public static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query, String serverId, String summaryClass,
+            boolean includeQueryData) {
+        var builder = SearchProtocol.DocsumRequest.newBuilder()
+                .setTimeout((int) query.getTimeLeft())
+                .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
+
+        if (summaryClass != null) {
+            builder.setSummaryClass(summaryClass);
+        }
+
+        var documentDb = query.getModel().getDocumentDb();
+        if (documentDb != null) {
+            builder.setDocumentType(documentDb);
+        }
+
+        var ranking = query.getRanking();
         if (ranking.getQueryCache()) {
             builder.setCacheQuery(true);
+            builder.setSessionKey(query.getSessionId(serverId).toString());
         }
-        if (ranking.getSorting() != null) {
-            mergeToRequestFromSorting(ranking.getSorting(), builder, includeQueryData);
+        builder.setRankProfile(query.getRanking().getProfile());
+
+        if (includeQueryData) {
+            mergeQueryDataToDocsumRequest(query, builder);
         }
-        if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
-        }
-        mergeToRequestFromRankFeatures(ranking.getFeatures(), builder, includeQueryData);
-        mergeToRequestFromRankProperties(ranking.getProperties(), builder, includeQueryData);
+
+        return builder;
     }
 
-    private static void mergeToRequestFromRankFeatures(RankFeatures features, SearchProtocol.SearchRequest.Builder builder, boolean includeQueryData) {
-        if (includeQueryData) {
-            MapConverter.convertMapStrings(features.asMap(), builder::addFeatureOverrides);
-            MapConverter.convertMapTensors(features.asMap(), builder::addTensorFeatureOverrides);
+    public static byte[] serializeDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
+        builder.clearGlobalIds();
+        for (var hit : documents) {
+            builder.addGlobalIds(ByteString.copyFrom(hit.getGlobalId().getRawId()));
         }
+        return builder.build().toByteArray();
     }
 
-    private static void mergeToRequestFromRankProperties(RankProperties properties, Builder builder, boolean includeQueryData) {
-        if (includeQueryData) {
-            MapConverter.convertMultiMap(properties.asMap(), propB -> {
-                if (!GetDocSumsPacket.sessionIdKey.equals(propB.getName())) {
-                    builder.addRankProperties(propB);
-                }
-            }, builder::addTensorRankProperties);
-        }
+    private static void mergeQueryDataToDocsumRequest(Query query, SearchProtocol.DocsumRequest.Builder builder) {
+        var ranking = query.getRanking();
+        var featureMap = ranking.getFeatures().asMap();
+
+        builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree()));
+        builder.setGeoLocation(ranking.getLocation().toString());
+        MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
+        MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
+        MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
+        mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
+    }
+
+    public static byte[] serializeResult(Result searchResult) {
+        return convertFromResult(searchResult).toByteArray();
+    }
+
+    public static Result deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher)
+            throws InvalidProtocolBufferException {
+        var protobuf = SearchProtocol.SearchReply.parseFrom(payload);
+        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query));
+        return result;
     }
 
     private static Result convertToResult(Query query, SearchProtocol.SearchReply protobuf, DocumentDatabase documentDatabase) {
@@ -158,13 +181,14 @@ public class ProtobufSerialization {
             result.hits().add(hit);
         }
 
+        var sorting = query.getRanking().getSorting();
         for (var replyHit : protobuf.getHitsList()) {
             FastHit hit = new FastHit();
             hit.setQuery(query);
 
             hit.setRelevance(new Relevance(replyHit.getRelevance()));
             hit.setGlobalId(new GlobalId(replyHit.getGlobalId().toByteArray()));
-
+            hit.setSortData(replyHit.getSortData().toByteArray(), sorting);
             hit.setFillable();
             hit.setCached(false);
 
@@ -211,4 +235,26 @@ public class ProtobufSerialization {
         return builder.build();
     }
 
+    private static ByteString serializeQueryTree(QueryTree queryTree) {
+        int bufferSize = INITIAL_SERIALIZATION_BUFFER_SIZE;
+        while (true) {
+            try {
+                ByteBuffer treeBuffer = ByteBuffer.allocate(bufferSize);
+                queryTree.encode(treeBuffer);
+                treeBuffer.flip();
+                return ByteString.copyFrom(treeBuffer);
+            } catch (java.nio.BufferOverflowException e) {
+                bufferSize *= 2;
+            }
+        }
+    }
+
+    private static void mergeRankProperties(Ranking ranking, Consumer<StringProperty.Builder> stringProperties,
+            Consumer<TensorProperty.Builder> tensorProperties) {
+        MapConverter.convertMultiMap(ranking.getProperties().asMap(), propB -> {
+            if (!GetDocSumsPacket.sessionIdKey.equals(propB.getName())) {
+                stringProperties.accept(propB);
+            }
+        }, tensorProperties);
+    }
 }

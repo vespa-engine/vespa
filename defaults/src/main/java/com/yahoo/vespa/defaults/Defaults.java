@@ -1,12 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.defaults;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.logging.Logger;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 
 
@@ -25,6 +21,7 @@ public class Defaults {
     private final String vespaHome;
     private final String vespaUser;
     private final String vespaHost;
+    private final String temporaryApplicationStorage;
     private final int vespaWebServicePort;
     private final int vespaPortBase;
     private final int vespaPortConfigServerRpc;
@@ -35,6 +32,7 @@ public class Defaults {
         vespaHome = findVespaHome("/opt/vespa");
         vespaUser = findVespaUser("vespa");
         vespaHost = findVespaHostname("localhost");
+        temporaryApplicationStorage = underVespaHome("var/vespa/application");
         vespaWebServicePort = findWebServicePort(8080);
         vespaPortBase = findVespaPortBase(19000);
         vespaPortConfigServerRpc = findConfigServerPort(vespaPortBase + 70);
@@ -114,6 +112,15 @@ public class Defaults {
      * @return the vespa host name
      **/
     public String vespaHostname() { return vespaHost; }
+
+    /**
+     * Returns the path where a Vespa application can store arbitrary files. This should only be used for temporary
+     * files as there are no availability guarantees for files stored here. The application must be able to recreate
+     * required files on its own (e.g. by downloading them from a remote source) if missing.
+     *
+     * @return the temporary storage path
+     */
+    public String temporaryApplicationStorage() { return temporaryApplicationStorage; }
 
     /**
      * Returns the path to the root under which Vespa should read and write files.

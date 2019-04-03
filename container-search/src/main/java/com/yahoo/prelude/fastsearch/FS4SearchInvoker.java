@@ -44,16 +44,11 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     }
 
     @Override
-    protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
+    protected void sendSearchRequest(Query query) throws IOException {
         log.finest("sending query packet");
 
-        if (queryPacket == null) {
-            // query changed for subchannel
-            queryPacket = searcher.createQueryPacket(searcher.getServerId(), query);
-        }
-
         this.query = query;
-        this.queryPacket = queryPacket;
+        this.queryPacket = searcher.createQueryPacket(searcher.getServerId(), query);
 
         try {
             boolean couldSend = channel.sendPacket(queryPacket);

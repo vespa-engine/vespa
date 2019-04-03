@@ -50,10 +50,42 @@ message SearchReply {
     bool degraded_by_soft_timeout = 6;
     repeated Hit hits = 7;
     bytes grouping_blob = 8; // serialized opaquely like now, to be changed later
+    bytes slime_trace = 9;
 }
 
 message Hit {
     bytes global_id = 1;
     double relevance = 2;
     bytes sort_data = 3;
+}
+
+message DocsumRequest {
+    int32 timeout = 1; // milliseconds
+    string session_key = 2;
+    string document_type = 3;
+    string summary_class = 4;
+    bool cache_query = 5;
+    bool dump_features = 6;
+    string rank_profile = 7;
+    repeated StringProperty feature_overrides = 8;
+    repeated TensorProperty tensor_feature_overrides = 9;
+    repeated StringProperty rank_properties = 10;
+    repeated TensorProperty tensor_rank_properties = 11;
+    repeated StringProperty highlight_terms = 12;
+    string geo_location = 13; // to be moved into query_tree
+    bytes query_tree_blob = 14; // serialized opaquely like now, to be changed later
+    repeated bytes global_ids = 15;
+}
+
+message DocsumReply {
+    bytes slime_summaries = 1; // result array inside slime object
+}
+
+message MonitorRequest {
+}
+
+message MonitorReply {
+    bool online = 1;
+    int64 active_docs = 2;
+    int32 distribution_key = 3;
 }

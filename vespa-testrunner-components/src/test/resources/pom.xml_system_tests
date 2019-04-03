@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>tester-application</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <maven_version>4.12</maven_version>
+        <surefire_version>2.22.0</surefire_version>
+        <my-comp.jar.path>components/my-comp.jar</my-comp.jar.path>
+        <main.jar.path>main.jar</main.jar.path>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${maven_version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa.testrunner.test</groupId>
+            <artifactId>my-comp.jar</artifactId>
+            <scope>system</scope>
+            <type>test-jar</type>
+            <version>test</version>
+            <systemPath>${my-comp.jar.path}</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa.testrunner.test</groupId>
+            <artifactId>main.jar</artifactId>
+            <scope>system</scope>
+            <type>test-jar</type>
+            <version>test</version>
+            <systemPath>${main.jar.path}</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire_version}</version>
+                <configuration>
+                    <dependenciesToScan>
+                        <dependency>com.yahoo.vespa.testrunner.test:main.jar</dependency>
+                    </dependenciesToScan>
+                    <groups>com.yahoo.vespa.tenant.cd.SystemTest, com.yahoo.vespa.tenant.systemtest.base.SystemTest</groups>
+                    <excludedGroups>com.yahoo.vespa.tenant.systemtest.base.impl.EmptyExcludeGroup.class</excludedGroups>
+                    <excludes>
+                        <exclude>com.yahoo.vespa.tenant.cd.SystemTest, com.yahoo.vespa.tenant.systemtest.base.SystemTest</exclude>
+                    </excludes>
+                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <LD_LIBRARY_PATH>/opt/vespa/lib64</LD_LIBRARY_PATH>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${surefire_version}</version>
+                <configuration>
+                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

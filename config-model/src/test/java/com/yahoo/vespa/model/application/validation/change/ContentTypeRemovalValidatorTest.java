@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
@@ -23,9 +24,9 @@ public class ContentTypeRemovalValidatorTest {
     public void testContentTypeRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
-        VespaModel previous = tester.deploy(null, getServices("music"), null).getFirst();
+        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
         try {
-            tester.deploy(previous, getServices("book"), null);
+            tester.deploy(previous, getServices("book"), Environment.prod, null);
             fail("Expected exception due to removal of context type 'music");
         }
         catch (IllegalArgumentException expected) {
@@ -40,8 +41,16 @@ public class ContentTypeRemovalValidatorTest {
     public void testOverridingContentTypeRemovalValidation() {
         ValidationTester tester = new ValidationTester();
 
-        VespaModel previous = tester.deploy(null, getServices("music"), null).getFirst();
-        tester.deploy(previous, getServices("book"), removalOverride); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices("book"), Environment.prod, removalOverride); // Allowed due to override
+    }
+
+    @Test
+    public void testNoOverrideNeededinDev() {
+        ValidationTester tester = new ValidationTester();
+
+        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
+        tester.deploy(previous, getServices("book"), Environment.dev, null);
     }
 
     private static String getServices(String documentType) {

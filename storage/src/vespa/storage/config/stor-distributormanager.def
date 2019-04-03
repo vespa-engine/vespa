@@ -184,3 +184,10 @@ sequence_mutating_operations bool default=true
 ## towards a node if it has indicated that its merge queues are full or it is
 ## suffering from resource exhaustion.
 inhibit_merge_sending_on_busy_node_duration_sec int default=10
+
+## If set, enables potentially stale reads during cluster state transitions where
+## buckets change ownership. This also implicitly enables support for two-phase
+## cluster state transitions on the distributor.
+## For this option to take effect, the cluster controller must also have two-phase
+## states enabled.
+allow_stale_reads_during_cluster_state_transitions bool default=false

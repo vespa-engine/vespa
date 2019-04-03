@@ -65,7 +65,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     }
     
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/")) return root(request);
         if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().readLog());
         if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(maintenance.jobControl());
@@ -74,21 +74,21 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse post(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) return setActive(path.get("jobName"), false);
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
         return notFound(path);
     }
 
     private HttpResponse delete(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) return setActive(path.get("jobName"), true);
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return removeConfidenceOverride(path.get("version"));
         return notFound(path);
     }
 
     private HttpResponse patch(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/jobs/upgrader")) return configureUpgrader(request);
         return notFound(path);
     }

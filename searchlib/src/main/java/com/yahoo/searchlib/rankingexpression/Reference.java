@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
  */
 public class Reference extends TypeContext.Name {
 
+    private final int hashCode;
+
     private final Arguments arguments;
 
-    /**
-     * The output, or null if none
-     */
+    /** The output, or null if none */
     private final String output;
 
     public Reference(String name, Arguments arguments, String output) {
@@ -34,6 +34,7 @@ public class Reference extends TypeContext.Name {
         Objects.requireNonNull(arguments, "arguments cannot be null");
         this.arguments = arguments;
         this.output = output;
+        this.hashCode = Objects.hash(name(), arguments, output);
     }
 
     public Arguments arguments() { return arguments; }
@@ -115,7 +116,8 @@ public class Reference extends TypeContext.Name {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if (!(o instanceof Reference)) return false;
+        if (o.hashCode() != this.hashCode()) return false; // because this has a fast hashCode
+        if ( ! (o instanceof Reference)) return false;
         Reference other = (Reference) o;
         if (!Objects.equals(other.name(), this.name())) return false;
         if (!Objects.equals(other.arguments, this.arguments)) return false;
@@ -125,7 +127,7 @@ public class Reference extends TypeContext.Name {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name(), arguments, output);
+        return hashCode;
     }
 
     @Override

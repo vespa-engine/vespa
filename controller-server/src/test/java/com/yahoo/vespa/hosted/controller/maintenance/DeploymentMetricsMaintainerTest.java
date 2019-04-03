@@ -41,11 +41,13 @@ public class DeploymentMetricsMaintainerTest {
         // No metrics gathered yet
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
         assertEquals(0, deployment.get().metrics().documentCount(), 0);
+        assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
         assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
         // Metrics are gathered and saved to application
         maintainer.maintain();
+        Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
         assertEquals(0.5, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
         assertEquals(0.7, app.get().metrics().writeServiceQuality(), Double.MIN_VALUE);
         assertEquals(1, deployment.get().metrics().queriesPerSecond(), Double.MIN_VALUE);
@@ -53,7 +55,7 @@ public class DeploymentMetricsMaintainerTest {
         assertEquals(3, deployment.get().metrics().documentCount(), Double.MIN_VALUE);
         assertEquals(4, deployment.get().metrics().queryLatencyMillis(), Double.MIN_VALUE);
         assertEquals(5, deployment.get().metrics().writeLatencyMillis(), Double.MIN_VALUE);
-        Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
+        assertEquals(t1, deployment.get().metrics().instant().get());
         assertEquals(t1, deployment.get().activity().lastQueried().get());
         assertEquals(t1, deployment.get().activity().lastWritten().get());
 
@@ -61,6 +63,7 @@ public class DeploymentMetricsMaintainerTest {
         tester.clock().advance(Duration.ofHours(1));
         Instant t2 = tester.clock().instant().truncatedTo(MILLIS);
         maintainer.maintain();
+        assertEquals(t2, deployment.get().metrics().instant().get());
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t2, deployment.get().activity().lastWritten().get());
         assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);

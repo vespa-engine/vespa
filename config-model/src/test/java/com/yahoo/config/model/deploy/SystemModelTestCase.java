@@ -115,7 +115,7 @@ public class SystemModelTestCase {
         assertEquals(host2, host3);
 
         // all three host aliases are for the same host, so the number of services should be 3 + 8
-        // (3 simpleservices and logd, configproxy, config sentinel, admin server config server, slobrok and log server)
+        // (3 simpleservices and logd, configproxy, config sentinel, admin server config server, slobrok, logserver and metricsproxy)
         assertEquals(9, host1.getServices().size());
 
         assertNotNull(host1.getService("simpleservice"));

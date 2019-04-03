@@ -235,6 +235,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
         case api::MessageType::SETNODESTATE_ID:
         case api::MessageType::GETNODESTATE_ID:
         case api::MessageType::SETSYSTEMSTATE_ID:
+        case api::MessageType::ACTIVATE_CLUSTER_STATE_VERSION_ID:
         case api::MessageType::NOTIFYBUCKETCHANGE_ID:
             // state commands are always ok
             return false;

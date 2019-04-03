@@ -65,8 +65,8 @@ import static com.yahoo.document.json.JsonSerializationHelper.*;
  * @see #serialize(com.yahoo.document.DocumentUpdate)
  * @author Vegard Sjonfjell
  */
-public class DocumentUpdateJsonSerializer
-{
+public class DocumentUpdateJsonSerializer {
+
     private final JsonFactory jsonFactory = new JsonFactory();
     private final JsonDocumentUpdateWriter writer = new JsonDocumentUpdateWriter();
     private JsonGenerator generator;

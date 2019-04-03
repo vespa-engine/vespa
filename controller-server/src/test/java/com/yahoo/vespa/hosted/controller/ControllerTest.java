@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
@@ -532,6 +533,22 @@ public class ControllerTest {
                 .region("us-west-1")
                 .build(true);
         tester.deployCompletely(application, applicationPackage);
+    }
+
+    @Test
+    public void testDeployApplicationWithWarnings() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        ZoneId zone = ZoneId.from("prod", "us-west-1");
+        int warnings = 3;
+        tester.configServer().generateWarnings(new DeploymentId(application.id(), zone), warnings);
+        tester.deployCompletely(application, applicationPackage);
+        assertEquals(warnings, tester.applications().require(application.id()).deployments().get(zone)
+                                     .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

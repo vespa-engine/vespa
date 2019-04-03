@@ -78,10 +78,12 @@ Watcher::~Watcher()
 
 
 struct donecache {
+    donecache() : st_dev(0), st_ino(0), offset(0), valid(false) { memset(pad, 0, sizeof(pad)); }
     dev_t st_dev; /* device */
     ino_t st_ino; /* inode number */
     off_t offset;
     bool  valid;
+    char pad[7];
 };
 
 class StateSaver {
@@ -220,7 +222,7 @@ Watcher::watchfile()
                 }
                 while (nnl != nullptr && elapsed(tickStart) < 1) {
                     ++nnl;
-                    _forwarder.forwardLine(l, nnl);
+                    _forwarder.forwardLine(std::string_view(l, (nnl - l)));
                     ssize_t wsize = nnl - l;
                     offset += wsize;
                     l = nnl;
@@ -286,6 +288,7 @@ Watcher::watchfile()
             }
         }
 
+        _forwarder.flush();
         dcf.saveState(already);
 
         if (_confsubscriber.checkAvailable()) {

@@ -155,7 +155,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/command/restart")) {
             int restartCount = nodeRepository.restart(toNodeFilter(request)).size();
             return new MessageResponse("Scheduled restart of " + restartCount + " matching nodes");
@@ -177,7 +177,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleDELETE(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
+        Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) {
             String hostname = path.get("hostname");
             List<Node> removedNodes = nodeRepository.removeRecursively(hostname);

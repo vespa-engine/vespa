@@ -11,10 +11,10 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -61,19 +61,20 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                             applications.store(locked.withRotationStatus(rotationStatus(application))));
 
                     for (Deployment deployment : application.deployments().values()) {
-                        MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
-                                                                                         .getDeploymentMetrics(application.id(), deployment.zone());
-
-                        DeploymentMetrics newMetrics = new DeploymentMetrics(deploymentMetrics.queriesPerSecond(),
-                                                                             deploymentMetrics.writesPerSecond(),
-                                                                             deploymentMetrics.documentCount(),
-                                                                             deploymentMetrics.queryLatencyMillis(),
-                                                                             deploymentMetrics.writeLatencyMillis(),
-                                                                             Optional.of(controller().clock().instant()));
-
-                        applications.lockIfPresent(application.id(), locked ->
-                                applications.store(locked.with(deployment.zone(), newMetrics)
-                                                         .recordActivityAt(controller().clock().instant(), deployment.zone())));
+                        MetricsService.DeploymentMetrics collectedMetrics = controller().metricsService()
+                                                                                        .getDeploymentMetrics(application.id(), deployment.zone());
+                        Instant now = controller().clock().instant();
+                        applications.lockIfPresent(application.id(), locked -> {
+                            DeploymentMetrics newMetrics = locked.get().deployments().get(deployment.zone()).metrics()
+                                                                 .withQueriesPerSecond(collectedMetrics.queriesPerSecond())
+                                                                 .withWritesPerSecond(collectedMetrics.writesPerSecond())
+                                                                 .withDocumentCount(collectedMetrics.documentCount())
+                                                                 .withQueryLatencyMillis(collectedMetrics.queryLatencyMillis())
+                                                                 .withWriteLatencyMillis(collectedMetrics.writeLatencyMillis())
+                                                                 .at(now);
+                            applications.store(locked.with(deployment.zone(), newMetrics)
+                                                     .recordActivityAt(now, deployment.zone()));
+                        });
                     }
                 } catch (Exception e) {
                     failures.incrementAndGet();

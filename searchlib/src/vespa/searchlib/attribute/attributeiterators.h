@@ -5,6 +5,7 @@
 #include "dociditerator.h"
 #include "postinglisttraits.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 namespace search {
 
@@ -29,12 +30,16 @@ protected:
     template <typename SC>
     std::unique_ptr<BitVector> get_hits(const SC & sc, uint32_t begin_id) const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const attribute::ISearchContext &_baseSearchCtx;
-    fef::TermFieldMatchData * _matchData;
+    const attribute::ISearchContext & _baseSearchCtx;
+    fef::TermFieldMatchData         * _matchData;
     fef::TermFieldMatchDataPosition * _matchPosition;
 
 public:
-    AttributeIteratorBase(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData);
+    AttributeIteratorBase(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData)
+        : _baseSearchCtx(baseSearchCtx),
+          _matchData(matchData),
+          _matchPosition(_matchData->populate_fixed())
+    { }
     Trinary is_strict() const override { return Trinary::False; }
     const attribute::ISearchContext *getAttributeSearchContext() const override { return &_baseSearchCtx; }
 };
@@ -67,7 +72,11 @@ class FilterAttributeIterator : public AttributeIteratorBase
 {
 public:
     FilterAttributeIterator(const attribute::ISearchContext &baseSearchCtx,
-                            fef::TermFieldMatchData *matchData);
+                            fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData)
+    {
+        _matchPosition->setElementWeight(1);
+    }
 protected:
     void doUnpack(uint32_t docId) override;
 };
@@ -167,7 +176,10 @@ class AttributePostingListIterator : public AttributeIteratorBase
 {
 public:
     AttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx,
-                                 bool hasWeight, fef::TermFieldMatchData *matchData);
+                                 bool hasWeight, fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData),
+          _hasWeight(hasWeight)
+    {}
     Trinary is_strict() const override { return Trinary::True; }
 protected:
     bool  _hasWeight;
@@ -177,7 +189,9 @@ protected:
 class FilterAttributePostingListIterator : public AttributeIteratorBase
 {
 public:
-    FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData);
+    FilterAttributePostingListIterator(const attribute::ISearchContext &baseSearchCtx, fef::TermFieldMatchData *matchData)
+        : AttributeIteratorBase(baseSearchCtx, matchData)
+    {}
     Trinary is_strict() const override { return Trinary::True; }
 };
 

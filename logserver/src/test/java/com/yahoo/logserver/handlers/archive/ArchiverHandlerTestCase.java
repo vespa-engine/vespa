@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers.archive;
 
+import com.yahoo.io.IOUtils;
+import com.yahoo.log.InvalidLogFormatException;
+import com.yahoo.log.LogMessage;
+import com.yahoo.plugin.SystemPropertyConfig;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -10,15 +18,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.yahoo.io.IOUtils;
-import com.yahoo.log.InvalidLogFormatException;
-import com.yahoo.log.LogMessage;
-import com.yahoo.plugin.SystemPropertyConfig;
-
-import org.junit.*;
-import org.junit.rules.TemporaryFolder;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Bjorn Borud
@@ -26,10 +28,10 @@ import static org.junit.Assert.*;
 public class ArchiverHandlerTestCase {
 
     private static final String[] mStrings = {
-            "1095159244.095\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
-            "1095206399.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
-            "1095206400.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
-            "1095206401.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
+            "1095159244.095000\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
+            "1095206399.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
+            "1095206400.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
+            "1095206401.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
     };
 
     private static final LogMessage[] msg = new LogMessage[mStrings.length];
@@ -85,8 +87,8 @@ public class ArchiverHandlerTestCase {
         try {
             ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
                                                     1024);
-            LogMessage msg1 = LogMessage.parseNativeFormat("1139322725\thost\tthread\tservice\tcomponent\tinfo\tpayload");
-            LogMessage msg2 = LogMessage.parseNativeFormat("1161172200\thost\tthread\tservice\tcomponent\tinfo\tpayload");
+            LogMessage msg1 = LogMessage.parseNativeFormat("1139322725\thost\t1/1\tservice\tcomponent\tinfo\tpayload");
+            LogMessage msg2 = LogMessage.parseNativeFormat("1161172200\thost\t1/1\tservice\tcomponent\tinfo\tpayload");
             assertEquals(tmpDir.getAbsolutePath() + "/2006/02/07/14", a.getPrefix(msg1));
             assertEquals(tmpDir.getAbsolutePath() + "/2006/10/18/11", a.getPrefix(msg2));
             assertEquals(a.getPrefix(msg1).length(), a.getPrefix(msg2).length());

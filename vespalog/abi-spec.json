@@ -23,6 +23,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)",
       "public void <init>()"
     ],
     "fields": []
@@ -118,9 +119,13 @@
       "public"
     ],
     "methods": [
+      "public static com.yahoo.log.LogMessage of(java.time.Instant, java.lang.String, long, long, java.lang.String, java.lang.String, java.util.logging.Level, java.lang.String)",
+      "public java.time.Instant getTimestamp()",
       "public long getTime()",
       "public long getTimeInSeconds()",
       "public java.lang.String getHost()",
+      "public long getProcessId()",
+      "public java.util.OptionalLong getThreadId()",
       "public java.lang.String getThreadProcess()",
       "public java.lang.String getService()",
       "public java.lang.String getComponent()",
@@ -128,7 +133,9 @@
       "public java.lang.String getPayload()",
       "public static com.yahoo.log.LogMessage parseNativeFormat(java.lang.String)",
       "public com.yahoo.log.event.Event getEvent()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -258,6 +265,7 @@
       "public void <init>()",
       "public static java.lang.String escape(java.lang.String)",
       "public static void formatTime(long, java.lang.StringBuilder)",
+      "public static java.lang.String formatTime(java.time.Instant)",
       "public static java.lang.String format(java.lang.String, java.lang.String, java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, java.lang.Throwable)",
       "public static void formatException(java.lang.Throwable, java.lang.StringBuilder)"
     ],

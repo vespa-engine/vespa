@@ -9,6 +9,7 @@ import org.osgi.service.log.LogService;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.time.Instant;
 
 /**
  * @author Simon Thoresen Hult
@@ -44,21 +45,8 @@ class ConsoleLogFormatter {
     // TODO: The non-functional, side effect-laden coding style here is ugly and makes testing hard. See ticket 7128315.
 
     private StringBuilder formatTime(LogEntry entry, StringBuilder out) {
-        String str = Long.toString(Long.MAX_VALUE & entry.getTime()); // remove sign bit for good measure
-        int len = str.length();
-        if (len > 3) {
-            out.append(str, 0, len - 3);
-        } else {
-            out.append('0');
-        }
-        out.append('.');
-        if (len > 2) {
-            out.append(str, len - 3, len);
-        } else if (len == 2) {
-            out.append('0').append(str, len - 2, len); // should never happen
-        } else if (len == 1) {
-            out.append("00").append(str, len - 1, len); // should never happen
-        }
+        Instant instant = Instant.ofEpochMilli(entry.getTime());
+        out.append(String.format("%d.%06d", instant.getEpochSecond(), instant.getNano() / 1000));
         return out;
     }
 

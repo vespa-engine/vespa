@@ -2,6 +2,7 @@
 
 #include "termfieldmatchdata.h"
 #include <limits>
+#include <cassert>
 
 namespace search::fef {
 
@@ -28,7 +29,8 @@ TermFieldMatchData::TermFieldMatchData(const TermFieldMatchData & rhs) :
     }
 }
 
-TermFieldMatchData & TermFieldMatchData::operator = (const TermFieldMatchData & rhs)
+TermFieldMatchData &
+TermFieldMatchData::operator = (const TermFieldMatchData & rhs)
 {
     if (this != & rhs) {
         TermFieldMatchData tmp(rhs);
@@ -45,6 +47,27 @@ TermFieldMatchData::~TermFieldMatchData()
     } else {
         getFixed()->~TermFieldMatchDataPosition();
     }
+}
+
+TermFieldMatchData::MutablePositionsIterator
+TermFieldMatchData::populate_fixed() {
+    assert(!allocated());
+    if (_sz == 0) {
+        new (_data._position) TermFieldMatchDataPosition();
+        _sz = 1;
+    }
+    return getFixed();
+}
+
+TermFieldMatchData &
+TermFieldMatchData::setFieldId(uint32_t fieldId) {
+    if (fieldId == IllegalFieldId) {
+        fieldId = FIELDID_MASK;
+    } else {
+        assert(fieldId < FIELDID_MASK);
+    }
+    _fieldId = (_fieldId & ~FIELDID_MASK) | fieldId;
+    return *this;
 }
 
 namespace {

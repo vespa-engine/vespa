@@ -99,7 +99,7 @@ public class RPCCommunicatorTest {
                 (RequestWaiter)any());
     }
 
-    private static class Fixture {
+    private static class Fixture<RequestType> {
         final Supervisor mockSupervisor = mock(Supervisor.class);
         final Target mockTarget = mock(Target.class);
         final Timer timer = new FakeTimer();
@@ -107,7 +107,7 @@ public class RPCCommunicatorTest {
         final AtomicReference<Request> receivedRequest = new AtomicReference<>();
         final AtomicReference<RequestWaiter> receivedWaiter = new AtomicReference<>();
         @SuppressWarnings("unchecked") // Cannot mock with "compiler-obvious" type safety for generics
-        final Communicator.Waiter<SetClusterStateRequest> mockWaiter = mock(Communicator.Waiter.class);
+        final Communicator.Waiter<RequestType> mockWaiter = mock(Communicator.Waiter.class);
 
         Fixture() {
             communicator = new RPCCommunicator(
@@ -131,9 +131,9 @@ public class RPCCommunicatorTest {
 
     @Test
     public void setSystemState_v3_sends_distribution_states_rpc() {
-        Fixture f = new Fixture();
-        ClusterFixture cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
-        ClusterStateBundle sentBundle = ClusterStateBundleUtil.makeBundle("distributor:3 storage:3");
+        var f = new Fixture<SetClusterStateRequest>();
+        var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
+        var sentBundle = ClusterStateBundleUtil.makeBundle("distributor:3 storage:3");
         f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
 
         Request req = f.receivedRequest.get();
@@ -147,9 +147,9 @@ public class RPCCommunicatorTest {
 
     @Test
     public void set_distribution_states_v3_rpc_auto_downgrades_to_v2_on_unknown_method_error() {
-        Fixture f = new Fixture();
-        ClusterFixture cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
-        ClusterStateBundle sentBundle = ClusterStateBundleUtil.makeBundle("version:123 distributor:3 storage:3");
+        var f = new Fixture<SetClusterStateRequest>();
+        var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
+        var sentBundle = ClusterStateBundleUtil.makeBundle("version:123 distributor:3 storage:3");
         f.communicator.setSystemState(sentBundle, cf.cluster().getNodeInfo(Node.ofStorage(1)), f.mockWaiter);
 
         RequestWaiter waiter = f.receivedWaiter.get();
@@ -161,7 +161,7 @@ public class RPCCommunicatorTest {
         waiter.handleRequestDone(req);
 
         // This would normally be done in processResponses(), but that code path is not invoked in this test.
-        cf.cluster().getNodeInfo(Node.ofStorage(1)).setSystemStateVersionAcknowledged(123, false);
+        cf.cluster().getNodeInfo(Node.ofStorage(1)).setClusterStateBundleVersionAcknowledged(123, false);
 
         f.receivedRequest.set(null);
         // Now when we try again, we should have been downgraded to the legacy setsystemstate2 RPC
@@ -169,6 +169,19 @@ public class RPCCommunicatorTest {
         req = f.receivedRequest.get();
         assertThat(req, notNullValue());
         assertThat(req.methodName(), equalTo(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME));
+    }
+
+    @Test
+    public void activateClusterStateVersion_sends_version_activation_rpc() {
+        var f = new Fixture<ActivateClusterStateVersionRequest>();
+        var cf = ClusterFixture.forFlatCluster(3).bringEntireClusterUp().assignDummyRpcAddresses();
+        f.communicator.activateClusterStateVersion(12345, cf.cluster().getNodeInfo(Node.ofDistributor(1)), f.mockWaiter);
+
+        Request req = f.receivedRequest.get();
+        assertThat(req, notNullValue());
+        assertThat(req.methodName(), equalTo(RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME));
+        assertTrue(req.parameters().satisfies("i")); // <cluster state version>
+        assertThat(req.parameters().get(0).asInt32(), equalTo(12345));
     }
 
 }

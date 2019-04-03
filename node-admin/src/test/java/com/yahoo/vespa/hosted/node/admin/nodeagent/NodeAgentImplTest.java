@@ -25,7 +25,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorE
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
-import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -84,7 +84,7 @@ public class NodeAgentImplTest {
     private final HealthChecker healthChecker = mock(HealthChecker.class);
     private final ContainerStats emptyContainerStats = new ContainerStats(Collections.emptyMap(),
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
-    private final AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
+    private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
 
@@ -763,7 +763,7 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeMetricsConfig(any());
 
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, flagSource, Optional.of(athenzCredentialsMaintainer), Optional.of(aclMaintainer),
+                storageMaintainer, flagSource, Optional.of(credentialsMaintainer), Optional.of(aclMaintainer),
                 Optional.of(healthChecker));
     }
 

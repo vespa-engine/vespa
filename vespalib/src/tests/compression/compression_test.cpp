@@ -40,6 +40,33 @@ TEST("requireThatZStdCompressFine") {
     EXPECT_EQUAL(64u, compressed.getDataLen());
 }
 
+TEST("require that no compression/decompression works") {
+    CompressionConfig cfg(CompressionConfig::Type::NONE);
+    Compress compress(cfg, _G_compressableText.c_str(), _G_compressableText.size());
+    EXPECT_EQUAL(CompressionConfig::Type::NONE, compress.type());
+    EXPECT_EQUAL(1072u, compress.size());
+    Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
+    EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
+}
+
+TEST("require that lz4 compression/decompression works") {
+    CompressionConfig cfg(CompressionConfig::Type::LZ4);
+    Compress compress(cfg, _G_compressableText.c_str(), _G_compressableText.size());
+    EXPECT_EQUAL(CompressionConfig::Type::LZ4, compress.type());
+    EXPECT_EQUAL(66u, compress.size());
+    Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
+    EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
+}
+
+TEST("requiret that zstd compression/decompression works") {
+    CompressionConfig cfg(CompressionConfig::Type::ZSTD);
+    Compress compress(cfg, _G_compressableText.c_str(), _G_compressableText.size());
+    EXPECT_EQUAL(CompressionConfig::Type::ZSTD, compress.type());
+    EXPECT_EQUAL(64u, compress.size());
+    Decompress decompress(compress.type(), _G_compressableText.size(), compress.data(), compress.size());
+    EXPECT_EQUAL(_G_compressableText, vespalib::string(decompress.data(), decompress.size()));
+}
+
 TEST_MAIN() {
     TEST_RUN_ALL();
 }

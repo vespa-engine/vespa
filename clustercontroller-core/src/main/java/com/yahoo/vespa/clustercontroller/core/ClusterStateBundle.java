@@ -19,16 +19,23 @@ import java.util.stream.Collectors;
  *
  * The baseline state is identical to the legacy, global cluster state that the
  * cluster controller has historically produced as its only output.
+ *
+ * The bundle also contains an additional "deferred activation" flag which tells
+ * the recipient if the cluster state transition should complete immediately or
+ * await an explicit activation RPC from the cluster controller.
  */
 public class ClusterStateBundle {
 
     private final AnnotatedClusterState baselineState;
     private final Map<String, AnnotatedClusterState> derivedBucketSpaceStates;
+    private final boolean deferredActivation;
 
     public static class Builder {
         private final AnnotatedClusterState baselineState;
+        private Map<String, AnnotatedClusterState> explicitDerivedStates;
         private ClusterStateDeriver stateDeriver;
         private Set<String> bucketSpaces;
+        private boolean deferredActivation = false;
 
         public Builder(AnnotatedClusterState baselineState) {
             this.baselineState = baselineState;
@@ -40,30 +47,59 @@ public class ClusterStateBundle {
         }
 
         public Builder bucketSpaces(Set<String> bucketSpaces) {
+            if (this.explicitDerivedStates != null) {
+                throw new IllegalStateException("Cannot set bucket spaces on Builder that already " +
+                                                "has explicit derived states set");
+            }
             this.bucketSpaces = bucketSpaces;
             return this;
         }
 
         public Builder bucketSpaces(String... bucketSpaces) {
-            this.bucketSpaces = new TreeSet<>(Arrays.asList(bucketSpaces));
+            return bucketSpaces(new TreeSet<>(Arrays.asList(bucketSpaces)));
+        }
+
+        public Builder explicitDerivedStates(Map<String, AnnotatedClusterState> derivedStates) {
+            if (this.bucketSpaces != null || this.stateDeriver != null) {
+                throw new IllegalStateException("Cannot set explicitly derived states on Builder " +
+                                                "that already has bucket spaces or deriver set");
+            }
+            this.explicitDerivedStates = derivedStates;
+            return this;
+        }
+
+        public Builder deferredActivation(boolean deferred) {
+            this.deferredActivation = deferred;
             return this;
         }
 
         public ClusterStateBundle deriveAndBuild() {
-            if (stateDeriver == null || bucketSpaces == null || bucketSpaces.isEmpty()) {
-                return ClusterStateBundle.ofBaselineOnly(baselineState);
+            if ((stateDeriver == null || bucketSpaces == null || bucketSpaces.isEmpty()) && explicitDerivedStates == null) {
+                return ClusterStateBundle.ofBaselineOnly(baselineState, deferredActivation);
             }
-            Map<String, AnnotatedClusterState> derived = bucketSpaces.stream()
-                    .collect(Collectors.toMap(
-                            Function.identity(),
-                            s -> stateDeriver.derivedFrom(baselineState, s)));
-            return new ClusterStateBundle(baselineState, derived);
+            Map<String, AnnotatedClusterState> derived;
+            if (explicitDerivedStates != null) {
+                derived = explicitDerivedStates;
+            } else {
+                derived = bucketSpaces.stream()
+                        .collect(Collectors.toMap(
+                                Function.identity(),
+                                s -> stateDeriver.derivedFrom(baselineState, s)));
+            }
+            return new ClusterStateBundle(baselineState, derived, deferredActivation);
         }
     }
 
     private ClusterStateBundle(AnnotatedClusterState baselineState, Map<String, AnnotatedClusterState> derivedBucketSpaceStates) {
+        this(baselineState, derivedBucketSpaceStates, false);
+    }
+
+    private ClusterStateBundle(AnnotatedClusterState baselineState, Map<String,
+                               AnnotatedClusterState> derivedBucketSpaceStates,
+                               boolean deferredActivation) {
         this.baselineState = baselineState;
         this.derivedBucketSpaceStates = Collections.unmodifiableMap(derivedBucketSpaceStates);
+        this.deferredActivation = deferredActivation;
     }
 
     public static Builder builder(AnnotatedClusterState baselineState) {
@@ -72,6 +108,16 @@ public class ClusterStateBundle {
 
     public static ClusterStateBundle of(AnnotatedClusterState baselineState, Map<String, AnnotatedClusterState> derivedBucketSpaceStates) {
         return new ClusterStateBundle(baselineState, derivedBucketSpaceStates);
+    }
+
+    public static ClusterStateBundle of(AnnotatedClusterState baselineState,
+                                        Map<String, AnnotatedClusterState> derivedBucketSpaceStates,
+                                        boolean deferredActivation) {
+        return new ClusterStateBundle(baselineState, derivedBucketSpaceStates, deferredActivation);
+    }
+
+    public static ClusterStateBundle ofBaselineOnly(AnnotatedClusterState baselineState, boolean deferredActivation) {
+        return new ClusterStateBundle(baselineState, Collections.emptyMap(), deferredActivation);
     }
 
     public static ClusterStateBundle ofBaselineOnly(AnnotatedClusterState baselineState) {
@@ -94,13 +140,15 @@ public class ClusterStateBundle {
         return derivedBucketSpaceStates;
     }
 
+    public boolean deferredActivation() { return this.deferredActivation; }
+
     public ClusterStateBundle cloneWithMapper(Function<ClusterState, ClusterState> mapper) {
         AnnotatedClusterState clonedBaseline = baselineState.cloneWithClusterState(
                 mapper.apply(baselineState.getClusterState().clone()));
         Map<String, AnnotatedClusterState> clonedDerived = derivedBucketSpaceStates.entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().cloneWithClusterState(
                         mapper.apply(e.getValue().getClusterState().clone()))));
-        return new ClusterStateBundle(clonedBaseline, clonedDerived);
+        return new ClusterStateBundle(clonedBaseline, clonedDerived, deferredActivation);
     }
 
     public ClusterStateBundle clonedWithVersionSet(int version) {
@@ -127,12 +175,14 @@ public class ClusterStateBundle {
     @Override
     public String toString() {
         if (derivedBucketSpaceStates.isEmpty()) {
-            return String.format("ClusterStateBundle('%s')", baselineState);
+            return String.format("ClusterStateBundle('%s'%s)", baselineState,
+                    deferredActivation ? " (deferred activation)" : "");
         }
         Map<String, AnnotatedClusterState> orderedStates = new TreeMap<>(derivedBucketSpaceStates);
-        return String.format("ClusterStateBundle('%s', %s)", baselineState, orderedStates.entrySet().stream()
+        return String.format("ClusterStateBundle('%s', %s%s)", baselineState, orderedStates.entrySet().stream()
                 .map(e -> String.format("%s '%s'", e.getKey(), e.getValue()))
-                .collect(Collectors.joining(", ")));
+                .collect(Collectors.joining(", ")),
+                deferredActivation ? " (deferred activation)" : "");
     }
 
     @Override
@@ -140,13 +190,13 @@ public class ClusterStateBundle {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ClusterStateBundle that = (ClusterStateBundle) o;
-        return Objects.equals(baselineState, that.baselineState) &&
+        return deferredActivation == that.deferredActivation &&
+                Objects.equals(baselineState, that.baselineState) &&
                 Objects.equals(derivedBucketSpaceStates, that.derivedBucketSpaceStates);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(baselineState, derivedBucketSpaceStates);
+        return Objects.hash(baselineState, derivedBucketSpaceStates, deferredActivation);
     }
-
 }

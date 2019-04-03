@@ -170,8 +170,8 @@ public class Model implements Cloneable {
     }
 
     /**
-     * <p>Explicitly sets the locale to be used during parsing. This method also calls {@link #setLanguage(Language)}
-     * with the corresponding {@link Language} instance.</p>
+     * Explicitly sets the locale to be used during parsing. This method also calls {@link #setLanguage(Language)}
+     * with the corresponding {@link Language} instance.
      *
      * @param locale the locale to set
      * @see #getLocale()

@@ -23,7 +23,11 @@ import org.json.JSONObject;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
@@ -235,6 +239,7 @@ public class StateHandler extends AbstractRequestHandler {
                 GaugeMetric gauge = (GaugeMetric) tuple.val;
                 JSONObjectWithLegibleException valueFields = new JSONObjectWithLegibleException();
                 valueFields.put("average", gauge.getAverage())
+                        .put("sum", gauge.getSum())
                         .put("count", gauge.getCount())
                         .put("last", gauge.getLast())
                         .put("max", gauge.getMax())

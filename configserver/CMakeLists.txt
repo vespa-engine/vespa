@@ -12,6 +12,7 @@ install(DIRECTORY src/main/resources/configserver-app DESTINATION conf)
 
 install(CODE "execute_process(COMMAND mkdir -p \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components)")
 install(CODE "execute_process(COMMAND mkdir -p \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/config-models)")
+install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/athenz-identity-provider-service.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/config-model-fat.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/config-model-fat.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/configserver-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/configserver.jar)")
 install(CODE "execute_process(COMMAND ln -snf \${CMAKE_INSTALL_PREFIX}/lib/jars/configserver-flags-jar-with-dependencies.jar \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/conf/configserver-app/components/configserver-flags.jar)")

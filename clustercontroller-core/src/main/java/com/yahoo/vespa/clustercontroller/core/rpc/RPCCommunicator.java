@@ -15,6 +15,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.Communicator;
 import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
@@ -34,6 +35,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class RPCCommunicator implements Communicator {
 
     public static final Logger log = Logger.getLogger(RPCCommunicator.class.getName());
+
+    public static final int ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION = 4;
+    public static final String ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME = "activate_cluster_state_version";
 
     public static final int SET_DISTRIBUTION_STATES_RPC_VERSION = 3;
     public static final String SET_DISTRIBUTION_STATES_RPC_METHOD_NAME = "setdistributionstates";
@@ -106,7 +110,7 @@ public class RPCCommunicator implements Communicator {
     public void getNodeState(NodeInfo node, Waiter<GetNodeStateRequest> externalWaiter) {
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(LogLevel.DEBUG, "Connection to " + node.getRpcAddress() + " could not be created.");
+            log.log(LogLevel.DEBUG, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
         }
         NodeState currentState = node.getReportedState();
         Request req = new Request("getnodestate3");
@@ -134,7 +138,7 @@ public class RPCCommunicator implements Communicator {
 
         Target connection = getConnection(node);
         if ( ! connection.isValid()) {
-            log.log(LogLevel.DEBUG, "Connection to " + node.getRpcAddress() + " could not be created.");
+            log.log(LogLevel.DEBUG, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
             return;
         }
         int nodeVersion = node.getVersion();
@@ -158,7 +162,29 @@ public class RPCCommunicator implements Communicator {
         waiter.setRequest(stateRequest);
 
         connection.invokeAsync(req, 60, waiter);
-        node.setSystemStateVersionSent(baselineState);
+        node.setClusterStateVersionBundleSent(stateBundle);
+    }
+
+    @Override
+    public void activateClusterStateVersion(int clusterStateVersion, NodeInfo node, Waiter<ActivateClusterStateVersionRequest> externalWaiter) {
+        var waiter = new RPCActivateClusterStateVersionWaiter(externalWaiter);
+
+        Target connection = getConnection(node);
+        if ( ! connection.isValid()) {
+            log.log(LogLevel.DEBUG, () -> String.format("Connection to '%s' could not be created.", node.getRpcAddress()));
+            return;
+        }
+
+        var req = new Request(ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME);
+        req.parameters().add(new Int32Value(clusterStateVersion));
+
+        log.log(LogLevel.DEBUG, () -> String.format("Sending '%s' RPC to %s for state version %d",
+                req.methodName(), node.getRpcAddress(), clusterStateVersion));
+        var activationRequest = new RPCActivateClusterStateVersionRequest(node, req, clusterStateVersion);
+        waiter.setRequest(activationRequest);
+
+        connection.invokeAsync(req, 60, waiter);
+        node.setClusterStateVersionActivationSent(clusterStateVersion);
     }
 
     // protected for testing.

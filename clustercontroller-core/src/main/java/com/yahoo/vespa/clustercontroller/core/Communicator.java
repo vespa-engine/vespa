@@ -20,6 +20,8 @@ public interface Communicator {
 
     void setSystemState(ClusterStateBundle states, NodeInfo node, Waiter<SetClusterStateRequest> waiter);
 
+    void activateClusterStateVersion(int clusterStateVersion, NodeInfo node, Waiter<ActivateClusterStateVersionRequest> waiter);
+
     void shutdown();
 
 }

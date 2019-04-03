@@ -53,7 +53,7 @@ public class Node {
     public boolean isWorking() { return working.get(); }
 
     /** Updates the active documents on this node */
-    void setActiveDocuments(long activeDocuments) {
+    public void setActiveDocuments(long activeDocuments) {
         this.activeDocuments.set(activeDocuments);
     }
 

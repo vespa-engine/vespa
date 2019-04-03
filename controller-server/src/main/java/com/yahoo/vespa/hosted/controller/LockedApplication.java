@@ -148,14 +148,14 @@ public class LockedApplication {
     }
 
     public LockedApplication withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
-                                               Instant instant) {
+                                               Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings) {
         // Use info from previous deployment if available, otherwise create a new one.
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
                                                                                       version, instant));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
-                                                  previousDeployment.metrics(),
+                                                  previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity());
         return with(newDeployment);
     }

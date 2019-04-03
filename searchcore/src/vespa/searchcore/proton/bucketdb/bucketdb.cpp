@@ -22,10 +22,15 @@ BucketDB::~BucketDB()
     clear();
 }
 
+void
+BucketDB::add(const BucketId &bucketId, const BucketState & state) {
+    _map[bucketId] += state;
+}
+
 bucketdb::BucketState *
 BucketDB::getBucketStatePtr(const BucketId &bucket)
 {
-    MapIterator it(_map.find(bucket));
+    auto it(_map.find(bucket));
     if (it != _map.end()) {
         return &it->second;
     }
@@ -42,9 +47,7 @@ BucketDB::unloadBucket(const BucketId &bucket, const BucketState &delta)
 
 const bucketdb::BucketState &
 BucketDB::add(const GlobalId &gid,
-              const BucketId &bucketId,
-              const Timestamp &timestamp,
-              uint32_t docSize,
+              const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
               SubDbType subDbType)
 {
     BucketState &state = _map[bucketId];
@@ -54,9 +57,7 @@ BucketDB::add(const GlobalId &gid,
 
 void
 BucketDB::remove(const GlobalId &gid,
-                 const BucketId &bucketId,
-                 const Timestamp &timestamp,
-                 uint32_t docSize,
+                 const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
                  SubDbType subDbType)
 {
     BucketState &state = _map[bucketId];
@@ -65,17 +66,13 @@ BucketDB::remove(const GlobalId &gid,
 
 void
 BucketDB::modify(const GlobalId &gid,
-                 const BucketId &oldBucketId,
-                 const Timestamp &oldTimestamp,
-                 uint32_t oldDocSize,
-                 const BucketId &newBucketId,
-                 const Timestamp &newTimestamp,
-                 uint32_t newDocSize,
+                 const BucketId &oldBucketId, const Timestamp &oldTimestamp, uint32_t oldDocSize,
+                 const BucketId &newBucketId, const Timestamp &newTimestamp, uint32_t newDocSize,
                  SubDbType subDbType)
 {
     if (oldBucketId == newBucketId) {
         BucketState &state = _map[oldBucketId];
-        state.modify(oldTimestamp, oldDocSize, newTimestamp, newDocSize, subDbType);
+        state.modify(gid, oldTimestamp, oldDocSize, newTimestamp, newDocSize, subDbType);
     } else {
         remove(gid, oldBucketId, oldTimestamp, oldDocSize, subDbType);
         add(gid, newBucketId, newTimestamp, newDocSize, subDbType);
@@ -86,7 +83,7 @@ BucketDB::modify(const GlobalId &gid,
 bucketdb::BucketState
 BucketDB::get(const BucketId &bucketId) const
 {
-    Map::const_iterator itr = _map.find(bucketId);
+    auto itr = _map.find(bucketId);
     if (itr != _map.end()) {
         return itr->second;
     }
@@ -125,22 +122,15 @@ BucketDB::cachedGet(const BucketId &bucketId) const
 bool
 BucketDB::hasBucket(const BucketId &bucketId) const
 {
-    Map::const_iterator itr = _map.find(bucketId);
-    if (itr != _map.end()) {
-        return true;
-    }
-    return false;
+    return (_map.find(bucketId) != _map.end());
 }
 
 
 bool
 BucketDB::isActiveBucket(const BucketId &bucketId) const
 {
-    Map::const_iterator itr = _map.find(bucketId);
-    if (itr != _map.end()) {
-        return itr->second.isActive();
-    }
-    return false;
+    auto itr = _map.find(bucketId);
+    return (itr != _map.end()) && itr->second.isActive();
 }
 
 void
@@ -194,7 +184,7 @@ BucketDB::createBucket(const BucketId &bucketId)
 void
 BucketDB::deleteEmptyBucket(const BucketId &bucketId)
 {
-    Map::iterator itr = _map.find(bucketId);
+    auto itr = _map.find(bucketId);
     if (itr == _map.end()) {
         return;
     }
@@ -215,8 +205,7 @@ BucketDB::getActiveBuckets(BucketId::List &buckets) const
 }
 
 void
-BucketDB::populateActiveBuckets(const BucketId::List &buckets,
-                                BucketId::List &fixupBuckets)
+BucketDB::populateActiveBuckets(const BucketId::List &buckets, BucketId::List &fixupBuckets)
 {
     typedef BucketId::List BIV;
     BIV sorted(buckets);
@@ -237,12 +226,10 @@ BucketDB::populateActiveBuckets(const BucketId::List &buckets,
     for (; si != se; ++si) {
         toAdd.push_back(*si);
     }
-    BIV::const_iterator ai(toAdd.begin());
-    BIV::const_iterator ae(toAdd.end());
     BucketState activeState;
     activeState.setActive(true);
-    for (; ai != ae; ++ai) {
-        InsertResult ins(_map.insert(std::make_pair(*ai, activeState)));
+    for (const BucketId & bucketId : toAdd) {
+        InsertResult ins(_map.emplace(bucketId, activeState));
         assert(ins.second);
     }
 }

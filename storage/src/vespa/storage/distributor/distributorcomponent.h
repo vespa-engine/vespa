@@ -29,11 +29,12 @@ class DistributorComponent : public storage::DistributorComponent
 {
 public:
     DistributorComponent(DistributorInterface& distributor,
-                         DistributorBucketSpaceRepo &bucketSpaceRepo,
-  		         DistributorComponentRegister& compReg,
-		         const std::string& name);
+                         DistributorBucketSpaceRepo& bucketSpaceRepo,
+                         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+                         DistributorComponentRegister& compReg,
+                         const std::string& name);
 
-    ~DistributorComponent();
+    ~DistributorComponent() override;
 
     /**
      * Returns the ownership status of a bucket as decided with the given
@@ -153,6 +154,9 @@ public:
     DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
 
+    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() { return _readOnlyBucketSpaceRepo; }
+    const DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() const { return _readOnlyBucketSpaceRepo; }
+
     /**
      * Finds a bucket that has the same direct parent as the given bucket
      * (i.e. split one bit less), but different bit in the most used bit.
@@ -179,7 +183,8 @@ private:
 
 protected:
 
-    DistributorBucketSpaceRepo &_bucketSpaceRepo;
+    DistributorBucketSpaceRepo& _bucketSpaceRepo;
+    DistributorBucketSpaceRepo& _readOnlyBucketSpaceRepo;
     vespalib::Lock _sync;
 };
 

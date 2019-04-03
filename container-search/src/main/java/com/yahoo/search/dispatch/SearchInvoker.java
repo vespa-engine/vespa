@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -31,14 +30,14 @@ public abstract class SearchInvoker extends CloseableInvoker {
      * nodes, the provided {@link Execution} may be used to retrieve document summaries required
      * for correct result windowing.
      */
-    public Result search(Query query, QueryPacket queryPacket, Execution execution) throws IOException {
-        sendSearchRequest(query, queryPacket);
+    public Result search(Query query, Execution execution) throws IOException {
+        sendSearchRequest(query);
         Result result = getSearchResult(execution);
         setFinalStatus(result.hits().getError() == null);
         return result;
     }
 
-    protected abstract void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException;
+    protected abstract void sendSearchRequest(Query query) throws IOException;
 
     protected abstract Result getSearchResult(Execution execution) throws IOException;
 

@@ -48,6 +48,7 @@ private:
     const PointSnapshot &_point;
     const size_t _observedCount;
     const double _averageValue;
+    const double _sumValue;
     const double _minValue;
     const double _maxValue;
     const double _lastValue;
@@ -57,6 +58,7 @@ public:
           _point(p),
           _observedCount(c.observedCount),
           _averageValue(c.sumValue / (c.observedCount > 0 ? c.observedCount : 1)),
+          _sumValue(c.sumValue),
           _minValue(c.minValue),
           _maxValue(c.maxValue),
           _lastValue(c.lastValue)
@@ -66,6 +68,7 @@ public:
     const PointSnapshot &point() const { return _point; }
     size_t observedCount() const { return _observedCount; }
     double averageValue() const { return _averageValue; }
+    double sumValue() const { return _sumValue; }
     double minValue() const { return _minValue; }
     double maxValue() const { return _maxValue; }
     double lastValue() const { return _lastValue; }

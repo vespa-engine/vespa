@@ -64,11 +64,6 @@ public class Flags {
             "Whether to use a dedicated node for the logserver.", "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_DOCKER_91 = defineFeatureFlag(
-            "use-docker-91", false,
-            "Whether to upgrade to Docker version 1.13.1-91.git07f3374", "Takes effect after restart of host admin",
-            HOSTNAME);
-
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
@@ -100,6 +95,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DISPATCH_WITH_PROTOBUF = defineFeatureFlag(
+            "dispatch-with-protobuf", false,
+            "Should the java dispatcher use protobuf/jrt as the default",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
             "Provision a new docker host when we otherwise can't allocate a docker node",
@@ -112,9 +113,27 @@ public class Flags {
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_SEPARATE_SERVICE_TYPE_FOR_LOGSERVER_CONTAINER = defineFeatureFlag(
-            "use-separate-service-type-for-logserver-container", false,
-            "Use separate service type for Logserver container, resulting in logserver container not being an application endpoint",
+    public static final UnboundBooleanFlag ENABLE_METRICS_PROXY_CONTAINER = defineFeatureFlag(
+            "enable-metrics-proxy-container", false,
+            "Start a container for metrics-proxy on every vespa node",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_LB_STATUS_FILE = defineFeatureFlag(
+            "use-lb-status-file", false,
+            "Serve status.html from the new path",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID, HOSTNAME);
+
+    public static final UnboundBooleanFlag USE_NEW_LOGROTATE_CONFIGURATION = defineFeatureFlag(
+            "use-new-logrotate-configuration", false,
+            "Set up logrotate configuration without using any proprietary software",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID, HOSTNAME);
+
+    public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
+            "use-https-load-balancer-upstream", false,
+            "Use https between load balancer and upstream containers",
             "Takes effect at redeployment",
             APPLICATION_ID);
 

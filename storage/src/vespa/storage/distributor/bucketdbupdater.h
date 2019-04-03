@@ -33,7 +33,8 @@ public:
     using OutdatedNodes = dbtransition::OutdatedNodes;
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     BucketDBUpdater(Distributor& owner,
-                    DistributorBucketSpaceRepo &bucketSpaceRepo,
+                    DistributorBucketSpaceRepo& bucketSpaceRepo,
+                    DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                     DistributorMessageSender& sender,
                     DistributorComponentRegister& compReg);
     ~BucketDBUpdater();
@@ -43,6 +44,7 @@ public:
     void recheckBucketInfo(uint32_t nodeIdx, const document::Bucket& bucket);
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
+    bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd) override;
     bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
@@ -124,6 +126,7 @@ private:
         }
     };
 
+    bool shouldDeferStateEnabling() const noexcept;
     bool hasPendingClusterState() const;
     bool pendingClusterStateAccepted(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
     bool processSingleBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
@@ -131,6 +134,7 @@ private:
                                        const BucketRequest& req);
     bool isPendingClusterStateCompleted() const;
     void processCompletedPendingClusterState();
+    void activatePendingClusterState();
     void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                      const BucketRequest& req);
     void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
@@ -141,6 +145,7 @@ private:
                               BucketListMerger::BucketList& existing) const;
     void ensureTransitionTimerStarted();
     void completeTransitionTimer();
+    void clearReadOnlyBucketRepoDatabases();
     /**
      * Adds all buckets contained in the bucket database
      * that are either contained
@@ -161,6 +166,9 @@ private:
     void removeSuperfluousBuckets(const lib::ClusterStateBundle& newState);
 
     void replyToPreviousPendingClusterStateIfAny();
+    void replyToActivationWithActualVersion(
+            const api::ActivateClusterStateVersionCommand& cmd,
+            uint32_t actualVersion);
 
     void enableCurrentClusterStateBundleInDistributor();
     void addCurrentStateToClusterStateHistory();
@@ -191,23 +199,27 @@ private:
     public:
         NodeRemover(const lib::ClusterState& oldState,
                     const lib::ClusterState& s,
-                    [[maybe_unused]] const document::BucketIdFactory& factory,
                     uint16_t localIndex,
                     const lib::Distribution& distribution,
                     const char* upStates)
             : _oldState(oldState),
               _state(s),
+              _nonOwnedBuckets(),
+              _removedBuckets(),
               _localIndex(localIndex),
               _distribution(distribution),
               _upStates(upStates) {}
 
-        ~NodeRemover();
+        ~NodeRemover() override;
         bool process(BucketDatabase::Entry& e) override;
         void logRemove(const document::BucketId& bucketId, const char* msg) const;
         bool distributorOwnsBucket(const document::BucketId&) const;
 
-        const std::vector<document::BucketId>& getBucketsToRemove() const {
+        const std::vector<document::BucketId>& getBucketsToRemove() const noexcept {
             return _removedBuckets;
+        }
+        const std::vector<document::BucketId>& getNonOwnedBuckets() const noexcept {
+            return _nonOwnedBuckets;
         }
     private:
         void setCopiesInEntry(BucketDatabase::Entry& e, const std::vector<BucketCopy>& copies) const;
@@ -215,6 +227,7 @@ private:
 
         const lib::ClusterState _oldState;
         const lib::ClusterState _state;
+        std::vector<document::BucketId> _nonOwnedBuckets;
         std::vector<document::BucketId> _removedBuckets;
 
         uint16_t _localIndex;

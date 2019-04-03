@@ -738,7 +738,7 @@ public class RankProfile implements Serializable, Cloneable {
      * Creates a context containing the type information of all constants, attributes and query profiles
      * referable from this rank profile.
      */
-    public TypeContext<Reference> typeContext(QueryProfileRegistry queryProfiles) {
+    public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getFunctions().values().stream()
                                                                                       .map(RankingExpressionFunction::function)
                                                                                       .collect(Collectors.toList()));

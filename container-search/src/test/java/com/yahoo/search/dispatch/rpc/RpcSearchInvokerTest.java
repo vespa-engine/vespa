@@ -5,7 +5,6 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
@@ -40,7 +39,7 @@ public class RpcSearchInvokerTest {
         var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 77, 1), mockPool);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        invoker.sendSearchRequest(q, null);
+        invoker.sendSearchRequest(q);
 
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
@@ -54,8 +53,8 @@ public class RpcSearchInvokerTest {
             AtomicInteger lengthHolder) {
         return new Client() {
             @Override
-            public void search(NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-                    RpcSearchInvoker responseReceiver, double timeoutSeconds) {
+            public void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength,
+                    byte[] compressedPayload, ResponseReceiver responseReceiver, double timeoutSeconds) {
                 compressionTypeHolder.set(compression);
                 payloadHolder.set(compressedPayload);
                 lengthHolder.set(uncompressedLength);
@@ -78,7 +77,7 @@ public class RpcSearchInvokerTest {
     private VespaBackEndSearcher mockSearcher() {
         return new VespaBackEndSearcher() {
             @Override
-            protected Result doSearch2(Query query, QueryPacket queryPacket, Execution execution) {
+            protected Result doSearch2(Query query, Execution execution) {
                 fail("Unexpected call");
                 return null;
             }

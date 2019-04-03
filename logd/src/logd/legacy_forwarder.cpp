@@ -1,32 +1,102 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "conn.h"
 #include "exceptions.h"
 #include "legacy_forwarder.h"
 #include "metrics.h"
+#include <vespa/log/log_message.h>
+#include <vespa/log/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
 
 using LogLevel = ns_log::Logger::LogLevel;
+using ns_log::BadLogLineException;
+using ns_log::LogMessage;
+using ns_log::Logger;
+using LogLevel = Logger::LogLevel;
+using vespalib::make_string;
 
 namespace logdemon {
 
-LegacyForwarder::LegacyForwarder(Metrics &metrics)
-    : _logserverfd(-1),
+void
+LegacyForwarder::connect_to_logserver(const vespalib::string& logserver_host, int logserver_port)
+{
+    int new_fd = makeconn(logserver_host.c_str(), logserver_port);
+    if (new_fd >= 0) {
+        LOG(debug, "Connected to logserver at %s:%d", logserver_host.c_str(), logserver_port);
+        _logserver_fd = new_fd;
+    } else {
+        auto error_msg = make_string("Could not connect to %s:%d", logserver_host.c_str(), logserver_port);
+        LOG(debug, "%s", error_msg.c_str());
+        throw ConnectionException(error_msg);
+    }
+}
+
+void
+LegacyForwarder::connect_to_dev_null()
+{
+    int new_fd = open("/dev/null", O_RDWR);
+    if (new_fd >= 0) {
+        LOG(debug, "Opened /dev/null for read/write");
+        _logserver_fd = new_fd;
+    } else {
+        auto error_msg = make_string("Error opening /dev/null (%d): %s", new_fd, strerror(new_fd));
+        LOG(debug, "%s", error_msg.c_str());
+        throw ConnectionException(error_msg);
+    }
+}
+
+LegacyForwarder::LegacyForwarder(Metrics &metrics, const ForwardMap& forward_filter)
+    :
       _metrics(metrics),
-      _forwardMap(),
-      _levelparser(),
+      _logserver_fd(-1),
+      _forward_filter(forward_filter),
       _badLines(0)
-{}
-LegacyForwarder::~LegacyForwarder() = default;
+{
+}
+
+LegacyForwarder::UP
+LegacyForwarder::to_logserver(Metrics& metrics, const ForwardMap& forward_filter,
+                              const vespalib::string& logserver_host, int logserver_port)
+{
+    LegacyForwarder::UP result(new LegacyForwarder(metrics, forward_filter));
+    result->connect_to_logserver(logserver_host, logserver_port);
+    return result;
+}
+
+LegacyForwarder::UP
+LegacyForwarder::to_dev_null(Metrics& metrics)
+{
+    LegacyForwarder::UP result(new LegacyForwarder(metrics, ForwardMap()));
+    result->connect_to_dev_null();
+    return result;
+}
+
+LegacyForwarder::UP
+LegacyForwarder::to_open_file(Metrics& metrics, const ForwardMap& forward_filter, int file_desc)
+{
+    LegacyForwarder::UP result(new LegacyForwarder(metrics, forward_filter));
+    result->_logserver_fd = file_desc;
+    return result;
+}
+
+LegacyForwarder::~LegacyForwarder()
+{
+    if (_logserver_fd >= 0) {
+        close(_logserver_fd);
+    }
+}
 
 void
 LegacyForwarder::forwardText(const char *text, int len)
 {
-    int wsize = write(_logserverfd, text, len);
+    int wsize = write(_logserver_fd, text, len);
 
     if (wsize != len) {
         if (wsize > 0) {
@@ -53,137 +123,45 @@ LegacyForwarder::sendMode()
 }
 
 void
-LegacyForwarder::forwardLine(const char *line, const char *eol)
+LegacyForwarder::forwardLine(std::string_view line)
 {
-    int linelen = eol - line;
+    assert(_logserver_fd >= 0);
+    assert (line.size() > 0);
+    assert (line.size() < 1024*1024);
+    assert (line[line.size() - 1] == '\n');
 
-    assert(_logserverfd >= 0);
-    assert (linelen > 0);
-    assert (linelen < 1024*1024);
-    assert (line[linelen - 1] == '\n');
-
-    if (parseline(line, eol)) {
-        forwardText(line, linelen);
+    if (parseLine(line)) {
+        forwardText(line.data(), line.size());
     }
 }
 
 bool
-LegacyForwarder::parseline(const char *linestart, const char *lineend)
+LegacyForwarder::parseLine(std::string_view line)
 {
-    int llength = lineend - linestart;
-
-    const char *fieldstart = linestart;
-    // time
-    const char *tab = strchr(fieldstart, '\t');
-    if (tab == nullptr || tab == fieldstart) {
-        LOG(spam, "bad logline no 1. tab: %.*s", llength, linestart);
-        ++_badLines;
-        return false;
-    }
-    char *eod;
-    double logtime = vespalib::locale::c::strtod(fieldstart, &eod);
-    if (eod != tab) {
-        int fflen = tab - linestart;
-        LOG(spam, "bad logline first field not strtod parsable: %.*s", fflen, linestart);
-        ++_badLines;
-        return false;
-    }
-    time_t now = time(nullptr);
-    if (logtime - 864000 > now) {
-        int fflen = tab - linestart;
-        LOG(warning, "bad logline, time %.*s > 10 days in the future", fflen, linestart);
-        ++_badLines;
-        return false;
-    }
-    if (logtime + 8640000 < now) {
-        int fflen = tab - linestart;
-        LOG(warning, "bad logline, time %.*s > 100 days in the past", fflen, linestart);
+    LogMessage message;
+    try {
+        message.parse_log_line(line);
+    } catch (BadLogLineException &e) {
+        LOG(spam, "bad logline: %s", e.what());
         ++_badLines;
         return false;
     }
 
-    // hostname
-    fieldstart = tab + 1;
-    tab = strchr(fieldstart, '\t');
-    if (tab == nullptr) {
-        LOG(spam, "bad logline no 2. tab: %.*s", llength, linestart);
-        ++_badLines;
-        return false;
+    std::string logLevelName;
+    if (message.level() >= LogLevel::NUM_LOGLEVELS) {
+        logLevelName = "unknown";
+    } else {
+        logLevelName = Logger::logLevelNames[message.level()];
     }
-
-    // pid
-    fieldstart = tab + 1;
-    tab = strchr(fieldstart, '\t');
-    if (tab == nullptr || tab == fieldstart) {
-        LOG(spam, "bad logline no 3. tab: %.*s", llength, linestart);
-        return false;
-    }
-
-    // service
-    fieldstart = tab + 1;
-    tab = strchr(fieldstart, '\t');
-    if (tab == nullptr) {
-        LOG(spam, "bad logline no 4. tab: %.*s", llength, linestart);
-        ++_badLines;
-        return false;
-    }
-    if (tab == fieldstart) {
-        LOG(spam, "empty service in logline: %.*s", llength, linestart);
-    }
-    std::string service(fieldstart, tab-fieldstart);
-
-    // component
-    fieldstart = tab + 1;
-    tab = strchr(fieldstart, '\t');
-    if (tab == nullptr || tab == fieldstart) {
-        LOG(spam, "bad logline no 5. tab: %.*s", llength, linestart);
-        ++_badLines;
-        return false;
-    }
-    std::string component(fieldstart, tab-fieldstart);
-
-    // level
-    fieldstart = tab + 1;
-    tab = strchr(fieldstart, '\t');
-    if (tab == nullptr || tab == fieldstart) {
-        LOG(spam, "bad logline no 6. tab: %.*s", llength, linestart);
-        ++_badLines;
-        return false;
-    }
-    std::string level(fieldstart, tab-fieldstart);
-    LogLevel l = _levelparser.parseLevel(level.c_str());
-
-    // rest is freeform message, must be on this line:
-    if (tab > lineend) {
-        LOG(spam, "bad logline last tab after end: %.*s", llength, linestart);
-        ++_badLines;
-        return false;
-    }
-
-    _metrics.countLine(level, service);
+    _metrics.countLine(logLevelName, message.service());
 
     // Check overrides
-    ForwardMap::iterator found = _forwardMap.find(l);
-    if (found != _forwardMap.end()) {
+    auto found = _forward_filter.find(message.level());
+    if (found != _forward_filter.end()) {
         return found->second;
     }
     return false; // Unknown log level
 }
 
-LogLevel
-LevelParser::parseLevel(const char *level)
-{
-    using ns_log::Logger;
-
-    LogLevel l = Logger::parseLevel(level);
-    if (l >= 0 && l <= Logger::NUM_LOGLEVELS) {
-        return l;
-    }
-    if (_seenLevelMap.find(level) == _seenLevelMap.end()) {
-        LOG(warning, "unknown level '%s'", level);
-        _seenLevelMap.insert(level);
-    }
-    return Logger::fatal;
-}
 
 } // namespace
