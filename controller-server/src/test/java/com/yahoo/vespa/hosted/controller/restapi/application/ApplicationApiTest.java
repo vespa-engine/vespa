@@ -872,7 +872,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}",
                               400);
 
-        // POST (add) a Athenz tenant with underscore in name
+        // POST (add) an Athenz tenant with underscore in name
         tester.assertResponse(request("/application/v4/tenant/my_tenant_2", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
@@ -880,12 +880,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"New tenant or application names must start with a letter, may contain no more than 20 characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.\"}",
                               400);
 
-        // POST (add) a Athenz tenant with by- prefix
+        // POST (add) an Athenz tenant with by- prefix
         tester.assertResponse(request("/application/v4/tenant/by-tenant2", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
                                       .oktaAccessToken(OKTA_AT),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz tenant name cannot have prefix 'by-'\"}",
+                              400);
+
+        // POST (add) an Athenz tenant with a reserved name
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'hosted-vespa' already exists\"}",
                               400);
 
         // POST (create) an (empty) application
