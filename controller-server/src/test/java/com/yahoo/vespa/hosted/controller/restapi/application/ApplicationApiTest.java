@@ -758,31 +758,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 new File("deploy-no-deployment.json"), 400);
     }
 
-    // Tests deployment to config server when using just on API call
-    // For now this depends on a switch in ApplicationController that does this for by- tenants in CD only
-    @Test
-    public void testDeployDirectlyUsingOneCallForDeploy() {
-        // Setup
-        tester.computeVersionStatus();
-        UserId userId = new UserId("new_user");
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, userId);
-
-        // Create tenant
-        // PUT (create) the authenticated user
-        byte[] data = new byte[0];
-        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
-                                      .data(data)
-                                      .userIdentity(userId), // Normalized to by-new-user by API
-                              new File("create-user-response.json"));
-
-        // POST (deploy) an application to a dev zone
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/cd-us-central-1/instance/default", POST)
-                                      .data(entity)
-                                      .userIdentity(userId),
-                              new File("deploy-result.json"));
-    }
-
     @Test
     public void testSortsDeploymentsAndJobs() {
         tester.computeVersionStatus();
