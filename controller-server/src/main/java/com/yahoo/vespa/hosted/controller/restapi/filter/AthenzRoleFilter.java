@@ -77,7 +77,7 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
         path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}");
         Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
 
-        AthenzIdentity identity = ((AthenzPrincipal) principal).getIdentity();
+        AthenzIdentity identity = principal.getIdentity();
 
         if (athenz.hasHostedOperatorAccess(identity))
             return Role.hostedOperator.limitedTo(system);
