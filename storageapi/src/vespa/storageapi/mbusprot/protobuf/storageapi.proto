@@ -57,6 +57,12 @@ message BucketInfo {
     BucketInfoV2 info_v2 = 2;
 }
 
+message GlobalId {
+    // 96 bits of GID data in _little_ endian.
+    fixed64 lo_64 = 1;
+    fixed32 hi_32 = 2;
+}
+
 // TODO these should ideally be gRPC headers..
 message RequestHeader {
     uint64  message_id   = 1;
@@ -68,23 +74,13 @@ message RequestHeader {
 // TODO these should ideally be gRPC headers..
 message ResponseHeader {
     // TODO this should ideally be gRPC Status...
-    uint32 return_code_id = 1;
+    uint32 return_code_id      = 1;
     bytes  return_code_message = 2; // FIXME it's `bytes` since `string` will check for UTF-8... might not hold...
-    uint64 message_id = 3;
-    uint32 priority   = 4; // Always in range [0, 255]
+    uint64 message_id          = 3;
+    uint32 priority            = 4; // Always in range [0, 255]
 }
 
-// Next tag to use: 3
-message DeleteBucketRequest {
-    Bucket bucket = 1;
-    BucketInfo expected_bucket_info = 2;
-}
-
-// Next tag to use: 3
-message DeleteBucketResponse {
-    BucketInfo bucket_info = 1;
-    BucketId remapped_bucket_id = 2;
-}
+// TODO extract bucket info response fields to own message!
 
 message Document {
     bytes payload = 1;
@@ -98,61 +94,148 @@ message TestAndSetCondition {
     bytes selection = 1;
 }
 
+// Next tag to use: 6
 message PutRequest {
-    Bucket bucket = 1;
-    Document document = 2;
-    uint64 new_timestamp = 3;
-    uint64 expected_old_timestamp = 4; // If zero; no expectation.
-    TestAndSetCondition condition = 5;
+    Bucket   bucket                 = 1;
+    Document document               = 2;
+    uint64   new_timestamp          = 3;
+    uint64   expected_old_timestamp = 4; // If zero; no expectation.
+    TestAndSetCondition condition   = 5;
 }
 
+// Next tag to use: 4
 message PutResponse {
-    BucketInfo bucket_info = 1;
-    BucketId remapped_bucket_id = 2;
-    bool was_found = 3;
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+    bool       was_found          = 3;
 }
 
+// Next tag to use: 2
 message Update {
     bytes payload = 1;
 }
 
+// Next tag to use: 6
 message UpdateRequest {
-    Bucket bucket = 1;
-    Update update = 2;
-    uint64 new_timestamp = 3;
+    Bucket bucket                 = 1;
+    Update update                 = 2;
+    uint64 new_timestamp          = 3;
     uint64 expected_old_timestamp = 4; // If zero; no expectation.
     TestAndSetCondition condition = 5;
 }
 
+// Next tag to use: 4
 message UpdateResponse {
-    BucketInfo bucket_info = 1;
-    BucketId remapped_bucket_id = 2;
-    uint64 updated_timestamp = 3;
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+    uint64     updated_timestamp  = 3;
 }
 
+// Next tag to use: 5
 message RemoveRequest {
-    Bucket bucket = 1;
-    bytes document_id = 2;
-    uint64 new_timestamp = 3;
+    Bucket bucket                 = 1;
+    bytes  document_id            = 2;
+    uint64 new_timestamp          = 3;
     TestAndSetCondition condition = 4;
 }
 
+// Next tag to use: 4
 message RemoveResponse {
-    BucketInfo bucket_info = 1;
-    BucketId remapped_bucket_id = 2;
-    uint64 removed_timestamp = 3;
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+    uint64     removed_timestamp  = 3;
 }
 
+// Next tag to use: 5
 message GetRequest {
-    Bucket bucket = 1;
-    bytes document_id = 2;
-    bytes field_set = 3;
+    Bucket bucket           = 1;
+    bytes  document_id      = 2;
+    bytes  field_set        = 3;
     uint64 before_timestamp = 4;
 }
 
+// Next tag to use: 5
 message GetResponse {
-    Document document = 1;
-    uint64 last_modified_timestamp = 2;
-    BucketInfo bucket_info = 3;
-    BucketId remapped_bucket_id = 4;
+    Document   document                = 1;
+    uint64     last_modified_timestamp = 2;
+    BucketInfo bucket_info             = 3;
+    BucketId   remapped_bucket_id      = 4;
 }
+
+// TODO consider deprecation/removal if this is not used in practice.
+message RevertRequest {
+    Bucket   bucket               = 1;
+    repeated uint64 revert_tokens = 2;
+}
+
+// Next tag to use: 3
+message RevertResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+}
+
+// Next tag to use: 3
+message DeleteBucketRequest {
+    Bucket     bucket               = 1;
+    BucketInfo expected_bucket_info = 2;
+}
+
+// Next tag to use: 3
+message DeleteBucketResponse {
+    BucketInfo bucket_info       = 1;
+    BucketId  remapped_bucket_id = 2;
+}
+
+// Next tag to use: 3
+message CreateBucketRequest {
+    Bucket bucket           = 1;
+    bool   create_as_active = 2;
+}
+
+// Next tag to use: 3
+message CreateBucketResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+}
+
+// Next tag to use: 3
+message MergeNode {
+    uint32 index = 1;
+    bool   source_only = 2;
+}
+
+// Next tag to use: 6
+message MergeBucketRequest {
+    Bucket             bucket                = 1;
+    uint32             cluster_state_version = 2;
+    uint64             max_timestamp         = 3;
+    repeated MergeNode nodes                 = 4;
+    repeated uint32    node_chain            = 5;
+}
+
+// Next tag to use: 2
+message MergeBucketResponse {
+    BucketId remapped_bucket_id = 1;
+}
+
+message MetaDiffEntry {
+    uint64   timestamp   = 1;
+    GlobalId gid         = 2;
+    uint32   header_size = 3; // TODO one of these can be removed...!
+    uint32   body_size   = 4;
+    uint32   flags       = 5;
+    uint32   has_mask    = 6;
+}
+
+message GetBucketDiffRequest {
+    Bucket                 bucket        = 1;
+    uint64                 max_timestamp = 2;
+    repeated MergeNode     nodes         = 3;
+    repeated MetaDiffEntry diff          = 4;
+}
+
+message GetBucketDiffResponse {
+    BucketId remapped_bucket_id = 1;
+    repeated MetaDiffEntry diff = 2;
+}
+

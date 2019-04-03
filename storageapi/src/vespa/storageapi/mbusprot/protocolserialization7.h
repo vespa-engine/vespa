@@ -19,12 +19,6 @@ public:
     ProtocolSerialization7(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                              const documentapi::LoadTypeSet &loadTypes);
 
-    // DeleteBucket
-    void onEncode(GBBuf&, const api::DeleteBucketCommand&) const override;
-    void onEncode(GBBuf&, const api::DeleteBucketReply&) const override;
-    SCmd::UP onDecodeDeleteBucketCommand(BBuf&) const override;
-    SRep::UP onDecodeDeleteBucketReply(const SCmd&, BBuf&) const override;
-
     // Put
     void onEncode(GBBuf&, const api::PutCommand&) const override;
     void onEncode(GBBuf&, const api::PutReply&) const override;
@@ -49,9 +43,41 @@ public:
     SCmd::UP onDecodeGetCommand(BBuf&) const override;
     SRep::UP onDecodeGetReply(const SCmd&, BBuf&) const override;
 
+    // Revert - TODO this is deprecated, no?
+    void onEncode(GBBuf&, const api::RevertCommand&) const override;
+    void onEncode(GBBuf&, const api::RevertReply&) const override;
+    SCmd::UP onDecodeRevertCommand(BBuf&) const override;
+    SRep::UP onDecodeRevertReply(const SCmd&, BBuf&) const override;
+
+    // DeleteBucket
+    void onEncode(GBBuf&, const api::DeleteBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::DeleteBucketReply&) const override;
+    SCmd::UP onDecodeDeleteBucketCommand(BBuf&) const override;
+    SRep::UP onDecodeDeleteBucketReply(const SCmd&, BBuf&) const override;
+
+    // CreateBucket
+    void onEncode(GBBuf&, const api::CreateBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::CreateBucketReply&) const override;
+    SCmd::UP onDecodeCreateBucketCommand(BBuf&) const override;
+    SRep::UP onDecodeCreateBucketReply(const SCmd&, BBuf&) const override;
+
+    // MergeBucket
+    void onEncode(GBBuf&, const api::MergeBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::MergeBucketReply&) const override;
+    SCmd::UP onDecodeMergeBucketCommand(BBuf&) const override;
+    SRep::UP onDecodeMergeBucketReply(const SCmd&, BBuf&) const override;
+
+    // GetBucketDiff
+    void onEncode(GBBuf&, const api::GetBucketDiffCommand&) const override;
+    void onEncode(GBBuf&, const api::GetBucketDiffReply&) const override;
+    SCmd::UP onDecodeGetBucketDiffCommand(BBuf&) const override;
+    SRep::UP onDecodeGetBucketDiffReply(const SCmd&, BBuf&) const override;
+
 private:
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageCommand> decode_bucket_request(document::ByteBuffer& in_buf, Func&& f) const;
+    template <typename ProtobufType, typename Func>
+    std::unique_ptr<api::StorageReply> decode_bucket_response(document::ByteBuffer& in_buf, Func&& f) const;
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageReply> decode_bucket_info_response(document::ByteBuffer& in_buf, Func&& f) const;
 };
