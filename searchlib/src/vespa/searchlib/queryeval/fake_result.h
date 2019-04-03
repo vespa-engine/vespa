@@ -48,6 +48,7 @@ public:
     FakeResult();
     FakeResult(const FakeResult &);
     ~FakeResult();
+    FakeResult &operator=(const FakeResult &);
 
     FakeResult &doc(uint32_t docId) {
         _documents.push_back(Document(docId));

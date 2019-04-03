@@ -16,6 +16,9 @@ FakeResult::FakeResult(const FakeResult &) = default;
 
 FakeResult::~FakeResult() = default;
 
+FakeResult &
+FakeResult::operator=(const FakeResult &) = default;
+
 std::ostream &operator << (std::ostream &out, const FakeResult &result) {
     const std::vector<FakeResult::Document> &doc = result.inspect();
     if (doc.size() == 0) {
