@@ -1,18 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.role;
 
-import com.google.common.collect.ImmutableMap;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
-
 import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,6 +65,7 @@ public class RoleMembership { // TODO replace with Set<RoleWithContext>
     public interface Resolver {
 
         RoleMembership membership(Principal user, Optional<String> path); // TODO get rid of path.
+
     }
 
 }

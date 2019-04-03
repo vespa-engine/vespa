@@ -55,12 +55,23 @@ public class Role implements RoleInSystem, RoleInSystemWithTenant, RoleInSystemW
                                                                                          Policy.productionDeployment,
                                                                                          Policy.submission);
 
-    /** Tenant admin with full access to all tenant resources, including the ability to create new applications. */
-    public static final RoleInSystemWithTenant tenantAdmin = new Role(applicationAdmin,
-                                                                      Policy.applicationCreate,
+    /** Application administrator with the additional ability to delete an application. */
+    public static final RoleInSystemWithTenantAndApplication applicationOwner = new Role(applicationOperator,
+                                                                                         Policy.applicationDelete);
+
+    /** Tenant operator with admin access to all applications under the tenant, as well as the ability to create applications. */
+    public static final RoleInSystemWithTenant tenantOperator = new Role(applicationAdmin,
+                                                                         Policy.applicationCreate);
+
+    /** Tenant admin with full access to all tenant resources, except deleting the tenant. */
+    public static final RoleInSystemWithTenant tenantAdmin = new Role(tenantOperator,
                                                                       Policy.applicationDelete,
                                                                       Policy.manager,
-                                                                      Policy.tenantWrite);
+                                                                      Policy.tenantUpdate);
+
+    /** Tenant admin with full access to all tenant resources. */
+    public static final RoleInSystemWithTenant tenantOwner = new Role(tenantAdmin,
+                                                                      Policy.tenantDelete);
 
     /** Build and continuous delivery service. */ // TODO replace with buildService, when everyone is on new pipeline.
     public static final RoleInSystemWithTenantAndApplication tenantPipeline = new Role(everyone,
@@ -70,8 +81,9 @@ public class Role implements RoleInSystem, RoleInSystemWithTenant, RoleInSystemW
 
     /** Tenant administrator with full access to all child resources. */
     public static final RoleInSystemWithTenant athenzTenantAdmin = new Role(everyone,
-                                                                            Policy.tenantWrite,
                                                                             Policy.tenantRead,
+                                                                            Policy.tenantUpdate,
+                                                                            Policy.tenantDelete,
                                                                             Policy.applicationCreate,
                                                                             Policy.applicationUpdate,
                                                                             Policy.applicationDelete,
