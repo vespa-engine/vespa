@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include <memory>
+#include <vector>
 
 namespace vespalib { class nbostream; }
 
@@ -23,6 +24,10 @@ public:
     }
 
     static std::unique_ptr<Tensor> deserialize(nbostream &stream);
+    
+    // This is a temporary method until we get full support for typed tensors
+    template <typename T>
+    static void deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<T> & cells);
 };
 
 }

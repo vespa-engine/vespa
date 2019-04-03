@@ -57,13 +57,26 @@ decodeDimensions(nbostream & stream, std::vector<Dimension> & dimensions) {
     return cellsSize;
 }
 
-template<typename T>
+template<typename T, typename V>
 void
-decodeCells(nbostream &stream, size_t cellsSize, DenseTensor::Cells & cells) {
+decodeCells(nbostream &stream, size_t cellsSize, V & cells) {
     T cellValue = 0.0;
     for (size_t i = 0; i < cellsSize; ++i) {
         stream >> cellValue;
         cells.emplace_back(cellValue);
+    }
+}
+
+template <typename V>
+void decodeCells(SerializeFormat format, nbostream &stream, size_t cellsSize, V & cells)
+{
+    switch (format) {
+    case SerializeFormat::DOUBLE:
+        decodeCells<double>(stream, cellsSize, cells);
+        break;
+    case SerializeFormat::FLOAT:
+        decodeCells<float>(stream, cellsSize, cells);
+        break;
     }
 }
 
@@ -93,16 +106,24 @@ DenseBinaryFormat::deserialize(nbostream &stream)
     size_t cellsSize = decodeDimensions(stream,dimensions);
     DenseTensor::Cells cells;
     cells.reserve(cellsSize);
-    switch (_format) {
-        case SerializeFormat::DOUBLE:
-            decodeCells<double>(stream, cellsSize,cells);
-            break;
-        case SerializeFormat::FLOAT:
-            decodeCells<float>(stream, cellsSize, cells);
-            break;
-    }
+
+    decodeCells(_format, stream, cellsSize, cells);
 
     return std::make_unique<DenseTensor>(makeValueType(std::move(dimensions)), std::move(cells));
 }
+
+template <typename T>
+void
+DenseBinaryFormat::deserializeCellsOnly(nbostream &stream, std::vector<T> & cells)
+{
+    std::vector<Dimension> dimensions;
+    size_t cellsSize = decodeDimensions(stream,dimensions);
+    cells.clear();
+    cells.reserve(cellsSize);
+    decodeCells(_format, stream, cellsSize, cells);
+}
+
+template void DenseBinaryFormat::deserializeCellsOnly(nbostream &stream, std::vector<double> & cells);
+template void DenseBinaryFormat::deserializeCellsOnly(nbostream &stream, std::vector<float> & cells);
 
 }

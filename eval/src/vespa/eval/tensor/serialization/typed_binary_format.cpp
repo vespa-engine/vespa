@@ -99,4 +99,21 @@ TypedBinaryFormat::deserialize(nbostream &stream)
     abort();
 }
 
+template <typename T>
+void
+TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<T> & cells)
+{
+    auto formatId = stream.getInt1_4Bytes();
+    if (formatId == DENSE_BINARY_FORMAT_TYPE) {
+        return DenseBinaryFormat(SerializeFormat::DOUBLE).deserializeCellsOnly(stream, cells);
+    }
+    if (formatId == TYPED_DENSE_BINARY_FORMAT_TYPE) {
+        return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserializeCellsOnly(stream, cells);
+    }
+    abort();
+}
+
+template void TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<double> & cells);
+template void TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<float> & cells);
+    
 }
