@@ -12,6 +12,7 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Request extends AbstractResource {
 
-    private final Map<String, Object> context = new HashMap<>();
+    private final Map<String, Object> context = Collections.synchronizedMap(new HashMap<>());
     private final HeaderFields headers = new HeaderFields();
     private final Container container;
     private final Request parent;
@@ -204,10 +205,6 @@ public class Request extends AbstractResource {
     /**
      * <p>Returns the named application context objects. This data is not intended for network transport, rather they
      * are intended for passing shared data between components of an Application.</p>
-     *
-     * <p>Modifying the context map is a thread-unsafe operation -- any changes made after calling {@link
-     * #connect(ResponseHandler)} might never become visible to other threads, and might throw
-     * ConcurrentModificationExceptions in other threads.</p>
      *
      * @return The context map.
      */
