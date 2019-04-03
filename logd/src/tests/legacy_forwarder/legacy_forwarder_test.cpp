@@ -40,7 +40,7 @@ struct ForwardFixture {
         timer.SetNow();
         std::stringstream ss;
         ss << std::fixed << timer.Secs();
-        ss << "\texample.yahoo.com\t7518/34779\tlogd\tlogdemon\tevent\tstarted/1 name=\"logdemon\"\n";
+        ss << "\texample.yahoo.com\t7518/34779\tlogd\tlogdemon\tevent\tstarted/1 name=\"logdemon\"";
         return ss.str();
     }
 
@@ -50,7 +50,7 @@ struct ForwardFixture {
         int rfd = open(fname.c_str(), O_RDONLY);
         char *buffer[2048];
         ssize_t bytes = read(rfd, buffer, 2048);
-        ssize_t expected = doForward ? logLine.length() : 0;
+        ssize_t expected = doForward ? logLine.length() + 1 : 0;
         EXPECT_EQUAL(expected, bytes);
         close(rfd);
     }
