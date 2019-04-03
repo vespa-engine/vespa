@@ -73,8 +73,8 @@ public class Concat extends PrimitiveTensorFunction {
             MutableLong concatSize = new MutableLong(0);
             a.sizeOfDimension(dimension).ifPresent(concatSize::add);
             b.sizeOfDimension(dimension).ifPresent(concatSize::add);
-                builder.set(TensorType.Dimension.indexed(dimension, concatSize.get()));
-                */
+            builder.set(TensorType.Dimension.indexed(dimension, concatSize.get()));
+            */
         }
         return builder.build();
     }
