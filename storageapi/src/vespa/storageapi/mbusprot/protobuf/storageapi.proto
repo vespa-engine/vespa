@@ -239,3 +239,50 @@ message GetBucketDiffResponse {
     repeated MetaDiffEntry diff = 2;
 }
 
+message ApplyDiffEntry {
+    MetaDiffEntry entry_meta = 1;
+    bytes document_id = 2;
+    bytes header_blob = 3; // TODO use singular blob
+    bytes body_blob = 4;
+}
+
+message ApplyBucketDiffRequest {
+    Bucket             bucket = 1;
+    repeated MergeNode nodes  = 2;
+    uint32 max_buffer_size = 3;
+    repeated ApplyDiffEntry entries = 4;
+}
+
+message ApplyBucketDiffResponse {
+    BucketId remapped_bucket_id = 1;
+    repeated ApplyDiffEntry entries = 4;
+}
+
+message ExplicitBucketSet {
+    // `Bucket` is not needed, as the space is inferred from the owning message.
+    repeated BucketId bucket_ids = 2;
+}
+
+message AllBuckets {
+    uint32 distributor_index = 1;
+    bytes cluster_state = 2;
+    bytes distribution_hash = 3;
+}
+
+message RequestBucketInfoRequest {
+    BucketSpace bucket_space = 1;
+    oneof request_for {
+        ExplicitBucketSet explicit_bucket_set = 2;
+        AllBuckets        all_buckets         = 3;
+    }
+    // TODO bucket info version requested
+}
+
+message BucketAndBucketInfo {
+    fixed64 raw_bucket_id = 1;
+    BucketInfo bucket_info = 2;
+}
+
+message RequestBucketInfoResponse {
+    repeated BucketAndBucketInfo bucket_infos = 1;
+}

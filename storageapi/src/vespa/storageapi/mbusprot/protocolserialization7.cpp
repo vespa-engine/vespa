@@ -258,6 +258,42 @@ public:
 };
 
 template <typename ProtobufType, typename Func>
+void encode_request(vespalib::GrowableByteBuffer& out_buf, const api::StorageCommand& msg, Func&& f) {
+    RequestEncoder<ProtobufType> enc(out_buf, msg);
+    f(enc.request());
+    enc.encode();
+}
+
+template <typename ProtobufType, typename Func>
+void encode_response(vespalib::GrowableByteBuffer& out_buf, const api::StorageReply& reply, Func&& f) {
+    ResponseEncoder<ProtobufType> enc(out_buf, reply);
+    auto& res = enc.response();
+    f(res);
+    enc.encode();
+}
+
+template <typename ProtobufType, typename Func>
+std::unique_ptr<api::StorageCommand>
+ProtocolSerialization7::decode_request(document::ByteBuffer& in_buf, Func&& f) const {
+    RequestDecoder<ProtobufType> dec(in_buf, loadTypes());
+    const auto& req = dec.request();
+    auto cmd = f(req);
+    dec.transfer_meta_information_to(*cmd);
+    return cmd;
+}
+
+template <typename ProtobufType, typename Func>
+std::unique_ptr<api::StorageReply>
+ProtocolSerialization7::decode_response(document::ByteBuffer& in_buf, Func&& f) const {
+    ResponseDecoder<ProtobufType> dec(in_buf);
+    const auto& res = dec.response();
+    auto reply = f(res);
+    return reply;
+}
+
+// TODO encode in terms of encode_request/response
+
+template <typename ProtobufType, typename Func>
 void encode_bucket_request(vespalib::GrowableByteBuffer& out_buf, const api::BucketCommand& msg, Func&& f) {
     RequestEncoder<ProtobufType> enc(out_buf, msg);
     set_bucket(*enc.request().mutable_bucket(), msg.getBucket());
@@ -747,6 +783,159 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeGetBucketDiffReply(const S
         diff.reserve(res.diff_size());
         for (const auto& diff_entry : res.diff()) {
             diff.emplace_back(get_diff_entry(diff_entry));
+        }
+        return reply;
+    });
+}
+
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::ApplyBucketDiffCommand& msg) const {
+    encode_bucket_request<protobuf::ApplyBucketDiffRequest>(buf, msg, [&](auto& req) {
+        // TODO dedupe
+        for (const auto& src_node : msg.getNodes()) {
+            auto* dest_node = req.add_nodes();
+            dest_node->set_index(src_node.index);
+            dest_node->set_source_only(src_node.sourceOnly);
+        }
+        req.set_max_buffer_size(msg.getMaxBufferSize());
+        // TODO dedupe
+        for (const auto& entry : msg.getDiff()) {
+            auto* proto_entry = req.add_entries();
+            set_diff_entry(*proto_entry->mutable_entry_meta(), entry._entry);
+            proto_entry->set_document_id(entry._docName.data(), entry._docName.size());
+            proto_entry->set_header_blob(entry._headerBlob.data(), entry._headerBlob.size());
+            proto_entry->set_body_blob(entry._bodyBlob.data(), entry._bodyBlob.size());
+        }
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::ApplyBucketDiffReply& msg) const {
+    encode_bucket_response<protobuf::ApplyBucketDiffResponse>(buf, msg, [&](auto& res) {
+        for (const auto& entry : msg.getDiff()) {
+            auto* proto_entry = res.add_entries();
+            set_diff_entry(*proto_entry->mutable_entry_meta(), entry._entry);
+            proto_entry->set_document_id(entry._docName.data(), entry._docName.size());
+            proto_entry->set_header_blob(entry._headerBlob.data(), entry._headerBlob.size());
+            proto_entry->set_body_blob(entry._bodyBlob.data(), entry._bodyBlob.size());
+        }
+    });
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeApplyBucketDiffCommand(BBuf& buf) const {
+    return decode_bucket_request<protobuf::ApplyBucketDiffRequest>(buf, [&](auto& req, auto& bucket) {
+        // TODO dedupe
+        using Node = api::MergeBucketCommand::Node;
+        std::vector<Node> nodes;
+        nodes.reserve(req.nodes_size());
+        for (const auto& node : req.nodes()) {
+            nodes.emplace_back(node.index(), node.source_only());
+        }
+        auto cmd = std::make_unique<api::ApplyBucketDiffCommand>(bucket, std::move(nodes), req.max_buffer_size());
+        auto& diff = cmd->getDiff(); // TODO refactor
+        // TODO refactor, dedupe
+        size_t n_entries = req.entries_size();
+        diff.resize(n_entries);
+        for (size_t i = 0; i < n_entries; ++i) {
+            auto& proto_entry = req.entries(i);
+            auto& dest = diff[i];
+            dest._entry = get_diff_entry(proto_entry.entry_meta());
+            dest._docName = proto_entry.document_id();
+            dest._headerBlob.resize(proto_entry.header_blob().size());
+            memcpy(dest._headerBlob.data(), proto_entry.header_blob().data(), proto_entry.header_blob().size());
+            dest._bodyBlob.resize(proto_entry.body_blob().size());
+            memcpy(dest._bodyBlob.data(), proto_entry.body_blob().data(), proto_entry.body_blob().size());
+        }
+        return cmd;
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeApplyBucketDiffReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_bucket_response<protobuf::ApplyBucketDiffResponse>(buf, [&](auto& res) {
+        auto reply = std::make_unique<api::ApplyBucketDiffReply>(static_cast<const api::ApplyBucketDiffCommand&>(cmd));
+        auto& diff = reply->getDiff(); // TODO refactor
+        // TODO refactor, dedupe
+        size_t n_entries = res.entries_size();
+        diff.resize(n_entries);
+        for (size_t i = 0; i < n_entries; ++i) {
+            auto& proto_entry = res.entries(i);
+            auto& dest = diff[i];
+            dest._entry = get_diff_entry(proto_entry.entry_meta());
+            dest._docName = proto_entry.document_id();
+            dest._headerBlob.resize(proto_entry.header_blob().size());
+            memcpy(dest._headerBlob.data(), proto_entry.header_blob().data(), proto_entry.header_blob().size());
+            dest._bodyBlob.resize(proto_entry.body_blob().size());
+            memcpy(dest._bodyBlob.data(), proto_entry.body_blob().data(), proto_entry.body_blob().size());
+        }
+        return reply;
+    });
+}
+
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoCommand& msg) const {
+    encode_request<protobuf::RequestBucketInfoRequest>(buf, msg, [&](auto& req) {
+        req.mutable_bucket_space()->set_space_id(msg.getBucketSpace().getId());
+        auto& buckets = msg.getBuckets();
+        if (!buckets.empty()) {
+            auto* proto_buckets = req.mutable_explicit_bucket_set();
+            for (const auto& b : buckets) {
+                proto_buckets->add_bucket_ids()->set_raw_id(b.getRawId());
+            }
+        } else {
+            auto* all_buckets = req.mutable_all_buckets();
+            auto cluster_state = msg.getSystemState().toString();
+            all_buckets->set_distributor_index(msg.getDistributor());
+            all_buckets->set_cluster_state(cluster_state.data(), cluster_state.size());
+            all_buckets->set_distribution_hash(msg.getDistributionHash().data(), msg.getDistributionHash().size());
+        }
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoReply& msg) const {
+    encode_response<protobuf::RequestBucketInfoResponse>(buf, msg, [&](protobuf::RequestBucketInfoResponse& res) {
+        auto* proto_info = res.mutable_bucket_infos();
+        proto_info->Reserve(msg.getBucketInfo().size());
+        for (const auto& entry : msg.getBucketInfo()) {
+            auto* bucket_and_info = proto_info->Add();
+            bucket_and_info->set_raw_bucket_id(entry._bucketId.getRawId());
+            set_bucket_info(*bucket_and_info->mutable_bucket_info(), entry._info);
+        }
+    });
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeRequestBucketInfoCommand(BBuf& buf) const {
+    return decode_request<protobuf::RequestBucketInfoRequest>(buf, [&](auto& req) {
+        document::BucketSpace bucket_space(req.bucket_space().space_id());
+        if (req.has_explicit_bucket_set()) {
+            const uint32_t n_buckets = req.explicit_bucket_set().bucket_ids_size();
+            std::vector<document::BucketId> buckets(n_buckets);
+            const auto& proto_buckets = req.explicit_bucket_set().bucket_ids();
+            for (uint32_t i = 0; i < n_buckets; ++i) {
+                buckets[i] = document::BucketId(proto_buckets.Get(i).raw_id());
+            }
+            return std::make_unique<api::RequestBucketInfoCommand>(bucket_space, std::move(buckets));
+        } else if (req.has_all_buckets()) {
+            auto& all_req = req.all_buckets();
+            return std::make_unique<api::RequestBucketInfoCommand>(
+                    bucket_space, all_req.distributor_index(),
+                    lib::ClusterState(all_req.cluster_state()), all_req.distribution_hash());
+        } else {
+            throw vespalib::IllegalArgumentException("RequestBucketInfo does not have any applicable fields set");
+        }
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeRequestBucketInfoReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_response<protobuf::RequestBucketInfoResponse>(buf, [&](auto& res) {
+        auto reply = std::make_unique<api::RequestBucketInfoReply>(static_cast<const api::RequestBucketInfoCommand&>(cmd));
+        auto& dest_entries = reply->getBucketInfo();
+        uint32_t n_entries = res.bucket_infos_size();
+        dest_entries.resize(n_entries);
+        for (uint32_t i = 0; i < n_entries; ++i) {
+            auto& proto_entry = res.bucket_infos(i);
+            dest_entries[i]._bucketId = document::BucketId(proto_entry.raw_bucket_id());
+            dest_entries[i]._info     = get_bucket_info(proto_entry.bucket_info());
         }
         return reply;
     });

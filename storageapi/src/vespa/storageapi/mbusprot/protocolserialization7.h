@@ -73,7 +73,23 @@ public:
     SCmd::UP onDecodeGetBucketDiffCommand(BBuf&) const override;
     SRep::UP onDecodeGetBucketDiffReply(const SCmd&, BBuf&) const override;
 
+    // ApplyBucketDiff
+    void onEncode(GBBuf&, const api::ApplyBucketDiffCommand&) const override;
+    void onEncode(GBBuf&, const api::ApplyBucketDiffReply&) const override;
+    SCmd::UP onDecodeApplyBucketDiffCommand(BBuf&) const override;
+    SRep::UP onDecodeApplyBucketDiffReply(const SCmd&, BBuf&) const override;
+
+    // RequestBucketInfo
+    void onEncode(GBBuf&, const api::RequestBucketInfoCommand&) const override;
+    void onEncode(GBBuf&, const api::RequestBucketInfoReply&) const override;
+    SCmd::UP onDecodeRequestBucketInfoCommand(BBuf&) const override;
+    SRep::UP onDecodeRequestBucketInfoReply(const SCmd&, BBuf&) const override;
+
 private:
+    template <typename ProtobufType, typename Func>
+    std::unique_ptr<api::StorageCommand> decode_request(document::ByteBuffer& in_buf, Func&& f) const;
+    template <typename ProtobufType, typename Func>
+    std::unique_ptr<api::StorageReply> decode_response(document::ByteBuffer& in_buf, Func&& f) const;
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageCommand> decode_bucket_request(document::ByteBuffer& in_buf, Func&& f) const;
     template <typename ProtobufType, typename Func>
