@@ -25,7 +25,6 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-@After("com.yahoo.vespa.hosted.controller.athenz.filter.UserAuthWithAthenzPrincipalFilter")
 @Provides("ControllerAuthorizationFilter")
 public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
