@@ -22,13 +22,12 @@ public class Join extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
+
         OrderedTensorType a = largestInput().type().get();
         OrderedTensorType b = smallestInput().type().get();
 
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(resultValueType());
         int sizeDifference = a.rank() - b.rank();
         for (int i = 0; i < a.rank(); ++i) {
             TensorType.Dimension aDim = a.dimensions().get(i);
@@ -52,12 +51,8 @@ public class Join extends IntermediateOperation {
 
     @Override
     protected TensorFunction lazyGetFunction() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
-        if (!allInputFunctionsPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
+        if ( ! allInputFunctionsPresent(2)) return null;
 
         IntermediateOperation a = largestInput();
         IntermediateOperation b = smallestInput();
@@ -92,9 +87,8 @@ public class Join extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        if (!allInputTypesPresent(2)) {
-            return;
-        }
+        if ( ! allInputTypesPresent(2)) return;
+
         OrderedTensorType a = largestInput().type().get();
         OrderedTensorType b = smallestInput().type().get();
         int sizeDifference = a.rank() - b.rank();

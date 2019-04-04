@@ -63,27 +63,21 @@ public class DenseBinaryFormatTestCase {
                 64, 0, 0, 0, // value 1
                 64, 64, 0, 0,  // value 2
         };
-        Tensor tensor = Tensor.from("tensor(xy[],z[]):{{xy:0,z:0}:2.0,{xy:1,z:0}:3.0}");
-        tensor.type().valueType(TensorType.ValueType.FLOAT);
-        assertEquals(Arrays.toString(encodedTensor),
-                Arrays.toString(TypedBinaryFormat.encode(tensor)));
+        Tensor tensor = Tensor.from("tensor<float>(xy[],z[]):{{xy:0,z:0}:2.0,{xy:1,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
     }
 
     @Test
     public void testSerializationOfDifferentValueTypes() {
-        assertSerialization(TensorType.ValueType.DOUBLE, "tensor(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
-        assertSerialization(TensorType.ValueType.FLOAT, "tensor(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<double>(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<float>(x[],y[]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
     }
 
     private void assertSerialization(String tensorString) {
-        assertSerialization(TensorType.ValueType.DOUBLE, Tensor.from(tensorString));
-    }
-    private void assertSerialization(TensorType.ValueType valueType, String tensorString) {
-        assertSerialization(valueType, Tensor.from(tensorString));
+        assertSerialization(Tensor.from(tensorString));
     }
 
-    private void assertSerialization(TensorType.ValueType valueType, Tensor tensor) {
-        tensor.type().valueType(valueType);
+    private void assertSerialization(Tensor tensor) {
         assertSerialization(tensor, tensor.type());
     }
 

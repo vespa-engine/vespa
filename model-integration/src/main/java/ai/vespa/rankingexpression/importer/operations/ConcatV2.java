@@ -21,20 +21,15 @@ public class ConcatV2 extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!inputs.stream().map(IntermediateOperation::type).allMatch(Optional::isPresent)) {
-            return null;
-        }
+        if ( ! inputs.stream().map(IntermediateOperation::type).allMatch(Optional::isPresent)) return null;
 
         IntermediateOperation concatDimOp = inputs.get(inputs.size() - 1);  // ConcatV2: concat dimension is the last input
-        if (!concatDimOp.getConstantValue().isPresent()) {
-            throw new IllegalArgumentException("ConcatV2 in " + name + ": " +
-                                               "concat dimension must be a constant.");
-        }
+        if ( ! concatDimOp.getConstantValue().isPresent())
+            throw new IllegalArgumentException("ConcatV2 in " + name + ": Concat dimension must be a constant.");
+
         Tensor concatDimTensor = concatDimOp.getConstantValue().get().asTensor();
-        if (concatDimTensor.type().rank() != 0) {
-            throw new IllegalArgumentException("ConcatV2 in " + name + ": " +
-                                               "concat dimension must be a scalar.");
-        }
+        if (concatDimTensor.type().rank() != 0)
+            throw new IllegalArgumentException("ConcatV2 in " + name + ": Concat dimension must be a scalar.");
 
         OrderedTensorType aType = inputs.get(0).type().get();
         concatDimensionIndex = (int)concatDimTensor.asDouble();
@@ -42,10 +37,9 @@ public class ConcatV2 extends IntermediateOperation {
 
         for (int i = 1; i < inputs.size() - 1; ++i) {
             OrderedTensorType bType = inputs.get(i).type().get();
-            if (bType.rank() != aType.rank()) {
-                throw new IllegalArgumentException("ConcatV2 in " + name + ": " +
-                                                   "inputs must have save rank.");
-            }
+            if (bType.rank() != aType.rank())
+                throw new IllegalArgumentException("ConcatV2 in " + name + ": Inputs must have the same rank.");
+
             for (int j = 0; j < aType.rank(); ++j) {
                 long dimSizeA = aType.dimensions().get(j).size().orElse(-1L);
                 long dimSizeB = bType.dimensions().get(j).size().orElse(-1L);
@@ -58,7 +52,7 @@ public class ConcatV2 extends IntermediateOperation {
             }
         }
 
-        OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder typeBuilder = new OrderedTensorType.Builder(resultValueType());
         int dimensionIndex = 0;
         for (TensorType.Dimension dimension : aType.dimensions()) {
             if (dimensionIndex == concatDimensionIndex) {

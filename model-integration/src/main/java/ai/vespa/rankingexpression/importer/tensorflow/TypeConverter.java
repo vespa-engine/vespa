@@ -5,6 +5,7 @@ package ai.vespa.rankingexpression.importer.tensorflow;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import org.tensorflow.framework.AttrValue;
+import org.tensorflow.framework.DataType;
 import org.tensorflow.framework.NodeDef;
 import org.tensorflow.framework.TensorShapeProto;
 
@@ -22,7 +23,7 @@ class TypeConverter {
         if (shape != null) {
             if (shape.getDimCount() != type.rank()) {
                 throw new IllegalArgumentException("TensorFlow shape of '" + node.getName() + "' " +
-                        "does not match Vespa shape");
+                                                   "does not match Vespa shape");
             }
             for (int tensorFlowIndex = 0; tensorFlowIndex < type.dimensions().size(); ++tensorFlowIndex) {
                 int vespaIndex = type.dimensionMap(tensorFlowIndex);
@@ -30,7 +31,7 @@ class TypeConverter {
                 TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
                 if (tensorFlowDimension.getSize() != vespaDimension.size().orElse(-1L)) {
                     throw new IllegalArgumentException("TensorFlow dimensions of '" + node.getName() + "' " +
-                            "does not match Vespa dimensions");
+                                                       "does not match Vespa dimensions");
                 }
             }
         }
@@ -38,16 +39,24 @@ class TypeConverter {
 
     private static TensorShapeProto tensorFlowShape(NodeDef node) {
         AttrValue attrValueList = node.getAttrMap().get("_output_shapes");
-        if (attrValueList == null) {
+        if (attrValueList == null)
             throw new IllegalArgumentException("_output_shapes attribute of '" + node.getName() + "' " +
-                    "does not exist");
-        }
-        if (attrValueList.getValueCase() != AttrValue.ValueCase.LIST) {
+                                               "does not exist");
+        if (attrValueList.getValueCase() != AttrValue.ValueCase.LIST)
             throw new IllegalArgumentException("_output_shapes attribute of '" + node.getName() + "' " +
-                    "is not of expected type");
-        }
-        List<TensorShapeProto> shapeList = attrValueList.getList().getShapeList();
-        return shapeList.get(0); // support multiple outputs?
+                                               "is not of expected type");
+
+        return attrValueList.getList().getShape(0); // support multiple outputs?
+    }
+
+    private static DataType tensorFlowValueType(NodeDef node) {
+        AttrValue attrValueList = node.getAttrMap().get("dtypes");
+        if (attrValueList == null)
+            return DataType.DT_DOUBLE; // default. This will usually (always?) be used. TODO: How can we do better?
+        if (attrValueList.getValueCase() != AttrValue.ValueCase.LIST)
+            return DataType.DT_DOUBLE; // default
+
+        return attrValueList.getList().getType(0); // support multiple outputs?
     }
 
     static OrderedTensorType fromTensorFlowType(NodeDef node) {
@@ -55,8 +64,8 @@ class TypeConverter {
     }
 
     private static OrderedTensorType fromTensorFlowType(NodeDef node, String dimensionPrefix) {
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
         TensorShapeProto shape = tensorFlowShape(node);
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(toValueType(tensorFlowValueType(node)));
         for (int i = 0; i < shape.getDimCount(); ++ i) {
             String dimensionName = dimensionPrefix + i;
             TensorShapeProto.Dim tensorFlowDimension = shape.getDim(i);
@@ -67,6 +76,28 @@ class TypeConverter {
             }
         }
         return builder.build();
+    }
+
+    /** TensorFlow has two different DataType classes. This must be kept in sync with TensorConverter.toValueType */
+    static TensorType.Value toValueType(DataType dataType) {
+        switch (dataType) {
+            case DT_FLOAT: return TensorType.Value.FLOAT;
+            case DT_DOUBLE: return TensorType.Value.DOUBLE;
+            // Imperfect conversion, for now:
+            case DT_BOOL: return TensorType.Value.FLOAT;
+            case DT_BFLOAT16: return TensorType.Value.FLOAT;
+            case DT_HALF: return TensorType.Value.FLOAT;
+            case DT_INT8: return TensorType.Value.FLOAT;
+            case DT_INT16: return TensorType.Value.FLOAT;
+            case DT_INT32: return TensorType.Value.FLOAT;
+            case DT_INT64: return TensorType.Value.DOUBLE;
+            case DT_UINT8: return TensorType.Value.FLOAT;
+            case DT_UINT16: return TensorType.Value.FLOAT;
+            case DT_UINT32: return TensorType.Value.FLOAT;
+            case DT_UINT64: return TensorType.Value.DOUBLE;
+            default: throw new IllegalArgumentException("A TensorFlow tensor with data type " + dataType +
+                                                        " cannot be converted to a Vespa tensor type");
+        }
     }
 
 }

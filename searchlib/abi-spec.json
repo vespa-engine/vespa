@@ -886,6 +886,7 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.LambdaFunctionNode lambdaFunction()",
       "public final com.yahoo.tensor.functions.Reduce$Aggregator tensorReduceAggregator()",
       "public final com.yahoo.tensor.TensorType tensorTypeArgument()",
+      "public final com.yahoo.tensor.TensorType$Value optionalTensorValueTypeParameter()",
       "public final void tensorTypeDimension(com.yahoo.tensor.TensorType$Builder)",
       "public final java.lang.String tensorFunctionName()",
       "public final com.yahoo.searchlib.rankingexpression.rule.Function unaryFunctionName()",

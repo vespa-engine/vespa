@@ -78,7 +78,7 @@ class MixedBinaryFormat implements BinaryFormat {
             TensorType serializedType = decodeType(buffer);
             if ( ! serializedType.isAssignableTo(type))
                 throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
-                        " cannot be assigned to type " + type);
+                                                   " cannot be assigned to type " + type);
         }
         else {
             type = decodeType(buffer);
@@ -103,7 +103,7 @@ class MixedBinaryFormat implements BinaryFormat {
 
     private void decodeCells(GrowableByteBuffer buffer, MixedTensor.BoundBuilder builder, TensorType type) {
         List<TensorType.Dimension> sparseDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
-        TensorType sparseType = MixedTensor.createPartialType(sparseDimensions);
+        TensorType sparseType = MixedTensor.createPartialType(type.valueType(), sparseDimensions);
         long denseSubspaceSize = builder.denseSubspaceSize();
 
         int numBlocks = 1;

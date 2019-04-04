@@ -13,9 +13,10 @@ public class OrderedTensorTypeTestCase {
     @Test
     public void testToFromSpec() {
         String spec = "tensor(b[],c{},a[3])";
+        String orderedSpec = "tensor(a[3],b[],c{})";
         OrderedTensorType type = OrderedTensorType.fromSpec(spec);
-        assertEquals(spec, type.toString());
-        assertEquals("tensor(a[3],b[],c{})", type.type().toString());
+        assertEquals(orderedSpec, type.toString());
+        assertEquals(orderedSpec, type.type().toString());
     }
 
 }

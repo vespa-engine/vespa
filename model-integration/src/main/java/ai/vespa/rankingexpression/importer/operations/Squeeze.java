@@ -25,9 +25,8 @@ public class Squeeze extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!allInputTypesPresent(1)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(1)) return null;
+
         OrderedTensorType inputType = inputs.get(0).type().get();
         squeezeDimensions = new ArrayList<>();
 
@@ -51,9 +50,8 @@ public class Squeeze extends IntermediateOperation {
 
     @Override
     protected TensorFunction lazyGetFunction() {
-        if (!allInputFunctionsPresent(1)) {
-            return null;
-        }
+        if ( ! allInputFunctionsPresent(1)) return null;
+
         TensorFunction inputFunction = inputs.get(0).function().get();
         return new Reduce(inputFunction, Reduce.Aggregator.sum, squeezeDimensions);
     }
@@ -73,7 +71,7 @@ public class Squeeze extends IntermediateOperation {
     }
 
     private OrderedTensorType reducedType(OrderedTensorType inputType) {
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(resultValueType());
         for (TensorType.Dimension dimension: inputType.type().dimensions()) {
             if ( ! squeezeDimensions.contains(dimension.name())) {
                 builder.add(dimension);

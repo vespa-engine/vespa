@@ -29,9 +29,17 @@ public class OrderedTensorType {
     private final long[] innerSizesVespa;
     private final int[] dimensionMap;
 
-    private OrderedTensorType(List<TensorType.Dimension> dimensions) {
+    private OrderedTensorType(TensorType.Value valueType, List<TensorType.Dimension> dimensions) {
         this.dimensions = Collections.unmodifiableList(dimensions);
-        this.type = new TensorType.Builder(dimensions).build();
+        this.type = new TensorType.Builder(valueType, dimensions).build();
+        this.innerSizesOriginal = new long[dimensions.size()];
+        this.innerSizesVespa = new long[dimensions.size()];
+        this.dimensionMap = createDimensionMap();
+    }
+
+    private OrderedTensorType(TensorType type) {
+        this.dimensions = type.dimensions();
+        this.type = type;
         this.innerSizesOriginal = new long[dimensions.size()];
         this.innerSizesVespa = new long[dimensions.size()];
         this.dimensionMap = createDimensionMap();
@@ -136,11 +144,11 @@ public class OrderedTensorType {
                 renamedDimensions.add(TensorType.Dimension.mapped(newName.get()));
             }
         }
-        return new OrderedTensorType(renamedDimensions);
+        return new OrderedTensorType(type.valueType(), renamedDimensions);
     }
 
     public OrderedTensorType rename(String dimensionPrefix) {
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(type.valueType());
         for (int i = 0; i < dimensions.size(); ++ i) {
             String dimensionName = dimensionPrefix + i;
             Optional<Long> dimSize = dimensions.get(i).size();
@@ -154,7 +162,7 @@ public class OrderedTensorType {
     }
 
     public static OrderedTensorType standardType(OrderedTensorType type) {
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(type.type().valueType());
         for (int i = 0; i < type.dimensions().size(); ++ i) {
             TensorType.Dimension dim = type.dimensions().get(i);
             String dimensionName = "d" + i;
@@ -193,18 +201,18 @@ public class OrderedTensorType {
      * where dimensions are listed in the order of this rather than the natural order of their names.
      */
     public static OrderedTensorType fromSpec(String typeSpec) {
-        return new OrderedTensorType(TensorTypeParser.dimensionsFromSpec(typeSpec));
+        return new OrderedTensorType(TensorType.fromSpec(typeSpec));
     }
 
-    public static OrderedTensorType fromDimensionList(List<Long> dims) {
-        return fromDimensionList(dims, "d");  // standard naming convention: d0, d1, ...
+    public static OrderedTensorType fromDimensionList(TensorType.Value valueType, List<Long> dimensions) {
+        return fromDimensionList(valueType, dimensions, "d");  // standard naming convention: d0, d1, ...
     }
 
-    private static OrderedTensorType fromDimensionList(List<Long> dims, String dimensionPrefix) {
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
-        for (int i = 0; i < dims.size(); ++ i) {
+    private static OrderedTensorType fromDimensionList(TensorType.Value valueType, List<Long> dimensions, String dimensionPrefix) {
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(valueType);
+        for (int i = 0; i < dimensions.size(); ++ i) {
             String dimensionName = dimensionPrefix + i;
-            Long dimSize = dims.get(i);
+            Long dimSize = dimensions.get(i);
             if (dimSize >= 0) {
                 builder.add(TensorType.Dimension.indexed(dimensionName, dimSize));
             } else {
@@ -216,9 +224,15 @@ public class OrderedTensorType {
 
     public static class Builder {
 
+        private final TensorType.Value valueType;
         private final List<TensorType.Dimension> dimensions;
 
         public Builder() {
+            this(TensorType.Value.DOUBLE);
+        }
+
+        public Builder(TensorType.Value valueType) {
+            this.valueType = valueType;
             this.dimensions = new ArrayList<>();
         }
 
@@ -228,7 +242,7 @@ public class OrderedTensorType {
         }
 
         public OrderedTensorType build() {
-            return new OrderedTensorType(dimensions);
+            return new OrderedTensorType(valueType, dimensions);
         }
     }
 
