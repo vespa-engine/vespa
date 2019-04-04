@@ -85,6 +85,24 @@ public:
     SCmd::UP onDecodeRequestBucketInfoCommand(BBuf&) const override;
     SRep::UP onDecodeRequestBucketInfoReply(const SCmd&, BBuf&) const override;
 
+    // NotifyBucketChange
+    void onEncode(GBBuf&, const api::NotifyBucketChangeCommand&) const override;
+    void onEncode(GBBuf&, const api::NotifyBucketChangeReply&) const override;
+    SCmd::UP onDecodeNotifyBucketChangeCommand(BBuf&) const override;
+    SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&, BBuf&) const override;
+
+    // SplitBucket
+    void onEncode(GBBuf&, const api::SplitBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::SplitBucketReply&) const override;
+    SCmd::UP onDecodeSplitBucketCommand(BBuf&) const override;
+    SRep::UP onDecodeSplitBucketReply(const SCmd&, BBuf&) const override;
+
+    // JoinBuckets
+    void onEncode(GBBuf&, const api::JoinBucketsCommand&) const override;
+    void onEncode(GBBuf&, const api::JoinBucketsReply&) const override;
+    SCmd::UP onDecodeJoinBucketsCommand(BBuf&) const override;
+    SRep::UP onDecodeJoinBucketsReply(const SCmd&, BBuf&) const override;
+
 private:
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageCommand> decode_request(document::ByteBuffer& in_buf, Func&& f) const;

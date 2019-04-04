@@ -286,3 +286,36 @@ message BucketAndBucketInfo {
 message RequestBucketInfoResponse {
     repeated BucketAndBucketInfo bucket_infos = 1;
 }
+
+message NotifyBucketChangeRequest {
+    Bucket     bucket      = 1;
+    BucketInfo bucket_info = 2;
+}
+
+message NotifyBucketChangeResponse {
+    // Currently empty
+}
+
+message SplitBucketRequest {
+    Bucket bucket         = 1;
+    uint32 min_split_bits = 2;
+    uint32 max_split_bits = 3;
+    uint32 min_byte_size  = 4;
+    uint32 min_doc_count  = 5;
+}
+
+message SplitBucketResponse {
+    BucketId remapped_bucket_id = 1;
+    repeated BucketAndBucketInfo split_info = 2;
+}
+
+message JoinBucketsRequest {
+    Bucket bucket = 1;
+    repeated BucketId source_buckets = 2;
+    uint32 min_join_bits = 3;
+}
+
+message JoinBucketsResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+}
