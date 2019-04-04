@@ -16,6 +16,16 @@
     <description>Service monitor component for hosted vespa.</description>
 
     <dependencies>
+        <!-- compile scope -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5</version>
+            <!-- This is necessary to get 4.4's HostnameVerifier API of SSLConnectionSocketFactory::new -->
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- provided scope -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config</artifactId>
@@ -68,6 +78,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>annotations</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -97,13 +108,8 @@
             <artifactId>jackson-databind</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5</version>
-            <!-- This is necessary to get 4.4's HostnameVerifier API of SSLConnectionSocketFactory::new -->
-            <scope>compile</scope>
-        </dependency>
+
+        <!-- test scope -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
