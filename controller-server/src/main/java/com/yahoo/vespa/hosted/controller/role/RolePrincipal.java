@@ -1,6 +1,4 @@
-package com.yahoo.vespa.hosted.controller.restapi.filter;
-
-import com.yahoo.vespa.hosted.controller.role.RoleMembership;
+package com.yahoo.vespa.hosted.controller.role;
 
 import java.security.Principal;
 

@@ -6,13 +6,11 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import com.yahoo.vespa.hosted.controller.role.Role;
 import com.yahoo.vespa.hosted.controller.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.role.RolePrincipal;
 import org.junit.Test;
 
 import java.io.IOException;

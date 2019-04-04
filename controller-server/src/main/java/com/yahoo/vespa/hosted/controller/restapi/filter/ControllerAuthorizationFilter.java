@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.role.Action;
 import com.yahoo.vespa.hosted.controller.role.Role;
 import com.yahoo.vespa.hosted.controller.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.role.RolePrincipal;
 
 import java.security.Principal;
 import java.util.Optional;

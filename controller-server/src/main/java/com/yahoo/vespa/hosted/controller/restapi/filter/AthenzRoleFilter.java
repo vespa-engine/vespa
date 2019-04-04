@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.role.Role;
 import com.yahoo.vespa.hosted.controller.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.role.RolePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
