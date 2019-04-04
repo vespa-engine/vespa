@@ -34,6 +34,16 @@
       <artifactId>security-utils</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion> <!-- not needed -->
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+        </exclusion>
+        <exclusion> <!-- not needed -->
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency> <!-- required due to bug in maven dependency resolving - bouncycastle is compile scope in security-utils, yet it is not part of test scope here -->
       <groupId>org.bouncycastle</groupId>
