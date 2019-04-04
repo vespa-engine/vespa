@@ -51,10 +51,10 @@ public enum PathGroup {
                     Matcher.application,
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
-                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/logs",
-                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/suspended",
-                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/service/{*}",
-                    "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/global-rotation/{*}"),
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/suspended",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/{*}"),
 
     /** Path used to restart application nodes. */ // TODO move to the above when everyone is on new pipeline.
     applicationRestart(Matcher.tenant,
