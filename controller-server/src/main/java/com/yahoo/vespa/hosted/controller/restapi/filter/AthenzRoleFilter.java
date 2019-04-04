@@ -16,11 +16,11 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
-import com.yahoo.vespa.hosted.controller.api.role.RolePrincipal;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Enriches the request principal with roles from Athenz.
@@ -59,8 +58,8 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
     protected Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             AthenzPrincipal athenzPrincipal = (AthenzPrincipal) request.getUserPrincipal();
-            request.setUserPrincipal(new AthenzRolePrincipal(athenzPrincipal.getIdentity(),
-                                                             membership(athenzPrincipal, request.getUri())));
+            request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(athenzPrincipal,
+                                                                         membership(athenzPrincipal, request.getUri())));
             return Optional.empty();
         }
         catch (Exception e) {
@@ -113,22 +112,4 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
             throw new RuntimeException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
         }
     }
-
-
-    private static class AthenzRolePrincipal extends AthenzPrincipal implements RolePrincipal {
-
-        private final RoleMembership roles;
-
-        private AthenzRolePrincipal(AthenzIdentity athenzIdentity, RoleMembership roles) {
-            super(requireNonNull(athenzIdentity));
-            this.roles = requireNonNull(roles);
-        }
-
-        @Override
-        public RoleMembership roles() {
-            return roles;
-        }
-
-    }
-
 }

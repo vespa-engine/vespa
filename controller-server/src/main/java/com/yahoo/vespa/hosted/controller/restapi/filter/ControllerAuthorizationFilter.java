@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Action;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
-import com.yahoo.vespa.hosted.controller.api.role.RolePrincipal;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 
 import java.security.Principal;
 import java.util.Optional;
@@ -47,7 +47,9 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             Principal principal = request.getUserPrincipal();
-            if ( ! (principal instanceof RolePrincipal))
+            Optional<SecurityContext> securityContext = Optional.ofNullable((SecurityContext)request.getAttribute(SecurityContext.ATTRIBUTE_NAME));
+
+            if (securityContext.isEmpty())
                 return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
 
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
@@ -56,7 +58,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             if (Role.everyone.limitedTo(system).allows(action, request.getUri()))
                 return Optional.empty();
 
-            RoleMembership roles = ((RolePrincipal) principal).roles();
+            RoleMembership roles = securityContext.get().roles();
             if (roles.allows(action, request.getUri()))
                 return Optional.empty();
         }
