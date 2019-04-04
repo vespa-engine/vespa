@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "protocolserialization.h"
+#include "legacyprotocolserialization.h"
 
 namespace storage::mbusprot {
 
-class ProtocolSerialization4_2 : public ProtocolSerialization {
+class ProtocolSerialization4_2 : public LegacyProtocolSerialization {
 public:
-    ProtocolSerialization4_2(const std::shared_ptr<const document::DocumentTypeRepo>&);
+    explicit ProtocolSerialization4_2(const std::shared_ptr<const document::DocumentTypeRepo>&);
 
 protected:
     void onEncode(GBBuf&, const api::GetCommand&) const override;

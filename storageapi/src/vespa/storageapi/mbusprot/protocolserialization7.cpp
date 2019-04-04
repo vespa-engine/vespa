@@ -8,19 +8,23 @@
 #include "protocolserialization7.h"
 #include "serializationhelper.h"
 #include "storageapi.pb.h"
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/util/bufferexceptions.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/visitor.h>
 
 #pragma GCC diagnostic pop
 
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/util/bufferexceptions.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/visitor.h>
+
 namespace storage::mbusprot {
 
-ProtocolSerialization7::ProtocolSerialization7(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-                                                   const documentapi::LoadTypeSet& loadTypes)
-    : ProtocolSerialization6_0(repo, loadTypes)
+ProtocolSerialization7::ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo,
+                                               const documentapi::LoadTypeSet& load_types)
+    : ProtocolSerialization(),
+      _repo(std::move(repo)),
+      _load_types(load_types)
 {
 }
 
@@ -278,7 +282,7 @@ void encode_response(vespalib::GrowableByteBuffer& out_buf, const api::StorageRe
 template <typename ProtobufType, typename Func>
 std::unique_ptr<api::StorageCommand>
 ProtocolSerialization7::decode_request(document::ByteBuffer& in_buf, Func&& f) const {
-    RequestDecoder<ProtobufType> dec(in_buf, loadTypes());
+    RequestDecoder<ProtobufType> dec(in_buf, _load_types);
     const auto& req = dec.request();
     auto cmd = f(req);
     dec.transfer_meta_information_to(*cmd);
@@ -331,7 +335,7 @@ void encode_bucket_info_response(vespalib::GrowableByteBuffer& out_buf, const ap
 template <typename ProtobufType, typename Func>
 std::unique_ptr<api::StorageCommand>
 ProtocolSerialization7::decode_bucket_request(document::ByteBuffer& in_buf, Func&& f) const {
-    RequestDecoder<ProtobufType> dec(in_buf, loadTypes());
+    RequestDecoder<ProtobufType> dec(in_buf, _load_types);
     const auto& req = dec.request();
     if (!req.has_bucket()) {
         throw vespalib::IllegalArgumentException("Malformed protocol buffer request; no bucket"); // TODO proto type name?
@@ -404,7 +408,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::PutReply& msg) cons
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodePutCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::PutRequest>(buf, [&](auto& req, auto& bucket) {
-        auto document = get_document(req.document(), getTypeRepo());
+        auto document = get_document(req.document(), type_repo());
         auto cmd = std::make_unique<api::PutCommand>(bucket, std::move(document), req.new_timestamp());
         cmd->setUpdateTimestamp(req.expected_old_timestamp());
         if (req.has_condition()) {
@@ -450,7 +454,7 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeUpdateCommand(BBuf& buf)
         // TODO move out
         std::shared_ptr<document::DocumentUpdate> update;
         if (req.has_update() && !req.update().payload().empty()) {
-            update = document::DocumentUpdate::createHEAD(getTypeRepo(), vespalib::nbostream(
+            update = document::DocumentUpdate::createHEAD(type_repo(), vespalib::nbostream(
                     req.update().payload().data(), req.update().payload().size()));
         }
         auto cmd = std::make_unique<api::UpdateCommand>(bucket, std::move(update), req.new_timestamp());
@@ -538,7 +542,7 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeGetCommand(BBuf& buf) co
 api::StorageReply::UP ProtocolSerialization7::onDecodeGetReply(const SCmd& cmd, BBuf& buf) const {
     return decode_bucket_info_response<protobuf::GetResponse>(buf, [&](auto& res) {
         try {
-            auto document = get_document(res.document(), getTypeRepo());
+            auto document = get_document(res.document(), type_repo());
             return std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
                                                    std::move(document), res.last_modified_timestamp());
         } catch (std::exception& e) {

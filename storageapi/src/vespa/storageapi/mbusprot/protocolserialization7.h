@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "protocolserialization6_0.h"
+#include "protocolserialization.h"
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace storage {
@@ -11,13 +11,15 @@ namespace mbusprot {
 /**
  * Protocol serialization version that uses Protocol Buffers for all its binary
  * encoding and decoding.
- *
- * TODO stop inheriting from _versioned_ protocol impl once all methods are implemented here.
  */
-class ProtocolSerialization7 : public ProtocolSerialization6_0 {
+class ProtocolSerialization7 : public ProtocolSerialization {
+    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
+    const documentapi::LoadTypeSet& _load_types;
 public:
-    ProtocolSerialization7(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             const documentapi::LoadTypeSet &loadTypes);
+    ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo,
+                           const documentapi::LoadTypeSet& load_types);
+
+    const document::DocumentTypeRepo& type_repo() const { return *_repo; }
 
     // Put
     void onEncode(GBBuf&, const api::PutCommand&) const override;
