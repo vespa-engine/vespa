@@ -155,7 +155,13 @@ AverageAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     if (isReady(_sum.get(), result)) {
         return;
     }
-    _sum.reset(dynamic_cast<NumericResultNode *>(result.createBaseType().release()));
+    
+    ResultNode::UP tmp = result.createBaseType();
+    if (dynamic_cast<NumericResultNode *>(tmp.get())) {
+        _sum.reset(static_cast<NumericResultNode *>(tmp.release()));
+    } else {
+        _sum.reset(new FloatResultNode());
+    }
     if ( useForInit ) {
         _sum->set(result);
     }
@@ -546,7 +552,7 @@ ExpressionCountAggregationResult::ExpressionCountAggregationResult() = default;
 ExpressionCountAggregationResult::~ExpressionCountAggregationResult() = default;
 
 StandardDeviationAggregationResult::StandardDeviationAggregationResult()
-        : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
+    : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
 {
     _stdDevScratchPad.reset(new expression::FloatResultNode());
 }
