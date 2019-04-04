@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include "common.h"
 #include <memory>
-namespace vespalib {
+#include <vector>
 
-class nbostream;
+namespace vespalib { class nbostream; }
 
-namespace tensor {
+namespace vespalib::tensor {
 
 class DenseTensor;
 class DenseTensorView;
@@ -18,9 +19,15 @@ class DenseTensorView;
 class DenseBinaryFormat
 {
 public:
-    static void serialize(nbostream &stream, const DenseTensorView &tensor);
-    static std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
+    DenseBinaryFormat(SerializeFormat format) : _format(format) { }
+    void serialize(nbostream &stream, const DenseTensorView &tensor);
+    std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
+    
+    // This is a temporary method untill we get full support for typed tensors
+    template <typename T>
+    void deserializeCellsOnly(nbostream &stream, std::vector<T> & cells);
+private:
+    SerializeFormat _format;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

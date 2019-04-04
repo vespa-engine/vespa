@@ -6,9 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
 
-namespace vespalib {
-namespace eval {
-namespace value_type {
+namespace vespalib::eval::value_type {
 
 namespace {
 
@@ -205,6 +203,4 @@ to_spec(const ValueType &type)
     return os.str();
 }
 
-} // namespace vespalib::eval::value_type
-} // namespace vespalib::eval
-} // namespace vespalib
+}

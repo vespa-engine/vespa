@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 class Tensor;
 
@@ -30,5 +29,4 @@ public:
     virtual std::unique_ptr<Tensor> build() = 0;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

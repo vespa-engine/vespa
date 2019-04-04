@@ -15,12 +15,11 @@ class DenseTensorBuilder
 {
 public:
     using Dimension = TensorBuilder::Dimension;
-
 private:
     vespalib::hash_map<vespalib::string, size_t> _dimensionsEnum;
     std::vector<eval::ValueType::Dimension> _dimensions;
-    DenseTensor::Cells _cells;
-    std::vector<size_t> _addressBuilder;
+    DenseTensor::Cells     _cells;
+    std::vector<size_t>    _addressBuilder;
     std::vector<Dimension> _dimensionsMapping;
 
     void allocateCellsStorage();
@@ -34,7 +33,7 @@ public:
     Dimension defineDimension(const vespalib::string &dimension, size_t dimensionSize);
     DenseTensorBuilder &addLabel(Dimension dimension, size_t label);
     DenseTensorBuilder &addCell(double value);
-    Tensor::UP build();
+    std::unique_ptr<DenseTensor> build();
 };
 
 }

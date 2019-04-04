@@ -26,8 +26,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.default_tensor_engine");
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 using eval::Aggr;
 using eval::Aggregator;
@@ -390,5 +389,4 @@ DefaultTensorEngine::rename(const Value &a, const std::vector<vespalib::string> 
 
 //-----------------------------------------------------------------------------
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

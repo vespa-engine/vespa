@@ -4,7 +4,6 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
-#include <memory>
 
 namespace vespalib::eval {
 
@@ -36,11 +35,12 @@ public:
     };
 
 private:
-    Type _type;
+    Type     _type;
     std::vector<Dimension> _dimensions;
 
-    explicit ValueType(Type type_in)
+    ValueType(Type type_in)
         : _type(type_in), _dimensions() {}
+
     ValueType(Type type_in, std::vector<Dimension> &&dimensions_in)
         : _type(type_in), _dimensions(std::move(dimensions_in)) {}
 

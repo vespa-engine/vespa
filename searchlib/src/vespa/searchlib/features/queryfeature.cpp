@@ -3,9 +3,9 @@
 #include "queryfeature.h"
 #include "utils.h"
 #include "valuefeature.h"
+#include "constant_tensor_executor.h"
 
 #include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/searchlib/features/constant_tensor_executor.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -25,8 +25,7 @@ using document::TensorDataType;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 namespace {
 
@@ -65,25 +64,21 @@ QueryBlueprint::QueryBlueprint() :
 {
 }
 
-QueryBlueprint::~QueryBlueprint()
-{
-}
+QueryBlueprint::~QueryBlueprint() = default;
 
 void
-QueryBlueprint::visitDumpFeatures(const IIndexEnvironment &,
-                                  IDumpFeatureVisitor &) const
+QueryBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
 }
 
 Blueprint::UP
 QueryBlueprint::createInstance() const
 {
-    return Blueprint::UP(new QueryBlueprint());
+    return std::make_unique<QueryBlueprint>();
 }
 
 bool
-QueryBlueprint::setup(const IIndexEnvironment &env,
-                      const ParameterList &params)
+QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
     _key = params[0].getValue();
     _key2 = "$";
@@ -107,19 +102,18 @@ QueryBlueprint::setup(const IIndexEnvironment &env,
     FeatureType output_type = _valueType.is_tensor()
                               ? FeatureType::object(_valueType)
                               : FeatureType::number();
-    describeOutput("out", "The value looked up in query properties using the given key.",
-                   output_type);
+    describeOutput("out", "The value looked up in query properties using the given key.", output_type);
     return true;
 }
 
 namespace {
 
 FeatureExecutor &
-createTensorExecutor(const search::fef::IQueryEnvironment &env,
+createTensorExecutor(const IQueryEnvironment &env,
                      const vespalib::string &queryKey,
                      const ValueType &valueType, vespalib::Stash &stash)
 {
-    search::fef::Property prop = env.getProperties().lookup(queryKey);
+    Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
@@ -156,5 +150,4 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &st
     }
 }
 
-} // namespace features
-} // namespace search
+}

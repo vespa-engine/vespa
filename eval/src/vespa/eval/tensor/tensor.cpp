@@ -4,8 +4,7 @@
 #include "default_tensor_engine.h"
 #include <sstream>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 Tensor::Tensor()
     : eval::Tensor(DefaultTensorEngine::ref())
@@ -34,5 +33,4 @@ operator<<(std::ostream &out, const Tensor &value)
     return out;
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

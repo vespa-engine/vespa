@@ -44,7 +44,7 @@ public:
     MutableDenseTensorView(eval::ValueType type_in);
     MutableDenseTensorView(eval::ValueType type_in, CellsRef cells_in);
     void setCells(CellsRef cells_in) {
-        _cellsRef = cells_in;
+        initCellsRef(cells_in);
     }
     void setUnboundDimensions(const uint32_t *unboundDimSizeBegin, const uint32_t *unboundDimSizeEnd) {
         _concreteType.setUnboundDimensions(unboundDimSizeBegin, unboundDimSizeEnd);

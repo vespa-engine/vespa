@@ -4,8 +4,7 @@
 
 #include "types.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 class Tensor;
@@ -20,11 +19,9 @@ public:
     static std::unique_ptr<Tensor>
     create(const TensorCells &cells, TensorBuilder &builder);
     static std::unique_ptr<Tensor>
-    create(const TensorCells &cells, const TensorDimensions &dimensions,
-           TensorBuilder &builder);
+    create(const TensorCells &cells, const TensorDimensions &dimensions, TensorBuilder &builder);
     static std::unique_ptr<Tensor>
     createDense(const DenseTensorCells &cells);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

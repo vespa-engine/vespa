@@ -5,12 +5,10 @@
 #include "tensor_builder.h"
 #include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 std::unique_ptr<Tensor>
-TensorFactory::create(const TensorCells &cells,
-                      TensorBuilder &builder) {
+TensorFactory::create(const TensorCells &cells, TensorBuilder &builder) {
     for (const auto &cell : cells) {
         for (const auto &addressElem : cell.first) {
             const auto &dimension = addressElem.first;
@@ -30,9 +28,7 @@ TensorFactory::create(const TensorCells &cells,
 
 
 std::unique_ptr<Tensor>
-TensorFactory::create(const TensorCells &cells,
-                      const TensorDimensions &dimensions,
-                      TensorBuilder &builder) {
+TensorFactory::create(const TensorCells &cells, const TensorDimensions &dimensions, TensorBuilder &builder) {
     for (const auto &dimension : dimensions) {
         builder.define_dimension(dimension);
     }
@@ -47,17 +43,12 @@ TensorFactory::createDense(const DenseTensorCells &cells)
     DenseTensorBuilder builder;
     for (const auto &cell : cells) {
         for (const auto &addressElem : cell.first) {
-            dimensionSizes[addressElem.first] =
-                std::max(dimensionSizes[addressElem.first],
-                         (addressElem.second + 1));
+            dimensionSizes[addressElem.first] = std::max(dimensionSizes[addressElem.first], (addressElem.second + 1));
         }
     }
-    std::map<std::string,
-        typename DenseTensorBuilder::Dimension> dimensionEnums;
+    std::map<std::string, typename DenseTensorBuilder::Dimension> dimensionEnums;
     for (const auto &dimensionElem : dimensionSizes) {
-        dimensionEnums[dimensionElem.first] =
-            builder.defineDimension(dimensionElem.first,
-                                    dimensionElem.second);
+        dimensionEnums[dimensionElem.first] = builder.defineDimension(dimensionElem.first, dimensionElem.second);
     }
     for (const auto &cell : cells) {
         for (const auto &addressElem : cell.first) {
@@ -71,5 +62,4 @@ TensorFactory::createDense(const DenseTensorCells &cells)
 }
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
