@@ -14,6 +14,24 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 
 /**
+ * Definitions of feature flags.
+ *
+ * <p>To use feature flags, define the flag in this class as an "unbound" flag, e.g. {@link UnboundBooleanFlag}
+ * or {@link UnboundStringFlag}. At the location you want to get the value of the flag, you need the following:</p>
+ *
+ * <ol>
+ *     <li>The unbound flag</li>
+ *     <li>A {@link FlagSource}. The flag source is typically available as an injectible component. Binding
+ *     an unbound flag to a flag source produces a (bound) flag, e.g. {@link BooleanFlag} and {@link StringFlag}.</li>
+ *     <li>If you would like your flag value to be dependent on e.g. the application ID, then 1. you should
+ *     declare this in the unbound flag definition in this file (referring to
+ *     {@link FetchVector.Dimension#APPLICATION_ID}), and 2. specify the application ID when retrieving the value, e.g.
+ *     {@link BooleanFlag#with(FetchVector.Dimension, String)}. See {@link FetchVector} for more info.</li>
+ * </ol>
+ *
+ * <p>Once the code is in place, you can override the flag value. This depends on the flag source, but typically
+ * there is a REST API for updating the flags in the config server, which is the root of all flag sources in the zone.</p>
+ *
  * @author hakonhall
  */
 public class Flags {

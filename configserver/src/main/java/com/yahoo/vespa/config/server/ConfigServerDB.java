@@ -2,8 +2,8 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.config.application.ConfigDefinitionDir;
+import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.defaults.Defaults;
