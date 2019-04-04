@@ -6,16 +6,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
-import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
@@ -54,19 +47,11 @@ class ApacheHttpClient implements AutoCloseable {
                     }
                 };
 
-        return VespaHttpClientBuilder.create(ApacheHttpClient::createConnectionManager)
+        return VespaHttpClientBuilder.createWithBasicConnectionManager()
                 .setKeepAliveStrategy(keepAliveStrategy)
                 .disableAutomaticRetries()
                 .setDefaultRequestConfig(requestConfig)
                 .build();
-    }
-
-    private static HttpClientConnectionManager createConnectionManager(SSLConnectionSocketFactory sslConnectionSocketFactory) {
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("https", sslConnectionSocketFactory)
-                .register("http", PlainConnectionSocketFactory.getSocketFactory())
-                .build();
-        return new BasicHttpClientConnectionManager(registry);
     }
 
     ApacheHttpClient(URL url, Duration timeout, Duration keepAlive) {
