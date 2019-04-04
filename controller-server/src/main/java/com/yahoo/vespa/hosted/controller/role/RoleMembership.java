@@ -2,10 +2,9 @@
 package com.yahoo.vespa.hosted.controller.role;
 
 import java.net.URI;
-import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -17,7 +16,7 @@ import java.util.stream.Stream;
  * @author mpolden
  * @author jonmv
  */
-public class RoleMembership { // TODO replace with Set<RoleWithContext>
+public class RoleMembership {
 
     private final Map<Role, Set<Context>> roles;
 
@@ -57,6 +56,18 @@ public class RoleMembership { // TODO replace with Set<RoleWithContext>
     @Override
     public String toString() {
         return "roles " + roles;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if ( ! (o instanceof RoleMembership)) return false;
+        return Objects.equals(roles, ((RoleMembership) o).roles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(roles);
     }
 
 }

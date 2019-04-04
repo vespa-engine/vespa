@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
@@ -16,16 +15,12 @@ import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.role.Context;
 import com.yahoo.vespa.hosted.controller.role.Role;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.Optional;
-import java.util.Set;
 
-import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -71,53 +66,54 @@ public class AthenzRoleFilterTest {
     @Test
     public void testTranslations() {
 
-        // Only unprivileged users are members of the everyone role.
-        assertEquals(emptySet(),
-                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.everyone));
-        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     filter.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.everyone));
-        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     filter.membership(TENANT_PIPELINE, NO_CONTEXT_PATH).contextsFor(Role.everyone));
-        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     filter.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.everyone));
+        // Hosted operators are always members of the hostedOperator role.
+        assertEquals(Role.hostedOperator.limitedTo(tester.controller().system()),
+                     filter.membership(HOSTED_OPERATOR, NO_CONTEXT_PATH));
 
-        // Only operators are members of the operator role.
-        assertEquals(Set.of(Context.unlimitedIn(tester.controller().system())),
-                     filter.membership(HOSTED_OPERATOR, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.hostedOperator));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.hostedOperator));
-        assertEquals(emptySet(),
-                     filter.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.hostedOperator));
+        assertEquals(Role.hostedOperator.limitedTo(tester.controller().system()),
+                     filter.membership(HOSTED_OPERATOR, TENANT_CONTEXT_PATH));
 
-        // Only tenant admins are tenant admins of their tenants.
-        assertEquals(emptySet(),
-                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
-        assertEquals(emptySet(), // TODO this is wrong, but we can't do better until we ask ZMS for roles.
-                     filter.membership(TENANT_ADMIN, NO_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
-        assertEquals(Set.of(Context.limitedTo(TENANT, tester.controller().system())),
-                     filter.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
-        assertEquals(emptySet(),
-                     filter.membership(USER, TENANT_CONTEXT_PATH).contextsFor(Role.athenzTenantAdmin));
+        assertEquals(Role.hostedOperator.limitedTo(tester.controller().system()),
+                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH));
 
-        // Only build services are pipeline operators of their applications.
-        assertEquals(emptySet(),
-                     filter.membership(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_ADMIN, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
-        assertEquals(Set.of(Context.limitedTo(TENANT, APPLICATION, tester.controller().system())),
-                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
-        assertEquals(emptySet(),
-                     filter.membership(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
-        assertEquals(emptySet(),
-                     filter.membership(USER, APPLICATION_CONTEXT_PATH).contextsFor(Role.tenantPipeline));
+        // Tenant admins are members of the athenzTenantAdmin role within their tenant subtree.
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(TENANT_PIPELINE, NO_CONTEXT_PATH));
+
+        assertEquals(Role.athenzTenantAdmin.limitedTo(TENANT, tester.controller().system()),
+                     filter.membership(TENANT_ADMIN, TENANT_CONTEXT_PATH));
+
+        assertEquals(Role.athenzTenantAdmin.limitedTo(TENANT, tester.controller().system()),
+                     filter.membership(TENANT_ADMIN, APPLICATION_CONTEXT_PATH));
+
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(TENANT_ADMIN, TENANT2_CONTEXT_PATH));
+
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(TENANT_ADMIN, APPLICATION2_CONTEXT_PATH));
+
+        // Build services are members of the tenantPipeline role within their application subtree.
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(TENANT_PIPELINE, NO_CONTEXT_PATH));
+
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(TENANT_PIPELINE, TENANT_CONTEXT_PATH));
+
+        assertEquals(Role.tenantPipeline.limitedTo(APPLICATION, TENANT, tester.controller().system()),
+                     filter.membership(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH));
+
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH));
+
+        // Unprivileged users are just members of the everyone role.
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(USER, NO_CONTEXT_PATH));
+
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(USER, TENANT_CONTEXT_PATH));
+
+        assertEquals(Role.everyone.limitedTo(tester.controller().system()),
+                     filter.membership(USER, APPLICATION_CONTEXT_PATH));
     }
 
 }

@@ -111,26 +111,17 @@ public class Role implements RoleInSystem, RoleInSystemWithTenant, RoleInSystemW
 
     @Override
     public RoleMembership limitedTo(SystemName system) {
-        return new RoleWithContext(this, Context.unlimitedIn(system));
+        return new RoleMembership(Map.of(this, Set.of(Context.unlimitedIn(system))));
     }
 
     @Override
     public RoleMembership limitedTo(TenantName tenant, SystemName system) {
-        return new RoleWithContext(this, Context.limitedTo(tenant, system));
+        return new RoleMembership(Map.of(this, Set.of(Context.limitedTo(tenant, system))));
     }
 
     @Override
     public RoleMembership limitedTo(ApplicationName application, TenantName tenant, SystemName system) {
-        return new RoleWithContext(this, Context.limitedTo(tenant, application, system));
-    }
-
-
-    public static class RoleWithContext extends RoleMembership { // TODO fix.
-
-        private RoleWithContext(Role role, Context context) {
-            super(Map.of(role, Set.of(context)));
-        }
-
+        return new RoleMembership(Map.of(this, Set.of(Context.limitedTo(tenant, application, system))));
     }
 
 }
