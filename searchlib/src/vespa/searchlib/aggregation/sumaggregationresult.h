@@ -13,7 +13,7 @@ public:
     DECLARE_AGGREGATIONRESULT(SumAggregationResult);
     SumAggregationResult();
     SumAggregationResult(SingleResultNode::UP sum);
-    ~SumAggregationResult();
+    ~SumAggregationResult() override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const SingleResultNode & getSum() const { return *_sum; }
 private:
