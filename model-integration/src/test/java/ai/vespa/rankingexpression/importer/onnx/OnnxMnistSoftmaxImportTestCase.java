@@ -43,14 +43,14 @@ public class OnnxMnistSoftmaxImportTestCase {
         // Check inputs
         assertEquals(1, model.inputs().size());
         assertTrue(model.inputs().containsKey("Placeholder"));
-        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), model.inputs().get("Placeholder"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[],d1[784])"), model.inputs().get("Placeholder"));
 
         // Check signature
         ImportedMlFunction output = model.defaultSignature().outputFunction("add", "add");
         assertNotNull(output);
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable), f(a,b)(a * b)), sum, d2), constant(test_Variable_1), f(a,b)(a + b))",
                      output.expression());
-        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"),
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[],d1[784])"),
                      model.inputs().get(model.defaultSignature().inputs().get("Placeholder")));
         assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.argumentTypes().toString());
     }

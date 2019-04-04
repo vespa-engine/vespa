@@ -16,10 +16,8 @@ import ai.vespa.rankingexpression.importer.operations.MatMul;
 import ai.vespa.rankingexpression.importer.operations.NoOp;
 import ai.vespa.rankingexpression.importer.operations.Reshape;
 import ai.vespa.rankingexpression.importer.operations.Shape;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import onnx.Onnx;
-import onnx.Onnx.TensorProto.DataType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -107,8 +105,8 @@ class GraphImporter {
         if (isArgumentTensor(name, onnxGraph)) {
             Onnx.ValueInfoProto valueInfoProto = getArgumentTensor(name, onnxGraph);
             if (valueInfoProto == null)
-                throw new IllegalArgumentException("Could not find argument tensor: " + name);
-            OrderedTensorType type = TypeConverter.fromOnnxType(valueInfoProto.getType());
+                throw new IllegalArgumentException("Could not find argument tensor '" + name + "'");
+            OrderedTensorType type = TypeConverter.typeFrom(valueInfoProto.getType());
             operation = new Argument(intermediateGraph.name(), valueInfoProto.getName(), type);
 
             intermediateGraph.inputs(intermediateGraph.defaultSignature())
@@ -116,8 +114,7 @@ class GraphImporter {
 
         } else if (isConstantTensor(name, onnxGraph)) {
             Onnx.TensorProto tensorProto = getConstantTensor(name, onnxGraph);
-            OrderedTensorType defaultType = OrderedTensorType.fromDimensionList(toValueType(tensorProto.getDataType()),
-                                                                                tensorProto.getDimsList());
+            OrderedTensorType defaultType = TypeConverter.typeFrom(tensorProto);
             operation = new Constant(intermediateGraph.name(), name, defaultType);
             operation.setConstantValueFunction(type -> new TensorValue(TensorConverter.toVespaTensor(tensorProto, type)));
 
@@ -134,25 +131,6 @@ class GraphImporter {
         intermediateGraph.put(operation.vespaName(), operation);
 
         return operation;
-    }
-
-    private static TensorType.Value toValueType(DataType dataType) {
-        switch (dataType) {
-            case FLOAT: return TensorType.Value.FLOAT;
-            case DOUBLE: return TensorType.Value.DOUBLE;
-            // Imperfect conversion, for now:
-            case BOOL: return TensorType.Value.FLOAT;
-            case INT8: return TensorType.Value.FLOAT;
-            case INT16: return TensorType.Value.FLOAT;
-            case INT32: return TensorType.Value.FLOAT;
-            case INT64: return TensorType.Value.DOUBLE;
-            case UINT8: return TensorType.Value.FLOAT;
-            case UINT16: return TensorType.Value.FLOAT;
-            case UINT32: return TensorType.Value.FLOAT;
-            case UINT64: return TensorType.Value.DOUBLE;
-            default: throw new IllegalArgumentException("A ONNX tensor with data type " + dataType +
-                                                        " cannot be converted to a Vespa tensor type");
-        }
     }
 
     private static boolean isArgumentTensor(String name, Onnx.GraphProto graph) {
