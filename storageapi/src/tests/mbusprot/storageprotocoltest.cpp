@@ -548,7 +548,6 @@ TEST_P(StorageProtocolTest, testCreateVisitor) {
     cmd->setFieldSet("foo,bar,vekterli");
     cmd->setVisitInconsistentBuckets();
     cmd->setQueueTimeout(100);
-    cmd->setVisitorOrdering(document::OrderingSpecification::DESCENDING);
     cmd->setPriority(149);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("library", cmd2->getLibraryName());
@@ -562,7 +561,6 @@ TEST_P(StorageProtocolTest, testCreateVisitor) {
     EXPECT_EQ(buckets, cmd2->getBuckets());
     EXPECT_EQ("foo,bar,vekterli", cmd2->getFieldSet());
     EXPECT_TRUE(cmd2->visitInconsistentBuckets());
-    EXPECT_EQ(document::OrderingSpecification::DESCENDING, cmd2->getVisitorOrdering());
     EXPECT_EQ(149, cmd2->getPriority());
 
     auto reply = std::make_shared<CreateVisitorReply>(*cmd2);

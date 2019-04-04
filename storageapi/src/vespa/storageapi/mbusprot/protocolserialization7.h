@@ -103,6 +103,30 @@ public:
     SCmd::UP onDecodeJoinBucketsCommand(BBuf&) const override;
     SRep::UP onDecodeJoinBucketsReply(const SCmd&, BBuf&) const override;
 
+    // SetBucketState
+    void onEncode(GBBuf&, const api::SetBucketStateCommand&) const override;
+    void onEncode(GBBuf&, const api::SetBucketStateReply&) const override;
+    SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const override;
+    SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const override;
+
+    // CreateVisitor
+    void onEncode(GBBuf&, const api::CreateVisitorCommand&) const override;
+    void onEncode(GBBuf&, const api::CreateVisitorReply&) const override;
+    SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
+    SRep::UP onDecodeCreateVisitorReply(const SCmd&, BBuf&) const override;
+
+    // DestroyVisitor
+    void onEncode(GBBuf&, const api::DestroyVisitorCommand&) const override;
+    void onEncode(GBBuf&, const api::DestroyVisitorReply&) const override;
+    SCmd::UP onDecodeDestroyVisitorCommand(BBuf&) const override;
+    SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const override;
+
+    // RemoveLocation
+    void onEncode(GBBuf&, const api::RemoveLocationCommand&) const override;
+    void onEncode(GBBuf&, const api::RemoveLocationReply&) const override;
+    SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const override;
+    SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const override;
+
 private:
     template <typename ProtobufType, typename Func>
     std::unique_ptr<api::StorageCommand> decode_request(document::ByteBuffer& in_buf, Func&& f) const;

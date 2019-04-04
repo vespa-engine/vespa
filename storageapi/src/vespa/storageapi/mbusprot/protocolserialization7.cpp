@@ -8,9 +8,11 @@
 #include "protocolserialization7.h"
 #include "serializationhelper.h"
 #include "storageapi.pb.h"
-#include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/bufferexceptions.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/visitor.h>
 
 #pragma GCC diagnostic pop
 
@@ -1015,7 +1017,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeSplitBucketReply(const SCm
 // -----------------------------------------------------------------
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::JoinBucketsCommand& msg) const {
-    encode_bucket_request<protobuf::JoinBucketsRequest>(buf, msg, [&](protobuf::JoinBucketsRequest& req) {
+    encode_bucket_request<protobuf::JoinBucketsRequest>(buf, msg, [&](auto& req) {
         for (const auto& source : msg.getSourceBuckets()) {
             req.add_source_buckets()->set_raw_id(source.getRawId());
         }
@@ -1045,31 +1047,184 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeJoinBucketsReply(const SCm
     });
 }
 
-/*
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::SetBucketStateCommand& msg) const {
+    encode_bucket_request<protobuf::SetBucketStateRequest>(buf, msg, [&](auto& req) {
+        auto state = (msg.getState() == api::SetBucketStateCommand::BUCKET_STATE::ACTIVE
+                      ? protobuf::SetBucketStateRequest_BucketState_Active
+                      : protobuf::SetBucketStateRequest_BucketState_Inactive);
+        req.set_state(state);
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::SetBucketStateReply& msg) const {
+    // SetBucketStateReply is _technically_ a BucketInfoReply, but the legacy protocol impls
+    // do _not_ encode bucket info as part of the wire format (and it's not used on the distributor),
+    // so we follow that here and only encode remapping information.
+    encode_bucket_response<protobuf::SetBucketStateResponse>(buf, msg, no_op_encode);
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeSetBucketStateCommand(BBuf& buf) const {
+    return decode_bucket_request<protobuf::SetBucketStateRequest>(buf, [&](auto& req, auto& bucket) {
+        auto state = (req.state() == protobuf::SetBucketStateRequest_BucketState_Active
+                      ? api::SetBucketStateCommand::BUCKET_STATE::ACTIVE
+                      : api::SetBucketStateCommand::BUCKET_STATE::INACTIVE);
+        return std::make_unique<api::SetBucketStateCommand>(bucket, state);
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeSetBucketStateReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_bucket_response<protobuf::SetBucketStateResponse>(buf, [&]([[maybe_unused]] auto& res) {
+        return std::make_unique<api::SetBucketStateReply>(static_cast<const api::SetBucketStateCommand&>(cmd));
+    });
+}
 
 // -----------------------------------------------------------------
 
-void ProtocolSerialization7::onEncode(GBBuf& buf, const api::Command& msg) const {
-    (void)buf;
-    (void)msg;
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::CreateVisitorCommand& msg) const {
+    encode_request<protobuf::CreateVisitorRequest>(buf, msg, [&](auto& req) {
+        req.mutable_bucket_space()->set_space_id(msg.getBucketSpace().getId());
+        for (const auto& bucket : msg.getBuckets()) {
+            req.add_buckets()->set_raw_id(bucket.getRawId());
+        }
+
+        auto* ctrl_meta = req.mutable_control_meta();
+        ctrl_meta->set_library_name(msg.getLibraryName().data(), msg.getLibraryName().size());
+        ctrl_meta->set_instance_id(msg.getInstanceId().data(), msg.getInstanceId().size());
+        ctrl_meta->set_visitor_command_id(msg.getVisitorCmdId());
+        ctrl_meta->set_control_destination(msg.getControlDestination().data(), msg.getControlDestination().size());
+        ctrl_meta->set_data_destination(msg.getDataDestination().data(), msg.getDataDestination().size());
+        ctrl_meta->set_queue_timeout(msg.getQueueTimeout());
+        ctrl_meta->set_max_pending_reply_count(msg.getMaximumPendingReplyCount());
+        ctrl_meta->set_max_buckets_per_visitor(msg.getMaxBucketsPerVisitor());
+
+        auto* constraints = req.mutable_constraints();
+        constraints->set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+        constraints->set_from_time_usec(msg.getFromTime());
+        constraints->set_to_time_usec(msg.getToTime());
+        constraints->set_visit_inconsistent_buckets(msg.visitInconsistentBuckets());
+        constraints->set_visit_removes(msg.visitRemoves());
+        constraints->set_field_set(msg.getFieldSet().data(), msg.getFieldSet().size());
+
+        for (const auto& param : msg.getParameters()) {
+            auto* proto_param = req.add_client_parameters();
+            proto_param->set_key(param.first.data(), param.first.size());
+            proto_param->set_value(param.second.data(), param.second.size());
+        }
+    });
 }
 
-void ProtocolSerialization7::onEncode(GBBuf& buf, const api::Reply& msg) const {
-    (void)buf;
-    (void)msg;
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::CreateVisitorReply& msg) const {
+    encode_response<protobuf::CreateVisitorResponse>(buf, msg, [&](auto& res) {
+        auto& stats = msg.getVisitorStatistics();
+        auto* proto_stats = res.mutable_visitor_statistics();
+        proto_stats->set_buckets_visited(stats.getBucketsVisited());
+        proto_stats->set_documents_visited(stats.getDocumentsVisited());
+        proto_stats->set_bytes_visited(stats.getBytesVisited());
+        proto_stats->set_documents_returned(stats.getDocumentsReturned());
+        proto_stats->set_bytes_returned(stats.getBytesReturned());
+        proto_stats->set_second_pass_documents_returned(stats.getSecondPassDocumentsReturned());
+        proto_stats->set_second_pass_bytes_returned(stats.getSecondPassBytesReturned());
+    });
 }
 
-api::StorageCommand::UP ProtocolSerialization7::onDecodeCommand(BBuf& buf) const {
-    (void)buf;
-    return api::StorageCommand::UP();
+api::StorageCommand::UP ProtocolSerialization7::onDecodeCreateVisitorCommand(BBuf& buf) const {
+    return decode_request<protobuf::CreateVisitorRequest>(buf, [&](auto& req) {
+        document::BucketSpace bucket_space(req.bucket_space().space_id());
+        auto& ctrl_meta = req.control_meta();
+        auto& constraints = req.constraints();
+        auto cmd = std::make_unique<api::CreateVisitorCommand>(bucket_space, ctrl_meta.library_name(),
+                                                               ctrl_meta.instance_id(), constraints.document_selection());
+        for (const auto& proto_bucket : req.buckets()) {
+            cmd->getBuckets().emplace_back(proto_bucket.raw_id());
+        }
+
+        cmd->setVisitorCmdId(ctrl_meta.visitor_command_id());
+        cmd->setControlDestination(ctrl_meta.control_destination());
+        cmd->setDataDestination(ctrl_meta.data_destination());
+        cmd->setMaximumPendingReplyCount(ctrl_meta.max_pending_reply_count());
+        cmd->setQueueTimeout(ctrl_meta.queue_timeout());
+        cmd->setMaxBucketsPerVisitor(ctrl_meta.max_buckets_per_visitor());
+        cmd->setVisitorDispatcherVersion(50); // FIXME this magic number is lifted verbatim from the 5.1 protocol
+
+        for (const auto& proto_param : req.client_parameters()) {
+            cmd->getParameters().set(proto_param.key(), proto_param.value());
+        }
+
+        cmd->setFromTime(constraints.from_time_usec());
+        cmd->setToTime(constraints.to_time_usec());
+        cmd->setVisitRemoves(constraints.visit_removes());
+        cmd->setFieldSet(constraints.field_set());
+        cmd->setVisitInconsistentBuckets(constraints.visit_inconsistent_buckets());
+        return cmd;
+    });
 }
 
-api::StorageReply::UP ProtocolSerialization7::onDecodeReply(const SCmd& cmd, BBuf& buf) const {
-    (void)cmd;
-    (void)buf;
-    return api::StorageReply::UP();
+api::StorageReply::UP ProtocolSerialization7::onDecodeCreateVisitorReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_response<protobuf::CreateVisitorResponse>(buf, [&](auto& res) {
+        auto reply = std::make_unique<api::CreateVisitorReply>(static_cast<const api::CreateVisitorCommand&>(cmd));
+        vdslib::VisitorStatistics vs;
+        const auto& proto_stats = res.visitor_statistics();
+        vs.setBucketsVisited(proto_stats.buckets_visited());
+        vs.setDocumentsVisited(proto_stats.documents_visited());
+        vs.setBytesVisited(proto_stats.bytes_visited());
+        vs.setDocumentsReturned(proto_stats.documents_returned());
+        vs.setBytesReturned(proto_stats.bytes_returned());
+        vs.setSecondPassDocumentsReturned(proto_stats.second_pass_documents_returned());
+        vs.setSecondPassBytesReturned(proto_stats.second_pass_bytes_returned());
+        reply->setVisitorStatistics(vs);
+        return reply;
+    });
 }
- */
+
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::DestroyVisitorCommand& msg) const {
+    encode_request<protobuf::DestroyVisitorRequest>(buf, msg, [&](auto& req) {
+        req.set_instance_id(msg.getInstanceId().data(), msg.getInstanceId().size());
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::DestroyVisitorReply& msg) const {
+    encode_response<protobuf::DestroyVisitorResponse>(buf, msg, no_op_encode);
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeDestroyVisitorCommand(BBuf& buf) const {
+    return decode_request<protobuf::DestroyVisitorRequest>(buf, [&](auto& req) {
+        return std::make_unique<api::DestroyVisitorCommand>(req.instance_id());
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeDestroyVisitorReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_response<protobuf::DestroyVisitorResponse>(buf, [&]([[maybe_unused]] auto& res) {
+        return std::make_unique<api::DestroyVisitorReply>(static_cast<const api::DestroyVisitorCommand&>(cmd));
+    });
+}
+
+// -----------------------------------------------------------------
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationCommand& msg) const {
+    encode_bucket_request<protobuf::RemoveLocationRequest>(buf, msg, [&](auto& req) {
+        req.set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+    });
+}
+
+void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationReply& msg) const {
+    encode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, msg, no_op_encode);
+}
+
+api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveLocationCommand(BBuf& buf) const {
+    return decode_bucket_request<protobuf::RemoveLocationRequest>(buf, [&](auto& req, auto& bucket) {
+        return std::make_unique<api::RemoveLocationCommand>(req.document_selection(), bucket);
+    });
+}
+
+api::StorageReply::UP ProtocolSerialization7::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf) const {
+    return decode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, [&]([[maybe_unused]] auto& res) {
+        return std::make_unique<api::RemoveLocationReply>(static_cast<const api::RemoveLocationCommand&>(cmd));
+    });
+}
 
 /*
  * TODO extend testing of:
