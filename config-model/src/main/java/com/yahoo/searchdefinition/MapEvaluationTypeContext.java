@@ -193,7 +193,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         }
 
         // TODO: Determine the type of the weighted set/vector and use that as value type
-        return Optional.of(new TensorType.Builder(TensorType.Value.DOUBLE).mapped(dimension).build());
+        return Optional.of(new TensorType.Builder().mapped(dimension).build());
     }
 
     /** Binds the given list of formal arguments to their actual values */
