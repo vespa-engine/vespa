@@ -8,7 +8,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.Metric.Context;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
@@ -358,13 +357,12 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     private void addResponseMetrics(HttpResponseStatisticsCollector statisticsCollector) {
-        Map<String, Map<String, Long>> statistics = statisticsCollector.takeStatisticsByMethod();
-        statistics.forEach((httpMethod, statsByResponseType) -> {
+        for (var metricEntry : statisticsCollector.takeStatistics()) {
             Map<String, Object> dimensions = new HashMap<>();
-            dimensions.put(Metrics.METHOD_DIMENSION, httpMethod);
-            Context ctx = metric.createContext(dimensions);
-            statsByResponseType.forEach((group, value) -> metric.add(group, value, ctx));
-        });
+            dimensions.put(Metrics.METHOD_DIMENSION, metricEntry.method);
+            dimensions.put(Metrics.SCHEME_DIMENSION, metricEntry.scheme);
+            metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
+        }
     }
 
     private void setConnectorMetrics(JDiscServerConnector connector) {
