@@ -3,8 +3,7 @@
 
 #include "resultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class SingleResultNode : public ResultNode
 {
@@ -26,5 +25,3 @@ public:
 };
 
 }
-}
-

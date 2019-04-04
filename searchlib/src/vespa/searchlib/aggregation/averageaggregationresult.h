@@ -12,7 +12,7 @@ public:
     using NumericResultNode = expression::NumericResultNode;
     DECLARE_AGGREGATIONRESULT(AverageAggregationResult);
     AverageAggregationResult() : _sum(), _count(0) {}
-    ~AverageAggregationResult();
+    ~AverageAggregationResult() override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const NumericResultNode & getAverage() const;
     const NumericResultNode & getSum() const { return *_sum; }

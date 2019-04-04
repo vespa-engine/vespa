@@ -39,7 +39,7 @@ public:
     AggregationResult & operator = (const AggregationResult &);
     AggregationResult(AggregationResult &&) = default;
     AggregationResult & operator = (AggregationResult &&) = default;
-    ~AggregationResult();
+    ~AggregationResult() override;
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     private:
@@ -73,7 +73,7 @@ private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
     bool onExecute() const override { return true; }
 
-    void prepare() { if (getExpression() != NULL) { prepare(&getExpression()->getResult(), false); } }
+    void prepare() { if (getExpression() != nullptr) { prepare(&getExpression()->getResult(), false); } }
     void prepare(const ResultNode * result, bool useForInit) { if (result) { onPrepare(*result, useForInit); } }
     virtual void onPrepare(const ResultNode & result, bool useForInit) = 0;
     virtual void onMerge(const AggregationResult & b) = 0;
