@@ -3,24 +3,27 @@ package com.yahoo.vespa.hosted.controller.api.role;
 
 import java.security.Principal;
 import java.util.Objects;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 public class SecurityContext {
 
     public static final String ATTRIBUTE_NAME = SecurityContext.class.getName();
 
     private final Principal principal;
-    private final RoleMembership roles;
+    private final Set<Role> roles;
 
-    public SecurityContext(Principal principal, RoleMembership roles) {
-        this.principal = principal;
-        this.roles = roles;
+    public SecurityContext(Principal principal, Set<Role> roles) {
+        this.principal = requireNonNull(principal);
+        this.roles = Set.copyOf(roles);
     }
 
     public Principal principal() {
         return principal;
     }
 
-    public RoleMembership roles() {
+    public Set<Role> roles() {
         return roles;
     }
 
