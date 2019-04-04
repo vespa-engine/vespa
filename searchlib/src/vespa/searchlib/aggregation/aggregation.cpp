@@ -17,6 +17,17 @@ bool isReady(const ResultNode *myRes, const ResultNode &ref) {
     return (myRes != 0 && myRes->getClass().id() == ref.getClass().id());
 }
 
+template<typename Wanted, typename Fallback>
+std::unique_ptr<Wanted>
+createAndEnsureWanted(const ResultNode & result) {
+    std::unique_ptr<ResultNode> tmp = result.createBaseType();
+    if (dynamic_cast<Wanted *>(tmp.get()) != nullptr) {
+        return std::unique_ptr<Wanted>(static_cast<Wanted *>(tmp.release()));
+    } else {
+        return std::make_unique<Fallback>();
+    }
+}
+
 } // namespace search::aggregation::<unnamed>
 
 
@@ -75,7 +86,7 @@ AggregationResult::Configure::check(const vespalib::Identifiable &obj) const
 void
 AggregationResult::Configure::execute(vespalib::Identifiable &obj)
 {
-    AggregationResult & a(static_cast<AggregationResult &>(obj));
+    auto & a(static_cast<AggregationResult &>(obj));
     a.prepare();
 }
 
@@ -100,7 +111,7 @@ SumAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     if (isReady(_sum.get(), result)) {
         return;
     }
-    _sum.reset(dynamic_cast<SingleResultNode *>(result.createBaseType().release()));
+    _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     if ( useForInit ) {
         _sum->set(result);
     }
@@ -120,7 +131,7 @@ MinAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     if (isReady(_min.get(), result)) {
         return;
     }
-    _min.reset(dynamic_cast<SingleResultNode *>(result.createBaseType().release()));
+    _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
     if ( !useForInit ) {
         _min->setMax();
     } else {
@@ -141,7 +152,7 @@ MaxAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     if (isReady(_max.get(), result)) {
         return;
     }
-    _max.reset(dynamic_cast<SingleResultNode *>(result.createBaseType().release()));
+    _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
     if ( !useForInit ) {
         _max->setMin();  ///Should figure out how to set min too for float.
     } else {
@@ -155,13 +166,7 @@ AverageAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     if (isReady(_sum.get(), result)) {
         return;
     }
-    
-    ResultNode::UP tmp = result.createBaseType();
-    if (dynamic_cast<NumericResultNode *>(tmp.get())) {
-        _sum.reset(static_cast<NumericResultNode *>(tmp.release()));
-    } else {
-        _sum.reset(new FloatResultNode());
-    }
+    _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     if ( useForInit ) {
         _sum->set(result);
     }
@@ -193,7 +198,7 @@ SumAggregationResult::onAggregate(const ResultNode & result)
 void
 SumAggregationResult::onReset()
 {
-    _sum.reset(static_cast<SingleResultNode *>(_sum->getClass().create()));
+    _sum.reset(static_cast<NumericResultNode *>(_sum->getClass().create()));
 }
 
 void
@@ -269,7 +274,7 @@ AverageAggregationResult::~AverageAggregationResult() = default;
 void
 AverageAggregationResult::onMerge(const AggregationResult & b)
 {
-    const AverageAggregationResult & avg(static_cast<const AverageAggregationResult &>(b));
+    const auto & avg(static_cast<const AverageAggregationResult &>(b));
     _sum->add(*avg._sum);
     _count += avg._count;
 }
@@ -340,7 +345,7 @@ AggregationResult::onSerialize(Serializer & os) const
 Deserializer &
 AggregationResult::onDeserialize(Deserializer & is)
 {
-    _expressionTree.reset(new ExpressionTree());
+    _expressionTree = std::make_shared<ExpressionTree>();
     return (is >> *_expressionTree).get(_G_tagField, _tag);
 }
 
@@ -393,7 +398,7 @@ SumAggregationResult::onDeserialize(Deserializer & is)
 
 SumAggregationResult::SumAggregationResult() = default;
 
-SumAggregationResult::SumAggregationResult(SingleResultNode::UP sum)
+SumAggregationResult::SumAggregationResult(NumericResultNode::UP sum)
     : AggregationResult(),
       _sum(sum.release())
 { }
@@ -449,8 +454,7 @@ MaxAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 namespace {
-    static FieldBase _G_countField("count");
-    static FieldBase _G_sumField("sum");
+    FieldBase _G_countField("count");
 }
 
 Serializer &
