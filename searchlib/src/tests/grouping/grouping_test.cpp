@@ -313,10 +313,9 @@ Test::testAggregationSimple()
     ctx.add(FloatAttrBuilder("float").add(3).add(7).add(15).sp());
     ctx.add(StringAttrBuilder("string").add("3").add("7").add("15").sp());
 
-    char strsum[3] = {-101, '5', 0};
-    testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode(strsum));
-    testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15"));
-    testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7"));
+    TEST_DO(testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode("25")));
+    TEST_DO(testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15")));
+    TEST_DO(testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7")));
 }
 
 #define MU std::make_unique
@@ -630,6 +629,14 @@ createAggr(SingleResultNode::UP r, ExpressionNode::UP e) {
     return aggr;
 }
 
+template<typename T>
+ExpressionNode::UP
+createNumAggr(NumericResultNode::UP r, ExpressionNode::UP e) {
+    std::unique_ptr<T> aggr = MU<T>(std::move(r));
+    aggr->setExpression(std::move(e));
+    return aggr;
+}
+
 void
 Test::testAggregationGroupCapping()
 {
@@ -680,13 +687,13 @@ Test::testAggregationGroupCapping()
 
         Group expect;
         expect.addChild(Group().setId(Int64ResultNode(7)).setRank(RawRank(7))
-                                .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(7), MU<AttributeNode>("attr")))
+                                .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(7), MU<AttributeNode>("attr")))
                                 .addOrderBy(MU<AggregationRefNode>(0), false))
               .addChild(Group().setId(Int64ResultNode(8)).setRank(RawRank(8))
-                                .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(8), MU<AttributeNode>("attr")))
+                                .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(8), MU<AttributeNode>("attr")))
                                 .addOrderBy(MU<AggregationRefNode>(0), false))
               .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(9))
-                                .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(9), MU<AttributeNode>("attr")))
+                                .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(9), MU<AttributeNode>("attr")))
                                 .addOrderBy(MU<AggregationRefNode>(0), false));
 
         EXPECT_TRUE(testAggregation(ctx, request, expect));
@@ -701,13 +708,13 @@ Test::testAggregationGroupCapping()
 
         Group expect = Group()
                        .addChild(Group().setId(Int64ResultNode(1)).setRank(RawRank(1))
-                                         .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(1), MU<AttributeNode>("attr")))
+                                         .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(1), MU<AttributeNode>("attr")))
                                          .addOrderBy(MU<AggregationRefNode>(0), true))
                        .addChild(Group().setId(Int64ResultNode(2)).setRank(RawRank(2))
-                                         .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(2), MU<AttributeNode>("attr")))
+                                         .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(2), MU<AttributeNode>("attr")))
                                          .addOrderBy(MU<AggregationRefNode>(0), true))
                        .addChild(Group().setId(Int64ResultNode(3)).setRank(RawRank(3))
-                                         .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(3), MU<AttributeNode>("attr")))
+                                         .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(3), MU<AttributeNode>("attr")))
                                          .addOrderBy(MU<AggregationRefNode>(0), true));
 
         EXPECT_TRUE(testAggregation(ctx, request, expect));
@@ -726,13 +733,13 @@ Test::testAggregationGroupCapping()
 
         Group expect;
         expect.addChild(Group().setId(Int64ResultNode(7)).setRank(RawRank(7))
-                                .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(7), MU<AttributeNode>("attr")))
+                                .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(7), MU<AttributeNode>("attr")))
                                 .addOrderBy(AddFunctionNode().appendArg(MU<AggregationRefNode>(0)).appendArg(MU<ConstantNode>(MU<Int64ResultNode>(3))).setResult(Int64ResultNode(10)), false))
               .addChild(Group().setId(Int64ResultNode(8)).setRank(RawRank(8))
-                                .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(8), MU<AttributeNode>("attr")))
+                                .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(8), MU<AttributeNode>("attr")))
                                 .addOrderBy(AddFunctionNode().appendArg(MU<AggregationRefNode>(0)).appendArg(MU<ConstantNode>(MU<Int64ResultNode>(3))).setResult(Int64ResultNode(11)), false))
               .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(9))
-                                .addAggregationResult(createAggr<SumAggregationResult>(MU<Int64ResultNode>(9), MU<AttributeNode>("attr")))
+                                .addAggregationResult(createNumAggr<SumAggregationResult>(MU<Int64ResultNode>(9), MU<AttributeNode>("attr")))
                                 .addOrderBy(AddFunctionNode().appendArg(MU<AggregationRefNode>(0)).appendArg(MU<ConstantNode>(MU<Int64ResultNode>(3))).setResult(Int64ResultNode(12)), false));
 
         EXPECT_TRUE(testAggregation(ctx, request, expect));
