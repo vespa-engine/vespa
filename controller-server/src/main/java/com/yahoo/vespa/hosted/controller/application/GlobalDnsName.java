@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.Objects;
 
 /**
- * Represents an application's global rotation.
+ * Represents names for an application's global rotation.
  *
  * @author mpolden
  */

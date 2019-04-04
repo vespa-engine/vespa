@@ -9,8 +9,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
@@ -76,6 +75,7 @@ public class Controller extends AbstractComponent {
     private final Chef chef;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
+    private final FlagSource flagSource;
 
     /**
      * Creates a controller 
@@ -88,11 +88,11 @@ public class Controller extends AbstractComponent {
                       NameService nameService, RoutingGenerator routingGenerator, Chef chef,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
+                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
@@ -102,7 +102,7 @@ public class Controller extends AbstractComponent {
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer) {
+                      Mailer mailer, FlagSource flagSource) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -113,6 +113,7 @@ public class Controller extends AbstractComponent {
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
+        this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
@@ -123,7 +124,8 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
-                                                          clock);
+                                                          clock
+        );
         tenantController = new TenantController(this, curator, accessControl);
         auditLogger = new AuditLogger(curator, clock);
 
@@ -144,6 +146,11 @@ public class Controller extends AbstractComponent {
 
     public Mailer mailer() {
         return mailer;
+    }
+
+    /** Provides access to the feature flags of this */
+    public FlagSource flagSource() {
+        return flagSource;
     }
 
     public Clock clock() { return clock; }

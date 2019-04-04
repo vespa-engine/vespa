@@ -13,6 +13,9 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -42,6 +45,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -112,6 +116,7 @@ public class ApplicationController {
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
     private final Clock clock;
+    private final BooleanFlag redirectLegacyDnsFlag;
 
     private final DeploymentTrigger deploymentTrigger;
 
@@ -127,6 +132,7 @@ public class ApplicationController {
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
         this.clock = clock;
+        this.redirectLegacyDnsFlag = Flags.REDIRECT_LEGACY_DNS_NAMES.bindTo(controller.flagSource());
 
         this.artifactRepository = artifactRepository;
         this.applicationStore = applicationStore;
@@ -432,9 +438,18 @@ public class ApplicationController {
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
-                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().dnsName());
-                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().secureDnsName());
-                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().oathDnsName());
+                GlobalDnsName dnsName = application.get().globalDnsName(controller.system())
+                                                   .orElseThrow(() -> new IllegalStateException("Expected rotation to be assigned"));
+                boolean redirectLegacyDns = redirectLegacyDnsFlag.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm())
+                                                                 .value();
+                registerCname(dnsName.oathDnsName(), rotation.name());
+                if (redirectLegacyDns) {
+                    registerCname(dnsName.dnsName(), dnsName.oathDnsName());
+                    registerCname(dnsName.secureDnsName(), dnsName.oathDnsName());
+                } else {
+                    registerCname(dnsName.dnsName(), rotation.name());
+                    registerCname(dnsName.secureDnsName(), rotation.name());
+                }
             }
         }
         return application;
@@ -494,24 +509,22 @@ public class ApplicationController {
                                  options.deployCurrentVersion);
     }
 
-    /** Register a DNS name for rotation */
-    private void registerRotationInDns(Rotation rotation, String dnsName) {
+    /** Register a CNAME record in DNS */
+    private void registerCname(String name, String targetName) {
         try {
-
-            RecordData rotationName = RecordData.fqdn(rotation.name());
-            List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(dnsName));
+            RecordData data = RecordData.fqdn(targetName);
+            List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(name));
             records.forEach(record -> {
-                // Ensure that the existing record points to the correct rotation
-                if ( ! record.data().equals(rotationName)) {
-                    nameService.updateRecord(record, rotationName);
-                    log.info("Updated mapping for record '" + record + "': '" + dnsName
-                             + "' -> '" + rotation.name() + "'");
+                // Ensure that the existing record points to the correct target
+                if ( ! record.data().equals(data)) {
+                    log.info("Updating mapping for record '" + record + "': '" + name
+                             + "' -> '" + data.asString() + "'");
+                    nameService.updateRecord(record, data);
                 }
             });
-
             if (records.isEmpty()) {
-                Record record = nameService.createCname(RecordName.from(dnsName), rotationName);
-                log.info("Registered mapping as record  '" + record + "'");
+                Record record = nameService.createCname(RecordName.from(name), data);
+                log.info("Registered mapping as record '" + record + "'");
             }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);
