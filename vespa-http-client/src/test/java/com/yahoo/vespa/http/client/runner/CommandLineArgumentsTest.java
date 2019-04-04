@@ -91,7 +91,7 @@ public class CommandLineArgumentsTest {
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(4080));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(false));
         assertThat(params.getConnectionParams().getUseCompression(), is(false));
-        assertThat(params.getConnectionParams().getNumPersistentConnectionsPerEndpoint(), is(16));
+        assertThat(params.getConnectionParams().getNumPersistentConnectionsPerEndpoint(), is(1));
         assertThat(params.getFeedParams().getRoute(), is("default"));
         assertThat(params.getFeedParams().getDataFormat(), is(FeedParams.DataFormat.XML_UTF8));
         assertThat(params.getFeedParams().getLocalQueueTimeOut(), is(180000L));
