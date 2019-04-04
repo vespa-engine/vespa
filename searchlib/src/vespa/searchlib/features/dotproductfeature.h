@@ -10,6 +10,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::fef { class Property; }
+namespace vespalib { class nbostream; }
 
 namespace search::features {
 
@@ -34,6 +35,7 @@ struct Converter<vespalib::string, const char *> {
 template <typename T>
 struct ArrayParam : public fef::Anything {
     ArrayParam(const fef::Property & prop);
+    ArrayParam(vespalib::nbostream & stream);
     std::vector<T>        values;
     std::vector<uint32_t> indexes;
 };

@@ -12,6 +12,8 @@
 #include <type_traits>
 
 #include <vespa/log/log.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 LOG_SETUP(".features.dotproduct");
 
@@ -340,11 +342,18 @@ ArrayParam<T>::ArrayParam(const Property & prop) {
     parseVectors(prop, values, indexes);
 }
 
+template <typename T>
+ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
+    vespalib::tensor::TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(stream, values);
+}
+
+
 // Explicit instantiation since these are inspected by unit tests.
 // FIXME this feels a bit dirty, consider breaking up ArrayParam to remove dependencies
 // on templated vector parsing. This is why it's defined in this translation unit as it is.
-template struct ArrayParam<int64_t>;
+template ArrayParam<int64_t>::ArrayParam(const Property & prop);
 template struct ArrayParam<double>;
+template struct ArrayParam<float>;
 
 } // namespace dotproduct
 
@@ -621,9 +630,26 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
         {
             attribute = env.getAttributeContext().getAttributeStableEnum(getAttribute(env));
         }
+        fef::Anything::UP arguments;
+        if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
+            Property tensorBlob = env.getProperties().lookup(getBaseName(), _queryVector, "tensor");
+            if (attribute->isFloatingPointType() && tensorBlob.found() && !tensorBlob.get().empty()) {
+                const Property::Value & blob = tensorBlob.get();
+                vespalib::nbostream stream(blob.data(), blob.size());
+                if (attribute->getBasicType() == BasicType::FLOAT) {
+                    arguments = std::make_unique<ArrayParam<float>>(stream);
+                } else {
+                    arguments = std::make_unique<ArrayParam<double>>(stream);
+                }
+            } else {
+                Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
+                if (prop.found() && !prop.get().empty()) {
+                    arguments = attemptParseArrayQueryVector(*attribute, prop);
+                }
+            }
+        }
         Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
         if (prop.found() && !prop.get().empty()) {
-            fef::Anything::UP arguments;
             if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
                 if (attribute->isStringType() && attribute->hasEnum()) {
                     dotproduct::wset::EnumVector vector(attribute);
@@ -638,12 +664,10 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
                     }
                 }
                 // TODO actually use the parsed output for wset operations!
-            } else if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
-                arguments = attemptParseArrayQueryVector(*attribute, prop);
             }
-            if (arguments.get()) {
-                store.add(getBaseName() + "." + _queryVector + "." + OBJECT, std::move(arguments));
-            }
+        }
+        if (arguments) {
+            store.add(getBaseName() + "." + _queryVector + "." + OBJECT, std::move(arguments));
         }
     }
 }
