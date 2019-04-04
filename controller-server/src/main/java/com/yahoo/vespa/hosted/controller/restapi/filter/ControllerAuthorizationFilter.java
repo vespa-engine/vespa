@@ -10,10 +10,10 @@ import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.role.Action;
-import com.yahoo.vespa.hosted.controller.role.Role;
-import com.yahoo.vespa.hosted.controller.role.RoleMembership;
-import com.yahoo.vespa.hosted.controller.role.RolePrincipal;
+import com.yahoo.vespa.hosted.controller.api.role.Action;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.api.role.RolePrincipal;
 
 import java.security.Principal;
 import java.util.Optional;

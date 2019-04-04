@@ -8,9 +8,9 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
-import com.yahoo.vespa.hosted.controller.role.Role;
-import com.yahoo.vespa.hosted.controller.role.RoleMembership;
-import com.yahoo.vespa.hosted.controller.role.RolePrincipal;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.api.role.RolePrincipal;
 import org.junit.Test;
 
 import java.io.IOException;

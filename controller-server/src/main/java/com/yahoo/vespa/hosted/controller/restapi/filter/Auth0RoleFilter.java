@@ -2,8 +2,8 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import com.yahoo.vespa.hosted.controller.role.RoleMembership;
-import com.yahoo.vespa.hosted.controller.role.RolePrincipal;
+import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.api.role.RolePrincipal;
 
 import java.util.Objects;
 import java.util.Optional;

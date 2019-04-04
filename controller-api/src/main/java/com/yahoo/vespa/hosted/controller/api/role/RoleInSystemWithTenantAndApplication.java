@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.role;
+package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;

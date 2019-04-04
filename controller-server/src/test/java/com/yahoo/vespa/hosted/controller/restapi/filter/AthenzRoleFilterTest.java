@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 import org.junit.Before;
 import org.junit.Test;
 
