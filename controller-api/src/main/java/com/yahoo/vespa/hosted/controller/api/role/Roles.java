@@ -17,10 +17,11 @@ public class Roles {
 
     private final SystemName system;
 
-    /** Create a Roles which can be used to create bound roles for the given system. */
+    /** Creates a Roles which can be used to create bound roles for the given system. */
     public Roles(SystemName system) {
         this.system = Objects.requireNonNull(system);
     }
+
 
     // General roles.
     /** Returns a {@link ProtoRole#hostedOperator} for the current system. */
@@ -33,6 +34,7 @@ public class Roles {
         return new UnboundRole(ProtoRole.everyone, system);
     }
 
+
     // Athenz based roles.
     /** Returns a {@link ProtoRole#athenzTenantAdmin} for the current system and given tenant. */
     public TenantRole athenzTenantAdmin(TenantName tenant) {
@@ -43,6 +45,7 @@ public class Roles {
     public ApplicationRole tenantPipeline(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(ProtoRole.tenantPipeline, system, tenant, application);
     }
+
 
     // Other identity provider based roles.
     /** Returns a {@link ProtoRole#tenantOwner} for the current system and given tenant. */
@@ -83,6 +86,11 @@ public class Roles {
     /** Returns a {@link ProtoRole#applicationReader} for the current system and given tenant and application. */
     public ApplicationRole applicationReader(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(ProtoRole.applicationReader, system, tenant, application);
+    }
+
+    /** Returns a {@link ProtoRole#buildService} for the current system and given tenant and application. */
+    public ApplicationRole buildService(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(ProtoRole.buildService, system, tenant, application);
     }
 
 }
