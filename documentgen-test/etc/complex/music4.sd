@@ -4,5 +4,8 @@ search music4 {
         field mu4 type string {
 
         }
+        field pos type position {
+
+        }
     }
 }

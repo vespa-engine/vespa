@@ -974,5 +974,12 @@ public class DocumentGenPluginTest {
         book.setVector(Tensor.from("{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}"));
         assertEquals("tensor(x{}):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", book.getVector().toString());
     }
+
+    @Test
+    public void testPositionType() {
+        Music4 book = new Music4(new DocumentId("doc:music4:0"));
+        book.setPos(new Music4.Position().setX(7).setY(8));
+        assertEquals(new Music4.Position().setX(7).setY(8), book.getPos());
+    }
     
 }
