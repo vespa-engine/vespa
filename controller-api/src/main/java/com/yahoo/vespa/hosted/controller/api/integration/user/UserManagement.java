@@ -6,28 +6,28 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Management of {@link UserId}s and {@link GroupId}s, used for access control with {@link Role}s.
+ * Management of {@link UserId}s and {@link RoleId}s, used for access control with {@link Role}s.
  *
  * @author jonmv
  */
 public interface UserManagement {
 
-    /** Creates the given group, or throws if the group already exists. */
-    void createGroup(GroupId group);
+    /** Creates the given role, or throws if the role already exists. */
+    void createRole(RoleId role);
 
-    /** Deletes the given group, or throws if it doesn't already exist.. */
-    void deleteGroup(GroupId group);
+    /** Deletes the given role, or throws if it doesn't already exist.. */
+    void deleteRole(RoleId role);
 
-    /** Ensures the given users exist, and are part of the given group, or throws if the group does not exist. */
-    void addUsers(GroupId group, Collection<UserId> users);
+    /** Ensures the given users exist, and are part of the given role, or throws if the role does not exist. */
+    void addUsers(RoleId role, Collection<UserId> users);
 
-    /** Ensures none of the given users are part of the given group, or throws if the group does not exist. */
-    void removeUsers(GroupId group, Collection<UserId> users);
+    /** Ensures none of the given users are part of the given role, or throws if the role does not exist. */
+    void removeUsers(RoleId role, Collection<UserId> users);
 
-    /** Returns all known groups. */
-    List<GroupId> listGroups();
+    /** Returns all known roles. */
+    List<RoleId> listRoles();
 
-    /** Returns all users in the given group, or throws if the group does not exist. */
-    List<UserId> listUsers(GroupId gruop);
+    /** Returns all users in the given role, or throws if the role does not exist. */
+    List<UserId> listUsers(RoleId role);
 
 }

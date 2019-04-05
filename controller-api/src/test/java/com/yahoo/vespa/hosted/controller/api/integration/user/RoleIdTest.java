@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author jonmv
  */
-public class GroupIdTest {
+public class RoleIdTest {
 
     @Test
     public void testSerialization() {
@@ -25,7 +25,7 @@ public class GroupIdTest {
         for (TenantRole role : List.of(roles.tenantOwner(tenant),
                                        roles.tenantAdmin(tenant),
                                        roles.tenantOperator(tenant)))
-            assertEquals(role, GroupId.fromRole(role).toRole(roles));
+            assertEquals(role, RoleId.fromRole(role).toRole(roles));
 
         ApplicationName application = ApplicationName.from("my-application");
         for (ApplicationRole role : List.of(roles.applicationOwner(tenant, application),
@@ -33,42 +33,42 @@ public class GroupIdTest {
                                             roles.applicationOperator(tenant, application),
                                             roles.applicationDeveloper(tenant, application),
                                             roles.applicationReader(tenant, application)))
-            assertEquals(role, GroupId.fromRole(role).toRole(roles));
+            assertEquals(role, RoleId.fromRole(role).toRole(roles));
 
         assertEquals(roles.tenantOperator(tenant),
-                     GroupId.fromValue("my-tenant.tenantOperator").toRole(roles));
+                     RoleId.fromValue("my-tenant.tenantOperator").toRole(roles));
         assertEquals(roles.applicationReader(tenant, application),
-                     GroupId.fromValue("my-tenant.my-application.applicationReader").toRole(roles));
+                     RoleId.fromValue("my-tenant.my-application.applicationReader").toRole(roles));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalTenantName() {
-        GroupId.fromRole(new Roles(SystemName.main).tenantAdmin(TenantName.from("my.tenant")));
+        RoleId.fromRole(new Roles(SystemName.main).tenantAdmin(TenantName.from("my.tenant")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalApplicationName() {
-        GroupId.fromRole(new Roles(SystemName.main).applicationOperator(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
+        RoleId.fromRole(new Roles(SystemName.main).applicationOperator(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalRole() {
-        GroupId.fromRole(new Roles(SystemName.main).tenantPipeline(TenantName.from("my-tenant"), ApplicationName.from("my-app")));
+        RoleId.fromRole(new Roles(SystemName.main).tenantPipeline(TenantName.from("my-tenant"), ApplicationName.from("my-app")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalRoleValue() {
-        GroupId.fromValue("my-tenant.awesomePerson").toRole(new Roles(SystemName.cd));
+        RoleId.fromValue("my-tenant.awesomePerson").toRole(new Roles(SystemName.cd));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalCombination() {
-        GroupId.fromValue("my-tenant.my-application.tenantOwner").toRole(new Roles(SystemName.cd));
+        RoleId.fromValue("my-tenant.my-application.tenantOwner").toRole(new Roles(SystemName.cd));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalValue() {
-        GroupId.fromValue("hostedOperator").toRole(new Roles(SystemName.Public));
+        RoleId.fromValue("hostedOperator").toRole(new Roles(SystemName.Public));
     }
 
 }

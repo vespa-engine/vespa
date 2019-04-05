@@ -11,30 +11,30 @@ import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import java.util.Objects;
 
 /**
- * An identifier for a group of {@link UserId}s, corresponding to a bound {@link Role}.
+ * An identifier for a role which users identified by {@link UserId}s can be members of, corresponding to a bound {@link Role}.
  *
  * @author jonmv
  */
-public class GroupId {
+public class RoleId {
 
     private final String value;
 
-    private GroupId(String value) {
+    private RoleId(String value) {
         if (value.isBlank())
             throw new IllegalArgumentException("Id value must be non-blank.");
         this.value = value;
     }
 
-    public static GroupId fromRole(TenantRole role) {
-        return new GroupId(valueOf(role));
+    public static RoleId fromRole(TenantRole role) {
+        return new RoleId(valueOf(role));
     }
 
-    public static GroupId fromRole(ApplicationRole role) {
-        return new GroupId(valueOf(role));
+    public static RoleId fromRole(ApplicationRole role) {
+        return new RoleId(valueOf(role));
     }
 
-    public static GroupId fromValue(String value) {
-        return new GroupId(value);
+    public static RoleId fromValue(String value) {
+        return new RoleId(value);
     }
 
     public String value() {
@@ -45,7 +45,7 @@ public class GroupId {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        GroupId id = (GroupId) o;
+        RoleId id = (RoleId) o;
         return Objects.equals(value, id.value);
     }
 
@@ -56,7 +56,7 @@ public class GroupId {
 
     @Override
     public String toString() {
-        return "group '" + value + "'";
+        return "role '" + value + "'";
     }
 
     /** Returns the {@link Role} this represent. */
