@@ -12,6 +12,8 @@
 #include <type_traits>
 
 #include <vespa/log/log.h>
+#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 LOG_SETUP(".features.dotproduct");
 
@@ -340,11 +342,21 @@ ArrayParam<T>::ArrayParam(const Property & prop) {
     parseVectors(prop, values, indexes);
 }
 
+template <typename T>
+ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
+    vespalib::tensor::TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(stream, values);
+}
+
+template <typename T>
+ArrayParam<T>::~ArrayParam() = default;
+
+
 // Explicit instantiation since these are inspected by unit tests.
 // FIXME this feels a bit dirty, consider breaking up ArrayParam to remove dependencies
 // on templated vector parsing. This is why it's defined in this translation unit as it is.
-template struct ArrayParam<int64_t>;
+template ArrayParam<int64_t>::ArrayParam(const Property & prop);
 template struct ArrayParam<double>;
+template struct ArrayParam<float>;
 
 } // namespace dotproduct
 
@@ -609,42 +621,62 @@ fef::Anything::UP attemptParseArrayQueryVector(const IAttributeVector & attribut
 
 } // anon ns
 
+const IAttributeVector *
+DotProductBlueprint::upgradeIfNecessary(const IAttributeVector * attribute, const IQueryEnvironment & env) const {
+    if ((attribute->getCollectionType() == attribute::CollectionType::WSET) &&
+        attribute->hasEnum() &&
+        (attribute->isStringType() || attribute->isIntegerType()))
+    {
+        attribute = env.getAttributeContext().getAttributeStableEnum(getAttribute(env));
+    }
+    return attribute;
+}
+
 void
 DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
 {
     _attribute = env.getAttributeContext().getAttribute(getAttribute(env));
     const IAttributeVector * attribute = _attribute;
-    if (attribute != nullptr) {
-        if ((attribute->getCollectionType() == attribute::CollectionType::WSET) &&
-            attribute->hasEnum() &&
-            (attribute->isStringType() || attribute->isIntegerType()))
-        {
-            attribute = env.getAttributeContext().getAttributeStableEnum(getAttribute(env));
-        }
-        Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
-        if (prop.found() && !prop.get().empty()) {
-            fef::Anything::UP arguments;
-            if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
-                if (attribute->isStringType() && attribute->hasEnum()) {
-                    dotproduct::wset::EnumVector vector(attribute);
-                    WeightedSetParser::parse(prop.get(), vector);
-                } else if (attribute->isIntegerType()) {
-                    if (attribute->hasEnum()) {
-                        dotproduct::wset::EnumVector vector(attribute);
-                        WeightedSetParser::parse(prop.get(), vector);
-                    } else {
-                        dotproduct::wset::IntegerVector vector;
-                        WeightedSetParser::parse(prop.get(), vector);
-                    }
-                }
-                // TODO actually use the parsed output for wset operations!
-            } else if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
+    if (attribute == nullptr) return;
+
+    attribute = upgradeIfNecessary(attribute, env);
+    fef::Anything::UP arguments;
+    if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
+        Property tensorBlob = env.getProperties().lookup(getBaseName(), _queryVector, "tensor");
+        if (attribute->isFloatingPointType() && tensorBlob.found() && !tensorBlob.get().empty()) {
+            const Property::Value & blob = tensorBlob.get();
+            vespalib::nbostream stream(blob.data(), blob.size());
+            if (attribute->getBasicType() == BasicType::FLOAT) {
+                arguments = std::make_unique<ArrayParam<float>>(stream);
+            } else {
+                arguments = std::make_unique<ArrayParam<double>>(stream);
+            }
+        } else {
+            Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
+            if (prop.found() && !prop.get().empty()) {
                 arguments = attemptParseArrayQueryVector(*attribute, prop);
             }
-            if (arguments.get()) {
-                store.add(getBaseName() + "." + _queryVector + "." + OBJECT, std::move(arguments));
-            }
         }
+    } else if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
+        Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
+        if (prop.found() && !prop.get().empty()) {
+            if (attribute->isStringType() && attribute->hasEnum()) {
+                dotproduct::wset::EnumVector vector(attribute);
+                WeightedSetParser::parse(prop.get(), vector);
+            } else if (attribute->isIntegerType()) {
+                if (attribute->hasEnum()) {
+                    dotproduct::wset::EnumVector vector(attribute);
+                    WeightedSetParser::parse(prop.get(), vector);
+                } else {
+                    dotproduct::wset::IntegerVector vector;
+                    WeightedSetParser::parse(prop.get(), vector);
+                }
+            }
+            // TODO actually use the parsed output for wset operations!
+        }
+    }
+    if (arguments) {
+        store.add(getBaseName() + "." + _queryVector + "." + OBJECT, std::move(arguments));
     }
 }
 
@@ -657,12 +689,7 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
             getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
-    if ((attribute->getCollectionType() == attribute::CollectionType::WSET) &&
-        attribute->hasEnum() &&
-        (attribute->isStringType() || attribute->isIntegerType()))
-    {
-        attribute = env.getAttributeContext().getAttributeStableEnum(getAttribute(env));
-    }
+    attribute = upgradeIfNecessary(attribute, env);
     const fef::Anything * argument = env.getObjectStore().get(getBaseName() + "." + _queryVector + "." + OBJECT);
     if (argument != nullptr) {
         return createFromObject(attribute, *argument, stash);

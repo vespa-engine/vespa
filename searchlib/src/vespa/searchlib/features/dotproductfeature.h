@@ -10,6 +10,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::fef { class Property; }
+namespace vespalib { class nbostream; }
 
 namespace search::features {
 
@@ -34,6 +35,9 @@ struct Converter<vespalib::string, const char *> {
 template <typename T>
 struct ArrayParam : public fef::Anything {
     ArrayParam(const fef::Property & prop);
+    ArrayParam(vespalib::nbostream & stream);
+    ArrayParam(std::vector<T> v) : values(std::move(v)) {}
+    ~ArrayParam() override;
     std::vector<T>        values;
     std::vector<uint32_t> indexes;
 };
@@ -260,12 +264,14 @@ private:
  */
 class DotProductBlueprint : public fef::Blueprint {
 private:
+    using IAttributeVector = attribute::IAttributeVector;
     vespalib::string _defaultAttribute;
     vespalib::string _queryVector;
 
-    mutable const attribute::IAttributeVector * _attribute;
+    mutable const IAttributeVector * _attribute;
 
     vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
+    const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
 
 public:
     DotProductBlueprint();
