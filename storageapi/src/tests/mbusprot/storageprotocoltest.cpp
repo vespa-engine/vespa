@@ -16,6 +16,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
 #include <iomanip>
 #include <sstream>
 
@@ -34,6 +35,15 @@ using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
 using storage::lib::ClusterState;
 using vespalib::string;
+
+namespace vespalib {
+
+// Needed for GTest to properly understand how to print Version values.
+void PrintTo(const vespalib::Version& v, std::ostream* os) {
+    *os << v.toString();
+}
+
+}
 
 namespace storage::api {
 

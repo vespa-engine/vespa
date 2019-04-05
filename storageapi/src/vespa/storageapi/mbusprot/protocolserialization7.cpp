@@ -97,12 +97,13 @@ void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageC
     hdr.set_source_index(cmd.getSourceIndex());
     hdr.set_loadtype_id(cmd.getLoadType().getId());
 
-    char dest[128]; // Only primitive fields, should be plenty large enough.
+    uint8_t dest[128]; // Only primitive fields, should be plenty large enough.
     auto encoded_size = static_cast<uint32_t>(hdr.ByteSizeLong());
-    bool ok = hdr.SerializeToArray(dest, sizeof(dest));
-    assert(ok); // TODO
+    assert(encoded_size <= sizeof(dest));
+    [[maybe_unused]] bool ok = hdr.SerializeWithCachedSizesToArray(dest);
+    assert(ok);
     buf.putInt(encoded_size);
-    buf.putBytes(dest, encoded_size);
+    buf.putBytes(reinterpret_cast<const char*>(dest), encoded_size);
 }
 
 void write_response_header(vespalib::GrowableByteBuffer& buf, const api::StorageReply& reply) {
@@ -115,11 +116,12 @@ void write_response_header(vespalib::GrowableByteBuffer& buf, const api::Storage
     hdr.set_message_id(reply.getMsgId());
     hdr.set_priority(reply.getPriority());
 
-    std::string encoded; // TODO wrap in zero copy buffers!
-    bool ok = hdr.SerializeToString(&encoded);
-    assert(ok); // TODO
-    buf.putInt(static_cast<uint32_t>(encoded.size()));
-    buf.putBytes(encoded.data(), static_cast<uint32_t>(encoded.size()));
+    const auto header_size = hdr.ByteSizeLong();
+    buf.putInt(static_cast<uint32_t>(header_size));
+
+    auto* dest_buf = reinterpret_cast<uint8_t*>(buf.allocate(header_size));
+    [[maybe_unused]] bool ok = hdr.SerializeWithCachedSizesToArray(dest_buf);
+    assert(ok);
 }
 
 void decode_request_header(document::ByteBuffer& buf, protobuf::RequestHeader& hdr) {
@@ -163,10 +165,10 @@ public:
 
     void encode() {
         assert(_proto_obj != nullptr);
-        std::string encoded; // TODO wrap in zero copy buffers!
-        bool ok = _proto_obj->SerializeToString(&encoded);
-        assert(ok); // TODO
-        _out_buf.putBytes(encoded.data(), encoded.size());
+        const auto sz = _proto_obj->ByteSizeLong();
+        auto* buf = reinterpret_cast<uint8_t*>(_out_buf.allocate(sz));
+        [[maybe_unused]] bool ok = _proto_obj->SerializeWithCachedSizesToArray(buf);
+        assert(ok);
         _proto_obj = nullptr;
     }
 protected:
