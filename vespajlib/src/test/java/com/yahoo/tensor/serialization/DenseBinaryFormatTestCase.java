@@ -55,7 +55,7 @@ public class DenseBinaryFormatTestCase {
 
     @Test
     public void requireThatFloatSerializationFormatDoNotChange() {
-        byte[] encodedTensor = new byte[]{4, // binary format type
+        byte[] encodedTensor = new byte[]{6, // binary format type
                 1, // float type
                 2, // dimension count
                 2, (byte) 'x', (byte) 'y', 2, // dimension xy with size

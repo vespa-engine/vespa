@@ -23,7 +23,9 @@ public class TypedBinaryFormat {
     private static final int SPARSE_BINARY_FORMAT_TYPE = 1;
     private static final int DENSE_BINARY_FORMAT_TYPE = 2;
     private static final int MIXED_BINARY_FORMAT_TYPE = 3;
-    private static final int TYPED_DENSE_BINARY_FORMAT_TYPE = 4;
+    private static final int SPARSE_BINARY_FORMAT_WITH_CELLTYPE = 5;
+    private static final int DENSE_BINARY_FORMAT_WITH_CELLTYPE = 6;
+    private static final int MIXED_BINARY_FORMAT_WITH_CELLTYPE = 7;
 
     public static byte[] encode(Tensor tensor) {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
@@ -38,7 +40,7 @@ public class TypedBinaryFormat {
                     new DenseBinaryFormat(DenseBinaryFormat.EncodeType.DOUBLE_IS_DEFAULT).encode(buffer, tensor);
                     break;
                 default:
-                    buffer.putInt1_4Bytes(TYPED_DENSE_BINARY_FORMAT_TYPE);
+                    buffer.putInt1_4Bytes(DENSE_BINARY_FORMAT_WITH_CELLTYPE);
                     new DenseBinaryFormat(DenseBinaryFormat.EncodeType.NO_DEFAULT).encode(buffer, tensor);
                     break;
             }
@@ -67,7 +69,7 @@ public class TypedBinaryFormat {
             case MIXED_BINARY_FORMAT_TYPE: return new MixedBinaryFormat().decode(type, buffer);
             case SPARSE_BINARY_FORMAT_TYPE: return new SparseBinaryFormat().decode(type, buffer);
             case DENSE_BINARY_FORMAT_TYPE: return new DenseBinaryFormat(DenseBinaryFormat.EncodeType.DOUBLE_IS_DEFAULT).decode(type, buffer);
-            case TYPED_DENSE_BINARY_FORMAT_TYPE: return new DenseBinaryFormat(DenseBinaryFormat.EncodeType.NO_DEFAULT).decode(type, buffer);
+            case DENSE_BINARY_FORMAT_WITH_CELLTYPE: return new DenseBinaryFormat(DenseBinaryFormat.EncodeType.NO_DEFAULT).decode(type, buffer);
             default: throw new IllegalArgumentException("Binary format type " + formatType + " is unknown");
         }
     }

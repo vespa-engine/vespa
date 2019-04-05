@@ -25,7 +25,9 @@ namespace  {
 constexpr uint32_t SPARSE_BINARY_FORMAT_TYPE = 1u;
 constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
 constexpr uint32_t MIXED_BINARY_FORMAT_TYPE = 3u;
-constexpr uint32_t TYPED_DENSE_BINARY_FORMAT_TYPE = 4u;
+constexpr uint32_t SPARSE_BINARY_FORMAT_WITH_CELLTYPE = 5u; //Future
+constexpr uint32_t DENSE_BINARY_FORMAT_WITH_CELLTYPE = 6u;
+constexpr uint32_t MIXED_BINARY_FORMAT_WITH_CELLTYPE = 7u; //Future
 
 constexpr uint32_t DOUBLE_VALUE_TYPE = 0;
 constexpr uint32_t FLOAT_VALUE_TYPE = 1;
@@ -60,7 +62,7 @@ TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor, SerializeF
 {
     if (auto denseTensor = dynamic_cast<const DenseTensorView *>(&tensor)) {
         if (format != SerializeFormat::DOUBLE) {
-            stream.putInt1_4Bytes(TYPED_DENSE_BINARY_FORMAT_TYPE);
+            stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_WITH_CELLTYPE);
             stream.putInt1_4Bytes(format2Encoding(format));
             DenseBinaryFormat(format).serialize(stream, *denseTensor);
         } else {
@@ -89,7 +91,7 @@ TypedBinaryFormat::deserialize(nbostream &stream)
     if (formatId == DENSE_BINARY_FORMAT_TYPE) {
         return DenseBinaryFormat(SerializeFormat::DOUBLE).deserialize(stream);
     }
-    if (formatId == TYPED_DENSE_BINARY_FORMAT_TYPE) {
+    if (formatId == DENSE_BINARY_FORMAT_WITH_CELLTYPE) {
         return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserialize(stream);
     }
     if (formatId == MIXED_BINARY_FORMAT_TYPE) {
@@ -107,7 +109,7 @@ TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::
     if (formatId == DENSE_BINARY_FORMAT_TYPE) {
         return DenseBinaryFormat(SerializeFormat::DOUBLE).deserializeCellsOnly(stream, cells);
     }
-    if (formatId == TYPED_DENSE_BINARY_FORMAT_TYPE) {
+    if (formatId == DENSE_BINARY_FORMAT_WITH_CELLTYPE) {
         return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserializeCellsOnly(stream, cells);
     }
     abort();
