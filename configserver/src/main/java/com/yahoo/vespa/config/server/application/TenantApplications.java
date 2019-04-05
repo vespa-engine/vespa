@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -17,12 +16,13 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The applications of a tenant, backed by ZooKeeper.
@@ -70,40 +70,39 @@ public class TenantApplications {
      * @return a list of {@link ApplicationId}s that are active.
      */
     public List<ApplicationId> listApplications() {
-        try {
-            List<String> appNodes = curator.framework().getChildren().forPath(applicationsPath.getAbsolute());
-            List<ApplicationId> applicationIds = new ArrayList<>();
-            for (String appNode : appNodes) {
-                parseApplication(appNode).ifPresent(applicationIds::add);
-            }
-            return applicationIds;
-        } catch (Exception e) {
-            throw new RuntimeException(TenantRepository.logPre(tenant)+"Unable to list applications", e);
-        }
+        return curator.getChildren(applicationsPath).stream()
+                      .flatMap(this::parseApplication)
+                      .collect(Collectors.toUnmodifiableList());
     }
 
-    private Optional<ApplicationId> parseApplication(String appNode) {
+    // TODO jvenstad: Remove after it has run once everywhere.
+    private Stream<ApplicationId> parseApplication(String appNode) {
         try {
-            ApplicationId id = ApplicationId.fromSerializedForm(appNode);
-            getSessionIdForApplication(id);
-            return Optional.of(id);
-        } catch (IllegalArgumentException e) {
-            log.log(LogLevel.INFO, TenantRepository.logPre(tenant)+"Unable to parse application with id '" + appNode + "', ignoring.");
-            return Optional.empty();
+            return Stream.of(ApplicationId.fromSerializedForm(appNode));
+        } catch (IllegalArgumentException __) {
+            log.log(LogLevel.INFO, TenantRepository.logPre(tenant) + "Unable to parse application id from '" +
+                    appNode + "'; deleting it as it shouldn't be here.");
+            try {
+                curator.delete(applicationsPath.append(appNode));
+            }
+            catch (Exception e) {
+                log.log(LogLevel.WARNING, TenantRepository.logPre(tenant) + "Failed to clean up stray node '" + appNode + "'!", e);
+            }
+            return Stream.empty();
         }
     }
 
     /**
-     * Register active application and adds it to the repo. If it already exists it is overwritten.
+     * Returns a transaction which writes the given session id as the currently active for the given application.
      *
      * @param applicationId An {@link ApplicationId} that represents an active application.
      * @param sessionId Id of the session containing the application package for this id.
      */
     public Transaction createPutApplicationTransaction(ApplicationId applicationId, long sessionId) {
         if (listApplications().contains(applicationId)) {
-            return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationsPath.append(applicationId.serializedForm()).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+            return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
         } else {
-            return new CuratorTransaction(curator).add(CuratorOperations.create(applicationsPath.append(applicationId.serializedForm()).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+            return new CuratorTransaction(curator).add(CuratorOperations.create(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
         }
     }
 
@@ -115,7 +114,7 @@ public class TenantApplications {
      * @throws IllegalArgumentException if the application does not exist
      */
     public long getSessionIdForApplication(ApplicationId applicationId) {
-        String path = applicationsPath.append(applicationId.serializedForm()).getAbsolute();
+        String path = applicationPath(applicationId).getAbsolute();
         try {
             return Long.parseLong(Utf8.toString(curator.framework().getData().forPath(path)));
         } catch (Exception e) {
@@ -124,18 +123,22 @@ public class TenantApplications {
     }
 
     /**
-     * Returns a transaction which deletes this application
-     *
-     * @param applicationId an {@link ApplicationId} to delete.
+     * Returns a transaction which deletes this application.
      */
     public CuratorTransaction deleteApplication(ApplicationId applicationId) {
-        Path path = applicationsPath.append(applicationId.serializedForm());
-        return CuratorTransaction.from(CuratorOperations.delete(path.getAbsolute()), curator);
+        return CuratorTransaction.from(CuratorOperations.delete(applicationPath(applicationId).getAbsolute()), curator);
     }
 
     /**
-         * Closes the application repo. Once a repo has been closed, it should not be used again.
-         */
+     * Removes all applications not known to this from the config server state.
+     */
+    public void removeUnusedApplications() {
+        reloadHandler.removeApplicationsExcept(Set.copyOf(listApplications()));
+    }
+
+    /**
+     * Closes the application repo. Once a repo has been closed, it should not be used again.
+     */
     public void close() {
         directoryCache.close();
     }
@@ -169,13 +172,8 @@ public class TenantApplications {
         log.log(LogLevel.DEBUG, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
     }
 
-    /**
-     * Removes unused applications
-     *
-     */
-    public void removeUnusedApplications() {
-        ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
-        reloadHandler.removeApplicationsExcept(activeApplications);
+    private Path applicationPath(ApplicationId id) {
+        return applicationsPath.append(id.serializedForm());
     }
 
 }
