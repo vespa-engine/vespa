@@ -6,12 +6,8 @@ import com.yahoo.container.core.LogHandlerConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -32,47 +28,19 @@ public class LogHandler extends ThreadedHttpRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        JSONObject responseJSON = new JSONObject();
 
         Instant earliestLogThreshold = Optional.ofNullable(request.getProperty("from"))
                 .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MIN);
         Instant latestLogThreshold = Optional.ofNullable(request.getProperty("to"))
                 .map(Long::valueOf).map(Instant::ofEpochMilli).orElseGet(Instant::now);
 
-        try {
-            if (request.hasProperty("streaming")) {
-                return new HttpResponse(200) {
-                    {
-                        headers().add("Content-Encoding", "gzip");
-                    }
-
-                    @Override
-                    public void render(OutputStream outputStream) {
-                        logReader.writeLogs(outputStream, earliestLogThreshold, latestLogThreshold);
-                    }
-                };
-            }
-
-            JSONObject logJson = logReader.readLogs(earliestLogThreshold, latestLogThreshold);
-            responseJSON.put("logs", logJson);
-        } catch (IOException | JSONException e) {
-            return new HttpResponse(404) {
-                @Override
-                public void render(OutputStream outputStream) {}
-            };
-        }
-
         return new HttpResponse(200) {
-            @Override
-            public void render(OutputStream outputStream) throws IOException {
-                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
-                outputStreamWriter.write(responseJSON.toString());
-                outputStreamWriter.close();
+            {
+                headers().add("Content-Encoding", "gzip");
             }
-
             @Override
-            public String getContentType() {
-                return "application/json";
+            public void render(OutputStream outputStream) {
+                logReader.writeLogs(outputStream, earliestLogThreshold, latestLogThreshold);
             }
         };
     }
