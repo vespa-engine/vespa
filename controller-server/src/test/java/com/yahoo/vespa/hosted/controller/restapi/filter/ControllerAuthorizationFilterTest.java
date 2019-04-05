@@ -6,13 +6,10 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
-import com.yahoo.vespa.hosted.controller.role.Role;
-import com.yahoo.vespa.hosted.controller.role.RoleMembership;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,39 +30,40 @@ import static org.junit.Assert.assertTrue;
 public class ControllerAuthorizationFilterTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static AthenzIdentity identity = new AthenzUser("user");
 
     @Test
     public void operator() {
         ControllerTester tester = new ControllerTester();
-        RoleMembership.Resolver operatorResolver = (user, path) -> RoleMembership.in(tester.controller().system())
-                                                                                 .add(Role.hostedOperator)
-                                                                                 .build();
-        ControllerAuthorizationFilter filter = createFilter(tester, operatorResolver);
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", identity)));
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        SecurityContext securityContext = new SecurityContext(() -> "operator", Role.hostedOperator.limitedTo(tester.controller().system()));
+
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", securityContext)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", securityContext)));
     }
 
     @Test
     public void unprivileged() {
         ControllerTester tester = new ControllerTester();
-        RoleMembership.Resolver emptyResolver = (user, path) -> RoleMembership.in(tester.controller().system()).build();
-        ControllerAuthorizationFilter filter = createFilter(tester, emptyResolver);
-        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", identity)));
+        SecurityContext securityContext = new SecurityContext(() -> "user", Role.everyone.limitedTo(tester.controller().system()));
+
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", securityContext)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", securityContext)));
     }
 
     @Test
     public void unprivilegedInPublic() {
         ControllerTester tester = new ControllerTester();
         tester.zoneRegistry().setSystemName(SystemName.Public);
-        RoleMembership.Resolver emptyResolver = (user, path) -> RoleMembership.in(tester.controller().system()).build();
-        ControllerAuthorizationFilter filter = createFilter(tester, emptyResolver);
-        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", identity)));
-        assertIsForbidden(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", identity)));
-        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", identity)));
+
+        SecurityContext securityContext = new SecurityContext(() -> "user", Role.everyone.limitedTo(tester.controller().system()));
+
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", securityContext)));
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", securityContext)));
     }
 
     private static void assertIsAllowed(Optional<AuthorizationResponse> response) {
@@ -79,8 +77,8 @@ public class ControllerAuthorizationFilterTest {
         assertEquals("Invalid status code", FORBIDDEN, response.get().statusCode);
     }
 
-    private static ControllerAuthorizationFilter createFilter(ControllerTester tester, RoleMembership.Resolver resolver) {
-        return new ControllerAuthorizationFilter(resolver, tester.controller(), Set.of("http://localhost"));
+    private static ControllerAuthorizationFilter createFilter(ControllerTester tester) {
+        return new ControllerAuthorizationFilter(tester.controller().system(), Set.of("http://localhost"));
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,
@@ -91,9 +89,9 @@ public class ControllerAuthorizationFilterTest {
                        .map(response -> new AuthorizationResponse(response.getStatus(), getErrorMessage(responseHandlerMock)));
     }
 
-    private static DiscFilterRequest createRequest(Method method, String path, AthenzIdentity identity) {
-        Request request = new Request(path, new byte[0], Request.Method.valueOf(method.name()),
-                                      new AthenzPrincipal(identity));
+    private static DiscFilterRequest createRequest(Method method, String path, SecurityContext securityContext) {
+        Request request = new Request(path, new byte[0], Request.Method.valueOf(method.name()), securityContext.principal());
+        request.getAttributes().put(SecurityContext.ATTRIBUTE_NAME, securityContext);
         return new ApplicationRequestToDiscFilterRequestWrapper(request);
     }
 
@@ -114,5 +112,4 @@ public class ControllerAuthorizationFilterTest {
             this.message = message;
         }
     }
-
 }

@@ -1,5 +1,5 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.role;
+package com.yahoo.vespa.hosted.controller.api.role;
 
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
@@ -39,9 +39,14 @@ public enum Policy {
                           .in(SystemName.main, SystemName.cd, SystemName.dev)), // TODO SystemName.all()
 
     /** Full access to tenant information and settings. */
-    tenantWrite(Privilege.grant(Action.write())
-                         .on(PathGroup.tenant)
-                         .in(SystemName.all())),
+    tenantDelete(Privilege.grant(Action.delete)
+                          .on(PathGroup.tenant)
+                          .in(SystemName.all())),
+
+    /** Full access to tenant information and settings. */
+    tenantUpdate(Privilege.grant(Action.update)
+                          .on(PathGroup.tenant)
+                          .in(SystemName.all())),
 
     /** Read access to tenant information and settings. */
     tenantRead(Privilege.grant(Action.read)

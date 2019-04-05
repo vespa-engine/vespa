@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -9,12 +10,11 @@ import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.role.Action;
-import com.yahoo.vespa.hosted.controller.role.RoleMembership;
-import com.yahoo.yolean.chain.After;
-import com.yahoo.yolean.chain.Provides;
+import com.yahoo.vespa.hosted.controller.api.role.Action;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 
-import javax.ws.rs.WebApplicationException;
 import java.security.Principal;
 import java.util.Optional;
 import java.util.Set;
@@ -25,44 +25,40 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-@After("com.yahoo.vespa.hosted.controller.athenz.filter.UserAuthWithAthenzPrincipalFilter")
-@Provides("ControllerAuthorizationFilter")
 public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
-    private final RoleMembership.Resolver roleResolver;
-    private final Controller controller;
+    private final SystemName system;
 
     @Inject
-    public ControllerAuthorizationFilter(RoleMembership.Resolver roleResolver,
-                                         Controller controller,
+    public ControllerAuthorizationFilter(Controller controller,
                                          CorsFilterConfig corsConfig) {
-        this(roleResolver, controller, Set.copyOf(corsConfig.allowedUrls()));
+        this(controller.system(), Set.copyOf(corsConfig.allowedUrls()));
     }
 
-    ControllerAuthorizationFilter(RoleMembership.Resolver roleResolver,
-                                  Controller controller,
+    ControllerAuthorizationFilter(SystemName system,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
-        this.roleResolver = roleResolver;
-        this.controller = controller;
+        this.system = system;
     }
 
     @Override
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
             Principal principal = request.getUserPrincipal();
-            if (principal == null)
+            Optional<SecurityContext> securityContext = Optional.ofNullable((SecurityContext)request.getAttribute(SecurityContext.ATTRIBUTE_NAME));
+
+            if (securityContext.isEmpty())
                 return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
 
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
             // Avoid expensive lookups when request is always legal.
-            if (RoleMembership.everyoneIn(controller.system()).allows(action, request.getUri()))
+            if (Role.everyone.limitedTo(system).allows(action, request.getUri()))
                 return Optional.empty();
 
-            RoleMembership roles = this.roleResolver.membership(principal, Optional.of(request.getRequestURI()));
+            RoleMembership roles = securityContext.get().roles();
             if (roles.allows(action, request.getUri()))
                 return Optional.empty();
         }

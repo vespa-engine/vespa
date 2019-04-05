@@ -758,31 +758,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 new File("deploy-no-deployment.json"), 400);
     }
 
-    // Tests deployment to config server when using just on API call
-    // For now this depends on a switch in ApplicationController that does this for by- tenants in CD only
-    @Test
-    public void testDeployDirectlyUsingOneCallForDeploy() {
-        // Setup
-        tester.computeVersionStatus();
-        UserId userId = new UserId("new_user");
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, userId);
-
-        // Create tenant
-        // PUT (create) the authenticated user
-        byte[] data = new byte[0];
-        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
-                                      .data(data)
-                                      .userIdentity(userId), // Normalized to by-new-user by API
-                              new File("create-user-response.json"));
-
-        // POST (deploy) an application to a dev zone
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
-        tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/cd-us-central-1/instance/default", POST)
-                                      .data(entity)
-                                      .userIdentity(userId),
-                              new File("deploy-result.json"));
-    }
-
     @Test
     public void testSortsDeploymentsAndJobs() {
         tester.computeVersionStatus();
@@ -897,7 +872,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}",
                               400);
 
-        // POST (add) a Athenz tenant with underscore in name
+        // POST (add) an Athenz tenant with underscore in name
         tester.assertResponse(request("/application/v4/tenant/my_tenant_2", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
@@ -905,12 +880,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"New tenant or application names must start with a letter, may contain no more than 20 characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.\"}",
                               400);
 
-        // POST (add) a Athenz tenant with by- prefix
+        // POST (add) an Athenz tenant with by- prefix
         tester.assertResponse(request("/application/v4/tenant/by-tenant2", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
                                       .oktaAccessToken(OKTA_AT),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz tenant name cannot have prefix 'by-'\"}",
+                              400);
+
+        // POST (add) an Athenz tenant with a reserved name
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'hosted-vespa' already exists\"}",
                               400);
 
         // POST (create) an (empty) application

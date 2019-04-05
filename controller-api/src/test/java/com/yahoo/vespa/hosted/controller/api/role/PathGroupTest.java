@@ -1,9 +1,8 @@
-package com.yahoo.vespa.hosted.controller.role;
+package com.yahoo.vespa.hosted.controller.api.role;
 
 import org.junit.Test;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
