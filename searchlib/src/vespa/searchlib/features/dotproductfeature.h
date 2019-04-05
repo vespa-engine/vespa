@@ -264,12 +264,14 @@ private:
  */
 class DotProductBlueprint : public fef::Blueprint {
 private:
+    using IAttributeVector = attribute::IAttributeVector;
     vespalib::string _defaultAttribute;
     vespalib::string _queryVector;
 
-    mutable const attribute::IAttributeVector * _attribute;
+    mutable const IAttributeVector * _attribute;
 
     vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
+    const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
 
 public:
     DotProductBlueprint();
