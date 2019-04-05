@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.http.server.jetty.HttpResponseStatisticsCollector.StatisticsEntry;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpURI;
@@ -22,10 +23,9 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Map;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -40,55 +40,62 @@ public class HttpResponseStatisticsCollectorTest {
 
     @Test
     public void statistics_are_aggregated_by_category() throws Exception {
-        testRequest(300, "GET");
-        testRequest(301, "GET");
-        testRequest(200, "GET");
+        testRequest("http", 300, "GET");
+        testRequest("http", 301, "GET");
+        testRequest("http", 200, "GET");
 
-        Map<String, Map<String, Long>> stats = collector.takeStatisticsByMethod();
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_2XX), equalTo(1L));
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_3XX), equalTo(2L));
+        var stats = collector.takeStatistics();
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_3XX, 2L);
     }
 
     @Test
-    public void statistics_are_grouped_by_http_method() throws Exception {
-        testRequest(200, "GET");
-        testRequest(200, "PUT");
-        testRequest(200, "POST");
-        testRequest(200, "POST");
-        testRequest(404, "GET");
+    public void statistics_are_grouped_by_http_method_and_scheme() throws Exception {
+        testRequest("http", 200, "GET");
+        testRequest("http", 200, "PUT");
+        testRequest("http", 200, "POST");
+        testRequest("http", 200, "POST");
+        testRequest("http", 404, "GET");
+        testRequest("https", 404, "GET");
+        testRequest("https", 200, "POST");
+        testRequest("https", 200, "POST");
+        testRequest("https", 200, "POST");
+        testRequest("https", 200, "POST");
 
-        Map<String, Map<String, Long>> stats = collector.takeStatisticsByMethod();
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_2XX), equalTo(1L));
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_4XX), equalTo(1L));
-        assertThat(stats.get("PUT").get(Metrics.RESPONSES_2XX), equalTo(1L));
-        assertThat(stats.get("POST").get(Metrics.RESPONSES_2XX), equalTo(2L));
+        var stats = collector.takeStatistics();
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_4XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "PUT", Metrics.RESPONSES_2XX, 1L);
+        assertStatisticsEntryPresent(stats, "http", "POST", Metrics.RESPONSES_2XX, 2L);
+        assertStatisticsEntryPresent(stats, "https", "GET", Metrics.RESPONSES_4XX, 1L);
+        assertStatisticsEntryPresent(stats, "https", "POST", Metrics.RESPONSES_2XX, 4L);
     }
 
     @Test
     public void statistics_include_grouped_and_single_statuscodes() throws Exception {
-        testRequest(401, "GET");
-        testRequest(404, "GET");
-        testRequest(403, "GET");
+        testRequest("http", 401, "GET");
+        testRequest("http", 404, "GET");
+        testRequest("http", 403, "GET");
 
-        Map<String, Map<String, Long>> stats = collector.takeStatisticsByMethod();
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_4XX), equalTo(3L));
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_401), equalTo(1L));
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_403), equalTo(1L));
+        var stats = collector.takeStatistics();
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_4XX, 3L);
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_401, 1L);
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_403, 1L);
 
     }
 
     @Test
     public void retrieving_statistics_resets_the_counters() throws Exception {
-        testRequest(200, "GET");
-        testRequest(200, "GET");
+        testRequest("http", 200, "GET");
+        testRequest("http", 200, "GET");
 
-        Map<String, Map<String, Long>> stats = collector.takeStatisticsByMethod();
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_2XX), equalTo(2L));
+        var stats = collector.takeStatistics();
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 2L);
 
-        testRequest(200, "GET");
+        testRequest("http", 200, "GET");
 
-        stats = collector.takeStatisticsByMethod();
-        assertThat(stats.get("GET").get(Metrics.RESPONSES_2XX), equalTo(1L));
+        stats = collector.takeStatistics();
+        assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
     }
 
     @BeforeTest
@@ -116,15 +123,24 @@ public class HttpResponseStatisticsCollectorTest {
         server.start();
     }
 
-    private Request testRequest(int responseCode, String httpMethod) throws Exception {
+    private Request testRequest(String scheme, int responseCode, String httpMethod) throws Exception {
         HttpChannel channel = new HttpChannel(connector, new HttpConfiguration(), null, new DummyTransport());
-        MetaData.Request metaData = new MetaData.Request(httpMethod, new HttpURI("http://foo/bar"), HttpVersion.HTTP_1_1, new HttpFields());
+        MetaData.Request metaData = new MetaData.Request(httpMethod, new HttpURI(scheme + "://foo/bar"), HttpVersion.HTTP_1_1, new HttpFields());
         Request req = channel.getRequest();
         req.setMetaData(metaData);
 
         this.httpResponseCode = responseCode;
         channel.handle();
         return req;
+    }
+
+    private static void assertStatisticsEntryPresent(List<StatisticsEntry> result, String scheme, String method, String name, long expectedValue) {
+        long value = result.stream()
+                .filter(entry -> entry.method.equals(method) && entry.scheme.equals(scheme) && entry.name.equals(name))
+                .mapToLong(entry -> entry.value)
+                .findAny()
+                .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s)", scheme, method, name)));
+        assertThat(value, equalTo(expectedValue));
     }
 
     private final class DummyTransport implements HttpTransport {
