@@ -367,6 +367,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {
+        object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
         object.setString("deployments", withPath("/application/v4" +
@@ -456,21 +457,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
 
-            deploymentObject.setString("environment", deployment.zone().environment().value());
-            deploymentObject.setString("region", deployment.zone().region().value());
-            deploymentObject.setString("instance", application.id().instance().value()); // pointless
             if (application.rotation().isPresent() && deployment.zone().environment() == Environment.prod) {
                 toSlime(application.rotationStatus(deployment), deploymentObject);
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
-            else
+            else {
+                deploymentObject.setString("environment", deployment.zone().environment().value());
+                deploymentObject.setString("region", deployment.zone().region().value());
+                deploymentObject.setString("instance", application.id().instance().value()); // pointless
                 deploymentObject.setString("url", withPath(request.getUri().getPath() +
                                                            "/environment/" + deployment.zone().environment().value() +
                                                            "/region/" + deployment.zone().region().value() +
                                                            "/instance/" + application.id().instance().value(),
                                                            request.getUri()).toString());
+            }
         }
 
         // Metrics
@@ -515,6 +517,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
+
+        response.setString("tenant", deploymentId.applicationId().tenant().value());
+        response.setString("application", deploymentId.applicationId().application().value());
+        response.setString("instance", deploymentId.applicationId().instance().value()); // pointless
+        response.setString("environment", deploymentId.zoneId().environment().value());
+        response.setString("region", deploymentId.zoneId().region().value());
 
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.applications().getDeploymentEndpoints(deploymentId)
@@ -1154,6 +1162,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Application application, Cursor object, HttpRequest request) {
+        object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
         object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +

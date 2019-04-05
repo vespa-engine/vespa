@@ -1,4 +1,5 @@
 {
+  "tenant": "tenant1",
   "application": "application1",
   "instance": "default",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/",
@@ -231,12 +232,12 @@
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default"
     },
     {
-      "environment": "prod",
-      "region": "us-central-1",
-      "instance": "default",
       "bcpStatus": {
         "rotationStatus": "UNKNOWN"
       },
+      "environment": "prod",
+      "region": "us-central-1",
+      "instance": "default",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default"
     }
   ],

@@ -1,10 +1,12 @@
 {
-  "environment": "prod",
-  "region": "us-central-1",
-  "instance": "default",
   "bcpStatus": {
     "rotationStatus": "UNKNOWN"
   },
+  "tenant": "tenant1",
+  "application": "application1",
+  "instance": "default",
+  "environment": "prod",
+  "region": "us-central-1",
   "serviceUrls": [
     "http://old-endpoint.vespa.yahooapis.com:4080",
     "http://qrs-endpoint.vespa.yahooapis.com:4080",
