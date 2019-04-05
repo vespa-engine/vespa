@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The context in which a role is valid.
+ * The context in which a role is valid. This is immutable.
  *
  * @author mpolden
  */
@@ -38,11 +38,6 @@ public class Context {
     /** System in which this is valid */
     public SystemName system() {
         return system;
-    }
-
-    /** Returns whether this context is considered limited */
-    public boolean limited() {
-        return tenant.isPresent() || application.isPresent();
     }
 
     /** Returns a context that has no restrictions on tenant or application in given system */
