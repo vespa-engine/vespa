@@ -63,6 +63,7 @@ public class ControllerContainerTest {
             "      <item>http://localhost</item>\n" +
             "    </allowedUrls>\n" +
             "  </config>\n" +
+            "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock'/>\n" +
