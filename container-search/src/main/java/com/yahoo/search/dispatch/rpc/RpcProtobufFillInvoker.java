@@ -66,9 +66,6 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     protected void sendFillRequest(Result result, String summaryClass) {
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
 
-        CompressionType compression = CompressionType
-                .valueOf(result.getQuery().properties().getString(RpcResourcePool.dispatchCompression, "LZ4").toUpperCase());
-
         result.getQuery().trace(false, 5, "Sending ", hitsByNode.size(), " summary fetch requests with jrt/protobuf");
 
         outstandingResponses = hitsByNode.size();
@@ -77,7 +74,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         var builder = ProtobufSerialization.createDocsumRequestBuilder(result.getQuery(), serverId, summaryClass, summaryNeedsQuery);
         for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
             var payload = ProtobufSerialization.serializeDocsumRequest(builder, nodeHits.getValue());
-            sendDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), payload, compression, result);
+            sendDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), payload, result);
         }
     }
 
@@ -117,8 +114,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     }
 
     /** Send a docsums request to a node. Responses will be added to the given receiver. */
-    private void sendDocsumsRequest(int nodeId, List<FastHit> hits, byte[] payload, CompressionType compression, Result result) {
-        Client.NodeConnection node = resourcePool.nodeConnections().get(nodeId);
+    private void sendDocsumsRequest(int nodeId, List<FastHit> hits, byte[] payload, Result result) {
+        Client.NodeConnection node = resourcePool.getConnection(nodeId);
         if (node == null) {
             String error = "Could not fill hits from unknown node " + nodeId;
             receive(Client.ResponseOrError.fromError(error), hits);
@@ -129,9 +126,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
         Query query = result.getQuery();
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
-        Compressor.Compression compressionResult = resourcePool.compressor().compress(compression, payload);
-        resourcePool.client().request(RPC_METHOD, node, compressionResult.type(), payload.length, compressionResult.data(),
-                roe -> receive(roe, hits), timeoutSeconds);
+        Compressor.Compression compressionResult = resourcePool.compress(query, payload);
+        node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(), roe -> receive(roe, hits),
+                timeoutSeconds);
     }
 
     private void processResponses(Result result, String summaryClass) throws TimeoutException {
