@@ -67,7 +67,7 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public void createApplication(ApplicationId application, Credentials credentials) {
-        RoleId ownerRole = RoleId.fromRole(roles.applicationOwner(application.tenant(), application.application()));
+        RoleId ownerRole = RoleId.fromRole(roles.applicationAdmin(application.tenant(), application.application()));
         userManagement.createRole(ownerRole);
         userManagement.addUsers(ownerRole, List.of(new UserId(credentials.user().getName())));
     }
@@ -97,8 +97,7 @@ public class CloudAccessControl implements AccessControl {
         return List.of(roles.applicationReader(tenant, application),
                        roles.applicationDeveloper(tenant, application),
                        roles.applicationOperator(tenant, application),
-                       roles.applicationAdmin(tenant, application),
-                       roles.applicationOwner(tenant, application));
+                       roles.applicationAdmin(tenant, application));
     }
 
 }

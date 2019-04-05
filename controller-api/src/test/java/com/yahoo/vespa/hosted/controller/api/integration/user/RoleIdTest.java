@@ -28,8 +28,7 @@ public class RoleIdTest {
             assertEquals(role, RoleId.fromRole(role).toRole(roles));
 
         ApplicationName application = ApplicationName.from("my-application");
-        for (ApplicationRole role : List.of(roles.applicationOwner(tenant, application),
-                                            roles.applicationAdmin(tenant, application),
+        for (ApplicationRole role : List.of(roles.applicationAdmin(tenant, application),
                                             roles.applicationOperator(tenant, application),
                                             roles.applicationDeveloper(tenant, application),
                                             roles.applicationReader(tenant, application)))

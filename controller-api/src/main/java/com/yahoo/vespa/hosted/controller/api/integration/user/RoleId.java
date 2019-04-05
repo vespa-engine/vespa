@@ -68,7 +68,6 @@ public class RoleId {
             case "tenantOperator": return roles.tenantOperator(TenantName.from(parts[0]));
         }
         if (parts.length == 3) switch (parts[2]) {
-            case "applicationOwner":     return roles.applicationOwner(TenantName.from(parts[0]), ApplicationName.from(parts[1]));
             case "applicationAdmin":     return roles.applicationAdmin(TenantName.from(parts[0]), ApplicationName.from(parts[1]));
             case "applicationOperator":  return roles.applicationOperator(TenantName.from(parts[0]), ApplicationName.from(parts[1]));
             case "applicationDeveloper": return roles.applicationDeveloper(TenantName.from(parts[0]), ApplicationName.from(parts[1]));
@@ -104,7 +103,6 @@ public class RoleId {
             case tenantOwner:          return "tenantOwner";
             case tenantAdmin:          return "tenantAdmin";
             case tenantOperator:       return "tenantOperator";
-            case applicationOwner:     return "applicationOwner";
             case applicationAdmin:     return "applicationAdmin";
             case applicationOperator:  return "applicationOperator";
             case applicationDeveloper: return "applicationDeveloper";

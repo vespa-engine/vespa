@@ -71,11 +71,6 @@ public class Roles {
         return new TenantRole(RoleDefinition.tenantOperator, system, tenant);
     }
 
-    /** Returns a {@link RoleDefinition#applicationOwner} for the current system and given tenant and application. */
-    public ApplicationRole applicationOwner(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationOwner, system, tenant, application);
-    }
-
     /** Returns a {@link RoleDefinition#applicationAdmin} for the current system and given tenant and application. */
     public ApplicationRole applicationAdmin(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(RoleDefinition.applicationAdmin, system, tenant, application);
