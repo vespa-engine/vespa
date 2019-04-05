@@ -77,6 +77,7 @@ vespalib::string parse_ident(ParseContext &ctx) {
 }
 
 size_t parse_int(ParseContext &ctx) {
+    ctx.skip_spaces();
     vespalib::string num;
     for (; isdigit(ctx.get()); ctx.next()) {
         num.push_back(ctx.get());
@@ -91,11 +92,11 @@ ValueType::Dimension parse_dimension(ParseContext &ctx) {
     ValueType::Dimension dimension(parse_ident(ctx));
     ctx.skip_spaces();
     if (ctx.get() == '{') {
-        ctx.next(); // '{'
+        ctx.eat('{');
         ctx.skip_spaces();
         ctx.eat('}');
     } else if (ctx.get() == '[') {
-        ctx.next(); // '['
+        ctx.eat('[');
         ctx.skip_spaces();
         if (ctx.get() == ']') {
             dimension.size = 0;
@@ -129,6 +130,18 @@ std::vector<ValueType::Dimension> parse_dimension_list(ParseContext &ctx) {
     return list;
 }
 
+vespalib::string parse_cell_type(ParseContext &ctx) {
+    vespalib::string cell_type = "double";
+    ctx.skip_spaces();
+    if (ctx.get() == '<') {
+        ctx.eat('<');
+        cell_type = parse_ident(ctx);
+        ctx.skip_spaces();
+        ctx.eat('>');
+    }
+    return cell_type;
+}
+
 } // namespace vespalib::eval::value_type::<anonymous>
 
 ValueType
@@ -143,6 +156,10 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out)
     } else if (type_name == "double") {
         return ValueType::double_type();
     } else if (type_name == "tensor") {
+        vespalib::string cell_type = parse_cell_type(ctx);
+        if ((cell_type != "double") && (cell_type != "float")) {
+            ctx.fail();
+        }
         std::vector<ValueType::Dimension> list = parse_dimension_list(ctx);
         if (!ctx.failed()) {
             return ValueType::tensor_type(std::move(list));
