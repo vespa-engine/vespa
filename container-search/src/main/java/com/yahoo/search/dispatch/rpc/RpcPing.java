@@ -52,12 +52,12 @@ public class RpcPing implements Callable<Pong> {
     }
 
     private void sendPing(LinkedBlockingQueue<ResponseOrError<ProtobufResponse>> queue) {
-        var connection = resourcePool.nodeConnections().get(node.key());
+        var connection = resourcePool.getConnection(node.key());
         var ping = SearchProtocol.MonitorRequest.newBuilder().build().toByteArray();
         double timeoutSeconds = ((double) clusterMonitor.getConfiguration().getRequestTimeout()) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compressor().compress(PING_COMPRESSION, ping);
-        resourcePool.client().request(RPC_METHOD, connection, compressionResult.type(), ping.length, compressionResult.data(),
-                rsp -> queue.add(rsp), timeoutSeconds);
+        connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), rsp -> queue.add(rsp),
+                timeoutSeconds);
     }
 
     private Pong decodeReply(ProtobufResponse response) throws InvalidProtocolBufferException {

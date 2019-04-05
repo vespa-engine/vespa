@@ -34,7 +34,7 @@ public class RpcSearchInvokerTest {
         var payloadHolder = new AtomicReference<byte[]>();
         var lengthHolder = new AtomicInteger();
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
-        var mockPool = new RpcResourcePool(mockClient, ImmutableMap.of(7, () -> {}));
+        var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
         @SuppressWarnings("resource")
         var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 77, 1), mockPool);
 
@@ -53,23 +53,26 @@ public class RpcSearchInvokerTest {
             AtomicInteger lengthHolder) {
         return new Client() {
             @Override
-            public void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength,
-                    byte[] compressedPayload, ResponseReceiver responseReceiver, double timeoutSeconds) {
-                compressionTypeHolder.set(compression);
-                payloadHolder.set(compressedPayload);
-                lengthHolder.set(uncompressedLength);
-            }
-
-            @Override
-            public void getDocsums(List<FastHit> hits, NodeConnection node, CompressionType compression, int uncompressedLength,
-                    byte[] compressedSlime, GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
-                fail("Unexpected call");
-            }
-
-            @Override
             public NodeConnection createConnection(String hostname, int port) {
-                fail("Unexpected call");
-                return null;
+                return new NodeConnection() {
+                    @Override
+                    public void getDocsums(List<FastHit> hits, CompressionType compression, int uncompressedLength, byte[] compressedSlime,
+                            GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
+                        fail("Unexpected call");
+                    }
+
+                    @Override
+                    public void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
+                            ResponseReceiver responseReceiver, double timeoutSeconds) {
+                        compressionTypeHolder.set(compression);
+                        payloadHolder.set(compressedPayload);
+                        lengthHolder.set(uncompressedLength);
+                    }
+
+                    @Override
+                    public void close() {
+                    }
+                };
             }
         };
     }

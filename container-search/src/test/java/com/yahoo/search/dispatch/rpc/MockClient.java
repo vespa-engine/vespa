@@ -36,62 +36,6 @@ public class MockClient implements Client {
         return new MockNodeConnection(hostname, port);
     }
 
-    @Override
-    public void getDocsums(List<FastHit> hitsContext, NodeConnection node, CompressionType compression,
-                           int uncompressedSize, byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver,
-                           double timeoutSeconds) {
-        if (malfunctioning) {
-            responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
-            return;
-        }
-
-        Inspector request = BinaryFormat.decode(compressor.decompress(compressedSlime, compression, uncompressedSize)).get();
-        String docsumClass = request.field("class").asString();
-        List<Map<String, Object>> docsumsToReturn = new ArrayList<>();
-        request.field("gids").traverse((ArrayTraverser)(index, gid) -> {
-            GlobalId docId = new GlobalId(gid.asData());
-            docsumsToReturn.add(docsums.get(new DocsumKey(node.toString(), docId, docsumClass)));
-        });
-        Slime responseSlime = new Slime();
-        Cursor root = responseSlime.setObject();
-        Cursor docsums = root.setArray("docsums");
-        for (Map<String, Object> docsumFields : docsumsToReturn) {
-            Cursor docsumItem = docsums.addObject();
-            Cursor docsum = docsumItem.setObject("docsum");
-            for (Map.Entry<String, Object> field : docsumFields.entrySet()) {
-                if (field.getValue() instanceof Integer)
-                    docsum.setLong(field.getKey(), (Integer)field.getValue());
-                else if (field.getValue() instanceof String)
-                    docsum.setString(field.getKey(), (String)field.getValue());
-                else
-                    throw new RuntimeException();
-            }
-        }
-        byte[] slimeBytes = BinaryFormat.encode(responseSlime);
-        Compressor.Compression compressionResult = compressor.compress(compression, slimeBytes);
-        GetDocsumsResponse response = new GetDocsumsResponse(compressionResult.type().getCode(), slimeBytes.length,
-                                                             compressionResult.data(), hitsContext);
-        responseReceiver.receive(ResponseOrError.fromResponse(response));
-    }
-
-    @Override
-    public void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
-            ResponseReceiver responseReceiver, double timeoutSeconds) {
-        if (malfunctioning) {
-            responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
-            return;
-        }
-
-        if(searchResult == null) {
-            responseReceiver.receive(ResponseOrError.fromError("No result defined"));
-            return;
-        }
-        var payload = ProtobufSerialization.serializeResult(searchResult);
-        var compressionResult = compressor.compress(compression, payload);
-        var response = new ProtobufResponse(compressionResult.type().getCode(), payload.length, compressionResult.data());
-        responseReceiver.receive(ResponseOrError.fromResponse(response));
-    }
-
     public void setDocsumReponse(String nodeId, int docId, String docsumClass, Map<String, Object> docsumValues) {
         docsums.put(new DocsumKey(nodeId, globalIdFrom(docId), docsumClass), docsumValues);
     }
@@ -100,12 +44,67 @@ public class MockClient implements Client {
         return new GlobalId(new IdIdString("", "test", "", String.valueOf(hitId)));
     }
 
-    private static class MockNodeConnection implements Client.NodeConnection {
+    private class MockNodeConnection implements Client.NodeConnection {
 
         private final String hostname;
 
         public MockNodeConnection(String hostname, int port) {
             this.hostname = hostname;
+        }
+
+        @Override
+        public void getDocsums(List<FastHit> hitsContext, CompressionType compression, int uncompressedSize, byte[] compressedSlime,
+                RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
+            if (malfunctioning) {
+                responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
+                return;
+            }
+
+            Inspector request = BinaryFormat.decode(compressor.decompress(compressedSlime, compression, uncompressedSize)).get();
+            String docsumClass = request.field("class").asString();
+            List<Map<String, Object>> docsumsToReturn = new ArrayList<>();
+            request.field("gids").traverse((ArrayTraverser) (index, gid) -> {
+                GlobalId docId = new GlobalId(gid.asData());
+                docsumsToReturn.add(docsums.get(new DocsumKey(toString(), docId, docsumClass)));
+            });
+            Slime responseSlime = new Slime();
+            Cursor root = responseSlime.setObject();
+            Cursor docsums = root.setArray("docsums");
+            for (Map<String, Object> docsumFields : docsumsToReturn) {
+                Cursor docsumItem = docsums.addObject();
+                Cursor docsum = docsumItem.setObject("docsum");
+                for (Map.Entry<String, Object> field : docsumFields.entrySet()) {
+                    if (field.getValue() instanceof Integer)
+                        docsum.setLong(field.getKey(), (Integer) field.getValue());
+                    else if (field.getValue() instanceof String)
+                        docsum.setString(field.getKey(), (String) field.getValue());
+                    else
+                        throw new RuntimeException();
+                }
+            }
+            byte[] slimeBytes = BinaryFormat.encode(responseSlime);
+            Compressor.Compression compressionResult = compressor.compress(compression, slimeBytes);
+            GetDocsumsResponse response = new GetDocsumsResponse(compressionResult.type().getCode(), slimeBytes.length,
+                    compressionResult.data(), hitsContext);
+            responseReceiver.receive(ResponseOrError.fromResponse(response));
+        }
+
+        @Override
+        public void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
+                ResponseReceiver responseReceiver, double timeoutSeconds) {
+            if (malfunctioning) {
+                responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
+                return;
+            }
+
+            if(searchResult == null) {
+                responseReceiver.receive(ResponseOrError.fromError("No result defined"));
+                return;
+            }
+            var payload = ProtobufSerialization.serializeResult(searchResult);
+            var compressionResult = compressor.compress(compression, payload);
+            var response = new ProtobufResponse(compressionResult.type().getCode(), payload.length, compressionResult.data());
+            responseReceiver.receive(ResponseOrError.fromResponse(response));
         }
 
         @Override
