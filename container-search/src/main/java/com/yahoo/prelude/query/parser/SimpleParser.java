@@ -10,10 +10,10 @@ import static com.yahoo.prelude.query.parser.Token.Kind.PLUS;
 import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 
 /**
- * Base class for parsers of the "simple" query languages (query types
- * ANY and ALL).
+ * Base class for parsers of the "simple" query languages (query types ANY and ALL).
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 abstract class SimpleParser extends StructuredParser {
 
@@ -24,7 +24,6 @@ abstract class SimpleParser extends StructuredParser {
     protected Item handleComposite(boolean topLevel) {
         return anyItems(false); // Nesteds are any even if all on top level
     }
-
 
     protected abstract Item negativeItem();
 
@@ -163,11 +162,7 @@ abstract class SimpleParser extends StructuredParser {
         return false;
     }
 
-
-    /**
-     * Removes and returns the first <i>not</i> found in the composite,
-     * or returns null if there's none
-     */
+    /** Removes and returns the first <i>not</i> found in the composite, or returns null if there's none */
     private NotItem removeNot(CompositeItem composite) {
         for (int i = 0; i < composite.getItemCount(); i++) {
             if (composite.getItem(i) instanceof NotItem) {
@@ -184,7 +179,7 @@ abstract class SimpleParser extends StructuredParser {
         Item item = null;
 
         try {
-            if (!tokens.skipMultiple(PLUS)) {
+            if ( ! tokens.skipMultiple(PLUS)) {
                 return null;
             }
 
