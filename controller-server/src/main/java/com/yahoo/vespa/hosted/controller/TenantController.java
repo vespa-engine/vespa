@@ -61,7 +61,7 @@ public class TenantController {
                       .collect(Collectors.toList());
     }
 
-    /** Returns the lsit of tenants accessible to the given user. */
+    /** Returns the list of tenants accessible to the given user. */
     public List<Tenant> asList(Credentials credentials) {
         return accessControl.accessibleTenants(asList(), credentials);
     }

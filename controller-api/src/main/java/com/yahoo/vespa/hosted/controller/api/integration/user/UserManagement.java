@@ -15,7 +15,7 @@ public interface UserManagement {
     /** Creates the given role, or throws if the role already exists. */
     void createRole(RoleId role);
 
-    /** Deletes the given role, or throws if it doesn't already exist.. */
+    /** Deletes the given role, or throws if it doesn't already exist. */
     void deleteRole(RoleId role);
 
     /** Ensures the given users exist, and are part of the given role, or throws if the role does not exist. */

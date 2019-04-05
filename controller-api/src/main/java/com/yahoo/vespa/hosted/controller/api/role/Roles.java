@@ -1,8 +1,10 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.util.Objects;
 
@@ -16,6 +18,12 @@ import java.util.Objects;
 public class Roles {
 
     private final SystemName system;
+
+
+    @Inject
+    public Roles(ZoneRegistry zones) {
+        this(zones.system());
+    }
 
     /** Creates a Roles which can be used to create bound roles for the given system. */
     public Roles(SystemName system) {
