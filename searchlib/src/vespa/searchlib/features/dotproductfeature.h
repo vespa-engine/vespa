@@ -36,6 +36,8 @@ template <typename T>
 struct ArrayParam : public fef::Anything {
     ArrayParam(const fef::Property & prop);
     ArrayParam(vespalib::nbostream & stream);
+    ArrayParam(std::vector<T> v) : values(std::move(v)) {}
+    ~ArrayParam() override;
     std::vector<T>        values;
     std::vector<uint32_t> indexes;
 };

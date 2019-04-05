@@ -347,6 +347,9 @@ ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
     vespalib::tensor::TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(stream, values);
 }
 
+template <typename T>
+ArrayParam<T>::~ArrayParam() = default;
+
 
 // Explicit instantiation since these are inspected by unit tests.
 // FIXME this feels a bit dirty, consider breaking up ArrayParam to remove dependencies
