@@ -23,7 +23,7 @@ while getopts "uh" opt; do
 done
 shift $((OPTIND-1))
 
-if [[ $# -eq 0 ]]; then
+if [[ $# -eq 0 ]]; then
     SOURCE_DIR=$(dirname "$0")
     EXTRA_CMAKE_ARGS=""
 elif [[ $# -eq 1 ]]; then
