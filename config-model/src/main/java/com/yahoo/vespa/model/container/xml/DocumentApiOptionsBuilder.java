@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 public class DocumentApiOptionsBuilder {
 
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
-    private static final String[] DEFAULT_BINDINGS = {"http://*/", "https://*/"};
+    private static final String[] DEFAULT_BINDINGS = {"http://*/"};
 
     public static ContainerDocumentApi.Options build(Element spec) {
         return new ContainerDocumentApi.Options(

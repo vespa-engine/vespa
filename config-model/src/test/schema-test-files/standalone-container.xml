@@ -70,7 +70,6 @@
 
   <document-api>
     <binding>http://*/document-api/</binding>
-    <binding>https://*/document-api/</binding>
     <abortondocumenterror>false</abortondocumenterror>
     <retryenabled>false</retryenabled>
     <timeout>5.55</timeout>

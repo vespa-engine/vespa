@@ -153,6 +153,6 @@ public final class AccessControl {
     }
 
     private static Stream<String> servletBindings(Servlet servlet) {
-        return Stream.of("http://*/", "https://*/").map(protocol -> protocol + servlet.bindingPath);
+        return Stream.of("http://*/").map(protocol -> protocol + servlet.bindingPath);
     }
 }

@@ -271,7 +271,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_SETTING));
             cluster.addComponent(
                     new FileStatusHandlerComponent(name + "-status-handler", statusFile.orElse(HOSTED_VESPA_STATUS_FILE),
-                            "http://*/" + name, "https://*/" + name));
+                            "http://*/" + name));
         } else {
             cluster.addVipHandler();
         }
@@ -712,7 +712,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(
                 cluster.getSearch().getChains(), "com.yahoo.search.handler.SearchHandler");
 
-        String[] defaultBindings = {"http://*/search/*", "https://*/search/*"};
+        String[] defaultBindings = {"http://*/search/*"};
         for (String binding: serverBindings(searchElement, defaultBindings)) {
             searchHandler.addServerBindings(binding);
         }
@@ -722,7 +722,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
         Handler<?> guiHandler = new GUIHandler();
-        guiHandler.addServerBindings("http://"+GUIHandler.BINDING, "https://"+GUIHandler.BINDING);
+        guiHandler.addServerBindings("http://"+GUIHandler.BINDING);
         cluster.addComponent(guiHandler);
     }
 

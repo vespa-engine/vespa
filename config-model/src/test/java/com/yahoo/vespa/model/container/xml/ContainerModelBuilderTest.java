@@ -35,7 +35,6 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.component.HttpFilter;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
@@ -266,11 +265,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         JdiscBindingsConfig.Handlers applicationStatusHandler = config.handlers(ApplicationStatusHandler.class.getName());
         assertThat(applicationStatusHandler.serverBindings(),
-                   contains("http://*/ApplicationStatus", "https://*/ApplicationStatus"));
+                   contains("http://*/ApplicationStatus"));
 
         JdiscBindingsConfig.Handlers fileRequestHandler = config.handlers(VipStatusHandler.class.getName());
         assertThat(fileRequestHandler.serverBindings(),
-                   contains("http://*/status.html", "https://*/status.html"));
+                   contains("http://*/status.html"));
     }
 
     @Test
