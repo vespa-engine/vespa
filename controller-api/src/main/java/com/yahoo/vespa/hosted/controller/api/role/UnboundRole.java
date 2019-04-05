@@ -9,13 +9,13 @@ import com.yahoo.config.provision.SystemName;
  */
 public class UnboundRole extends Role {
 
-    UnboundRole(ProtoRole protoRole, SystemName system) {
-        super(protoRole, Context.unlimitedIn(system));
+    UnboundRole(RoleDefinition roleDefinition, SystemName system) {
+        super(roleDefinition, Context.unlimitedIn(system));
     }
 
     @Override
     public String toString() {
-        return "role '" + proto() + "'";
+        return "role '" + definition() + "'";
     }
 
 }

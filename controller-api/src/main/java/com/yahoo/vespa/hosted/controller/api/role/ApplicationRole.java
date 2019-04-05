@@ -11,8 +11,8 @@ import com.yahoo.config.provision.TenantName;
  */
 public class ApplicationRole extends Role {
 
-    ApplicationRole(ProtoRole protoRole, SystemName system, TenantName tenant, ApplicationName application) {
-        super(protoRole, Context.limitedTo(tenant, application, system));
+    ApplicationRole(RoleDefinition roleDefinition, SystemName system, TenantName tenant, ApplicationName application) {
+        super(roleDefinition, Context.limitedTo(tenant, application, system));
     }
 
     /** Returns the {@link TenantName} this is bound to. */
@@ -23,7 +23,7 @@ public class ApplicationRole extends Role {
 
     @Override
     public String toString() {
-        return "role '" + proto() + "' of '" + application() + "' owned by '" + tenant() + "'";
+        return "role '" + definition() + "' of '" + application() + "' owned by '" + tenant() + "'";
     }
 
 }

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.user;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
-import com.yahoo.vespa.hosted.controller.api.role.ProtoRole;
+import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
@@ -78,11 +78,11 @@ public class RoleId {
     }
 
     private static String valueOf(TenantRole role) {
-        return valueOf(role.tenant()) + "." + valueOf(role.proto());
+        return valueOf(role.tenant()) + "." + valueOf(role.definition());
     }
 
     private static String valueOf(ApplicationRole role) {
-        return valueOf(role.tenant()) + "." + valueOf(role.application()) + "." + valueOf(role.proto());
+        return valueOf(role.tenant()) + "." + valueOf(role.application()) + "." + valueOf(role.definition());
     }
 
     private static String valueOf(TenantName tenant) {
@@ -99,7 +99,7 @@ public class RoleId {
         return application.value();
     }
 
-    private static String valueOf(ProtoRole role) {
+    private static String valueOf(RoleDefinition role) {
         switch (role) {
             case tenantOwner:          return "tenantOwner";
             case tenantAdmin:          return "tenantAdmin";

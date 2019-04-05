@@ -5,17 +5,16 @@ import java.util.Set;
 
 /**
  * This declares all tenant roles known to the controller. A role contains one or more {@link Policy}s which decide
- * what actions a member of a role can perform.
+ * what actions a member of a role can perform, given a {@link Context} for the action.
  *
- * Optionally, some role definition also inherit all policies from a "lower ranking" role. Read the list of roles
- * from {@code everyone} to {@code tenantAdmin}, in order, to see what policies these roles.
+ * Optionally, some role definitions also inherit all policies from a "lower ranking" role.
  *
  * See {@link Role} for roles bound to a context, where policies can be evaluated.
  *
  * @author mpolden
  * @author jonmv
  */
-public enum ProtoRole {
+public enum RoleDefinition {
 
     /** Deus ex machina. */
     hostedOperator(Policy.operator),
@@ -87,11 +86,11 @@ public enum ProtoRole {
 
     private final Set<Policy> policies;
 
-    ProtoRole(Policy... policies) {
+    RoleDefinition(Policy... policies) {
         this.policies = EnumSet.copyOf(Set.of(policies));
     }
 
-    ProtoRole(ProtoRole inherited, Policy... policies) {
+    RoleDefinition(RoleDefinition inherited, Policy... policies) {
         this.policies = EnumSet.copyOf(Set.of(policies));
         this.policies.addAll(inherited.policies);
     }
