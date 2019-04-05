@@ -12,7 +12,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Action;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.RoleMembership;
+import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 
 import java.security.Principal;
@@ -29,7 +29,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
-    private final SystemName system;
+    private final Roles roles;
 
     @Inject
     public ControllerAuthorizationFilter(Controller controller,
@@ -40,7 +40,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     ControllerAuthorizationFilter(SystemName system,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
-        this.system = system;
+        this.roles = new Roles(system);
     }
 
     @Override
@@ -54,12 +54,12 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
-            // Avoid expensive lookups when request is always legal.
-            if (Role.everyone.limitedTo(system).allows(action, request.getUri()))
+            // Avoid expensive look-ups when request is always legal.
+            if (roles.everyone().allows(action, request.getUri()))
                 return Optional.empty();
 
-            RoleMembership roles = securityContext.get().roles();
-            if (roles.allows(action, request.getUri()))
+            Set<Role> roles = securityContext.get().roles();
+            if (roles.stream().anyMatch(role -> role.allows(action, request.getUri())))
                 return Optional.empty();
         }
         catch (Exception e) {
