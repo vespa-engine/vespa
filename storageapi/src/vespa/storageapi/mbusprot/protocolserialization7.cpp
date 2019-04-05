@@ -7,7 +7,9 @@
 
 #include "protocolserialization7.h"
 #include "serializationhelper.h"
-#include "storageapi.pb.h"
+#include "feed.pb.h"
+#include "visiting.pb.h"
+#include "maintenance.pb.h"
 
 #pragma GCC diagnostic pop
 
@@ -722,7 +724,7 @@ void set_diff_entry(protobuf::MetaDiffEntry& dest, const api::GetBucketDiffComma
     dest.set_header_size(src._headerSize);
     dest.set_body_size(src._bodySize);
     dest.set_flags(src._flags);
-    dest.set_has_mask(src._flags);
+    dest.set_has_mask(src._hasMask);
 }
 
 api::GetBucketDiffCommand::Entry get_diff_entry(const protobuf::MetaDiffEntry& src) {

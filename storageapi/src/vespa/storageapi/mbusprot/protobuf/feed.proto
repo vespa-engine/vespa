@@ -1,0 +1,104 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+option cc_enable_arenas = true;
+
+package storage.mbusprot.protobuf;
+
+import "common.proto";
+
+message TestAndSetCondition {
+    bytes selection = 1;
+}
+
+// Next tag to use: 6
+message PutRequest {
+    Bucket   bucket                 = 1;
+    Document document               = 2;
+    uint64   new_timestamp          = 3;
+    uint64   expected_old_timestamp = 4; // If zero; no expectation.
+    TestAndSetCondition condition   = 5;
+}
+
+// Next tag to use: 4
+message PutResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+    bool       was_found          = 3;
+}
+
+// Next tag to use: 2
+message Update {
+    bytes payload = 1;
+}
+
+// Next tag to use: 6
+message UpdateRequest {
+    Bucket bucket                 = 1;
+    Update update                 = 2;
+    uint64 new_timestamp          = 3;
+    uint64 expected_old_timestamp = 4; // If zero; no expectation.
+    TestAndSetCondition condition = 5;
+}
+
+// Next tag to use: 4
+message UpdateResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+    uint64     updated_timestamp  = 3;
+}
+
+// Next tag to use: 5
+message RemoveRequest {
+    Bucket bucket                 = 1;
+    bytes  document_id            = 2;
+    uint64 new_timestamp          = 3;
+    TestAndSetCondition condition = 4;
+}
+
+// Next tag to use: 4
+message RemoveResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+    uint64     removed_timestamp  = 3;
+}
+
+// Next tag to use: 5
+message GetRequest {
+    Bucket bucket           = 1;
+    bytes  document_id      = 2;
+    bytes  field_set        = 3;
+    uint64 before_timestamp = 4;
+}
+
+// Next tag to use: 5
+message GetResponse {
+    Document   document                = 1;
+    uint64     last_modified_timestamp = 2;
+    BucketInfo bucket_info             = 3;
+    BucketId   remapped_bucket_id      = 4;
+}
+
+// TODO consider deprecation/removal if this is not used in practice.
+message RevertRequest {
+    Bucket   bucket               = 1;
+    repeated uint64 revert_tokens = 2;
+}
+
+// Next tag to use: 3
+message RevertResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+}
+
+// Next tag to use: 3
+message RemoveLocationRequest {
+    Bucket bucket             = 1;
+    bytes  document_selection = 2;
+}
+
+// Next tag to use: 3
+message RemoveLocationResponse {
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
+}

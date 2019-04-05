@@ -608,6 +608,33 @@ TEST_P(StorageProtocolTest, testGetBucketDiff) {
     recordSerialization50();
 }
 
+namespace {
+
+ApplyBucketDiffCommand::Entry dummy_apply_entry() {
+    ApplyBucketDiffCommand::Entry e;
+    e._docName = "my cool id";
+    vespalib::string header_data = "fancy header";
+    e._headerBlob.resize(header_data.size());
+    memcpy(&e._headerBlob[0], header_data.data(), header_data.size());
+
+    vespalib::string body_data = "fancier body!";
+    e._bodyBlob.resize(body_data.size());
+    memcpy(&e._bodyBlob[0], body_data.data(), body_data.size());
+
+    GetBucketDiffCommand::Entry meta;
+    meta._timestamp = 567890;
+    meta._hasMask = 0x3;
+    meta._flags = 0x1;
+    meta._headerSize = 12345;
+    meta._headerSize = header_data.size();
+    meta._bodySize = body_data.size();
+
+    e._entry = meta;
+    return e;
+}
+
+}
+
 TEST_P(StorageProtocolTest, testApplyBucketDiff) {
     document::BucketId bucketId(16, 623);
     document::Bucket bucket(makeDocumentBucket(bucketId));
@@ -615,8 +642,7 @@ TEST_P(StorageProtocolTest, testApplyBucketDiff) {
     std::vector<api::MergeBucketCommand::Node> nodes;
     nodes.push_back(4);
     nodes.push_back(13);
-    std::vector<ApplyBucketDiffCommand::Entry> entries;
-    entries.push_back(ApplyBucketDiffCommand::Entry());
+    std::vector<ApplyBucketDiffCommand::Entry> entries = {dummy_apply_entry()};
 
     auto cmd = std::make_shared<ApplyBucketDiffCommand>(bucket, nodes, 1234);
     cmd->getDiff() = entries;
