@@ -145,7 +145,8 @@ public class FastSearcherTestCase {
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
             assertEquals("Since we don't actually run summary backends we get this error when the Dispatcher is used",
-                         "Error response from rpc node connection to host1:0: Connection error", error.getDetailedMessage());
+                         "Error response from rpc node connection to hostX:0: Connection error",
+                          error.getDetailedMessage().replaceAll("host[12]", "hostX"));
         }
 
         { // direct.summaries due to no summary features
