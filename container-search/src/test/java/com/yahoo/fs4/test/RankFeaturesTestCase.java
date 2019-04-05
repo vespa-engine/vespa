@@ -63,11 +63,10 @@ public class RankFeaturesTestCase {
         assertEquals(entries.size(), properties.asMap().size());
 
         Map<String, Object> decodedProperties = decode(type, encode(properties));
-        assertEquals(entries.size() * 2, properties.asMap().size()); // tensor type info has been added
-        assertEquals(entries.size() * 2, decodedProperties.size());
+        assertEquals(entries.size(), properties.asMap().size());
+        assertEquals(entries.size(), decodedProperties.size());
         for (Entry entry : entries) {
             assertEquals(entry.tensor, decodedProperties.get(entry.normalizedKey));
-            assertEquals("tensor", decodedProperties.get(entry.normalizedKey + ".type"));
         }
     }
 

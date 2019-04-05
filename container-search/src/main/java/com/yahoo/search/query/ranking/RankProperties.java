@@ -76,7 +76,7 @@ public class RankProperties implements Cloneable {
     /** Encodes this in a binary internal representation and returns the number of property maps encoded (0 or 1) */
     public int encode(ByteBuffer buffer, boolean encodeQueryData) {
         if (encodeQueryData) {
-            return MapEncoder.encodeObjectMultiMap("rank", properties, buffer);
+            return MapEncoder.encodeMultiMap("rank", properties, buffer);
         }
         else {
             List<Object> sessionId = properties.get(GetDocSumsPacket.sessionIdKey);
