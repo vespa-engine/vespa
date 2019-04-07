@@ -60,7 +60,7 @@ abstract class StructuredParser extends AbstractParser {
             String indexName = indexPrefix();
             setSubmodeFromIndex(indexName, indexFacts);
 
-            item = number(indexName != null);
+            item = number();
 
             if (item == null) {
                 item = phrase();
@@ -147,39 +147,36 @@ abstract class StructuredParser extends AbstractParser {
             List<Token> firstWord = new ArrayList<>();
             List<Token> secondWord = new ArrayList<>();
 
-            tokens.skip(LSQUAREBRACKET); // For test 93 and 60
+            tokens.skip(LSQUAREBRACKET);
 
-            if (!tokens.currentIs(WORD) && !tokens.currentIs(NUMBER)
-                && !tokens.currentIs(UNDERSCORE)) {
+            if ( ! tokens.currentIs(WORD) && ! tokens.currentIs(NUMBER) && ! tokens.currentIs(UNDERSCORE)) {
                 return null;
             }
 
             firstWord.add(tokens.next());
 
             while (tokens.currentIsNoIgnore(UNDERSCORE)
-                    || tokens.currentIsNoIgnore(WORD)
-                    || tokens.currentIsNoIgnore(NUMBER)) {
+                   || tokens.currentIsNoIgnore(WORD)
+                   || tokens.currentIsNoIgnore(NUMBER)) {
                 firstWord.add(tokens.next());
             }
 
             if (tokens.currentIsNoIgnore(DOT)) {
                 tokens.skip();
-                if (tokens.currentIsNoIgnore(WORD)
-                        || tokens.currentIsNoIgnore(NUMBER)) {
+                if (tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER)) {
                     secondWord.add(tokens.next());
                 } else {
                     return null;
                 }
                 while (tokens.currentIsNoIgnore(UNDERSCORE)
-                        || tokens.currentIsNoIgnore(WORD)
-                        || tokens.currentIsNoIgnore(NUMBER)) {
+                       || tokens.currentIsNoIgnore(WORD)
+                       || tokens.currentIsNoIgnore(NUMBER)) {
                     secondWord.add(tokens.next());
                 }
             }
 
-            if (!tokens.skipNoIgnore(COLON)) {
+            if ( ! tokens.skipNoIgnore(COLON))
                 return null;
-            }
 
             if (secondWord.size() == 0) {
                 item = concatenate(firstWord);
@@ -195,8 +192,7 @@ abstract class StructuredParser extends AbstractParser {
                 return null;
             } else {
                 if (nothingAhead(false)) {
-                    // correct index syntax, correct name, but followed
-                    // by noise. Let's skip this.
+                    // correct index syntax, correct name, but followed by noise. Let's skip this.
                     nothingAhead(true);
                     position = tokens.getPosition();
                     item = indexPrefix();
@@ -253,11 +249,11 @@ abstract class StructuredParser extends AbstractParser {
 
     private boolean endOfNumber() {
         return tokens.currentIsNoIgnore(SPACE)
-                || tokens.currentIsNoIgnore(RSQUAREBRACKET)
-                || tokens.currentIsNoIgnore(SEMICOLON)
-                || tokens.currentIsNoIgnore(RBRACE)
-                || tokens.currentIsNoIgnore(EOF)
-                || tokens.currentIsNoIgnore(EXCLAMATION);
+               || tokens.currentIsNoIgnore(RSQUAREBRACKET)
+               || tokens.currentIsNoIgnore(SEMICOLON)
+               || tokens.currentIsNoIgnore(RBRACE)
+               || tokens.currentIsNoIgnore(EOF)
+               || tokens.currentIsNoIgnore(EXCLAMATION);
     }
 
     private String decimalPart() {
@@ -277,19 +273,19 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    private IntItem number(boolean hasIndex) {
+    private IntItem number() {
         int position = tokens.getPosition();
         IntItem item = null;
 
         try {
-            if (item == null) {
-                item = numberRange();
-            }
+            item = numberRange();
 
-            tokens.skip(LSQUAREBRACKET); // For test 93 and 60
+            tokens.skip(LSQUAREBRACKET);
+            if (item == null)
+                tokens.skipNoIgnore(SPACE);
 
             // TODO: Better definition of start and end of numeric items
-            if (item == null && hasIndex && tokens.currentIsNoIgnore(MINUS) && (tokens.currentNoIgnore(1).kind == NUMBER)) {
+            if (item == null && tokens.currentIsNoIgnore(MINUS) && (tokens.currentNoIgnore(1).kind == NUMBER)) {
                 tokens.skipNoIgnore();
                 Token t = tokens.next();
                 item = new IntItem("-" + t.toString() + decimalPart(), true);
@@ -307,7 +303,7 @@ abstract class StructuredParser extends AbstractParser {
             if (item == null) {
                 item = numberGreater();
             }
-            if (item != null && !endOfNumber()) {
+            if (item != null && ! endOfNumber()) {
                 item = null;
             }
             return item;

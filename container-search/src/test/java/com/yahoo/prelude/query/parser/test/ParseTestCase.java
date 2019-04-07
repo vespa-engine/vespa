@@ -1957,7 +1957,12 @@ public class ParseTestCase {
 
     @Test
     public void testNumbersAndNot() {
-        tester.assertParsed("+a -12", "a -12", Query.Type.ALL);
+        tester.assertParsed("AND a -12", "a -12", Query.Type.ALL);
+    }
+
+    @Test
+    public void testNumbersAndDoubleNot() {
+        tester.assertParsed("+a --12", "a --12", Query.Type.ALL);
     }
 
     @Test
@@ -1967,7 +1972,7 @@ public class ParseTestCase {
 
     @Test
     public void testSingleNegativeNumberLikeTerm() {
-        tester.assertParsed(null, "-12", Query.Type.ALL);
+        tester.assertParsed("-12", "-12", Query.Type.ALL);
     }
 
     @Test
@@ -2004,7 +2009,12 @@ public class ParseTestCase {
 
     @Test
     public void testDecimalNumbersAndNot() {
-        tester.assertParsed("+a -12.2", "a -12.2", Query.Type.ALL);
+        tester.assertParsed("AND a -12.2", "a -12.2", Query.Type.ALL);
+    }
+
+    @Test
+    public void testDecimalNumbersAndDoubleNot() {
+        tester.assertParsed("+a --12.2", "a --12.2", Query.Type.ALL);
     }
 
     @Test
@@ -2014,7 +2024,7 @@ public class ParseTestCase {
 
     @Test
     public void testSingleNegativeDecimalNumberLikeTerm() {
-        tester.assertParsed(null, "-12.2", Query.Type.ALL);
+        tester.assertParsed("-12.2", "-12.2", Query.Type.ALL);
     }
 
     @Test
@@ -2321,12 +2331,12 @@ public class ParseTestCase {
 
     @Test
     public void testSingleNegativeNumberLikeTermWeb() {
-        tester.assertParsed(null, "-12", Query.Type.WEB);
+        tester.assertParsed("-12", "-12", Query.Type.WEB);
     }
 
     @Test
     public void testSingleNegativeDecimalNumberLikeTermWeb() {
-        tester.assertParsed(null, "-12.2", Query.Type.WEB);
+        tester.assertParsed("-12.2", "-12.2", Query.Type.WEB);
     }
 
     @Test
