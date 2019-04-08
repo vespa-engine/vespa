@@ -17,18 +17,19 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The applications of a tenant, backed by ZooKeeper.
  *
- * Each application is stored as a single node under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;applications&gt;,
- * named the same as the application id and containing the id of the session storing the content of the application.
+ * Each application is stored under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;applications&gt;,
+ * the root contains the currently active session, if any, and sub-paths /preparing contains the session id
+ * of whatever session may be activated next, if any, and /lock is used for synchronizing writes to all these paths.
  *
  * @author Ulf Lilleengen
  */
@@ -69,16 +70,18 @@ public class TenantApplications {
      *
      * @return a list of {@link ApplicationId}s that are active.
      */
-    public List<ApplicationId> listApplications() {
+    public List<ApplicationId> activeApplications() {
         return curator.getChildren(applicationsPath).stream()
-                      .flatMap(this::parseApplication)
+                      .filter(this::isValid)
+                      .map(ApplicationId::fromSerializedForm)
+                      .filter(id -> activeSessionOf(id).isPresent())
                       .collect(Collectors.toUnmodifiableList());
     }
 
-    // TODO jvenstad: Remove after it has run once everywhere.
-    private Stream<ApplicationId> parseApplication(String appNode) {
+    private boolean isValid(String appNode) { // TODO jvenstad: Remove after it has run once everywhere.
         try {
-            return Stream.of(ApplicationId.fromSerializedForm(appNode));
+            ApplicationId.fromSerializedForm(appNode);
+            return true;
         } catch (IllegalArgumentException __) {
             log.log(LogLevel.INFO, TenantRepository.logPre(tenant) + "Unable to parse application id from '" +
                     appNode + "'; deleting it as it shouldn't be here.");
@@ -88,8 +91,15 @@ public class TenantApplications {
             catch (Exception e) {
                 log.log(LogLevel.WARNING, TenantRepository.logPre(tenant) + "Failed to clean up stray node '" + appNode + "'!", e);
             }
-            return Stream.empty();
+            return false;
         }
+    }
+
+    /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
+    public OptionalLong activeSessionOf(ApplicationId id) {
+        String data = curator.getData(applicationPath(id)).map(Utf8::toString)
+                             .orElseThrow(() -> new IllegalArgumentException("Unknown application '" + id + "'."));
+        return data.isEmpty() ? OptionalLong.empty() : OptionalLong.of(Long.parseLong(data));
     }
 
     /**
@@ -98,8 +108,8 @@ public class TenantApplications {
      * @param applicationId An {@link ApplicationId} that represents an active application.
      * @param sessionId Id of the session containing the application package for this id.
      */
-    public Transaction createPutApplicationTransaction(ApplicationId applicationId, long sessionId) {
-        if (listApplications().contains(applicationId)) {
+    public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
+        if (curator.exists(applicationPath(applicationId))) {
             return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
         } else {
             return new CuratorTransaction(curator).add(CuratorOperations.create(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
@@ -107,25 +117,21 @@ public class TenantApplications {
     }
 
     /**
-     * Return the stored session id for a given application.
+     * Return the active session id for a given application.
      *
      * @param  applicationId an {@link ApplicationId}
      * @return session id of given application id.
      * @throws IllegalArgumentException if the application does not exist
      */
-    public long getSessionIdForApplication(ApplicationId applicationId) {
-        String path = applicationPath(applicationId).getAbsolute();
-        try {
-            return Long.parseLong(Utf8.toString(curator.framework().getData().forPath(path)));
-        } catch (Exception e) {
-            throw new IllegalArgumentException(TenantRepository.logPre(applicationId) + "Unable to read the session id from '" + path + "'", e);
-        }
+    public long requireActiveSessionOf(ApplicationId applicationId) {
+        return activeSessionOf(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Application '" + applicationId + "' has no active session."));
     }
 
     /**
      * Returns a transaction which deletes this application.
      */
-    public CuratorTransaction deleteApplication(ApplicationId applicationId) {
+    public CuratorTransaction createDeleteTransaction(ApplicationId applicationId) {
         return CuratorTransaction.from(CuratorOperations.delete(applicationPath(applicationId).getAbsolute()), curator);
     }
 
@@ -133,7 +139,7 @@ public class TenantApplications {
      * Removes all applications not known to this from the config server state.
      */
     public void removeUnusedApplications() {
-        reloadHandler.removeApplicationsExcept(Set.copyOf(listApplications()));
+        reloadHandler.removeApplicationsExcept(Set.copyOf(activeApplications()));
     }
 
     /**

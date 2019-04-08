@@ -95,7 +95,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         zooKeeperClient.createActiveWaiter();
         superModelGenerationCounter.increment(); // TODO jvenstad: I hope this counter isn't used for serious things, as it's updated way ahead of activation.
         Transaction transaction = createSetStatusTransaction(Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutApplicationTransaction(zooKeeperClient.readApplicationId(), getSessionId()).operations());
+        transaction.add(applicationRepo.createPutTransaction(zooKeeperClient.readApplicationId(), getSessionId()).operations());
         return transaction;
     }
 
