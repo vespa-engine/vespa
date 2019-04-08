@@ -268,6 +268,8 @@ TEST("require that value type spec can be parsed") {
     EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec("tensor(y[10])"));
     EXPECT_EQUAL(ValueType::tensor_type({{"z", 0}}), ValueType::from_spec("tensor(z[])"));
     EXPECT_EQUAL(ValueType::tensor_type({{"x"}, {"y", 10}, {"z", 0}}), ValueType::from_spec("tensor(x{},y[10],z[])"));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec("tensor<double>(y[10])"));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec("tensor<float>(y[10])"));
 }
 
 TEST("require that value type spec can be parsed with extra whitespace") {
@@ -280,6 +282,8 @@ TEST("require that value type spec can be parsed with extra whitespace") {
     EXPECT_EQUAL(ValueType::tensor_type({{"z", 0}}), ValueType::from_spec(" tensor ( z [ ] ) "));
     EXPECT_EQUAL(ValueType::tensor_type({{"x"}, {"y", 10}, {"z", 0}}),
                  ValueType::from_spec(" tensor ( x { } , y [ 10 ] , z [ ] ) "));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec(" tensor < double > ( y [ 10 ] ) "));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}), ValueType::from_spec(" tensor < float > ( y [ 10 ] ) "));
 }
 
 TEST("require that malformed value type spec is parsed as error") {
@@ -300,6 +304,7 @@ TEST("require that malformed value type spec is parsed as error") {
     EXPECT_TRUE(ValueType::from_spec("tensor(x{},x{})").is_error());
     EXPECT_TRUE(ValueType::from_spec("tensor(x{},x[10])").is_error());
     EXPECT_TRUE(ValueType::from_spec("tensor(x{},x[])").is_error());
+    EXPECT_TRUE(ValueType::from_spec("tensor<float16>(x[10])").is_error());
 }
 
 struct ParseResult {

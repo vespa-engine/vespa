@@ -12,6 +12,14 @@ namespace {
 
 class ParseContext
 {
+public:
+    struct Mark {
+        const char *pos;
+        char curr;
+        bool failed;
+        Mark(const char *pos_in, char curr_in, bool failed_in)
+            : pos(pos_in), curr(curr_in), failed(failed_in) {}
+    };
 private:
     const char  *_pos;
     const char  *_end;
@@ -33,6 +41,14 @@ public:
         } else {
             _pos_after = nullptr;
         }
+    }
+    Mark mark() const {
+        return Mark(_pos, _curr, _failed);
+    }
+    void revert(Mark mark) {
+        _pos = mark.pos;
+        _curr = mark.curr;
+        _failed = mark.failed;
     }
     void fail() {
         _failed = true;
@@ -77,6 +93,7 @@ vespalib::string parse_ident(ParseContext &ctx) {
 }
 
 size_t parse_int(ParseContext &ctx) {
+    ctx.skip_spaces();
     vespalib::string num;
     for (; isdigit(ctx.get()); ctx.next()) {
         num.push_back(ctx.get());
@@ -91,11 +108,11 @@ ValueType::Dimension parse_dimension(ParseContext &ctx) {
     ValueType::Dimension dimension(parse_ident(ctx));
     ctx.skip_spaces();
     if (ctx.get() == '{') {
-        ctx.next(); // '{'
+        ctx.eat('{');
         ctx.skip_spaces();
         ctx.eat('}');
     } else if (ctx.get() == '[') {
-        ctx.next(); // '['
+        ctx.eat('[');
         ctx.skip_spaces();
         if (ctx.get() == ']') {
             dimension.size = 0;
@@ -129,6 +146,20 @@ std::vector<ValueType::Dimension> parse_dimension_list(ParseContext &ctx) {
     return list;
 }
 
+vespalib::string parse_cell_type(ParseContext &ctx) {
+    auto mark = ctx.mark();
+    ctx.skip_spaces();
+    ctx.eat('<');
+    auto cell_type = parse_ident(ctx);
+    ctx.skip_spaces();
+    ctx.eat('>');
+    if (ctx.failed()) {
+        ctx.revert(mark);
+        cell_type = "double";
+    }
+    return cell_type;
+}
+
 } // namespace vespalib::eval::value_type::<anonymous>
 
 ValueType
@@ -143,6 +174,10 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out)
     } else if (type_name == "double") {
         return ValueType::double_type();
     } else if (type_name == "tensor") {
+        vespalib::string cell_type = parse_cell_type(ctx);
+        if ((cell_type != "double") && (cell_type != "float")) {
+            ctx.fail();
+        }
         std::vector<ValueType::Dimension> list = parse_dimension_list(ctx);
         if (!ctx.failed()) {
             return ValueType::tensor_type(std::move(list));
