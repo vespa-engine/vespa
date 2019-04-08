@@ -76,115 +76,77 @@
 
     <handler id='com.yahoo.vespa.config.server.http.HttpGetConfigHandler' bundle='configserver'>
       <binding>http://*/config/v1/*/*</binding>
-      <binding>https://*/config/v1/*/*</binding>
       <binding>http://*/config/v1/*</binding>
-      <binding>https://*/config/v1/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.HttpListConfigsHandler' bundle='configserver'>
       <binding>http://*/config/v1/</binding>
-      <binding>https://*/config/v1/</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.HttpListNamedConfigsHandler' bundle='configserver'>
       <binding>http://*/config/v1/*/</binding>
-      <binding>https://*/config/v1/*/</binding>
       <binding>http://*/config/v1/*/*/</binding>
-      <binding>https://*/config/v1/*/*/</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.status.StatusHandler' bundle='configserver'>
       <binding>http://*/status</binding>
-      <binding>https://*/status</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.flags.FlagsHandler' bundle='configserver'>
       <binding>http://*/flags/v1</binding>
-      <binding>https://*/flags/v1</binding>
       <binding>http://*/flags/v1/*</binding>
-      <binding>https://*/flags/v1/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.TenantHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/</binding>
-      <binding>https://*/application/v2/tenant/</binding>
       <binding>http://*/application/v2/tenant/*</binding>
-      <binding>https://*/application/v2/tenant/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionCreateHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session</binding>
-      <binding>https://*/application/v2/tenant/*/session</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionPrepareHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session/*/prepared</binding>
-      <binding>https://*/application/v2/tenant/*/session/*/prepared</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionActiveHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session/*/active</binding>
-      <binding>https://*/application/v2/tenant/*/session/*/active</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/prepareandactivate</binding>
-      <binding>https://*/application/v2/tenant/*/prepareandactivate</binding>
       <binding>http://*/application/v2/tenant/*/session/*/prepareandactivate</binding>
-      <binding>https://*/application/v2/tenant/*/session/*/prepareandactivate</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.SessionContentHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/session/*/content/*</binding>
-      <binding>https://*/application/v2/tenant/*/session/*/content/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.ListApplicationsHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/*/application/</binding>
-      <binding>https://*/application/v2/tenant/*/application/</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.ApplicationHandler' bundle='configserver'>
       <!-- WARNING: THIS LIST *MUST* MATCH THE ONE IN ApplicationHandler::getBindingMatch -->
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*</binding>
-      <binding>https://*/application/v2/tenant/*/application/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*/logs</binding>
-      <binding>https://*/application/v2/tenant/*/application/*/logs</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.HttpGetConfigHandler' bundle='configserver'>
       <binding>http://*/config/v2/tenant/*/application/*/*</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/*</binding>
       <binding>http://*/config/v2/tenant/*/application/*/*/*</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/*/*</binding>
       <binding>http://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*</binding>
       <binding>http://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*/*</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.HttpListConfigsHandler' bundle='configserver'>
       <binding>http://*/config/v2/tenant/*/application/*/</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/</binding>
       <binding>http://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.HttpListNamedConfigsHandler' bundle='configserver'>
       <binding>http://*/config/v2/tenant/*/application/*/*/</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/*/</binding>
       <binding>http://*/config/v2/tenant/*/application/*/*/*/</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/*/*/</binding>
       <binding>http://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*/</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*/</binding>
       <binding>http://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*/*/</binding>
-      <binding>https://*/config/v2/tenant/*/application/*/environment/*/region/*/instance/*/*/*/</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.HostHandler' bundle='configserver'>
       <binding>http://*/application/v2/host/*</binding>
-      <binding>https://*/application/v2/host/*</binding>
     </handler>
 
     <http>

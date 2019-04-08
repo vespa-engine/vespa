@@ -49,9 +49,7 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
     public static Handler<?> getHandler() {
         Handler<?> handler = new Handler<>(new ComponentModel(REST_HANDLER_NAME, null, BUNDLE_NAME));
         handler.addServerBindings("http://*/" + REST_BINDING,
-                                  "https://*/" + REST_BINDING,
-                                  "http://*/" + REST_BINDING + "/*",
-                                  "https://*/" + REST_BINDING + "/*");
+                                  "http://*/" + REST_BINDING + "/*");
         return handler;
     }
 

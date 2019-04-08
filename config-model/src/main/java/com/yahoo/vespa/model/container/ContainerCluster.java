@@ -212,9 +212,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
         stateHandler.addServerBindings("http://*" + StateHandler.STATE_API_ROOT,
-                                       "https://*" + StateHandler.STATE_API_ROOT,
-                                       "http://*" + StateHandler.STATE_API_ROOT + "/*",
-                                       "https://*" + StateHandler.STATE_API_ROOT + "/*");
+                                       "http://*" + StateHandler.STATE_API_ROOT + "/*");
         addComponent(stateHandler);
     }
 
@@ -242,13 +240,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
                         APPLICATION_STATUS_HANDLER_CLASS, null), null));
-        statusHandler.addServerBindings("http://*/ApplicationStatus", "https://*/ApplicationStatus");
+        statusHandler.addServerBindings("http://*/ApplicationStatus");
         addComponent(statusHandler);
     }
 
     public void addVipHandler() {
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
-        vipHandler.addServerBindings("http://*/status.html", "https://*/status.html");
+        vipHandler.addServerBindings("http://*/status.html");
         addComponent(vipHandler);
     }
 
