@@ -23,10 +23,15 @@ public enum Policy {
                       .on(PathGroup.all())
                       .in(SystemName.all())),
 
-    /** Full access to user management in select systems. */
-    manager(Privilege.grant(Action.all())
-                     .on(PathGroup.userManagement)
-                     .in(SystemName.Public)),
+    /** Full access to user management for a tenant in select systems. */
+    tenantManager(Privilege.grant(Action.all())
+                           .on(PathGroup.tenantUsers)
+                           .in(SystemName.Public)),
+
+    /** Full access to user management for an application in select systems. */
+    applicationManager(Privilege.grant(Action.all())
+                                .on(PathGroup.applicationUsers)
+                                .in(SystemName.Public)),
 
     /** Access to create a user tenant in select systems. */
     userCreate(Privilege.grant(Action.update)

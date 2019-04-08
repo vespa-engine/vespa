@@ -27,15 +27,16 @@ public enum PathGroup {
              "/provision/v2/{*}",
              "/zone/v2/{*}"),
 
-    /** Paths used for user management. */
-    userManagement("/user/v1/{*}"), // TODO probably add tenant and application levels.
-
     /** Paths used for creating user tenants. */
     user("/application/v4/user"),
 
     /** Paths used for creating tenants with proper access control. */
     tenant(Matcher.tenant,
            "/application/v4/tenant/{tenant}"),
+
+    /** Paths used for user management on the tenant level. */
+    tenantUsers(Matcher.tenant,
+                "/user/v1/tenant/{tenant}"),
 
     /** Paths used by tenant administrators. */
     tenantInfo(Matcher.tenant,
@@ -45,6 +46,11 @@ public enum PathGroup {
     application(Matcher.tenant,
                 Matcher.application,
                 "/application/v4/tenant/{tenant}/application/{application}"),
+
+    /** Paths used for user management on the application level. */
+    applicationUsers(Matcher.tenant,
+                     Matcher.application,
+                     "/user/v1/tenant/{tenant}/application/{application}"),
 
     /** Paths used by application administrators. */
     applicationInfo(Matcher.tenant,

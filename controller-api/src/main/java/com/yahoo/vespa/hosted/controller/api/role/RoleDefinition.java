@@ -48,6 +48,7 @@ public enum RoleDefinition {
     applicationAdmin(applicationDeveloper,
                      applicationOperator,
                      Policy.applicationUpdate,
+                     Policy.applicationManager,
                      Policy.productionDeployment,
                      Policy.submission),
 
@@ -60,7 +61,7 @@ public enum RoleDefinition {
     tenantAdmin(tenantOperator,
                 applicationAdmin,
                 Policy.applicationDelete,
-                Policy.manager,
+                Policy.tenantManager,
                 Policy.tenantUpdate),
 
     /** Tenant admin with full access to all tenant resources. */
