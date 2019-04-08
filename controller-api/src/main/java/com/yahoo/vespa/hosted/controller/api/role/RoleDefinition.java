@@ -41,21 +41,24 @@ public enum RoleDefinition {
                          Policy.developmentDeployment),
 
     /** Application operator with access to normal, operational tasks of an application. */
-    applicationOperator(applicationDeveloper,
+    applicationOperator(applicationReader,
                         Policy.applicationOperations),
 
     /** Application administrator with full access to an already existing application, including emergency operations. */
-    applicationAdmin(applicationOperator,
+    applicationAdmin(applicationDeveloper,
+                     applicationOperator,
                      Policy.applicationUpdate,
                      Policy.productionDeployment,
                      Policy.submission),
 
-    /** Tenant operator with admin access to all applications under the tenant, as well as the ability to create applications. */
-    tenantOperator(applicationAdmin,
+    /** Tenant operator with access to create application under a tenant, and to read the tenant's and public data. */
+    tenantOperator(everyone,
+                   Policy.tenantRead,
                    Policy.applicationCreate),
 
     /** Tenant admin with full access to all tenant resources, except deleting the tenant. */
     tenantAdmin(tenantOperator,
+                applicationAdmin,
                 Policy.applicationDelete,
                 Policy.manager,
                 Policy.tenantUpdate),
