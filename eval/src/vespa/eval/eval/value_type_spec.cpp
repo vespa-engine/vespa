@@ -12,6 +12,14 @@ namespace {
 
 class ParseContext
 {
+public:
+    struct Mark {
+        const char *pos;
+        char curr;
+        bool failed;
+        Mark(const char *pos_in, char curr_in, bool failed_in)
+            : pos(pos_in), curr(curr_in), failed(failed_in) {}
+    };
 private:
     const char  *_pos;
     const char  *_end;
@@ -33,6 +41,14 @@ public:
         } else {
             _pos_after = nullptr;
         }
+    }
+    Mark mark() const {
+        return Mark(_pos, _curr, _failed);
+    }
+    void revert(Mark mark) {
+        _pos = mark.pos;
+        _curr = mark.curr;
+        _failed = mark.failed;
     }
     void fail() {
         _failed = true;
@@ -131,13 +147,15 @@ std::vector<ValueType::Dimension> parse_dimension_list(ParseContext &ctx) {
 }
 
 vespalib::string parse_cell_type(ParseContext &ctx) {
-    vespalib::string cell_type = "double";
+    auto mark = ctx.mark();
     ctx.skip_spaces();
-    if (ctx.get() == '<') {
-        ctx.eat('<');
-        cell_type = parse_ident(ctx);
-        ctx.skip_spaces();
-        ctx.eat('>');
+    ctx.eat('<');
+    auto cell_type = parse_ident(ctx);
+    ctx.skip_spaces();
+    ctx.eat('>');
+    if (ctx.failed()) {
+        ctx.revert(mark);
+        cell_type = "double";
     }
     return cell_type;
 }
