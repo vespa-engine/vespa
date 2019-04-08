@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.component.chain.Chain;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * Represents the http servers and filters of a Jdisc cluster.
@@ -24,9 +26,19 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         public final ComponentSpecification filterId;
         public final String binding;
 
-        public Binding(ComponentSpecification filterId, String binding) {
+        private Binding(ComponentSpecification filterId, String binding) {
             this.filterId = filterId;
             this.binding = binding;
+        }
+
+        public static Binding create(ComponentSpecification filterId, String binding, DeployLogger logger) {
+            if (binding.startsWith("https://")) {
+                logger.log(Level.WARNING, String.format(
+                        "For binding '%s' on '%s': 'https' bindings are deprecated, " +
+                                "use 'http' instead to bind to both http and https traffic.",
+                        binding, filterId));
+            }
+            return new Binding(filterId, binding);
         }
     }
 
