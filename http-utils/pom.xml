@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -8,27 +8,27 @@
     <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
-  <artifactId>security-utils</artifactId>
-  <packaging>container-plugin</packaging>
+  <artifactId>http-utils</artifactId>
+  <packaging>jar</packaging>
   <version>7-SNAPSHOT</version>
   <dependencies>
     <!-- provided -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>annotations</artifactId>
+      <artifactId>security-utils</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <!-- compile scope -->
     <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
       <scope>compile</scope>
     </dependency>
 
@@ -36,17 +36,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-library</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>testutil</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -60,13 +49,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
-      </plugin>
-    </plugins>
-  </build>
 </project>
