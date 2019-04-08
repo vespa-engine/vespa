@@ -1,17 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// Disable warnings emitted by protoc generated
-// TODO move into own forwarding header file
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-
 #include "protocolserialization7.h"
 #include "serializationhelper.h"
-#include "feed.pb.h"
-#include "visiting.pb.h"
-#include "maintenance.pb.h"
-
-#pragma GCC diagnostic pop
+#include "protobuf_includes.h"
 
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/bufferexceptions.h>
@@ -91,7 +82,7 @@ std::shared_ptr<document::Document> get_document(const protobuf::Document& src_d
 }
 
 void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageCommand& cmd) {
-    protobuf::RequestHeader hdr;
+    protobuf::RequestHeader hdr; // Arena alloc not needed since there are no nested messages
     hdr.set_message_id(cmd.getMsgId());
     hdr.set_priority(cmd.getPriority());
     hdr.set_source_index(cmd.getSourceIndex());
@@ -107,7 +98,7 @@ void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageC
 }
 
 void write_response_header(vespalib::GrowableByteBuffer& buf, const api::StorageReply& reply) {
-    protobuf::ResponseHeader hdr;
+    protobuf::ResponseHeader hdr; // Arena alloc not needed since there are no nested messages
     const auto& result = reply.getResult();
     hdr.set_return_code_id(static_cast<uint32_t>(result.getResult()));
     if (!result.getMessage().empty()) {
@@ -117,6 +108,7 @@ void write_response_header(vespalib::GrowableByteBuffer& buf, const api::Storage
     hdr.set_priority(reply.getPriority());
 
     const auto header_size = hdr.ByteSizeLong();
+    assert(header_size <= UINT32_MAX);
     buf.putInt(static_cast<uint32_t>(header_size));
 
     auto* dest_buf = reinterpret_cast<uint8_t*>(buf.allocate(header_size));
@@ -166,6 +158,7 @@ public:
     void encode() {
         assert(_proto_obj != nullptr);
         const auto sz = _proto_obj->ByteSizeLong();
+        assert(sz <= UINT32_MAX);
         auto* buf = reinterpret_cast<uint8_t*>(_out_buf.allocate(sz));
         [[maybe_unused]] bool ok = _proto_obj->SerializeWithCachedSizesToArray(buf);
         assert(ok);
@@ -302,75 +295,68 @@ ProtocolSerialization7::decode_response(document::ByteBuffer& in_buf, Func&& f) 
     return reply;
 }
 
-// TODO encode in terms of encode_request/response
-
 template <typename ProtobufType, typename Func>
 void encode_bucket_request(vespalib::GrowableByteBuffer& out_buf, const api::BucketCommand& msg, Func&& f) {
-    RequestEncoder<ProtobufType> enc(out_buf, msg);
-    set_bucket(*enc.request().mutable_bucket(), msg.getBucket());
-    f(enc.request());
-    enc.encode();
-}
-
-template <typename ProtobufType, typename Func>
-void encode_bucket_response(vespalib::GrowableByteBuffer& out_buf, const api::BucketReply& reply, Func&& f) {
-    ResponseEncoder<ProtobufType> enc(out_buf, reply);
-    auto& res = enc.response();
-    if (reply.hasBeenRemapped()) {
-        res.mutable_remapped_bucket_id()->set_raw_id(reply.getBucketId().getRawId());
-    }
-    f(res);
-    enc.encode();
-}
-
-// TODO implement in terms of encode_bucket_response
-template <typename ProtobufType, typename Func>
-void encode_bucket_info_response(vespalib::GrowableByteBuffer& out_buf, const api::BucketInfoReply& reply, Func&& f) {
-    ResponseEncoder<ProtobufType> enc(out_buf, reply);
-    auto& res = enc.response();
-    if (reply.hasBeenRemapped()) {
-        res.mutable_remapped_bucket_id()->set_raw_id(reply.getBucketId().getRawId());
-    }
-    set_bucket_info(*res.mutable_bucket_info(), reply.getBucketInfo());
-    f(res);
-    enc.encode();
+    encode_request<ProtobufType>(out_buf, msg, [&](ProtobufType& req) {
+        set_bucket(*req.mutable_bucket(), msg.getBucket());
+        f(req);
+    });
 }
 
 template <typename ProtobufType, typename Func>
 std::unique_ptr<api::StorageCommand>
 ProtocolSerialization7::decode_bucket_request(document::ByteBuffer& in_buf, Func&& f) const {
-    RequestDecoder<ProtobufType> dec(in_buf, _load_types);
-    const auto& req = dec.request();
-    if (!req.has_bucket()) {
-        throw vespalib::IllegalArgumentException("Malformed protocol buffer request; no bucket"); // TODO proto type name?
-    }
-    const auto bucket = get_bucket(req.bucket());
-    auto cmd = f(req, bucket);
-    dec.transfer_meta_information_to(*cmd);
-    return cmd;
+    return decode_request<ProtobufType>(in_buf, [&](const ProtobufType& req) {
+        if (!req.has_bucket()) {
+            throw vespalib::IllegalArgumentException(
+                    vespalib::make_string("Malformed protocol buffer request for %s; no bucket",
+                                          ProtobufType::descriptor()->full_name().c_str()));
+        }
+        const auto bucket = get_bucket(req.bucket());
+        return f(req, bucket);
+    });
+}
+
+template <typename ProtobufType, typename Func>
+void encode_bucket_response(vespalib::GrowableByteBuffer& out_buf, const api::BucketReply& reply, Func&& f) {
+    encode_response<ProtobufType>(out_buf, reply, [&](ProtobufType& res) {
+        if (reply.hasBeenRemapped()) {
+            res.mutable_remapped_bucket_id()->set_raw_id(reply.getBucketId().getRawId());
+        }
+        f(res);
+    });
 }
 
 template <typename ProtobufType, typename Func>
 std::unique_ptr<api::StorageReply>
 ProtocolSerialization7::decode_bucket_response(document::ByteBuffer& in_buf, Func&& f) const {
-    ResponseDecoder<ProtobufType> dec(in_buf);
-    const auto& res = dec.response();
-    auto reply = f(res);
-    if (res.has_remapped_bucket_id()) {
-        reply->remapBucketId(document::BucketId(res.remapped_bucket_id().raw_id()));
-    }
-    return reply;
+    return decode_response<ProtobufType>(in_buf, [&](const ProtobufType& res) {
+        auto reply = f(res);
+        if (res.has_remapped_bucket_id()) {
+            reply->remapBucketId(document::BucketId(res.remapped_bucket_id().raw_id()));
+        }
+        return reply;
+    });
 }
 
-// TODO implement this in terms of decode_bucket_response
+template <typename ProtobufType, typename Func>
+void encode_bucket_info_response(vespalib::GrowableByteBuffer& out_buf, const api::BucketInfoReply& reply, Func&& f) {
+    encode_bucket_response<ProtobufType>(out_buf, reply, [&](ProtobufType& res) {
+        set_bucket_info(*res.mutable_bucket_info(), reply.getBucketInfo());
+        f(res);
+    });
+}
+
 template <typename ProtobufType, typename Func>
 std::unique_ptr<api::StorageReply>
 ProtocolSerialization7::decode_bucket_info_response(document::ByteBuffer& in_buf, Func&& f) const {
-    ResponseDecoder<ProtobufType> dec(in_buf);
-    const auto& res = dec.response();
-    auto reply = f(res);
-    transfer_bucket_info_response_fields_from_proto_to_msg(*reply, res);
-    return reply;
+    return decode_bucket_response<ProtobufType>(in_buf, [&](const ProtobufType& res) {
+        auto reply = f(res);
+        if (res.has_bucket_info()) {
+            reply->setBucketInfo(get_bucket_info(res.bucket_info()));
+        }
+        return reply;
+    });
 }
 
 // TODO document protobuf ducktyping assumptions
