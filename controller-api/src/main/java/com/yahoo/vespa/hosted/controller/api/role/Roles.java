@@ -19,7 +19,6 @@ public class Roles {
 
     private final SystemName system;
 
-
     @Inject
     public Roles(ZoneRegistry zones) {
         this(zones.system());
@@ -69,11 +68,6 @@ public class Roles {
     /** Returns a {@link RoleDefinition#tenantOperator} for the current system and given tenant. */
     public TenantRole tenantOperator(TenantName tenant) {
         return new TenantRole(RoleDefinition.tenantOperator, system, tenant);
-    }
-
-    /** Returns a {@link RoleDefinition#applicationOwner} for the current system and given tenant and application. */
-    public ApplicationRole applicationOwner(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationOwner, system, tenant, application);
     }
 
     /** Returns a {@link RoleDefinition#applicationAdmin} for the current system and given tenant and application. */

@@ -49,10 +49,6 @@ public enum RoleDefinition {
                      Policy.productionDeployment,
                      Policy.submission),
 
-    /** Application administrator with the additional ability to delete an application. */
-    applicationOwner(applicationOperator,
-                     Policy.applicationDelete),
-
     /** Tenant operator with admin access to all applications under the tenant, as well as the ability to create applications. */
     tenantOperator(applicationAdmin,
                    Policy.applicationCreate),
