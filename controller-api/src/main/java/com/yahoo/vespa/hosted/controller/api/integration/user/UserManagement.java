@@ -15,7 +15,7 @@ public interface UserManagement {
     /** Creates the given role, or throws if the role already exists. */
     void createRole(RoleId role);
 
-    /** Deletes the given role, or throws if it doesn't already exist. */
+    /** Ensures the given role does not exist. */
     void deleteRole(RoleId role);
 
     /** Ensures the given users exist, and are part of the given role, or throws if the role does not exist. */
@@ -25,7 +25,7 @@ public interface UserManagement {
     void removeUsers(RoleId role, Collection<UserId> users);
 
     /** Returns all known roles. */
-    List<RoleId> listRoles();
+    default List<RoleId> listRoles() { throw new UnsupportedOperationException("To be removed."); }
 
     /** Returns all users in the given role, or throws if the role does not exist. */
     List<UserId> listUsers(RoleId role);
