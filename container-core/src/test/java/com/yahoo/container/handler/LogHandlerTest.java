@@ -3,12 +3,11 @@ package com.yahoo.container.handler;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.util.concurrent.Executor;
 
@@ -16,7 +15,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class LogHandlerTest {
-
 
     @Test
     public void handleCorrectlyParsesQueryParameters() throws IOException {
@@ -28,7 +26,7 @@ public class LogHandlerTest {
             HttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             response.render(bos);
-            String expectedResponse = "{\"logs\":{\"one\":\"newer_log\"}}";
+            String expectedResponse = "newer log";
             assertEquals(expectedResponse, bos.toString());
         }
 
@@ -37,7 +35,7 @@ public class LogHandlerTest {
             HttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             response.render(bos);
-            String expectedResponse = "{\"logs\":{\"two\":\"older_log\"}}";
+            String expectedResponse = "older log";
             assertEquals(expectedResponse, bos.toString());
         }
 
@@ -49,12 +47,14 @@ public class LogHandlerTest {
         }
 
         @Override
-        protected JSONObject readLogs(Instant earliestLogThreshold, Instant latestLogThreshold) throws JSONException {
-            if (latestLogThreshold.isAfter(Instant.ofEpochMilli(1000))) {
-                return new JSONObject("{\"one\":\"newer_log\"}");
-            } else {
-                return new JSONObject("{\"two\":\"older_log\"}");
-            }
+        protected void writeLogs(OutputStream outputStream, Instant earliestLogThreshold, Instant latestLogThreshold)  {
+            try {
+                if (latestLogThreshold.isAfter(Instant.ofEpochMilli(1000))) {
+                    outputStream.write("newer log".getBytes());
+                } else {
+                    outputStream.write("older log".getBytes());
+                }
+            } catch (Exception e) {}
         }
     }
 }

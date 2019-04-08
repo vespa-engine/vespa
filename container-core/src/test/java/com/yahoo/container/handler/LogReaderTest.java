@@ -2,7 +2,6 @@
 package com.yahoo.container.handler;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -37,47 +35,37 @@ public class LogReaderTest {
         Files.setLastModifiedTime(
                 Files.write(logDirectory.resolve("subfolder/log2.log"), "This is another log file\n".getBytes()),
                 FileTime.from(Instant.ofEpochMilli(234)));
-    }
 
-    @Test
-    public void testThatFilesAreWrittenCorrectlyToOutputStream() throws Exception{
-        LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        JSONObject json = logReader.readLogs(Instant.ofEpochMilli(21), Instant.now());
-        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxlCg==\",\"log1.log.gz\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGUK\"}";
-        String actual = json.toString();
-        assertEquals(expected, actual);
     }
 
     @Test
     public void testThatLogsOutsideRangeAreExcluded() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        JSONObject json = logReader.readLogs(Instant.MAX, Instant.MIN);
-        String expected = "{}";
-        String actual = json.toString();
+        logReader.writeLogs(baos, Instant.ofEpochMilli(235), Instant.ofEpochMilli(300));
+        String expected = "";
+        String actual = decompress(baos.toByteArray());
         assertEquals(expected, actual);
     }
 
     @Test
     public void testThatLogsNotMatchingRegexAreExcluded() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*2\\.log"));
-        JSONObject json = logReader.readLogs(Instant.ofEpochMilli(21), Instant.now());
-        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxlCg==\"}";
-        String actual = json.toString();
+        logReader.writeLogs(baos, Instant.ofEpochMilli(21), Instant.now());
+        String expected = "This is another log file\n";
+        String actual = decompress(baos.toByteArray());
         assertEquals(expected, actual);
     }
 
     @Test
     public void testZippedStreaming() throws IOException {
-
         ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
         logReader.writeLogs(zippedBaos, Instant.ofEpochMilli(21), Instant.now());
-        GZIPInputStream unzippedIs = new GZIPInputStream(new ByteArrayInputStream(zippedBaos.toByteArray()));
-
-        Scanner s = new Scanner(unzippedIs).useDelimiter("\\A");
-        String actual = s.hasNext() ? s.next() : "";
 
         String expected = "This is one log file\nThis is another log file\n";
+        String actual = decompress(zippedBaos.toByteArray());
         assertEquals(expected, actual);
     }
 
@@ -87,6 +75,12 @@ public class LogReaderTest {
         zip.write(input.getBytes());
         zip.close();
         return baos.toByteArray();
+    }
+
+    private String decompress(byte[] input) throws IOException {
+        if (input.length == 0) return "";
+        byte[] decompressed = new GZIPInputStream(new ByteArrayInputStream(input)).readAllBytes();
+        return new String(decompressed);
     }
 
 }

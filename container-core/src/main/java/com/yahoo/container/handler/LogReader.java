@@ -3,10 +3,7 @@ package com.yahoo.container.handler;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.defaults.Defaults;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -16,15 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 class LogReader {
@@ -39,19 +33,6 @@ class LogReader {
     LogReader(Path logDirectory, Pattern logFilePattern) {
         this.logDirectory = logDirectory;
         this.logFilePattern = logFilePattern;
-    }
-
-    // TODO: Remove when all clients use streaming
-    JSONObject readLogs(Instant earliestLogThreshold, Instant latestLogThreshold) throws IOException, JSONException {
-        JSONObject json = new JSONObject();
-        latestLogThreshold = latestLogThreshold.plus(Duration.ofMinutes(5)); // Add some time to allow retrieving logs currently being modified
-        for (Path file : getMatchingFiles(earliestLogThreshold, latestLogThreshold)) {
-            StringBuilder filenameBuilder = new StringBuilder();
-            logDirectory.relativize(file).iterator().forEachRemaining(p -> filenameBuilder.append("-").append(p.getFileName().toString()));
-            byte[] fileData = file.toString().endsWith(".gz") ? new GZIPInputStream(new ByteArrayInputStream(Files.readAllBytes(file))).readAllBytes() : Files.readAllBytes(file);
-            json.put(filenameBuilder.substring(1), Base64.getEncoder().encodeToString(fileData));
-        }
-        return json;
     }
 
     void writeLogs(OutputStream outputStream, Instant earliestLogThreshold, Instant latestLogThreshold) {
