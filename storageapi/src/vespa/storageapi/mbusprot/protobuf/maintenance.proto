@@ -15,8 +15,8 @@ message DeleteBucketRequest {
 
 // Next tag to use: 3
 message DeleteBucketResponse {
-    BucketInfo bucket_info       = 1;
-    BucketId  remapped_bucket_id = 2;
+    BucketInfo bucket_info        = 1;
+    BucketId   remapped_bucket_id = 2;
 }
 
 // Next tag to use: 3
@@ -52,12 +52,12 @@ message MergeBucketResponse {
 }
 
 message MetaDiffEntry {
-    uint64   timestamp   = 1;
-    GlobalId gid         = 2;
-    uint32   header_size = 3; // TODO one of these can be removed...!
-    uint32   body_size   = 4;
-    uint32   flags       = 5;
-    uint32   has_mask    = 6;
+    uint64   timestamp     = 1;
+    GlobalId gid           = 2;
+    uint32   header_size   = 3;
+    uint32   body_size     = 4;
+    uint32   flags         = 5;
+    uint32   presence_mask = 6;
 }
 
 message GetBucketDiffRequest {
@@ -75,7 +75,7 @@ message GetBucketDiffResponse {
 message ApplyDiffEntry {
     MetaDiffEntry entry_meta = 1;
     bytes document_id = 2;
-    bytes header_blob = 3; // TODO use singular blob
+    bytes header_blob = 3;
     bytes body_blob = 4;
 }
 

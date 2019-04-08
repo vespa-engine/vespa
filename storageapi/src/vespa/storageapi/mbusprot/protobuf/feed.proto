@@ -79,7 +79,7 @@ message GetResponse {
     BucketId   remapped_bucket_id      = 4;
 }
 
-// TODO consider deprecation/removal if this is not used in practice.
+// Next tag to use: 3
 message RevertRequest {
     Bucket   bucket               = 1;
     repeated uint64 revert_tokens = 2;
