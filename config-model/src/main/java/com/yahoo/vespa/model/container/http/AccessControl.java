@@ -4,11 +4,11 @@ package com.yahoo.vespa.model.container.http;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
-import com.yahoo.vespa.model.container.http.Http.Binding;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,10 +47,12 @@ public final class AccessControl {
         private final Set<String> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
         private Collection<Servlet> servlets = Collections.emptyList();
+        private final DeployLogger logger;
 
-        public Builder(String domain, String applicationId) {
+        public Builder(String domain, String applicationId, DeployLogger logger) {
             this.domain = domain;
             this.applicationId = applicationId;
+            this.logger = logger;
         }
 
         public Builder readEnabled(boolean readEnabled) {
@@ -85,7 +87,7 @@ public final class AccessControl {
 
         public AccessControl build() {
             return new AccessControl(domain, applicationId, writeEnabled, readEnabled,
-                                     excludeBindings, vespaDomain, servlets, handlers);
+                                     excludeBindings, vespaDomain, servlets, handlers, logger);
         }
     }
 
@@ -97,6 +99,7 @@ public final class AccessControl {
     private final Set<String> excludedBindings;
     private final Collection<Handler<?>> handlers;
     private final Collection<Servlet> servlets;
+    private final DeployLogger logger;
 
     private AccessControl(String domain,
                           String applicationId,
@@ -105,7 +108,8 @@ public final class AccessControl {
                           Set<String> excludedBindings,
                           Optional<String> vespaDomain,
                           Collection<Servlet> servlets,
-                          Collection<Handler<?>> handlers) {
+                          Collection<Handler<?>> handlers,
+                          DeployLogger logger) {
         this.domain = domain;
         this.applicationId = applicationId;
         this.readEnabled = readEnabled;
@@ -114,6 +118,7 @@ public final class AccessControl {
         this.vespaDomain = vespaDomain;
         this.handlers = handlers;
         this.servlets = servlets;
+        this.logger = logger;
     }
 
     public List<Binding> getBindings() {
@@ -125,14 +130,14 @@ public final class AccessControl {
         return handlers.stream()
                         .filter(this::shouldHandlerBeProtected)
                         .flatMap(handler -> handler.getServerBindings().stream())
-                        .map(AccessControl::accessControlBinding);
+                        .map(binding -> accessControlBinding(binding, logger));
     }
 
     private Stream<Binding> getServletBindings() {
         return servlets.stream()
                 .filter(this::shouldServletBeProtected)
                 .flatMap(AccessControl::servletBindings)
-                .map(AccessControl::accessControlBinding);
+                .map(binding -> accessControlBinding(binding, logger));
     }
 
     private boolean shouldHandlerBeProtected(Handler<?> handler) {
@@ -148,8 +153,8 @@ public final class AccessControl {
         return servletBindings(servlet).noneMatch(excludedBindings::contains);
     }
 
-    private static Binding accessControlBinding(String binding) {
-        return new Binding(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding);
+    private static Binding accessControlBinding(String binding, DeployLogger logger) {
+        return Binding.create(new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()), binding, logger);
     }
 
     private static Stream<String> servletBindings(Servlet servlet) {

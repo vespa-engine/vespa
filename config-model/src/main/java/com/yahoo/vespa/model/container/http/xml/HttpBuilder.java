@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.Http.Binding;
+import com.yahoo.vespa.model.container.http.Binding;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
             filterChains = new FilterChainsBuilder().build(deployState, ancestor, filteringElem);
-            bindings = readFilterBindings(filteringElem);
+            bindings = readFilterBindings(filteringElem, deployState.getDeployLogger());
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
@@ -65,7 +65,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         String application = XmlHelper.getOptionalChildValue(accessControlElem, "application")
                 .orElse(getDeployedApplicationId(deployState, ancestor).value());
 
-        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application);
+        AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application, deployState.getDeployLogger());
 
         getContainerCluster(ancestor).ifPresent(cluster -> {
             builder.setHandlers(cluster.getHandlers());
@@ -106,7 +106,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return Optional.of((ApplicationContainerCluster) currentProducer);
     }
 
-    private List<Binding> readFilterBindings(Element filteringSpec) {
+    private List<Binding> readFilterBindings(Element filteringSpec, DeployLogger logger) {
         List<Binding> result = new ArrayList<>();
 
         for (Element child: XML.getChildren(filteringSpec)) {
@@ -116,7 +116,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(new Binding(chainId, binding));
+                    result.add(Binding.create(chainId, binding, logger));
                 }
             }
         }

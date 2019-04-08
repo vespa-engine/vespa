@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
-import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.jdisc.http.ServerConfig;
@@ -19,16 +18,6 @@ import java.util.Optional;
  * @author Tony Vaagenes
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> implements ServerConfig.Producer {
-
-    public static class Binding {
-        public final ComponentSpecification filterId;
-        public final String binding;
-
-        public Binding(ComponentSpecification filterId, String binding) {
-            this.filterId = filterId;
-            this.binding = binding;
-        }
-    }
 
     private FilterChains filterChains;
     private JettyHttpServer httpServer;
@@ -91,8 +80,8 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         for (final Binding binding : bindings) {
             builder.filter(
                     new ServerConfig.Filter.Builder()
-                            .id(binding.filterId.stringValue())
-                            .binding(binding.binding));
+                            .id(binding.filterId().stringValue())
+                            .binding(binding.binding()));
         }
     }
 
@@ -110,8 +99,8 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
             ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
 
             for (Binding binding: bindings) {
-                if (filters.getComponent(binding.filterId) == null && chains.getComponent(binding.filterId) == null)
-                    throw new RuntimeException("Can't find filter " + binding.filterId + " for binding " + binding.binding);
+                if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
+                    throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
             }
         }
     }

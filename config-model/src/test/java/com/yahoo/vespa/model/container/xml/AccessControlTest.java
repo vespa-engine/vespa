@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.Http.Binding;
+import com.yahoo.vespa.model.container.http.Binding;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import org.junit.Test;
@@ -140,8 +140,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                    missingRequiredBindings.isEmpty());
 
         FORBIDDEN_HANDLER_BINDINGS.forEach(forbiddenBinding -> http.getBindings().forEach(
-                binding -> assertFalse("Access control chain was bound to: " + binding.binding,
-                                       binding.binding.contains(forbiddenBinding))));
+                binding -> assertFalse("Access control chain was bound to: " + binding.binding(),
+                                       binding.binding().contains(forbiddenBinding))));
     }
 
     @Test
@@ -256,7 +256,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     private boolean containsBinding(Collection<Binding> bindings, String binding) {
         for (Binding b : bindings) {
-            if (b.binding.contains(binding))
+            if (b.binding().contains(binding))
                 return true;
         }
         return false;
