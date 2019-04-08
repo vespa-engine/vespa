@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.util.http;
+package com.yahoo.security.tls.https;
 
-import ai.vespa.util.http.VespaHttpClientBuilder.HttpToHttpsRewritingRequestInterceptor;
+import com.yahoo.security.tls.https.VespaHttpClientBuilder.HttpToHttpsRewritingRequestInterceptor;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.protocol.BasicHttpContext;
 import org.junit.Test;
