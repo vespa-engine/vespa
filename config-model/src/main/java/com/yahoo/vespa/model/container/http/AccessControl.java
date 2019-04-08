@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
-import com.yahoo.vespa.model.container.http.Http.Binding;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.Http.Binding;
+import com.yahoo.vespa.model.container.http.Binding;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;

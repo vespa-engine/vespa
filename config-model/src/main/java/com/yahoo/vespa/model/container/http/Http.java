@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
-import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.component.chain.Chain;
@@ -13,7 +11,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 
 /**
  * Represents the http servers and filters of a Jdisc cluster.
@@ -21,26 +18,6 @@ import java.util.logging.Level;
  * @author Tony Vaagenes
  */
 public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> implements ServerConfig.Producer {
-
-    public static class Binding {
-        public final ComponentSpecification filterId;
-        public final String binding;
-
-        private Binding(ComponentSpecification filterId, String binding) {
-            this.filterId = filterId;
-            this.binding = binding;
-        }
-
-        public static Binding create(ComponentSpecification filterId, String binding, DeployLogger logger) {
-            if (binding.startsWith("https://")) {
-                logger.log(Level.WARNING, String.format(
-                        "For binding '%s' on '%s': 'https' bindings are deprecated, " +
-                                "use 'http' instead to bind to both http and https traffic.",
-                        binding, filterId));
-            }
-            return new Binding(filterId, binding);
-        }
-    }
 
     private FilterChains filterChains;
     private JettyHttpServer httpServer;
@@ -103,8 +80,8 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
         for (final Binding binding : bindings) {
             builder.filter(
                     new ServerConfig.Filter.Builder()
-                            .id(binding.filterId.stringValue())
-                            .binding(binding.binding));
+                            .id(binding.filterId().stringValue())
+                            .binding(binding.binding()));
         }
     }
 
@@ -122,8 +99,8 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
             ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
 
             for (Binding binding: bindings) {
-                if (filters.getComponent(binding.filterId) == null && chains.getComponent(binding.filterId) == null)
-                    throw new RuntimeException("Can't find filter " + binding.filterId + " for binding " + binding.binding);
+                if (filters.getComponent(binding.filterId()) == null && chains.getComponent(binding.filterId()) == null)
+                    throw new RuntimeException("Can't find filter " + binding.filterId() + " for binding " + binding.binding());
             }
         }
     }
