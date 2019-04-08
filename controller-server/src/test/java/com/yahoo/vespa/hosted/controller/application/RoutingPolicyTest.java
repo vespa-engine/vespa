@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.ZoneId;
 import org.junit.Test;
 
 import java.util.Optional;
