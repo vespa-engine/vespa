@@ -712,7 +712,7 @@ public class YqlParser implements Parser {
                                                .setLanguage(language)
                                                .setDefaultIndexName(defaultIndex)).getRoot();
         // the null check should be unnecessary, but is there to avoid having to suppress null warnings
-        if ( ! allowNullItem && (item == null || item instanceof NullItem))
+        if ( !allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
 
         if (language != Language.ENGLISH) // mark the language used, unless it's the default
