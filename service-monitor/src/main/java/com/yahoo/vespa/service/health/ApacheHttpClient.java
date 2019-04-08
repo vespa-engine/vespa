@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -12,7 +13,6 @@ import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 
@@ -57,7 +57,7 @@ class ApacheHttpClient implements AutoCloseable {
                     }
                 };
 
-        return HttpClients.custom()
+        return VespaHttpClientBuilder.createWithBasicConnectionManager()
                 .setKeepAliveStrategy(keepAliveStrategy)
                 .setConnectionManager(connectionManager)
                 .disableAutomaticRetries()
