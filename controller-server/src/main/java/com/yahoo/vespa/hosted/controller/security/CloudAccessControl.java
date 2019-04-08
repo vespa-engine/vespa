@@ -2,15 +2,15 @@ package com.yahoo.vespa.hosted.controller.security;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Marketplace;
-import com.yahoo.vespa.hosted.controller.api.integration.user.RoleId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
+import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -28,12 +28,14 @@ public class CloudAccessControl implements AccessControl {
     private final Marketplace marketplace;
     private final UserManagement userManagement;
     private final Roles roles;
+    private final UserRoles userRoles;
 
     @Inject
     public CloudAccessControl(Marketplace marketplace, UserManagement userManagement, Roles roles) {
         this.marketplace = marketplace;
         this.userManagement = userManagement;
         this.roles = roles;
+        this.userRoles = new UserRoles(roles);
     }
 
     @Override
@@ -43,7 +45,7 @@ public class CloudAccessControl implements AccessControl {
         // CloudTenant tenant new CloudTenant(spec.tenant(), marketplace.resolveCustomer(spec.getRegistrationToken()));
         // TODO Enable the above when things work.
 
-        RoleId ownerRole = RoleId.fromRole(roles.tenantOwner(spec.tenant()));
+        Role ownerRole = roles.tenantOwner(spec.tenant());
         userManagement.createRole(ownerRole);
         userManagement.addUsers(ownerRole, List.of(new UserId(credentials.user().getName())));
 
@@ -59,25 +61,21 @@ public class CloudAccessControl implements AccessControl {
     public void deleteTenant(TenantName tenant, Credentials credentials) {
         // Probably terminate customer subscription?
 
-        tenantRoles(tenant).stream()
-                           .map(RoleId::fromRole)
-                           .filter(userManagement.listRoles()::contains)
-                           .forEach(userManagement::deleteRole);
+        for (TenantRole role : userRoles.tenantRoles(tenant))
+            userManagement.deleteRole(role);
     }
 
     @Override
     public void createApplication(ApplicationId application, Credentials credentials) {
-        RoleId ownerRole = RoleId.fromRole(roles.applicationAdmin(application.tenant(), application.application()));
+        Role ownerRole = roles.applicationAdmin(application.tenant(), application.application());
         userManagement.createRole(ownerRole);
         userManagement.addUsers(ownerRole, List.of(new UserId(credentials.user().getName())));
     }
 
     @Override
     public void deleteApplication(ApplicationId id, Credentials credentials) {
-        applicationRoles(id.tenant(), id.application()).stream()
-                                                       .map(RoleId::fromRole)
-                                                       .filter(userManagement.listRoles()::contains)
-                                                       .forEach(userManagement::deleteRole);
+        for (ApplicationRole role : userRoles.applicationRoles(id.tenant(), id.application()))
+            userManagement.deleteRole(role);
     }
 
     @Override
@@ -85,19 +83,6 @@ public class CloudAccessControl implements AccessControl {
         // TODO: Get credential things (token with roles or something) and check what it's good for.
         // TODO  ... or ignore this here, and compute it somewhere else.
         return Collections.emptyList();
-    }
-
-    private List<TenantRole> tenantRoles(TenantName tenant) { // TODO jvenstad: Move these two to CloudRoles utility class.
-        return List.of(roles.tenantOperator(tenant),
-                       roles.tenantAdmin(tenant),
-                       roles.tenantOwner(tenant));
-    }
-
-    private List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(roles.applicationReader(tenant, application),
-                       roles.applicationDeveloper(tenant, application),
-                       roles.applicationOperator(tenant, application),
-                       roles.applicationAdmin(tenant, application));
     }
 
 }

@@ -19,7 +19,6 @@ public class Roles {
 
     private final SystemName system;
 
-
     @Inject
     public Roles(ZoneRegistry zones) {
         this(zones.system());

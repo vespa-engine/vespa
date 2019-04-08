@@ -14,9 +14,9 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.user.RoleId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
+import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
@@ -43,6 +43,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
 
     private final Roles roles;
+    private final UserRoles userRoles;
     private final UserManagement users;
     private final Controller controller;
 
@@ -50,6 +51,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     public UserApiHandler(Context parentCtx, Roles roles, UserManagement users, Controller controller) {
         super(parentCtx);
         this.roles = roles;
+        this.userRoles = new UserRoles(roles);
         this.users = users;
         this.controller = controller;
     }
@@ -117,11 +119,12 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
         Cursor rolesArray = root.setArray("roles");
-        for (TenantRole role : tenantRoles(TenantName.from(tenantName))) {
+        // TODO jvenstad: Move these two to CloudRoles utility class.
+        for (TenantRole role : userRoles.tenantRoles(TenantName.from(tenantName))) {
             Cursor roleObject = rolesArray.addObject();
             roleObject.setString("name", role.definition().name());
             Cursor membersArray = roleObject.setArray("members");
-            for (UserId user : users.listUsers(RoleId.fromRole(role)))
+            for (UserId user : users.listUsers(role))
                 membersArray.addString(user.value());
         }
         return new SlimeJsonResponse(slime);
@@ -133,11 +136,11 @@ public class UserApiHandler extends LoggingRequestHandler {
         root.setString("tenant", tenantName);
         root.setString("application", applicationName);
         Cursor rolesArray = root.setArray("roles");
-        for (ApplicationRole role : applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName))) {
+        for (ApplicationRole role : userRoles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName))) {
             Cursor roleObject = rolesArray.addObject();
             roleObject.setString("name", role.definition().name());
             Cursor membersArray = roleObject.setArray("members");
-            for (UserId user : users.listUsers(RoleId.fromRole(role)))
+            for (UserId user : users.listUsers(role))
                 membersArray.addString(user.value());
         }
         return new SlimeJsonResponse(slime);
@@ -147,49 +150,36 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        RoleId roleId = RoleId.fromValue(tenantName + "." + roleName); // TODO jvenstad: Move this logic to utility class CloudRoles, with validation.
-        users.addUsers(roleId, List.of(new UserId(user)));
-        return new MessageResponse("User '" + user + "' is now a member of role '" + roleId + "'.");
+        Role role = userRoles.toRole(TenantName.from(tenantName), roleName);
+        users.addUsers(role, List.of(new UserId(user)));
+        return new MessageResponse(user + " is now a member of " + role);
     }
 
     private HttpResponse addApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        RoleId roleId = RoleId.fromValue(tenantName + "." + applicationName + "." + roleName); // TODO jvenstad: Move this logic to utility class CloudRoles, with validation.
-        users.addUsers(roleId, List.of(new UserId(user)));
-        return new MessageResponse("User '" + user + "' is now a member of role '" + roleId + "'.");
+        Role role = userRoles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
+        users.addUsers(role, List.of(new UserId(user)));
+        return new MessageResponse(user + " is now a member of " + role);
     }
 
     private HttpResponse removeTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        RoleId roleId = RoleId.fromValue(tenantName + "." + roleName); // TODO jvenstad: Move this logic to utility class CloudRoles, with validation.
-        users.removeUsers(roleId, List.of(new UserId(user)));
-        return new MessageResponse("User '" + user + "' is no longer a member of role '" + roleId + "'.");
+        Role role = userRoles.toRole(TenantName.from(tenantName), roleName);
+        users.removeUsers(role, List.of(new UserId(user)));
+        return new MessageResponse(user + " is no longer a member of " + role);
     }
 
     private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        RoleId roleId = RoleId.fromValue(tenantName + "." + applicationName + "." + roleName); // TODO jvenstad: Move this logic to utility class CloudRoles, with validation.
-        users.removeUsers(roleId, List.of(new UserId(user)));
-        return new MessageResponse("User '" + user + "' is no longer a member of role '" + roleId + "'.");
-    }
-
-    private List<TenantRole> tenantRoles(TenantName tenant) { // TODO jvenstad: Move these two to CloudRoles utility class.
-        return List.of(roles.tenantOperator(tenant),
-                       roles.tenantAdmin(tenant),
-                       roles.tenantOwner(tenant));
-    }
-
-    private List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(roles.applicationReader(tenant, application),
-                       roles.applicationDeveloper(tenant, application),
-                       roles.applicationOperator(tenant, application),
-                       roles.applicationAdmin(tenant, application));
+        Role role = userRoles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
+        users.removeUsers(role, List.of(new UserId(user)));
+        return new MessageResponse(user + " is no longer a member of " + role);
     }
 
     private static Inspector bodyInspector(HttpRequest request) {
