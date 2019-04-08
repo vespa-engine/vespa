@@ -87,7 +87,7 @@ public class CloudAccessControl implements AccessControl {
         return Collections.emptyList();
     }
 
-    private List<TenantRole> tenantRoles(TenantName tenant) {
+    private List<TenantRole> tenantRoles(TenantName tenant) { // TODO jvenstad: Move these two to CloudRoles utility class.
         return List.of(roles.tenantOperator(tenant),
                        roles.tenantAdmin(tenant),
                        roles.tenantOwner(tenant));

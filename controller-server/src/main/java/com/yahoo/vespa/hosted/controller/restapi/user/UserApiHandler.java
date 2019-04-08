@@ -86,5 +86,17 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
 
+    private List<TenantRole> tenantRoles(TenantName tenant) { // TODO jvenstad: Move these two to CloudRoles utility class.
+        return List.of(roles.tenantOperator(tenant),
+                       roles.tenantAdmin(tenant),
+                       roles.tenantOwner(tenant));
+    }
+
+    private List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
+        return List.of(roles.applicationReader(tenant, application),
+                       roles.applicationDeveloper(tenant, application),
+                       roles.applicationOperator(tenant, application),
+                       roles.applicationAdmin(tenant, application));
+    }
 
 }

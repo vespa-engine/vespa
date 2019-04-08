@@ -15,7 +15,7 @@ import java.util.Objects;
  *
  * @author jonmv
  */
-public class RoleId {
+public class RoleId { // TODO jvenstad: Move serlialisation part to CloudRoles utility class.
 
     private final String value;
 
