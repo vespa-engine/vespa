@@ -56,7 +56,7 @@ public class RoleId { // TODO jvenstad: Move serlialisation part to CloudRoles u
 
     @Override
     public String toString() {
-        return "role '" + value + "'";
+        return value;
     }
 
     /** Returns the {@link Role} this represent. */
