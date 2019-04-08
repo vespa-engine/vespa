@@ -39,6 +39,8 @@ using vespalib::string;
 namespace vespalib {
 
 // Needed for GTest to properly understand how to print Version values.
+// If not present, it will print the byte values of the presumed memory area
+// (which will be overrun for some reason, causing Valgrind to scream at us).
 void PrintTo(const vespalib::Version& v, std::ostream* os) {
     *os << v.toString();
 }
@@ -80,8 +82,6 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     template<typename Reply>
     std::shared_ptr<Reply> copyReply(const std::shared_ptr<Reply>&);
     void recordOutput(const api::StorageMessage& msg);
-
-    void recordSerialization50();
 };
 
 StorageProtocolTest::~StorageProtocolTest() = default;
@@ -169,32 +169,6 @@ StorageProtocolTest::copyReply(const std::shared_ptr<Reply>& m)
     return std::dynamic_pointer_cast<Reply>(internalMessage);
 }
 
-// TODO remove whatever this thing might be
-void StorageProtocolTest::recordSerialization50() {
-    assert(lastCommand.get());
-    assert(lastReply.get());
-    for (uint32_t j=0; j<2; ++j) {
-        mbusprot::StorageMessage& msg(j == 0
-                ? dynamic_cast<mbusprot::StorageMessage&>(*lastCommand)
-                : dynamic_cast<mbusprot::StorageMessage&>(*lastReply));
-        msg.getInternalMessage()->forceMsgId(0);
-        mbus::Routable& routable(j == 0
-                ? dynamic_cast<mbus::Routable&>(*lastCommand)
-                : dynamic_cast<mbus::Routable&>(*lastReply));
-        mbus::Blob blob = _protocol.encode(_version5_0, routable);
-        _serialization50.push_back('\n');
-        std::string type(msg.getInternalMessage()->getType().toString());
-        for (uint32_t i=0, n=type.size(); i<n; ++i) {
-            _serialization50.push_back(type[i]);
-        }
-        _serialization50.push_back('\n');
-
-        for (uint32_t i=0, n=blob.size(); i<n; ++i) {
-            _serialization50.push_back(blob.data()[i]);
-        }
-    }
-}
-
 TEST_P(StorageProtocolTest, testPut) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->setUpdateTimestamp(Timestamp(13));
@@ -218,7 +192,6 @@ TEST_P(StorageProtocolTest, testPut) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testUpdate) {
@@ -251,7 +224,6 @@ TEST_P(StorageProtocolTest, testUpdate) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testGet) {
@@ -274,7 +246,6 @@ TEST_P(StorageProtocolTest, testGet) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testRemove) {
@@ -294,7 +265,6 @@ TEST_P(StorageProtocolTest, testRemove) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testRevert) {
@@ -313,7 +283,6 @@ TEST_P(StorageProtocolTest, testRevert) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testRequestBucketInfo) {
@@ -353,7 +322,6 @@ TEST_P(StorageProtocolTest, testRequestBucketInfo) {
 
         recordOutput(*cmd2);
         recordOutput(*reply2);
-        recordSerialization50();
     }
 }
 
@@ -371,7 +339,6 @@ TEST_P(StorageProtocolTest, testNotifyBucketChange) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testCreateBucket) {
@@ -388,7 +355,6 @@ TEST_P(StorageProtocolTest, testCreateBucket) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testDeleteBucket) {
@@ -411,7 +377,6 @@ TEST_P(StorageProtocolTest, testDeleteBucket) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testMergeBucket) {
@@ -447,7 +412,6 @@ TEST_P(StorageProtocolTest, testMergeBucket) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testSplitBucket) {
@@ -482,7 +446,6 @@ TEST_P(StorageProtocolTest, testSplitBucket) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testJoinBuckets) {
@@ -519,7 +482,6 @@ TEST_P(StorageProtocolTest, testDestroyVisitor) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testRemoveLocation) {
@@ -536,7 +498,6 @@ TEST_P(StorageProtocolTest, testRemoveLocation) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testCreateVisitor) {
@@ -578,7 +539,6 @@ TEST_P(StorageProtocolTest, testCreateVisitor) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 TEST_P(StorageProtocolTest, testGetBucketDiff) {
@@ -615,7 +575,6 @@ TEST_P(StorageProtocolTest, testGetBucketDiff) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 namespace {
@@ -667,7 +626,6 @@ TEST_P(StorageProtocolTest, testApplyBucketDiff) {
 
     recordOutput(*cmd2);
     recordOutput(*reply2);
-    recordSerialization50();
 }
 
 namespace {
