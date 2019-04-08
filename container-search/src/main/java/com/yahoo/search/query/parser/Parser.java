@@ -15,7 +15,8 @@ public interface Parser {
      * {@link QueryTree}. If parsing fails without an exception, the contained
      * root will be an instance of {@link com.yahoo.prelude.query.NullItem}.
      *
-     * @param query the Parsable to parse
+     * @param query
+     *            the Parsable to parse
      * @return the parsed QueryTree, never null
      */
     QueryTree parse(Parsable query);
