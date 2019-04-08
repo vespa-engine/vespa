@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.List;
 

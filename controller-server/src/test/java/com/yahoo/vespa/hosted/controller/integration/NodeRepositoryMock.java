@@ -8,7 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Collections;
 import java.util.HashMap;

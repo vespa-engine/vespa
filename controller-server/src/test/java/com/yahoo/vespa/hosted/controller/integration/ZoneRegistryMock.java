@@ -12,10 +12,10 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilter;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilterMock;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneFilter;
+import com.yahoo.config.provision.zone.ZoneFilterMock;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;

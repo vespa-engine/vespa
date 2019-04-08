@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 /**
  * A repository of application build artifacts.

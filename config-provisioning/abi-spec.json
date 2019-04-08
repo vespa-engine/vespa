@@ -762,27 +762,5 @@
       "public int hashCode()"
     ],
     "fields": []
-  },
-  "com.yahoo.config.provision.ZoneId": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public static com.yahoo.config.provision.ZoneId from(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
-      "public static com.yahoo.config.provision.ZoneId from(java.lang.String, java.lang.String)",
-      "public static com.yahoo.config.provision.ZoneId from(java.lang.String)",
-      "public static com.yahoo.config.provision.ZoneId from(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName, com.yahoo.config.provision.CloudName)",
-      "public static com.yahoo.config.provision.ZoneId from(java.lang.String, java.lang.String, java.lang.String)",
-      "public com.yahoo.config.provision.Environment environment()",
-      "public com.yahoo.config.provision.RegionName region()",
-      "public com.yahoo.config.provision.CloudName cloud()",
-      "public java.lang.String value()",
-      "public java.lang.String toString()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
-    ],
-    "fields": []
   }
 }
