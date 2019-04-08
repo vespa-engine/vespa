@@ -27,7 +27,7 @@ class ApacheHttpClient implements AutoCloseable {
         T handle(CloseableHttpResponse httpResponse) throws Exception;
     }
 
-    static CloseableHttpClient makeCloseableHttpClient(URL url, Duration timeout, Duration keepAlive) {
+    static CloseableHttpClient makeCloseableHttpClient(Duration timeout, Duration keepAlive) {
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout((int) timeout.toMillis()) // establishment of connection
                 .setConnectionRequestTimeout((int) timeout.toMillis())  // connection from connection manager
@@ -54,7 +54,7 @@ class ApacheHttpClient implements AutoCloseable {
     }
 
     ApacheHttpClient(URL url, Duration timeout, Duration keepAlive) {
-        this(url, makeCloseableHttpClient(url, timeout, keepAlive));
+        this(url, makeCloseableHttpClient(timeout, keepAlive));
     }
 
     ApacheHttpClient(URL url, CloseableHttpClient client) {
