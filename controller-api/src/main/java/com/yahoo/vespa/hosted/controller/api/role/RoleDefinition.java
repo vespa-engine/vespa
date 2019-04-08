@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -80,17 +81,36 @@ public enum RoleDefinition {
                       Policy.applicationOperations,
                       Policy.developmentDeployment);
 
+    private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;
 
     RoleDefinition(Policy... policies) {
-        this.policies = EnumSet.copyOf(Set.of(policies));
+        this(Set.of(), policies);
     }
 
-    RoleDefinition(RoleDefinition inherited, Policy... policies) {
-        this.policies = EnumSet.copyOf(Set.of(policies));
-        this.policies.addAll(inherited.policies);
+    RoleDefinition(RoleDefinition first, Policy... policies) {
+        this(Set.of(first), policies);
     }
 
-    Set<Policy> policies() { return policies; }
+    RoleDefinition(RoleDefinition first, RoleDefinition second, Policy... policies) {
+        this(Set.of(first, second), policies);
+    }
+
+    RoleDefinition(Set<RoleDefinition> parents, Policy... policies) {
+        this.parents = new HashSet<>(parents);
+        this.policies = EnumSet.copyOf(Set.of(policies));
+        for (RoleDefinition parent : parents) {
+            this.parents.addAll(parent.parents);
+            this.policies.addAll(parent.policies);
+        }
+    }
+
+    Set<Policy> policies() {
+        return policies;
+    }
+
+    Set<RoleDefinition> inherited() {
+        return parents;
+    }
 
 }
