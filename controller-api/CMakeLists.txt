@@ -1,0 +1,1 @@
+install_configserver_component(controller-api)
