@@ -50,7 +50,10 @@ public class Record implements Comparable<Record> {
         PTR,
         SOA,
         SRV,
-        TXT
+        TXT,
+        SPF,
+        NAPTR,
+        CAA,
     }
 
     @Override
