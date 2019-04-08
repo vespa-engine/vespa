@@ -13,7 +13,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
@@ -42,34 +41,25 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
 
-    private final Roles roles;
-    private final UserRoles userRoles;
+    private final UserRoles roles;
     private final UserManagement users;
-    private final Controller controller;
 
     @Inject
-    public UserApiHandler(Context parentCtx, Roles roles, UserManagement users, Controller controller) {
+    public UserApiHandler(Context parentCtx, Roles roles, UserManagement users) {
         super(parentCtx);
-        this.roles = roles;
-        this.userRoles = new UserRoles(roles);
+        this.roles = new UserRoles(roles);
         this.users = users;
-        this.controller = controller;
     }
 
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
             switch (request.getMethod()) {
-                case GET:
-                    return handleGET(request);
-                case POST:
-                    return handlePOST(request);
-                case DELETE:
-                    return handleDELETE(request);
-                case OPTIONS:
-                    return handleOPTIONS();
-                default:
-                    return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+                case GET: return handleGET(request);
+                case POST: return handlePOST(request);
+                case DELETE: return handleDELETE(request);
+                case OPTIONS: return handleOPTIONS();
+                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
         }
         catch (IllegalArgumentException e) {
@@ -119,8 +109,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
         Cursor rolesArray = root.setArray("roles");
-        // TODO jvenstad: Move these two to CloudRoles utility class.
-        for (TenantRole role : userRoles.tenantRoles(TenantName.from(tenantName))) {
+        for (TenantRole role : roles.tenantRoles(TenantName.from(tenantName))) {
             Cursor roleObject = rolesArray.addObject();
             roleObject.setString("name", role.definition().name());
             Cursor membersArray = roleObject.setArray("members");
@@ -136,7 +125,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         root.setString("tenant", tenantName);
         root.setString("application", applicationName);
         Cursor rolesArray = root.setArray("roles");
-        for (ApplicationRole role : userRoles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName))) {
+        for (ApplicationRole role : roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName))) {
             Cursor roleObject = rolesArray.addObject();
             roleObject.setString("name", role.definition().name());
             Cursor membersArray = roleObject.setArray("members");
@@ -150,7 +139,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        Role role = userRoles.toRole(TenantName.from(tenantName), roleName);
+        Role role = roles.toRole(TenantName.from(tenantName), roleName);
         users.addUsers(role, List.of(new UserId(user)));
         return new MessageResponse(user + " is now a member of " + role);
     }
@@ -159,7 +148,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        Role role = userRoles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
+        Role role = roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
         users.addUsers(role, List.of(new UserId(user)));
         return new MessageResponse(user + " is now a member of " + role);
     }
@@ -168,7 +157,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        Role role = userRoles.toRole(TenantName.from(tenantName), roleName);
+        Role role = roles.toRole(TenantName.from(tenantName), roleName);
         users.removeUsers(role, List.of(new UserId(user)));
         return new MessageResponse(user + " is no longer a member of " + role);
     }
@@ -177,7 +166,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         String user = require("user", Inspector::asString, requestObject);
-        Role role = userRoles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
+        Role role = roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
         users.removeUsers(role, List.of(new UserId(user)));
         return new MessageResponse(user + " is no longer a member of " + role);
     }

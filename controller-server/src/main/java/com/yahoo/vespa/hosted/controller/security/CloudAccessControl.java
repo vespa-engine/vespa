@@ -21,7 +21,6 @@ import java.util.List;
 
 /**
  * @author jonmv
- * @author tokle
  */
 public class CloudAccessControl implements AccessControl {
 

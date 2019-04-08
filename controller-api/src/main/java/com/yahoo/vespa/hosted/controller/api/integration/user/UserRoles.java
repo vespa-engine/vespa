@@ -49,6 +49,16 @@ public class UserRoles {
         throw new IllegalArgumentException("Malformed or illegal role value '" + value + "'.");
     }
 
+    /** Returns the {@link Role} the given tenant, application and role names correspond to. */
+    public Role toRole(TenantName tenant, String roleName) {
+        switch (roleName) {
+            case "tenantOwner": return roles.tenantOwner(tenant);
+            case "tenantAdmin": return roles.tenantAdmin(tenant);
+            case "tenantOperator": return roles.tenantOperator(tenant);
+            default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
+        }
+    }
+
     /** Returns the {@link Role} the given tenant and role names correspond to. */
     public Role toRole(TenantName tenant, ApplicationName application, String roleName) {
         switch (roleName) {
@@ -56,16 +66,6 @@ public class UserRoles {
             case "applicationOperator": return roles.applicationOperator(tenant, application);
             case "applicationDeveloper": return roles.applicationDeveloper(tenant, application);
             case "applicationReader": return roles.applicationReader(tenant, application);
-            default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
-        }
-    }
-
-    /** Returns the {@link Role} the given tenant, application and role names correspond to. */
-    public Role toRole(TenantName tenant, String roleName) {
-        switch (roleName) {
-            case "tenantOwner": return roles.tenantOwner(tenant);
-            case "tenantAdmin": return roles.tenantAdmin(tenant);
-            case "tenantOperator": return roles.tenantOperator(tenant);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -85,19 +85,6 @@ public class UserRoles {
         return valueOf(role.tenant()) + "." + valueOf(role.application()) + "." + valueOf(role.definition());
     }
 
-    private static String valueOf(RoleDefinition role) {
-        switch (role) {
-            case tenantOwner:          return "tenantOwner";
-            case tenantAdmin:          return "tenantAdmin";
-            case tenantOperator:       return "tenantOperator";
-            case applicationAdmin:     return "applicationAdmin";
-            case applicationOperator:  return "applicationOperator";
-            case applicationDeveloper: return "applicationDeveloper";
-            case applicationReader:    return "applicationReader";
-            default: throw new IllegalArgumentException("No value defined for role '" + role + "'.");
-        }
-    }
-
     private static String valueOf(TenantName tenant) {
         if (tenant.value().contains("."))
             throw new IllegalArgumentException("Tenant names may not contain '.'.");
@@ -110,6 +97,19 @@ public class UserRoles {
             throw new IllegalArgumentException("Application names may not contain '.'.");
 
         return application.value();
+    }
+
+    private static String valueOf(RoleDefinition role) {
+        switch (role) {
+            case tenantOwner:          return "tenantOwner";
+            case tenantAdmin:          return "tenantAdmin";
+            case tenantOperator:       return "tenantOperator";
+            case applicationAdmin:     return "applicationAdmin";
+            case applicationOperator:  return "applicationOperator";
+            case applicationDeveloper: return "applicationDeveloper";
+            case applicationReader:    return "applicationReader";
+            default: throw new IllegalArgumentException("No value defined for role '" + role + "'.");
+        }
     }
 
 }
