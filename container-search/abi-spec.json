@@ -5066,6 +5066,7 @@
       "public void addItem(com.yahoo.prelude.query.Item)",
       "public void addItem(int, com.yahoo.prelude.query.Item)",
       "public boolean isEmpty()",
+      "public com.yahoo.prelude.query.Item and(com.yahoo.prelude.query.Item)",
       "public static java.util.List getPositiveTerms(com.yahoo.prelude.query.Item)",
       "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
