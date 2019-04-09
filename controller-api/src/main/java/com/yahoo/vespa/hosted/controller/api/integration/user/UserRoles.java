@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
+import com.yahoo.vespa.hosted.controller.api.role.UnboundRole;
 
 import java.util.List;
 
@@ -41,12 +42,24 @@ public class UserRoles {
                        roles.applicationAdmin(tenant, application));
     }
 
+    public List<UnboundRole> hostedOperator() {
+        return List.of(roles.hostedOperator());
+    }
+
     /** Returns the {@link Role} the given value represents. */
     public Role toRole(String value) {
         String[] parts = value.split("\\.");
+        if (parts.length == 1) return toOperatorRole(parts[0]);
         if (parts.length == 2) return toRole(TenantName.from(parts[0]), parts[1]);
         if (parts.length == 3) return toRole(TenantName.from(parts[0]), ApplicationName.from(parts[1]), parts[2]);
         throw new IllegalArgumentException("Malformed or illegal role value '" + value + "'.");
+    }
+
+    public Role toOperatorRole(String roleName) {
+        switch (roleName) {
+            case "hostedOperator": return roles.hostedOperator();
+            default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
+        }
     }
 
     /** Returns the {@link Role} the given tenant, application and role names correspond to. */

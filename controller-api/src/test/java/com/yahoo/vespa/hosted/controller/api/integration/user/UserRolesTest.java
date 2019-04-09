@@ -61,7 +61,12 @@ public class UserRolesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalValue() {
-        userRoles.toRole("hostedOperator");
+        userRoles.toRole("everyone");
+    }
+
+    @Test
+    public void allowHostedOperator() {
+        assertEquals(roles.hostedOperator(), userRoles.toRole("hostedOperator"));
     }
 
 }
