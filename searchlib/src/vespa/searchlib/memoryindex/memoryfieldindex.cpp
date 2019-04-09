@@ -149,7 +149,7 @@ void
 MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
 {
     vespalib::stringref word;
-    FeatureStore::DecodeContextCooked decoder(NULL);
+    FeatureStore::DecodeContextCooked decoder(nullptr);
     DocIdAndFeatures features;
     vespalib::Array<uint32_t> wordMap(_numUniqueWords + 1, 0);
     _featureStore.setupForField(_fieldId, decoder);

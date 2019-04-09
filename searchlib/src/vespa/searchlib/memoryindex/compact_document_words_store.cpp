@@ -58,7 +58,7 @@ CompactDocumentWordsStore::Iterator::nextWord()
 }
 
 CompactDocumentWordsStore::Iterator::Iterator()
-    : _buf(NULL),
+    : _buf(nullptr),
       _remainingWords(0),
       _wordRef(0),
       _valid(false)

@@ -265,7 +265,7 @@ void
 MemoryIndex::pruneRemovedFields(const Schema &schema)
 {
     LockGuard lock(_lock);
-    if (_prunedSchema.get() == NULL) {
+    if (_prunedSchema.get() == nullptr) {
         Schema::UP newSchema = Schema::intersect(_schema, schema);
         if (_schema == *newSchema)
             return;

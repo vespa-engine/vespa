@@ -173,7 +173,7 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
         static_cast<const StructFieldValue &>(url_field);
 
     const FieldValue::UP all_val = field.getValue("all");
-    if (all_val.get() == NULL) {
+    if (all_val.get() == nullptr) {
         if (_useAnnotations) {
             // New style, use annotations
             processAnnotatedUrlField(field);
@@ -192,7 +192,7 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
     if (_useAnnotations) {
         StringFieldValue::SpanTrees trees = all_sfv.getSpanTrees();
         const SpanTree *tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
-        if (tree != NULL) {
+        if (tree != nullptr) {
             // New style, use annotations
             processAnnotatedUrlField(field);
             return;

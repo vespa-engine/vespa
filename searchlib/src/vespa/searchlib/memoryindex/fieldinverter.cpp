@@ -110,7 +110,7 @@ FieldInverter::processAnnotations(const StringFieldValue &value)
     _terms.clear();
     StringFieldValue::SpanTrees spanTrees = value.getSpanTrees();
     const SpanTree *tree = StringFieldValue::findTree(spanTrees, linguistics::SPANTREE_NAME);
-    if (tree == NULL) {
+    if (tree == nullptr) {
         /* This is wrong unless field is exact match */
         const vespalib::string &text = value.getValue();
         if (text.empty())

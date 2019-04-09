@@ -19,7 +19,7 @@ PostingIterator::PostingIterator(Dictionary::PostingList::ConstIterator itr,
     queryeval::RankedSearchIteratorBase(matchData),
     _itr(itr),
     _featureStore(featureStore),
-    _featureDecoder(NULL)
+    _featureDecoder(nullptr)
 {
     _featureStore.setupForField(packedIndex, _featureDecoder);
 }
