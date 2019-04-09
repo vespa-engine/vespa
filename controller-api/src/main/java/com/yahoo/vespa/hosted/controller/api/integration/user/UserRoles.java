@@ -28,17 +28,17 @@ public class UserRoles {
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
     public List<TenantRole> tenantRoles(TenantName tenant) {
-        return List.of(roles.tenantOperator(tenant),
+        return List.of(roles.tenantOwner(tenant),
                        roles.tenantAdmin(tenant),
-                       roles.tenantOwner(tenant));
+                       roles.tenantOperator(tenant));
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
     public List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(roles.applicationReader(tenant, application),
-                       roles.applicationDeveloper(tenant, application),
+        return List.of(roles.applicationAdmin(tenant, application),
                        roles.applicationOperator(tenant, application),
-                       roles.applicationAdmin(tenant, application));
+                       roles.applicationDeveloper(tenant, application),
+                       roles.applicationReader(tenant, application));
     }
 
     /** Returns the {@link Role} the given value represents. */
