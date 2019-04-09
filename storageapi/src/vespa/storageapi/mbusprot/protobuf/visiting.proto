@@ -14,32 +14,32 @@ message ClientVisitorParameter {
 }
 
 message VisitorConstraints {
-    bytes  document_selection = 1;
-    uint64 from_time_usec = 2;
-    uint64 to_time_usec = 3;
-    bool   visit_removes = 5;
-    bytes  field_set = 6;
-    bool   visit_inconsistent_buckets = 7;
+    bytes  document_selection         = 1;
+    uint64 from_time_usec             = 2;
+    uint64 to_time_usec               = 3;
+    bool   visit_removes              = 4;
+    bytes  field_set                  = 5;
+    bool   visit_inconsistent_buckets = 6;
 }
 
 message VisitorControlMeta {
-    bytes  instance_id = 1;
-    bytes  library_name = 2;
-    uint32 visitor_command_id = 3;
-    bytes  control_destination = 4;
-    bytes  data_destination = 5;
+    bytes  instance_id             = 1;
+    bytes  library_name            = 2;
+    uint32 visitor_command_id      = 3;
+    bytes  control_destination     = 4;
+    bytes  data_destination        = 5;
 
     // TODO move?
     uint32 max_pending_reply_count = 6;
-    uint32 queue_timeout = 7;
+    uint32 queue_timeout           = 7;
     uint32 max_buckets_per_visitor = 8;
 }
 
 message CreateVisitorRequest {
-    BucketSpace bucket_space = 1;
-    repeated BucketId buckets = 2;
+    BucketSpace bucket_space        = 1;
+    repeated BucketId buckets       = 2;
 
-    VisitorConstraints constraints = 3;
+    VisitorConstraints constraints  = 3;
     VisitorControlMeta control_meta = 4;
     repeated ClientVisitorParameter client_parameters = 5;
 }

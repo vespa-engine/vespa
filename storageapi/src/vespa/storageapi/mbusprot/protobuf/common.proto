@@ -58,8 +58,10 @@ message BucketInfo {
 }
 
 message GlobalId {
-    // 96 bits of GID data in _little_ endian.
+    // 96 bits of GID data in _little_ endian. High entropy, so fixed encoding is better than varint.
+    // Low 64 bits as if memcpy()ed from bytes [0, 8) of the GID buffer
     fixed64 lo_64 = 1;
+    // High 32 bits as if memcpy()ed from bytes [8, 12) of the GID buffer
     fixed32 hi_32 = 2;
 }
 
@@ -68,7 +70,7 @@ message RequestHeader {
     uint64  message_id   = 1;
     uint32  priority     = 2; // Always in range [0, 255]
     uint32  source_index = 3; // Always in range [0, 65535]
-    fixed32 loadtype_id  = 4;
+    fixed32 loadtype_id  = 4; // It's a hash with high entropy, so fixed encoding is better than varint
 }
 
 // TODO these should ideally be gRPC headers..

@@ -95,13 +95,10 @@ protected:
     virtual void onEncode(GBBuf&, const api::GetBucketDiffReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::ApplyBucketDiffCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::ApplyBucketDiffReply&) const = 0;
-    virtual void onEncode(GBBuf&,
-                          const api::RequestBucketInfoCommand&) const = 0;
+    virtual void onEncode(GBBuf&, const api::RequestBucketInfoCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::RequestBucketInfoReply&) const = 0;
-    virtual void onEncode(GBBuf&,
-                          const api::NotifyBucketChangeCommand&) const = 0;
-    virtual void onEncode(GBBuf&,
-                          const api::NotifyBucketChangeReply&) const = 0;
+    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeCommand&) const = 0;
+    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::SplitBucketCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::SplitBucketReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::JoinBucketsCommand&) const = 0;
@@ -136,11 +133,9 @@ protected:
     virtual SCmd::UP onDecodeApplyBucketDiffCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeApplyBucketDiffReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeRequestBucketInfoCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeRequestBucketInfoReply(const SCmd&,
-                                                    BBuf&) const = 0;
+    virtual SRep::UP onDecodeRequestBucketInfoReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeNotifyBucketChangeCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&,
-                                                     BBuf&) const = 0;
+    virtual SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeSplitBucketCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeSplitBucketReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeJoinBucketsCommand(BBuf&) const = 0;
