@@ -12,7 +12,7 @@ LOG_SETUP(".searchlib.memoryindex.postingiterator");
 
 namespace search::memoryindex {
 
-PostingIterator::PostingIterator(Dictionary::PostingList::ConstIterator itr,
+PostingIterator::PostingIterator(FieldIndex::PostingList::ConstIterator itr,
                                  const FeatureStore & featureStore,
                                  uint32_t packedIndex,
                                  const fef::TermFieldMatchDataArray & matchData) :

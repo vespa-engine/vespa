@@ -22,7 +22,7 @@ namespace search::memoryindex {
 
 class FieldInverter;
 class UrlFieldInverter;
-class Dictionary;
+class FieldIndexCollection;
 
 class DocumentInverter
 {
@@ -69,11 +69,9 @@ public:
     ~DocumentInverter();
 
     /**
-     * Push inverted documents to memory index structure.
-     *
-     * @param dict             dictionary
+     * Push inverted documents to memory field indexes.
      */
-    void pushDocuments(Dictionary &dict, const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void pushDocuments(FieldIndexCollection &fieldIndexes, const std::shared_ptr<IDestructorCallback> &onWriteDone);
 
     /**
      * Invert a document.

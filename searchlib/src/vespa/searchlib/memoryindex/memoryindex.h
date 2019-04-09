@@ -17,7 +17,7 @@ namespace document { class Document; }
 namespace search::memoryindex {
 
 class DocumentInverter;
-class Dictionary;
+class FieldIndexCollection;
 
 /**
  * Lock-free implementation of a memory-based index
@@ -32,7 +32,7 @@ private:
     std::unique_ptr<DocumentInverter>  _inverter0;
     std::unique_ptr<DocumentInverter>  _inverter1;
     DocumentInverter                  *_inverter;
-    std::unique_ptr<Dictionary>        _dictionary;
+    std::unique_ptr<FieldIndexCollection> _fieldIndexes;
     bool              _frozen;
     uint32_t          _maxDocId;
     uint32_t          _numDocs;

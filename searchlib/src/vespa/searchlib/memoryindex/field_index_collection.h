@@ -9,7 +9,13 @@ namespace search::memoryindex {
 class IDocumentRemoveListener;
 class FieldInverter;
 
-class Dictionary {
+/**
+ * The collection of all field indexes that are part of a memory index.
+ *
+ * Provides functions to create a posting list iterator (used for searching)
+ * for a given word in a given field.
+ */
+class FieldIndexCollection {
 public:
     using PostingList = FieldIndex::PostingList;
 
@@ -20,8 +26,8 @@ private:
     uint32_t                _numFields;
 
 public:
-    Dictionary(const index::Schema &schema);
-    ~Dictionary();
+    FieldIndexCollection(const index::Schema &schema);
+    ~FieldIndexCollection();
     PostingList::Iterator find(const vespalib::stringref word,
                                uint32_t fieldId) const
     {

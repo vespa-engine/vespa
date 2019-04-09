@@ -1,21 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentinverter.h"
+#include "field_index_collection.h"
 #include "fieldinverter.h"
-#include "urlfieldinverter.h"
-#include "dictionary.h"
 #include "ordereddocumentinserter.h"
-#include <vespa/document/datatype/urldatatype.h>
+#include "urlfieldinverter.h"
 #include <vespa/document/annotation/alternatespanlist.h>
-#include <vespa/searchlib/util/url.h>
-#include <stdexcept>
-#include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/text/lowercase.h>
-#include <vespa/searchlib/common/sort.h>
+#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <vespa/log/log.h>
+#include <vespa/searchlib/common/sort.h>
+#include <vespa/searchlib/util/url.h>
+#include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/text/utf8.h>
+#include <stdexcept>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.documentinverter");
 
 namespace search::memoryindex {
@@ -177,11 +177,10 @@ DocumentInverter::removeDocument(uint32_t docId)
 
 
 void
-DocumentInverter::pushDocuments(Dictionary &dict,
-                                const std::shared_ptr<IDestructorCallback> &
-                                onWriteDone)
+DocumentInverter::pushDocuments(FieldIndexCollection &fieldIndexes,
+                                const std::shared_ptr<IDestructorCallback> &onWriteDone)
 {
-    auto indexFieldIterator = dict.getFieldIndexes().begin();
+    auto indexFieldIterator = fieldIndexes.getFieldIndexes().begin();
     uint32_t fieldId = 0;
     for (auto &inverter : _inverters) {
         FieldIndex &fieldIndex(**indexFieldIterator);
