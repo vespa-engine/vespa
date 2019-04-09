@@ -16,9 +16,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.urlfieldinverter");
 
-namespace search {
-
-namespace memoryindex {
+namespace search::memoryindex {
 
 namespace {
 
@@ -46,8 +44,7 @@ lowercaseToken(vespalib::string &dest, const char *src, size_t srcSize)
     return dest.size();
 }
 
-
-}  // namespace
+}
 
 
 using document::ArrayFieldValue;
@@ -394,7 +391,5 @@ UrlFieldInverter::UrlFieldInverter(index::Schema::CollectionType collectionType,
 }
 
 
-} // namespace memoryindex
-
-} // namespace search
+}
 

@@ -21,9 +21,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
 
-namespace search {
-
-namespace memoryindex {
+namespace search::memoryindex {
 
 using document::AlternateSpanList;
 using document::Annotation;
@@ -569,7 +567,5 @@ FieldInverter::pushDocuments(IOrderedDocumentInserter &inserter)
 }
 
 
-} // namespace memoryindex
-
-} // namespace search
+}
 

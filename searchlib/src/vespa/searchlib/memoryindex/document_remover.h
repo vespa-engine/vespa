@@ -4,8 +4,7 @@
 #include "compact_document_words_store.h"
 #include "i_document_insert_listener.h"
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 class IDocumentRemoveListener;
 class WordStore;
@@ -59,6 +58,5 @@ public:
     void flush() override;
 };
 
-} // namespace memoryindex
-} // namespace search
+}
 

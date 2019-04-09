@@ -4,8 +4,7 @@
 #include "wordstore.h"
 #include <vespa/searchlib/common/sort.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 typedef CompactDocumentWordsStore::Builder Builder;
 typedef CompactDocumentWordsStore::Iterator Iterator;
@@ -62,5 +61,4 @@ DocumentRemover::flush()
 }
 
 
-} // namespace memoryindex
-} // namespace search
+}

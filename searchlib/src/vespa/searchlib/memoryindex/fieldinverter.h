@@ -13,11 +13,7 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/document/annotation/span.h>
 
-namespace search
-{
-
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 class IOrderedDocumentInserter;
 class DocumentRemover;
@@ -442,7 +438,5 @@ public:
     }
 };
 
-} // namespace memoryindex
-
-} // namespace search
+}
 

@@ -7,8 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.compact_document_words_store");
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 typedef CompactDocumentWordsStore::Builder Builder;
 
@@ -173,6 +172,5 @@ CompactDocumentWordsStore::getMemoryUsage() const
 
 }
 
-} // namespace memoryindex
-} // namespace search
+}
 

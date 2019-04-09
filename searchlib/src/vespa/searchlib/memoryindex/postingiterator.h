@@ -5,8 +5,7 @@
 #include "dictionary.h"
 #include <vespa/searchlib/queryeval/iterators.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 /**
  * Search iterator for memory index posting list.
@@ -39,6 +38,5 @@ public:
     Trinary is_strict() const override { return Trinary::True; }
 };
 
-} // namespace search::memoryindex
-} // namespace search
+}
 

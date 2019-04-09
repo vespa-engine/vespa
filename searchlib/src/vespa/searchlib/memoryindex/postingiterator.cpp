@@ -10,8 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.postingiterator");
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 PostingIterator::PostingIterator(Dictionary::PostingList::ConstIterator itr,
                                  const FeatureStore & featureStore,
@@ -69,7 +68,5 @@ PostingIterator::doUnpack(uint32_t docId)
     setUnpacked();
 }
 
-
-} // namespace search::memoryindex
-} // namespace search
+}
 
