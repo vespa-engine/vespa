@@ -3,7 +3,7 @@
 #pragma once
 
 #include "iordereddocumentinserter.h"
-#include "memoryfieldindex.h"
+#include "field_index.h"
 #include <limits>
 
 namespace search::memoryindex {
@@ -12,7 +12,7 @@ class IDocumentInsertListener;
 
 
 /**
- * Class for inserting updates to MemoryFieldIndex in an ordered manner
+ * Class for inserting updates to FieldIndex in an ordered manner
  * (single pass scan of dictionary tree)
  *
  * Insert order must be properly sorted, by (word, docId)
@@ -22,12 +22,12 @@ class OrderedDocumentInserter : public IOrderedDocumentInserter
     vespalib::stringref _word;
     uint32_t _prevDocId;
     bool     _prevAdd;
-    using DictionaryTree = MemoryFieldIndex::DictionaryTree;
-    using PostingListStore = MemoryFieldIndex::PostingListStore;
-    using KeyComp = MemoryFieldIndex::KeyComp;
-    using WordKey = MemoryFieldIndex::WordKey;
-    using PostingListKeyDataType = MemoryFieldIndex::PostingListKeyDataType;
-    MemoryFieldIndex        &_fieldIndex;
+    using DictionaryTree = FieldIndex::DictionaryTree;
+    using PostingListStore = FieldIndex::PostingListStore;
+    using KeyComp = FieldIndex::KeyComp;
+    using WordKey = FieldIndex::WordKey;
+    using PostingListKeyDataType = FieldIndex::PostingListKeyDataType;
+    FieldIndex        &_fieldIndex;
     DictionaryTree::Iterator _dItr;
     IDocumentInsertListener &_listener;
 
@@ -47,7 +47,7 @@ class OrderedDocumentInserter : public IOrderedDocumentInserter
     void flushWord();
 
 public:
-    OrderedDocumentInserter(MemoryFieldIndex &fieldIndex);
+    OrderedDocumentInserter(FieldIndex &fieldIndex);
     ~OrderedDocumentInserter() override;
     void setNextWord(const vespalib::stringref word) override;
     void add(uint32_t docId, const index::DocIdAndFeatures &features) override;

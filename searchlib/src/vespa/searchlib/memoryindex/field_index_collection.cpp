@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dictionary.h"
+#include "field_index_collection.h"
 #include "fieldinverter.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
@@ -15,7 +15,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.dictionary");
+LOG_SETUP(".searchlib.memoryindex.field_index_collection");
 
 
 namespace search {
@@ -26,23 +26,23 @@ using index::Schema;
 
 namespace memoryindex {
 
-Dictionary::Dictionary(const Schema & schema)
+FieldIndexCollection::FieldIndexCollection(const Schema & schema)
     : _fieldIndexes(),
       _numFields(schema.getNumIndexFields())
 {
     for (uint32_t fieldId = 0; fieldId < _numFields; ++fieldId) {
-        auto fieldIndex = std::make_unique<MemoryFieldIndex>(schema, fieldId);
+        auto fieldIndex = std::make_unique<FieldIndex>(schema, fieldId);
         _fieldIndexes.push_back(std::move(fieldIndex));
     }
 }
 
-Dictionary::~Dictionary()
+FieldIndexCollection::~FieldIndexCollection()
 {
 }
 
 
 void
-Dictionary::dump(search::index::IndexBuilder &indexBuilder)
+FieldIndexCollection::dump(search::index::IndexBuilder &indexBuilder)
 {
     for (uint32_t fieldId = 0; fieldId < _numFields; ++fieldId) {
         indexBuilder.startField(fieldId);
@@ -52,7 +52,7 @@ Dictionary::dump(search::index::IndexBuilder &indexBuilder)
 }
 
 MemoryUsage
-Dictionary::getMemoryUsage() const
+FieldIndexCollection::getMemoryUsage() const
 {
     MemoryUsage usage;
     for (auto &fieldIndex : _fieldIndexes) {

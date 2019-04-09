@@ -27,7 +27,7 @@ const vespalib::string emptyWord = "";
 
 }
 
-OrderedDocumentInserter::OrderedDocumentInserter(MemoryFieldIndex &fieldIndex)
+OrderedDocumentInserter::OrderedDocumentInserter(FieldIndex &fieldIndex)
     : _word(),
       _prevDocId(noDocId),
       _prevAdd(false),

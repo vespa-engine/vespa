@@ -2,12 +2,12 @@
 vespa_add_library(searchlib_memoryindex OBJECT
     SOURCES
     compact_document_words_store.cpp
-    dictionary.cpp
     documentinverter.cpp
     document_remover.cpp
     featurestore.cpp
+    field_index.cpp
+    field_index_collection.cpp
     fieldinverter.cpp
-    memoryfieldindex.cpp
     memoryindex.cpp
     ordereddocumentinserter.cpp
     postingiterator.cpp

@@ -1,17 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "documentinverter.h"
+#include "field_index_collection.h"
 #include "memoryindex.h"
 #include "postingiterator.h"
-#include "documentinverter.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.memoryindex");
@@ -61,7 +62,7 @@ MemoryIndex::MemoryIndex(const Schema &schema,
       _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
       _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
       _inverter(_inverter0.get()),
-      _dictionary(std::make_unique<Dictionary>(_schema)),
+      _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema)),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved
       _numDocs(0),
@@ -113,7 +114,7 @@ MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
 {
     _invertThreads.sync(); // drain inverting into this inverter
     _pushThreads.sync(); // drain use of other inverter
-    _inverter->pushDocuments(*_dictionary, onWriteDone);
+    _inverter->pushDocuments(*_fieldIndexes, onWriteDone);
     flipInverter();
 }
 
@@ -133,7 +134,7 @@ MemoryIndex::freeze()
 void
 MemoryIndex::dump(IndexBuilder &indexBuilder)
 {
-    _dictionary->dump(indexBuilder);
+    _fieldIndexes->dump(indexBuilder);
 }
 
 namespace {
@@ -142,14 +143,14 @@ class MemTermBlueprint : public queryeval::SimpleLeafBlueprint
 {
 private:
     GenerationHandler::Guard               _genGuard;
-    Dictionary::PostingList::ConstIterator _pitr;
+    FieldIndex::PostingList::ConstIterator _pitr;
     const FeatureStore                    &_featureStore;
     const uint32_t                         _fieldId;
     const bool                             _useBitVector;
 
 public:
     MemTermBlueprint(GenerationHandler::Guard &&genGuard,
-                     Dictionary::PostingList::ConstIterator pitr,
+                     FieldIndex::PostingList::ConstIterator pitr,
                      const FeatureStore &featureStore,
                      const FieldSpecBase &field,
                      uint32_t fieldId,
@@ -189,28 +190,27 @@ class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper
 private:
     const FieldSpec &_field;
     const uint32_t   _fieldId;
-    Dictionary &     _dictionary;
+    FieldIndexCollection &_fieldIndexes;
 
 public:
     CreateBlueprintVisitor(Searchable &searchable,
                            const IRequestContext & requestContext,
                            const FieldSpec &field,
                            uint32_t fieldId,
-                           Dictionary &dictionary)
+                           FieldIndexCollection &fieldIndexes)
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _fieldId(fieldId),
-          _dictionary(dictionary) {}
+          _fieldIndexes(fieldIndexes) {}
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
         const vespalib::string termStr = queryeval::termAsString(n);
         LOG(debug, "searching for '%s' in '%s'",
             termStr.c_str(), _field.getName().c_str());
-        MemoryFieldIndex *fieldIndex = _dictionary.getFieldIndex(_fieldId);
+        FieldIndex *fieldIndex = _fieldIndexes.getFieldIndex(_fieldId);
         GenerationHandler::Guard genGuard = fieldIndex->takeGenerationGuard();
-        Dictionary::PostingList::ConstIterator pitr
-            = fieldIndex->findFrozen(termStr);
+        FieldIndex::PostingList::ConstIterator pitr = fieldIndex->findFrozen(termStr);
         bool useBitVector = _field.isFilter();
         setResult(std::make_unique<MemTermBlueprint>(std::move(genGuard), pitr,
                                                      fieldIndex->getFeatureStore(),
@@ -243,7 +243,7 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
     if (fieldId == Schema::UNKNOWN_FIELD_ID || _hiddenFields[fieldId]) {
         return std::make_unique<EmptyBlueprint>(field);
     }
-    CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_dictionary);
+    CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_fieldIndexes);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }
@@ -252,13 +252,13 @@ MemoryUsage
 MemoryIndex::getMemoryUsage() const
 {
     MemoryUsage usage;
-    usage.merge(_dictionary->getMemoryUsage());
+    usage.merge(_fieldIndexes->getMemoryUsage());
     return usage;
 }
 
 uint64_t
 MemoryIndex::getNumWords() const {
-    return _dictionary->getNumUniqueWords();
+    return _fieldIndexes->getNumUniqueWords();
 }
 
 void
