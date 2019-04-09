@@ -140,7 +140,7 @@ MemoryFieldIndex::compactFeatures()
             }
         }
     }
-    typedef GenerationHandler::generation_t generation_t;
+    using generation_t = GenerationHandler::generation_t;
     _featureStore.finishCompact(toHold);
     generation_t generation = _generationHandler.getCurrentGeneration();
     _featureStore.transferHoldLists(generation);

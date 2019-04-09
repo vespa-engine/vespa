@@ -93,7 +93,7 @@ private:
     FieldInverter &operator=(const FieldInverter &) = delete;
     FieldInverter &operator=(const FieldInverter &&) = delete;
 
-    typedef vespalib::Array<char> WordBuffer;
+    using WordBuffer = vespalib::Array<char>;
 
     class ElemInfo
     {
@@ -114,9 +114,8 @@ private:
         }
     };
 
-    typedef std::vector<ElemInfo> ElemInfoVec;
-
-    typedef std::vector<PosInfo> PosInfoVec;
+    using ElemInfoVec = std::vector<ElemInfo>;
+    using PosInfoVec = std::vector<PosInfo>;
 
     class CompareWordRef
     {
@@ -185,8 +184,8 @@ private:
     std::vector<uint32_t>          _elementWordRefs;
     std::vector<uint32_t>          _wordRefs;
 
-    typedef std::pair<document::Span, const document::FieldValue *> SpanTerm;
-    typedef std::vector<SpanTerm> SpanTermVector;
+    using SpanTerm = std::pair<document::Span, const document::FieldValue *>;
+    using SpanTermVector = std::vector<SpanTerm>;
     SpanTermVector                      _terms;
 
     // info about aborted and pending documents.

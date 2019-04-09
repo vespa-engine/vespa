@@ -65,11 +65,8 @@ private:
     void flipInverter();
 
 public:
-    /**
-     * Convenience type defs.
-     */
-    typedef std::unique_ptr<MemoryIndex> UP;
-    typedef std::shared_ptr<MemoryIndex> SP;
+    using UP = std::unique_ptr<MemoryIndex>;
+    using SP = std::shared_ptr<MemoryIndex>;
 
     /**
      * Create a new memory index based on the given schema.

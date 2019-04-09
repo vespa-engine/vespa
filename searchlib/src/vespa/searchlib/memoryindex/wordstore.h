@@ -10,8 +10,8 @@ namespace search::memoryindex {
 class WordStore
 {
 public:
-    typedef datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2> > DataStoreType;
-    typedef DataStoreType::RefType RefType;
+    using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
+    using RefType = DataStoreType::RefType;
 
 private:
     DataStoreType           _store;

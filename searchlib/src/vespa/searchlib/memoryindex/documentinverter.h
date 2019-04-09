@@ -37,9 +37,8 @@ private:
     void invertNormalDocTextField(size_t fieldId, const document::FieldValue &field);
     void invertNormalDocUriField(const index::UriField &handle, const document::FieldValue &field);
 
-    //typedef document::FieldPath FieldPath;
-    typedef document::Field FieldPath;
-    typedef std::vector<std::unique_ptr<FieldPath> > IndexedFieldPaths;
+    using FieldPath = document::Field;
+    using IndexedFieldPaths = std::vector<std::unique_ptr<FieldPath>>;
     IndexedFieldPaths                   _indexedFieldPaths;
     const document::DataType *          _dataType;
 

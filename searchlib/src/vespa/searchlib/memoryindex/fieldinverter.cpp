@@ -275,7 +275,7 @@ uint32_t
 FieldInverter::saveWord(const document::FieldValue &fv)
 {
     assert(fv.getClass().id() == StringFieldValue::classId);
-    typedef std::pair<const char*, size_t> RawRef;
+    using RawRef = std::pair<const char*, size_t>;
     RawRef sRef = fv.getAsRaw();
     return saveWord(vespalib::stringref(sRef.first, sRef.second));
 }

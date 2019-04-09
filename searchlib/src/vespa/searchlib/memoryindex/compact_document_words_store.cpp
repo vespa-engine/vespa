@@ -9,7 +9,7 @@ LOG_SETUP(".memoryindex.compact_document_words_store");
 
 namespace search::memoryindex {
 
-typedef CompactDocumentWordsStore::Builder Builder;
+using Builder = CompactDocumentWordsStore::Builder;
 
 namespace {
 

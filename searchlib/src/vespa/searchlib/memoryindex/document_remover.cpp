@@ -6,8 +6,8 @@
 
 namespace search::memoryindex {
 
-typedef CompactDocumentWordsStore::Builder Builder;
-typedef CompactDocumentWordsStore::Iterator Iterator;
+using Builder = CompactDocumentWordsStore::Builder;
+using Iterator = CompactDocumentWordsStore::Iterator;
 
 DocumentRemover::DocumentRemover(const WordStore &wordStore)
     : _store(),

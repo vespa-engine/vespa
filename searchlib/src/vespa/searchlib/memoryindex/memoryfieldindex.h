@@ -22,14 +22,13 @@ class OrderedDocumentInserter;
  */
 class MemoryFieldIndex {
 public:
-    typedef btree::BTreeRoot<uint32_t, uint32_t, search::btree::NoAggregated>
-    PostingList; // docid -> feature ref
-    typedef btree::BTreeStore<uint32_t, uint32_t,
-                              search::btree::NoAggregated,
-                              std::less<uint32_t>,
-            btree::BTreeDefaultTraits> PostingListStore;
-    typedef PostingListStore::KeyDataType PostingListKeyDataType;
-
+    // Mapping from docid -> feature ref
+    using PostingList = btree::BTreeRoot<uint32_t, uint32_t, search::btree::NoAggregated>;
+    using PostingListStore = btree::BTreeStore<uint32_t, uint32_t,
+                                               search::btree::NoAggregated,
+                                               std::less<uint32_t>,
+                                               btree::BTreeDefaultTraits>;
+    using PostingListKeyDataType = PostingListStore::KeyDataType;
 
     struct WordKey {
         datastore::EntryRef _wordRef;
@@ -69,12 +68,12 @@ public:
         }
     };
 
-    typedef uint32_t PostingListPtr;
-    typedef btree::BTree<WordKey, PostingListPtr,
-                         search::btree::NoAggregated,
-                         const KeyComp> DictionaryTree;
+    using PostingListPtr = uint32_t;
+    using DictionaryTree = btree::BTree<WordKey, PostingListPtr,
+                                        search::btree::NoAggregated,
+                                        const KeyComp>;
 private:
-    typedef vespalib::GenerationHandler GenerationHandler;
+    using GenerationHandler = vespalib::GenerationHandler;
 
     WordStore               _wordStore;
     uint64_t                _numUniqueWords;
