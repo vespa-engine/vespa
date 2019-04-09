@@ -16,17 +16,18 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
-import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
-import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -108,14 +109,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
-        Cursor rolesArray = root.setArray("roles");
-        for (TenantRole role : roles.tenantRoles(TenantName.from(tenantName))) {
-            Cursor roleObject = rolesArray.addObject();
-            roleObject.setString("name", role.definition().name());
-            Cursor membersArray = roleObject.setArray("members");
-            for (UserId user : users.listUsers(role))
-                membersArray.addString(user.value());
-        }
+        fillRoles(root, roles.tenantRoles(TenantName.from(tenantName)));
         return new SlimeJsonResponse(slime);
     }
 
@@ -124,15 +118,33 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
         root.setString("application", applicationName);
-        Cursor rolesArray = root.setArray("roles");
-        for (ApplicationRole role : roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName))) {
-            Cursor roleObject = rolesArray.addObject();
-            roleObject.setString("name", role.definition().name());
-            Cursor membersArray = roleObject.setArray("members");
-            for (UserId user : users.listUsers(role))
-                membersArray.addString(user.value());
-        }
+        fillRoles(root, roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)));
         return new SlimeJsonResponse(slime);
+    }
+
+    private void fillRoles(Cursor root, List<? extends Role> roles) {
+        Cursor rolesArray = root.setArray("roleNames");
+        for (Role role : roles)
+            rolesArray.addString(valueOf(role));
+
+        Map<UserId, List<Role>> memberships = new HashMap<>();
+        for (Role role : roles)
+            for (UserId user : users.listUsers(role)) {
+                memberships.putIfAbsent(user, new ArrayList<>());
+                memberships.get(user).add(role);
+            }
+
+        Cursor usersArray = root.setArray("users");
+        memberships.forEach((user, userRoles) -> {
+            Cursor userObject = usersArray.addObject();
+            userObject.setString("name", user.value());
+            Cursor rolesObject = userObject.setObject("roles");
+            for (Role role : roles) {
+                Cursor roleObject = rolesObject.setObject(valueOf(role));
+                roleObject.setBool("explicit", userRoles.contains(role));
+                roleObject.setBool("implied", userRoles.stream().anyMatch(userRole -> userRole.implies(role)));
+            }
+        });
     }
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
@@ -178,6 +190,19 @@ public class UserApiHandler extends LoggingRequestHandler {
     private <Type> Type require(String name, Function<Inspector, Type> mapper, Inspector object) {
         if ( ! object.field(name).valid()) throw new IllegalArgumentException("Missing field '" + name + "'.");
         return mapper.apply(object.field(name));
+    }
+
+    private static String valueOf(Role role) {
+        switch (role.definition()) {
+            case tenantOwner:           return "tenantOwner";
+            case tenantAdmin:           return "tenantAdmin";
+            case tenantOperator:        return "tenantOperator";
+            case applicationAdmin:      return "applicationAdmin";
+            case applicationOperator:   return "applicationOperator";
+            case applicationDeveloper:  return "applicationDeveloper";
+            case applicationReader:     return "applicationReader";
+            default: throw new IllegalArgumentException("Unexpected role type '" + role.definition() + "'.");
+        }
     }
 
 }
