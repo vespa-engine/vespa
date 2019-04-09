@@ -433,6 +433,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor globalRotationsArray = object.setArray("globalRotations");
         application.endpointsIn(controller.system())
                    .scope(Endpoint.Scope.global)
+                   .legacy(false) // Hide legacy names
                    .asList().stream()
                    .map(Endpoint::url)
                    .map(URI::toString)
