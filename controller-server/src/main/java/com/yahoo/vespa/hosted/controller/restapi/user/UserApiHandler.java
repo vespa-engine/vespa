@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
@@ -150,36 +151,40 @@ public class UserApiHandler extends LoggingRequestHandler {
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
-        String user = require("user", Inspector::asString, requestObject);
+        UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = roles.toRole(TenantName.from(tenantName), roleName);
-        users.addUsers(role, List.of(new UserId(user)));
+        users.addUsers(role, List.of(user));
         return new MessageResponse(user + " is now a member of " + role);
     }
 
     private HttpResponse addApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
-        String user = require("user", Inspector::asString, requestObject);
+        UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
-        users.addUsers(role, List.of(new UserId(user)));
+        users.addUsers(role, List.of(user));
         return new MessageResponse(user + " is now a member of " + role);
     }
 
     private HttpResponse removeTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
-        String user = require("user", Inspector::asString, requestObject);
+        UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = roles.toRole(TenantName.from(tenantName), roleName);
-        users.removeUsers(role, List.of(new UserId(user)));
+        if (   role.definition() == RoleDefinition.tenantOwner
+            && users.listUsers(role).equals(List.of(user)))
+            throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
+
+        users.removeUsers(role, List.of(user));
         return new MessageResponse(user + " is no longer a member of " + role);
     }
 
     private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
-        String user = require("user", Inspector::asString, requestObject);
+        UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
-        users.removeUsers(role, List.of(new UserId(user)));
+        users.removeUsers(role, List.of(user));
         return new MessageResponse(user + " is no longer a member of " + role);
     }
 
