@@ -83,7 +83,8 @@ public class MockClient implements Client {
                 }
             }
             byte[] slimeBytes = BinaryFormat.encode(responseSlime);
-            Compressor.Compression compressionResult = compressor.compress(compression, slimeBytes);
+            CompressionType responseCompressionType = compression == CompressionType.INCOMPRESSIBLE ? CompressionType.NONE : compression;
+            Compressor.Compression compressionResult = compressor.compress(responseCompressionType, slimeBytes);
             GetDocsumsResponse response = new GetDocsumsResponse(compressionResult.type().getCode(), slimeBytes.length,
                     compressionResult.data(), hitsContext);
             responseReceiver.receive(ResponseOrError.fromResponse(response));

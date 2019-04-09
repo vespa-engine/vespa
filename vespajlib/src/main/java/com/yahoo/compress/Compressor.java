@@ -88,8 +88,8 @@ public class Compressor {
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
     }
-    /** Compresses some data using the compression type of this compressor */
-    public Compression compress(CompressionType requestedCompression, byte[] data) { return compress(type, data, Optional.empty()); }
+    /** Compresses some data using the requested compression type */
+    public Compression compress(CompressionType requestedCompression, byte[] data) { return compress(requestedCompression, data, Optional.empty()); }
     /** Compresses some data using the compression type of this compressor */
     public Compression compress(byte[] data, int uncompressedSize) { return compress(type, data, Optional.of(uncompressedSize)); }
     /** Compresses some data using the compression type of this compressor */
@@ -150,7 +150,7 @@ public class Compressor {
          * This will be either the requested compression or INCOMPRESSIBLE.
          */
         public CompressionType type() { return compressionType; }
-        
+
         /** Returns the uncompressed size of this data in bytes */
         public int uncompressedSize() { return uncompressedSize; }
 
