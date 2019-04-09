@@ -125,8 +125,9 @@ UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
                                      bool addAnchors)
 {
     const FieldValue::UP sfv = field.getValue(subField);
-    if (!sfv)
+    if (!sfv) {
         return;
+    }
     if (!sfv->inherits(IDENTIFIABLE_CLASSID(StringFieldValue))) {
         LOG(error,
             "Illegal field type %s for URL subfield %s, expected string",
@@ -134,7 +135,7 @@ UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
             vespalib::string(subField).data());
         return;
     }
-    const StringFieldValue &value = static_cast<const StringFieldValue &>(*sfv);
+    const auto &value = static_cast<const StringFieldValue &>(*sfv);
     if (addAnchors) {
         inverter->addWord(HOSTNAME_BEGIN);
     }
@@ -169,8 +170,7 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
         return;
     }
     assert(url_field.getClass().id() == StructFieldValue::classId);
-    const StructFieldValue &field =
-        static_cast<const StructFieldValue &>(url_field);
+    const auto &field = static_cast<const StructFieldValue &>(url_field);
 
     const FieldValue::UP all_val = field.getValue("all");
     if (all_val.get() == nullptr) {
@@ -187,8 +187,7 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
             all_val->getDataType()->getName().c_str());
         return;
     }
-    const StringFieldValue &all_sfv =
-        static_cast<const StringFieldValue &>(*all_val);
+    const auto &all_sfv = static_cast<const StringFieldValue &>(*all_val);
     if (_useAnnotations) {
         StringFieldValue::SpanTrees trees = all_sfv.getSpanTrees();
         const SpanTree *tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
@@ -317,7 +316,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
         break;
     case CollectionType::WEIGHTEDSET:
         if (cInfo.id() == WeightedSetFieldValue::classId) {
-            const WeightedSetFieldValue &wset = static_cast<const WeightedSetFieldValue &>(val);
+            const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (isUriType(wset.getNestedType())) {
                 processWeightedSetUrlField(wset);
             } else {
@@ -329,7 +328,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
         break;
     case CollectionType::ARRAY:
         if (cInfo.id() == ArrayFieldValue::classId) {
-            const ArrayFieldValue &arr = static_cast<const ArrayFieldValue&>(val);
+            const auto &arr = static_cast<const ArrayFieldValue&>(val);
             if (isUriType(arr.getNestedType())) {
                 processArrayUrlField(arr);
             } else {

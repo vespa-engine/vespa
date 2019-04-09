@@ -106,7 +106,7 @@ OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
 
 void
 OrderedDocumentInserter::add(uint32_t docId,
-                               const index::DocIdAndFeatures &features)
+                             const index::DocIdAndFeatures &features)
 {
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId ||

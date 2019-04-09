@@ -88,7 +88,7 @@ FeatureStore::FeatureStore(const Schema &schema)
 
     _fieldsParams.resize(_schema.getNumIndexFields());
     SchemaUtil::IndexIterator it(_schema);
-    for(; it.isValid(); ++it) {
+    for (; it.isValid(); ++it) {
         _fieldsParams[it.getIndex()].setSchemaParams(_schema, it.getIndex());
     }
     _store.addType(&_type);

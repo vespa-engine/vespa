@@ -81,7 +81,7 @@ MemoryFieldIndex::find(const vespalib::stringref word) const
 MemoryFieldIndex::PostingList::ConstIterator
 MemoryFieldIndex::findFrozen(const vespalib::stringref word) const
 {
-    DictionaryTree::ConstIterator itr = _dict.getFrozenView().find(WordKey(EntryRef()), KeyComp(_wordStore, word));
+    auto itr = _dict.getFrozenView().find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
         return _postingListStore.beginFrozen(EntryRef(itr.getData()));
     }
@@ -95,18 +95,19 @@ MemoryFieldIndex::compactFeatures()
     std::vector<uint32_t> toHold;
 
     toHold = _featureStore.startCompact();
-    DictionaryTree::Iterator itr(_dict.begin());
+    auto itr = _dict.begin();
     uint32_t packedIndex = _fieldId;
     for (; itr.valid(); ++itr) {
         PostingListStore::RefType pidx(EntryRef(itr.getData()));
-        if (!pidx.valid())
+        if (!pidx.valid()) {
             continue;
+        }
         uint32_t clusterSize = _postingListStore.getClusterSize(pidx);
         if (clusterSize == 0) {
             const PostingList *tree = _postingListStore.getTreeEntry(pidx);
-            PostingList::Iterator it(tree->begin(_postingListStore.getAllocator()));
-            for (; it.valid(); ++it) {
-                EntryRef oldFeatures(it.getData());
+            auto pitr = tree->begin(_postingListStore.getAllocator());
+            for (; pitr.valid(); ++pitr) {
+                EntryRef oldFeatures(pitr.getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
@@ -117,7 +118,7 @@ MemoryFieldIndex::compactFeatures()
                 std::atomic_thread_fence(std::memory_order_release);
 
                 // Ugly, ugly due to const_cast in iterator
-                it.writeData(newFeatures.ref());
+                pitr.writeData(newFeatures.ref());
             }
         } else {
             const PostingListKeyDataType *shortArray = _postingListStore.getKeyDataEntry(pidx, clusterSize);
@@ -153,17 +154,18 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
     DocIdAndFeatures features;
     vespalib::Array<uint32_t> wordMap(_numUniqueWords + 1, 0);
     _featureStore.setupForField(_fieldId, decoder);
-    for (DictionaryTree::Iterator itr = _dict.begin(); itr.valid(); ++itr) {
+    for (auto itr = _dict.begin(); itr.valid(); ++itr) {
         const WordKey & wk = itr.getKey();
         PostingListStore::RefType plist(EntryRef(itr.getData()));
         word = _wordStore.getWord(wk._wordRef);
-        if (!plist.valid())
+        if (!plist.valid()) {
             continue;
+        }
         indexBuilder.startWord(word);
         uint32_t clusterSize = _postingListStore.getClusterSize(plist);
         if (clusterSize == 0) {
             const PostingList *tree = _postingListStore.getTreeEntry(plist);
-            PostingList::Iterator pitr = tree->begin(_postingListStore.getAllocator());
+            auto pitr = tree->begin(_postingListStore.getAllocator());
             assert(pitr.valid());
             for (; pitr.valid(); ++pitr) {
                 uint32_t docId = pitr.getKey();
