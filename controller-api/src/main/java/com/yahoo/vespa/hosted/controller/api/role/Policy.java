@@ -26,12 +26,12 @@ public enum Policy {
     /** Full access to user management for a tenant in select systems. */
     tenantManager(Privilege.grant(Action.all())
                            .on(PathGroup.tenantUsers)
-                           .in(SystemName.Public)),
+                           .in(SystemName.all())),
 
     /** Full access to user management for an application in select systems. */
     applicationManager(Privilege.grant(Action.all())
                                 .on(PathGroup.applicationUsers)
-                                .in(SystemName.Public)),
+                                .in(SystemName.all())),
 
     /** Access to create a user tenant in select systems. */
     userCreate(Privilege.grant(Action.update)

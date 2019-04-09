@@ -104,8 +104,7 @@ public enum PathGroup {
                    "/application/v4/tenant/",
                    "/",
                    "/d/{*}",
-                   "/statuspage/v1/{*}"
-    ),
+                   "/statuspage/v1/{*}"),
 
     /** Paths providing public information. */
     publicInfo("/badge/v1/{*}",
