@@ -11,6 +11,7 @@ import com.yahoo.processing.response.ArrayDataList;
 import com.yahoo.processing.response.DataList;
 import com.yahoo.processing.response.DefaultIncomingData;
 import com.yahoo.processing.response.IncomingData;
+import com.yahoo.search.query.Sorting;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -687,7 +688,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             hit.setAddNumber(size());
         }
 
-        if (SortDataHitSorter.isSortable(hit, this)) {
+        if (SortDataHitSorter.isSortable(hit, currentSorting())) {
             hitsWithSortData++;
         }
 
@@ -739,7 +740,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             errorHit = null;
         }
 
-        if (SortDataHitSorter.isSortable(hit, this)) {
+        if (SortDataHitSorter.isSortable(hit, currentSorting())) {
             hitsWithSortData--;
         }
 
@@ -758,7 +759,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         if (!hit.isCached())
             notCachedCount++;
 
-        if (SortDataHitSorter.isSortable(hit, this)) {
+        if (SortDataHitSorter.isSortable(hit, currentSorting())) {
             hitsWithSortData++;
         }
     }
@@ -925,6 +926,15 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         Predicate<Hit> isFillable = hit -> hit.isFillable();
 
         return Iterables.filter(hits, isFillable);
+    }
+
+    private Sorting currentSorting() {
+        var query = getQuery();
+        if(query == null) {
+            return null;
+        } else {
+            return query.getRanking().getSorting();
+        }
     }
 
     /** Returns the incoming hit buffer to which new hits can be added to this asynchronous, if supported by the instance */

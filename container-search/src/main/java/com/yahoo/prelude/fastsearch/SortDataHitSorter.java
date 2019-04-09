@@ -20,13 +20,13 @@ public class SortDataHitSorter {
         Collections.sort(hits, getComparator(sorting, fallbackComparator));
     }
 
-    public static boolean isSortable(Hit hit, HitGroup hitGroup) {
-        if (hitGroup.getQuery() == null) {
+    public static boolean isSortable(Hit hit, Sorting sorting) {
+        if (sorting == null) {
             return false;
         }
         if (hit instanceof FastHit) {
             var fhit = (FastHit) hit;
-            return fhit.hasSortData(hitGroup.getQuery().getRanking().getSorting());
+            return fhit.hasSortData(sorting);
         } else {
             return false;
         }

@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -86,15 +85,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         CompressionType compression = CompressionType.valueOf(protobufResponse.compression());
         byte[] payload = resourcePool.compressor().decompress(protobufResponse.compressedPayload(), compression,
                 protobufResponse.uncompressedSize());
-        var result = ProtobufSerialization.deserializeToSearchResult(payload, query, searcher);
-        result.hits().unorderedIterator().forEachRemaining(hit -> {
-            if(hit instanceof FastHit) {
-                FastHit fhit = (FastHit) hit;
-                fhit.setPartId(node.pathIndex());
-                fhit.setDistributionKey(node.key());
-            }
-            hit.setSource(getName());
-        });
+        var result = ProtobufSerialization.deserializeToSearchResult(payload, query, searcher, node.pathIndex(), node.key());
 
         return result;
     }
