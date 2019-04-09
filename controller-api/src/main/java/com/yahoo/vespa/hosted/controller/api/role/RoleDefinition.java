@@ -48,6 +48,7 @@ public enum RoleDefinition {
     applicationAdmin(applicationDeveloper,
                      applicationOperator,
                      Policy.applicationUpdate,
+                     Policy.applicationDelete,
                      Policy.applicationManager,
                      Policy.productionDeployment,
                      Policy.submission),
