@@ -31,7 +31,7 @@ Dictionary::Dictionary(const Schema & schema)
       _numFields(schema.getNumIndexFields())
 {
     for (uint32_t fieldId = 0; fieldId < _numFields; ++fieldId) {
-        auto fieldIndex = std::make_unique<MemoryFieldIndex>(schema, fieldId);
+        auto fieldIndex = std::make_unique<FieldIndex>(schema, fieldId);
         _fieldIndexes.push_back(std::move(fieldIndex));
     }
 }

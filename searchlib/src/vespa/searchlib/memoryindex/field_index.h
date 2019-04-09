@@ -17,10 +17,21 @@
 namespace search::memoryindex {
 
 class OrderedDocumentInserter;
-/*
+
+/**
  * Memory index for a single field.
+ *
+ * It consists of the following components:
+ *   - WordStore containing all unique words in this field (across all documents).
+ *   - B-Tree dictionary that maps from unique word (32-bit ref) -> posting list (32-bit ref).
+ *   - B-Tree posting lists that maps from document id (32-bit) -> features (32-bit ref).
+ *   - BTreeStore containing all the posting lists.
+ *   - FeatureStore containing information on where a (word, document) pair matched this field.
+ *     This information is unpacked and used during ranking.
+ *
+ * Elements in the three stores are accessed using 32-bit references / handles.
  */
-class MemoryFieldIndex {
+class FieldIndex {
 public:
     // Mapping from docid -> feature ref
     using PostingList = btree::BTreeRoot<uint32_t, uint32_t, search::btree::NoAggregated>;
@@ -97,8 +108,8 @@ public:
         return _featureStore.addFeatures(_fieldId, features).first;
     }
 
-    MemoryFieldIndex(const index::Schema &schema, uint32_t fieldId);
-    ~MemoryFieldIndex();
+    FieldIndex(const index::Schema &schema, uint32_t fieldId);
+    ~FieldIndex();
     PostingList::Iterator find(const vespalib::stringref word) const;
 
     PostingList::ConstIterator
@@ -186,80 +197,80 @@ public:
 namespace search::btree {
 
 extern template
-class BTreeNodeDataWrap<memoryindex::MemoryFieldIndex::WordKey,
+class BTreeNodeDataWrap<memoryindex::FieldIndex::WordKey,
                         BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeT<memoryindex::MemoryFieldIndex::WordKey,
+class BTreeNodeT<memoryindex::FieldIndex::WordKey,
                  BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 #if 0
 extern template
-class BTreeNodeT<memoryindex::MemoryFieldIndex::WordKey,
+class BTreeNodeT<memoryindex::FieldIndex::WordKey,
                  BTreeDefaultTraits::LEAF_SLOTS>;
 #endif
 
 extern template
-class BTreeNodeTT<memoryindex::MemoryFieldIndex::WordKey,
+class BTreeNodeTT<memoryindex::FieldIndex::WordKey,
                   datastore::EntryRef,
                   search::btree::NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 extern template
-class BTreeNodeTT<memoryindex::MemoryFieldIndex::WordKey,
-                  memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeNodeTT<memoryindex::FieldIndex::WordKey,
+                  memoryindex::FieldIndex::PostingListPtr,
                   search::btree::NoAggregated,
                   BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeInternalNode<memoryindex::MemoryFieldIndex::WordKey,
+class BTreeInternalNode<memoryindex::FieldIndex::WordKey,
                         search::btree::NoAggregated,
                         BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 extern template
-class BTreeLeafNode<memoryindex::MemoryFieldIndex::WordKey,
-                    memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeLeafNode<memoryindex::FieldIndex::WordKey,
+                    memoryindex::FieldIndex::PostingListPtr,
                     search::btree::NoAggregated,
                     BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeStore<memoryindex::MemoryFieldIndex::WordKey,
-                     memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeNodeStore<memoryindex::FieldIndex::WordKey,
+                     memoryindex::FieldIndex::PostingListPtr,
                      search::btree::NoAggregated,
                      BTreeDefaultTraits::INTERNAL_SLOTS,
                      BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeIterator<memoryindex::MemoryFieldIndex::WordKey,
-                    memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeIterator<memoryindex::FieldIndex::WordKey,
+                    memoryindex::FieldIndex::PostingListPtr,
                     search::btree::NoAggregated,
-                    const memoryindex::MemoryFieldIndex::KeyComp,
+                    const memoryindex::FieldIndex::KeyComp,
                     BTreeDefaultTraits>;
 
 extern template
-class BTree<memoryindex::MemoryFieldIndex::WordKey,
-            memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTree<memoryindex::FieldIndex::WordKey,
+            memoryindex::FieldIndex::PostingListPtr,
             search::btree::NoAggregated,
-            const memoryindex::MemoryFieldIndex::KeyComp,
+            const memoryindex::FieldIndex::KeyComp,
             BTreeDefaultTraits>;
 
 extern template
-class BTreeRoot<memoryindex::MemoryFieldIndex::WordKey,
-               memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeRoot<memoryindex::FieldIndex::WordKey,
+               memoryindex::FieldIndex::PostingListPtr,
                 search::btree::NoAggregated,
-               const memoryindex::MemoryFieldIndex::KeyComp,
+               const memoryindex::FieldIndex::KeyComp,
                BTreeDefaultTraits>;
 
 extern template
-class BTreeRootBase<memoryindex::MemoryFieldIndex::WordKey,
-                    memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeRootBase<memoryindex::FieldIndex::WordKey,
+                    memoryindex::FieldIndex::PostingListPtr,
                     search::btree::NoAggregated,
                     BTreeDefaultTraits::INTERNAL_SLOTS,
                     BTreeDefaultTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeAllocator<memoryindex::MemoryFieldIndex::WordKey,
-                       memoryindex::MemoryFieldIndex::PostingListPtr,
+class BTreeNodeAllocator<memoryindex::FieldIndex::WordKey,
+                       memoryindex::FieldIndex::PostingListPtr,
                          search::btree::NoAggregated,
                        BTreeDefaultTraits::INTERNAL_SLOTS,
                        BTreeDefaultTraits::LEAF_SLOTS>;

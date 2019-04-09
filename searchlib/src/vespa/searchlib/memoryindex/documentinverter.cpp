@@ -184,7 +184,7 @@ DocumentInverter::pushDocuments(Dictionary &dict,
     auto indexFieldIterator = dict.getFieldIndexes().begin();
     uint32_t fieldId = 0;
     for (auto &inverter : _inverters) {
-        MemoryFieldIndex &fieldIndex(**indexFieldIterator);
+        FieldIndex &fieldIndex(**indexFieldIterator);
         DocumentRemover &remover(fieldIndex.getDocumentRemover());
         OrderedDocumentInserter &inserter(fieldIndex.getInserter());
         _pushThreads.execute(fieldId,

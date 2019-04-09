@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "memoryfieldindex.h"
+#include "field_index.h"
 
 namespace search::memoryindex {
 
@@ -11,12 +11,12 @@ class FieldInverter;
 
 class Dictionary {
 public:
-    using PostingList = MemoryFieldIndex::PostingList;
+    using PostingList = FieldIndex::PostingList;
 
 private:
     using GenerationHandler = vespalib::GenerationHandler;
 
-    std::vector<std::unique_ptr<MemoryFieldIndex> > _fieldIndexes;
+    std::vector<std::unique_ptr<FieldIndex>> _fieldIndexes;
     uint32_t                _numFields;
 
 public:
@@ -46,11 +46,11 @@ public:
 
     MemoryUsage getMemoryUsage() const;
 
-    MemoryFieldIndex *getFieldIndex(uint32_t fieldId) const {
+    FieldIndex *getFieldIndex(uint32_t fieldId) const {
         return _fieldIndexes[fieldId].get();
     }
 
-    const std::vector<std::unique_ptr<MemoryFieldIndex> > &
+    const std::vector<std::unique_ptr<FieldIndex>> &
     getFieldIndexes() const { return _fieldIndexes; }
 
     uint32_t getNumFields() const { return _numFields; }

@@ -207,7 +207,7 @@ public:
         const vespalib::string termStr = queryeval::termAsString(n);
         LOG(debug, "searching for '%s' in '%s'",
             termStr.c_str(), _field.getName().c_str());
-        MemoryFieldIndex *fieldIndex = _dictionary.getFieldIndex(_fieldId);
+        FieldIndex *fieldIndex = _dictionary.getFieldIndex(_fieldId);
         GenerationHandler::Guard genGuard = fieldIndex->takeGenerationGuard();
         Dictionary::PostingList::ConstIterator pitr
             = fieldIndex->findFrozen(termStr);
