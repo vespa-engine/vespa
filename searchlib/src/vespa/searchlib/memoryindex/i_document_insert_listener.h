@@ -2,8 +2,7 @@
 #pragma once
 #include <vespa/searchlib/datastore/entryref.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
 /**
  * Interface used to track which {wordRef, fieldId} pairs that are
@@ -17,7 +16,5 @@ public:
     virtual void flush() = 0;
 };
 
-
-} // namespace memoryindex
-} // namespace search
+}
 

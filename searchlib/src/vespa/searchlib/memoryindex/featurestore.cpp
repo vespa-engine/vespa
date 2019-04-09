@@ -73,9 +73,9 @@ FeatureStore::moveFeatures(datastore::EntryRef ref, uint64_t bitLen)
 
 FeatureStore::FeatureStore(const Schema &schema)
     : _store(),
-      _f(NULL),
+      _f(nullptr),
       _fctx(_f),
-      _d(NULL),
+      _d(nullptr),
       _fieldsParams(),
       _schema(schema),
       _type(RefType::align(1u), MIN_BUFFER_ARRAYS,
@@ -88,7 +88,7 @@ FeatureStore::FeatureStore(const Schema &schema)
 
     _fieldsParams.resize(_schema.getNumIndexFields());
     SchemaUtil::IndexIterator it(_schema);
-    for(; it.isValid(); ++it) {
+    for (; it.isValid(); ++it) {
         _fieldsParams[it.getIndex()].setSchemaParams(_schema, it.getIndex());
     }
     _store.addType(&_type);

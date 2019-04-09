@@ -62,6 +62,5 @@ Dictionary::getMemoryUsage() const
 }
 
 
-} // namespace search::memoryindex
-
-} // namespace search
+}
+}

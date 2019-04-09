@@ -12,17 +12,16 @@ namespace search::memoryindex {
 class FeatureStore
 {
 public:
-    typedef datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2> > DataStoreType;
-    typedef DataStoreType::RefType RefType;
-    typedef bitcompression::EG2PosOccEncodeContext<true> EncodeContext;
-    typedef bitcompression::EG2PosOccDecodeContextCooked<true>
-    DecodeContextCooked;
-    typedef vespalib::GenerationHandler::generation_t generation_t;
+    using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
+    using RefType = DataStoreType::RefType;
+    using EncodeContext = bitcompression::EG2PosOccEncodeContext<true>;
+    using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
+    using generation_t = vespalib::GenerationHandler::generation_t;
 
 private:
-    typedef index::Schema Schema;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
+    using Schema = index::Schema;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 
     static const uint32_t DECODE_SAFETY = 16;
 

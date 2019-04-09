@@ -23,8 +23,8 @@ public:
     class Builder
     {
     public:
-        typedef std::unique_ptr<Builder> UP;
-        typedef vespalib::Array<datastore::EntryRef> WordRefVector;
+        using UP = std::unique_ptr<Builder>;
+        using WordRefVector = vespalib::Array<datastore::EntryRef>;
 
     private:
         uint32_t   _docId;
@@ -66,8 +66,8 @@ public:
     class Store
     {
     public:
-        typedef datastore::DataStoreT<datastore::EntryRefT<22> > DataStoreType;
-        typedef DataStoreType::RefType RefType;
+        using DataStoreType = datastore::DataStoreT<datastore::EntryRefT<22>>;
+        using RefType = DataStoreType::RefType;
 
     private:
         DataStoreType               _store;
@@ -82,7 +82,7 @@ public:
         MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     };
 
-    typedef vespalib::hash_map<uint32_t, datastore::EntryRef> DocumentWordsMap;
+    using DocumentWordsMap = vespalib::hash_map<uint32_t, datastore::EntryRef>;
 
 private:
     DocumentWordsMap _docs;

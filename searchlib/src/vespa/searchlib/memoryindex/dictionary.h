@@ -14,7 +14,7 @@ public:
     using PostingList = MemoryFieldIndex::PostingList;
 
 private:
-    typedef vespalib::GenerationHandler GenerationHandler;
+    using GenerationHandler = vespalib::GenerationHandler;
 
     std::vector<std::unique_ptr<MemoryFieldIndex> > _fieldIndexes;
     uint32_t                _numFields;

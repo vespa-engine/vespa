@@ -21,9 +21,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
 
-namespace search {
-
-namespace memoryindex {
+namespace search::memoryindex {
 
 using document::AlternateSpanList;
 using document::Annotation;
@@ -112,11 +110,12 @@ FieldInverter::processAnnotations(const StringFieldValue &value)
     _terms.clear();
     StringFieldValue::SpanTrees spanTrees = value.getSpanTrees();
     const SpanTree *tree = StringFieldValue::findTree(spanTrees, linguistics::SPANTREE_NAME);
-    if (tree == NULL) {
+    if (tree == nullptr) {
         /* This is wrong unless field is exact match */
         const vespalib::string &text = value.getValue();
-        if (text.empty())
+        if (text.empty()) {
             return;
+        }
         uint32_t wordRef = saveWord(text);
         if (wordRef != 0u) {
             add(wordRef);
@@ -251,8 +250,9 @@ FieldInverter::saveWord(const vespalib::stringref word)
     const size_t wordsSize = _words.size();
     // assert((wordsSize & 3) == 0); // Check alignment
     size_t len = word.size();
-    if (len == 0)
+    if (len == 0) {
         return 0u;
+    }
 
     const size_t fullyPaddedSize = (wordsSize + 4 + len + 1 + 3) & ~3;
     _words.reserve(vespalib::roundUp2inN(fullyPaddedSize));
@@ -275,7 +275,7 @@ uint32_t
 FieldInverter::saveWord(const document::FieldValue &fv)
 {
     assert(fv.getClass().id() == StringFieldValue::classId);
-    typedef std::pair<const char*, size_t> RawRef;
+    using RawRef = std::pair<const char*, size_t>;
     RawRef sRef = fv.getAsRaw();
     return saveWord(vespalib::stringref(sRef.first, sRef.second));
 }
@@ -307,8 +307,7 @@ FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field)
     for (;el < ele; ++el) {
         const FieldValue &elfv = field[el];
         assert(elfv.getClass().id() == StringFieldValue::classId);
-        const StringFieldValue &element =
-            static_cast<const StringFieldValue &>(elfv);
+        const auto &element = static_cast<const StringFieldValue &>(elfv);
         startElement(1);
         processAnnotations(element);
         endElement();
@@ -324,7 +323,7 @@ FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue 
         const FieldValue &xweight = *el.second;
         assert(key.getClass().id() == StringFieldValue::classId);
         assert(xweight.getClass().id() == IntFieldValue::classId);
-        const StringFieldValue &element = static_cast<const StringFieldValue &>(key);
+        const auto &element = static_cast<const StringFieldValue &>(key);
         int32_t weight = xweight.getAsInt();
         startElement(weight);
         processAnnotations(element);
@@ -374,8 +373,9 @@ FieldInverter::moveNotAbortedDocs(uint32_t &dstIdx,
 {
     assert(nextTrimIdx >= srcIdx);
     uint32_t size = nextTrimIdx - srcIdx;
-    if (size == 0)
+    if (size == 0) {
         return;
+    }
     assert(dstIdx < srcIdx);
     assert(srcIdx < _positions.size());
     assert(srcIdx + size <= _positions.size());
@@ -440,7 +440,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
         break;
     case CollectionType::WEIGHTEDSET:
         if (cInfo.id() == WeightedSetFieldValue::classId) {
-            const WeightedSetFieldValue &wset = static_cast<const WeightedSetFieldValue &>(val);
+            const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (wset.getNestedType() == *DataType::STRING) {
                 processNormalDocWeightedSetTextField(wset);
             } else {
@@ -452,7 +452,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
         break;
     case CollectionType::ARRAY:
         if (cInfo.id() == ArrayFieldValue::classId) {
-            const ArrayFieldValue &arr = static_cast<const ArrayFieldValue&>(val);
+            const auto &arr = static_cast<const ArrayFieldValue&>(val);
             if (arr.getNestedType() == *DataType::STRING) {
                 processNormalDocArrayTextField(arr);
             } else {
@@ -569,7 +569,5 @@ FieldInverter::pushDocuments(IOrderedDocumentInserter &inserter)
 }
 
 
-} // namespace memoryindex
-
-} // namespace search
+}
 

@@ -4,11 +4,10 @@
 #include "wordstore.h"
 #include <vespa/searchlib/common/sort.h>
 
-namespace search {
-namespace memoryindex {
+namespace search::memoryindex {
 
-typedef CompactDocumentWordsStore::Builder Builder;
-typedef CompactDocumentWordsStore::Iterator Iterator;
+using Builder = CompactDocumentWordsStore::Builder;
+using Iterator = CompactDocumentWordsStore::Iterator;
 
 DocumentRemover::DocumentRemover(const WordStore &wordStore)
     : _store(),
@@ -49,11 +48,11 @@ DocumentRemover::flush()
     }
     ShiftBasedRadixSorter<WordFieldDocTuple, WordFieldDocTuple::Radix, std::less<WordFieldDocTuple>, 24, true>::
        radix_sort(WordFieldDocTuple::Radix(), std::less<WordFieldDocTuple>(), &_wordFieldDocTuples[0], _wordFieldDocTuples.size(), 16);
-    Builder::UP builder(new Builder(_wordFieldDocTuples[0]._docId));
+    auto builder = std::make_unique<Builder>(_wordFieldDocTuples[0]._docId);
     for (const auto &tuple : _wordFieldDocTuples) {
         if (builder->docId() != tuple._docId) {
             _store.insert(*builder);
-            builder.reset(new Builder(tuple._docId));
+            builder = std::make_unique<Builder>(tuple._docId);
         }
         builder->insert(tuple._wordRef);
     }
@@ -62,5 +61,4 @@ DocumentRemover::flush()
 }
 
 
-} // namespace memoryindex
-} // namespace search
+}

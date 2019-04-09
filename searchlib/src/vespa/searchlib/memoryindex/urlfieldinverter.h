@@ -5,11 +5,7 @@
 #include <vespa/searchcommon/common/datatype.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 
-namespace search
-{
-
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 class FieldInverter;
 
@@ -71,7 +67,4 @@ public:
     }
 };
 
-
-} // namespace memoryindex
-
-} // namespace search
+}
