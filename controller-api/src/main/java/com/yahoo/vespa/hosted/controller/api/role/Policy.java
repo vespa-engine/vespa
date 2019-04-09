@@ -55,7 +55,7 @@ public enum Policy {
 
     /** Read access to tenant information and settings. */
     tenantRead(Privilege.grant(Action.read)
-                        .on(PathGroup.tenant, PathGroup.tenantInfo)
+                        .on(PathGroup.tenant, PathGroup.tenantInfo, PathGroup.tenantUsers, PathGroup.applicationUsers)
                         .in(SystemName.all())),
 
     /** Access to create application under a certain tenant. */
