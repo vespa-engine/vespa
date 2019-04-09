@@ -154,14 +154,15 @@ public class ProtobufSerialization {
         return convertFromResult(searchResult).toByteArray();
     }
 
-    public static Result deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher)
+    public static Result deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher, int partId, int distKey)
             throws InvalidProtocolBufferException {
         var protobuf = SearchProtocol.SearchReply.parseFrom(payload);
-        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query));
+        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey, searcher.getName());
         return result;
     }
 
-    private static Result convertToResult(Query query, SearchProtocol.SearchReply protobuf, DocumentDatabase documentDatabase) {
+    private static Result convertToResult(Query query, SearchProtocol.SearchReply protobuf, DocumentDatabase documentDatabase, int partId,
+            int distKey, String source) {
         var result = new Result(query);
 
         result.setTotalHitCount(protobuf.getTotalHitCount());
@@ -188,11 +189,19 @@ public class ProtobufSerialization {
 
             hit.setRelevance(new Relevance(replyHit.getRelevance()));
             hit.setGlobalId(new GlobalId(replyHit.getGlobalId().toByteArray()));
-            hit.setSortData(replyHit.getSortData().toByteArray(), sorting);
+            if (!replyHit.getSortData().isEmpty()) {
+                hit.setSortData(replyHit.getSortData().toByteArray(), sorting);
+            }
             hit.setFillable();
             hit.setCached(false);
+            hit.setPartId(partId);
+            hit.setDistributionKey(distKey);
+            hit.setSource(source);
 
             result.hits().add(hit);
+        }
+        if(sorting != null) {
+            result.hits().setSorted(true);
         }
 
         return result;
