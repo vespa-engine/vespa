@@ -95,7 +95,7 @@ DocumentInverter::addFieldPath(const document::DocumentType &docType,
             _schema.getIndexField(fieldId).getName().c_str(),
             docType.getName().c_str());
     } else {
-        fp.reset(new Field(docType.getField(_schema.getIndexField(fieldId).getName())));
+        fp = std::make_unique<Field>(docType.getField(_schema.getIndexField(fieldId).getName()));
     }
     _indexedFieldPaths[fieldId] = std::move(fp);
 }

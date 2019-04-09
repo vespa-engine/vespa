@@ -48,11 +48,11 @@ DocumentRemover::flush()
     }
     ShiftBasedRadixSorter<WordFieldDocTuple, WordFieldDocTuple::Radix, std::less<WordFieldDocTuple>, 24, true>::
        radix_sort(WordFieldDocTuple::Radix(), std::less<WordFieldDocTuple>(), &_wordFieldDocTuples[0], _wordFieldDocTuples.size(), 16);
-    Builder::UP builder(new Builder(_wordFieldDocTuples[0]._docId));
+    auto builder = std::make_unique<Builder>(_wordFieldDocTuples[0]._docId);
     for (const auto &tuple : _wordFieldDocTuples) {
         if (builder->docId() != tuple._docId) {
             _store.insert(*builder);
-            builder.reset(new Builder(tuple._docId));
+            builder = std::make_unique<Builder>(tuple._docId);
         }
         builder->insert(tuple._wordRef);
     }

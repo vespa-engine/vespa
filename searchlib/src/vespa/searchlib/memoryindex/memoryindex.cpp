@@ -168,11 +168,11 @@ public:
 
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
-        SearchIterator::UP search(new PostingIterator(_pitr, _featureStore, _fieldId, tfmda));
+        auto search = std::make_unique<PostingIterator>(_pitr, _featureStore, _fieldId, tfmda);
         if (_useBitVector) {
             LOG(debug, "Return BooleanMatchIteratorWrapper: fieldId(%u), docCount(%zu)",
                 _fieldId, _pitr.size());
-            return SearchIterator::UP(new BooleanMatchIteratorWrapper(std::move(search), tfmda));
+            return std::make_unique<BooleanMatchIteratorWrapper>(std::move(search), tfmda);
         }
         LOG(debug, "Return PostingIterator: fieldId(%u), docCount(%zu)",
             _fieldId, _pitr.size());
@@ -212,9 +212,9 @@ public:
         Dictionary::PostingList::ConstIterator pitr
             = fieldIndex->findFrozen(termStr);
         bool useBitVector = _field.isFilter();
-        setResult(make_UP(new MemTermBlueprint(std::move(genGuard), pitr,
-                                               fieldIndex->getFeatureStore(),
-                                              _field, _fieldId, useBitVector)));
+        setResult(std::make_unique<MemTermBlueprint>(std::move(genGuard), pitr,
+                                                     fieldIndex->getFeatureStore(),
+                                                     _field, _fieldId, useBitVector));
     }
 
     void visit(LocationTerm &n)  override { visitTerm(n); }
@@ -241,7 +241,7 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
 {
     uint32_t fieldId = _schema.getIndexFieldId(field.getName());
     if (fieldId == Schema::UNKNOWN_FIELD_ID || _hiddenFields[fieldId]) {
-        return Blueprint::UP(new EmptyBlueprint(field));
+        return std::make_unique<EmptyBlueprint>(field);
     }
     CreateBlueprintVisitor visitor(*this, requestContext, field, fieldId, *_dictionary);
     const_cast<Node &>(term).accept(visitor);
