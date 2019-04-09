@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
-import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import org.junit.Before;
@@ -51,7 +50,7 @@ public class AthenzRoleFilterTest {
     public void setup() {
         tester = new ControllerTester();
         filter = new AthenzRoleFilter(new CorsFilterConfig.Builder().build(),
-                                      new AthenzFacade(new AthenzClientFactoryMock(tester.athenzDb())),
+                                      new AthenzClientFactoryMock(tester.athenzDb()),
                                       tester.controller());
 
         tester.athenzDb().hostedOperators.add(HOSTED_OPERATOR.getIdentity());
