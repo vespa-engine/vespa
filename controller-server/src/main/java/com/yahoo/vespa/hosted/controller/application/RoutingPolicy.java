@@ -6,14 +6,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Represents the DNS routing policy for a load balancer.
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
  * @author mortent
  * @author mpolden
  */
-public class RoutingPolicy {
+public class  RoutingPolicy {
 
     private final ApplicationId owner;
     private final ZoneId zone;
@@ -41,9 +40,9 @@ public class RoutingPolicy {
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
     }
 
-    public RoutingPolicy(ApplicationId owner, ZoneId zone, ClusterSpec.Id cluster, HostName canonicalName,
+    public RoutingPolicy(ApplicationId owner, ZoneId zone, ClusterSpec.Id cluster, SystemName system, HostName canonicalName,
                          Optional<String> dnsZone, Set<RotationName> rotations) {
-        this(owner, zone, HostName.from(aliasOf(cluster, owner, zone)), canonicalName, dnsZone, rotations);
+        this(owner, zone, HostName.from(endpointOf(cluster, owner, zone, system).dnsName()), canonicalName, dnsZone, rotations);
     }
 
     /** The application owning this */
@@ -76,6 +75,11 @@ public class RoutingPolicy {
         return rotations;
     }
 
+    /** Endpoints for this routing policy */
+    public EndpointList endpointsIn(SystemName system) {
+        return EndpointList.of(rotations.stream().map(rotation -> endpointOf(owner, rotation, system)));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -98,21 +102,14 @@ public class RoutingPolicy {
                              zone.value());
     }
 
-    /** Returns the alias to use for the given application cluster in zone */
-    private static String aliasOf(ClusterSpec.Id cluster, ApplicationId application, ZoneId zone) {
-        List<String> parts = List.of(ignorePartIfDefault(cluster.value()),
-                                     ignorePartIfDefault(application.instance().value()),
-                                     application.application().value(),
-                                     application.tenant().value() +
-                                     "." + zone.value() + "." + "vespa.oath.cloud"
-        );
-        return parts.stream()
-                    .filter(Predicate.not(String::isBlank))
-                    .collect(Collectors.joining("--"));
+    /** Returns the endpoint of given rotation */
+    public static Endpoint endpointOf(ApplicationId application, RotationName rotation, SystemName system) {
+        return Endpoint.of(application).target(rotation).on(Port.tls()).directRouting().in(system);
     }
 
-    private static String ignorePartIfDefault(String s) {
-        return "default".equalsIgnoreCase(s) ? "" : s;
+    /** Returns the endpoint of given clsuter */
+    public static Endpoint endpointOf(ClusterSpec.Id cluster, ApplicationId application, ZoneId zone, SystemName system) {
+        return Endpoint.of(application).target(cluster, zone).on(Port.tls()).directRouting().in(system);
     }
 
 }

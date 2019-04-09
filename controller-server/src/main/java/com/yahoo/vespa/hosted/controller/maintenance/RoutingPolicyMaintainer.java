@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.RoutingId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -91,7 +91,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
             // Create DNS record for each routing ID
             for (Map.Entry<RoutingId, List<RoutingPolicy>> route : routingTable.entrySet()) {
-                GlobalDnsName dnsName = dnsName(route.getKey());
+                Endpoint endpoint = RoutingPolicy.endpointOf(route.getKey().application(), route.getKey().rotation(),
+                                                             controller().system());
                 Set<AliasTarget> targets = route.getValue()
                                                 .stream()
                                                 .filter(policy -> policy.dnsZone().isPresent())
@@ -100,10 +101,10 @@ public class RoutingPolicyMaintainer extends Maintainer {
                                                                                policy.zone()))
                                                 .collect(Collectors.toSet());
                 try {
-                    nameService.createAlias(RecordName.from(dnsName.oathDnsName()), targets);
+                    nameService.createAlias(RecordName.from(endpoint.dnsName()), targets);
                 } catch (Exception e) {
                     log.log(LogLevel.WARNING, "Failed to create or update DNS record for global rotation " +
-                                              dnsName.oathDnsName() + ". Retrying in " + maintenanceInterval(), e);
+                                              endpoint.dnsName() + ". Retrying in " + maintenanceInterval(), e);
                 }
             }
         }
@@ -136,7 +137,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
     /** Register DNS alias for given load balancer */
     private RoutingPolicy registerCname(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
-        RoutingPolicy routingPolicy = new RoutingPolicy(application, zone, loadBalancer.cluster(),
+        RoutingPolicy routingPolicy = new RoutingPolicy(application, zone,
+                                                        loadBalancer.cluster(), controller().system(),
                                                         loadBalancer.hostname(), loadBalancer.dnsZone(),
                                                         loadBalancer.rotations());
         RecordName name = RecordName.from(routingPolicy.alias().value());
@@ -186,21 +188,16 @@ public class RoutingPolicyMaintainer extends Maintainer {
             Set<RoutingId> activeRoutingIds = routingIdsFrom(loadBalancers);
             removalCandidates.removeAll(activeRoutingIds);
             for (RoutingId id : removalCandidates) {
-                GlobalDnsName dnsName = dnsName(id);
+                Endpoint endpoint = RoutingPolicy.endpointOf(id.application(), id.rotation(), controller().system());
                 try {
-                    List<Record> records = nameService.findRecords(Record.Type.ALIAS, RecordName.from(dnsName.oathDnsName()));
+                    List<Record> records = nameService.findRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()));
                     nameService.removeRecords(records);
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to remove all ALIAS records with name '" + dnsName.oathDnsName() +
+                    log.log(LogLevel.WARNING, "Failed to remove all ALIAS records with name '" + endpoint.dnsName() +
                                               "'. Retrying in " + maintenanceInterval());
                 }
             }
         }
-    }
-
-    /** Create a global DNS name for given routing ID */
-    private GlobalDnsName dnsName(RoutingId routingId) {
-        return new GlobalDnsName(routingId.application(), controller().system(), routingId.rotation());
     }
 
     /** Compute routing IDs from given load balancers */

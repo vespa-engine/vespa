@@ -6,11 +6,12 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -56,15 +57,22 @@ public class RoutingPolicyMaintainerTest {
     public void maintains_global_routing_policies() {
         int clustersPerZone = 2;
         tester.deployCompletely(app1, applicationPackage);
-        Map<Integer, Set<RotationName>> rotations = Map.of(0, Set.of(RotationName.from("r0")));
+        // Cluster is member of 2 global rotations
+        Map<Integer, Set<RotationName>> rotations = Map.of(0, Set.of(RotationName.from("r0"), RotationName.from("r1")));
         provisionLoadBalancers(app1, clustersPerZone, rotations);
 
-        // Creates alias record for cluster0
+        // Creates alias records for cluster0
         maintainer.maintain();
-        Supplier<List<Record>> records1 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0--app1--tenant1.global.vespa.oath.cloud"));
+        Supplier<List<Record>> records1 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app1.tenant1.global.vespa.oath.cloud"));
+        Supplier<List<Record>> records2 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r1.app1.tenant1.global.vespa.oath.cloud"));
         assertEquals(2, records1.get().size());
+        assertEquals(records1.get().size(), records2.get().size());
         assertEquals("lb-0--tenant1:app1:default--prod.us-central-1.", records1.get().get(0).data().asString());
         assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records1.get().get(1).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1.", records2.get().get(0).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records2.get().get(1).data().asString());
+        assertEquals(2, tester.controller().applications().routingPolicies(app1.id()).iterator().next()
+                              .endpointsIn(SystemName.main).asList().size());
 
         // Applications gains a new deployment
         ApplicationPackage updatedApplicationPackage = new ApplicationPackageBuilder()
@@ -85,13 +93,13 @@ public class RoutingPolicyMaintainerTest {
         assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records1.get().get(2).data().asString());
 
         // Another application is deployed
-        Supplier<List<Record>> records2 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0--app2--tenant1.global.vespa.oath.cloud"));
+        Supplier<List<Record>> records3 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app2.tenant1.global.vespa.oath.cloud"));
         tester.deployCompletely(app2, applicationPackage);
         provisionLoadBalancers(app2, 1, Map.of(0, Set.of(RotationName.from("r0"))));
         maintainer.maintain();
-        assertEquals(2, records2.get().size());
-        assertEquals("lb-0--tenant1:app2:default--prod.us-central-1.", records2.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app2:default--prod.us-west-1.", records2.get().get(1).data().asString());
+        assertEquals(2, records3.get().size());
+        assertEquals("lb-0--tenant1:app2:default--prod.us-central-1.", records3.get().get(0).data().asString());
+        assertEquals("lb-0--tenant1:app2:default--prod.us-west-1.", records3.get().get(1).data().asString());
 
         // All rotations for app1 are removed
         provisionLoadBalancers(app1, clustersPerZone, Collections.emptyMap());
@@ -101,7 +109,7 @@ public class RoutingPolicyMaintainerTest {
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
                    policies.stream().allMatch(policy -> policy.rotations().isEmpty()));
-        assertEquals("Rotations for " + app2 + " are not removed", 2, records2.get().size());
+        assertEquals("Rotations for " + app2 + " are not removed", 2, records3.get().size());
     }
 
     @Test
@@ -114,10 +122,10 @@ public class RoutingPolicyMaintainerTest {
         // Creates records and policies for all clusters in all zones
         maintainer.maintain();
         Set<String> expectedRecords = Set.of(
-                "c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c0--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-central-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
         assertEquals(4, policies(app1).size());
@@ -131,12 +139,12 @@ public class RoutingPolicyMaintainerTest {
         provisionLoadBalancers(app1, clustersPerZone + 1);
         maintainer.maintain();
         expectedRecords = Set.of(
-                "c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c2--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c0--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c2--app1--tenant1.prod.us-central-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
         assertEquals(6, policies(app1).size());
@@ -146,16 +154,16 @@ public class RoutingPolicyMaintainerTest {
         provisionLoadBalancers(app2, clustersPerZone);
         maintainer.maintain();
         expectedRecords = Set.of(
-                "c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c2--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c0--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c2--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c0--app2--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app2--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c0--app2--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app2--tenant1.prod.us-west-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app2.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
         assertEquals(4, policies(app2).size());
@@ -164,14 +172,14 @@ public class RoutingPolicyMaintainerTest {
         provisionLoadBalancers(app1, clustersPerZone);
         maintainer.maintain();
         expectedRecords = Set.of(
-                "c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c0--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c0--app2--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app2--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c0--app2--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app2--tenant1.prod.us-west-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app2.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
 
@@ -183,10 +191,10 @@ public class RoutingPolicyMaintainerTest {
               });
         maintainer.maintain();
         expectedRecords = Set.of(
-                "c0--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-west-1.vespa.oath.cloud",
-                "c0--app1--tenant1.prod.us-central-1.vespa.oath.cloud",
-                "c1--app1--tenant1.prod.us-central-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
     }
