@@ -46,7 +46,6 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     @Override
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         try {
-            Principal principal = request.getUserPrincipal();
             Optional<SecurityContext> securityContext = Optional.ofNullable((SecurityContext)request.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
             if (securityContext.isEmpty())
