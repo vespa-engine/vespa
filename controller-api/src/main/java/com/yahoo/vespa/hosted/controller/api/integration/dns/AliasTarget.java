@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Objects;
 
