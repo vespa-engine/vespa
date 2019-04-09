@@ -15,6 +15,7 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
@@ -46,9 +47,9 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
     private final Roles roles;
 
     @Inject
-    public AthenzRoleFilter(CorsFilterConfig config, AthenzFacade athenz, Controller controller) {
+    public AthenzRoleFilter(CorsFilterConfig config, AthenzClientFactory athenzClientFactory, Controller controller) {
         super(Set.copyOf(config.allowedUrls()));
-        this.athenz = athenz;
+        this.athenz = new AthenzFacade(athenzClientFactory);
         this.tenants = controller.tenants();
         this.roles = new Roles(controller.system());
     }
