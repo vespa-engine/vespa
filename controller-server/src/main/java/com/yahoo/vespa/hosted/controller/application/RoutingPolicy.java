@@ -20,7 +20,7 @@ import java.util.Set;
  * @author mortent
  * @author mpolden
  */
-public class  RoutingPolicy {
+public class RoutingPolicy {
 
     private final ApplicationId owner;
     private final ZoneId zone;
@@ -107,7 +107,7 @@ public class  RoutingPolicy {
         return Endpoint.of(application).target(rotation).on(Port.tls()).directRouting().in(system);
     }
 
-    /** Returns the endpoint of given clsuter */
+    /** Returns the endpoint of given cluster */
     public static Endpoint endpointOf(ClusterSpec.Id cluster, ApplicationId application, ZoneId zone, SystemName system) {
         return Endpoint.of(application).target(cluster, zone).on(Port.tls()).directRouting().in(system);
     }

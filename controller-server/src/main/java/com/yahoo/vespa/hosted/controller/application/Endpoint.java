@@ -59,7 +59,10 @@ public class Endpoint {
         return legacy;
     }
 
-    /** Returns whether this endpoint supports direct routing */
+    /**
+     * Returns whether this endpoint supports direct routing. Direct routing means that this endpoint is served by an
+     * exclusive load balancer instead of a shared routing layer.
+     */
     public boolean directRouting() {
         return directRouting;
     }
@@ -212,12 +215,11 @@ public class Endpoint {
         private boolean legacy = false;
         private boolean directRouting = false;
 
-
         private EndpointBuilder(ApplicationId application) {
             this.application = application;
         }
 
-        /** Sets the cluster and zone target of this endpoint */
+        /** Sets the cluster and zone target of this  */
         public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
             if (rotation != null) {
                 throw new IllegalArgumentException("Cannot set both cluster and rotation target");
@@ -227,7 +229,7 @@ public class Endpoint {
             return this;
         }
 
-        /** Sets the rotation target of this endpoint */
+        /** Sets the rotation target of this */
         public EndpointBuilder target(RotationName rotation) {
             if (cluster != null && zone != null) {
                 throw new IllegalArgumentException("Cannot set both cluster and rotation target");
@@ -236,28 +238,25 @@ public class Endpoint {
             return this;
         }
 
-        /** Sets the port of this endpoint */
+        /** Sets the port of this  */
         public EndpointBuilder on(Port port) {
             this.port = port;
             return this;
         }
 
-        /** Sets this endpoint as a legacy endpoint */
+        /** Marks this as a legacy endpoint */
         public EndpointBuilder legacy() {
             this.legacy = true;
             return this;
         }
 
-        /**
-         * Sets direct routing support for this endpoint. Direct routing means that this endpoint is served by an
-         * exclusive load balancer instead of a shared routing layer.
-         */
+        /** Enables direct routing support for this */
         public EndpointBuilder directRouting() {
             this.directRouting = true;
             return this;
         }
 
-        /** The system where this endpoint is available */
+        /** Sets the system that owns this */
         public Endpoint in(SystemName system) {
             String name;
             if (cluster != null && zone != null) {
