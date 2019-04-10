@@ -25,7 +25,6 @@ import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
-import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import com.yahoo.yolean.concurrent.ResourceFactory;
