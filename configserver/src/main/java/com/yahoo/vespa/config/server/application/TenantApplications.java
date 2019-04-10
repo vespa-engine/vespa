@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  * of whatever session may be activated next, if any, and /lock is used for synchronizing writes to all these paths.
  *
  * @author Ulf Lilleengen
+ * @author jonmv
  */
 public class TenantApplications {
 
@@ -73,6 +74,7 @@ public class TenantApplications {
     public List<ApplicationId> activeApplications() {
         return curator.getChildren(applicationsPath).stream()
                       .filter(this::isValid)
+                      .sorted()
                       .map(ApplicationId::fromSerializedForm)
                       .filter(id -> activeSessionOf(id).isPresent())
                       .collect(Collectors.toUnmodifiableList());
@@ -109,11 +111,14 @@ public class TenantApplications {
      * @param sessionId Id of the session containing the application package for this id.
      */
     public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
-        if (curator.exists(applicationPath(applicationId))) {
-            return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
-        } else {
-            return new CuratorTransaction(curator).add(CuratorOperations.create(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
-        }
+        return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+    }
+
+    /**
+     * Creates a node for the given application, marking its existence.
+     */
+    public void createApplication(ApplicationId id) {
+        curator.create(applicationPath(id));
     }
 
     /**
