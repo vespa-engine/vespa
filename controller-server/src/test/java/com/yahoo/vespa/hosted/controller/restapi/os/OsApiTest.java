@@ -149,7 +149,7 @@ public class OsApiTest extends ControllerContainerTest {
                             node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
                             node.wantedVersion(), node.wantedOsVersion(), node.wantedOsVersion(), node.serviceState(),
                             node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
-                            node.wantedRebootGeneration()));
+                            node.wantedRebootGeneration(), node.canonicalFlavor(), node.clusterId(), node.clusterType()));
                 }
             }
         }
