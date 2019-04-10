@@ -2,7 +2,6 @@
 package com.yahoo.documentapi.messagebus.loadtypes;
 
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import java.security.MessageDigest;
