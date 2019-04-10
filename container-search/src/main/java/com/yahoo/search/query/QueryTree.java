@@ -108,9 +108,12 @@ public class QueryTree extends CompositeItem {
 
     // -------------- Facade
 
-    /** Modifies this query to become the current query AND the given item */
-    // TODO: Make sure this is complete, unit test and make it public
-    private void and(Item item) {
+    /**
+     * Modifies this query to become the current query AND the given item.
+     *
+     * @return the resulting root item in this
+     */
+    public Item and(Item item) {
         if (isEmpty()) {
             setRoot(item);
         }
@@ -126,12 +129,16 @@ public class QueryTree extends CompositeItem {
             notItem.addPositiveItem(getRoot());
             setRoot(notItem);
         }
+        else if (getRoot() instanceof AndItem) {
+            ((AndItem) getRoot()).addItem(item);
+        }
         else {
             AndItem andItem = new AndItem();
             andItem.addItem(getRoot());
             andItem.addItem(item);
             setRoot(andItem);
         }
+        return getRoot();
     }
 
     /** Returns a flattened list of all positive query terms under the given item */

@@ -136,7 +136,7 @@ public final class FieldMatchMetricsComputer {
 
         // Explore segmentations
         while (segmentStartPoint!=null) {
-            metrics =segmentStartPoint.getMetrics().clone();
+            metrics = segmentStartPoint.getMetrics().clone();
             if (collectTrace)
                 metrics.trace().add("\nLooking for segment from " + segmentStartPoint + "..." + "\n");
             boolean found=findAlternativeSegmentFrom(segmentStartPoint);
@@ -148,7 +148,7 @@ public final class FieldMatchMetricsComputer {
             segmentStartPoint=findOpenSegment(segmentStartPoint.getI());
         }
 
-        metrics=findLastStartPoint().getMetrics(); // these metrics are the final set
+        metrics = findLastStartPoint().getMetrics(); // these metrics are the final set
         setOccurrenceCounts(metrics);
         metrics.onComplete();
         metrics.setComplete(true);

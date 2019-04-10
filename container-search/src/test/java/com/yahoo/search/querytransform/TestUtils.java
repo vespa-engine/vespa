@@ -6,7 +6,9 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.search.Result;
 
 public class TestUtils {
+
     public static Item getQueryTreeRoot(Result result) {
         return result.getQuery().getModel().getQueryTree().getRoot();
     }
+
 }
