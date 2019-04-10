@@ -96,48 +96,6 @@ TEST("require that sparse tensors can be mapped to dense type") {
                    .add({{"x",1},{"y",2}}, 0)));
 }
 
-TEST("require that sparse tensors can be mapped to abstract dense type") {
-    TEST_DO(verify(TensorSpec("tensor(x{},y{})")
-                   .add({{"x","0"},{"y","0"}}, 1)
-                   .add({{"x","1"},{"y","0"}}, 3)
-                   .add({{"x","0"},{"y","1"}}, 5)
-                   .add({{"x","10"},{"y","1"}}, 7),
-                   "tensor(x[2],y[])",
-                   TensorSpec("tensor(x[2],y[2])")
-                   .add({{"x",0},{"y",0}}, 1)
-                   .add({{"x",0},{"y",1}}, 5)
-                   .add({{"x",1},{"y",0}}, 3)
-                   .add({{"x",1},{"y",1}}, 0)));
-
-    TEST_DO(verify(TensorSpec("tensor(x{},y{})")
-                   .add({{"x","0"},{"y","0"}}, 1)
-                   .add({{"x","1"},{"y","0"}}, 3)
-                   .add({{"x","0"},{"y","1"}}, 5)
-                   .add({{"x","2"},{"y","0"}}, 7),
-                   "tensor(x[],y[])",
-                   TensorSpec("tensor(x[3],y[2])")
-                   .add({{"x",0},{"y",0}}, 1)
-                   .add({{"x",0},{"y",1}}, 5)
-                   .add({{"x",1},{"y",0}}, 3)
-                   .add({{"x",1},{"y",1}}, 0)
-                   .add({{"x",2},{"y",0}}, 7)
-                   .add({{"x",2},{"y",1}}, 0)));
-
-    TEST_DO(verify(TensorSpec("tensor(x{},y{})")
-                   .add({{"x","0"},{"y","0"}}, 1)
-                   .add({{"x","1"},{"y","0"}}, 3)
-                   .add({{"x","0"},{"y","1"}}, 5)
-                   .add({{"x","10"},{"y","3"}}, 7),
-                   "tensor(x[],y[3])",
-                   TensorSpec("tensor(x[2],y[3])")
-                   .add({{"x",0},{"y",0}}, 1)
-                   .add({{"x",0},{"y",1}}, 5)
-                   .add({{"x",0},{"y",2}}, 0)
-                   .add({{"x",1},{"y",0}}, 3)
-                   .add({{"x",1},{"y",1}}, 0)
-                   .add({{"x",1},{"y",2}}, 0)));
-}
-
 TEST("require that dense tensors can be mapped to sparse type") {
     TEST_DO(verify(TensorSpec("tensor(x[2],y[2])")
                    .add({{"x",0},{"y",0}}, 1)
@@ -168,7 +126,7 @@ TEST("require that mixed tensors can be mapped to dense type") {
                    .add({{"x",0},{"y","1"}}, 3)
                    .add({{"x",1},{"y","0"}}, 5)
                    .add({{"x",1},{"y","1"}}, 7),
-                   "tensor(y[])",
+                   "tensor(y[2])",
                    TensorSpec("tensor(y[2])")
                    .add({{"y",0}}, 6)
                    .add({{"y",1}}, 10)));
@@ -180,7 +138,7 @@ TEST("require that mixed tensors can be mapped to mixed type") {
                    .add({{"x",0},{"y","1"}}, 3)
                    .add({{"x",1},{"y","0"}}, 5)
                    .add({{"x",1},{"y","1"}}, 7),
-                   "tensor(x{},y[])",
+                   "tensor(x{},y[2])",
                    TensorSpec("tensor(x{},y[2])")
                    .add({{"x","0"},{"y",0}}, 1)
                    .add({{"x","0"},{"y",1}}, 3)
@@ -194,7 +152,7 @@ TEST("require that dense tensors can be mapped to mixed type") {
                    .add({{"x",0},{"y",1}}, 3)
                    .add({{"x",1},{"y",0}}, 5)
                    .add({{"x",1},{"y",1}}, 7),
-                   "tensor(x{},y[])",
+                   "tensor(x{},y[2])",
                    TensorSpec("tensor(x{},y[2])")
                    .add({{"x","0"},{"y",0}}, 1)
                    .add({{"x","0"},{"y",1}}, 3)
@@ -208,7 +166,7 @@ TEST("require that sparse tensors can be mapped to mixed type") {
                    .add({{"x","0"},{"y","1"}}, 3)
                    .add({{"x","1"},{"y","0"}}, 5)
                    .add({{"x","1"},{"y","1"}}, 7),
-                   "tensor(x[],y{})",
+                   "tensor(x[2],y{})",
                    TensorSpec("tensor(x[2],y{})")
                    .add({{"x",0},{"y","0"}}, 1)
                    .add({{"x",0},{"y","1"}}, 3)
@@ -225,14 +183,14 @@ TEST("require that missing dimensions are added appropriately") {
 
     TEST_DO(verify(TensorSpec("tensor(x[1])")
                    .add({{"x",0}}, 42),
-                   "tensor(x[1],y[],z[2])",
+                   "tensor(x[1],y[1],z[2])",
                    TensorSpec("tensor(x[1],y[1],z[2])")
                    .add({{"x",0},{"y",0},{"z",0}}, 42)
                    .add({{"x",0},{"y",0},{"z",1}}, 0)));
 
     TEST_DO(verify(TensorSpec("tensor(a{})")
                    .add({{"a","foo"}}, 42),
-                   "tensor(a{},b[],c{},d[2])",
+                   "tensor(a{},b[1],c{},d[2])",
                    TensorSpec("tensor(a{},b[1],c{},d[2])")
                    .add({{"a","foo"},{"b",0},{"c",""},{"d",0}}, 42)
                    .add({{"a","foo"},{"b",0},{"c",""},{"d",1}}, 0)));
