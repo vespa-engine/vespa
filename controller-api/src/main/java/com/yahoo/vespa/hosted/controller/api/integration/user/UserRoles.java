@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
-import com.yahoo.vespa.hosted.controller.api.role.UnboundRole;
 
 import java.util.List;
 
@@ -40,10 +39,6 @@ public class UserRoles {
                        roles.applicationDeveloper(tenant, application),
                        roles.applicationOperator(tenant, application),
                        roles.applicationAdmin(tenant, application));
-    }
-
-    public List<UnboundRole> hostedOperator() {
-        return List.of(roles.hostedOperator());
     }
 
     /** Returns the {@link Role} the given value represents. */
