@@ -3,8 +3,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/memoryindex/document_remover.h>
+#include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
 #include <vespa/searchlib/memoryindex/wordstore.h>
-#include <vespa/searchlib/memoryindex/i_document_remove_listener.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 
@@ -38,7 +38,7 @@ operator<<(std::ostream &os, const WordFieldPair &val)
     return os;
 }
 
-struct MockRemoveListener : public IDocumentRemoveListener
+struct MockRemoveListener : public IFieldIndexRemoveListener
 {
     WordFieldVector _words;
     uint32_t _expDocId;

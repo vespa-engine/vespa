@@ -6,7 +6,7 @@
 
 namespace search::memoryindex {
 
-class IDocumentRemoveListener;
+class IFieldIndexRemoveListener;
 class FieldInverter;
 
 /**

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "i_document_remove_listener.h"
+#include "i_field_index_remove_listener.h"
 #include <vespa/searchlib/index/schema_index_fields.h>
 
 namespace document {

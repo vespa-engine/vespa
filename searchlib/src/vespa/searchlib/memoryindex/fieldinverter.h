@@ -2,23 +2,23 @@
 
 #pragma once
 
-#include <map>
-#include <set>
-#include <vespa/document/fieldvalue/document.h>
+#include "i_field_index_remove_listener.h"
+#include <vespa/document/annotation/span.h>
 #include <vespa/document/datatype/datatypes.h>
-#include <limits>
-#include "i_document_remove_listener.h"
-#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
-#include <vespa/document/annotation/span.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <limits>
+#include <map>
+#include <set>
 
 namespace search::memoryindex {
 
 class IOrderedFieldIndexInserter;
 class DocumentRemover;
 
-class FieldInverter : public IDocumentRemoveListener {
+class FieldInverter : public IFieldIndexRemoveListener {
 public:
     class PosInfo {
     public:

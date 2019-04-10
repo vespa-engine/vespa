@@ -503,7 +503,7 @@ public:
 };
 
 
-class MyDrainRemoves : IDocumentRemoveListener
+class MyDrainRemoves : IFieldIndexRemoveListener
 {
     DocumentRemover &_remover;
 public:

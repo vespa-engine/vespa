@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "document_remover.h"
-#include "i_document_remove_listener.h"
+#include "i_field_index_remove_listener.h"
 #include "wordstore.h"
 #include <vespa/searchlib/common/sort.h>
 
@@ -20,7 +20,7 @@ DocumentRemover::DocumentRemover(const WordStore &wordStore)
 DocumentRemover::~DocumentRemover() = default;
 
 void
-DocumentRemover::remove(uint32_t docId, IDocumentRemoveListener &listener)
+DocumentRemover::remove(uint32_t docId, IFieldIndexRemoveListener &listener)
 {
     Iterator itr = _store.get(docId);
     if (itr.valid()) {
