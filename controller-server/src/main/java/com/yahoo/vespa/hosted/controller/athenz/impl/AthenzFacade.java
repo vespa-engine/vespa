@@ -142,9 +142,9 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public void createApplication(ApplicationId application, Credentials credentials) {
+    public void createApplication(ApplicationId id, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
-        createApplication(athenzCredentials.domain(), application.application(), athenzCredentials.token());
+        createApplication(athenzCredentials.domain(), id.application(), athenzCredentials.token());
     }
 
     private void createApplication(AthenzDomain domain, ApplicationName application, OktaAccessToken token) {

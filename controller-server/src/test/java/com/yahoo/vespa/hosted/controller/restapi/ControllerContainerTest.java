@@ -5,6 +5,7 @@ import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
@@ -36,109 +37,120 @@ public class ControllerContainerTest {
     protected JDisc container;
 
     @Before
-    public void startContainer() { container = JDisc.fromServicesXml(controllerServicesXml, Networking.disable); }
+    public void startContainer() { container = JDisc.fromServicesXml(controllerServicesXml(), Networking.disable); }
 
     @After
     public void stopContainer() { container.close(); }
 
-    private final String controllerServicesXml =
-            "<jdisc version='1.0'>\n" +
-            "  <config name=\"container.handler.threadpool\">\n" +
-            "    <maxthreads>10</maxthreads>\n" +
-            "  </config> \n" +
-            "  <config name='vespa.hosted.zone.config.zone'>\n" +
-            "    <system>main</system>\n" +
-            "  </config>\n" +
-            "  <config name=\"vespa.hosted.rotation.config.rotations\">\n" +
-            "    <rotations>\n" +
-            "      <item key=\"rotation-id-1\">rotation-fqdn-1</item>\n" +
-            "      <item key=\"rotation-id-2\">rotation-fqdn-2</item>\n" +
-            "      <item key=\"rotation-id-3\">rotation-fqdn-3</item>\n" +
-            "      <item key=\"rotation-id-4\">rotation-fqdn-4</item>\n" +
-            "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
-            "    </rotations>\n" +
-            "  </config>\n" +
-            "  <config name=\"jdisc.http.filter.security.cors.cors-filter\">\n" +
-            "    <allowedUrls>\n" +
-            "      <item>http://localhost</item>\n" +
-            "    </allowedUrls>\n" +
-            "  </config>\n" +
-            "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.restapi.cost.NoopCostReportConsumer'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'>\n" +
-            "    <config name=\"vespa.hosted.controller.authority.config.api-authority\">\n" +
-            "      <authorities><item>https://localhost:4443/</item></authorities>\n" +
-            "    </config>" +
-            "  </component>" +
-            "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.role.Roles'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
-            "    <binding>http://*/application/v4/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
-            "    <binding>http://*/athenz/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
-            "    <binding>http://*/deployment/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>\n" +
-            "    <binding>http://*/badge/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>\n" +
-            "    <binding>http://*/controller/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
-            "    <binding>http://*/os/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
-            "    <binding>http://*/cost/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
-            "    <binding>http://*/zone/v1</binding>\n" +
-            "    <binding>http://*/zone/v1/*</binding>\n" +
-            "  </handler>\n" +
-            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
-            "    <binding>http://*/zone/v2</binding>\n" +
-            "    <binding>http://*/zone/v2/*</binding>\n" +
-            "  </handler>\n" +
-            "  <http>\n" +
-            "    <server id='default' port='8080' />\n" +
-            "    <filtering>\n" +
-            "      <request-chain id='default'>\n" +
-            "        <filter id='com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock'/>\n" +
-            "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.AthenzRoleFilter'/>\n" +
-            "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
-            "        <binding>http://*/*</binding>\n" +
-            "      </request-chain>\n" +
-            "    </filtering>\n" +
-            "  </http>\n" +
-            "</jdisc>";
+    private String controllerServicesXml() {
+        return "<jdisc version='1.0'>\n" +
+               "  <config name=\"container.handler.threadpool\">\n" +
+               "    <maxthreads>10</maxthreads>\n" +
+               "  </config> \n" +
+               "  <config name=\"cloud.config.configserver\">\n" +
+               "    <system>" + system().name() + "</system>\n" +
+               "  </config> \n" +
+               "  <config name=\"vespa.hosted.rotation.config.rotations\">\n" +
+               "    <rotations>\n" +
+               "      <item key=\"rotation-id-1\">rotation-fqdn-1</item>\n" +
+               "      <item key=\"rotation-id-2\">rotation-fqdn-2</item>\n" +
+               "      <item key=\"rotation-id-3\">rotation-fqdn-3</item>\n" +
+               "      <item key=\"rotation-id-4\">rotation-fqdn-4</item>\n" +
+               "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
+               "    </rotations>\n" +
+               "  </config>\n" +
+               "  <config name=\"jdisc.http.filter.security.cors.cors-filter\">\n" +
+               "    <allowedUrls>\n" +
+               "      <item>http://localhost</item>\n" +
+               "    </allowedUrls>\n" +
+               "  </config>\n" +
+               "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.restapi.cost.NoopCostReportConsumer'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'>\n" +
+               "    <config name=\"vespa.hosted.controller.authority.config.api-authority\">\n" +
+               "      <authorities><item>https://localhost:4443/</item></authorities>\n" +
+               "    </config>" +
+               "  </component>" +
+               "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.role.Roles'/>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
+               "    <binding>http://*/application/v4/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
+               "    <binding>http://*/deployment/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>\n" +
+               "    <binding>http://*/badge/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>\n" +
+               "    <binding>http://*/controller/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
+               "    <binding>http://*/os/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
+               "    <binding>http://*/cost/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
+               "    <binding>http://*/zone/v1</binding>\n" +
+               "    <binding>http://*/zone/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
+               "    <binding>http://*/zone/v2</binding>\n" +
+               "    <binding>http://*/zone/v2/*</binding>\n" +
+               "  </handler>\n" +
+               securityXml() +
+               "</jdisc>";
+    }
+
+    protected SystemName system() {
+        return SystemName.main;
+    }
+
+    protected String securityXml() {
+        return "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
+
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
+               "    <binding>http://*/athenz/v1/*</binding>\n" +
+               "  </handler>\n" +
+
+               "  <http>\n" +
+               "    <server id='default' port='8080' />\n" +
+               "    <filtering>\n" +
+               "      <request-chain id='default'>\n" +
+               "        <filter id='com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock'/>\n" +
+               "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.AthenzRoleFilter'/>\n" +
+               "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
+               "        <binding>http://*/*</binding>\n" +
+               "      </request-chain>\n" +
+               "    </filtering>\n" +
+               "  </http>\n";
+    }
 
     protected void assertResponse(Request request, int responseStatus, String responseMessage) {
         Response response = container.handleRequest(request);

@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.api.role;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -40,23 +41,28 @@ public enum RoleDefinition {
                          Policy.developmentDeployment),
 
     /** Application operator with access to normal, operational tasks of an application. */
-    applicationOperator(applicationDeveloper,
+    applicationOperator(applicationReader,
                         Policy.applicationOperations),
 
     /** Application administrator with full access to an already existing application, including emergency operations. */
-    applicationAdmin(applicationOperator,
+    applicationAdmin(applicationDeveloper,
+                     applicationOperator,
                      Policy.applicationUpdate,
+                     Policy.applicationDelete,
+                     Policy.applicationManager,
                      Policy.productionDeployment,
                      Policy.submission),
 
-    /** Tenant operator with admin access to all applications under the tenant, as well as the ability to create applications. */
-    tenantOperator(applicationAdmin,
+    /** Tenant operator with access to create application under a tenant, and to read the tenant's and public data. */
+    tenantOperator(everyone,
+                   Policy.tenantRead,
                    Policy.applicationCreate),
 
     /** Tenant admin with full access to all tenant resources, except deleting the tenant. */
     tenantAdmin(tenantOperator,
+                applicationAdmin,
                 Policy.applicationDelete,
-                Policy.manager,
+                Policy.tenantManager,
                 Policy.tenantUpdate),
 
     /** Tenant admin with full access to all tenant resources. */
@@ -80,17 +86,36 @@ public enum RoleDefinition {
                       Policy.applicationOperations,
                       Policy.developmentDeployment);
 
+    private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;
 
     RoleDefinition(Policy... policies) {
-        this.policies = EnumSet.copyOf(Set.of(policies));
+        this(Set.of(), policies);
     }
 
-    RoleDefinition(RoleDefinition inherited, Policy... policies) {
-        this.policies = EnumSet.copyOf(Set.of(policies));
-        this.policies.addAll(inherited.policies);
+    RoleDefinition(RoleDefinition first, Policy... policies) {
+        this(Set.of(first), policies);
     }
 
-    Set<Policy> policies() { return policies; }
+    RoleDefinition(RoleDefinition first, RoleDefinition second, Policy... policies) {
+        this(Set.of(first, second), policies);
+    }
+
+    RoleDefinition(Set<RoleDefinition> parents, Policy... policies) {
+        this.parents = new HashSet<>(parents);
+        this.policies = EnumSet.copyOf(Set.of(policies));
+        for (RoleDefinition parent : parents) {
+            this.parents.addAll(parent.parents);
+            this.policies.addAll(parent.policies);
+        }
+    }
+
+    Set<Policy> policies() {
+        return policies;
+    }
+
+    Set<RoleDefinition> inherited() {
+        return parents;
+    }
 
 }

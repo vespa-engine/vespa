@@ -1,0 +1,54 @@
+{
+  "tenant": "my-tenant",
+  "application": "my-app",
+  "roleNames": [
+    "applicationAdmin",
+    "applicationOperator",
+    "applicationDeveloper",
+    "applicationReader"
+  ],
+  "users": [
+    {
+      "name": "reader@app",
+      "roles": {
+        "applicationAdmin": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationOperator": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationDeveloper": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationReader": {
+          "explicit": true,
+          "implied": false
+        }
+      }
+    },
+    {
+      "name": "operator@tenant",
+      "roles": {
+        "applicationAdmin": {
+          "explicit": true,
+          "implied": false
+        },
+        "applicationOperator": {
+          "explicit": false,
+          "implied": true
+        },
+        "applicationDeveloper": {
+          "explicit": false,
+          "implied": true
+        },
+        "applicationReader": {
+          "explicit": false,
+          "implied": true
+        }
+      }
+    }
+  ]
+}
