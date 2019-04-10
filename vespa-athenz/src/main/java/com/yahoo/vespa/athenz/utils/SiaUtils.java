@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.utils;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
@@ -31,31 +32,31 @@ public class SiaUtils {
 
     private SiaUtils() {}
 
-    public static Path getPrivateKeyFile(AthenzService service) {
+    public static Path getPrivateKeyFile(AthenzIdentity service) {
         return getPrivateKeyFile(DEFAULT_SIA_DIRECTORY, service);
     }
 
-    public static Path getPrivateKeyFile(Path root, AthenzService service) {
+    public static Path getPrivateKeyFile(Path root, AthenzIdentity service) {
         return root
                 .resolve("keys")
                 .resolve(String.format("%s.%s.key.pem", service.getDomainName(), service.getName()));
     }
 
-    public static Path getCertificateFile(AthenzService service) {
+    public static Path getCertificateFile(AthenzIdentity service) {
         return getCertificateFile(DEFAULT_SIA_DIRECTORY, service);
     }
 
-    public static Path getCertificateFile(Path root, AthenzService service) {
+    public static Path getCertificateFile(Path root, AthenzIdentity service) {
         return root
                 .resolve("certs")
                 .resolve(String.format("%s.%s.cert.pem", service.getDomainName(), service.getName()));
     }
 
-    public static Optional<PrivateKey> readPrivateKeyFile(AthenzService service) {
+    public static Optional<PrivateKey> readPrivateKeyFile(AthenzIdentity service) {
         return readPrivateKeyFile(DEFAULT_SIA_DIRECTORY, service);
     }
 
-    public static Optional<PrivateKey> readPrivateKeyFile(Path root, AthenzService service) {
+    public static Optional<PrivateKey> readPrivateKeyFile(Path root, AthenzIdentity service) {
         try {
             Path privateKeyFile = getPrivateKeyFile(root, service);
             if (Files.notExists(privateKeyFile)) return Optional.empty();
@@ -65,11 +66,11 @@ public class SiaUtils {
         }
     }
 
-    public static Optional<X509Certificate> readCertificateFile(AthenzService service) {
+    public static Optional<X509Certificate> readCertificateFile(AthenzIdentity service) {
         return readCertificateFile(DEFAULT_SIA_DIRECTORY, service);
     }
 
-    public static Optional<X509Certificate> readCertificateFile(Path root, AthenzService service) {
+    public static Optional<X509Certificate> readCertificateFile(Path root, AthenzIdentity service) {
         try {
             Path certificateFile = getCertificateFile(root, service);
             if (Files.notExists(certificateFile)) return Optional.empty();
@@ -79,11 +80,11 @@ public class SiaUtils {
         }
     }
 
-    public static void writePrivateKeyFile(AthenzService service, PrivateKey privateKey) {
+    public static void writePrivateKeyFile(AthenzIdentity service, PrivateKey privateKey) {
         writePrivateKeyFile(DEFAULT_SIA_DIRECTORY, service, privateKey);
     }
 
-    public static void writePrivateKeyFile(Path root, AthenzService service, PrivateKey privateKey) {
+    public static void writePrivateKeyFile(Path root, AthenzIdentity service, PrivateKey privateKey) {
         try {
             Path privateKeyFile = getPrivateKeyFile(root, service);
             Files.createDirectories(privateKeyFile.getParent());
@@ -95,11 +96,11 @@ public class SiaUtils {
         }
     }
 
-    public static void writeCertificateFile(AthenzService service, X509Certificate certificate) {
+    public static void writeCertificateFile(AthenzIdentity service, X509Certificate certificate) {
         writeCertificateFile(DEFAULT_SIA_DIRECTORY, service, certificate);
     }
 
-    public static void writeCertificateFile(Path root, AthenzService service, X509Certificate certificate) {
+    public static void writeCertificateFile(Path root, AthenzIdentity service, X509Certificate certificate) {
         try {
             Path certificateFile = getCertificateFile(root, service);
             Files.createDirectories(certificateFile.getParent());
@@ -111,11 +112,11 @@ public class SiaUtils {
         }
     }
 
-    public static List<AthenzService> findSiaServices() {
+    public static List<AthenzIdentity> findSiaServices() {
         return findSiaServices(DEFAULT_SIA_DIRECTORY);
     }
 
-    public static List<AthenzService> findSiaServices(Path root) {
+    public static List<AthenzIdentity> findSiaServices(Path root) {
         String keyFileSuffix = ".key.pem";
         Path keysDirectory = root.resolve("keys");
         if ( ! Files.exists(keysDirectory))

@@ -5,7 +5,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
@@ -55,7 +55,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void createTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token) {
+    public void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/tenancy/%s", tenantDomain.getName(), providerService.getFullName()));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
@@ -66,7 +66,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void deleteTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token) {
+    public void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/tenancy/%s", tenantDomain.getName(), providerService.getFullName()));
         HttpUriRequest request = RequestBuilder.delete()
                 .setUri(uri)
@@ -76,7 +76,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token) {
+    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
@@ -87,7 +87,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, OktaAccessToken token) {
+    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, OktaAccessToken token) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
         HttpUriRequest request = RequestBuilder.delete()
                 .setUri(uri)
