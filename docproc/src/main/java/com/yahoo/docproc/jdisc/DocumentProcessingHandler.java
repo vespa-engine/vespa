@@ -31,7 +31,13 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.statistics.Statistics;
 
 import java.util.TimerTask;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
@@ -203,8 +209,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    void submit(DocumentProcessingTask task) {
+    private void submit(DocumentProcessingTask task) {
         if (threadPool.isAboveLimit()) {
             task.queueFull();
         } else {
