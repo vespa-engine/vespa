@@ -19,6 +19,9 @@ using CellRef = std::reference_wrapper<const Cell>;
 
 namespace {
 
+constexpr uint32_t DOUBLE_CELL_TYPE = 0;
+constexpr uint32_t FLOAT_CELL_TYPE = 1;
+
 void assert_type(const ValueType &type) {
     (void) type;
     assert(!type.is_abstract());
@@ -418,14 +421,17 @@ public:
 struct Format {
     bool     is_sparse;
     bool     is_dense;
+    bool     with_cell_type;
     uint32_t tag;
     explicit Format(const TypeMeta &meta)
         : is_sparse(meta.mapped.size() > 0),
           is_dense((meta.indexed.size() > 0) || !is_sparse),
+          with_cell_type(false),
           tag((is_sparse ? 0x1 : 0) | (is_dense ? 0x2 : 0)) {}
     explicit Format(uint32_t tag_in)
         : is_sparse((tag_in & 0x1) != 0),
           is_dense((tag_in & 0x2) != 0),
+          with_cell_type((tag_in & 0x4) != 0),
           tag(tag_in) {}
     ~Format() {}
 };
@@ -456,6 +462,13 @@ void encode_mapped_labels(nbostream &output, const TypeMeta &meta, const Address
     for (size_t idx: meta.mapped) {
         output.writeSmallString(addr[idx].name);
     }
+}
+
+uint32_t maybe_decode_cell_type(nbostream &input, const Format &format) {
+    if (format.with_cell_type) {
+        return input.getInt1_4Bytes();
+    }
+    return DOUBLE_CELL_TYPE;
 }
 
 ValueType decode_type(nbostream &input, const Format &format) {
@@ -496,17 +509,20 @@ void decode_mapped_labels(nbostream &input, const TypeMeta &meta, Address &addr)
     }
 }
 
-void decode_cells(nbostream &input, const ValueType &type, const TypeMeta meta,
+void decode_cells(uint32_t cell_type, nbostream &input, const ValueType &type, const TypeMeta meta,
                   Address &address, size_t n, Builder &builder)
 {
     if (n < meta.indexed.size()) {
         Label &label = address[meta.indexed[n]];
         size_t size = type.dimensions()[meta.indexed[n]].size;
         for (label.index = 0; label.index < size; ++label.index) {
-            decode_cells(input, type, meta, address, n + 1, builder);
+            decode_cells(cell_type, input, type, meta, address, n + 1, builder);
         }
     } else {
-        builder.set(address, input.readValue<double>());
+        double value = (cell_type == FLOAT_CELL_TYPE)
+                       ? input.readValue<float>()
+                       : input.readValue<double>();
+        builder.set(address, value);
     }
 }
 
@@ -693,6 +709,7 @@ std::unique_ptr<SimpleTensor>
 SimpleTensor::decode(nbostream &input)
 {
     Format format(input.getInt1_4Bytes());
+    uint32_t cell_type = maybe_decode_cell_type(input, format);
     ValueType type = decode_type(input, format);
     TypeMeta meta(type);
     Builder builder(type);
@@ -700,7 +717,7 @@ SimpleTensor::decode(nbostream &input)
     Address address(type.dimensions().size(), Label(size_t(0)));
     for (size_t i = 0; i < num_blocks; ++i) {
         decode_mapped_labels(input, meta, address);
-        decode_cells(input, type, meta, address, 0, builder);
+        decode_cells(cell_type, input, type, meta, address, 0, builder);
     }
     return builder.build();
 }
