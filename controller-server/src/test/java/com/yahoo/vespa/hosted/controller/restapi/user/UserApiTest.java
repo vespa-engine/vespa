@@ -126,7 +126,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
                               new File("application-roles.json"));
 
         // GET application role information is available also under the /api prefix.
-        tester.assertResponse(request("api//user/v1/tenant/my-tenant/application/my-app")
+        tester.assertResponse(request("/api/user/v1/tenant/my-tenant/application/my-app")
                                       .roles(Set.of(roles.tenantOperator(id.tenant()))),
                               new File("application-roles.json"));
 
