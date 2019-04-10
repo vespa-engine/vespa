@@ -41,10 +41,10 @@ public class TenantApplicationsTest {
         TenantApplications repo = createZKAppRepo();
         List<ApplicationId> applications = repo.activeApplications();
         assertThat(applications.size(), is(2));
-        assertThat(applications.get(0).application().value(), is("bar"));
-        assertThat(applications.get(1).application().value(), is("foo"));
-        assertThat(repo.requireActiveSessionOf(applications.get(0)), is(4L));
-        assertThat(repo.requireActiveSessionOf(applications.get(1)), is(3L));
+        assertThat(applications.get(0).application().value(), is("foo"));
+        assertThat(applications.get(1).application().value(), is("bar"));
+        assertThat(repo.requireActiveSessionOf(applications.get(0)), is(3L));
+        assertThat(repo.requireActiveSessionOf(applications.get(1)), is(4L));
     }
 
     @Test
@@ -77,7 +77,6 @@ public class TenantApplicationsTest {
     public void require_that_application_ids_can_be_written() throws Exception {
         TenantApplications repo = createZKAppRepo();
         ApplicationId myapp = createApplicationId("myapp");
-        repo.createApplication(myapp);
         repo.createPutTransaction(myapp, 3l).commit();
         String path = TenantRepository.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
         assertTrue(curatorFramework.checkExists().forPath(path) != null);
@@ -92,8 +91,6 @@ public class TenantApplicationsTest {
         TenantApplications repo = createZKAppRepo();
         ApplicationId id1 = createApplicationId("myapp");
         ApplicationId id2 = createApplicationId("myapp2");
-        repo.createApplication(id1);
-        repo.createApplication(id2);
         repo.createPutTransaction(id1, 1).commit();
         repo.createPutTransaction(id2, 1).commit();
         assertThat(repo.activeApplications().size(), is(2));
@@ -129,7 +126,11 @@ public class TenantApplicationsTest {
     }
 
     private static ApplicationId createApplicationId(String name) {
-        return ApplicationId.from(tenantName.value(), name, "myinst");
+        return new ApplicationId.Builder()
+                .tenant(tenantName.value())
+                .applicationName(name)
+                .instanceName("myinst")
+                .build();
     }
 
     private void writeApplicationData(ApplicationId applicationId, long sessionId) throws Exception {
