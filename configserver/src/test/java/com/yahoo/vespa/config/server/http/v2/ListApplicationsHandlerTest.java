@@ -51,17 +51,17 @@ public class ListApplicationsHandlerTest {
         final String url = "http://myhost:14000/application/v2/tenant/mytenant/application/";
         assertResponse(url, Response.Status.OK,
                 "[]");
-        ApplicationId id1 = ApplicationId.from("mytenant", "foo", "quux");
-        applicationRepo.createApplication(id1);
-        applicationRepo.createPutTransaction(id1, 1).commit();
+        applicationRepo.createPutTransaction(
+                new ApplicationId.Builder().tenant("tenant").applicationName("foo").instanceName("quux").build(),
+                1).commit();
         assertResponse(url, Response.Status.OK,
                 "[\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]");
-        ApplicationId id2 = ApplicationId.from("mytenant", "bali", "quux");
-        applicationRepo.createApplication(id2);
-        applicationRepo.createPutTransaction(id2, 1).commit();
+        applicationRepo.createPutTransaction(
+                new ApplicationId.Builder().tenant("tenant").applicationName("bali").instanceName("quux").build(),
+                1).commit();
         assertResponse(url, Response.Status.OK,
-                "[\"" + url + "bali/environment/dev/region/us-east/instance/quux\"," +
-                        "\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]"
+                "[\"" + url + "foo/environment/dev/region/us-east/instance/quux\"," +
+                        "\"" + url + "bali/environment/dev/region/us-east/instance/quux\"]"
         );
     }
 
@@ -82,12 +82,12 @@ public class ListApplicationsHandlerTest {
 
     @Test
     public void require_that_listing_works_with_multiple_tenants() throws Exception {
-        ApplicationId id1 = ApplicationId.from("mytenant", "foo", "quux");
-        applicationRepo.createApplication(id1);
-        applicationRepo.createPutTransaction(id1, 1).commit();
-        ApplicationId id2 = ApplicationId.from("foobar", "quux", "foo");
-        applicationRepo2.createApplication(id2);
-        applicationRepo2.createPutTransaction(id2, 1).commit();
+        applicationRepo.createPutTransaction(new ApplicationId.Builder()
+                .tenant("tenant")
+                .applicationName("foo").instanceName("quux").build(), 1).commit();
+        applicationRepo2.createPutTransaction(new ApplicationId.Builder()
+                .tenant("tenant")
+                .applicationName("quux").instanceName("foo").build(), 1).commit();
         String url = "http://myhost:14000/application/v2/tenant/mytenant/application/";
         assertResponse(url, Response.Status.OK,
                 "[\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]");
