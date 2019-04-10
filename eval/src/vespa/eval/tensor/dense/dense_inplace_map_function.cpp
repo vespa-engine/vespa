@@ -30,7 +30,7 @@ void my_inplace_map_op(eval::InterpretedFunction::State &state, uint64_t param) 
 }
 
 bool isConcreteDenseTensor(const ValueType &type) {
-    return (type.is_dense() && !type.is_abstract());
+    return type.is_dense();
 }
 
 } // namespace vespalib::tensor::<unnamed>

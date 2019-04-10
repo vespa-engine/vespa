@@ -167,9 +167,7 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out)
 {
     ParseContext ctx(pos_in, end_in, pos_out);
     vespalib::string type_name = parse_ident(ctx);
-    if (type_name == "any") {
-        return ValueType::any_type();
-    } else if (type_name == "error") {
+    if (type_name == "error") {
         return ValueType::error_type();
     } else if (type_name == "double") {
         return ValueType::double_type();
@@ -206,9 +204,6 @@ to_spec(const ValueType &type)
     asciistream os;
     size_t cnt = 0;
     switch (type.type()) {
-    case ValueType::Type::ANY:
-        os << "any";
-        break;
     case ValueType::Type::ERROR:
         os << "error";
         break;

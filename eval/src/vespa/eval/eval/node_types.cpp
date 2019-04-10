@@ -183,7 +183,7 @@ TypeResolver::~TypeResolver() {}
 } // namespace vespalib::eval::nodes
 
 NodeTypes::NodeTypes()
-    : _not_found(ValueType::any_type()),
+    : _not_found(ValueType::error_type()),
       _type_map()
 {
 }

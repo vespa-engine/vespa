@@ -15,7 +15,7 @@ using namespace eval::tensor_function;
 namespace {
 
 bool is_concrete_dense_tensor(const ValueType &type) {
-    return (type.is_dense() && !type.is_abstract());
+    return type.is_dense();
 }
 
 bool is_ident_aggr(Aggr aggr) {
