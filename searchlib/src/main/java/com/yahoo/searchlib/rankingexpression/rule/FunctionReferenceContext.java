@@ -61,7 +61,7 @@ public class FunctionReferenceContext {
      */
     public ExpressionFunction getFunction(String name) { return functions.get(name); }
 
-    protected Map<String, ExpressionFunction> functions() { return functions; }
+    protected ImmutableMap<String, ExpressionFunction> functions() { return functions; }
 
     /** Returns the resolution of an argument, or null if it isn't defined in this context */
     public String getBinding(String name) { return bindings.get(name); }

@@ -1382,7 +1382,7 @@
       "public void <init>(java.util.Map)",
       "public void <init>(java.util.Map, java.util.Map)",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction getFunction(java.lang.String)",
-      "protected java.util.Map functions()",
+      "protected com.google.common.collect.ImmutableMap functions()",
       "public java.lang.String getBinding(java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
     ],
