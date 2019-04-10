@@ -16,7 +16,7 @@
 namespace search::memoryindex {
 
 class IOrderedFieldIndexInserter;
-class DocumentRemover;
+class FieldIndexRemover;
 
 class FieldInverter : public IFieldIndexRemoveListener {
 public:
@@ -326,7 +326,7 @@ public:
      *
      * @param remover    document remover
      */
-    void applyRemoves(DocumentRemover &remover);
+    void applyRemoves(FieldIndexRemover &remover);
 
     /**
      * Push inverted documents to field index structure using the given inserter.

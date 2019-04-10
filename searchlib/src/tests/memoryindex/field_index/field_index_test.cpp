@@ -505,7 +505,7 @@ public:
 
 class MyDrainRemoves : IFieldIndexRemoveListener
 {
-    DocumentRemover &_remover;
+    FieldIndexRemover &_remover;
 public:
     virtual void remove(const vespalib::stringref, uint32_t) override { }
 

@@ -3,11 +3,11 @@
 #pragma once
 
 #include "featurestore.h"
+#include "field_index_remover.h"
 #include "wordstore.h"
-#include "document_remover.h"
-#include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/btree/btreenodeallocator.h>
+#include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/indexbuilder.h>
@@ -89,7 +89,7 @@ private:
     PostingListStore        _postingListStore;
     FeatureStore            _featureStore;
     uint32_t                _fieldId;
-    DocumentRemover         _remover;
+    FieldIndexRemover       _remover;
     std::unique_ptr<OrderedFieldIndexInserter> _inserter;
 
 public:
@@ -153,7 +153,7 @@ public:
     MemoryUsage getMemoryUsage() const;
     DictionaryTree &getDictionaryTree() { return _dict; }
     PostingListStore &getPostingListStore() { return _postingListStore; }
-    DocumentRemover &getDocumentRemover() { return _remover; }
+    FieldIndexRemover &getDocumentRemover() { return _remover; }
 
     void commit() {
         _remover.flush();

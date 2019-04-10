@@ -178,7 +178,7 @@ DocumentInverter::pushDocuments(FieldIndexCollection &fieldIndexes,
     uint32_t fieldId = 0;
     for (auto &inverter : _inverters) {
         FieldIndex &fieldIndex(**indexFieldIterator);
-        DocumentRemover &remover(fieldIndex.getDocumentRemover());
+        FieldIndexRemover &remover(fieldIndex.getDocumentRemover());
         OrderedFieldIndexInserter &inserter(fieldIndex.getInserter());
         _pushThreads.execute(fieldId,
                              [inverter(inverter.get()), &remover, &inserter,

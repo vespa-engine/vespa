@@ -459,7 +459,7 @@ struct FullRadix {
 }
 
 void
-FieldInverter::applyRemoves(DocumentRemover &remover)
+FieldInverter::applyRemoves(FieldIndexRemover &remover)
 {
     for (auto docId : _removeDocs) {
         remover.remove(docId, *this);

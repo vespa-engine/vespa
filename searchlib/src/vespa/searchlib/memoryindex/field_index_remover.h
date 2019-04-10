@@ -10,9 +10,13 @@ class IFieldIndexRemoveListener;
 class WordStore;
 
 /**
- * Class used to remove documents from the memory index dictionary.
+ * Class used to handle removal of documents from a FieldIndex.
+ *
+ * It tracks all {word, docId} tuples that are inserted into the index,
+ * and when removing a document, all these {word, docId} tuples are sent to the component
+ * that is doing the actual removal (IFieldIndexRemoveListener).
  */
-class DocumentRemover : public IFieldIndexInsertListener {
+class FieldIndexRemover : public IFieldIndexInsertListener {
 private:
     struct WordFieldDocTuple {
         datastore::EntryRef _wordRef;
@@ -44,8 +48,8 @@ private:
     const WordStore &_wordStore;
 
 public:
-    DocumentRemover(const WordStore &wordStore);
-    ~DocumentRemover();
+    FieldIndexRemover(const WordStore &wordStore);
+    ~FieldIndexRemover();
     void remove(uint32_t docId, IFieldIndexRemoveListener &inverter);
     CompactDocumentWordsStore &getStore() { return _store; }
     const CompactDocumentWordsStore &getStore() const { return _store; }

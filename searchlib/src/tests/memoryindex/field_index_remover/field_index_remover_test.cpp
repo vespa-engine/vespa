@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/searchlib/memoryindex/document_remover.h>
+#include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
 #include <vespa/searchlib/memoryindex/wordstore.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -65,7 +65,7 @@ struct Fixture
     MockRemoveListener _listener;
     std::vector<std::unique_ptr<WordStore>> _wordStores;
     std::vector<std::map<vespalib::string, datastore::EntryRef>> _wordToRefMaps;
-    std::vector<std::unique_ptr<DocumentRemover>> _removers;
+    std::vector<std::unique_ptr<FieldIndexRemover>> _removers;
     Fixture()
         : _listener(),
           _wordStores(),
@@ -75,7 +75,7 @@ struct Fixture
         uint32_t numFields = 4;
         for (uint32_t fieldId = 0; fieldId < numFields; ++fieldId) {
             _wordStores.push_back(std::make_unique<WordStore>());
-            _removers.push_back(std::make_unique<DocumentRemover>
+            _removers.push_back(std::make_unique<FieldIndexRemover>
                                 (*_wordStores.back()));
         }
         _wordToRefMaps.resize(numFields);
