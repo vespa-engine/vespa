@@ -194,6 +194,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                               .applicationName("foo")
                               .instanceName("quux")
                               .build();
+        applicationRepo.createApplication(fooId);
         applicationRepo.createPutTransaction(fooId, 2).commit();
         assertFromParameter("3", "http://myhost:40555/application/v2/tenant/" + tenant + "/application/foo/environment/test/region/baz/instance/quux");
         localSessionRepo.addSession(new SessionHandlerTest.MockSession(5l, FilesApplicationPackage.fromFile(testApp)));
@@ -202,6 +203,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                               .applicationName("foobio")
                               .instanceName("quux")
                               .build();
+        applicationRepo.createApplication(bioId);
         applicationRepo.createPutTransaction(bioId, 5).commit();
         assertFromParameter("6", "http://myhost:40555/application/v2/tenant/" + tenant + "/application/foobio/environment/staging/region/baz/instance/quux");
     }
