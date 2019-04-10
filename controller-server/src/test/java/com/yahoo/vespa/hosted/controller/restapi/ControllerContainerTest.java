@@ -97,9 +97,6 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.role.Roles'/>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
-               "    <binding>http://*/application/v4/*</binding>\n" +
-               "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
                "    <binding>http://*/deployment/v1/*</binding>\n" +
                "  </handler>\n" +
@@ -123,7 +120,7 @@ public class ControllerContainerTest {
                "    <binding>http://*/zone/v2</binding>\n" +
                "    <binding>http://*/zone/v2/*</binding>\n" +
                "  </handler>\n" +
-               securityXml() +
+               variablePartXml() +
                "</jdisc>";
     }
 
@@ -131,10 +128,13 @@ public class ControllerContainerTest {
         return SystemName.main;
     }
 
-    protected String securityXml() {
+    protected String variablePartXml() {
         return "  <component id='com.yahoo.vespa.hosted.controller.security.AthenzAccessControlRequests'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade'/>\n" +
 
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
+               "    <binding>http://*/application/v4/*</binding>\n" +
+               "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
                "    <binding>http://*/athenz/v1/*</binding>\n" +
                "  </handler>\n" +
