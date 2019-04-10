@@ -16,7 +16,7 @@
 
 namespace search::memoryindex {
 
-class OrderedDocumentInserter;
+class OrderedFieldIndexInserter;
 
 /**
  * Memory index for a single field.
@@ -90,7 +90,7 @@ private:
     FeatureStore            _featureStore;
     uint32_t                _fieldId;
     DocumentRemover         _remover;
-    std::unique_ptr<OrderedDocumentInserter> _inserter;
+    std::unique_ptr<OrderedFieldIndexInserter> _inserter;
 
 public:
     datastore::EntryRef addWord(const vespalib::stringref word) {
@@ -112,7 +112,7 @@ public:
     uint64_t getNumUniqueWords() const { return _numUniqueWords; }
     const FeatureStore & getFeatureStore() const { return _featureStore; }
     const WordStore &getWordStore() const { return _wordStore; }
-    OrderedDocumentInserter &getInserter() const { return *_inserter; }
+    OrderedFieldIndexInserter &getInserter() const { return *_inserter; }
 
 private:
     void freeze() {

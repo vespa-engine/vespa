@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldinverter.h"
-#include "ordereddocumentinserter.h"
+#include "ordered_field_index_inserter.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -468,7 +468,7 @@ FieldInverter::applyRemoves(DocumentRemover &remover)
 }
 
 void
-FieldInverter::pushDocuments(IOrderedDocumentInserter &inserter)
+FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
 {
     trimAbortedDocs();
 

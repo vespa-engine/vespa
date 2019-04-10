@@ -2,7 +2,7 @@
 
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/test/memoryindex/ordereddocumentinserter.h>
+#include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 
@@ -105,7 +105,7 @@ struct Fixture
     Schema _schema;
     DocBuilder _b;
     std::vector<std::unique_ptr<FieldInverter> > _inverters;
-    test::OrderedDocumentInserter _inserter;
+    test::OrderedFieldIndexInserter _inserter;
 
     static Schema
     makeSchema()

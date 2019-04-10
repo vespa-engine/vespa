@@ -3,7 +3,7 @@
 #include "documentinverter.h"
 #include "field_index_collection.h"
 #include "fieldinverter.h"
-#include "ordereddocumentinserter.h"
+#include "ordered_field_index_inserter.h"
 #include "urlfieldinverter.h"
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/datatype/urldatatype.h>
@@ -179,7 +179,7 @@ DocumentInverter::pushDocuments(FieldIndexCollection &fieldIndexes,
     for (auto &inverter : _inverters) {
         FieldIndex &fieldIndex(**indexFieldIterator);
         DocumentRemover &remover(fieldIndex.getDocumentRemover());
-        OrderedDocumentInserter &inserter(fieldIndex.getInserter());
+        OrderedFieldIndexInserter &inserter(fieldIndex.getInserter());
         _pushThreads.execute(fieldId,
                              [inverter(inverter.get()), &remover, &inserter,
                               &fieldIndex, onWriteDone]()

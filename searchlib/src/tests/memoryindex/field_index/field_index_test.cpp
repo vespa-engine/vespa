@@ -13,7 +13,7 @@
 #include <vespa/searchlib/memoryindex/documentinverter.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/memoryindex/ordereddocumentinserter.h>
+#include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/postingiterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -300,7 +300,7 @@ MockFieldIndex::~MockFieldIndex() = default;
 
 /**
  * MockWordStoreScan is a helper class to ensure that previous word is
- * still stored safely in memory, to satisfy OrderedDocumentInserter
+ * still stored safely in memory, to satisfy OrderedFieldIndexInserter
  * needs.
  */
 class MockWordStoreScan
@@ -347,7 +347,7 @@ class MyInserter
     MockFieldIndex _mock;
     FieldIndexCollection _fieldIndexes;
     DocIdAndPosOccFeatures _features;
-    IOrderedDocumentInserter *_documentInserter;
+    IOrderedFieldIndexInserter *_inserter;
 
 public:
     MyInserter(const Schema &schema)
@@ -355,7 +355,7 @@ public:
           _mock(),
           _fieldIndexes(schema),
           _features(),
-          _documentInserter(nullptr)
+          _inserter(nullptr)
     {
         _features.addNextOcc(0, 0, 1, 1);
     }
@@ -365,32 +365,32 @@ public:
     setNextWord(const vespalib::string &word)
     {
         const vespalib::string &w = _wordStoreScan.setWord(word);
-        _documentInserter->setNextWord(w);
+        _inserter->setNextWord(w);
         _mock.setNextWord(w);
     }
 
     void
     setNextField(uint32_t fieldId)
     {
-        if (_documentInserter != nullptr) {
-            _documentInserter->flush();
+        if (_inserter != nullptr) {
+            _inserter->flush();
         }
-        _documentInserter = &_fieldIndexes.getFieldIndex(fieldId)->getInserter();
-        _documentInserter->rewind();
+        _inserter = &_fieldIndexes.getFieldIndex(fieldId)->getInserter();
+        _inserter->rewind();
         _mock.setNextField(fieldId);
     }
 
     void
     add(uint32_t docId)
     {
-        _documentInserter->add(docId, _features);
+        _inserter->add(docId, _features);
         _mock.add(docId);
     }
 
     void
     remove(uint32_t docId)
     {
-        _documentInserter->remove(docId);
+        _inserter->remove(docId);
         _mock.remove(docId);
     }
 
@@ -406,8 +406,8 @@ public:
     bool
     assertPostings()
     {
-        if (_documentInserter != nullptr) {
-            _documentInserter->flush();
+        if (_inserter != nullptr) {
+            _inserter->flush();
         }
         for (auto wfp : _mock) {
             auto &wf = wfp.first;
@@ -423,9 +423,9 @@ public:
     void
     rewind()
     {
-        if (_documentInserter != nullptr) {
-            _documentInserter->flush();
-            _documentInserter = nullptr;
+        if (_inserter != nullptr) {
+            _inserter->flush();
+            _inserter = nullptr;
         }
     }
 
@@ -451,7 +451,7 @@ myremove(uint32_t docId, DocumentInverter &inv, FieldIndexCollection &fieldIndex
 
 class WrapInserter
 {
-    OrderedDocumentInserter &_inserter;
+    OrderedFieldIndexInserter &_inserter;
 public:
     WrapInserter(FieldIndexCollection &fieldIndexes, uint32_t fieldId)
         : _inserter(fieldIndexes.getFieldIndex(fieldId)->getInserter())

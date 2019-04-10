@@ -5,7 +5,7 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
 #include <vespa/searchlib/memoryindex/urlfieldinverter.h>
-#include <vespa/searchlib/test/memoryindex/ordereddocumentinserter.h>
+#include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 
@@ -183,7 +183,7 @@ struct Fixture
     DocBuilder _b;
     std::vector<std::unique_ptr<FieldInverter> > _inverters;
     std::unique_ptr<UrlFieldInverter> _urlInverter;
-    test::OrderedDocumentInserter _inserter;
+    test::OrderedFieldIndexInserter _inserter;
     index::SchemaIndexFields _schemaIndexFields;
 
     static Schema

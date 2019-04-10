@@ -15,7 +15,7 @@
 
 namespace search::memoryindex {
 
-class IOrderedDocumentInserter;
+class IOrderedFieldIndexInserter;
 class DocumentRemover;
 
 class FieldInverter : public IDocumentRemoveListener {
@@ -329,14 +329,11 @@ public:
     void applyRemoves(DocumentRemover &remover);
 
     /**
-     * Push inverted documents to memory index structure.
+     * Push inverted documents to field index structure using the given inserter.
      *
-     * Temporary restriction: Currently only one document at a time is
-     * supported.
-     *
-     * @param inserter  ordered document inserter
+     * Temporary restriction: Currently only one document at a time is supported.
      */
-    void pushDocuments(IOrderedDocumentInserter &inserter);
+    void pushDocuments(IOrderedFieldIndexInserter &inserter);
 
     /*
      * Invert a normal text field, based on annotations.

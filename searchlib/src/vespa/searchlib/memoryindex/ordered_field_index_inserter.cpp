@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "ordereddocumentinserter.h"
+#include "ordered_field_index_inserter.h"
 #include "i_document_insert_listener.h"
 
 #include <vespa/searchlib/index/docidandfeatures.h>
@@ -27,7 +27,7 @@ const vespalib::string emptyWord = "";
 
 }
 
-OrderedDocumentInserter::OrderedDocumentInserter(FieldIndex &fieldIndex)
+OrderedFieldIndexInserter::OrderedFieldIndexInserter(FieldIndex &fieldIndex)
     : _word(),
       _prevDocId(noDocId),
       _prevAdd(false),
@@ -39,13 +39,13 @@ OrderedDocumentInserter::OrderedDocumentInserter(FieldIndex &fieldIndex)
 {
 }
 
-OrderedDocumentInserter::~OrderedDocumentInserter()
+OrderedFieldIndexInserter::~OrderedFieldIndexInserter()
 {
     flush();
 }
 
 void
-OrderedDocumentInserter::flushWord()
+OrderedFieldIndexInserter::flushWord()
 {
     if (_removes.empty() && _adds.empty()) {
         return;
@@ -68,14 +68,14 @@ OrderedDocumentInserter::flushWord()
 }
 
 void
-OrderedDocumentInserter::flush()
+OrderedFieldIndexInserter::flush()
 {
     flushWord();
     _listener.flush();
 }
 
 void
-OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
+OrderedFieldIndexInserter::setNextWord(const vespalib::stringref word)
 {
     // TODO: Adjust here if zero length words should be legal.
     assert(_word < word);
@@ -101,8 +101,8 @@ OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
 }
 
 void
-OrderedDocumentInserter::add(uint32_t docId,
-                             const index::DocIdAndFeatures &features)
+OrderedFieldIndexInserter::add(uint32_t docId,
+                               const index::DocIdAndFeatures &features)
 {
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId ||
@@ -115,7 +115,7 @@ OrderedDocumentInserter::add(uint32_t docId,
 }
 
 void
-OrderedDocumentInserter::remove(uint32_t docId)
+OrderedFieldIndexInserter::remove(uint32_t docId)
 {
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId);
@@ -125,7 +125,7 @@ OrderedDocumentInserter::remove(uint32_t docId)
 }
 
 void
-OrderedDocumentInserter::rewind()
+OrderedFieldIndexInserter::rewind()
 {
     assert(_removes.empty() && _adds.empty());
     _word = "";
@@ -135,7 +135,7 @@ OrderedDocumentInserter::rewind()
 }
 
 datastore::EntryRef
-OrderedDocumentInserter::getWordRef() const
+OrderedFieldIndexInserter::getWordRef() const
 {
     return _dItr.getKey()._wordRef;
 }

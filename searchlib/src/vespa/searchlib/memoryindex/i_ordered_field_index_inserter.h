@@ -10,13 +10,14 @@ namespace search::index { class DocIdAndFeatures; }
 namespace search::memoryindex {
 
 /**
- * Interface class for ordered document inserter.
+ * Interface used to insert inverted documents into a FieldIndex,
+ * updating the underlying posting lists in that index.
  *
- * Insert order must be properly sorted, by (word, docId)
+ * Insert order must be properly sorted, first by word, then by docId.
  */
-class IOrderedDocumentInserter {
+class IOrderedFieldIndexInserter {
 public:
-    virtual ~IOrderedDocumentInserter() {}
+    virtual ~IOrderedFieldIndexInserter() {}
 
     /**
      * Set next word to operate on.
@@ -24,7 +25,7 @@ public:
     virtual void setNextWord(const vespalib::stringref word) = 0;
 
     /**
-     * Add (word, docId) tuple with given features.
+     * Add (word, docId) tuple with the given features.
      */
     virtual void add(uint32_t docId, const index::DocIdAndFeatures &features) = 0;
 
@@ -33,15 +34,13 @@ public:
      */
     virtual void remove(uint32_t docId) = 0;
 
-    /*
-     * Flush pending changes to postinglist for (_word).
-     *
-     * _dItr is located at correct position.
+    /**
+     * Flush pending changes for the current word (into the underlying posting list).
      */
     virtual void flush() = 0;
 
-    /*
-     * Rewind iterator, to start new pass.
+    /**
+     * Rewind to prepare for another set of (word, docId) tuples.
      */
     virtual void rewind() = 0;
 };

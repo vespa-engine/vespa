@@ -5,7 +5,7 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/documentinverter.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/test/memoryindex/ordereddocumentinserter.h>
+#include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -97,7 +97,7 @@ struct Fixture
     SequencedTaskExecutor _invertThreads;
     SequencedTaskExecutor _pushThreads;
     DocumentInverter _inv;
-    test::OrderedDocumentInserter _inserter;
+    test::OrderedFieldIndexInserter _inserter;
 
     static Schema
     makeSchema()

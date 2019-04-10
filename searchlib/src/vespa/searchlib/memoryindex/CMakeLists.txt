@@ -9,7 +9,7 @@ vespa_add_library(searchlib_memoryindex OBJECT
     field_index_collection.cpp
     fieldinverter.cpp
     memoryindex.cpp
-    ordereddocumentinserter.cpp
+    ordered_field_index_inserter.cpp
     postingiterator.cpp
     urlfieldinverter.cpp
     wordstore.cpp

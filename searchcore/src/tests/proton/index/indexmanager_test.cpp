@@ -18,7 +18,6 @@
 #include <vespa/searchlib/memoryindex/documentinverter.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/memoryindex/ordereddocumentinserter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>

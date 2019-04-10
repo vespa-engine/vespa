@@ -2,20 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchlib/memoryindex/iordereddocumentinserter.h>
+#include <vespa/searchlib/memoryindex/i_ordered_field_index_inserter.h>
 #include <sstream>
 
-namespace search
-{
+namespace search::memoryindex::test {
 
-namespace memoryindex
-{
-
-namespace test
-{
-
-class OrderedDocumentInserter : public IOrderedDocumentInserter
-{
+class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
     std::stringstream _ss;
     bool _first;
     bool _verbose;
@@ -31,7 +23,7 @@ class OrderedDocumentInserter : public IOrderedDocumentInserter
         }
     }
 public:
-    OrderedDocumentInserter()
+    OrderedFieldIndexInserter()
         : _ss(),
           _first(true),
           _verbose(false),
@@ -115,6 +107,4 @@ public:
     void setVerbose() { _verbose = true; }
 };
 
-} // namespace test
-} // namespace memoryindex
-} // namespace search
+}
