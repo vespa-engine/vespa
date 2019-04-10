@@ -20,8 +20,7 @@ import static com.yahoo.yolean.Exceptions.toMessageString;
 
 /**
  * Searcher that builds a PredicateItem from the &amp;boolean properties and inserts it into a query.
- *
- * @author Magnar Nedland
+ * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
  */
 @After({ STEMMING, ACCENT_REMOVAL })
 @Provides(BooleanSearcher.PREDICATE)
@@ -75,7 +74,7 @@ public class BooleanSearcher extends Searcher {
         item.setIndexName(fieldName);
         new PredicateValueAttributeParser(item).parse(attributes);
         new PredicateRangeAttributeParser(item).parse(rangeAttributes);
-        query.getModel().getQueryTree().and(item);
+        QueryTreeUtil.andQueryItemWithRoot(query, item);
     }
 
     static public class PredicateValueAttributeParser extends BooleanAttributeParser {

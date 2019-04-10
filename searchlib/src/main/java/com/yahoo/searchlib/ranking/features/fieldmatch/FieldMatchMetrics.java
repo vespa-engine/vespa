@@ -19,9 +19,9 @@ public final class FieldMatchMetrics implements Cloneable {
     private FieldMatchMetricsComputer source;
 
     /** The trace accumulated during execution - empty if no tracing */
-    private final Trace trace = new Trace();
+    private final Trace trace=new Trace();
 
-    private boolean complete;
+    private boolean complete=false;
 
     // Metrics
     private int outOfOrder;
@@ -352,7 +352,7 @@ public final class FieldMatchMetrics implements Cloneable {
      * </p>
      *
      *
-     * <p>Weight and significance are not taken into account because this is meant to capture tha quality of the
+     * <p>Weight and significance are not taken into account because this is mean to capture tha quality of the
      * match in this field, while those measures relate this match to matches in other fields. This number
      * can be multiplied with those values when combining with other field match scores.</p>
      */
