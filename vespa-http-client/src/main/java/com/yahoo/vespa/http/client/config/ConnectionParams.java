@@ -36,7 +36,7 @@ public final class ConnectionParams {
         private long connectionTimeout = TimeUnit.SECONDS.toMillis(60);
         private final Multimap<String, String> headers = ArrayListMultimap.create();
         private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
-        private int numPersistentConnectionsPerEndpoint = 8;
+        private int numPersistentConnectionsPerEndpoint = 1;
         private String proxyHost = null;
         private int proxyPort = 8080;
         private boolean useCompression = false;

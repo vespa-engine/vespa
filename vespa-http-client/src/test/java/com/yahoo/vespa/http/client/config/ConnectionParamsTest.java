@@ -25,7 +25,7 @@ public class ConnectionParamsTest {
         ConnectionParams params = new ConnectionParams.Builder().build();
 
         assertThat(params.getHeaders().isEmpty(), is(true));
-        assertThat(params.getNumPersistentConnectionsPerEndpoint(), is(8));
+        assertThat(params.getNumPersistentConnectionsPerEndpoint(), is(1));
         assertThat(params.getSslContext(), nullValue());
     }
 
