@@ -24,8 +24,7 @@ class FieldInverter;
 class UrlFieldInverter;
 class FieldIndexCollection;
 
-class DocumentInverter
-{
+class DocumentInverter {
 private:
     DocumentInverter(const DocumentInverter &) = delete;
     DocumentInverter &operator=(const DocumentInverter &) = delete;

@@ -8,8 +8,7 @@ namespace search::memoryindex {
  * Interface used to track which {wordRef, fieldId} pairs that are
  * inserted into the memory index dictionary for a document.
  */
-class IDocumentInsertListener
-{
+class IDocumentInsertListener {
 public:
     virtual ~IDocumentInsertListener() {}
     virtual void insert(datastore::EntryRef wordRef, uint32_t docId) = 0;

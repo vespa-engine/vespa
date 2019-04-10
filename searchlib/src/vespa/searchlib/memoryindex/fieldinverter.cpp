@@ -48,23 +48,17 @@ using search::index::schema::CollectionType;
 using search::util::URL;
 using vespalib::make_string;
 
-namespace documentinverterkludge {
-
-namespace linguistics {
+namespace documentinverterkludge::linguistics {
 
 const vespalib::string SPANTREE_NAME("linguistics");
 
 }
 
-}
-
 using namespace documentinverterkludge;
 
-namespace
-{
+namespace {
 
-class SpanFinder : public SpanTreeVisitor
-{
+class SpanFinder : public SpanTreeVisitor {
 public:
     int32_t begin_pos;
     int32_t end_pos;
@@ -165,7 +159,6 @@ FieldInverter::processAnnotations(const StringFieldValue &value)
     }
 }
 
-
 void
 FieldInverter::reset()
 {
@@ -228,13 +221,11 @@ FieldInverter::sortWords()
     }
 }
 
-
 void
 FieldInverter::startElement(int32_t weight)
 {
     _elems.push_back(ElemInfo(weight)); // Fill in length later
 }
-
 
 void
 FieldInverter::endElement()
@@ -270,7 +261,6 @@ FieldInverter::saveWord(const vespalib::stringref word)
     return wordRef;
 }
 
-
 uint32_t
 FieldInverter::saveWord(const document::FieldValue &fv)
 {
@@ -280,7 +270,6 @@ FieldInverter::saveWord(const document::FieldValue &fv)
     return saveWord(vespalib::stringref(sRef.first, sRef.second));
 }
 
-
 void
 FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
 {
@@ -289,7 +278,6 @@ FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
     _positions.emplace_back(wordRef, docId);
 }
 
-
 void
 FieldInverter::processNormalDocTextField(const StringFieldValue &field)
 {
@@ -297,7 +285,6 @@ FieldInverter::processNormalDocTextField(const StringFieldValue &field)
     processAnnotations(field);
     endElement();
 }
-
 
 void
 FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field)
@@ -314,7 +301,6 @@ FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field)
     }
 }
 
-
 void
 FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue &field)
 {
@@ -330,7 +316,6 @@ FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue 
         endElement();
     }
 }
-
 
 FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId)
     : _fieldId(fieldId),
@@ -352,7 +337,6 @@ FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId)
 {
 }
 
-
 void
 FieldInverter::abortPendingDoc(uint32_t docId)
 {
@@ -364,7 +348,6 @@ FieldInverter::abortPendingDoc(uint32_t docId)
         _pendingDocs.erase(itr);
     }
 }
-
 
 void
 FieldInverter::moveNotAbortedDocs(uint32_t &dstIdx,
@@ -390,7 +373,6 @@ FieldInverter::moveNotAbortedDocs(uint32_t &dstIdx,
     dstIdx += size;
 }
 
-
 void
 FieldInverter::trimAbortedDocs()
 {
@@ -413,7 +395,6 @@ FieldInverter::trimAbortedDocs()
     _abortedDocs.clear();
 }
 
-
 void
 FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
 {
@@ -423,7 +404,6 @@ FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
     }
     endDoc();
 }
-
 
 void
 FieldInverter::invertNormalDocTextField(const FieldValue &val)
@@ -467,7 +447,6 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
     }
 }
 
-
 namespace {
 
 struct FullRadix {
@@ -479,7 +458,6 @@ struct FullRadix {
 
 }
 
-
 void
 FieldInverter::applyRemoves(DocumentRemover &remover)
 {
@@ -488,7 +466,6 @@ FieldInverter::applyRemoves(DocumentRemover &remover)
     }
     _removeDocs.clear();
 }
-
 
 void
 FieldInverter::pushDocuments(IOrderedDocumentInserter &inserter)
@@ -567,7 +544,6 @@ FieldInverter::pushDocuments(IOrderedDocumentInserter &inserter)
     inserter.flush();
     reset();
 }
-
 
 }
 

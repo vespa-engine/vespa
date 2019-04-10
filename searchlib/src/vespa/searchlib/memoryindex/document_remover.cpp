@@ -17,8 +17,7 @@ DocumentRemover::DocumentRemover(const WordStore &wordStore)
 {
 }
 
-DocumentRemover::~DocumentRemover() {
-}
+DocumentRemover::~DocumentRemover() = default;
 
 void
 DocumentRemover::remove(uint32_t docId, IDocumentRemoveListener &listener)
@@ -39,7 +38,6 @@ DocumentRemover::insert(datastore::EntryRef wordRef, uint32_t docId)
     _wordFieldDocTuples.emplace_back(wordRef, docId);
 }
 
-
 void
 DocumentRemover::flush()
 {
@@ -59,6 +57,5 @@ DocumentRemover::flush()
     _store.insert(*builder);
     _wordFieldDocTuples.clear();
 }
-
 
 }

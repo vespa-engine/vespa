@@ -26,7 +26,6 @@ FeatureStore::writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &featur
     return oldOffset;
 }
 
-
 datastore::EntryRef
 FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 {
@@ -43,7 +42,6 @@ FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
     return result.ref;
 }
 
-
 std::pair<datastore::EntryRef, uint64_t>
 FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset)
 {
@@ -58,7 +56,6 @@ FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset)
     return std::make_pair(ref, bitLen);
 }
 
-
 datastore::EntryRef
 FeatureStore::moveFeatures(datastore::EntryRef ref, uint64_t bitLen)
 {
@@ -69,7 +66,6 @@ FeatureStore::moveFeatures(datastore::EntryRef ref, uint64_t bitLen)
     _store.incDead(ref, byteLen + RefType::pad(byteLen));
     return newRef;
 }
-
 
 FeatureStore::FeatureStore(const Schema &schema)
     : _store(),
@@ -95,12 +91,10 @@ FeatureStore::FeatureStore(const Schema &schema)
     _store.initActiveBuffers();
 }
 
-
 FeatureStore::~FeatureStore()
 {
     _store.dropBuffers();
 }
-
 
 std::pair<datastore::EntryRef, uint64_t>
 FeatureStore::addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features)
@@ -111,8 +105,6 @@ FeatureStore::addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features
     return addFeatures(oldOffset, newOffset);
 }
 
-
-
 void
 FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAndFeatures &features)
 {
@@ -120,7 +112,6 @@ FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAn
     setupForReadFeatures(ref, _d);
     _d.readFeatures(features);
 }
-
 
 size_t
 FeatureStore::bitSize(uint32_t packedIndex, datastore::EntryRef ref)
@@ -134,7 +125,6 @@ FeatureStore::bitSize(uint32_t packedIndex, datastore::EntryRef ref)
     assert(static_cast<int64_t>(bitLen) > 0);
     return bitLen;
 }
-
 
 datastore::EntryRef
 FeatureStore::moveFeatures(uint32_t packedIndex, datastore::EntryRef ref)

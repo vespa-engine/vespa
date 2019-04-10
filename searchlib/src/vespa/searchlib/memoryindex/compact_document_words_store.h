@@ -14,14 +14,12 @@ namespace search::memoryindex {
  * into the memory index dictionary. These tuples are later used when removing
  * all remains of a document from the posting lists of the dictionary.
  */
-class CompactDocumentWordsStore
-{
+class CompactDocumentWordsStore {
 public:
     /**
      * Builder used to collect all wordRefs for a field.
      */
-    class Builder
-    {
+    class Builder {
     public:
         using UP = std::unique_ptr<Builder>;
         using WordRefVector = vespalib::Array<datastore::EntryRef>;
@@ -41,8 +39,7 @@ public:
     /**
      * Iterator over all {wordRef, fieldId} pairs for a document.
      */
-    class Iterator
-    {
+    class Iterator {
     private:
         const uint32_t *_buf;
         uint32_t        _remainingWords;
@@ -63,8 +60,7 @@ public:
     /**
      * Store for all {wordRef, fieldId} pairs among all documents.
      */
-    class Store
-    {
+    class Store {
     public:
         using DataStoreType = datastore::DataStoreT<datastore::EntryRefT<22>>;
         using RefType = DataStoreType::RefType;

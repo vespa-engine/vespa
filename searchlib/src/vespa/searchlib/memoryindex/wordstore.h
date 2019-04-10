@@ -7,8 +7,7 @@
 
 namespace search::memoryindex {
 
-class WordStore
-{
+class WordStore {
 public:
     using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
     using RefType = DataStoreType::RefType;
@@ -23,8 +22,7 @@ public:
     WordStore();
     ~WordStore();
     datastore::EntryRef addWord(const vespalib::stringref word);
-    const char * getWord(datastore::EntryRef ref) const
-    {
+    const char *getWord(datastore::EntryRef ref) const {
         RefType internalRef(ref);
         return _store.getEntry<char>(internalRef);
     }

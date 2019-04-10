@@ -9,8 +9,7 @@
 
 namespace search::memoryindex {
 
-class FeatureStore
-{
+class FeatureStore {
 public:
     using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
     using RefType = DataStoreType::RefType;
@@ -122,9 +121,7 @@ public:
      * @param packedIndex The field or field collection owning features
      * @param decoder     The feature decoder
      */
-    void
-    setupForField(uint32_t packedIndex, DecodeContextCooked &decoder) const
-    {
+    void setupForField(uint32_t packedIndex, DecodeContextCooked &decoder) const {
         decoder._fieldsParams = &_fieldsParams[packedIndex];
     }
 
@@ -135,9 +132,7 @@ public:
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
      */
-    void
-    setupForReadFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const
-    {
+    void setupForReadFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const {
         const uint8_t * bits = getBits(ref);
         decoder.setByteCompr(bits);
         uint32_t bufferId = RefType(ref).bufferId();
@@ -155,9 +150,7 @@ public:
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
      */
-    void
-    setupForUnpackFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const
-    {
+    void setupForUnpackFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const {
         decoder.setByteCompr(getBits(ref));
     }
 
@@ -169,8 +162,7 @@ public:
      * @param ref         Reference to stored features
      * @return            size of features in bits
      */
-    size_t
-    bitSize(uint32_t packedIndex, datastore::EntryRef ref);
+    size_t bitSize(uint32_t packedIndex, datastore::EntryRef ref);
 
     /**
      * Get byte address of stored features

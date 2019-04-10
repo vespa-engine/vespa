@@ -9,8 +9,7 @@ namespace search::memoryindex {
 
 class FieldInverter;
 
-class UrlFieldInverter
-{
+class UrlFieldInverter {
     FieldInverter *_all;
     FieldInverter *_scheme;
     FieldInverter *_host;
@@ -31,11 +30,10 @@ class UrlFieldInverter
 
     void endElement();
 
-    void
-    processUrlSubField(FieldInverter *inverter,
-                       const document::StructFieldValue &field,
-                       vespalib::stringref subField,
-                       bool addAnchors);
+    void processUrlSubField(FieldInverter *inverter,
+                            const document::StructFieldValue &field,
+                            vespalib::stringref subField,
+                            bool addAnchors);
 
     void processAnnotatedUrlField(const document::StructFieldValue &field);
 

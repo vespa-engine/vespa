@@ -39,7 +39,6 @@ using index::DocIdAndPosOccFeatures;
 using index::Schema;
 using search::util::URL;
 
-
 DocumentInverter::DocumentInverter(const Schema &schema,
                                    ISequencedTaskExecutor &invertThreads,
                                    ISequencedTaskExecutor &pushThreads)
@@ -74,13 +73,11 @@ DocumentInverter::DocumentInverter(const Schema &schema,
     }
 }
 
-
 DocumentInverter::~DocumentInverter()
 {
     _invertThreads.sync();
     _pushThreads.sync();
 }
-
 
 void
 DocumentInverter::addFieldPath(const document::DocumentType &docType,
@@ -100,9 +97,9 @@ DocumentInverter::addFieldPath(const document::DocumentType &docType,
     _indexedFieldPaths[fieldId] = std::move(fp);
 }
 
-
-void DocumentInverter::buildFieldPath(const document::DocumentType &docType,
-                                      const document::DataType *dataType)
+void
+DocumentInverter::buildFieldPath(const document::DocumentType &docType,
+                                 const document::DataType *dataType)
 {
     _indexedFieldPaths.clear();
     _indexedFieldPaths.resize(_schema.getNumIndexFields());
@@ -114,7 +111,6 @@ void DocumentInverter::buildFieldPath(const document::DocumentType &docType,
     }
     _dataType = dataType;
 }
-
 
 void
 DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
@@ -154,7 +150,6 @@ DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
     }
 }
 
-
 void
 DocumentInverter::removeDocument(uint32_t docId)
 {
@@ -174,7 +169,6 @@ DocumentInverter::removeDocument(uint32_t docId)
         ++urlId;
     }
 }
-
 
 void
 DocumentInverter::pushDocuments(FieldIndexCollection &fieldIndexes,

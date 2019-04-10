@@ -44,7 +44,6 @@ OrderedDocumentInserter::~OrderedDocumentInserter()
     flush();
 }
 
-
 void
 OrderedDocumentInserter::flushWord()
 {
@@ -68,14 +67,12 @@ OrderedDocumentInserter::flushWord()
     _adds.clear();
 }
 
-
 void
 OrderedDocumentInserter::flush()
 {
     flushWord();
     _listener.flush();
 }
-
 
 void
 OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
@@ -103,7 +100,6 @@ OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
     assert(_word == wordStore.getWord(_dItr.getKey()._wordRef));
 }
 
-
 void
 OrderedDocumentInserter::add(uint32_t docId,
                              const index::DocIdAndFeatures &features)
@@ -118,7 +114,6 @@ OrderedDocumentInserter::add(uint32_t docId,
     _prevAdd = true;
 }
 
-
 void
 OrderedDocumentInserter::remove(uint32_t docId)
 {
@@ -129,7 +124,6 @@ OrderedDocumentInserter::remove(uint32_t docId)
     _prevAdd = false;
 }
 
-
 void
 OrderedDocumentInserter::rewind()
 {
@@ -139,7 +133,6 @@ OrderedDocumentInserter::rewind()
     _prevAdd = false;
     _dItr.begin();
 }
-
 
 datastore::EntryRef
 OrderedDocumentInserter::getWordRef() const

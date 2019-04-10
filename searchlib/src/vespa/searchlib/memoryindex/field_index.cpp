@@ -88,7 +88,6 @@ FieldIndex::findFrozen(const vespalib::stringref word) const
     return PostingList::Iterator();
 }
 
-
 void
 FieldIndex::compactFeatures()
 {
@@ -218,7 +217,6 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
     }
 }
 
-
 MemoryUsage
 FieldIndex::getMemoryUsage() const
 {
@@ -231,7 +229,7 @@ FieldIndex::getMemoryUsage() const
     return usage;
 }
 
-} // namespace search::memoryindex
+}
 
 namespace search::btree {
 

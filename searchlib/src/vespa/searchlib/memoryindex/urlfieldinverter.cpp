@@ -46,7 +46,6 @@ lowercaseToken(vespalib::string &dest, const char *src, size_t srcSize)
 
 }
 
-
 using document::ArrayFieldValue;
 using document::DataType;
 using document::FieldValue;
@@ -61,7 +60,6 @@ using search::index::schema::CollectionType;
 using search::util::URL;
 using vespalib::make_string;
 
-
 void
 UrlFieldInverter::startDoc(uint32_t docId)
 {
@@ -74,7 +72,6 @@ UrlFieldInverter::startDoc(uint32_t docId)
     _fragment->startDoc(docId);
     _hostname->startDoc(docId);
 }
-
 
 void
 UrlFieldInverter::endDoc()
@@ -89,7 +86,6 @@ UrlFieldInverter::endDoc()
     _hostname->endDoc();
 }
 
-
 void
 UrlFieldInverter::startElement(int32_t weight)
 {
@@ -103,7 +99,6 @@ UrlFieldInverter::startElement(int32_t weight)
     _hostname->startElement(weight);
 }
 
-
 void
 UrlFieldInverter::endElement()
 {
@@ -116,7 +111,6 @@ UrlFieldInverter::endElement()
     _fragment->endElement();
     _hostname->endElement();
 }
-
 
 void
 UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
@@ -145,7 +139,6 @@ UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
     }
 }
 
-
 void
 UrlFieldInverter::processAnnotatedUrlField(const StructFieldValue & field)
 {
@@ -158,7 +151,6 @@ UrlFieldInverter::processAnnotatedUrlField(const StructFieldValue & field)
     processUrlSubField(_fragment, field, UrlDataType::FIELD_FRAGMENT, false);
     processUrlSubField(_hostname, field, UrlDataType::FIELD_HOST, true);
 }
-
 
 void
 UrlFieldInverter::processUrlField(const FieldValue &url_field)
@@ -207,7 +199,9 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
     processUrlOldStyle(s);
 }
 
-void UrlFieldInverter::processUrlOldStyle(const vespalib::string &s) {
+void
+UrlFieldInverter::processUrlOldStyle(const vespalib::string &s)
+{
     URL url(reinterpret_cast<const unsigned char *>(s.data()), s.size());
 
     _hostname->addWord(HOSTNAME_BEGIN);
@@ -264,7 +258,6 @@ void UrlFieldInverter::processUrlOldStyle(const vespalib::string &s) {
     _hostname->addWord(HOSTNAME_END);
 }
 
-
 void
 UrlFieldInverter::processArrayUrlField(const ArrayFieldValue &field)
 {
@@ -275,7 +268,6 @@ UrlFieldInverter::processArrayUrlField(const ArrayFieldValue &field)
         endElement();
     }
 }
-
 
 void
 UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field)
@@ -292,13 +284,16 @@ UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field)
 }
 
 namespace {
-bool isUriType(const DataType &type) {
-    return type == UrlDataType::getInstance()
-        || type == *DataType::STRING
-        || type == *DataType::URI;
-}
-}  // namespace
 
+bool
+isUriType(const DataType &type)
+{
+    return type == UrlDataType::getInstance()
+           || type == *DataType::STRING
+           || type == *DataType::URI;
+}
+
+}
 
 void
 UrlFieldInverter::invertUrlField(const FieldValue &val)
@@ -366,7 +361,6 @@ UrlFieldInverter::removeDocument(uint32_t docId)
     _hostname->removeDocument(docId);
 }
 
-
 UrlFieldInverter::UrlFieldInverter(index::Schema::CollectionType collectionType,
                                    FieldInverter *all,
                                    FieldInverter *scheme,
@@ -388,7 +382,6 @@ UrlFieldInverter::UrlFieldInverter(index::Schema::CollectionType collectionType,
       _collectionType(collectionType)
 {
 }
-
 
 }
 

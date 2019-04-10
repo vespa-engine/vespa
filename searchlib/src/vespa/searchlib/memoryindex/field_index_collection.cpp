@@ -40,7 +40,6 @@ FieldIndexCollection::~FieldIndexCollection()
 {
 }
 
-
 void
 FieldIndexCollection::dump(search::index::IndexBuilder &indexBuilder)
 {
@@ -60,7 +59,6 @@ FieldIndexCollection::getMemoryUsage() const
     }
     return usage;
 }
-
 
 }
 }

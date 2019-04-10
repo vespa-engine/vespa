@@ -29,14 +29,11 @@ public:
     FieldIndexCollection(const index::Schema &schema);
     ~FieldIndexCollection();
     PostingList::Iterator find(const vespalib::stringref word,
-                               uint32_t fieldId) const
-    {
+                               uint32_t fieldId) const {
         return _fieldIndexes[fieldId]->find(word);
     }
 
-    PostingList::ConstIterator
-    findFrozen(const vespalib::stringref word, uint32_t fieldId) const
-    {
+    PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t fieldId) const {
         return _fieldIndexes[fieldId]->findFrozen(word);
     }
 
@@ -56,8 +53,7 @@ public:
         return _fieldIndexes[fieldId].get();
     }
 
-    const std::vector<std::unique_ptr<FieldIndex>> &
-    getFieldIndexes() const { return _fieldIndexes; }
+    const std::vector<std::unique_ptr<FieldIndex>> &getFieldIndexes() const { return _fieldIndexes; }
 
     uint32_t getNumFields() const { return _numFields; }
 };

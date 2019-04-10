@@ -10,8 +10,7 @@ namespace search::memoryindex {
 /**
  * Search iterator for memory field index posting list.
  */
-class PostingIterator : public queryeval::RankedSearchIteratorBase
-{
+class PostingIterator : public queryeval::RankedSearchIteratorBase {
 private:
     FieldIndex::PostingList::ConstIterator             _itr;
     const FeatureStore                                &_featureStore;

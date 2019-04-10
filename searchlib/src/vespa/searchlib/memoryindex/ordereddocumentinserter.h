@@ -10,15 +10,14 @@ namespace search::memoryindex {
 
 class IDocumentInsertListener;
 
-
 /**
  * Class for inserting updates to FieldIndex in an ordered manner
  * (single pass scan of dictionary tree)
  *
  * Insert order must be properly sorted, by (word, docId)
  */
-class OrderedDocumentInserter : public IOrderedDocumentInserter
-{
+class OrderedDocumentInserter : public IOrderedDocumentInserter {
+private:
     vespalib::stringref _word;
     uint32_t _prevDocId;
     bool     _prevAdd;

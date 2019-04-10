@@ -23,8 +23,7 @@ class FieldIndexCollection;
  * Lock-free implementation of a memory-based index
  * using the document inverter and dictionary classes from searchlib.
  **/
-class MemoryIndex : public queryeval::Searchable
-{
+class MemoryIndex : public queryeval::Searchable {
 private:
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
@@ -136,15 +135,13 @@ public:
     void dump(index::IndexBuilder &indexBuilder);
 
     // implements Searchable
-    queryeval::Blueprint::UP
-    createBlueprint(const queryeval::IRequestContext & requestContext,
-                    const queryeval::FieldSpec &field,
-                    const query::Node &term) override;
+    queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
+                                             const queryeval::FieldSpec &field,
+                                             const query::Node &term) override;
 
-    queryeval::Blueprint::UP
-    createBlueprint(const queryeval::IRequestContext & requestContext,
-                    const queryeval::FieldSpecList &fields,
-                    const query::Node &term) override {
+    queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
+                                             const queryeval::FieldSpecList &fields,
+                                             const query::Node &term) override {
         return queryeval::Searchable::createBlueprint(requestContext, fields, term);
     }
 

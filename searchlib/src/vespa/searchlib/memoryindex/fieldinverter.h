@@ -18,11 +18,9 @@ namespace search::memoryindex {
 class IOrderedDocumentInserter;
 class DocumentRemover;
 
-class FieldInverter : public IDocumentRemoveListener
-{
+class FieldInverter : public IDocumentRemoveListener {
 public:
-    class PosInfo
-    {
+    class PosInfo {
     public:
         uint32_t _wordNum;      // XXX: Initially word reference
         uint32_t _docId;
@@ -54,7 +52,6 @@ public:
         {
         }
 
-
         PosInfo(uint32_t wordRef,
                 uint32_t docId)
             : _wordNum(wordRef),
@@ -65,22 +62,19 @@ public:
         {
         }
 
-        bool
-        removed() const
-        {
-            return _elemId == _elemRemoved;
-        }
+        bool removed() const { return _elemId == _elemRemoved; }
 
-        bool
-        operator<(const PosInfo &rhs) const
-        {
-            if (_wordNum != rhs._wordNum)
+        bool operator<(const PosInfo &rhs) const {
+            if (_wordNum != rhs._wordNum) {
                 return _wordNum < rhs._wordNum;
-            if (_docId != rhs._docId)
+            }
+            if (_docId != rhs._docId) {
                 return _docId < rhs._docId;
+            }
             if (_elemId != rhs._elemId) {
-                if (removed() != rhs.removed())
+                if (removed() != rhs.removed()) {
                     return removed() && !rhs.removed();
+                }
                 return _elemId < rhs._elemId;
             }
             return _wordPos < rhs._wordPos;
@@ -95,8 +89,7 @@ private:
 
     using WordBuffer = vespalib::Array<char>;
 
-    class ElemInfo
-    {
+    class ElemInfo {
     public:
         int32_t _weight;
         uint32_t _len;
@@ -107,18 +100,13 @@ private:
         {
         }
 
-        void
-        setLen(uint32_t len)
-        {
-            _len = len;
-        }
+        void setLen(uint32_t len) { _len = len; }
     };
 
     using ElemInfoVec = std::vector<ElemInfo>;
     using PosInfoVec = std::vector<PosInfo>;
 
-    class CompareWordRef
-    {
+    class CompareWordRef {
         const char *const _wordBuffer;
 
     public:
@@ -127,15 +115,11 @@ private:
         {
         }
 
-        const char *
-        getWord(uint32_t wordRef) const
-        {
+        const char *getWord(uint32_t wordRef) const {
             return &_wordBuffer[static_cast<size_t>(wordRef) << 2];
         }
 
-        bool
-        operator()(const uint32_t lhs, const uint32_t rhs) const
-        {
+        bool operator()(const uint32_t lhs, const uint32_t rhs) const {
             return strcmp(getWord(lhs), getWord(rhs)) < 0;
         }
     };
@@ -143,8 +127,7 @@ private:
     /*
      * Range in _positions vector used to represent a document put.
      */
-    class PositionRange
-    {
+    class PositionRange {
         uint32_t _start;
         uint32_t _len;
 
@@ -155,9 +138,7 @@ private:
         {
         }
 
-        bool
-        operator<(const PositionRange &rhs) const
-        {
+        bool operator<(const PositionRange &rhs) const {
             if (_start != rhs._start) {
                 return _start < rhs._start;
             }
@@ -202,14 +183,12 @@ public:
      *
      * @param weight        element weight
      */
-    void
-    startElement(int32_t weight);
+    void startElement(int32_t weight);
 
     /**
      * End an element.
      */
-    void
-    endElement();
+    void endElement();
 
 private:
     /**
@@ -220,8 +199,7 @@ private:
      *
      * @return          word reference
      */
-    VESPA_DLL_LOCAL uint32_t
-    saveWord(const vespalib::stringref word);
+    VESPA_DLL_LOCAL uint32_t saveWord(const vespalib::stringref word);
 
     /**
      * Save field value as word in word buffer.
@@ -230,8 +208,7 @@ private:
      *
      * @return          word reference
      */
-    VESPA_DLL_LOCAL uint32_t
-    saveWord(const document::FieldValue &fv);
+    VESPA_DLL_LOCAL uint32_t saveWord(const document::FieldValue &fv);
 
     /**
      * Get pointer to saved word from a word reference.
@@ -240,9 +217,7 @@ private:
      *
      * @return          saved word
      */
-    const char *
-    getWordFromRef(uint32_t wordRef) const
-    {
+    const char *getWordFromRef(uint32_t wordRef) const {
         return &_words[static_cast<size_t>(wordRef) << 2];
     }
 
@@ -253,9 +228,7 @@ private:
      *
      * @return          saved word
      */
-    const char *
-    getWordFromNum(uint32_t wordNum) const
-    {
+    const char *getWordFromNum(uint32_t wordNum) const {
         return getWordFromRef(_wordRefs[wordNum]);
     }
 
@@ -266,9 +239,7 @@ private:
      *
      * @return          word number
      */
-    uint32_t
-    getWordNum(uint32_t wordRef) const
-    {
+    uint32_t getWordNum(uint32_t wordRef) const {
         const char *p = &_words[static_cast<size_t>(wordRef - 1) << 2];
         return *reinterpret_cast<const uint32_t *>(p);
     }
@@ -279,9 +250,7 @@ private:
      * @param wordRef       word reference
      * @param wordNum       word number
      */
-    void
-    updateWordNum(uint32_t wordRef, uint32_t wordNum)
-    {
+    void updateWordNum(uint32_t wordRef, uint32_t wordNum) {
         char *p = &_words[static_cast<size_t>(wordRef - 1) << 2];
         *reinterpret_cast<uint32_t *>(p) = wordNum;
     }
@@ -292,17 +261,12 @@ private:
      *
      * @param wordRef       word reference
      */
-    void
-    add(uint32_t wordRef) {
+    void add(uint32_t wordRef) {
         _positions.emplace_back(wordRef, _docId, _elem,
                                 _wpos, _elems.size() - 1);
     }
 
-    void
-    stepWordPos()
-    {
-        ++_wpos;
-    }
+    void stepWordPos() { ++_wpos; }
 
 public:
     VESPA_DLL_LOCAL void
@@ -323,30 +287,22 @@ private:
      *
      * @return schema used by this index
      */
-    const index::Schema &
-    getSchema() const
-    {
-        return _schema;
-    }
+    const index::Schema &getSchema() const { return _schema; }
 
     /**
      * Clear internal memory structures.
      */
-    void
-    reset();
+    void reset();
 
     /**
      * Calculate word numbers and replace word references with word
      * numbers in internal memory structures.
      */
-    void
-    sortWords();
+    void sortWords();
 
-    void
-    moveNotAbortedDocs(uint32_t &dstIdx, uint32_t srcIdx, uint32_t nextTrimIdx);
+    void moveNotAbortedDocs(uint32_t &dstIdx, uint32_t srcIdx, uint32_t nextTrimIdx);
 
-    void
-    trimAbortedDocs();
+    void trimAbortedDocs();
 
     /*
      * Abort a pending document that has already been inverted.
@@ -354,8 +310,7 @@ private:
      * @param docId            local id for document
      *
      */
-    void
-    abortPendingDoc(uint32_t docId);
+    void abortPendingDoc(uint32_t docId);
 
 public:
     /**
@@ -371,8 +326,7 @@ public:
      *
      * @param remover    document remover
      */
-    void
-    applyRemoves(DocumentRemover &remover);
+    void applyRemoves(DocumentRemover &remover);
 
     /**
      * Push inverted documents to memory index structure.
@@ -382,31 +336,24 @@ public:
      *
      * @param inserter  ordered document inserter
      */
-    void
-    pushDocuments(IOrderedDocumentInserter &inserter);
+    void pushDocuments(IOrderedDocumentInserter &inserter);
 
     /*
      * Invert a normal text field, based on annotations.
      */
-    void
-    invertField(uint32_t docId, const document::FieldValue::UP &val);
+    void invertField(uint32_t docId, const document::FieldValue::UP &val);
 
     /*
      * Setup remove of word in old version of document.
      */
-    virtual void
-    remove(const vespalib::stringref word, uint32_t docId) override;
+    virtual void remove(const vespalib::stringref word, uint32_t docId) override;
 
-    void
-    removeDocument(uint32_t docId)
-    {
+    void removeDocument(uint32_t docId) {
         abortPendingDoc(docId);
         _removeDocs.push_back(docId);
     }
 
-    void
-    startDoc(uint32_t docId)
-    {
+    void startDoc(uint32_t docId) {
         assert(_docId == 0);
         assert(docId != 0);
         abortPendingDoc(docId);
@@ -416,9 +363,7 @@ public:
         _wpos = 0;
     }
 
-    void
-    endDoc()
-    {
+    void endDoc() {
         uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
         _pendingDocs.insert({ _docId,
                                  { _oldPosSize, newPosSize - _oldPosSize } });
@@ -426,9 +371,7 @@ public:
         _oldPosSize = newPosSize;
     }
 
-    void
-    addWord(const vespalib::stringref word)
-    {
+    void addWord(const vespalib::stringref word) {
         uint32_t wordRef = saveWord(word);
         if (wordRef != 0u) {
             add(wordRef);

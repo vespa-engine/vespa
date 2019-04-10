@@ -10,8 +10,7 @@ namespace search::memoryindex {
  * Interface used to track which {wordRef, fieldId} pairs that are
  * removed from the memory index dictionary for a document.
  */
-class IDocumentRemoveListener
-{
+class IDocumentRemoveListener {
 public:
     virtual ~IDocumentRemoveListener() {}
     virtual void remove(const vespalib::stringref word, uint32_t docId) = 0;

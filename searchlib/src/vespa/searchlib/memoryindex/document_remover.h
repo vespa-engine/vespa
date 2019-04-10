@@ -12,11 +12,9 @@ class WordStore;
 /**
  * Class used to remove documents from the memory index dictionary.
  */
-class DocumentRemover : public IDocumentInsertListener
-{
+class DocumentRemover : public IDocumentInsertListener {
 private:
-    struct WordFieldDocTuple
-    {
+    struct WordFieldDocTuple {
         datastore::EntryRef _wordRef;
         uint32_t _docId;
         WordFieldDocTuple() :
@@ -38,7 +36,6 @@ private:
                return wft._docId;
             }
         };
-
     };
 
     CompactDocumentWordsStore              _store;

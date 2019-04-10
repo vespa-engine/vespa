@@ -56,9 +56,7 @@ public:
         const WordStore          &_wordStore;
         const vespalib::stringref _word;
 
-        const char *
-        getWord(datastore::EntryRef wordRef) const
-        {
+        const char *getWord(datastore::EntryRef wordRef) const {
             if (wordRef.valid()) {
                 return _wordStore.getWord(wordRef);
             }
@@ -71,9 +69,7 @@ public:
               _word(word)
         { }
 
-        bool
-        operator()(const WordKey & lhs, const WordKey & rhs) const
-        {
+        bool operator()(const WordKey & lhs, const WordKey & rhs) const {
             int cmpres = strcmp(getWord(lhs._wordRef), getWord(rhs._wordRef));
             return cmpres < 0;
         }
@@ -102,9 +98,7 @@ public:
         return _wordStore.addWord(word);
     }
 
-    datastore::EntryRef
-    addFeatures(const index::DocIdAndFeatures &features)
-    {
+    datastore::EntryRef addFeatures(const index::DocIdAndFeatures &features) {
         return _featureStore.addFeatures(_fieldId, features).first;
     }
 
@@ -126,9 +120,7 @@ private:
         _dict.getAllocator().freeze();
     }
 
-    void
-    trimHoldLists()
-    {
+    void trimHoldLists() {
         GenerationHandler::generation_t usedGen =
             _generationHandler.getFirstUsedGeneration();
         _postingListStore.trimHoldLists(usedGen);
@@ -136,9 +128,7 @@ private:
         _featureStore.trimHoldLists(usedGen);
     }
 
-    void
-    transferHoldLists()
-    {
+    void transferHoldLists() {
         GenerationHandler::generation_t generation =
             _generationHandler.getCurrentGeneration();
         _postingListStore.transferHoldLists(generation);
@@ -146,9 +136,7 @@ private:
         _featureStore.transferHoldLists(generation);
     }
 
-    void
-    incGeneration()
-    {
+    void incGeneration() {
         _generationHandler.incGeneration();
     }
 
@@ -163,27 +151,11 @@ public:
     void dump(search::index::IndexBuilder & indexBuilder);
 
     MemoryUsage getMemoryUsage() const;
+    DictionaryTree &getDictionaryTree() { return _dict; }
+    PostingListStore &getPostingListStore() { return _postingListStore; }
+    DocumentRemover &getDocumentRemover() { return _remover; }
 
-    DictionaryTree &
-    getDictionaryTree()
-    {
-        return _dict;
-    }
-
-    PostingListStore &
-    getPostingListStore()
-    {
-        return _postingListStore;
-    }
-
-    DocumentRemover &
-    getDocumentRemover()
-    {
-        return _remover;
-    }
-
-    void commit()
-    {
+    void commit() {
         _remover.flush();
         freeze();
         transferHoldLists();

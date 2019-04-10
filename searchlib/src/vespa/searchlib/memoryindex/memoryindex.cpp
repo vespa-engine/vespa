@@ -118,7 +118,6 @@ MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
     flipInverter();
 }
 
-
 void
 MemoryIndex::flipInverter()
 {
@@ -139,8 +138,7 @@ MemoryIndex::dump(IndexBuilder &indexBuilder)
 
 namespace {
 
-class MemTermBlueprint : public queryeval::SimpleLeafBlueprint
-{
+class MemTermBlueprint : public queryeval::SimpleLeafBlueprint {
 private:
     GenerationHandler::Guard               _genGuard;
     FieldIndex::PostingList::ConstIterator _pitr;
@@ -167,8 +165,7 @@ public:
         setEstimate(estimate);
     }
 
-    SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
         auto search = std::make_unique<PostingIterator>(_pitr, _featureStore, _fieldId, tfmda);
         if (_useBitVector) {
             LOG(debug, "Return BooleanMatchIteratorWrapper: fieldId(%u), docCount(%zu)",
@@ -185,8 +182,7 @@ public:
 /**
  * Determines the correct Blueprint to use.
  **/
-class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper
-{
+class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper {
 private:
     const FieldSpec &_field;
     const uint32_t   _fieldId;
