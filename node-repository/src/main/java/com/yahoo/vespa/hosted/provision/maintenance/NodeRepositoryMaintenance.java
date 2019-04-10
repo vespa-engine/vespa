@@ -180,7 +180,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone) {
-            failGrace = Duration.ofMinutes(60);
+            failGrace = Duration.ofMinutes(30);
             periodicRedeployInterval = Duration.ofMinutes(30);
             // Don't redeploy in test environments
             redeployMaintainerInterval = zone.environment().isTest() ? Duration.ofDays(1) : Duration.ofMinutes(1);
