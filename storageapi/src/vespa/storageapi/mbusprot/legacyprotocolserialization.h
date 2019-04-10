@@ -5,6 +5,11 @@
 
 namespace storage::mbusprot {
 
+/*
+ * Utility base class for pre-v7 (protobuf) serialization implementations.
+ *
+ * TODO remove on Vespa 8 alongside legacy serialization formats.
+ */
 class LegacyProtocolSerialization : public ProtocolSerialization {
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
 public:

@@ -7,37 +7,31 @@ package storage.mbusprot.protobuf;
 
 import "common.proto";
 
-// Next tag to use: 3
 message DeleteBucketRequest {
     Bucket     bucket               = 1;
     BucketInfo expected_bucket_info = 2;
 }
 
-// Next tag to use: 3
 message DeleteBucketResponse {
     BucketInfo bucket_info        = 1;
     BucketId   remapped_bucket_id = 2;
 }
 
-// Next tag to use: 3
 message CreateBucketRequest {
     Bucket bucket           = 1;
     bool   create_as_active = 2;
 }
 
-// Next tag to use: 3
 message CreateBucketResponse {
     BucketInfo bucket_info        = 1;
     BucketId   remapped_bucket_id = 2;
 }
 
-// Next tag to use: 3
 message MergeNode {
     uint32 index = 1;
     bool   source_only = 2;
 }
 
-// Next tag to use: 6
 message MergeBucketRequest {
     Bucket             bucket                = 1;
     uint32             cluster_state_version = 2;
@@ -46,7 +40,6 @@ message MergeBucketRequest {
     repeated uint32    node_chain            = 5;
 }
 
-// Next tag to use: 2
 message MergeBucketResponse {
     BucketId remapped_bucket_id = 1;
 }
@@ -108,7 +101,6 @@ message RequestBucketInfoRequest {
         ExplicitBucketSet explicit_bucket_set = 2;
         AllBuckets        all_buckets         = 3;
     }
-    // TODO bucket info version requested
 }
 
 message BucketAndBucketInfo {

@@ -7,7 +7,6 @@ package storage.mbusprot.protobuf;
 
 import "common.proto";
 
-
 message ClientVisitorParameter {
     bytes key   = 1;
     bytes value = 2;

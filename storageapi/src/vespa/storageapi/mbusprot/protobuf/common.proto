@@ -8,53 +8,30 @@ package storage.mbusprot.protobuf;
 // Note: we use a *Request/*Response naming convention rather than *Command/*Reply,
 // as the former is the gRPC convention and that's where we intend to move.
 
-// Next tag to use: 2
 message BucketSpace {
    uint64 space_id = 1;
 }
 
-// Next tag to use: 2
 message BucketId {
    fixed64 raw_id = 1;
 }
 
-// Next tag to use: 3
 message Bucket {
     uint64  space_id      = 1;
     fixed64 raw_bucket_id = 2;
 }
 
-// Next tag to use: 9
-message BucketInfoV1 {
-    uint64  last_modified_timestamp = 1;
-    // TODO version the checksum instead?
-    fixed32 checksum       = 2;
-    uint32  doc_count      = 3;
-    uint32  total_doc_size = 4;
-    uint32  meta_count     = 5;
-    uint32  used_file_size = 6;
-    bool    ready          = 7;
-    bool    active         = 8;
-}
-
-// Next tag to use: 10
-message BucketInfoV2 {
-    uint64  last_modified_timestamp = 1;
-    // TODO version the checksum instead?
-    fixed64 checksum_lo    = 2;
-    fixed64 checksum_hi    = 3;
-    uint32  doc_count      = 4;
-    uint32  total_doc_size = 5;
-    uint32  meta_count     = 6;
-    uint32  used_file_size = 7;
-    bool    ready          = 8;
-    bool    active         = 9;
-}
-
 // Next tag to use: 3
 message BucketInfo {
-    BucketInfoV1 info_v1 = 1;
-    BucketInfoV2 info_v2 = 2;
+    uint64  last_modified_timestamp = 1;
+    fixed32 legacy_checksum = 2;
+    // TODO v2 checksum
+    uint32  doc_count       = 3;
+    uint32  total_doc_size  = 4;
+    uint32  meta_count      = 5;
+    uint32  used_file_size  = 6;
+    bool    ready           = 7;
+    bool    active          = 8;
 }
 
 message GlobalId {
@@ -81,8 +58,6 @@ message ResponseHeader {
     uint64 message_id          = 3;
     uint32 priority            = 4; // Always in range [0, 255]
 }
-
-// TODO extract bucket info response fields to own message!
 
 message Document {
     bytes payload = 1;

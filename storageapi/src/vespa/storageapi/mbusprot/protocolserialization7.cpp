@@ -45,15 +45,14 @@ document::BucketSpace get_bucket_space(const protobuf::BucketSpace& src) {
 }
 
 void set_bucket_info(protobuf::BucketInfo& dest, const api::BucketInfo& src) {
-    auto* info = dest.mutable_info_v1();
-    info->set_last_modified_timestamp(src.getLastModified());
-    info->set_checksum(src.getChecksum());
-    info->set_doc_count(src.getDocumentCount());
-    info->set_total_doc_size(src.getTotalDocumentSize());
-    info->set_meta_count(src.getMetaCount());
-    info->set_used_file_size(src.getUsedFileSize());
-    info->set_active(src.isActive());
-    info->set_ready(src.isReady());
+    dest.set_last_modified_timestamp(src.getLastModified());
+    dest.set_legacy_checksum(src.getChecksum());
+    dest.set_doc_count(src.getDocumentCount());
+    dest.set_total_doc_size(src.getTotalDocumentSize());
+    dest.set_meta_count(src.getMetaCount());
+    dest.set_used_file_size(src.getUsedFileSize());
+    dest.set_active(src.isActive());
+    dest.set_ready(src.isReady());
 }
 
 document::Bucket get_bucket(const protobuf::Bucket& src) {
@@ -62,19 +61,15 @@ document::Bucket get_bucket(const protobuf::Bucket& src) {
 }
 
 api::BucketInfo get_bucket_info(const protobuf::BucketInfo& src) {
-    if (!src.has_info_v1()) {
-        return {};
-    }
     api::BucketInfo info;
-    const auto& s = src.info_v1();
-    info.setLastModified(s.last_modified_timestamp());
-    info.setChecksum(s.checksum());
-    info.setDocumentCount(s.doc_count());
-    info.setTotalDocumentSize(s.total_doc_size());
-    info.setMetaCount(s.meta_count());
-    info.setUsedFileSize(s.used_file_size());
-    info.setActive(s.active());
-    info.setReady(s.ready());
+    info.setLastModified(src.last_modified_timestamp());
+    info.setChecksum(src.legacy_checksum());
+    info.setDocumentCount(src.doc_count());
+    info.setTotalDocumentSize(src.total_doc_size());
+    info.setMetaCount(src.meta_count());
+    info.setUsedFileSize(src.used_file_size());
+    info.setActive(src.active());
+    info.setReady(src.ready());
     return info;
 }
 
