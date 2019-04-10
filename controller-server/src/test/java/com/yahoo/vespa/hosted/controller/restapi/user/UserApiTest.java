@@ -42,6 +42,11 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .roles(operator),
                               "[]");
 
+        // GET at application/v4/tenant is available also under the /api prefix.
+        tester.assertResponse(request("/api/application/v4/tenant")
+                                      .roles(operator),
+                              "[]");
+
         // POST a tenant is not available to everyone.
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .data("{\"token\":\"hello\"}"),
@@ -117,6 +122,11 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // GET application role information is available to tenant operators.
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app")
+                                      .roles(Set.of(roles.tenantOperator(id.tenant()))),
+                              new File("application-roles.json"));
+
+        // GET application role information is available also under the /api prefix.
+        tester.assertResponse(request("api//user/v1/tenant/my-tenant/application/my-app")
                                       .roles(Set.of(roles.tenantOperator(id.tenant()))),
                               new File("application-roles.json"));
 
