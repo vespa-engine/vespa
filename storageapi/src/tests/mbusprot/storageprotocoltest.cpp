@@ -184,8 +184,19 @@ TEST_P(StorageProtocolTest, put) {
     EXPECT_EQ(*_testDoc, *reply->getDocument());
     EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
     EXPECT_EQ(Timestamp(14), reply2->getTimestamp());
-    // TODO test without remapping as well
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
+}
+
+TEST_P(StorageProtocolTest, response_without_remapped_bucket_preserves_original_bucket) {
+    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    auto cmd2 = copyCommand(cmd);
+    auto reply = std::make_shared<PutReply>(*cmd2);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_FALSE(reply2->hasBeenRemapped());
+    EXPECT_EQ(_bucket_id, reply2->getBucketId());
+    EXPECT_EQ(document::BucketId(), reply2->getOriginalBucketId());
+
 }
 
 TEST_P(StorageProtocolTest, update) {
