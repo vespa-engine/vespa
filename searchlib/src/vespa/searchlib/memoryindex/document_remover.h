@@ -2,7 +2,7 @@
 #pragma once
 
 #include "compact_document_words_store.h"
-#include "i_document_insert_listener.h"
+#include "i_field_index_insert_listener.h"
 
 namespace search::memoryindex {
 
@@ -12,7 +12,7 @@ class WordStore;
 /**
  * Class used to remove documents from the memory index dictionary.
  */
-class DocumentRemover : public IDocumentInsertListener {
+class DocumentRemover : public IFieldIndexInsertListener {
 private:
     struct WordFieldDocTuple {
         datastore::EntryRef _wordRef;
@@ -50,7 +50,7 @@ public:
     CompactDocumentWordsStore &getStore() { return _store; }
     const CompactDocumentWordsStore &getStore() const { return _store; }
 
-    // Implements IDocumentInsertListener
+    // Implements IFieldIndexInsertListener
     void insert(datastore::EntryRef wordRef, uint32_t docId) override;
     void flush() override;
 };

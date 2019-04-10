@@ -8,7 +8,7 @@
 
 namespace search::memoryindex {
 
-class IDocumentInsertListener;
+class IFieldIndexInsertListener;
 
 /**
  * Class used to insert inverted documents into a FieldIndex,
@@ -31,7 +31,7 @@ private:
     using PostingListKeyDataType = FieldIndex::PostingListKeyDataType;
     FieldIndex        &_fieldIndex;
     DictionaryTree::Iterator _dItr;
-    IDocumentInsertListener &_listener;
+    IFieldIndexInsertListener &_listener;
 
     // Pending changes to posting list for (_word)
     std::vector<uint32_t>    _removes;
