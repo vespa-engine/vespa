@@ -39,6 +39,8 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
     public static final String JDISC_REQUEST_PRINCIPAL = "jdisc.request.principal";
     public static final String JDISC_REQUEST_X509CERT = "jdisc.request.X509Certificate";
     public static final String SERVLET_REQUEST_X509CERT = "javax.servlet.request.X509Certificate";
+    public static final String SERVLET_REQUEST_SSL_SESSION_ID = "javax.servlet.request.ssl_session_id";
+    public static final String SERVLET_REQUEST_CIPHER_SUITE = "javax.servlet.request.cipher_suite";
 
     private final HttpServletRequest request;
     private final HeaderFields headerFields;

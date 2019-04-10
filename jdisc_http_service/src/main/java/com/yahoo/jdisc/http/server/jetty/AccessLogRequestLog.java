@@ -87,6 +87,14 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             if (clientCert != null && clientCert.length > 0) {
                 accessLogEntry.setSslPrincipal(clientCert[0].getSubjectX500Principal());
             }
+            String sslSessionId = (String) request.getAttribute(ServletRequest.SERVLET_REQUEST_SSL_SESSION_ID);
+            if (sslSessionId != null) {
+                accessLogEntry.addKeyValue("ssl-session-id", sslSessionId);
+            }
+            String cipherSuite = (String) request.getAttribute(ServletRequest.SERVLET_REQUEST_CIPHER_SUITE);
+            if (cipherSuite != null) {
+                accessLogEntry.addKeyValue("cipher-suite", cipherSuite);
+            }
 
             final long startTime = request.getTimeStamp();
             final long endTime = System.currentTimeMillis();
