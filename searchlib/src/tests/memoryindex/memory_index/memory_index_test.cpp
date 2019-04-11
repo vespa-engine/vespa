@@ -2,24 +2,24 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/searchlib/memoryindex/memoryindex.h>
+#include <vespa/searchlib/common/scheduletaskcallback.h>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
-#include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("memoryindex_test");
+LOG_SETUP("memory_index_test");
 
 using document::Document;
 using document::FieldValue;

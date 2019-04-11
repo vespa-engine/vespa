@@ -2,7 +2,7 @@
 
 #include "document_inverter.h"
 #include "field_index_collection.h"
-#include "memoryindex.h"
+#include "memory_index.h"
 #include "postingiterator.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -15,7 +15,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.memoryindex");
+LOG_SETUP(".searchlib.memoryindex.memory_index");
 
 using document::ArrayFieldValue;
 using document::WeightedSetFieldValue;
