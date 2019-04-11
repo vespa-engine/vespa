@@ -22,7 +22,8 @@ public enum JobProfile {
                           installTester,
                           startTests,
                           endTests),
-               EnumSet.of(deactivateTester,
+               EnumSet.of(copyVespaLogs,
+                          deactivateTester,
                           deactivateReal,
                           report)),
 
@@ -34,7 +35,8 @@ public enum JobProfile {
                            installTester,
                            startTests,
                            endTests),
-                EnumSet.of(deactivateTester,
+                EnumSet.of(copyVespaLogs,
+                           deactivateTester,
                            deactivateReal,
                            report)),
 
