@@ -14,11 +14,11 @@ namespace search::diskindex
 template <bool bigEndian>
 Zc4PostingWriter<bigEndian>::Zc4PostingWriter(PostingListCounts &counts)
     : Zc4PostingWriterBase(counts),
-      _encodeContext(),
-      _encodeFeatures(nullptr)
+      _encode_context(),
+      _encode_features(nullptr)
 {
-    _encodeContext.setWriteContext(&_writeContext);
-    _writeContext.setEncodeContext(&_encodeContext);
+    _encode_context.setWriteContext(&_writeContext);
+    _writeContext.setEncodeContext(&_encode_context);
 }
 
 template <bool bigEndian>
@@ -31,8 +31,8 @@ void
 Zc4PostingWriter<bigEndian>::reset_chunk()
 {
     _docIds.clear();
-    if (_encodeFeatures != nullptr) {
-        _encodeFeatures->setupWrite(_featureWriteContext);
+    if (_encode_features != nullptr) {
+        _encode_features->setupWrite(_featureWriteContext);
         _featureOffset = 0;
     }
 }
@@ -43,18 +43,19 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 {
     assert(_docIds.size() >= _minSkipDocs || !_counts._segments.empty());
 
-    if (_encodeFeatures != nullptr) {
-        _encodeFeatures->flush();
+    if (_encode_features != nullptr) {
+        _encode_features->flush();
     }
-    EncodeContext &e = _encodeContext;
+    EncodeContext &e = _encode_context;
 
     uint32_t numDocs = _docIds.size();
 
     e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
-    if (numDocs >= _minChunkDocs)
+    if (numDocs >= _minChunkDocs) {
         e.writeBits((hasMore ? 1 : 0), 1);
+    }
 
-    calc_skip_info(_encodeFeatures != nullptr);
+    calc_skip_info(_encode_features != nullptr);
 
     uint32_t docIdsSize = _zcDocIds.size();
     uint32_t l1SkipSize = _l1Skip.size();
@@ -73,7 +74,7 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
             }
         }
     }
-    if (_encodeFeatures != nullptr) {
+    if (_encode_features != nullptr) {
         e.encodeExpGolomb(_featureOffset, K_VALUE_ZCPOSTING_FEATURESSIZE);
     }
 
@@ -148,9 +149,9 @@ Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures &fe
     if (__builtin_expect(_docIds.size() >= _minChunkDocs, false)) {
         flush_word_with_skip(true);
     }
-    if (_encodeFeatures != nullptr) {
-        _encodeFeatures->writeFeatures(features);
-        uint64_t writeOffset = _encodeFeatures->getWriteOffset();
+    if (_encode_features != nullptr) {
+        _encode_features->writeFeatures(features);
+        uint64_t writeOffset = _encode_features->getWriteOffset();
         uint64_t featureSize = writeOffset - _featureOffset;
         assert(static_cast<uint32_t>(featureSize) == featureSize);
         _docIds.push_back(std::make_pair(features._docId,
@@ -168,10 +169,10 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
     // Too few document ids for skip info.
     assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());
 
-    if (_encodeFeatures != nullptr) {
-        _encodeFeatures->flush();
+    if (_encode_features != nullptr) {
+        _encode_features->flush();
     }
-    EncodeContext &e = _encodeContext;
+    EncodeContext &e = _encode_context;
     uint32_t numDocs = _docIds.size();
 
     e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
@@ -216,7 +217,7 @@ Zc4PostingWriter<bigEndian>::flush_word()
         _numWords++;
     }
 
-    EncodeContext &e = _encodeContext;
+    EncodeContext &e = _encode_context;
     uint64_t writePos = e.getWriteOffset();
 
     _counts._bitLength = writePos - _writePos;
@@ -227,12 +228,12 @@ template <bool bigEndian>
 void
 Zc4PostingWriter<bigEndian>::set_encode_features(EncodeContext *encode_features)
 {
-    _encodeFeatures = encode_features;
-    if (_encodeFeatures != nullptr) {
-        _encodeFeatures->setWriteContext(&_featureWriteContext);
-        _encodeFeatures->setupWrite(_featureWriteContext);
+    _encode_features = encode_features;
+    if (_encode_features != nullptr) {
+        _encode_features->setWriteContext(&_featureWriteContext);
+        _encode_features->setupWrite(_featureWriteContext);
     }
-    _featureWriteContext.setEncodeContext(_encodeFeatures);
+    _featureWriteContext.setEncodeContext(_encode_features);
     _featureOffset = 0;
 }
 
@@ -241,7 +242,7 @@ void
 Zc4PostingWriter<bigEndian>::on_open()
 {
     _numWords = 0;
-    _writePos = _encodeContext.getWriteOffset(); // Position after file header 
+    _writePos = _encode_context.getWriteOffset(); // Position after file header 
 }
 
 template <bool bigEndian>
@@ -252,15 +253,15 @@ Zc4PostingWriter<bigEndian>::on_close()
     // memory mapped file during search and into SIGSEGV territory.
 
     // First pad to 64 bits alignment.
-    _encodeContext.smallAlign(64);
-    _encodeContext.writeComprBufferIfNeeded();
+    _encode_context.smallAlign(64);
+    _encode_context.writeComprBufferIfNeeded();
 
     // Then write 128 more bits.  This allows for 64-bit decoding
     // with a readbits that always leaves a nonzero preRead
-    _encodeContext.padBits(128);
-    _encodeContext.alignDirectIO();
-    _encodeContext.flush();
-    _encodeContext.writeComprBuffer();   // Also flushes slack
+    _encode_context.padBits(128);
+    _encode_context.alignDirectIO();
+    _encode_context.flush();
+    _encode_context.writeComprBuffer();   // Also flushes slack
 }
 
 template class Zc4PostingWriter<false>;

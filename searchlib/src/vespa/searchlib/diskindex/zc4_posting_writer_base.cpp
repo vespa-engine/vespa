@@ -187,14 +187,18 @@ Zc4PostingWriterBase::calc_skip_info(bool encodeFeatures)
         ++l1SkipCnt;
     }
     // Extra partial entries for skip tables to simplify iterator during search
-    if (_l1Skip.size() > 0)
+    if (_l1Skip.size() > 0) {
         _l1Skip.encode(lastDocId - lastL1SkipDocId - 1);
-    if (_l2Skip.size() > 0)
+    }
+    if (_l2Skip.size() > 0) {
         _l2Skip.encode(lastDocId - lastL2SkipDocId - 1);
-    if (_l3Skip.size() > 0)
+    }
+    if (_l3Skip.size() > 0) {
         _l3Skip.encode(lastDocId - lastL3SkipDocId - 1);
-    if (_l4Skip.size() > 0)
+    }
+    if (_l4Skip.size() > 0) {
         _l4Skip.encode(lastDocId - lastL4SkipDocId - 1);
+    }
 }
 
 void

@@ -23,9 +23,9 @@ class Zc4PostingWriter : public Zc4PostingWriterBase
 {
     using EncodeContext = bitcompression::FeatureEncodeContext<bigEndian>;
 
-    EncodeContext _encodeContext;
+    EncodeContext _encode_context;
     // Buffer up features in memory
-    EncodeContext *_encodeFeatures;
+    EncodeContext *_encode_features;
 public:
     Zc4PostingWriter(const Zc4PostingWriter &) = delete;
     Zc4PostingWriter(Zc4PostingWriter &&) = delete;
@@ -43,8 +43,8 @@ public:
     void on_open();
     void on_close();
 
-    EncodeContext &get_encode_features() { return *_encodeFeatures; }
-    EncodeContext &get_encode_context() { return _encodeContext; }
+    EncodeContext &get_encode_features() { return *_encode_features; }
+    EncodeContext &get_encode_context() { return _encode_context; }
 };
 
 extern template class Zc4PostingWriter<false>;
