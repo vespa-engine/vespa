@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -59,7 +58,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
@@ -482,21 +481,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
+        application.endpointsIn(controller.system())
+                   .scope(Endpoint.Scope.global)
+                   .legacy(false) // Hide legacy names
+                   .asList().stream()
+                   .map(Endpoint::url)
+                   .map(URI::toString)
+                   .forEach(globalRotationsArray::addString);
 
-        application.globalDnsName(controller.system()).ifPresent(rotation -> {
-            globalRotationsArray.addString(rotation.url().toString());
-            globalRotationsArray.addString(rotation.secureUrl().toString());
-            globalRotationsArray.addString(rotation.oathUrl().toString());
-            object.setString("rotationId", application.rotation().get().asString());
-        });
+        application.rotation().ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies(application.id());
         for (RoutingPolicy policy : routingPolicies) {
-            for (RotationName rotation : policy.rotations()) {
-                GlobalDnsName dnsName = new GlobalDnsName(application.id(), controller.system(), rotation);
-                globalRotationsArray.addString(dnsName.oathUrl().toString());
-            }
+            policy.endpointsIn(controller.system()).asList().stream()
+                  .map(Endpoint::url)
+                  .map(URI::toString)
+                  .forEach(globalRotationsArray::addString);
         }
 
         // Deployments sorted according to deployment spec
@@ -574,6 +575,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
 
+        // serviceUrls contains zone/cluster-specific endpoints for this deployment. The name of these endpoints may
+        // contain  the cluster name (if non-default) and since the controller has no knowledge of clusters, we have to
+        // ask the routing layer here
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.applications().getDeploymentEndpoints(deploymentId)
                   .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));

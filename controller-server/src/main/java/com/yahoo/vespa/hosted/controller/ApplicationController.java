@@ -45,7 +45,8 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -283,7 +284,7 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             Set<String> rotationNames = new HashSet<>();
-            Set<String> cnames = new HashSet<>();
+            Set<String> cnames;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(require(applicationId), lock);
@@ -324,13 +325,7 @@ public class ApplicationController {
                 // Assign global rotation
                 application = withRotation(application, zone);
                 Application app = application.get();
-                app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
-                    rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
-                    cnames.add(applicationRotation.dnsName());
-                    cnames.add(applicationRotation.secureDnsName());
-                    cnames.add(applicationRotation.oathDnsName());
-                });
-
+                cnames = app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).collect(Collectors.toSet());
                 // Update application with information from application package
                 if (   ! preferOldestVersion
                     && ! application.get().deploymentJobs().deployedInternally()
@@ -438,18 +433,20 @@ public class ApplicationController {
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
-                GlobalDnsName dnsName = application.get().globalDnsName(controller.system())
-                                                   .orElseThrow(() -> new IllegalStateException("Expected rotation to be assigned"));
                 boolean redirectLegacyDns = redirectLegacyDnsFlag.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm())
                                                                  .value();
-                registerCname(dnsName.oathDnsName(), rotation.name());
-                if (redirectLegacyDns) {
-                    registerCname(dnsName.dnsName(), dnsName.oathDnsName());
-                    registerCname(dnsName.secureDnsName(), dnsName.oathDnsName());
-                } else {
-                    registerCname(dnsName.dnsName(), rotation.name());
-                    registerCname(dnsName.secureDnsName(), rotation.name());
-                }
+
+                EndpointList globalEndpoints = application.get()
+                                                          .endpointsIn(controller.system())
+                                                          .scope(Endpoint.Scope.global);
+                globalEndpoints.main().ifPresent(mainEndpoint -> {
+                    registerCname(mainEndpoint.dnsName(), rotation.name());
+                    if (redirectLegacyDns) {
+                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), mainEndpoint.dnsName()));
+                    } else {
+                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), rotation.name()));
+                    }
+                });
             }
         }
         return application;

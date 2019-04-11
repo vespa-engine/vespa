@@ -65,8 +65,8 @@ public class RotationRepositoryTest {
 
         application = tester.applications().require(application.id());
         assertEquals(expected.id(), application.rotation().get());
-        assertEquals(URI.create("http://app1.tenant1.global.vespa.yahooapis.com:4080/"),
-                     application.globalDnsName(SystemName.main).get().url());
+        assertEquals(URI.create("https://app1--tenant1.global.vespa.oath.cloud:4443/"),
+                     application.endpointsIn(SystemName.main).main().get().url());
         try (RotationLock lock = repository.lock()) {
             Rotation rotation = repository.getOrAssignRotation(tester.applications().require(application.id()), lock);
             assertEquals(expected, rotation);
@@ -153,10 +153,9 @@ public class RotationRepositoryTest {
         Application application = tester.createApplication("app2", "tenant2", 22L,
                                                            2L);
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(new RotationId("foo-1"), tester.applications().require(application.id())
-                .rotation().get());
-        assertEquals("https://cd--app2--tenant2.global.vespa.yahooapis.com:4443/", tester.applications().require(application.id())
-                .globalDnsName(SystemName.cd).get().secureUrl().toString());
+        assertEquals(new RotationId("foo-1"), tester.applications().require(application.id()).rotation().get());
+        assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/", tester.applications().require(application.id())
+                .endpointsIn(SystemName.cd).main().get().url().toString());
     }
 
 }

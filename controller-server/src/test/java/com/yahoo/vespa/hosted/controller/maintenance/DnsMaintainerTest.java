@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -117,7 +117,7 @@ public class DnsMaintainerTest {
         for (int i = 1; i <= staleTotal; i++) {
             Rotation r = rotation(i);
             tester.controllerTester().nameService().createCname(RecordName.from("stale-record-" + i + "." +
-                                                                                GlobalDnsName.OATH_DNS_SUFFIX),
+                                                                                Endpoint.OATH_DNS_SUFFIX),
                                                                 RecordData.from(r.name() + "."));
         }
 

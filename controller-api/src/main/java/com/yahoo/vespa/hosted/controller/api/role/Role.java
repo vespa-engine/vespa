@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.controller.api.role;
 import java.net.URI;
 import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * A role is a combination of a {@link RoleDefinition} and a {@link Context}, which allows evaluation
  * of access control for a given action on a resource. Create using {@link Roles}.
@@ -18,15 +16,15 @@ public abstract class Role {
     final Context context;
 
     Role(RoleDefinition roleDefinition, Context context) {
-        this.roleDefinition = requireNonNull(roleDefinition);
-        this.context = requireNonNull(context);
+        this.roleDefinition = Objects.requireNonNull(roleDefinition);
+        this.context = Objects.requireNonNull(context);
     }
 
     /** Returns the role definition of this bound role. */
     public RoleDefinition definition() { return roleDefinition; }
 
     /** Returns whether this role is allowed to perform the given action on the given resource. */
-    public boolean allows(Action action, URI uri) {
+    public final boolean allows(Action action, URI uri) {
         return roleDefinition.policies().stream().anyMatch(policy -> policy.evaluate(action, uri, context));
     }
 

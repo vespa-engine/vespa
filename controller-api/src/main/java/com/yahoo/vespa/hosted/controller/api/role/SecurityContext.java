@@ -5,8 +5,9 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
-
+/**
+ * @author tokle
+ */
 public class SecurityContext {
 
     public static final String ATTRIBUTE_NAME = SecurityContext.class.getName();
@@ -15,7 +16,7 @@ public class SecurityContext {
     private final Set<Role> roles;
 
     public SecurityContext(Principal principal, Set<Role> roles) {
-        this.principal = requireNonNull(principal);
+        this.principal = Objects.requireNonNull(principal);
         this.roles = Set.copyOf(roles);
     }
 

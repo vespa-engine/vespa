@@ -8,7 +8,7 @@
   "changeBlockers": [],
   "compileVersion": "(ignore)",
   "globalRotations": [
-    "https://c0--application1--tenant1.global.vespa.oath.cloud:4443/"
+    "https://c0.application1.tenant1.global.vespa.oath.cloud/"
   ],
   "instances": [],
   "metrics": {

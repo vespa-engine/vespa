@@ -24,7 +24,7 @@ public enum SystemName {
     Public,
 
     /** VaaS */
-    vaas;
+    vaas; // TODO: Remove this and use public everywhere
 
     public static SystemName defaultSystem() {
         return main;
@@ -35,7 +35,7 @@ public enum SystemName {
             case "dev": return dev;
             case "cd": return cd;
             case "main": return main;
-            case "public": return Public;
+            case "public":
             case "Public": return Public;
             case "vaas": return vaas;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
