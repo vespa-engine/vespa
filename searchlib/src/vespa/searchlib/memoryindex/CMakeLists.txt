@@ -3,7 +3,7 @@ vespa_add_library(searchlib_memoryindex OBJECT
     SOURCES
     compact_document_words_store.cpp
     document_inverter.cpp
-    featurestore.cpp
+    feature_store.cpp
     field_index.cpp
     field_index_collection.cpp
     field_index_remover.cpp

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "featurestore.h"
+#include "feature_store.h"
 #include "field_index_remover.h"
 #include "wordstore.h"
 #include <vespa/searchlib/btree/btree.h>

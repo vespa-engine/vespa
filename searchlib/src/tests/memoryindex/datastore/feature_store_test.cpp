@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
-LOG_SETUP("featurestore_test");
+LOG_SETUP("feature_store_test");
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/memoryindex/featurestore.h>
+#include <vespa/searchlib/memoryindex/feature_store.h>
 
 using namespace search::btree;
 using namespace search::datastore;
@@ -213,7 +213,7 @@ Test::Test()
 int
 Test::Main()
 {
-    TEST_INIT("featurestore_test");
+    TEST_INIT("feature_store_test");
 
     requireThatFeaturesCanBeAddedAndRetrieved();
     requireThatNextWordsAreWorking();
