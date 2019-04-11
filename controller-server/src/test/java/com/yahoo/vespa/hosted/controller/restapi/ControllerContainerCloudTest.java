@@ -24,14 +24,20 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
     }
 
     @Override
-    protected String securityXml() {
+    protected String variablePartXml() {
         return "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMarketplace'/>\n" +
 
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
+               "    <binding>http://*/application/v4/*</binding>\n" +
+               "    <binding>http://*/api/application/v4/*</binding>\n" +
+               "  </handler>\n" +
+
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
                "    <binding>http://*/user/v1/*</binding>\n" +
+               "    <binding>http://*/api/user/v1/*</binding>\n" +
                "  </handler>\n" +
 
                "  <http>\n" +

@@ -15,6 +15,7 @@ import java.util.Set;
  * When creating a new API, its paths must be added here and a policy must be declared in {@link Policy}.
  *
  * @author mpolden
+ * @author jonmv
  */
 public enum PathGroup {
 
@@ -32,29 +33,35 @@ public enum PathGroup {
 
     /** Paths used for creating tenants with proper access control. */
     tenant(Matcher.tenant,
+           Optional.of("/api"),
            "/application/v4/tenant/{tenant}"),
 
     /** Paths used for user management on the tenant level. */
     tenantUsers(Matcher.tenant,
+                Optional.of("/api"),
                 "/user/v1/tenant/{tenant}"),
 
     /** Paths used by tenant administrators. */
     tenantInfo(Matcher.tenant,
+               Optional.of("/api"),
                "/application/v4/tenant/{tenant}/application/"),
 
     /** Path for the base application resource. */
     application(Matcher.tenant,
                 Matcher.application,
+                Optional.of("/api"),
                 "/application/v4/tenant/{tenant}/application/{application}"),
 
     /** Paths used for user management on the application level. */
     applicationUsers(Matcher.tenant,
                      Matcher.application,
+                     Optional.of("/api"),
                      "/user/v1/tenant/{tenant}/application/{application}"),
 
     /** Paths used by application administrators. */
     applicationInfo(Matcher.tenant,
                     Matcher.application,
+                    Optional.of("/api"),
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/instance/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs",
@@ -65,10 +72,12 @@ public enum PathGroup {
     /** Path used to restart application nodes. */ // TODO move to the above when everyone is on new pipeline.
     applicationRestart(Matcher.tenant,
                        Matcher.application,
+                       Optional.of("/api"),
                        "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/restart"),
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,
                           Matcher.application,
+                          Optional.of("/api"),
                           "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}",
                           "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}/deploy",
                           "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}",
@@ -77,6 +86,7 @@ public enum PathGroup {
     /** Paths used for production deployments. */
     productionDeployment(Matcher.tenant,
                          Matcher.application,
+                         Optional.of("/api"),
                          "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}",
                          "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/deploy",
                          "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{instance}",
@@ -87,21 +97,26 @@ public enum PathGroup {
     /** Paths used for continuous deployment to production. */
     submission(Matcher.tenant,
                Matcher.application,
+               Optional.of("/api"),
                "/application/v4/tenant/{tenant}/application/{application}/submit"),
 
     /** Paths used for other tasks by build services. */ // TODO: This will vanish.
     buildService(Matcher.tenant,
                  Matcher.application,
+                 Optional.of("/api"),
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
                  "/application/v4/tenant/{tenant}/application/{application}/promote",
                  "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote"),
+
+    /** Paths which contain (not very strictly) classified information about customers. */
+    classifiedTenantInfo(Optional.of("/api"),
+                         "/application/v4/",
+                         "/application/v4/tenant/"),
 
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
     classifiedInfo("/athenz/v1/{*}",
                    "/cost/v1/{*}",
                    "/deployment/v1/{*}",
-                   "/application/v4/",
-                   "/application/v4/tenant/",
                    "/",
                    "/d/{*}",
                    "/statuspage/v1/{*}"),
@@ -111,30 +126,43 @@ public enum PathGroup {
                "/zone/v1/{*}");
 
     final List<String> pathSpecs;
+    final String prefix;
     final List<Matcher> matchers;
 
     PathGroup(String... pathSpecs) {
-        this(List.of(), List.of(pathSpecs));
+        this(List.of(), Optional.empty(), List.of(pathSpecs));
+    }
+
+    PathGroup(Optional<String> prefix, String... pathSpecs) {
+        this(List.of(), prefix, List.of(pathSpecs));
     }
 
     PathGroup(Matcher first, String... pathSpecs) {
-        this(List.of(first), List.of(pathSpecs));
+        this(List.of(first), Optional.empty(), List.of(pathSpecs));
+    }
+
+    PathGroup(Matcher first, Optional<String> prefix, String... pathSpecs) {
+        this(List.of(first), prefix, List.of(pathSpecs));
     }
 
     PathGroup(Matcher first, Matcher second, String... pathSpecs) {
-        this(List.of(first, second), List.of(pathSpecs));
+        this(List.of(first, second), Optional.empty(), List.of(pathSpecs));
+    }
+
+    PathGroup(Matcher first, Matcher second, Optional<String> prefix, String... pathSpecs) {
+        this(List.of(first, second), prefix, List.of(pathSpecs));
     }
 
     /** Creates a new path group, if the given context matchers are each present exactly once in each of the given specs. */
-    PathGroup(List<Matcher> matchers, List<String> pathSpecs) {
+    PathGroup(List<Matcher> matchers, Optional<String> prefix, List<String> pathSpecs) {
         this.matchers = matchers;
+        this.prefix = prefix.orElse("");
         this.pathSpecs = pathSpecs;
     }
 
     /** Returns path if it matches any spec in this group, with match groups set by the match. */
-    @SuppressWarnings("deprecation")
     private Optional<Path> get(URI uri) {
-        Path matcher = new Path(uri); // TODO Get URI down here.
+        Path matcher = new Path(uri, prefix);
         for (String spec : pathSpecs) // Iterate to be sure the Path's state is that of the match.
             if (matcher.matches(spec)) return Optional.of(matcher);
         return Optional.empty();

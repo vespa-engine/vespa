@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 public class UserApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
+    private static final String optionalPrefix = "/api";
 
     private final UserRoles roles;
     private final UserManagement users;
@@ -56,10 +57,11 @@ public class UserApiHandler extends LoggingRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
+            Path path = new Path(request.getUri(), optionalPrefix);
             switch (request.getMethod()) {
-                case GET: return handleGET(request);
-                case POST: return handlePOST(request);
-                case DELETE: return handleDELETE(request);
+                case GET: return handleGET(path, request);
+                case POST: return handlePOST(path, request);
+                case DELETE: return handleDELETE(path, request);
                 case OPTIONS: return handleOPTIONS();
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
@@ -73,8 +75,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri());
+    private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return listTenantRoleMembers(path.get("tenant"));
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return listApplicationRoleMembers(path.get("tenant"), path.get("application"));
 
@@ -82,8 +83,7 @@ public class UserApiHandler extends LoggingRequestHandler {
                                                          request.getUri().getPath()));
     }
 
-    private HttpResponse handlePOST(HttpRequest request) {
-        Path path = new Path(request.getUri());
+    private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return addTenantRoleMember(path.get("tenant"), request);
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return addApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
@@ -91,8 +91,7 @@ public class UserApiHandler extends LoggingRequestHandler {
                                                          request.getUri().getPath()));
     }
 
-    private HttpResponse handleDELETE(HttpRequest request) {
-        Path path = new Path(request.getUri());
+    private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/user/v1/tenant/{tenant}")) return removeTenantRoleMember(path.get("tenant"), request);
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return removeApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
