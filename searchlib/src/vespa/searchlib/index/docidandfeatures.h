@@ -183,14 +183,6 @@ public:
 
     void setRaw(bool raw) { _raw = raw; }
     bool getRaw() const { return _raw; }
-
-    /**
-     * Append features from a single field to a field collection.
-     *
-     * @param rhs       features for a single field
-     * @param localFieldId  local field id for the field
-     */
-    void append(const DocIdAndFeatures &rhs, uint32_t localFieldId);
 };
 
 }
