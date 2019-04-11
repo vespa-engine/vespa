@@ -723,7 +723,6 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
     _fileBitSize = 0;
     // Start write initial header
     makeHeader(fileHeaderContext);
-//    _writer.get_encode_features().setupWrite(_writer.get_feature_write_context());
     // end write initial header
     _writer.on_open();
     return true;    // Assume success
