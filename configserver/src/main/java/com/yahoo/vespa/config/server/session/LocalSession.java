@@ -64,6 +64,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
                                        Optional<ApplicationSet> currentActiveApplicationSet, 
                                        Path tenantPath,
                                        Instant now) {
+        applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
         ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params,
                                                               currentActiveApplicationSet, tenantPath, now);
