@@ -44,7 +44,7 @@ public class Messenger implements Runnable {
      *
      * @param task The task to add.
      */
-    public void addRecurrentTask(final Task task) {
+    void addRecurrentTask(final Task task) {
         children.add(task);
     }
 
@@ -159,7 +159,7 @@ public class Messenger implements Runnable {
             synchronized (this) {
                 if (queue.isEmpty()) {
                     try {
-                        wait(100);
+                        wait(10);
                     } catch (final InterruptedException e) {
                         continue;
                     }
@@ -210,13 +210,13 @@ public class Messenger implements Runnable {
         /**
          * <p>This method is called when being executed.</p>
          */
-        public void run();
+        void run();
 
         /**
          * <p>This method is called for all tasks, even if {@link #run()} was
          * never called.</p>
          */
-        public void destroy();
+        void destroy();
     }
 
     private static class MessageTask implements Runnable {

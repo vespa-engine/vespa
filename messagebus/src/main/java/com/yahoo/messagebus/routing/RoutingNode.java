@@ -1,15 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.routing;
 
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
+import com.yahoo.messagebus.SendProxy;
+import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceLevel;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.messagebus.metrics.RouteMetricSet;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.ServiceAddress;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -32,7 +45,7 @@ public class RoutingNode implements ReplyHandler {
     private final AtomicInteger pending = new AtomicInteger(0);
     private final Message msg;
     private Reply reply = null;
-    private Route route = null;
+    private Route route;
     private RoutingPolicy policy = null;
     private RoutingContext routingContext = null;
     private ServiceAddress serviceAddress = null;
@@ -122,7 +135,7 @@ public class RoutingNode implements ReplyHandler {
      *
      * @param msg The error message to assign.
      */
-    public void notifyAbort(String msg) {
+    private void notifyAbort(String msg) {
         Stack<RoutingNode> stack = new Stack<>();
         stack.push(this);
         while (!stack.isEmpty()) {

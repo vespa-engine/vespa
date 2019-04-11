@@ -576,7 +576,6 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void addRecurrentTask(com.yahoo.messagebus.Messenger$Task)",
       "public void start()",
       "public void deliverMessage(com.yahoo.messagebus.Message, com.yahoo.messagebus.MessageHandler)",
       "public void deliverReply(com.yahoo.messagebus.Reply, com.yahoo.messagebus.ReplyHandler)",
