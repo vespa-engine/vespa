@@ -77,6 +77,12 @@ public class MixedBinaryFormatTestCase {
         assertSerialization(tensor);
     }
 
+    @Test
+    public void testSerializationOfDifferentValueTypes() {
+        assertSerialization("tensor<double>(x{},y[2]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<float>(x{},y[2]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+    }
+
     private void assertSerialization(String tensorString) {
         assertSerialization(Tensor.from(tensorString));
     }

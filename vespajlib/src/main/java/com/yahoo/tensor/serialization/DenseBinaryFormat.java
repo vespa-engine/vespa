@@ -9,6 +9,8 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Implementation of a dense binary format for a tensor on the form:
@@ -22,38 +24,21 @@ import java.util.Optional;
  */
 public class DenseBinaryFormat implements BinaryFormat {
 
-    static private final int DOUBLE_VALUE_TYPE = 0; // Not encoded as it is default, and you know the type when deserializing
-    static private final int FLOAT_VALUE_TYPE = 1;
+    private final TensorType.Value serializationValueType;
 
-    enum EncodeType {NO_DEFAULT, DOUBLE_IS_DEFAULT}
-    private final EncodeType encodeType;
     DenseBinaryFormat() {
-        encodeType = EncodeType.DOUBLE_IS_DEFAULT;
+        this(TensorType.Value.DOUBLE);
     }
-    DenseBinaryFormat(EncodeType encodeType) {
-        this.encodeType = encodeType;
+    DenseBinaryFormat(TensorType.Value serializationValueType) {
+        this.serializationValueType = serializationValueType;
     }
 
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {
         if ( ! ( tensor instanceof IndexedTensor))
             throw new RuntimeException("The dense format is only supported for indexed tensors");
-        encodeValueType(buffer, tensor.type().valueType());
         encodeDimensions(buffer, (IndexedTensor)tensor);
         encodeCells(buffer, tensor);
-    }
-
-    private void encodeValueType(GrowableByteBuffer buffer, TensorType.Value valueType) {
-        switch (valueType) {
-            case DOUBLE:
-                if (encodeType != EncodeType.DOUBLE_IS_DEFAULT) {
-                    buffer.putInt1_4Bytes(DOUBLE_VALUE_TYPE);
-                }
-                break;
-            case FLOAT:
-                buffer.putInt1_4Bytes(FLOAT_VALUE_TYPE);
-                break;
-        }
     }
 
     private void encodeDimensions(GrowableByteBuffer buffer, IndexedTensor tensor) {
@@ -65,26 +50,17 @@ public class DenseBinaryFormat implements BinaryFormat {
     }
 
     private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
-        switch (tensor.type().valueType()) {
-            case DOUBLE:
-                encodeCellsAsDouble(buffer, tensor);
-                break;
-            case FLOAT:
-                encodeCellsAsFloat(buffer, tensor);
-                break;
+        switch (serializationValueType) {
+            case DOUBLE: encodeCells(tensor, buffer::putDouble); break;
+            case FLOAT: encodeCells(tensor, (i) -> buffer.putFloat(i.floatValue())); break;
         }
     }
 
-    private void encodeCellsAsDouble(GrowableByteBuffer buffer, Tensor tensor) {
+    private void encodeCells(Tensor tensor, Consumer<Double> consumer) {
         Iterator<Double> i = tensor.valueIterator();
-        while (i.hasNext())
-            buffer.putDouble(i.next());
-    }
-
-    private void encodeCellsAsFloat(GrowableByteBuffer buffer, Tensor tensor) {
-        Iterator<Double> i = tensor.valueIterator();
-        while (i.hasNext())
-            buffer.putFloat(i.next().floatValue());
+        while (i.hasNext()) {
+            consumer.accept(i.next());
+        }
     }
 
     @Override
@@ -93,40 +69,27 @@ public class DenseBinaryFormat implements BinaryFormat {
         DimensionSizes sizes;
         if (optionalType.isPresent()) {
             type = optionalType.get();
-            TensorType serializedType = decodeType(buffer, type.valueType());
+            if (type.valueType() != this.serializationValueType) {
+                throw new IllegalArgumentException("Tensor value type mismatch. Value type " + type.valueType() +
+                                                   " is not " + this.serializationValueType);
+            }
+            TensorType serializedType = decodeType(buffer);
             if ( ! serializedType.isAssignableTo(type))
                 throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
                                                    " cannot be assigned to type " + type);
             sizes = sizesFromType(serializedType);
         }
         else {
-            type = decodeType(buffer, TensorType.Value.DOUBLE);
+            type = decodeType(buffer);
             sizes = sizesFromType(type);
         }
         Tensor.Builder builder = Tensor.Builder.of(type, sizes);
-        decodeCells(type.valueType(), sizes, buffer, (IndexedTensor.BoundBuilder)builder);
+        decodeCells(sizes, buffer, (IndexedTensor.BoundBuilder)builder);
         return builder.build();
     }
 
-    private TensorType decodeType(GrowableByteBuffer buffer, TensorType.Value valueType) {
-        TensorType.Value serializedValueType = TensorType.Value.DOUBLE;
-        if ((valueType != TensorType.Value.DOUBLE) || (encodeType != EncodeType.DOUBLE_IS_DEFAULT)) {
-            int type = buffer.getInt1_4Bytes();
-            switch (type) {
-                case DOUBLE_VALUE_TYPE:
-                    serializedValueType = TensorType.Value.DOUBLE;
-                    break;
-                case FLOAT_VALUE_TYPE:
-                    serializedValueType = TensorType.Value.FLOAT;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Received tensor value type '" + serializedValueType + "'. Only 0(double), or 1(float) are legal.");
-            }
-        }
-        if (valueType != serializedValueType) {
-            throw new IllegalArgumentException("Expected " + valueType + ", got " + serializedValueType);
-        }
-        TensorType.Builder builder = new TensorType.Builder(serializedValueType);
+    private TensorType decodeType(GrowableByteBuffer buffer) {
+        TensorType.Builder builder = new TensorType.Builder(serializationValueType);
         int dimensionCount = buffer.getInt1_4Bytes();
         for (int i = 0; i < dimensionCount; i++)
             builder.indexed(buffer.getUtf8String(), buffer.getInt1_4Bytes()); // XXX: Size truncation
@@ -141,24 +104,16 @@ public class DenseBinaryFormat implements BinaryFormat {
         return builder.build();
     }
 
-    private void decodeCells(TensorType.Value valueType, DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
-        switch (valueType) {
-            case DOUBLE:
-                decodeCellsAsDouble(sizes, buffer, builder);
-                break;
-            case FLOAT:
-                decodeCellsAsFloat(sizes, buffer, builder);
-                break;
+    private void decodeCells(DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
+        switch (serializationValueType) {
+            case DOUBLE: decodeCells(sizes, builder, buffer::getDouble); break;
+            case FLOAT: decodeCells(sizes, builder, () -> (double)buffer.getFloat()); break;
         }
     }
 
-    private void decodeCellsAsDouble(DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
+    private void decodeCells(DimensionSizes sizes, IndexedTensor.BoundBuilder builder, Supplier<Double> supplier) {
         for (long i = 0; i < sizes.totalSize(); i++)
-            builder.cellByDirectIndex(i, buffer.getDouble());
-    }
-    private void decodeCellsAsFloat(DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
-        for (long i = 0; i < sizes.totalSize(); i++)
-            builder.cellByDirectIndex(i, buffer.getFloat());
+            builder.cellByDirectIndex(i, supplier.get());
     }
 
 }

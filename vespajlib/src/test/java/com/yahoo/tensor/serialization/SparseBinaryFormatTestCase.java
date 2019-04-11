@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.serialization;
 
-import com.google.common.collect.Sets;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -9,7 +8,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -53,6 +51,25 @@ public class SparseBinaryFormatTestCase {
                 2, (byte)'c', (byte)'d', 1, (byte)'e', 64, 8, 0, 0, 0, 0, 0, 0}; // cell 1
         assertEquals(Arrays.toString(encodedTensor),
                 Arrays.toString(TypedBinaryFormat.encode(Tensor.from("tensor(xy{},z{}):{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
+    }
+
+    @Test
+    public void requireThatFloatSerializationFormatDoNotChange() {
+        byte[] encodedTensor = new byte[] {5, // binary format type
+                1, // float type
+                2, // num dimensions
+                2, (byte)'x', (byte)'y', 1, (byte)'z', // dimensions
+                2, // num cells,
+                2, (byte)'a', (byte)'b', 1, (byte)'e', 64, 0, 0, 0, // cell 0
+                2, (byte)'c', (byte)'d', 1, (byte)'e', 64, 64, 0, 0}; // cell 1
+        assertEquals(Arrays.toString(encodedTensor),
+                Arrays.toString(TypedBinaryFormat.encode(Tensor.from("tensor<float>(xy{},z{}):{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
+    }
+
+    @Test
+    public void testSerializationOfDifferentValueTypes() {
+        assertSerialization("tensor<double>(x{},y{}):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<float>(x{},y{}):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
     }
 
     private void assertSerialization(String tensorString) {
