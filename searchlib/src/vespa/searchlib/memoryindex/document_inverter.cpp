@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "documentinverter.h"
+#include "document_inverter.h"
 #include "field_index_collection.h"
 #include "fieldinverter.h"
 #include "ordered_field_index_inserter.h"
@@ -16,7 +16,7 @@
 #include <stdexcept>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.documentinverter");
+LOG_SETUP(".memoryindex.document_inverter");
 
 namespace search::memoryindex {
 

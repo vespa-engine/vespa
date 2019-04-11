@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "documentinverter.h"
+#include "document_inverter.h"
 #include "field_index_collection.h"
 #include "memoryindex.h"
 #include "postingiterator.h"
