@@ -3,12 +3,13 @@
 #include "fakezcfilterocc.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
-#include <vespa/searchlib/diskindex/zcbuf.h>
+#include <vespa/searchlib/diskindex/zc4_posting_writer.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPosition;
 using search::queryeval::SearchIterator;
+using search::index::PostingListCounts;
 using search::index::PostingListParams;
 using search::index::DocIdAndFeatures;
 using search::index::DocIdAndPosOccFeatures;
@@ -23,11 +24,6 @@ namespace search {
 
 namespace fakedata {
 
-
-#define L1SKIPSTRIDE 16
-#define L2SKIPSTRIDE 8
-#define L3SKIPSTRIDE 8
-#define L4SKIPSTRIDE 8
 
 #define DEBUG_ZCFILTEROCC_PRINTF 0
 #define DEBUG_ZCFILTEROCC_ASSERT 0
@@ -137,35 +133,8 @@ void
 FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
                         bool dynamicK)
 {
-    ZcBuf bytes;
-    ZcBuf l1SkipBytes;
-    ZcBuf l2SkipBytes;
-    ZcBuf l3SkipBytes;
-    ZcBuf l4SkipBytes;
-    uint32_t lastDocId = 0u;
-    uint32_t lastL1SkipDocId = 0u;
-    uint64_t lastL1SkipDocIdPos = 0;
-    uint64_t lastL1SkipFeaturePos = 0;
-    unsigned int l1SkipCnt = 0;
-    uint32_t lastL2SkipDocId = 0u;
-    uint64_t lastL2SkipDocIdPos = 0;
-    uint64_t lastL2SkipFeaturePos = 0;
-    uint64_t lastL2SkipL1SkipPos = 0;
-    unsigned int l2SkipCnt = 0;
-    uint32_t lastL3SkipDocId = 0u;
-    uint64_t lastL3SkipDocIdPos = 0;
-    uint64_t lastL3SkipFeaturePos = 0;
-    uint64_t lastL3SkipL1SkipPos = 0;
-    uint64_t lastL3SkipL2SkipPos = 0;
-    unsigned int l3SkipCnt = 0;
-    uint32_t lastL4SkipDocId = 0u;
-    uint64_t lastL4SkipDocIdPos = 0;
-    uint64_t lastL4SkipFeaturePos = 0;
-    uint64_t lastL4SkipL1SkipPos = 0;
-    uint64_t lastL4SkipL2SkipPos = 0;
-    uint64_t lastL4SkipL3SkipPos = 0;
-    unsigned int l4SkipCnt = 0;
-    uint64_t featurePos = 0;
+    PostingListCounts counts;
+    Zc4PostingWriter<bigEndian> writer(counts);
 
     typedef FakeWord FW;
     typedef FW::DocWordFeatureList DWFL;
@@ -181,288 +150,89 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
     FeatureEncodeContext<bigEndian> &f = (dynamicK ?
             static_cast<FeatureEncodeContext<bigEndian> &>(f1) :
             static_cast<FeatureEncodeContext<bigEndian> &>(f0));
-    search::ComprFileWriteContext fctx(f);
-    f.setWriteContext(&fctx);
-    fctx.allocComprBuf(64, 1);
-    f.afterWrite(fctx, 0, 0);
 
+    writer.set_dynamic_k(dynamicK);
+    if (doFeatures) {
+        writer.set_encode_features(&f);
+    }
+    PostingListParams params;
+    params.set("docIdLimit", fw._docIdLimit);
+    params.set("minChunkDocs", 1000000000); // Disable chunking
+    params.set("minSkipDocs", 1u);          // Force skip info
+    writer.set_posting_list_params(params);
+    auto &writeContext = writer.get_write_context();
+    search::ComprBuffer &cb = writeContext;
+    auto &e = writer.get_encode_context();
+    writeContext.allocComprBuf(65536u, 32768u);
+    e.setupWrite(cb);
     // Ensure that some space is initially available in encoding buffers
-    bytes.maybeExpand();
-    l1SkipBytes.maybeExpand();
-    l2SkipBytes.maybeExpand();
-    l3SkipBytes.maybeExpand();
-    l4SkipBytes.maybeExpand();
     while (d != de) {
-        if (l1SkipCnt >= L1SKIPSTRIDE) {
-            uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
-            assert(static_cast<int32_t>(docIdDelta) > 0);
-            l1SkipBytes.encode(docIdDelta - 1);
-            uint64_t lastDocIdPos = bytes.size();
-            uint32_t docIdPosDelta = lastDocIdPos - lastL1SkipDocIdPos;
-            l1SkipBytes.encode(docIdPosDelta - 1);
-            if (doFeatures) {
-                featurePos = f.getWriteOffset();
-                l1SkipBytes.encode(featurePos - lastL1SkipFeaturePos - 1);
-                lastL1SkipFeaturePos = featurePos;
-            }
-#if DEBUG_ZCFILTEROCC_PRINTF
-            printf("L1Encode docId=%d (+%d), docIdPos=%d (+%u)\n",
-                   lastDocId, docIdDelta,
-                   (int) lastDocIdPos, docIdPosDelta);
-#endif
-            lastL1SkipDocId = lastDocId;
-            lastL1SkipDocIdPos = lastDocIdPos;
-            l1SkipCnt = 0;
-            ++l2SkipCnt;
-            if (l2SkipCnt >= L2SKIPSTRIDE) {
-                docIdDelta = lastDocId - lastL2SkipDocId;
-                docIdPosDelta = lastDocIdPos - lastL2SkipDocIdPos;
-                uint64_t lastL1SkipPos = l1SkipBytes.size();
-                uint32_t l1SkipPosDelta = lastL1SkipPos - lastL2SkipL1SkipPos;
-                l2SkipBytes.encode(docIdDelta - 1);
-                l2SkipBytes.encode(docIdPosDelta - 1);
-                if (doFeatures) {
-                    l2SkipBytes.encode(featurePos - lastL2SkipFeaturePos - 1);
-                    lastL2SkipFeaturePos = featurePos;
-                }
-                l2SkipBytes.encode(l1SkipPosDelta - 1);
-#if DEBUG_ZCFILTEROCC_PRINTF
-                printf("L2Encode docId=%d (+%d), docIdPos=%d (+%u),"
-                       " l1SkipPos=%d (+%u)\n",
-                       lastDocId, docIdDelta,
-                       (int) lastDocIdPos, docIdPosDelta,
-                       (int) lastL1SkipPos, l1SkipPosDelta);
-#endif
-                lastL2SkipDocId = lastDocId;
-                lastL2SkipDocIdPos = lastDocIdPos;
-                lastL2SkipL1SkipPos = lastL1SkipPos;
-                l2SkipCnt = 0;
-                ++l3SkipCnt;
-                if (l3SkipCnt >= L3SKIPSTRIDE) {
-                    docIdDelta = lastDocId - lastL3SkipDocId;
-                    docIdPosDelta = lastDocIdPos - lastL3SkipDocIdPos;
-                    l1SkipPosDelta = lastL1SkipPos - lastL3SkipL1SkipPos;
-                    uint64_t lastL2SkipPos = l2SkipBytes.size();
-                    uint32_t l2SkipPosDelta = lastL2SkipPos -
-                                              lastL3SkipL2SkipPos;
-                    l3SkipBytes.encode(docIdDelta - 1);
-                    l3SkipBytes.encode(docIdPosDelta - 1);
-                    if (doFeatures) {
-                        l3SkipBytes.encode(featurePos - lastL3SkipFeaturePos - 1);
-                        lastL3SkipFeaturePos = featurePos;
-                    }
-                    l3SkipBytes.encode(l1SkipPosDelta - 1);
-                    l3SkipBytes.encode(l2SkipPosDelta - 1);
-#if DEBUG_ZCFILTEROCC_PRINTF
-                    printf("L3Encode docId=%d (+%d), docIdPos=%d (+%u),"
-                           " l1SkipPos=%d (+%u) l2SkipPos %d (+%u)\n",
-                           lastDocId, docIdDelta,
-                           (int) lastDocIdPos, docIdPosDelta,
-                           (int) lastL1SkipPos, l1SkipPosDelta,
-                           (int) lastL2SkipPos, l2SkipPosDelta);
-#endif
-                    lastL3SkipDocId = lastDocId;
-                    lastL3SkipDocIdPos = lastDocIdPos;
-                    lastL3SkipL1SkipPos = lastL1SkipPos;
-                    lastL3SkipL2SkipPos = lastL2SkipPos;
-                    l3SkipCnt = 0;
-                    ++l4SkipCnt;
-                    if (l4SkipCnt >= L4SKIPSTRIDE) {
-                        docIdDelta = lastDocId - lastL4SkipDocId;
-                        docIdPosDelta = lastDocIdPos - lastL4SkipDocIdPos;
-                        l1SkipPosDelta = lastL1SkipPos - lastL4SkipL1SkipPos;
-                        l2SkipPosDelta = lastL2SkipPos - lastL4SkipL2SkipPos;
-                        uint64_t lastL3SkipPos = l3SkipBytes.size();
-                        uint32_t l3SkipPosDelta = lastL3SkipPos -
-                                                  lastL4SkipL3SkipPos;
-                        l4SkipBytes.encode(docIdDelta - 1);
-                        l4SkipBytes.encode(docIdPosDelta - 1);
-                        if (doFeatures) {
-                            l4SkipBytes.encode(featurePos - lastL4SkipFeaturePos - 1);
-                            lastL4SkipFeaturePos = featurePos;
-                        }
-                        l4SkipBytes.encode(l1SkipPosDelta - 1);
-                        l4SkipBytes.encode(l2SkipPosDelta - 1);
-                        l4SkipBytes.encode(l3SkipPosDelta - 1);
-#if DEBUG_ZCFILTEROCC_PRINTF
-                        printf("L4Encode docId=%d (+%d), docIdPos=%d (+%u),"
-                           " l1SkipPos=%d (+%u) l2SkipPos %d (+%u)"
-                           " l3SkipPos=%d (+%u)\n",
-                               lastDocId, docIdDelta,
-                               (int) lastDocIdPos, docIdPosDelta,
-                               (int) lastL1SkipPos, l1SkipPosDelta,
-                               (int) lastL2SkipPos, l2SkipPosDelta,
-                               (int) lastL3SkipPos, l3SkipPosDelta);
-#endif
-                        lastL4SkipDocId = lastDocId;
-                        lastL4SkipDocIdPos = lastDocIdPos;
-                        lastL4SkipL1SkipPos = lastL1SkipPos;
-                        lastL4SkipL2SkipPos = lastL2SkipPos;
-                        lastL4SkipL3SkipPos = lastL3SkipPos;
-                        l4SkipCnt = 0;
-                    }
-                }
-            }
-        }
-        if (lastDocId == 0u) {
-            bytes.encode(d->_docId - 1);
-#if DEBUG_ZCFILTEROCC_PRINTF
-            printf("Encode docId=%d\n",
-                   d->_docId);
-#endif
-        } else {
-            uint32_t docIdDelta = d->_docId - lastDocId;
-            bytes.encode(docIdDelta - 1);
-#if DEBUG_ZCFILTEROCC_PRINTF
-            printf("Encode docId=%d (+%d)\n",
-                   d->_docId, docIdDelta);
-#endif
-        }
         if (doFeatures) {
             fw.setupFeatures(*d, &*p, features);
             p += d->_positions;
-            f.writeFeatures(features);
+        } else {
+            features.clear(d->_docId);
         }
-        lastDocId = d->_docId;
-        ++l1SkipCnt;
+        writer.write_docid_and_features(features);
         ++d;
     }
     if (doFeatures) {
         assert(p == pe);
-        _featuresSize = f.getWriteOffset();
-        // First pad to 64 bits.
-        uint32_t pad = (64 - f.getWriteOffset()) & 63;
-        while (pad > 0) {
-            uint32_t now = std::min(32u, pad);
-            f.writeBits(0, now);
-            f.writeComprBufferIfNeeded();
-            pad -= now;
-        }
-
-        // Then write 128 more bits.  This allows for 64-bit decoding
-        // with a readbits that always leaves a nonzero preRead
-        for (unsigned int i = 0; i < 4; i++) {
-            f.writeBits(0, 32);
-            f.writeComprBufferIfNeeded();
-        }
-        f.writeComprBufferIfNeeded();
-        f.flush();
-        f.writeComprBuffer();
-    } else {
-        _featuresSize = 0;
     }
-    // Extra partial entries for skip tables to simplify iterator during search
-    if (l1SkipBytes.size() > 0) {
-        uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
-        assert(static_cast<int32_t>(docIdDelta) > 0);
-        l1SkipBytes.encode(docIdDelta - 1);
-    }
-    if (l2SkipBytes.size() > 0) {
-        uint32_t docIdDelta = lastDocId - lastL2SkipDocId;
-        assert(static_cast<int32_t>(docIdDelta) > 0);
-        l2SkipBytes.encode(docIdDelta - 1);
-    }
-    if (l3SkipBytes.size() > 0) {
-        uint32_t docIdDelta = lastDocId - lastL3SkipDocId;
-        assert(static_cast<int32_t>(docIdDelta) > 0);
-        l3SkipBytes.encode(docIdDelta - 1);
-    }
-    if (l4SkipBytes.size() > 0) {
-        uint32_t docIdDelta = lastDocId - lastL4SkipDocId;
-        assert(static_cast<int32_t>(docIdDelta) > 0);
-        l4SkipBytes.encode(docIdDelta - 1);
-    }
+    writer.flush_word();
+    // TODO:
+    _featuresSize = 0;
     _hitDocs = fw._postings.size();
     _docIdLimit = fw._docIdLimit;
-    _lastDocId = lastDocId;
-    FeatureEncodeContext<bigEndian> e;
-    ComprFileWriteContext ectx(e);
-    e.setWriteContext(&ectx);
-    ectx.allocComprBuf(64, 1);
-    e.afterWrite(ectx, 0, 0);
-
-    // Encode word header
-    e.encodeExpGolomb(_hitDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
-    _docIdsSize = bytes.size() * 8;
-    _l1SkipSize = l1SkipBytes.size();
-    _l2SkipSize = _l3SkipSize = _l4SkipSize = 0;
-    if (_l1SkipSize != 0)
-        _l2SkipSize = l2SkipBytes.size();
-    if (_l2SkipSize != 0)
-        _l3SkipSize = l3SkipBytes.size();
-    if (_l3SkipSize != 0)
-        _l4SkipSize = l4SkipBytes.size();
-
-    e.encodeExpGolomb(bytes.size() - 1, K_VALUE_ZCPOSTING_DOCIDSSIZE);
-    e.encodeExpGolomb(_l1SkipSize, K_VALUE_ZCPOSTING_L1SKIPSIZE);
-    e.writeComprBufferIfNeeded();
-    if (_l1SkipSize != 0) {
-        e.encodeExpGolomb(_l2SkipSize, K_VALUE_ZCPOSTING_L2SKIPSIZE);
-        if (_l2SkipSize != 0) {
-            e.writeComprBufferIfNeeded();
-            e.encodeExpGolomb(_l3SkipSize, K_VALUE_ZCPOSTING_L3SKIPSIZE);
-            if (_l3SkipSize != 0) {
-                e.encodeExpGolomb(_l4SkipSize, K_VALUE_ZCPOSTING_L4SKIPSIZE);
-            }
-        }
-    }
-    e.writeComprBufferIfNeeded();
-    if (doFeatures) {
-        e.encodeExpGolomb(_featuresSize, K_VALUE_ZCPOSTING_FEATURESSIZE);
-    }
-    uint32_t docIdK = e.calcDocIdK(_hitDocs, _docIdLimit);
-    if (dynamicK)
-        e.encodeExpGolomb(_docIdLimit - 1 - _lastDocId, docIdK);
-    else
-        e.encodeExpGolomb(_docIdLimit - 1 - _lastDocId,
-                          K_VALUE_ZCPOSTING_LASTDOCID);
-    uint64_t bytePad = (- e.getWriteOffset()) & 7;
-    if (bytePad > 0)
-        e.writeBits(0, bytePad);
-    size_t docIdSize = bytes.size();
-    if (docIdSize > 0) {
-        writeZcBuf(e, bytes);
-    }
-    if (_l1SkipSize > 0) {
-        writeZcBuf(e, l1SkipBytes);
-        if (_l2SkipSize > 0) {
-            writeZcBuf(e, l2SkipBytes);
-            if (_l3SkipSize > 0) {
-                writeZcBuf(e, l3SkipBytes);
-                if (_l4SkipSize > 0) {
-                    writeZcBuf(e, l4SkipBytes);
-                }
-            }
-        }
-    }
-    if (doFeatures) {
-        e.writeBits(static_cast<const uint64_t *>(fctx._comprBuf),
-                    0,
-                    _featuresSize);
-    }
     _compressedBits = e.getWriteOffset();
-    // First pad to 64 bits.
-    uint32_t pad = (64 - e.getWriteOffset()) & 63;
-    while (pad > 0) {
-        uint32_t now = std::min(32u, pad);
-        e.writeBits(0, now);
-        e.writeComprBufferIfNeeded();
-        pad -= now;
-    }
+    assert(_compressedBits == counts._bitLength);
+    assert(_hitDocs == counts._numDocs);
+    _lastDocId = fw._postings.back()._docId;
+    writer.on_close();
 
-    // Then write 128 more bits.  This allows for 64-bit decoding
-    // with a readbits that always leaves a nonzero preRead
-    for (unsigned int i = 0; i < 4; i++) {
-        e.writeBits(0, 32);
-        e.writeComprBufferIfNeeded();
-    }
-    e.writeComprBufferIfNeeded();
-    e.flush();
-    e.writeComprBuffer();
-
-    std::pair<void *, size_t> ectxData = ectx.grabComprBuffer(_compressedMalloc);
+    std::pair<void *, size_t> ectxData = writeContext.grabComprBuffer(_compressedMalloc);
     _compressed = std::make_pair(static_cast<uint64_t *>(ectxData.first),
                                  ectxData.second);
+    read_header<bigEndian>(doFeatures, dynamicK, writer.get_min_skip_docs(), writer.get_min_chunk_docs());
+}
+
+template <bool bigEndian>
+void
+FakeZcFilterOcc::read_header(bool doFeatures, bool dynamicK, uint32_t min_skip_docs, uint32_t min_chunk_docs)
+{
+    // read back word header to get skip sizes
+    using EC = FeatureEncodeContext<bigEndian>;
+    UC64_DECODECONTEXT(o);
+    uint32_t length;
+    uint64_t val64;
+    UC64_SETUPBITS_NS(o, _compressed.first, 0, EC);
+    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
+    assert(static_cast<uint32_t>(val64) + 1 == _hitDocs);
+    assert(_hitDocs >= min_skip_docs);
+    assert(_hitDocs < min_chunk_docs);
+    uint32_t docIdK = dynamicK ? EC::calcDocIdK(_hitDocs, _docIdLimit) : K_VALUE_ZCPOSTING_LASTDOCID;
+    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DOCIDSSIZE, EC);
+    _docIdsSize = val64 + 1;
+    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L1SKIPSIZE, EC);
+    _l1SkipSize = val64;
+    if (_l1SkipSize != 0) {
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L2SKIPSIZE, EC);
+        _l2SkipSize = val64;
+    }
+    if (_l2SkipSize != 0) {
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L3SKIPSIZE, EC);
+        _l3SkipSize = val64;
+    }
+    if (_l3SkipSize != 0) {
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L4SKIPSIZE, EC);
+        _l4SkipSize = val64;
+    }
+    if (doFeatures) {
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FEATURESSIZE, EC);
+        _featuresSize = val64;
+    }
+    UC64_DECODEEXPGOLOMB_NS(o, docIdK, EC);
+    assert(_lastDocId == _docIdLimit - 1 - val64);
 }
 
 

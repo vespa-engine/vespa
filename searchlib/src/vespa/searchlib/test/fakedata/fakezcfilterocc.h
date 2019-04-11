@@ -37,6 +37,9 @@ protected:
     template <bool bigEndian>
     void setupT(const FakeWord &fw, bool doFeatures, bool dynamicK);
 
+    template <bool bigEndian>
+    void read_header(bool do_features, bool dynamic_k, uint32_t min_skip_docs, uint32_t min_cunk_docs);
+
 public:
     FakeZcFilterOcc(const FakeWord &fw);
     FakeZcFilterOcc(const FakeWord &fw, bool bigEndian, const char *nameSuffix);

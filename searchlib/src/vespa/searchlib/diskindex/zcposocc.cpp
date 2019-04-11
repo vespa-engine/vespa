@@ -63,9 +63,7 @@ Zc4PosOccSeqWrite::Zc4PosOccSeqWrite(const Schema &schema,
       _fieldsParams(),
       _realEncodeFeatures(&_fieldsParams)
 {
-    _encodeFeatures = &_realEncodeFeatures;
-    _encodeFeatures->setWriteContext(&_featureWriteContext);
-    _featureWriteContext.setEncodeContext(_encodeFeatures);
+    _writer.set_encode_features(&_realEncodeFeatures);
     _fieldsParams.setSchemaParams(schema, indexId);
 }
 
@@ -118,9 +116,7 @@ ZcPosOccSeqWrite::ZcPosOccSeqWrite(const Schema &schema,
       _fieldsParams(),
       _realEncodeFeatures(&_fieldsParams)
 {
-    _encodeFeatures = &_realEncodeFeatures;
-    _encodeFeatures->setWriteContext(&_featureWriteContext);
-    _featureWriteContext.setEncodeContext(_encodeFeatures);
+    _writer.set_encode_features(&_realEncodeFeatures);
     _fieldsParams.setSchemaParams(schema, indexId);
 }
 
