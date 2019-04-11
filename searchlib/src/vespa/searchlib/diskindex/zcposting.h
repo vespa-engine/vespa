@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include "zcbuf.h"
+#include "zc4_posting_writer.h"
 #include <vespa/searchlib/index/postinglistfile.h>
-#include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/fastos/file.h>
 
 namespace search::index {
@@ -131,29 +130,8 @@ class Zc4PostingSeqWrite : public index::PostingListFileSeqWrite
 protected:
     typedef bitcompression::FeatureEncodeContextBE EncodeContext;
 
-    EncodeContext _encodeContext;
-    search::ComprFileWriteContext _writeContext;
-    FastOS_File _file;
-    uint32_t _minChunkDocs; // # of documents needed for chunking
-    uint32_t _minSkipDocs;  // # of documents needed for skipping
-    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
-    // Unpacked document ids for word and feature sizes
-    typedef std::pair<uint32_t, uint32_t> DocIdAndFeatureSize;
-    std::vector<DocIdAndFeatureSize> _docIds;
-
-    // Buffer up features in memory
-    EncodeContext *_encodeFeatures;
-    uint64_t _featureOffset;        // Bit offset of next feature
-    search::ComprFileWriteContext _featureWriteContext;
-    uint64_t _writePos; // Bit position for start of current word
-    bool _dynamicK;     // Caclulate EG compression parameters ?
-    ZcBuf _zcDocIds;    // Document id deltas
-    ZcBuf _l1Skip;      // L1 skip info
-    ZcBuf _l2Skip;      // L2 skip info
-    ZcBuf _l3Skip;      // L3 skip info
-    ZcBuf _l4Skip;      // L4 skip info
-
-    uint64_t _numWords; // Number of words in file
+    Zc4PostingWriter<true> _writer;
+    FastOS_File      _file;
     uint64_t _fileBitSize;
     index::PostingListCountFileSeqWrite *const _countFile;
 public:
@@ -177,37 +155,10 @@ public:
     void getFeatureParams(PostingListParams &params) override;
 
     /**
-     * Flush chunk to file.
-     */
-    void flushChunk();
-    void calcSkipInfo();
-
-    /**
-     * Flush word with skip info to disk
-     */
-    void flushWordWithSkip(bool hasMore);
-
-
-    /**
-     * Flush word without skip info to disk.
-     */
-    virtual void flushWordNoSkip();
-
-    /**
-     * Prepare for next word or next chunk.
-     */
-    void resetWord();
-
-    /**
      * Make header using feature encode write context.
      */
     void makeHeader(const search::common::FileHeaderContext &fileHeaderContext);
     void updateHeader();
-
-    /**
-     * Read header, using temporary feature decode context.
-     */
-    uint32_t readHeader(const vespalib::string &name);
 };
 
 
@@ -223,7 +174,6 @@ class ZcPostingSeqWrite : public Zc4PostingSeqWrite
 {
 public:
     ZcPostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
-    void flushWordNoSkip() override;
 };
 
 }

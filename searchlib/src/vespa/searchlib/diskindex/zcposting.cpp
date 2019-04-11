@@ -607,36 +607,16 @@ Zc4PostingSeqRead::setPostingOffset(uint64_t offset,
 Zc4PostingSeqWrite::
 Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
     : PostingListFileSeqWrite(),
-      _encodeContext(),
-      _writeContext(_encodeContext),
+      _writer(_counts),
       _file(),
-      _minChunkDocs(1 << 30),
-      _minSkipDocs(64),
-      _docIdLimit(10000000),
-      _docIds(),
-      _encodeFeatures(nullptr),
-      _featureOffset(0),
-      _featureWriteContext(sizeof(uint64_t)),
-      _writePos(0),
-      _dynamicK(false),
-      _zcDocIds(),
-      _l1Skip(),
-      _l2Skip(),
-      _l3Skip(),
-      _l4Skip(),
-      _numWords(0),
       _fileBitSize(0),
       _countFile(countFile)
 {
-    _encodeContext.setWriteContext(&_writeContext);
-
     if (_countFile != nullptr) {
         PostingListParams params;
         _countFile->getParams(params);
-        params.get("docIdLimit", _docIdLimit);
-        params.get("minChunkDocs", _minChunkDocs);
+        _writer.set_posting_list_params(params);
     }
-    _featureWriteContext.allocComprBuf(64, 1);
 }
 
 
@@ -646,110 +626,27 @@ Zc4PostingSeqWrite::~Zc4PostingSeqWrite()
 
 
 void
-Zc4PostingSeqWrite::
-writeDocIdAndFeatures(const DocIdAndFeatures &features)
+Zc4PostingSeqWrite::writeDocIdAndFeatures(const DocIdAndFeatures &features)
 {
-    if (__builtin_expect(_docIds.size() >= _minChunkDocs, false))
-        flushChunk();
-    _encodeFeatures->writeFeatures(features);
-    uint64_t writeOffset = _encodeFeatures->getWriteOffset();
-    uint64_t featureSize = writeOffset - _featureOffset;
-    assert(static_cast<uint32_t>(featureSize) == featureSize);
-    _docIds.push_back(std::make_pair(features._docId,
-                                     static_cast<uint32_t>(featureSize)));
-    _featureOffset = writeOffset;
+    _writer.write_docid_and_features(features);
 }
 
 
 void
 Zc4PostingSeqWrite::flushWord()
 {
-    if (__builtin_expect(_docIds.size() >= _minSkipDocs ||
-                         !_counts._segments.empty(), false)) {
-        // Use skip information if enough documents of chunking has happened
-        flushWordWithSkip(false);
-        _numWords++;
-    } else if (_docIds.size() > 0) {
-        flushWordNoSkip();
-        _numWords++;
-    }
-
-    EncodeContext &e = _encodeContext;
-    uint64_t writePos = e.getWriteOffset();
-
-    _counts._bitLength = writePos - _writePos;
-    _writePos = writePos;
-}
-
-
-uint32_t
-Zc4PostingSeqWrite::readHeader(const vespalib::string &name)
-{
-    EncodeContext &f = *_encodeFeatures;
-
-    FeatureDecodeContextBE d;
-    ComprFileReadContext drc(d);
-    FastOS_File file;
-    const vespalib::string &myId = _dynamicK ? myId5 : myId4;
-
-    d.setReadContext(&drc);
-    bool res = file.OpenReadOnly(name.c_str());
-    if (!res) {
-        LOG(error, "Could not open %s for reading file header: %s",
-            name.c_str(), getLastErrorString().c_str());
-        LOG_ABORT("should not be reached");
-    }
-
-    drc.setFile(&file);
-    drc.setFileSize(file.GetSize());
-    drc.allocComprBuf(512, 32768u);
-    d.emptyBuffer(0);
-    drc.readComprBuffer();
-
-    vespalib::FileHeader header;
-    d.readHeader(header, file.getSize());
-    uint32_t headerLen = header.getSize();
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(header.hasTag("format.1"));
-    assert(!header.hasTag("format.2"));
-    assert(header.hasTag("numWords"));
-    assert(header.hasTag("minChunkDocs"));
-    assert(header.hasTag("docIdLimit"));
-    assert(header.hasTag("minSkipDocs"));
-    assert(header.hasTag("endian"));
-    bool headerCompleted = header.getTag("frozen").asInteger() != 0;
-    uint64_t headerFileBitSize = header.getTag("fileBitSize").asInteger();
-    headerLen += (-headerLen & 7);
-    assert(!headerCompleted || headerFileBitSize >= headerLen * 8);
-    (void) headerCompleted;
-    (void) headerFileBitSize;
-    assert(header.getTag("format.0").asString() == myId);
-    (void) myId;
-    assert(header.getTag("format.1").asString() == f.getIdentifier());
-    _minChunkDocs = header.getTag("minChunkDocs").asInteger();
-    _docIdLimit = header.getTag("docIdLimit").asInteger();
-    _minSkipDocs = header.getTag("minSkipDocs").asInteger();
-    assert(header.getTag("endian").asString() == "big");
-    // Read feature decoding specific subheader using helper decode context
-    f.readHeader(header, "features.");
-    // Align on 64-bit unit
-    d.smallAlign(64);
-    assert(d.getReadOffset() == headerLen * 8);
-    file.Close();
-    return headerLen;
+    _writer.flush_word();
 }
 
 
 void
 Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
 {
-    EncodeContext &f = *_encodeFeatures;
-    EncodeContext &e = _encodeContext;
-    ComprFileWriteContext &wce = _writeContext;
+    EncodeContext &f = _writer.get_encode_features();
+    EncodeContext &e = _writer.get_encode_context();
+    ComprFileWriteContext &wce = _writer.get_write_context();
 
-    const vespalib::string &myId = _dynamicK ? myId5 : myId4;
+    const vespalib::string &myId = _writer.get_dynamic_k() ? myId5 : myId4;
     vespalib::FileHeader header;
 
     typedef vespalib::GenericHeader::Tag Tag;
@@ -759,9 +656,9 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
     header.putTag(Tag("format.0", myId));
     header.putTag(Tag("format.1", f.getIdentifier()));
     header.putTag(Tag("numWords", 0));
-    header.putTag(Tag("minChunkDocs", _minChunkDocs));
-    header.putTag(Tag("docIdLimit", _docIdLimit));
-    header.putTag(Tag("minSkipDocs", _minSkipDocs));
+    header.putTag(Tag("minChunkDocs", _writer.get_min_chunk_docs()));
+    header.putTag(Tag("docIdLimit", _writer.get_docid_limit()));
+    header.putTag(Tag("minSkipDocs", _writer.get_min_skip_docs()));
     header.putTag(Tag("endian", "big"));
     header.putTag(Tag("desc", "Posting list file"));
 
@@ -788,7 +685,7 @@ Zc4PostingSeqWrite::updateHeader()
     typedef vespalib::GenericHeader::Tag Tag;
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", _fileBitSize));
-    h.putTag(Tag("numWords", _numWords));
+    h.putTag(Tag("numWords", _writer.get_num_words()));
     h.rewriteFile(f);
     f.Sync();
     f.Close();
@@ -813,40 +710,21 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
         // XXX may need to do something more here, I don't know what...
         return false;
     }
-    uint64_t fileSize = _file.GetSize();
-    uint64_t bufferStartFilePos = _writeContext.getBufferStartFilePos();
-    assert(fileSize >= bufferStartFilePos);
-    (void) fileSize;
-    _file.SetSize(bufferStartFilePos);
-    assert(bufferStartFilePos == static_cast<uint64_t>(_file.GetPosition()));
-    _writeContext.setFile(&_file);
-    search::ComprBuffer &cb = _writeContext;
-    EncodeContext &e = _encodeContext;
-    _writeContext.allocComprBuf(65536u, 32768u);
-    if (bufferStartFilePos == 0) {
-        e.setupWrite(cb);
-        // Reset accumulated stats
-        _fileBitSize = 0;
-        _numWords = 0;
-        // Start write initial header
-        makeHeader(fileHeaderContext);
-        _encodeFeatures->setupWrite(_featureWriteContext);
-        // end write initial header
-        _writePos = e.getWriteOffset();
-    } else {
-        assert(bufferStartFilePos >= 8u);
-        uint32_t headerSize = readHeader(name); // Read existing header
-        assert(bufferStartFilePos >= headerSize);
-        (void) headerSize;
-        e.afterWrite(_writeContext, 0, bufferStartFilePos);
-    }
-
-    // Ensure that some space is initially available in encoding buffers
-    _zcDocIds.maybeExpand();
-    _l1Skip.maybeExpand();
-    _l2Skip.maybeExpand();
-    _l3Skip.maybeExpand();
-    _l4Skip.maybeExpand();
+    auto &writeContext = _writer.get_write_context();
+    uint64_t bufferStartFilePos = writeContext.getBufferStartFilePos();
+    assert(bufferStartFilePos == 0);
+    _file.SetSize(0);
+    writeContext.setFile(&_file);
+    search::ComprBuffer &cb = writeContext;
+    EncodeContext &e = _writer.get_encode_context();
+    writeContext.allocComprBuf(65536u, 32768u);
+    e.setupWrite(cb);
+    // Reset accumulated stats
+    _fileBitSize = 0;
+    // Start write initial header
+    makeHeader(fileHeaderContext);
+    // end write initial header
+    _writer.on_open();
     return true;    // Assume success
 }
 
@@ -854,32 +732,16 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
 bool
 Zc4PostingSeqWrite::close()
 {
-    EncodeContext &e = _encodeContext;
-
-    _fileBitSize = e.getWriteOffset();
-    // Write some pad bits to avoid decompression readahead going past
-    // memory mapped file during search and into SIGSEGV territory.
-
-    // First pad to 64 bits alignment.
-    e.smallAlign(64);
-    e.writeComprBufferIfNeeded();
-
-    // Then write 128 more bits.  This allows for 64-bit decoding
-    // with a readbits that always leaves a nonzero preRead
-    e.padBits(128);
-    e.alignDirectIO();
-    e.flush();
-    e.writeComprBuffer();   // Also flushes slack
-
-    _writeContext.dropComprBuf();
+    _fileBitSize = _writer.get_encode_context().getWriteOffset();
+    _writer.on_close(); // flush and pad
+    auto &writeContext = _writer.get_write_context();
+    writeContext.dropComprBuf();
     _file.Sync();
     _file.Close();
-    _writeContext.setFile(nullptr);
+    writeContext.setFile(nullptr);
     updateHeader();
     return true;
 }
-
-
 
 void
 Zc4PostingSeqWrite::
@@ -887,9 +749,7 @@ setParams(const PostingListParams &params)
 {
     if (_countFile != nullptr)
         _countFile->setParams(params);
-    params.get("docIdLimit", _docIdLimit);
-    params.get("minChunkDocs", _minChunkDocs);
-    params.get("minSkipDocs", _minSkipDocs);
+    _writer.set_posting_list_params(params);
 }
 
 
@@ -905,14 +765,14 @@ getParams(PostingListParams &params)
         uint32_t countMinChunkDocs = 0;
         countParams.get("docIdLimit", countDocIdLimit);
         countParams.get("minChunkDocs", countMinChunkDocs);
-        assert(_docIdLimit == countDocIdLimit);
-        assert(_minChunkDocs == countMinChunkDocs);
+        assert(_writer.get_docid_limit() == countDocIdLimit);
+        assert(_writer.get_min_chunk_docs() == countMinChunkDocs);
     } else {
         params.clear();
-        params.set("docIdLimit", _docIdLimit);
-        params.set("minChunkDocs", _minChunkDocs);
+        params.set("docIdLimit", _writer.get_docid_limit());
+        params.set("minChunkDocs", _writer.get_min_chunk_docs());
     }
-    params.set("minSkipDocs", _minSkipDocs);
+    params.set("minSkipDocs", _writer.get_min_skip_docs());
 }
 
 
@@ -920,7 +780,7 @@ void
 Zc4PostingSeqWrite::
 setFeatureParams(const PostingListParams &params)
 {
-    _encodeFeatures->setParams(params);
+    _writer.get_encode_features().setParams(params);
 }
 
 
@@ -928,314 +788,7 @@ void
 Zc4PostingSeqWrite::
 getFeatureParams(PostingListParams &params)
 {
-    _encodeFeatures->getParams(params);
-}
-
-
-void
-Zc4PostingSeqWrite::flushChunk()
-{
-    /* TODO: Flush chunk and prepare for new (possible short) chunk  */
-    flushWordWithSkip(true);
-}
-
-#define L1SKIPSTRIDE 16
-#define L2SKIPSTRIDE 8
-#define L3SKIPSTRIDE 8
-#define L4SKIPSTRIDE 8
-
-
-void
-Zc4PostingSeqWrite::calcSkipInfo()
-{
-    uint32_t lastDocId = 0u;
-    uint32_t lastL1SkipDocId = 0u;
-    uint32_t lastL1SkipDocIdPos = 0;
-    uint32_t lastL1SkipFeaturePos = 0;
-    uint32_t lastL2SkipDocId = 0u;
-    uint32_t lastL2SkipDocIdPos = 0;
-    uint32_t lastL2SkipFeaturePos = 0;
-    uint32_t lastL2SkipL1SkipPos = 0;
-    uint32_t lastL3SkipDocId = 0u;
-    uint32_t lastL3SkipDocIdPos = 0;
-    uint32_t lastL3SkipFeaturePos = 0;
-    uint32_t lastL3SkipL1SkipPos = 0;
-    uint32_t lastL3SkipL2SkipPos = 0;
-    uint32_t lastL4SkipDocId = 0u;
-    uint32_t lastL4SkipDocIdPos = 0;
-    uint32_t lastL4SkipFeaturePos = 0;
-    uint32_t lastL4SkipL1SkipPos = 0;
-    uint32_t lastL4SkipL2SkipPos = 0;
-    uint32_t lastL4SkipL3SkipPos = 0;
-    unsigned int l1SkipCnt = 0;
-    unsigned int l2SkipCnt = 0;
-    unsigned int l3SkipCnt = 0;
-    unsigned int l4SkipCnt = 0;
-    uint64_t featurePos = 0;
-
-    std::vector<DocIdAndFeatureSize>::const_iterator dit = _docIds.begin();
-    std::vector<DocIdAndFeatureSize>::const_iterator dite = _docIds.end();
-
-    if (!_counts._segments.empty()) {
-        lastDocId = _counts._segments.back()._lastDoc;
-        lastL1SkipDocId = lastDocId;
-        lastL2SkipDocId = lastDocId;
-        lastL3SkipDocId = lastDocId;
-        lastL4SkipDocId = lastDocId;
-    }
-
-    for (; dit != dite; ++dit) {
-        if (l1SkipCnt >= L1SKIPSTRIDE) {
-            // L1 docid delta
-            uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
-            assert(static_cast<int32_t>(docIdDelta) > 0);
-            _l1Skip.encode(docIdDelta - 1);
-            lastL1SkipDocId = lastDocId;
-            // L1 docid pos
-            uint64_t docIdPos = _zcDocIds.size();
-            _l1Skip.encode(docIdPos - lastL1SkipDocIdPos - 1);
-            lastL1SkipDocIdPos = docIdPos;
-            // L1 features pos
-            _l1Skip.encode(featurePos - lastL1SkipFeaturePos - 1);
-            lastL1SkipFeaturePos = featurePos;
-            l1SkipCnt = 0;
-            ++l2SkipCnt;
-            if (l2SkipCnt >= L2SKIPSTRIDE) {
-                // L2 docid delta
-                docIdDelta = lastDocId - lastL2SkipDocId;
-                assert(static_cast<int32_t>(docIdDelta) > 0);
-                _l2Skip.encode(docIdDelta - 1);
-                lastL2SkipDocId = lastDocId;
-                // L2 docid pos
-                docIdPos = _zcDocIds.size();
-                _l2Skip.encode(docIdPos - lastL2SkipDocIdPos - 1);
-                lastL2SkipDocIdPos = docIdPos;
-                // L2 features pos
-                _l2Skip.encode(featurePos - lastL2SkipFeaturePos - 1);
-                lastL2SkipFeaturePos = featurePos;
-                // L2 L1Skip pos
-                uint64_t l1SkipPos = _l1Skip.size();
-                _l2Skip.encode(l1SkipPos - lastL2SkipL1SkipPos - 1);
-                lastL2SkipL1SkipPos = l1SkipPos;
-                l2SkipCnt = 0;
-                ++l3SkipCnt;
-                if (l3SkipCnt >= L3SKIPSTRIDE) {
-                    // L3 docid delta
-                    docIdDelta = lastDocId - lastL3SkipDocId;
-                    assert(static_cast<int32_t>(docIdDelta) > 0);
-                    _l3Skip.encode(docIdDelta - 1);
-                    lastL3SkipDocId = lastDocId;
-                    // L3 docid pos
-                    docIdPos = _zcDocIds.size();
-                    _l3Skip.encode(docIdPos - lastL3SkipDocIdPos - 1);
-                    lastL3SkipDocIdPos = docIdPos;
-                    // L3 features pos
-                    _l3Skip.encode(featurePos - lastL3SkipFeaturePos - 1);
-                    lastL3SkipFeaturePos = featurePos;
-                    // L3 L1Skip pos
-                    l1SkipPos = _l1Skip.size();
-                    _l3Skip.encode(l1SkipPos - lastL3SkipL1SkipPos - 1);
-                    lastL3SkipL1SkipPos = l1SkipPos;
-                    // L3 L2Skip pos
-                    uint64_t l2SkipPos = _l2Skip.size();
-                    _l3Skip.encode(l2SkipPos - lastL3SkipL2SkipPos - 1);
-                    lastL3SkipL2SkipPos = l2SkipPos;
-                    l3SkipCnt = 0;
-                    ++l4SkipCnt;
-                    if (l4SkipCnt >= L4SKIPSTRIDE) {
-                        // L4 docid delta
-                        docIdDelta = lastDocId - lastL4SkipDocId;
-                        assert(static_cast<int32_t>(docIdDelta) > 0);
-                        _l4Skip.encode(docIdDelta - 1);
-                        lastL4SkipDocId = lastDocId;
-                        // L4 docid pos
-                        docIdPos = _zcDocIds.size();
-                        _l4Skip.encode(docIdPos - lastL4SkipDocIdPos - 1);
-                        lastL4SkipDocIdPos = docIdPos;
-                        // L4 features pos
-                        _l4Skip.encode(featurePos - lastL4SkipFeaturePos - 1);
-                        lastL4SkipFeaturePos = featurePos;
-                        // L4 L1Skip pos
-                        l1SkipPos = _l1Skip.size();
-                        _l4Skip.encode(l1SkipPos - lastL4SkipL1SkipPos - 1);
-                        lastL4SkipL1SkipPos = l1SkipPos;
-                        // L4 L2Skip pos
-                        l2SkipPos = _l2Skip.size();
-                        _l4Skip.encode(l2SkipPos - lastL4SkipL2SkipPos - 1);
-                        lastL4SkipL2SkipPos = l2SkipPos;
-                        // L4 L3Skip pos
-                        uint64_t l3SkipPos = _l3Skip.size();
-                        _l4Skip.encode(l3SkipPos - lastL4SkipL3SkipPos - 1);
-                        lastL4SkipL3SkipPos = l3SkipPos;
-                        l4SkipCnt = 0;
-                    }
-                }
-            }
-        }
-        uint32_t docId = dit->first;
-        featurePos += dit->second;
-        _zcDocIds.encode(docId - lastDocId - 1);
-        lastDocId = docId;
-        ++l1SkipCnt;
-    }
-    // Extra partial entries for skip tables to simplify iterator during search
-    if (_l1Skip.size() > 0)
-        _l1Skip.encode(lastDocId - lastL1SkipDocId - 1);
-    if (_l2Skip.size() > 0)
-        _l2Skip.encode(lastDocId - lastL2SkipDocId - 1);
-    if (_l3Skip.size() > 0)
-        _l3Skip.encode(lastDocId - lastL3SkipDocId - 1);
-    if (_l4Skip.size() > 0)
-        _l4Skip.encode(lastDocId - lastL4SkipDocId - 1);
-}
-
-
-void
-Zc4PostingSeqWrite::flushWordWithSkip(bool hasMore)
-{
-    assert(_docIds.size() >= _minSkipDocs || !_counts._segments.empty());
-
-    _encodeFeatures->flush();
-    EncodeContext &e = _encodeContext;
-
-    uint32_t numDocs = _docIds.size();
-
-    e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
-    if (numDocs >= _minChunkDocs)
-        e.writeBits((hasMore ? 1 : 0), 1);
-
-    // TODO: Calculate docids size, possible also k parameter  */
-    calcSkipInfo();
-
-    uint32_t docIdsSize = _zcDocIds.size();
-    uint32_t l1SkipSize = _l1Skip.size();
-    uint32_t l2SkipSize = _l2Skip.size();
-    uint32_t l3SkipSize = _l3Skip.size();
-    uint32_t l4SkipSize = _l4Skip.size();
-
-    e.encodeExpGolomb(docIdsSize - 1, K_VALUE_ZCPOSTING_DOCIDSSIZE);
-    e.encodeExpGolomb(l1SkipSize, K_VALUE_ZCPOSTING_L1SKIPSIZE);
-    if (l1SkipSize != 0) {
-        e.encodeExpGolomb(l2SkipSize, K_VALUE_ZCPOSTING_L2SKIPSIZE);
-        if (l2SkipSize != 0) {
-            e.encodeExpGolomb(l3SkipSize, K_VALUE_ZCPOSTING_L3SKIPSIZE);
-            if (l3SkipSize != 0) {
-                e.encodeExpGolomb(l4SkipSize, K_VALUE_ZCPOSTING_L4SKIPSIZE);
-            }
-        }
-    }
-    e.encodeExpGolomb(_featureOffset, K_VALUE_ZCPOSTING_FEATURESSIZE);
-
-    // Encode last document id in chunk or word.
-    if (_dynamicK) {
-        uint32_t docIdK = e.calcDocIdK((_counts._segments.empty() &&
-                                        !hasMore) ?
-                                       numDocs : 1,
-                                       _docIdLimit);
-        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back().first,
-                          docIdK);
-    } else {
-        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back().first,
-                          K_VALUE_ZCPOSTING_LASTDOCID);
-    }
-
-    e.smallAlign(8);    // Byte align
-
-    uint8_t *docIds = _zcDocIds._mallocStart;
-    e.writeBits(reinterpret_cast<const uint64_t *>(docIds),
-                0,
-                docIdsSize * 8);
-    if (l1SkipSize > 0) {
-        uint8_t *l1Skip = _l1Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l1Skip),
-                    0,
-                    l1SkipSize * 8);
-    }
-    if (l2SkipSize > 0) {
-        uint8_t *l2Skip = _l2Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l2Skip),
-                    0,
-                    l2SkipSize * 8);
-    }
-    if (l3SkipSize > 0) {
-        uint8_t *l3Skip = _l3Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l3Skip),
-                    0,
-                    l3SkipSize * 8);
-    }
-    if (l4SkipSize > 0) {
-        uint8_t *l4Skip = _l4Skip._mallocStart;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l4Skip),
-                    0,
-                    l4SkipSize * 8);
-    }
-
-    // Write features
-    e.writeBits(static_cast<const uint64_t *>(_featureWriteContext._comprBuf),
-                0,
-                _featureOffset);
-
-    _counts._numDocs += numDocs;
-    if (hasMore || !_counts._segments.empty()) {
-        uint64_t writePos = e.getWriteOffset();
-        PostingListCounts::Segment seg;
-        seg._bitLength = writePos - (_writePos + _counts._bitLength);
-        seg._numDocs = numDocs;
-        seg._lastDoc = _docIds.back().first;
-        _counts._segments.push_back(seg);
-        _counts._bitLength += seg._bitLength;
-    }
-    // reset tables in preparation for next word or next chunk
-    _zcDocIds.clear();
-    _l1Skip.clear();
-    _l2Skip.clear();
-    _l3Skip.clear();
-    _l4Skip.clear();
-    resetWord();
-}
-
-
-void
-Zc4PostingSeqWrite::flushWordNoSkip()
-{
-    // Too few document ids for skip info.
-    assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());
-
-    _encodeFeatures->flush();
-    EncodeContext &e = _encodeContext;
-    uint32_t numDocs = _docIds.size();
-
-    e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
-
-    uint32_t baseDocId = 1;
-    const uint64_t *features =
-        static_cast<const uint64_t *>(_featureWriteContext._comprBuf);
-    uint64_t featureOffset = 0;
-
-    std::vector<DocIdAndFeatureSize>::const_iterator dit = _docIds.begin();
-    std::vector<DocIdAndFeatureSize>::const_iterator dite = _docIds.end();
-
-    for (; dit != dite; ++dit) {
-        uint32_t docId = dit->first;
-        uint32_t featureSize = dit->second;
-        e.encodeExpGolomb(docId - baseDocId, K_VALUE_ZCPOSTING_DELTA_DOCID);
-        baseDocId = docId + 1;
-        e.writeBits(features + (featureOffset >> 6),
-                    featureOffset & 63,
-                    featureSize);
-        featureOffset += featureSize;
-    }
-    _counts._numDocs += numDocs;
-    resetWord();
-}
-
-
-void
-Zc4PostingSeqWrite::resetWord()
-{
-    _docIds.clear();
-    _encodeFeatures->setupWrite(_featureWriteContext);
-    _featureOffset = 0;
+    _writer.get_encode_features().getParams(params);
 }
 
 
@@ -1300,44 +853,7 @@ ZcPostingSeqRead::getIdentifier()
 ZcPostingSeqWrite::ZcPostingSeqWrite(PostingListCountFileSeqWrite *countFile)
     : Zc4PostingSeqWrite(countFile)
 {
-    _dynamicK = true;
-}
-
-
-void
-ZcPostingSeqWrite::flushWordNoSkip()
-{
-    // Too few document ids for skip info.
-    assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());
-
-    _encodeFeatures->flush();
-    EncodeContext &e = _encodeContext;
-    uint32_t numDocs = _docIds.size();
-
-    e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
-
-    uint32_t docIdK = e.calcDocIdK(numDocs, _docIdLimit);
-
-    uint32_t baseDocId = 1;
-    const uint64_t *features =
-        static_cast<const uint64_t *>(_featureWriteContext._comprBuf);
-    uint64_t featureOffset = 0;
-
-    std::vector<DocIdAndFeatureSize>::const_iterator dit = _docIds.begin();
-    std::vector<DocIdAndFeatureSize>::const_iterator dite = _docIds.end();
-
-    for (; dit != dite; ++dit) {
-        uint32_t docId = dit->first;
-        uint32_t featureSize = dit->second;
-        e.encodeExpGolomb(docId - baseDocId, docIdK);
-        baseDocId = docId + 1;
-        e.writeBits(features + (featureOffset >> 6),
-                    featureOffset & 63,
-                    featureSize);
-        featureOffset += featureSize;
-    }
-    _counts._numDocs += numDocs;
-    resetWord();
+    _writer.set_dynamic_k(true);
 }
 
 } // namespace search::diskindex
