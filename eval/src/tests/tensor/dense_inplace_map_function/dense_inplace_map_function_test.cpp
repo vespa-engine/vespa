@@ -27,7 +27,6 @@ EvalFixture::ParamRepo make_params() {
         .add_mutable("_d", spec(5.0))
         .add_mutable("_x5", spec({x(5)}, N()))
         .add_mutable("_x5y3", spec({x(5),y(3)}, N()))
-        .add_mutable("_x5_u", spec({x(5)}, N()), "tensor(x[])")
         .add_mutable("_x_m", spec({x({"a", "b", "c"})}, N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -58,10 +57,6 @@ TEST("require that mutable dense concrete tensors are optimized") {
 
 TEST("require that inplace map operations can be chained") {
     TEST_DO(verify_optimized("map(map(_x5,f(x)(x+10)),f(x)(x-5))", 2));
-}
-
-TEST("require that abstract tensors are not optimized") {
-    TEST_DO(verify_not_optimized("map(_x5_u,f(x)(x+10))"));
 }
 
 TEST("require that non-mutable tensors are not optimized") {
