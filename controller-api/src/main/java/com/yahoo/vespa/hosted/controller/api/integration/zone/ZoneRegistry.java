@@ -9,6 +9,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -53,7 +54,7 @@ public interface ZoneRegistry {
     SystemName system();
 
     /** Return the configserver's Athenz service identity */
-    AthenzService getConfigServerAthenzService(ZoneId zoneId);
+    AthenzIdentity getConfigServerAthenzIdentity(ZoneId zoneId);
 
     /** Returns the Vespa upgrade policy to use for zones in this registry */
     UpgradePolicy upgradePolicy();
