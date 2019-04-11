@@ -1,0 +1,176 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "compact_words_store.h"
+#include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".memoryindex.compact_words_store");
+
+namespace search::memoryindex {
+
+using Builder = CompactWordsStore::Builder;
+
+namespace {
+
+constexpr size_t MIN_BUFFER_ARRAYS = 1024u;
+
+size_t
+getSerializedSize(const Builder &builder)
+{
+    size_t size = 1 + builder.words().size(); // numWords, [words]
+    return size;
+}
+
+uint32_t *
+serialize(const Builder &builder, uint32_t *begin)
+{
+    uint32_t *buf = begin;
+    const Builder::WordRefVector &words = builder.words();
+    *buf++ = words.size();
+    for (auto word : words) {
+        *buf++ = word.ref();
+    }
+    return buf;
+}
+
+}
+
+CompactWordsStore::Builder::Builder(uint32_t docId_)
+    : _docId(docId_),
+      _words()
+{ }
+
+CompactWordsStore::Builder::~Builder() { }
+
+CompactWordsStore::Builder &
+CompactWordsStore::Builder::insert(datastore::EntryRef wordRef)
+{
+    _words.push_back(wordRef);
+    return *this;
+}
+
+inline void
+CompactWordsStore::Iterator::nextWord()
+{
+    _wordRef = *_buf++;
+    _remainingWords--;
+}
+
+CompactWordsStore::Iterator::Iterator()
+    : _buf(nullptr),
+      _remainingWords(0),
+      _wordRef(0),
+      _valid(false)
+{
+}
+
+CompactWordsStore::Iterator::Iterator(const uint32_t *buf)
+    : _buf(buf),
+      _remainingWords(0),
+      _wordRef(0),
+      _valid(true)
+{
+    _remainingWords = *_buf++;
+    if (_remainingWords > 0) {
+        nextWord();
+    } else {
+        _valid = false;
+    }
+}
+
+CompactWordsStore::Iterator &
+CompactWordsStore::Iterator::operator++()
+{
+    if (_remainingWords > 0) {
+        nextWord();
+    } else {
+        _valid = false;
+    }
+    return *this;
+}
+
+CompactWordsStore::Store::Store()
+    : _store(),
+      _type(1,
+            MIN_BUFFER_ARRAYS,
+            RefType::offsetSize()),
+      _typeId(0)
+{
+    _store.addType(&_type);
+    _store.initActiveBuffers();
+}
+
+CompactWordsStore::Store::~Store()
+{
+    _store.dropBuffers();
+}
+
+datastore::EntryRef
+CompactWordsStore::Store::insert(const Builder &builder)
+{
+    size_t serializedSize = getSerializedSize(builder);
+    auto result = _store.rawAllocator<uint32_t>(_typeId).alloc(serializedSize);
+    uint32_t *begin = result.data;
+    uint32_t *end = serialize(builder, begin);
+    assert(size_t(end - begin) == serializedSize);
+    (void) end;
+    return result.ref;
+}
+
+CompactWordsStore::Iterator
+CompactWordsStore::Store::get(datastore::EntryRef wordRef) const
+{
+    RefType internalRef(wordRef);
+    const uint32_t *buf = _store.getEntry<uint32_t>(internalRef);
+    return Iterator(buf);
+}
+
+CompactWordsStore::CompactWordsStore()
+    : _docs(),
+      _wordsStore()
+{ }
+
+CompactWordsStore::~CompactWordsStore() { }
+
+void
+CompactWordsStore::insert(const Builder &builder)
+{
+    datastore::EntryRef wordRef = _wordsStore.insert(builder);
+    auto insres = _docs.insert(std::make_pair(builder.docId(), wordRef));
+    if (!insres.second) {
+        LOG(error, "Failed inserting remove info for docid %u",
+            builder.docId());
+        LOG_ABORT("should not be reached");
+    }
+}
+
+void 
+CompactWordsStore::remove(uint32_t docId)
+{
+    _docs.erase(docId);
+}
+
+CompactWordsStore::Iterator
+CompactWordsStore::get(uint32_t docId) const
+{
+    auto itr = _docs.find(docId);
+    if (itr != _docs.end()) {
+        return _wordsStore.get(itr->second);
+    }
+    return Iterator();
+}
+
+MemoryUsage
+CompactWordsStore::getMemoryUsage() const
+{
+    MemoryUsage usage;
+    usage.incAllocatedBytes(_docs.getMemoryConsumption());
+    usage.incUsedBytes(_docs.getMemoryUsed());
+    usage.merge(_wordsStore.getMemoryUsage());
+    return usage;
+
+}
+
+}
+

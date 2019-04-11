@@ -173,14 +173,14 @@ vespa_define_module(
     src/tests/index/doctypebuilder
     src/tests/indexmetainfo
     src/tests/ld-library-path
-    src/tests/memoryindex/compact_document_words_store
+    src/tests/memoryindex/compact_words_store
     src/tests/memoryindex/datastore
-    src/tests/memoryindex/document_remover
-    src/tests/memoryindex/documentinverter
+    src/tests/memoryindex/document_inverter
     src/tests/memoryindex/field_index
-    src/tests/memoryindex/fieldinverter
-    src/tests/memoryindex/memoryindex
-    src/tests/memoryindex/urlfieldinverter
+    src/tests/memoryindex/field_index_remover
+    src/tests/memoryindex/field_inverter
+    src/tests/memoryindex/memory_index
+    src/tests/memoryindex/url_field_inverter
     src/tests/nativerank
     src/tests/nearsearch
     src/tests/postinglistbm

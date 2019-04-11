@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "featurestore.h"
-#include "wordstore.h"
-#include "document_remover.h"
-#include <vespa/searchlib/btree/btreeroot.h>
+#include "feature_store.h"
+#include "field_index_remover.h"
+#include "word_store.h"
 #include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/btree/btreenodeallocator.h>
+#include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/indexbuilder.h>
@@ -16,7 +16,7 @@
 
 namespace search::memoryindex {
 
-class OrderedDocumentInserter;
+class OrderedFieldIndexInserter;
 
 /**
  * Memory index for a single field.
@@ -56,9 +56,7 @@ public:
         const WordStore          &_wordStore;
         const vespalib::stringref _word;
 
-        const char *
-        getWord(datastore::EntryRef wordRef) const
-        {
+        const char *getWord(datastore::EntryRef wordRef) const {
             if (wordRef.valid()) {
                 return _wordStore.getWord(wordRef);
             }
@@ -71,9 +69,7 @@ public:
               _word(word)
         { }
 
-        bool
-        operator()(const WordKey & lhs, const WordKey & rhs) const
-        {
+        bool operator()(const WordKey & lhs, const WordKey & rhs) const {
             int cmpres = strcmp(getWord(lhs._wordRef), getWord(rhs._wordRef));
             return cmpres < 0;
         }
@@ -93,8 +89,8 @@ private:
     PostingListStore        _postingListStore;
     FeatureStore            _featureStore;
     uint32_t                _fieldId;
-    DocumentRemover         _remover;
-    std::unique_ptr<OrderedDocumentInserter> _inserter;
+    FieldIndexRemover       _remover;
+    std::unique_ptr<OrderedFieldIndexInserter> _inserter;
 
 public:
     datastore::EntryRef addWord(const vespalib::stringref word) {
@@ -102,9 +98,7 @@ public:
         return _wordStore.addWord(word);
     }
 
-    datastore::EntryRef
-    addFeatures(const index::DocIdAndFeatures &features)
-    {
+    datastore::EntryRef addFeatures(const index::DocIdAndFeatures &features) {
         return _featureStore.addFeatures(_fieldId, features).first;
     }
 
@@ -118,7 +112,7 @@ public:
     uint64_t getNumUniqueWords() const { return _numUniqueWords; }
     const FeatureStore & getFeatureStore() const { return _featureStore; }
     const WordStore &getWordStore() const { return _wordStore; }
-    OrderedDocumentInserter &getInserter() const { return *_inserter; }
+    OrderedFieldIndexInserter &getInserter() const { return *_inserter; }
 
 private:
     void freeze() {
@@ -126,9 +120,7 @@ private:
         _dict.getAllocator().freeze();
     }
 
-    void
-    trimHoldLists()
-    {
+    void trimHoldLists() {
         GenerationHandler::generation_t usedGen =
             _generationHandler.getFirstUsedGeneration();
         _postingListStore.trimHoldLists(usedGen);
@@ -136,9 +128,7 @@ private:
         _featureStore.trimHoldLists(usedGen);
     }
 
-    void
-    transferHoldLists()
-    {
+    void transferHoldLists() {
         GenerationHandler::generation_t generation =
             _generationHandler.getCurrentGeneration();
         _postingListStore.transferHoldLists(generation);
@@ -146,9 +136,7 @@ private:
         _featureStore.transferHoldLists(generation);
     }
 
-    void
-    incGeneration()
-    {
+    void incGeneration() {
         _generationHandler.incGeneration();
     }
 
@@ -163,27 +151,11 @@ public:
     void dump(search::index::IndexBuilder & indexBuilder);
 
     MemoryUsage getMemoryUsage() const;
+    DictionaryTree &getDictionaryTree() { return _dict; }
+    PostingListStore &getPostingListStore() { return _postingListStore; }
+    FieldIndexRemover &getDocumentRemover() { return _remover; }
 
-    DictionaryTree &
-    getDictionaryTree()
-    {
-        return _dict;
-    }
-
-    PostingListStore &
-    getPostingListStore()
-    {
-        return _postingListStore;
-    }
-
-    DocumentRemover &
-    getDocumentRemover()
-    {
-        return _remover;
-    }
-
-    void commit()
-    {
+    void commit() {
         _remover.flush();
         freeze();
         transferHoldLists();

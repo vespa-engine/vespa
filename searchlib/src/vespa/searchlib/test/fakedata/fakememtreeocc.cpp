@@ -2,13 +2,13 @@
 
 #include "fakememtreeocc.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/queryeval/iterators.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/memoryindex/postingiterator.h>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
 
 #include <vespa/log/log.h>

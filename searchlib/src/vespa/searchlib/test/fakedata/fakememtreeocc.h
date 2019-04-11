@@ -4,7 +4,7 @@
 #include "fakeword.h"
 #include "fakeposting.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/memoryindex/featurestore.h>
+#include <vespa/searchlib/memoryindex/feature_store.h>
 #include <vespa/searchlib/memoryindex/field_index.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>

@@ -14,11 +14,10 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/memoryindex/compact_document_words_store.h>
-#include <vespa/searchlib/memoryindex/documentinverter.h>
+#include <vespa/searchlib/memoryindex/compact_words_store.h>
+#include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
-#include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/memoryindex/ordereddocumentinserter.h>
+#include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -43,7 +42,7 @@ using search::index::DummyFileHeaderContext;
 using search::index::Schema;
 using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
-using search::memoryindex::CompactDocumentWordsStore;
+using search::memoryindex::CompactWordsStore;
 using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
 using std::set;

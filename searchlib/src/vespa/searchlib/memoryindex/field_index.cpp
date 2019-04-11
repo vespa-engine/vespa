@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field_index.h"
-#include "ordereddocumentinserter.h"
+#include "ordered_field_index_inserter.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
@@ -38,7 +38,7 @@ FieldIndex::FieldIndex(const Schema & schema, uint32_t fieldId)
       _featureStore(schema),
       _fieldId(fieldId),
       _remover(_wordStore),
-      _inserter(std::make_unique<OrderedDocumentInserter>(*this))
+      _inserter(std::make_unique<OrderedFieldIndexInserter>(*this))
 { }
 
 FieldIndex::~FieldIndex()
@@ -87,7 +87,6 @@ FieldIndex::findFrozen(const vespalib::stringref word) const
     }
     return PostingList::Iterator();
 }
-
 
 void
 FieldIndex::compactFeatures()
@@ -218,7 +217,6 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
     }
 }
 
-
 MemoryUsage
 FieldIndex::getMemoryUsage() const
 {
@@ -231,7 +229,7 @@ FieldIndex::getMemoryUsage() const
     return usage;
 }
 
-} // namespace search::memoryindex
+}
 
 namespace search::btree {
 

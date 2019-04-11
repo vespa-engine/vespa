@@ -4,7 +4,7 @@
 
 #include "predicate_tree_annotator.h"
 #include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/memoryindex/wordstore.h>
+#include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <unordered_set>
