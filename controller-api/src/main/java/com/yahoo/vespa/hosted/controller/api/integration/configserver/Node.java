@@ -31,10 +31,14 @@ public class Node {
     private final long wantedRestartGeneration;
     private final long rebootGeneration;
     private final long wantedRebootGeneration;
+    private final String canonicalFlavor;
+    private final String clusterId;
+    private final ClusterType clusterType;
 
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
-                long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration) {
+                long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
+                String canonicalFlavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
         this.state = state;
         this.type = type;
@@ -48,13 +52,17 @@ public class Node {
         this.wantedRestartGeneration = wantedRestartGeneration;
         this.rebootGeneration = rebootGeneration;
         this.wantedRebootGeneration = wantedRebootGeneration;
+        this.canonicalFlavor = canonicalFlavor;
+        this.clusterId = clusterId;
+        this.clusterType = clusterType;
     }
 
     @TestOnly
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion) {
         this(hostname, state, type, owner, currentVersion, wantedVersion,
-             Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0);
+             Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0,
+             "d-2-8-50", "cluster", ClusterType.container);
     }
 
     public HostName hostname() {
@@ -107,6 +115,18 @@ public class Node {
         return wantedRebootGeneration;
     }
 
+    public String canonicalFlavor() {
+        return canonicalFlavor;
+    }
+
+    public String clusterId() {
+        return clusterId;
+    }
+
+    public ClusterType clusterType() {
+        return clusterType;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -137,6 +157,13 @@ public class Node {
         expectedUp,
         allowedDown,
         unorchestrated
+    }
+
+    /** Known cluster types. */
+    public enum ClusterType {
+        admin,
+        container,
+        content
     }
 
 }

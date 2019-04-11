@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -173,6 +174,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
@@ -322,6 +324,58 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
         return controller.applications().get(applicationId)
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
+    }
+
+    private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        List<Node> nodes = controller.configServer().nodeRepository().list(zone, id);
+
+        Slime slime = new Slime();
+        Cursor nodesArray = slime.setObject().setArray("nodes");
+        for (Node node : nodes) {
+            Cursor nodeObject = nodesArray.addObject();
+            nodeObject.setString("hostname", node.hostname().value());
+            nodeObject.setString("state", valueOf(node.state()));
+            nodeObject.setString("orchestration", valueOf(node.serviceState()));
+            nodeObject.setString("version", node.currentVersion().toString());
+            nodeObject.setString("flavor", node.canonicalFlavor());
+            nodeObject.setString("clusterId", node.clusterId());
+            nodeObject.setString("clusterType", valueOf(node.clusterType()));
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static String valueOf(Node.State state) {
+        switch (state) {
+            case failed: return "failed";
+            case parked: return "parked";
+            case dirty: return "dirty";
+            case ready: return "ready";
+            case active: return "active";
+            case inactive: return "inactive";
+            case reserved: return "reserved";
+            case provisioned: return "provisioned";
+            default: throw new IllegalArgumentException("Unexpected node state '" + state + "'.");
+        }
+    }
+
+    private static String valueOf(Node.ServiceState state) {
+        switch (state) {
+            case expectedUp: return "expectedUp";
+            case allowedDown: return "allowedDown";
+            case unorchestrated: return "unorchestrated";
+            default: throw new IllegalArgumentException("Unexpected node state '" + state + "'.");
+        }
+    }
+
+    private static String valueOf(Node.ClusterType type) {
+        switch (type) {
+            case admin: return "admin";
+            case content: return "content";
+            case container: return "container";
+            default: throw new IllegalArgumentException("Unexpected node cluster type '" + type + "'.");
+        }
     }
 
     private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {

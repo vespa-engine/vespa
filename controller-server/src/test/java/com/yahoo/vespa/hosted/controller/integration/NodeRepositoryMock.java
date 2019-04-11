@@ -89,7 +89,10 @@ public class NodeRepositoryMock implements NodeRepository {
                                             node.restartGeneration(),
                                             node.wantedRestartGeneration(),
                                             node.rebootGeneration(),
-                                            node.wantedRebootGeneration()))
+                                            node.wantedRebootGeneration(),
+                                            node.canonicalFlavor(),
+                                            node.clusterId(),
+                                            node.clusterType()))
                       .forEach(node -> putByHostname(zone, node));
     }
 
@@ -131,7 +134,10 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.restartGeneration(),
                                                            node.wantedRestartGeneration() + 1,
                                                            node.rebootGeneration(),
-                                                           node.wantedRebootGeneration()));
+                                                           node.wantedRebootGeneration(),
+                                                           node.canonicalFlavor(),
+                                                           node.clusterId(),
+                                                           node.clusterType()));
     }
 
     public void doRestart(DeploymentId deployment, Optional<HostName> hostname) {
@@ -147,7 +153,10 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.restartGeneration() + 1,
                                                            node.wantedRestartGeneration(),
                                                            node.rebootGeneration(),
-                                                           node.wantedRebootGeneration()));
+                                                           node.wantedRebootGeneration(),
+                                                           node.canonicalFlavor(),
+                                                           node.clusterId(),
+                                                           node.clusterType()));
     }
 
     public void requestReboot(DeploymentId deployment, Optional<HostName> hostname) {
@@ -163,7 +172,10 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.restartGeneration(),
                                                            node.wantedRestartGeneration(),
                                                            node.rebootGeneration(),
-                                                           node.wantedRebootGeneration() + 1));
+                                                           node.wantedRebootGeneration() + 1,
+                                                           node.canonicalFlavor(),
+                                                           node.clusterId(),
+                                                           node.clusterType()));
     }
 
     public void doReboot(DeploymentId deployment, Optional<HostName> hostname) {
@@ -179,7 +191,10 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.restartGeneration(),
                                                            node.wantedRestartGeneration(),
                                                            node.rebootGeneration() + 1,
-                                                           node.wantedRebootGeneration()));
+                                                           node.wantedRebootGeneration(),
+                                                           node.canonicalFlavor(),
+                                                           node.clusterId(),
+                                                           node.clusterType()));
     }
 
 }

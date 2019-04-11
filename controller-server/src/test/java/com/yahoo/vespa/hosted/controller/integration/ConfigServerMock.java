@@ -248,7 +248,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
                 for (Node node : nodes) {
                     nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
-                                                                               node.state(), node.type(),
+                                                                               Node.State.active,
+                                                                               node.type(),
                                                                                node.owner(),
                                                                                node.currentVersion(),
                                                                                application.version().get()));
