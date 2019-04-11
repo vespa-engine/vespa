@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field_inverter.h"
-#include "urlfieldinverter.h"
+#include "url_field_inverter.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -14,7 +14,7 @@
 #include <stdexcept>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.urlfieldinverter");
+LOG_SETUP(".memoryindex.url_field_inverter");
 
 namespace search::memoryindex {
 

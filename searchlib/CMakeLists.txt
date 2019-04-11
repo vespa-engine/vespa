@@ -180,7 +180,7 @@ vespa_define_module(
     src/tests/memoryindex/field_index_remover
     src/tests/memoryindex/field_inverter
     src/tests/memoryindex/memory_index
-    src/tests/memoryindex/urlfieldinverter
+    src/tests/memoryindex/url_field_inverter
     src/tests/nativerank
     src/tests/nearsearch
     src/tests/postinglistbm

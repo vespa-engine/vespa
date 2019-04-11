@@ -4,7 +4,7 @@
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
-#include <vespa/searchlib/memoryindex/urlfieldinverter.h>
+#include <vespa/searchlib/memoryindex/url_field_inverter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 

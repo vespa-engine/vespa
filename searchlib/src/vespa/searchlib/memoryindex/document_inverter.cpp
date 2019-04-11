@@ -4,7 +4,7 @@
 #include "field_index_collection.h"
 #include "field_inverter.h"
 #include "ordered_field_index_inserter.h"
-#include "urlfieldinverter.h"
+#include "url_field_inverter.h"
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/repo/fixedtyperepo.h>
