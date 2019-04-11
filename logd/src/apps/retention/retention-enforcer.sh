@@ -15,11 +15,15 @@ RETAIN_DAYS=30
 # The "database" holds lines with format "timestamp /path/to/logfile"
 # where "timestamp" is just seconds since epoch.
 
+log_msg() {
+	echo "$0 [$$]" "$@"
+}
+
 prereq_dir() {
 	if [ -d $1 ] && [ -w $1 ]; then
 		:
 	else
-		echo "$0: missing directory '$1' in '`pwd`'" >&2
+		log_msg ERROR "missing directory '$1' in '`pwd`'" >&2
 		exit 1
 	fi
 }
@@ -33,13 +37,14 @@ ensure_dir () {
 	if [ -d $1 ] && [ -w $1 ]; then
 		return 0
 	fi
-	echo "Creating directory '$1' in '`pwd`'"
+	log_msg INFO "Creating directory '$1' in '`pwd`'"
 	mkdir -p $1 || exit 1
 }
 
 prepare_stuff() {
 	check_prereqs
-	exec > $DBGF.$$.log 2>&1
+	ensure_dir ${DBGF%/*}
+	exec >> $DBGF.log 2>&1
 	ensure_dir $DBDIR
 }
 
@@ -68,7 +73,7 @@ check_pidfile() {
 		ps -p $pid >/dev/null 2>&1 || return 1
 		proc=$(ps -p $pid 2>&1)
 		case $proc in *retention*) ;; *) return 1;; esac
-		echo "$0 [$$]: Yielding my place to pid '$pid'"
+		log_msg INFO "Yielding my place to pid '$pid'"
 		exit 1
 	fi
 }
@@ -82,7 +87,7 @@ maybe_collect() {
 	logfilename=$2
 
 	if bad_timestamp "$1"; then
-		echo "WARNING: bad timestamp '$timestamp' for logfilename '$logfilename'"
+		log_msg WARNING "bad timestamp '$timestamp' for logfilename '$logfilename'"
 		return
 	fi
 
@@ -92,7 +97,7 @@ maybe_collect() {
 	lim2=$(($mod_time + $add))
 
 	if [ $lim1 -lt $now ] && [ $lim2 -lt $now ]; then
-		echo "Collect logfile '$logfilename' timestamped $timestamp modified $mod_time"
+		log_msg INFO "Collect logfile '$logfilename' timestamped $timestamp modified $mod_time"
 		rm -f "$logfilename"
 	fi
 }
@@ -124,10 +129,10 @@ process_all() {
 
 mainloop() {
 	while true; do
+		check_pidfile
 		mark_pid
 		process_all
 		sleep 3600
-		check_pidfile
 	done
 }
 
