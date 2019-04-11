@@ -109,18 +109,22 @@ public class JobController {
         }
     }
 
-    /** Stores the given log records for the given run and step. */
-    public void log(RunId id, Step step, Level level, List<String> messages) {
+    /** Stores the given log entries for the given run and step. */
+    public void log(RunId id, Step step, List<LogEntry> entries) {
         locked(id, __ -> {
-            List<LogEntry> entries = messages.stream()
-                                             .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
-                                             .collect(toList());
             logs.append(id.application(), id.type(), step, entries);
             return __;
         });
     }
 
-    /** Stores the given log record for the given run and step. */
+    /** Stores the given log messages for the given run and step. */
+    public void log(RunId id, Step step, Level level, List<String> messages) {
+        log(id, step, messages.stream()
+                              .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
+                              .collect(toList()));
+    }
+
+    /** Stores the given log message for the given run and step. */
     public void log(RunId id, Step step, Level level, String message) {
         log(id, step, level, Collections.singletonList(message));
     }

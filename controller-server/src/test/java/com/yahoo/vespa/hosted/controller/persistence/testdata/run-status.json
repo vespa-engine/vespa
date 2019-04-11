@@ -15,6 +15,7 @@
       "deployTester": "succeeded",
       "installTester": "unfinished",
       "deactivateTester": "failed",
+      "copyVespaLogs": "succeeded",
       "startTests": "succeeded",
       "endTests": "unfinished",
       "report": "failed"

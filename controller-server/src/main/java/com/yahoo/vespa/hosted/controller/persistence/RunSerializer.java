@@ -35,6 +35,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
@@ -196,6 +197,7 @@ class RunSerializer {
             case deployTester       : return "deployTester";
             case installTester      : return "installTester";
             case deactivateTester   : return "deactivateTester";
+            case copyVespaLogs      : return "copyVespaLogs";
             case startTests         : return "startTests";
             case endTests           : return "endTests";
             case report             : return "report";
@@ -214,6 +216,7 @@ class RunSerializer {
             case "deployTester"       : return deployTester;
             case "installTester"      : return installTester;
             case "deactivateTester"   : return deactivateTester;
+            case "copyVespaLogs"      : return copyVespaLogs;
             case "startTests"         : return startTests;
             case "endTests"           : return endTests;
             case "report"             : return report;

@@ -25,9 +25,11 @@ import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
@@ -98,6 +100,7 @@ public class RunSerializerTest {
                              .put(deployTester, succeeded)
                              .put(installTester, unfinished)
                              .put(deactivateTester, failed)
+                             .put(copyVespaLogs, succeeded)
                              .put(startTests, succeeded)
                              .put(endTests, unfinished)
                              .put(report, failed)

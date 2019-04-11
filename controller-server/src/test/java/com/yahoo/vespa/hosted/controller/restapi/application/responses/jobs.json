@@ -57,6 +57,7 @@
             "installTester": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
+            "copyVespaLogs": "unfinished",
             "deactivateReal": "unfinished",
             "deactivateTester": "unfinished",
             "report": "unfinished"
@@ -94,6 +95,7 @@
             "installTester": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
+            "copyVespaLogs": "unfinished",
             "deactivateReal": "unfinished",
             "deactivateTester": "unfinished",
             "report": "unfinished"

@@ -49,8 +49,11 @@ public enum Step {
     /** See that the tests are done running. */
     endTests(startTests),
 
+    /** Fetch and store Vespa logs from the log server cluster of the deployment -- used for test deployments. */
+    copyVespaLogs(deployInitialReal, deployReal, endTests),
+
     /** Delete the real application -- used for test deployments. */
-    deactivateReal(deployInitialReal, deployReal, endTests),
+    deactivateReal(deployInitialReal, deployReal, endTests, copyVespaLogs),
 
     /** Deactivate the tester. */
     deactivateTester(deployTester, endTests),
