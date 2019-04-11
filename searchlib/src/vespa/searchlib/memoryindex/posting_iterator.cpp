@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "postingiterator.h"
+#include "posting_iterator.h"
+#include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.postingiterator");
+LOG_SETUP(".searchlib.memoryindex.posting_iterator");
 
 namespace search::memoryindex {
 

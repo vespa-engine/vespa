@@ -14,7 +14,7 @@
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
-#include <vespa/searchlib/memoryindex/postingiterator.h>
+#include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
 

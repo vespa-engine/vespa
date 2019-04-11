@@ -3,7 +3,7 @@
 #include "document_inverter.h"
 #include "field_index_collection.h"
 #include "memory_index.h"
-#include "postingiterator.h"
+#include "posting_iterator.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
