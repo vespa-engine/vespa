@@ -11,7 +11,6 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
@@ -19,9 +18,9 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
-import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -45,14 +44,14 @@ public class AthenzFacade implements AccessControl {
     private static final Logger log = Logger.getLogger(AthenzFacade.class.getName());
     private final ZmsClient zmsClient;
     private final ZtsClient ztsClient;
-    private final AthenzService service;
+    private final AthenzIdentity service;
 
     @Inject
     public AthenzFacade(AthenzClientFactory factory) {
         this(factory.createZmsClient(), factory.createZtsClient(), factory.getControllerIdentity());
     }
 
-    public AthenzFacade(ZmsClient zmsClient, ZtsClient ztsClient, AthenzService identity) {
+    public AthenzFacade(ZmsClient zmsClient, ZtsClient ztsClient, AthenzIdentity identity) {
         this.zmsClient = zmsClient;
         this.ztsClient = ztsClient;
         this.service = identity;

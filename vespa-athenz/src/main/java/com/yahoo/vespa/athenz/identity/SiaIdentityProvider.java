@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.identity;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.SslContextBuilder;
@@ -33,7 +34,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private static final Duration REFRESH_INTERVAL = Duration.ofHours(1);
 
     private final AtomicReference<SSLContext> sslContext = new AtomicReference<>();
-    private final AthenzService service;
+    private final AthenzIdentity service;
     private final File privateKeyFile;
     private final File certificateFile;
     private final File trustStoreFile;
@@ -48,7 +49,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
              createScheduler());
     }
 
-    public SiaIdentityProvider(AthenzService service,
+    public SiaIdentityProvider(AthenzIdentity service,
                                Path siaPath,
                                File trustStoreFile) {
         this(service,
@@ -58,7 +59,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
              createScheduler());
     }
 
-    public SiaIdentityProvider(AthenzService service,
+    public SiaIdentityProvider(AthenzIdentity service,
                                File privateKeyFile,
                                File certificateFile,
                                File trustStoreFile,
@@ -81,7 +82,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     }
 
     @Override
-    public AthenzService identity() {
+    public AthenzIdentity identity() {
         return service;
     }
 

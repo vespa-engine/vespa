@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -33,7 +34,7 @@ public interface NodeAgentContext extends TaskContext {
         return node().getNodeType();
     }
 
-    AthenzService identity();
+    AthenzIdentity identity();
 
     DockerNetworking dockerNetworking();
 

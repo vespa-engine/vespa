@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.component;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.net.URI;
@@ -16,12 +17,12 @@ import java.util.stream.Collectors;
  */
 public class ConfigServerInfo {
     private final URI loadBalancerEndpoint;
-    private final AthenzService configServerIdentity;
+    private final AthenzIdentity configServerIdentity;
     private final Function<String, URI> configServerHostnameToUriMapper;
     private final List<URI> configServerURIs;
 
     public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
-                            String scheme, int port, AthenzService configServerAthenzIdentity) {
+                            String scheme, int port, AthenzIdentity configServerAthenzIdentity) {
         this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
         this.configServerIdentity = configServerAthenzIdentity;
         this.configServerHostnameToUriMapper = hostname -> URI.create(scheme + "://" + hostname + ":" + port);
@@ -46,7 +47,7 @@ public class ConfigServerInfo {
         return loadBalancerEndpoint;
     }
 
-    public AthenzService getConfigServerIdentity() {
+    public AthenzIdentity getConfigServerIdentity() {
         return configServerIdentity;
     }
 }

@@ -17,13 +17,13 @@ import java.util.Set;
  */
 public interface ZmsClient extends AutoCloseable {
 
-    void createTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token);
+    void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token);
 
-    void deleteTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token);
+    void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token);
 
-    void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token);
+    void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token);
 
-    void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, OktaAccessToken token);
+    void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, OktaAccessToken token);
 
     boolean getMembership(AthenzRole role, AthenzIdentity identity);
 

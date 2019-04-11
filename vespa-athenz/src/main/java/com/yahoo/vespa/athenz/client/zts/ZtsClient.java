@@ -28,8 +28,8 @@ public interface ZtsClient extends AutoCloseable {
      * @param attestationData The signed identity documented serialized to a string.
      * @return A x509 certificate + service token (optional)
      */
-    InstanceIdentity registerInstance(AthenzService providerIdentity,
-                                      AthenzService instanceIdentity,
+    InstanceIdentity registerInstance(AthenzIdentity providerIdentity,
+                                      AthenzIdentity instanceIdentity,
                                       String instanceId, // TODO Remove this parameter (unused/unnecessary)
                                       String attestationData,
                                       boolean requestServiceToken,
@@ -40,8 +40,8 @@ public interface ZtsClient extends AutoCloseable {
      *
      * @return A x509 certificate + service token (optional)
      */
-    InstanceIdentity refreshInstance(AthenzService providerIdentity,
-                                     AthenzService instanceIdentity,
+    InstanceIdentity refreshInstance(AthenzIdentity providerIdentity,
+                                     AthenzIdentity instanceIdentity,
                                      String instanceId,
                                      boolean requestServiceToken,
                                      Pkcs10Csr csr);
@@ -51,7 +51,7 @@ public interface ZtsClient extends AutoCloseable {
      *
      * @return A x509 certificate with CA certificates
      */
-    Identity getServiceIdentity(AthenzService identity,
+    Identity getServiceIdentity(AthenzIdentity identity,
                                 String keyId,
                                 Pkcs10Csr csr);
 
@@ -60,7 +60,7 @@ public interface ZtsClient extends AutoCloseable {
      *
      * @return A x509 certificate with CA certificates
      */
-    Identity getServiceIdentity(AthenzService identity,
+    Identity getServiceIdentity(AthenzIdentity identity,
                                 String keyId,
                                 KeyPair keyPair,
                                 String dnsSuffix);

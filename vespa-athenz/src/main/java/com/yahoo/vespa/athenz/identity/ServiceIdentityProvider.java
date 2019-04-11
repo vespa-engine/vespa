@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.identity;
 
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import javax.net.ssl.SSLContext;
@@ -13,6 +14,6 @@ import javax.net.ssl.SSLContext;
  * @author bjorncs
  */
 public interface ServiceIdentityProvider {
-    AthenzService identity();
+    AthenzIdentity identity();
     SSLContext getIdentitySslContext();
 }

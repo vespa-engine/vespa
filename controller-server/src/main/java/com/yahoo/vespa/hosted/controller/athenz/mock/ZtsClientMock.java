@@ -45,22 +45,22 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public InstanceIdentity registerInstance(AthenzService providerIdentity, AthenzService instanceIdentity, String instanceId, String attestationData, boolean requestServiceToken, Pkcs10Csr csr) {
+    public InstanceIdentity registerInstance(AthenzIdentity providerIdentity, AthenzIdentity instanceIdentity, String instanceId, String attestationData, boolean requestServiceToken, Pkcs10Csr csr) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public InstanceIdentity refreshInstance(AthenzService providerIdentity, AthenzService instanceIdentity, String instanceId, boolean requestServiceToken, Pkcs10Csr csr) {
+    public InstanceIdentity refreshInstance(AthenzIdentity providerIdentity, AthenzIdentity instanceIdentity, String instanceId, boolean requestServiceToken, Pkcs10Csr csr) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Identity getServiceIdentity(AthenzService identity, String keyId, Pkcs10Csr csr) {
+    public Identity getServiceIdentity(AthenzIdentity identity, String keyId, Pkcs10Csr csr) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Identity getServiceIdentity(AthenzService identity, String keyId, KeyPair keyPair, String dnsSuffix) {
+    public Identity getServiceIdentity(AthenzIdentity identity, String keyId, KeyPair keyPair, String dnsSuffix) {
         throw new UnsupportedOperationException();
     }
 

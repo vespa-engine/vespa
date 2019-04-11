@@ -5,7 +5,6 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
@@ -30,23 +29,23 @@ public class ZmsClientMock implements ZmsClient {
     private static final Logger log = Logger.getLogger(ZmsClientMock.class.getName());
 
     private final AthenzDbMock athenz;
-    private final AthenzService controllerIdentity;
+    private final AthenzIdentity controllerIdentity;
     private static final Pattern TENANT_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.(?<tenantDomain>[\\w\\-_]+)\\..*");
     private static final Pattern APPLICATION_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.[\\w\\-_]+\\.res_group\\.(?<resourceGroup>[\\w\\-_]+)\\.wildcard");
 
-    public ZmsClientMock(AthenzDbMock athenz, AthenzService controllerIdentity) {
+    public ZmsClientMock(AthenzDbMock athenz, AthenzIdentity controllerIdentity) {
         this.athenz = athenz;
         this.controllerIdentity = controllerIdentity;
     }
 
     @Override
-    public void createTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token) {
+    public void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token) {
         log("createTenancy(tenantDomain='%s')", tenantDomain);
         getDomainOrThrow(tenantDomain, false).isVespaTenant = true;
     }
 
     @Override
-    public void deleteTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token) {
+    public void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token) {
         log("deleteTenancy(tenantDomain='%s')", tenantDomain);
         AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, false);
         domain.isVespaTenant = false;
@@ -55,7 +54,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token) {
+    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token) {
         log("createProviderResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
         AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
         ApplicationId applicationId = new ApplicationId(resourceGroup);
@@ -65,7 +64,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, OktaAccessToken token) {
+    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, OktaAccessToken token) {
         log("deleteProviderResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
         getDomainOrThrow(tenantDomain, true).applications.remove(new ApplicationId(resourceGroup));
     }
