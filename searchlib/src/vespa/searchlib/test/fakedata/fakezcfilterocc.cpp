@@ -180,7 +180,6 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
         assert(p == pe);
     }
     writer.flush_word();
-    // TODO:
     _featuresSize = 0;
     _hitDocs = fw._postings.size();
     _docIdLimit = fw._docIdLimit;
