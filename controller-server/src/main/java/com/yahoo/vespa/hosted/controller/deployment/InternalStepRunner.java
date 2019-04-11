@@ -396,7 +396,6 @@ public class InternalStepRunner implements StepRunner {
 
         controller.jobController().updateTestLog(id);
 
-        RunStatus status;
         TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(testerEndpoint.get());
         switch (testStatus) {
             case NOT_STARTED:
@@ -405,17 +404,16 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.empty();
             case FAILURE:
                 logger.log("Tests failed.");
-                status = testFailure; break;
+                return Optional.of(testFailure);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
-                status = error; break;
+                return Optional.of(error);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
-                status = running; break;
+                return Optional.of(running);
             default:
                 throw new IllegalStateException("Unknown status '" + testStatus + "'!");
         }
-        return Optional.of(status);
     }
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
