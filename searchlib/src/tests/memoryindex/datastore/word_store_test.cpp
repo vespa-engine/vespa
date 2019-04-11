@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
-LOG_SETUP("wordstore_test");
+LOG_SETUP("word_store_test");
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/memoryindex/wordstore.h>
+#include <vespa/searchlib/memoryindex/word_store.h>
 
 using namespace search::datastore;
 
@@ -75,7 +75,7 @@ Test::requireThatAddWordTriggersChangeOfBuffer()
 int
 Test::Main()
 {
-    TEST_INIT("wordstore_test");
+    TEST_INIT("word_store_test");
 
     requireThatWordsCanBeAddedAndRetrieved();
     requireThatAddWordTriggersChangeOfBuffer();

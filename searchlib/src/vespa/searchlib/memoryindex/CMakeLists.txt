@@ -12,6 +12,6 @@ vespa_add_library(searchlib_memoryindex OBJECT
     ordered_field_index_inserter.cpp
     posting_iterator.cpp
     url_field_inverter.cpp
-    wordstore.cpp
+    word_store.cpp
     DEPENDS
 )

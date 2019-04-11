@@ -1,6 +1,4 @@
 .depend
 Makefile
-feature_store_test
-wordstore_test
 searchlib_feature_store_test_app
-searchlib_wordstore_test_app
+searchlib_word_store_test_app

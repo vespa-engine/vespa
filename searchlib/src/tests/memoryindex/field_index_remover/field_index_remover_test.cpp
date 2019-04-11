@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
-#include <vespa/searchlib/memoryindex/wordstore.h>
+#include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 

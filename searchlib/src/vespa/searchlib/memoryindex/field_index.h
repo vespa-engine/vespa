@@ -4,7 +4,7 @@
 
 #include "feature_store.h"
 #include "field_index_remover.h"
-#include "wordstore.h"
+#include "word_store.h"
 #include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/btree/btreenodeallocator.h>
 #include <vespa/searchlib/btree/btreeroot.h>

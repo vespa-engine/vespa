@@ -2,7 +2,7 @@
 
 #include "field_index_remover.h"
 #include "i_field_index_remove_listener.h"
-#include "wordstore.h"
+#include "word_store.h"
 #include <vespa/searchlib/common/sort.h>
 
 namespace search::memoryindex {
