@@ -141,7 +141,7 @@ ConfigSubscriber::make_forwarder(Metrics& metrics)
             result = LegacyForwarder::to_logserver(metrics, _forward_filter, _logserver_host, _logserver_port);
         }
     } else {
-        LegacyForwarder::to_dev_null(metrics);
+        result = LegacyForwarder::to_dev_null(metrics);
     }
     _need_new_forwarder = false;
     return result;
