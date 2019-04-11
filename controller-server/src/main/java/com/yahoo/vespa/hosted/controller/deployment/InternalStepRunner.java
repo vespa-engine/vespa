@@ -12,6 +12,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.io.IOUtils;
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -21,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -45,6 +48,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,6 +119,7 @@ public class InternalStepRunner implements StepRunner {
                 case installTester: return installTester(id, logger);
                 case startTests: return startTests(id, logger);
                 case endTests: return endTests(id, logger);
+                case copyVespaLogs: return copyVespaLogs(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
                 case deactivateTester: return deactivateTester(id, logger);
                 case report: return report(id, logger);
@@ -414,6 +419,32 @@ public class InternalStepRunner implements StepRunner {
             default:
                 throw new IllegalStateException("Unknown status '" + testStatus + "'!");
         }
+    }
+
+    private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
+        ZoneId zone = id.type().zone(controller.system());
+        logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
+        try {
+            List<LogEntry> entries = new ArrayList<>();
+            String logs = IOUtils.readAll(controller.configServer().getLogStream(new DeploymentId(id.application(), zone),
+                                                                                 Collections.emptyMap()), // Get all logs.
+                                          StandardCharsets.UTF_8);
+            for (String line : logs.split("\n")) {
+                String[] parts = line.split("\t");
+                if (parts.length != 7) continue;
+                entries.add(new LogEntry(0,
+                                         (long) (Double.parseDouble(parts[0]) * 1000),
+                                         LogEntry.typeOf(LogLevel.parse(parts[5])),
+                                         parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
+                                         parts[6].replaceAll("\\\\n", "\n")
+                                                 .replaceAll("\\\\t", "\t")));
+            }
+            controller.jobController().log(id, Step.copyVespaLogs, entries);
+        }
+        catch (Exception e) {
+            logger.log(INFO, "Failure getting vespa logs for " + id, e);
+        }
+        return Optional.of(running); // Don't let failure here stop cleanup.
     }
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {

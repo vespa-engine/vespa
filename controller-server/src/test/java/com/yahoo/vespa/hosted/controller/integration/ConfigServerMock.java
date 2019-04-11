@@ -63,6 +63,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
     private ConfigChangeActions configChangeActions = null;
+    private String log = "INFO - All good";
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
@@ -361,7 +362,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public InputStream getLogStream(DeploymentId deployment, Map<String, String> queryParameters) {
-        return IOUtils.toInputStream("INFO - All good");
+        return IOUtils.toInputStream(log);
+    }
+
+    public void setLogStream(String log) {
+        this.log = log;
     }
 
     @Override
