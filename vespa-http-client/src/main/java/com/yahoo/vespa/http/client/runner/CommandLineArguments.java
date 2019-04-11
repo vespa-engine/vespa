@@ -169,7 +169,7 @@ public class CommandLineArguments {
 
     @Option(name = {"--numPersistentConnectionsPerEndpoint"},
             description = "How many tcp connections to establish per endoint.)")
-    private int numPersistentConnectionsPerEndpoint = 1;
+    private int numPersistentConnectionsPerEndpoint = 4;
 
     @Option(name = {"--maxChunkSizeBytes"},
             description = "How much data to send to gateway in each message.")
