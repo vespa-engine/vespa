@@ -17,7 +17,7 @@
 #include <vespa/searchlib/memoryindex/compact_document_words_store.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
-#include <vespa/searchlib/memoryindex/fieldinverter.h>
+#include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>

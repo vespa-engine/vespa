@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
-#include <vespa/searchlib/memoryindex/fieldinverter.h>
+#include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>

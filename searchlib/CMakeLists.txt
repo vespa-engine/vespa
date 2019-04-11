@@ -178,7 +178,7 @@ vespa_define_module(
     src/tests/memoryindex/document_inverter
     src/tests/memoryindex/field_index
     src/tests/memoryindex/field_index_remover
-    src/tests/memoryindex/fieldinverter
+    src/tests/memoryindex/field_inverter
     src/tests/memoryindex/memoryindex
     src/tests/memoryindex/urlfieldinverter
     src/tests/nativerank

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field_index_collection.h"
-#include "fieldinverter.h"
+#include "field_inverter.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
 #include <vespa/searchlib/btree/btreenode.hpp>

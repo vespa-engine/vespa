@@ -1,25 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "fieldinverter.h"
+#include "field_inverter.h"
 #include "ordered_field_index_inserter.h"
+#include <vespa/document/annotation/alternatespanlist.h>
+#include <vespa/document/annotation/annotation.h>
+#include <vespa/document/annotation/span.h>
+#include <vespa/document/annotation/spanlist.h>
+#include <vespa/document/annotation/spantree.h>
+#include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/searchlib/util/url.h>
-#include <stdexcept>
-#include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/text/lowercase.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
-#include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/alternatespanlist.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/annotation/spantreevisitor.h>
+#include <vespa/searchlib/common/sort.h>
+#include <vespa/searchlib/util/url.h>
+#include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <stdexcept>
 
 namespace search::memoryindex {
 

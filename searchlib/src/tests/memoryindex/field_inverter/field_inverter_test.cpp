@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/searchlib/memoryindex/fieldinverter.h>
+#include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 
 namespace search {
 
