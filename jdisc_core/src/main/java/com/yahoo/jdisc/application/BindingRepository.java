@@ -34,7 +34,7 @@ public class BindingRepository<T> implements Iterable<Map.Entry<UriPattern, T>> 
      */
     public void bind(String uriPattern, T target) {
         if (uriPattern.startsWith("https://")) {
-            log.warning(() -> "Bindings with 'https' scheme are deprecated. Use 'http' to match both 'http' and 'https' in URIs.");
+            log.warning(() -> String.format("For binding '%s': 'https' is deprecated, use 'http' to match both 'http' and 'https'", uriPattern));
         }
         put(new UriPattern(uriPattern), target);
     }
