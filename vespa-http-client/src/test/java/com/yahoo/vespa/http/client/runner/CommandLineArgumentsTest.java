@@ -18,7 +18,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class CommandLineArgumentsTest {
 
@@ -106,6 +106,7 @@ public class CommandLineArgumentsTest {
         add("host", "hostValue");
         add("port", "1234");
         add("timeout", "2345");
+        add("numPersistentConnectionsPerEndpoint", "7");
         args.add("--useCompression");
         args.add("--useDynamicThrottling");
         add("maxpending", "3456");
@@ -125,6 +126,7 @@ public class CommandLineArgumentsTest {
         assertThat(params.getFeedParams().getLocalQueueTimeOut(), is(2345000L));
         assertThat(params.getFeedParams().getMaxInFlightRequests(), is(3456));
         assertThat(params.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS), is(2345000L));
+        assertThat(params.getConnectionParams().getNumPersistentConnectionsPerEndpoint(), is(7));
     }
 
     @Test
