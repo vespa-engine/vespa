@@ -65,15 +65,17 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                                         .getDeploymentMetrics(application.id(), deployment.zone());
                         Instant now = controller().clock().instant();
                         applications.lockIfPresent(application.id(), locked -> {
-                            DeploymentMetrics newMetrics = locked.get().deployments().get(deployment.zone()).metrics()
-                                                                 .withQueriesPerSecond(collectedMetrics.queriesPerSecond())
-                                                                 .withWritesPerSecond(collectedMetrics.writesPerSecond())
-                                                                 .withDocumentCount(collectedMetrics.documentCount())
-                                                                 .withQueryLatencyMillis(collectedMetrics.queryLatencyMillis())
-                                                                 .withWriteLatencyMillis(collectedMetrics.writeLatencyMillis())
-                                                                 .at(now);
-                            applications.store(locked.with(deployment.zone(), newMetrics)
-                                                     .recordActivityAt(now, deployment.zone()));
+                            Deployment existingDeployment = locked.get().deployments().get(deployment.zone());
+                            if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
+                            DeploymentMetrics newMetrics = existingDeployment.metrics()
+                                                                             .withQueriesPerSecond(collectedMetrics.queriesPerSecond())
+                                                                             .withWritesPerSecond(collectedMetrics.writesPerSecond())
+                                                                             .withDocumentCount(collectedMetrics.documentCount())
+                                                                             .withQueryLatencyMillis(collectedMetrics.queryLatencyMillis())
+                                                                             .withWriteLatencyMillis(collectedMetrics.writeLatencyMillis())
+                                                                             .at(now);
+                            applications.store(locked.with(existingDeployment.zone(), newMetrics)
+                                                     .recordActivityAt(now, existingDeployment.zone()));
                         });
                     }
                 } catch (Exception e) {
