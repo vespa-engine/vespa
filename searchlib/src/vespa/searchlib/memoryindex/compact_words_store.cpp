@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "compact_document_words_store.h"
+#include "compact_words_store.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.compact_document_words_store");
+LOG_SETUP(".memoryindex.compact_words_store");
 
 namespace search::memoryindex {
 
-using Builder = CompactDocumentWordsStore::Builder;
+using Builder = CompactWordsStore::Builder;
 
 namespace {
 
@@ -36,28 +36,28 @@ serialize(const Builder &builder, uint32_t *begin)
 
 }
 
-CompactDocumentWordsStore::Builder::Builder(uint32_t docId_)
+CompactWordsStore::Builder::Builder(uint32_t docId_)
     : _docId(docId_),
       _words()
 { }
 
-CompactDocumentWordsStore::Builder::~Builder() { }
+CompactWordsStore::Builder::~Builder() { }
 
-CompactDocumentWordsStore::Builder &
-CompactDocumentWordsStore::Builder::insert(datastore::EntryRef wordRef)
+CompactWordsStore::Builder &
+CompactWordsStore::Builder::insert(datastore::EntryRef wordRef)
 {
     _words.push_back(wordRef);
     return *this;
 }
 
 inline void
-CompactDocumentWordsStore::Iterator::nextWord()
+CompactWordsStore::Iterator::nextWord()
 {
     _wordRef = *_buf++;
     _remainingWords--;
 }
 
-CompactDocumentWordsStore::Iterator::Iterator()
+CompactWordsStore::Iterator::Iterator()
     : _buf(nullptr),
       _remainingWords(0),
       _wordRef(0),
@@ -65,7 +65,7 @@ CompactDocumentWordsStore::Iterator::Iterator()
 {
 }
 
-CompactDocumentWordsStore::Iterator::Iterator(const uint32_t *buf)
+CompactWordsStore::Iterator::Iterator(const uint32_t *buf)
     : _buf(buf),
       _remainingWords(0),
       _wordRef(0),
@@ -79,8 +79,8 @@ CompactDocumentWordsStore::Iterator::Iterator(const uint32_t *buf)
     }
 }
 
-CompactDocumentWordsStore::Iterator &
-CompactDocumentWordsStore::Iterator::operator++()
+CompactWordsStore::Iterator &
+CompactWordsStore::Iterator::operator++()
 {
     if (_remainingWords > 0) {
         nextWord();
@@ -90,7 +90,7 @@ CompactDocumentWordsStore::Iterator::operator++()
     return *this;
 }
 
-CompactDocumentWordsStore::Store::Store()
+CompactWordsStore::Store::Store()
     : _store(),
       _type(1,
             MIN_BUFFER_ARRAYS,
@@ -101,13 +101,13 @@ CompactDocumentWordsStore::Store::Store()
     _store.initActiveBuffers();
 }
 
-CompactDocumentWordsStore::Store::~Store()
+CompactWordsStore::Store::~Store()
 {
     _store.dropBuffers();
 }
 
 datastore::EntryRef
-CompactDocumentWordsStore::Store::insert(const Builder &builder)
+CompactWordsStore::Store::insert(const Builder &builder)
 {
     size_t serializedSize = getSerializedSize(builder);
     auto result = _store.rawAllocator<uint32_t>(_typeId).alloc(serializedSize);
@@ -118,26 +118,26 @@ CompactDocumentWordsStore::Store::insert(const Builder &builder)
     return result.ref;
 }
 
-CompactDocumentWordsStore::Iterator
-CompactDocumentWordsStore::Store::get(datastore::EntryRef ref) const
+CompactWordsStore::Iterator
+CompactWordsStore::Store::get(datastore::EntryRef wordRef) const
 {
-    RefType internalRef(ref);
+    RefType internalRef(wordRef);
     const uint32_t *buf = _store.getEntry<uint32_t>(internalRef);
     return Iterator(buf);
 }
 
-CompactDocumentWordsStore::CompactDocumentWordsStore()
+CompactWordsStore::CompactWordsStore()
     : _docs(),
       _wordsStore()
 { }
 
-CompactDocumentWordsStore::~CompactDocumentWordsStore() { }
+CompactWordsStore::~CompactWordsStore() { }
 
 void
-CompactDocumentWordsStore::insert(const Builder &builder)
+CompactWordsStore::insert(const Builder &builder)
 {
-    datastore::EntryRef ref = _wordsStore.insert(builder);
-    auto insres = _docs.insert(std::make_pair(builder.docId(), ref));
+    datastore::EntryRef wordRef = _wordsStore.insert(builder);
+    auto insres = _docs.insert(std::make_pair(builder.docId(), wordRef));
     if (!insres.second) {
         LOG(error, "Failed inserting remove info for docid %u",
             builder.docId());
@@ -146,13 +146,13 @@ CompactDocumentWordsStore::insert(const Builder &builder)
 }
 
 void 
-CompactDocumentWordsStore::remove(uint32_t docId)
+CompactWordsStore::remove(uint32_t docId)
 {
     _docs.erase(docId);
 }
 
-CompactDocumentWordsStore::Iterator
-CompactDocumentWordsStore::get(uint32_t docId) const
+CompactWordsStore::Iterator
+CompactWordsStore::get(uint32_t docId) const
 {
     auto itr = _docs.find(docId);
     if (itr != _docs.end()) {
@@ -162,7 +162,7 @@ CompactDocumentWordsStore::get(uint32_t docId) const
 }
 
 MemoryUsage
-CompactDocumentWordsStore::getMemoryUsage() const
+CompactWordsStore::getMemoryUsage() const
 {
     MemoryUsage usage;
     usage.incAllocatedBytes(_docs.getMemoryConsumption());

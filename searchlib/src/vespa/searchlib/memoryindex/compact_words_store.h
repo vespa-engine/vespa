@@ -10,14 +10,14 @@
 namespace search::memoryindex {
 
 /**
- * Class used to store the {wordRef, fieldId, docId} tuples that are inserted
- * into the memory index dictionary. These tuples are later used when removing
- * all remains of a document from the posting lists of the dictionary.
+ * Class used to store the {wordRef, docId} tuples that are inserted into a FieldIndex and its posting lists.
+ *
+ * These tuples are later used when removing all remains of a document from the posting lists in that index.
  */
-class CompactDocumentWordsStore {
+class CompactWordsStore {
 public:
     /**
-     * Builder used to collect all wordRefs for a field.
+     * Builder used to collect all words (as wordRefs) for a docId in a field.
      */
     class Builder {
     public:
@@ -37,7 +37,7 @@ public:
     };
 
     /**
-     * Iterator over all {wordRef, fieldId} pairs for a document.
+     * Iterator over all words (as wordRefs) for a docId in a field.
      */
     class Iterator {
     private:
@@ -58,7 +58,7 @@ public:
     };
 
     /**
-     * Store for all {wordRef, fieldId} pairs among all documents.
+     * Store for all unique words (as wordRefs) among all documents.
      */
     class Store {
     public:
@@ -74,7 +74,7 @@ public:
         Store();
         ~Store();
         datastore::EntryRef insert(const Builder &builder);
-        Iterator get(datastore::EntryRef ref) const;
+        Iterator get(datastore::EntryRef wordRef) const;
         MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     };
 
@@ -85,8 +85,8 @@ private:
     Store            _wordsStore;
 
 public:
-    CompactDocumentWordsStore();
-    ~CompactDocumentWordsStore();
+    CompactWordsStore();
+    ~CompactWordsStore();
     void insert(const Builder &builder);
     void remove(uint32_t docId);
     Iterator get(uint32_t docId) const;

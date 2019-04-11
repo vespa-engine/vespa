@@ -7,8 +7,8 @@
 
 namespace search::memoryindex {
 
-using Builder = CompactDocumentWordsStore::Builder;
-using Iterator = CompactDocumentWordsStore::Iterator;
+using Builder = CompactWordsStore::Builder;
+using Iterator = CompactWordsStore::Iterator;
 
 FieldIndexRemover::FieldIndexRemover(const WordStore &wordStore)
     : _store(),

@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/memoryindex/compact_document_words_store.h>
+#include <vespa/searchlib/memoryindex/compact_words_store.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <iostream>
@@ -12,8 +12,8 @@ using namespace search;
 using namespace search::datastore;
 using namespace search::memoryindex;
 
-typedef CompactDocumentWordsStore::Builder Builder;
-typedef CompactDocumentWordsStore::Iterator Iterator;
+typedef CompactWordsStore::Builder Builder;
+typedef CompactWordsStore::Iterator Iterator;
 typedef Builder::WordRefVector WordRefVector;
 
 const EntryRef w1(1);
@@ -53,7 +53,7 @@ toStr(Iterator itr)
 
 struct SingleFixture
 {
-    CompactDocumentWordsStore _store;
+    CompactWordsStore _store;
     SingleFixture() : _store() {
         _store.insert(Builder(d1).insert(w1).insert(w2).insert(w3));
     }
@@ -61,7 +61,7 @@ struct SingleFixture
 
 struct MultiFixture
 {
-    CompactDocumentWordsStore _store;
+    CompactWordsStore _store;
     MultiFixture() : _store() {
         _store.insert(Builder(d1).insert(w1));
         _store.insert(Builder(d2).insert(w2));
@@ -100,7 +100,7 @@ TEST_F("require that documents can be removed and re-inserted", MultiFixture)
 
 TEST("require that a lot of words can be inserted, retrieved and removed")
 {
-    CompactDocumentWordsStore store;
+    CompactWordsStore store;
     for (uint32_t docId = 0; docId < 50; ++docId) {
         Builder b(docId);
         for (uint32_t wordRef = 0; wordRef < 20000; ++wordRef) {
@@ -125,9 +125,9 @@ TEST("require that a lot of words can be inserted, retrieved and removed")
 
 TEST("require that initial memory usage is reported")
 {
-    CompactDocumentWordsStore store;
-    CompactDocumentWordsStore::DocumentWordsMap docs;
-    CompactDocumentWordsStore::Store internalStore;
+    CompactWordsStore store;
+    CompactWordsStore::DocumentWordsMap docs;
+    CompactWordsStore::Store internalStore;
     MemoryUsage initExp;
     initExp.incAllocatedBytes(docs.getMemoryConsumption());
     initExp.incUsedBytes(docs.getMemoryUsed());
@@ -142,7 +142,7 @@ TEST("require that initial memory usage is reported")
 
 TEST("require that memory usage is updated after insert")
 {
-    CompactDocumentWordsStore store;
+    CompactWordsStore store;
     MemoryUsage init = store.getMemoryUsage();
 
     store.insert(Builder(d1).insert(w1));

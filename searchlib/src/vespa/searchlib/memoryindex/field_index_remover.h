@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "compact_document_words_store.h"
+#include "compact_words_store.h"
 #include "i_field_index_insert_listener.h"
 
 namespace search::memoryindex {
@@ -42,8 +42,8 @@ private:
         };
     };
 
-    CompactDocumentWordsStore              _store;
-    CompactDocumentWordsStore::Builder::UP _builder;
+    CompactWordsStore              _store;
+    CompactWordsStore::Builder::UP _builder;
     std::vector<WordFieldDocTuple>         _wordFieldDocTuples;
     const WordStore &_wordStore;
 
@@ -51,8 +51,8 @@ public:
     FieldIndexRemover(const WordStore &wordStore);
     ~FieldIndexRemover();
     void remove(uint32_t docId, IFieldIndexRemoveListener &inverter);
-    CompactDocumentWordsStore &getStore() { return _store; }
-    const CompactDocumentWordsStore &getStore() const { return _store; }
+    CompactWordsStore &getStore() { return _store; }
+    const CompactWordsStore &getStore() const { return _store; }
 
     // Implements IFieldIndexInsertListener
     void insert(datastore::EntryRef wordRef, uint32_t docId) override;

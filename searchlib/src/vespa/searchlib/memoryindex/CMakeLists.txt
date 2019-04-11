@@ -1,7 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_memoryindex OBJECT
     SOURCES
-    compact_document_words_store.cpp
+    compact_words_store.cpp
     document_inverter.cpp
     feature_store.cpp
     field_index.cpp
