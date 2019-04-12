@@ -20,9 +20,20 @@ class DocumentInverter;
 class FieldIndexCollection;
 
 /**
- * Lock-free implementation of a memory-based index
- * using the document inverter and dictionary classes from searchlib.
- **/
+ * Memory index for a set of text and uri fields that uses lock-free B-Trees in underlying components.
+ *
+ * Each field is handled separately by a FieldIndex that contains postings lists for all unique words in that field.
+ *
+ * Documents are inserted and removed from the underlying field indexes in a two-step process:
+ *   1) Call the async functions insertDocument() / removeDocument().
+ *      This adds tasks to invert / remove the fields in the documents to the 'invert threads' executor.
+ *   2) Call the async function commit().
+ *      This adds tasks to push the changes into the field indexes to the 'push threads' executor.
+ *      When commit is completed a completion callback is signaled.
+ *
+ * Use createBlueprint() to search the memory index for a given term in a given field.
+ *
+ */
 class MemoryIndex : public queryeval::Searchable {
 private:
     index::Schema     _schema;
@@ -70,71 +81,59 @@ public:
     /**
      * Create a new memory index based on the given schema.
      *
-     * @param schema the index schema to use
-     **/
+     * @param schema        the schema with which text and uri fields to keep in the index.
+     * @param invertThreads the executor with threads for doing document inverting.
+     * @param pushThreads   the executor with threads for doing pushing of changes (inverted documents)
+     *                      to corresponding field indexes.
+     */
     MemoryIndex(const index::Schema &schema,
                 ISequencedTaskExecutor &invertThreads,
                 ISequencedTaskExecutor &pushThreads);
 
-    /**
-     * Class destructor.  Clean up washlist.
-     */
     ~MemoryIndex();
 
-    /**
-     * Obtain the schema used by this index.
-     *
-     * @return schema used by this index
-     **/
     const index::Schema &getSchema() const { return _schema; }
 
-    /**
-     * Check if this index is frozen.
-     *
-     * @return true if this index is frozen
-     **/
     bool isFrozen() const { return _frozen; }
 
     /**
-     * Insert a document into the index. If the document is already in
-     * the index, the old version will be removed first.
+     * Insert a document into the underlying field indexes.
      *
-     * @param docId local document id.
-     * @param doc the document to insert.
-     **/
+     * If the document is already in the index, the old version will be removed first.
+     * This function is async. commit() must be called for changes to take effect.
+     */
     void insertDocument(uint32_t docId, const document::Document &doc);
 
     /**
-     * Remove a document from the index.
+     * Remove a document from the underlying field indexes.
      *
-     * @param docId local document id.
-     **/
+     * This function is async. commit() must be called for changes to take effect.
+     */
     void removeDocument(uint32_t docId);
 
     /**
-     * Commits the inserts and removes since the last commit, making
-     * them searchable. When commit is completed, onWriteDone goes out
-     * of scope, scheduling completion callback.
+     * Commits the inserts and removes since the last commit, making them searchable.
+     *
+     * When commit is completed, 'onWriteDone' goes out of scope, scheduling completion callback.
      *
      * Callers can call pushThreads.sync() to wait for push completion.
-     **/
+     */
     void commit(const std::shared_ptr<IDestructorCallback> &onWriteDone);
 
     /**
-     * Freeze this index. Further index updates will be
-     * discarded. Extra information kept to wash the posting lists
-     * will be discarded.
-     **/
+     * Freeze this index.
+     *
+     * Further index updates will be discarded.
+     * Extra information kept to wash the posting lists will be discarded.
+     */
     void freeze();
 
     /**
      * Dump the contents of this index into the given index builder.
-     *
-     * @param indexBuilder the builder to dump into
-     **/
+     */
     void dump(index::IndexBuilder &indexBuilder);
 
-    // implements Searchable
+    // Implements Searchable
     queryeval::Blueprint::UP createBlueprint(const queryeval::IRequestContext & requestContext,
                                              const queryeval::FieldSpec &field,
                                              const query::Node &term) override;
@@ -162,9 +161,7 @@ public:
 
     /**
      * Gets an approximation of how much memory the index uses.
-     *
-     * @return approximately how much memory is used by the index.
-     **/
+     */
     MemoryUsage getMemoryUsage() const;
 
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }

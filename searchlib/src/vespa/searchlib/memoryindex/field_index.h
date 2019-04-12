@@ -19,7 +19,7 @@ namespace search::memoryindex {
 class OrderedFieldIndexInserter;
 
 /**
- * Memory index for a single field.
+ * Memory index for a single field using lock-free B-Trees in underlying components.
  *
  * It consists of the following components:
  *   - WordStore containing all unique words in this field (across all documents).
