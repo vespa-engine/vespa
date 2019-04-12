@@ -19,7 +19,6 @@ import java.util.logging.Logger;
 public class SharedSourceSession extends AbstractResource implements ClientSession, ReplyHandler {
 
     private static final Logger log = Logger.getLogger(SharedSourceSession.class.getName());
-    private final SharedMessageBus mbus;
     private final SourceSession session;
     private final ResourceReference mbusReference;
 
@@ -27,7 +26,6 @@ public class SharedSourceSession extends AbstractResource implements ClientSessi
         if (params.getReplyHandler() != null) {
             throw new IllegalArgumentException("Reply handler must be null.");
         }
-        this.mbus = mbus;
         this.session = mbus.messageBus().createSourceSession(params.setReplyHandler(this));
         this.mbusReference = mbus.refer();
     }

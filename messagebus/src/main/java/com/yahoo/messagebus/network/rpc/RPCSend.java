@@ -113,7 +113,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
     private void doRequestDone(Request req) {
         SendContext ctx = (SendContext)req.getContext();
         String serviceName = ((RPCServiceAddress)ctx.recipient.getServiceAddress()).getServiceName();
-        Reply reply = null;
+        Reply reply;
         Error error = null;
         if (!req.checkReturnTypes(getReturnSpec())) {
             // Map all known JRT errors to the appropriate message bus error.
@@ -269,7 +269,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         final Request request;
         final Version version;
 
-        public ReplyContext(Request request, Version version) {
+        ReplyContext(Request request, Version version) {
             this.request = request;
             this.version = version;
         }

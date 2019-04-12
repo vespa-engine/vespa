@@ -6,7 +6,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.log.LogLevel;
@@ -23,7 +22,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -297,7 +295,7 @@ class ClientFeederV3 {
     }
 
     private void setMessageParameters(DocumentOperationMessageV3 msg, FeederSettings settings) {
-        msg.getMessage().setContext(new ReplyContext(msg.getOperationId(), feedReplies, DocumentOperationType.fromMessage(msg.getMessage())));
+        msg.getMessage().setContext(new ReplyContext(msg.getOperationId(), feedReplies));
         if (settings.traceLevel != null) {
             msg.getMessage().getTrace().setLevel(settings.traceLevel);
         }
