@@ -19,6 +19,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -96,6 +97,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.logging.Level;
 
 import static java.util.stream.Collectors.joining;
@@ -215,7 +217,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePATCH(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}"))
-            return setMajorVersion(path.get("tenant"), path.get("application"), request);
+            return patchApplication(path.get("tenant"), path.get("application"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -308,15 +310,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse setMajorVersion(String tenantName, String applicationName, HttpRequest request) {
-        Application application = getApplication(tenantName, applicationName);
-        Inspector majorVersionField = toSlime(request.getData()).get().field("majorVersion");
-        if ( ! majorVersionField.valid())
-            throw new IllegalArgumentException("Request body must contain a majorVersion field");
-        Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int)majorVersionField.asLong();
-        controller.applications().lockIfPresent(application.id(),
-                                                a -> controller.applications().store(a.withMajorVersion(majorVersion)));
-        return new MessageResponse("Set major version to " + ( majorVersion == null ? "empty" : majorVersion));
+    private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
+        Inspector requestObject = toSlime(request.getData()).get();
+        StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
+        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, "default"), application -> {
+            Inspector majorVersionField = requestObject.field("majorVersion");
+            if (majorVersionField.valid()) {
+                Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int) majorVersionField.asLong();
+                application = application.withMajorVersion(majorVersion);
+                messageBuilder.add("Set major version to " + (majorVersion == null ? "empty" : majorVersion));
+            }
+
+            Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
+            if (pemDeployKeyField.valid()) {
+                String pemDeployKey = pemDeployKeyField.type() == Type.NIX ? null : pemDeployKeyField.asString();
+                application = application.withPemDeployKey(pemDeployKey);
+                messageBuilder.add("Set pem deploy key to " + (pemDeployKey == null ? "empty" : pemDeployKey));
+            }
+
+            controller.applications().store(application);
+        });
+        return new MessageResponse(messageBuilder.toString());
     }
 
     private Application getApplication(String tenantName, String applicationName) {
