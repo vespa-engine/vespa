@@ -526,6 +526,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
 
+        application.pemDeployKey().ifPresent(key -> object.setString("pemDeploymentKey", key));
+
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
         metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
