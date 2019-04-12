@@ -1971,6 +1971,16 @@ public class ParseTestCase {
     }
 
     @Test
+    public void testNegativeTermPositiveNumberWithIndex() {
+        tester.assertParsed("+a -normal:12", "a -normal:12", Query.Type.ALL);
+    }
+
+    @Test
+    public void testNegativeTermNegativeNumberWithIndex() {
+        tester.assertParsed("+a -normal:-12", "a -normal:-12", Query.Type.ALL);
+    }
+
+    @Test
     public void testSingleNegativeNumberLikeTerm() {
         tester.assertParsed("-12", "-12", Query.Type.ALL);
     }

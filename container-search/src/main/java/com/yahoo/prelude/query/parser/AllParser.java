@@ -127,8 +127,11 @@ public class AllParser extends SimpleParser {
 
             // Heuristic overdrive engaged!
             // Interpret -N as a positive item matching a negative number (by backtracking out of this)
+            // but not if there is an explicit index (such as -a:b)
             // but interpret --N as a negative item matching a negative number
-            if ( item instanceof IntItem && ! ((IntItem)item).getNumber().startsWith(("-")))
+            if ( item instanceof IntItem &&
+                 ((IntItem)item).getIndexName().isEmpty() &&
+                 ! ((IntItem)item).getNumber().startsWith(("-")))
                 item = null;
 
             return item;
