@@ -5,10 +5,14 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.metrics.*;
 import com.yahoo.messagebus.Error;
+import com.yahoo.metrics.CountMetric;
+import com.yahoo.metrics.Metric;
+import com.yahoo.metrics.MetricSet;
+import com.yahoo.metrics.SimpleMetricSet;
+import com.yahoo.metrics.SumMetric;
+import com.yahoo.metrics.ValueMetric;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 /**

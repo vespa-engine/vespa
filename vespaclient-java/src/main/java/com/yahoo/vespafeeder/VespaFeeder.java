@@ -76,11 +76,7 @@ public class VespaFeeder {
     }
 
     void parseFiles(InputStream stdin, PrintStream output) throws Exception {
-        FeedContext context = new FeedContext(
-                args.getPropertyProcessor(),
-                args.getSessionFactory(),
-                manager,
-                new ClusterList(), new NullFeedMetric(true));
+        FeedContext context = new FeedContext(args.getPropertyProcessor(), args.getSessionFactory(), manager, new NullFeedMetric(true));
 
         final BufferedInputStream input = new BufferedInputStream(stdin);
         VespaFeedHandler handler = VespaFeedHandler.createFromContext(context, threadPool);

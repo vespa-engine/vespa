@@ -3,7 +3,6 @@ package com.yahoo.feedhandler;
 
 import com.google.inject.Inject;
 import com.yahoo.clientmetrics.ClientMetrics;
-import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -34,37 +33,36 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
                                 LoadTypeConfig loadTypeConfig,
                                 DocumentmanagerConfig documentmanagerConfig,
                                 SlobroksConfig slobroksConfig,
-                                ClusterListConfig clusterListConfig,
                                 Executor executor,
                                 Metric metric) {
         this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
-                                     slobroksConfig, clusterListConfig, metric), 
+                                     slobroksConfig, metric),
              executor, (long)feederConfig.timeout() * 1000);
     }
 
-    public VespaFeedHandlerBase(FeedContext context, Executor executor) {
+    VespaFeedHandlerBase(FeedContext context, Executor executor) {
         this(context, executor, context.getPropertyProcessor().getDefaultTimeoutMillis());
     }
 
-    public VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) {
+    VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) {
         super(executor, context.getMetricAPI());
         this.context = context;
         this.defaultTimeoutMillis = defaultTimeoutMillis;
     }
 
-    public SharedSender getSharedSender(String route) {
+    SharedSender getSharedSender(String route) {
         return context.getSharedSender(route);
     }
 
-    public DocprocService getDocprocChain(HttpRequest request) {
+    DocprocService getDocprocChain(HttpRequest request) {
         return context.getPropertyProcessor().getDocprocChain(request);
     }
 
-    public ComponentRegistry<DocprocService> getDocprocServiceRegistry(HttpRequest request) {
+    ComponentRegistry<DocprocService> getDocprocServiceRegistry(HttpRequest request) {
         return context.getPropertyProcessor().getDocprocServiceRegistry(request);
     }
 
-    public MessagePropertyProcessor getPropertyProcessor() {
+    MessagePropertyProcessor getPropertyProcessor() {
         return context.getPropertyProcessor();
     }
 
@@ -74,7 +72,7 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
      *         original data stream.
      * @throws IllegalArgumentException if GZIP stream creation failed
      */
-    public InputStream getRequestInputStream(HttpRequest request) {
+    InputStream getRequestInputStream(HttpRequest request) {
         if ("gzip".equals(request.getHeader("Content-Encoding"))) {
             try {
                 return new GZIPInputStream(request.getData());
