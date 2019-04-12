@@ -423,27 +423,28 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
         ZoneId zone = id.type().zone(controller.system());
-        logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
-        try {
-            List<LogEntry> entries = new ArrayList<>();
-            String logs = IOUtils.readAll(controller.configServer().getLogStream(new DeploymentId(id.application(), zone),
-                                                                                 Collections.emptyMap()), // Get all logs.
-                                          StandardCharsets.UTF_8);
-            for (String line : logs.split("\n")) {
-                String[] parts = line.split("\t");
-                if (parts.length != 7) continue;
-                entries.add(new LogEntry(0,
-                                         (long) (Double.parseDouble(parts[0]) * 1000),
-                                         LogEntry.typeOf(LogLevel.parse(parts[5])),
-                                         parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
-                                         parts[6].replaceAll("\\\\n", "\n")
-                                                 .replaceAll("\\\\t", "\t")));
+        if (controller.applications().require(id.application()).deployments().containsKey(zone))
+            try {
+                logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
+                List<LogEntry> entries = new ArrayList<>();
+                String logs = IOUtils.readAll(controller.configServer().getLogStream(new DeploymentId(id.application(), zone),
+                                                                                     Collections.emptyMap()), // Get all logs.
+                                              StandardCharsets.UTF_8);
+                for (String line : logs.split("\n")) {
+                    String[] parts = line.split("\t");
+                    if (parts.length != 7) continue;
+                    entries.add(new LogEntry(0,
+                                             (long) (Double.parseDouble(parts[0]) * 1000),
+                                             LogEntry.typeOf(LogLevel.parse(parts[5])),
+                                             parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
+                                             parts[6].replaceAll("\\\\n", "\n")
+                                                     .replaceAll("\\\\t", "\t")));
+                }
+                controller.jobController().log(id, Step.copyVespaLogs, entries);
             }
-            controller.jobController().log(id, Step.copyVespaLogs, entries);
-        }
-        catch (Exception e) {
-            logger.log(INFO, "Failure getting vespa logs for " + id, e);
-        }
+            catch (Exception e) {
+                logger.log(INFO, "Failure getting vespa logs for " + id, e);
+            }
         return Optional.of(running); // Don't let failure here stop cleanup.
     }
 
