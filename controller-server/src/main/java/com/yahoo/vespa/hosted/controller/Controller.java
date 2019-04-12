@@ -23,7 +23,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.Roles;
+import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -46,6 +51,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * API to the controller. This contains the object model of everything the controller cares about, mainly tenants and
@@ -76,6 +82,7 @@ public class Controller extends AbstractComponent {
     private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
+    private final UserRoles roles;
 
     /**
      * Creates a controller 
@@ -128,6 +135,7 @@ public class Controller extends AbstractComponent {
         );
         tenantController = new TenantController(this, curator, accessControl);
         auditLogger = new AuditLogger(curator, clock);
+        roles = new UserRoles(new Roles(zoneRegistry.system()));
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
@@ -286,6 +294,22 @@ public class Controller extends AbstractComponent {
 
     public AuditLogger auditLogger() {
         return auditLogger;
+    }
+
+    /** Returns all other roles the given tenant role implies. */
+    public Set<Role> impliedRoles(TenantRole role) {
+        return Stream.concat(roles.tenantRoles(role.tenant()).stream(),
+                             applications().asList(role.tenant()).stream()
+                                           .flatMap(application -> roles.applicationRoles(application.id().tenant(), application.id().application()).stream()))
+                .filter(role::implies)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** Returns all other roles the given application role implies. */
+    public Set<Role> impliedRoles(ApplicationRole role) {
+        return roles.applicationRoles(role.tenant(), role.application()).stream()
+                .filter(role::implies)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private Set<CloudName> clouds() {
