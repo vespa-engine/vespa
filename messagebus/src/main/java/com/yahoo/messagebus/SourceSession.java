@@ -4,7 +4,6 @@ package com.yahoo.messagebus;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingTable;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -209,7 +208,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         }
     }
 
-    Reply createSendTimedoutReply(Message msg, Error error) {
+    private Reply createSendTimedoutReply(Message msg, Error error) {
         Reply reply = new EmptyReply();
         reply.setMessage(msg);
         reply.addError(error);
@@ -246,12 +245,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
 
     private void expireStalledBlockedMessages() {
         synchronized (lock) {
-            Iterator<BlockedMessage> each = blockedQ.iterator();
-            while (each.hasNext()) {
-                if (each.next().notifyIfExpired()) {
-                    each.remove();
-                }
-            }
+            blockedQ.removeIf(BlockedMessage::notifyIfExpired);
         }
     }
 
