@@ -108,7 +108,7 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 // TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
 INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
                         Values(vespalib::Version(6, 240, 0),
-                               vespalib::Version(7, 0, 0)), // TODO proper 7 version
+                               vespalib::Version(7, 40, 5)),
                         version_as_gtest_string);
 
 namespace {
