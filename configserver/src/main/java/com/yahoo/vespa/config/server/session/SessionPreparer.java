@@ -113,9 +113,8 @@ public class SessionPreparer {
             log.log(LogLevel.DEBUG, () -> "time used " + params.getTimeoutBudget().timesUsed() +
                     " : " + params.getApplicationId());
             return preparation.result();
-        } catch (OutOfCapacityException e) {
-            throw e;
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw new InvalidApplicationException("Invalid application package", e);
         }
     }

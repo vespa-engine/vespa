@@ -59,11 +59,7 @@ public class TenantApplications {
     }
 
     public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
-        try {
-            return new TenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler, tenant);
-        } catch (Exception e) {
-            throw new RuntimeException(TenantRepository.logPre(tenant) + "Error creating application repo", e);
-        }
+        return new TenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler, tenant);
     }
 
     /**

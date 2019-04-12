@@ -115,7 +115,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Activates this. If it is not already prepared, this will call prepare first. */
     @Override
     public void activate() {
-        if (! prepared)
+        if ( ! prepared)
             prepare();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
