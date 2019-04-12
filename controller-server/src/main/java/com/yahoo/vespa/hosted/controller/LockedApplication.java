@@ -250,7 +250,7 @@ public class LockedApplication {
                                      metrics, pemDeployKey, rotation, rotationStatus);
     }
 
-    public LockedApplication withPemSubmissionKey(String pemDeployKey) {
+    public LockedApplication withPemDeployKey(String pemDeployKey) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, Optional.ofNullable(pemDeployKey), rotation, rotationStatus);

@@ -80,6 +80,7 @@
   "majorVersion": 7,
   "globalRotations": [],
   "instances": [],
+  "pemDeployKey": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----",
   "metrics": {
     "queryServiceQuality": 0.0,
     "writeServiceQuality": 0.0
