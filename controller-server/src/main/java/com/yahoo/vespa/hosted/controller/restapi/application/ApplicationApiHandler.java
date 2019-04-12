@@ -540,7 +540,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
 
-        application.pemDeployKey().ifPresent(key -> object.setString("pemDeploymentKey", key));
+        application.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");

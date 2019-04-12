@@ -329,15 +329,30 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .data("{\"majorVersion\":7}"),
                               "{\"message\":\"Set major version to 7\"}");
+
+        // PATCH in a pem deploy key
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"pemDeployKey\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
+                              "{\"message\":\"Set pem deploy key to -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+
         // GET an application with a major version override
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
-                              new File("application2-with-majorVersion.json"));
+                              new File("application2-with-patches.json"));
+
         // PATCH in removal of the application major version override removal
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
                                       .userIdentity(USER_ID)
                                       .data("{\"majorVersion\":null}"),
                               "{\"message\":\"Set major version to empty\"}");
+
+        // PATCH in removal of the pem deploy key
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"pemDeployKey\":null}"),
+                              "{\"message\":\"Set pem deploy key to empty\"}");
+
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
                               new File("application2.json"));
