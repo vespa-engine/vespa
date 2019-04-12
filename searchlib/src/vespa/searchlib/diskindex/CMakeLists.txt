@@ -18,6 +18,7 @@ vespa_add_library(searchlib_diskindex OBJECT
     pagedict4file.cpp
     pagedict4randread.cpp
     wordnummapper.cpp
+    zc4_posting_header.cpp
     zc4_posting_writer.cpp
     zc4_posting_writer_base.cpp
     zcbuf.cpp
