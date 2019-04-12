@@ -4,6 +4,8 @@
 #include "fpfactory.h"
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
 #include <vespa/searchlib/diskindex/zc4_posting_writer.h>
+#include <vespa/searchlib/diskindex/zc4_posting_header.h>
+#include <vespa/searchlib/diskindex/zc4_posting_params.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -13,6 +15,8 @@ using search::index::PostingListCounts;
 using search::index::PostingListParams;
 using search::index::DocIdAndFeatures;
 using search::index::DocIdAndPosOccFeatures;
+using search::bitcompression::DecodeContext64;
+using search::bitcompression::DecodeContext64Base;
 using search::bitcompression::PosOccFieldParams;
 using search::bitcompression::EGPosOccEncodeContext;
 using search::bitcompression::EG2PosOccEncodeContext;
@@ -200,38 +204,18 @@ void
 FakeZcFilterOcc::read_header(bool doFeatures, bool dynamicK, uint32_t min_skip_docs, uint32_t min_chunk_docs)
 {
     // read back word header to get skip sizes
-    using EC = FeatureEncodeContext<bigEndian>;
-    UC64_DECODECONTEXT(o);
-    uint32_t length;
-    uint64_t val64;
-    UC64_SETUPBITS_NS(o, _compressed.first, 0, EC);
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
-    assert(static_cast<uint32_t>(val64) + 1 == _hitDocs);
-    assert(_hitDocs >= min_skip_docs);
-    assert(_hitDocs < min_chunk_docs);
-    uint32_t docIdK = dynamicK ? EC::calcDocIdK(_hitDocs, _docIdLimit) : K_VALUE_ZCPOSTING_LASTDOCID;
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DOCIDSSIZE, EC);
-    _docIdsSize = val64 + 1;
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L1SKIPSIZE, EC);
-    _l1SkipSize = val64;
-    if (_l1SkipSize != 0) {
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L2SKIPSIZE, EC);
-        _l2SkipSize = val64;
-    }
-    if (_l2SkipSize != 0) {
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L3SKIPSIZE, EC);
-        _l3SkipSize = val64;
-    }
-    if (_l3SkipSize != 0) {
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L4SKIPSIZE, EC);
-        _l4SkipSize = val64;
-    }
-    if (doFeatures) {
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FEATURESSIZE, EC);
-        _featuresSize = val64;
-    }
-    UC64_DECODEEXPGOLOMB_NS(o, docIdK, EC);
-    assert(_lastDocId == _docIdLimit - 1 - val64);
+    DecodeContext64<bigEndian> decode_context;
+    decode_context.setPosition({ _compressed.first, 0 });
+    Zc4PostingParams params(min_skip_docs, min_chunk_docs, _docIdLimit, dynamicK, doFeatures);
+    Zc4PostingHeader header;
+    header.read<bigEndian>(decode_context, params);
+    _docIdsSize = header._doc_ids_size;
+    _l1SkipSize = header._l1_skip_size;
+    _l2SkipSize = header._l2_skip_size;
+    _l3SkipSize = header._l3_skip_size;
+    _l4SkipSize = header._l4_skip_size;
+    _featuresSize = header._features_size;
+    assert(_lastDocId == header._last_doc_id);
 }
 
 
@@ -383,54 +367,17 @@ FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end)
 {
     queryeval::RankedSearchIteratorBase::initRange(begin, end);
     DecodeContext &d = _decodeContext;
-    typedef EncodeContext EC;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-    uint32_t length;
-    uint64_t val64;
-
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
-    uint32_t numDocs = static_cast<uint32_t>(val64) + 1;
-
-    uint32_t docIdK = EC::calcDocIdK(numDocs, _docIdLimit);
-
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DOCIDSSIZE, EC);
-    uint32_t docIdsSize = val64 + 1;
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L1SKIPSIZE, EC);
-    uint32_t l1SkipSize = val64;
-    uint32_t l2SkipSize = 0;
-    if (l1SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L2SKIPSIZE, EC);
-        l2SkipSize = val64;
-    }
-    uint32_t l3SkipSize = 0;
-    if (l2SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L3SKIPSIZE, EC);
-        l3SkipSize = val64;
-    }
-    uint32_t l4SkipSize = 0;
-    if (l3SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L4SKIPSIZE, EC);
-        l4SkipSize = val64;
-    }
-    // Feature size would be here
-    UC64BE_DECODEEXPGOLOMB_NS(o, docIdK, EC);
-    _lastDocId = _docIdLimit - 1 - val64;
-    UC64_DECODECONTEXT_STORE(o, d._);
-    uint64_t bytePad = oPreRead & 7;
-    if (bytePad > 0) {
-        length = bytePad;
-        oVal <<= length;
-        UC64BE_READBITS_NS(o, EC);
-    }
-    UC64_DECODECONTEXT_STORE(o, d._);
+    Zc4PostingParams params(1, 1000000000, _docIdLimit, true, false);
+    Zc4PostingHeader header;
+    header.read<true>(d, params);
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
     _valI = bcompr;
-    bcompr += docIdsSize;
-    bcompr += l1SkipSize;
-    bcompr += l2SkipSize;
-    bcompr += l3SkipSize;
-    bcompr += l4SkipSize;
+    bcompr += header._doc_ids_size;
+    bcompr += header._l1_skip_size;
+    bcompr += header._l2_skip_size;
+    bcompr += header._l3_skip_size;
+    bcompr += header._l4_skip_size,
     d.setByteCompr(bcompr);
     uint32_t oDocId;
     ZCDECODE(_valI, oDocId = 1 +);
@@ -439,7 +386,7 @@ FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end)
            oDocId);
 #endif
     setDocId(oDocId);
-    _residue = numDocs;
+    _residue = header._num_docs;
 }
 
 
@@ -641,79 +588,43 @@ initRange(uint32_t begin, uint32_t end)
 {
     queryeval::RankedSearchIteratorBase::initRange(begin, end);
     DecodeContext &d = _decodeContext;
-    typedef EncodeContext EC;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-    uint32_t length;
-    uint64_t val64;
-
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
-    uint32_t numDocs = static_cast<uint32_t>(val64) + 1;
-
-    uint32_t docIdK = EC::calcDocIdK(numDocs, _docIdLimit);
-
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DOCIDSSIZE, EC);
-    uint32_t docIdsSize = val64 + 1;
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L1SKIPSIZE, EC);
-    uint32_t l1SkipSize = val64;
-    uint32_t l2SkipSize = 0;
-    if (l1SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L2SKIPSIZE, EC);
-        l2SkipSize = val64;
-    }
-    uint32_t l3SkipSize = 0;
-    if (l2SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L3SKIPSIZE, EC);
-        l3SkipSize = val64;
-    }
-    uint32_t l4SkipSize = 0;
-    if (l3SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L4SKIPSIZE, EC);
-        l4SkipSize = val64;
-    }
-    // Feature size would be here
-    UC64BE_DECODEEXPGOLOMB_NS(o, docIdK, EC);
-    _lastDocId = _docIdLimit - 1 - val64;
-    UC64_DECODECONTEXT_STORE(o, d._);
-    uint64_t bytePad = oPreRead & 7;
-    if (bytePad > 0) {
-        length = bytePad;
-        oVal <<= length;
-        UC64BE_READBITS_NS(o, EC);
-    }
-    UC64_DECODECONTEXT_STORE(o, d._);
+    Zc4PostingParams params(1, 1000000000, _docIdLimit, true, false);
+    Zc4PostingHeader header;
+    header.read<true>(d, params);
+    _lastDocId = header._last_doc_id;
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
     _valIBase = _valI = bcompr;
     _l1SkipDocIdPos = _l2SkipDocIdPos = bcompr;
     _l3SkipDocIdPos = _l4SkipDocIdPos = bcompr;
-    bcompr += docIdsSize;
-    if (l1SkipSize != 0) {
+    bcompr += header._doc_ids_size;
+    if (header._l1_skip_size != 0) {
         _l1SkipValIBase = _l1SkipValI = bcompr;
         _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos = bcompr;
-        bcompr += l1SkipSize;
+        bcompr += header._l1_skip_size;
     } else {
         _l1SkipValIBase = _l1SkipValI = NULL;
         _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos = NULL;
     }
-    if (l2SkipSize != 0) {
+    if (header._l2_skip_size != 0) {
         _l2SkipValIBase = _l2SkipValI = bcompr;
         _l3SkipL2SkipPos = _l4SkipL2SkipPos = bcompr;
-        bcompr += l2SkipSize;
+        bcompr += header._l2_skip_size;
     } else {
         _l2SkipValIBase = _l2SkipValI = NULL;
         _l3SkipL2SkipPos = _l4SkipL2SkipPos = NULL;
     }
-    if (l3SkipSize != 0) {
+    if (header._l3_skip_size != 0) {
         _l3SkipValIBase = _l3SkipValI = bcompr;
         _l4SkipL3SkipPos = bcompr;
-        bcompr += l3SkipSize;
+        bcompr += header._l3_skip_size;
     } else {
         _l3SkipValIBase = _l3SkipValI = NULL;
         _l4SkipL3SkipPos = NULL;
     }
-    if (l4SkipSize != 0) {
+    if (header._l4_skip_size != 0) {
         _l4SkipValI = bcompr;
-        bcompr += l4SkipSize;
+        bcompr += header._l4_skip_size;
     } else {
         _l4SkipValI = NULL;
     }
