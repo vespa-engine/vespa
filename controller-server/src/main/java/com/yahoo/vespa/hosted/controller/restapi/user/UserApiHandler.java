@@ -28,6 +28,7 @@ import com.yahoo.yolean.Exceptions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -132,7 +133,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         for (Role role : roles)
             rolesArray.addString(valueOf(role));
 
-        Map<UserId, List<Role>> memberships = new HashMap<>();
+        Map<UserId, List<Role>> memberships = new LinkedHashMap<>();
         List<Role> allRoles = new ArrayList<>(superRoles); // Membership in a super role may imply membership in a role.
         allRoles.addAll(roles);
         for (Role role : allRoles)
