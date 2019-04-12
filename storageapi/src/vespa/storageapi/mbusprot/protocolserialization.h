@@ -59,14 +59,21 @@ class StorageCommand;
 class StorageReply;
 
 class ProtocolSerialization {
+    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
+
 public:
     virtual mbus::Blob encode(const api::StorageMessage&) const;
     virtual std::unique_ptr<StorageCommand> decodeCommand(mbus::BlobRef) const;
     virtual std::unique_ptr<StorageReply> decodeReply(
                             mbus::BlobRef, const api::StorageCommand&) const;
+
 protected:
-    ProtocolSerialization() = default;
-    virtual ~ProtocolSerialization() = default;
+    const document::DocumentTypeRepo& getTypeRepo() const { return *_repo; }
+    const std::shared_ptr<const document::DocumentTypeRepo> getTypeRepoSp() const
+    { return _repo; }
+
+    ProtocolSerialization(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
+    virtual ~ProtocolSerialization() {}
 
     typedef api::StorageCommand SCmd;
     typedef api::StorageReply SRep;
@@ -95,10 +102,13 @@ protected:
     virtual void onEncode(GBBuf&, const api::GetBucketDiffReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::ApplyBucketDiffCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::ApplyBucketDiffReply&) const = 0;
-    virtual void onEncode(GBBuf&, const api::RequestBucketInfoCommand&) const = 0;
+    virtual void onEncode(GBBuf&,
+                          const api::RequestBucketInfoCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::RequestBucketInfoReply&) const = 0;
-    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeCommand&) const = 0;
-    virtual void onEncode(GBBuf&, const api::NotifyBucketChangeReply&) const = 0;
+    virtual void onEncode(GBBuf&,
+                          const api::NotifyBucketChangeCommand&) const = 0;
+    virtual void onEncode(GBBuf&,
+                          const api::NotifyBucketChangeReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::SplitBucketCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::SplitBucketReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::JoinBucketsCommand&) const = 0;
@@ -133,9 +143,11 @@ protected:
     virtual SCmd::UP onDecodeApplyBucketDiffCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeApplyBucketDiffReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeRequestBucketInfoCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeRequestBucketInfoReply(const SCmd&, BBuf&) const = 0;
+    virtual SRep::UP onDecodeRequestBucketInfoReply(const SCmd&,
+                                                    BBuf&) const = 0;
     virtual SCmd::UP onDecodeNotifyBucketChangeCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&, BBuf&) const = 0;
+    virtual SRep::UP onDecodeNotifyBucketChangeReply(const SCmd&,
+                                                     BBuf&) const = 0;
     virtual SCmd::UP onDecodeSplitBucketCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeSplitBucketReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeJoinBucketsCommand(BBuf&) const = 0;
@@ -148,6 +160,14 @@ protected:
     virtual SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const = 0;
+
+    virtual document::Bucket getBucket(document::ByteBuffer& buf) const = 0;
+    virtual void putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const = 0;
+    virtual document::BucketSpace getBucketSpace(document::ByteBuffer& buf) const = 0;
+    virtual void putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer& buf) const = 0;
+    virtual api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const = 0;
+    virtual void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const = 0;
+
 };
 
 }

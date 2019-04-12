@@ -73,9 +73,6 @@ public:
     SRep::UP onDecodeCreateVisitorReply(const SCmd& cmd, BBuf& buf) const override;
     void onDecodeCommand(BBuf& buf, api::StorageCommand& msg) const override;
     void onDecodeReply(BBuf&, api::StorageReply&) const override;
-
-protected:
-    const documentapi::LoadTypeSet& loadTypes() const noexcept { return _loadTypes; };
 };
 
 }

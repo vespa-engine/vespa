@@ -17,6 +17,11 @@ LOG_SETUP(".storage.api.mbusprot.serialization.base");
 
 namespace storage::mbusprot {
 
+ProtocolSerialization::ProtocolSerialization(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
+    : _repo(repo)
+{
+}
+
 mbus::Blob
 ProtocolSerialization::encode(const api::StorageMessage& msg) const
 {
