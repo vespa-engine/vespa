@@ -9,23 +9,23 @@
   ],
   "users": [
     {
-      "name": "reader@app",
+      "name": "owner@tenant",
       "roles": {
         "applicationAdmin": {
           "explicit": false,
-          "implied": false
+          "implied": true
         },
         "applicationOperator": {
           "explicit": false,
-          "implied": false
+          "implied": true
         },
         "applicationDeveloper": {
           "explicit": false,
-          "implied": false
+          "implied": true
         },
         "applicationReader": {
-          "explicit": true,
-          "implied": false
+          "explicit": false,
+          "implied": true
         }
       }
     },
@@ -47,6 +47,27 @@
         "applicationReader": {
           "explicit": false,
           "implied": true
+        }
+      }
+    },
+    {
+      "name": "reader@app",
+      "roles": {
+        "applicationAdmin": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationOperator": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationDeveloper": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationReader": {
+          "explicit": true,
+          "implied": false
         }
       }
     }
