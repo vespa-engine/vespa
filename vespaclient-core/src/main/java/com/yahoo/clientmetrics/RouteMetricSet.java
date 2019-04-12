@@ -2,7 +2,9 @@
 package com.yahoo.clientmetrics;
 
 import com.yahoo.messagebus.Reply;
-import com.yahoo.metrics.*;
+import com.yahoo.metrics.Metric;
+import com.yahoo.metrics.MetricSet;
+import com.yahoo.metrics.SumMetric;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,9 +14,9 @@ import java.util.Map;
 */
 public class RouteMetricSet extends MetricSet {
 
-    SumMetric sum;
-    ProgressCallback callback;
-    Map<Integer,MessageTypeMetricSet> typeMap = new HashMap<Integer,MessageTypeMetricSet>();
+    private final SumMetric sum;
+    private final ProgressCallback callback;
+    private final Map<Integer, MessageTypeMetricSet> typeMap = new HashMap<>();
 
     public interface ProgressCallback {
         void onProgress(RouteMetricSet route);
@@ -32,8 +34,10 @@ public class RouteMetricSet extends MetricSet {
         return "route";
     }
 
-    public RouteMetricSet(RouteMetricSet source, CopyType copyType, MetricSet owner, boolean includeUnused) {
+    private RouteMetricSet(RouteMetricSet source, CopyType copyType, MetricSet owner, boolean includeUnused) {
         super(source, copyType, owner, includeUnused);
+        sum = null;
+        callback = null;
     }
 
     public void addReply(Reply r) {
@@ -58,8 +62,9 @@ public class RouteMetricSet extends MetricSet {
     }
 
     @Override
-    public Metric clone(CopyType type, MetricSet owner, boolean includeUnused)
-        { return new RouteMetricSet(this, type, owner, includeUnused); }
+    public Metric clone(CopyType type, MetricSet owner, boolean includeUnused) {
+        return new RouteMetricSet(this, type, owner, includeUnused);
+    }
 
     String getRoute() {
         return getName();

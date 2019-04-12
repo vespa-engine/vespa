@@ -46,14 +46,13 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
                             LoadTypeConfig loadTypeConfig,
                             DocumentmanagerConfig documentmanagerConfig,
                             SlobroksConfig slobroksConfig,
-                            ClusterListConfig clusterListConfig,
                             Executor executor,
                             Metric metric)  {
-        super(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, clusterListConfig, executor, metric);
+        super(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, executor, metric);
         this.maxBusyThreads = feederConfig.maxbusythreads();
     }
 
-    VespaFeedHandler(FeedContext context, Executor executor) {
+    private VespaFeedHandler(FeedContext context, Executor executor) {
         super(context, executor);
         this.maxBusyThreads = 32;
     }

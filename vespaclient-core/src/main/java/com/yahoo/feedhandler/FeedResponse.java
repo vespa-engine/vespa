@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-@SuppressWarnings("deprecation")
 public final class FeedResponse extends HttpResponse implements SharedSender.ResultCallback {
 
     private final static Logger log = Logger.getLogger(FeedResponse.class.getName());
@@ -37,7 +36,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
     private boolean isAborted = false;
     private final SharedSender.Pending pendingNumber = new SharedSender.Pending();
 
-    public FeedResponse(RouteMetricSet metrics) {
+    FeedResponse(RouteMetricSet metrics) {
         super(com.yahoo.jdisc.http.HttpResponse.Status.OK);
         this.metrics = metrics;
     }
@@ -46,7 +45,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         return isAborted;
     }
 
-    public void setAbortOnFeedError(boolean abort) {
+    void setAbortOnFeedError(boolean abort) {
         abortOnError = abort;
     }
 
@@ -88,7 +87,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         return "application/xml";
     }
 
-    public String prettyPrint(Message m) {
+    private String prettyPrint(Message m) {
         if (m instanceof PutDocumentMessage) {
             return "PUT[" + ((PutDocumentMessage)m).getDocumentPut().getDocument().getId() + "] ";
         }
@@ -138,17 +137,12 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         metrics.done();
     }
 
-    public FeedResponse addXMLParseError(String error) {
+    FeedResponse addXMLParseError(String error) {
         errorMessages.add(ErrorMessage.createBadRequest(error));
         errors.add(error);
         return this;
     }
 
-    public FeedResponse addError(String error) {
-        errorMessages.add(ErrorMessage.createBadRequest(error));
-        errors.add(error);
-        return this;
-    }
     public FeedResponse addError(com.yahoo.container.protect.Error code, String error) {
         errorMessages.add(new ErrorMessage(code.code, error));
         errors.add(error);
@@ -157,10 +151,6 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
 
     public List<String> getErrorList() {
         return errors;
-    }
-
-    public List<ErrorMessage> getErrorMessageList() {
-        return errorMessages;
     }
 
     private static boolean containsFatalErrors(Stream<Error> errors) {
