@@ -114,7 +114,7 @@
       "public void <init>(com.yahoo.concurrent.Timer)",
       "public double getWindowSizeIncrement()",
       "public double getWindowSizeBackOff()",
-      "public void setMaxThroughput(double)",
+      "public com.yahoo.messagebus.DynamicThrottlePolicy setMaxThroughput(double)",
       "public boolean canSend(com.yahoo.messagebus.Message, int)",
       "public void processMessage(com.yahoo.messagebus.Message)",
       "public void processReply(com.yahoo.messagebus.Reply)",

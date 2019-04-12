@@ -25,7 +25,7 @@ public class TraceNode implements Comparable<TraceNode> {
     private TraceNode parent = null;
     private boolean strict = true;
     private String note = null;
-    private List<TraceNode> children = new ArrayList<TraceNode>();
+    private List<TraceNode> children = new ArrayList<>();
 
     /**
      * Create an empty trace tree.
@@ -48,7 +48,7 @@ public class TraceNode implements Comparable<TraceNode> {
      *
      * @param rhs The tree to copy.
      */
-    TraceNode(TraceNode rhs) {
+    private TraceNode(TraceNode rhs) {
         strict = rhs.strict;
         note = rhs.note;
         addChildren(rhs.children);
@@ -148,7 +148,7 @@ public class TraceNode implements Comparable<TraceNode> {
             return this;
         }
         List<TraceNode> tmp = this.children;
-        this.children = new ArrayList<TraceNode>();
+        this.children = new ArrayList<>();
         for (TraceNode child : tmp) {
             child.compact();
             if (child.isEmpty()) {

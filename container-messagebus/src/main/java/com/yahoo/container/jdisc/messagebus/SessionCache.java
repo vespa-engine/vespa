@@ -14,7 +14,6 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ConfigAgent;
-import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBusParams;
@@ -24,7 +23,6 @@ import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
-import com.yahoo.messagebus.shared.SharedDestinationSession;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
@@ -60,10 +58,6 @@ public final class SessionCache extends AbstractComponent {
     private final Map<String, SharedIntermediateSession> intermediates = new HashMap<>();
     private final IntermediateSessionCreator intermediatesCreator = new IntermediateSessionCreator();
 
-    private final Object destinationLock = new Object();
-    private final Map<String, SharedDestinationSession> destinations = new HashMap<>();
-    private final DestinationSessionCreator destinationsCreator = new DestinationSessionCreator();
-
     private final Object sourceLock = new Object();
     private final Map<SourceSessionKey, SharedSourceSession> sources = new HashMap<>();
     private final SourceSessionCreator sourcesCreator = new SourceSessionCreator();
@@ -85,6 +79,13 @@ public final class SessionCache extends AbstractComponent {
         this(identity, identity, identity, identity, identity, identity, new DocumentTypeManager());
     }
 
+    public void deconstruct() {
+        if (configAgent != null) {
+            configAgent.shutdown();
+        }
+    }
+
+
     private void start() {
         ContainerMbusConfig mbusConfig = ConfigGetter.getConfig(ContainerMbusConfig.class, containerMbusConfigId);
         if (documentManagerConfigId != null) {
@@ -97,6 +98,7 @@ public final class SessionCache extends AbstractComponent {
         configAgent = new ConfigAgent(messagebusConfigId, messageBus.messageBus());
         configAgent.subscribe();
     }
+
 
     private boolean isStarted() {
         return messageBus != null;
@@ -136,22 +138,13 @@ public final class SessionCache extends AbstractComponent {
                 (((double) (maxPendingSize / 1024L)) / 1024.0d) + " pending megabytes."));
     }
 
-    public ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {
+    ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {
         synchronized (this) {
             if (!isStarted()) {
                 start();
             }
         }
         return intermediatesCreator.retain(intermediateLock, intermediates, p);
-    }
-
-    public ReferencedResource<SharedDestinationSession> retainDestination(final DestinationSessionParams p) {
-        synchronized (this) {
-            if (!isStarted()) {
-                start();
-            }
-        }
-        return destinationsCreator.retain(destinationLock, destinations, p);
     }
 
     public ReferencedResource<SharedSourceSession> retainSource(final SourceSessionParams p) {
@@ -199,27 +192,6 @@ public final class SessionCache extends AbstractComponent {
             SESSION session = create(p);
             registry.put(key, session);
             return session;
-        }
-
-    }
-
-    private class DestinationSessionCreator
-            extends SessionCreator<DestinationSessionParams, String, SharedDestinationSession> {
-
-        @Override
-        SharedDestinationSession create(DestinationSessionParams p) {
-            log.log(LogLevel.DEBUG, "Creating new destination session " + p.getName() + "");
-            return messageBus.newDestinationSession(p);
-        }
-
-        @Override
-        String buildKey(DestinationSessionParams p) {
-            return p.getName();
-        }
-
-        @Override
-        void logReuse(SharedDestinationSession session) {
-            log.log(LogLevel.DEBUG, "Reusing destination session " + session.name() + "");
         }
 
     }
@@ -377,7 +349,6 @@ public final class SessionCache extends AbstractComponent {
     }
 
     static class UnknownThrottlePolicySignature extends ThrottlePolicySignature {
-
         private final ThrottlePolicy policy;
 
         UnknownThrottlePolicySignature(final ThrottlePolicy policy) {
@@ -419,10 +390,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public String toString() {
-            return "SourceSessionKey{" +
-                   "timeout=" + timeout +
-                   ", policy=" + policy +
-                   '}';
+            return "SourceSessionKey{" + "timeout=" + timeout + ", policy=" + policy + '}';
         }
 
         @Override

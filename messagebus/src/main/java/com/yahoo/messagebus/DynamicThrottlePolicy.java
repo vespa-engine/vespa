@@ -59,8 +59,9 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
         return windowSizeBackOff;
     }
 
-    public void setMaxThroughput(double maxThroughput) {
+    public DynamicThrottlePolicy setMaxThroughput(double maxThroughput) {
         this.maxThroughput = maxThroughput;
+        return this;
     }
 
     @Override
@@ -112,7 +113,6 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             }
             double efficiency = throughput*period/windowSize;
             if (efficiency < efficiencyThreshold) {
-                double newSize = Math.min(windowSize,throughput * period);
                 windowSize = Math.min(windowSize * windowSizeBackOff, windowSize - 2* windowSizeIncrement);
                 localMaxThroughput = 0;
             } else {

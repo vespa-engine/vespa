@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class MessageBusParams {
 
-    private final List<Protocol> protocols = new ArrayList<Protocol>();
+    private final List<Protocol> protocols = new ArrayList<>();
     private RetryPolicy retryPolicy;
     private int maxPendingCount;
     private int maxPendingSize;
