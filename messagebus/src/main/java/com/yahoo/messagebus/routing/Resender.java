@@ -87,8 +87,9 @@ public class Resender {
         node.getTrace().trace(TraceLevel.COMPONENT,
                               "Message scheduled for retry " + retry + " in " + delay + " seconds.");
         msg.setRetry(retry);
+        Entry entry = new Entry(node, SystemTimer.INSTANCE.milliTime() + (long) (delay * 1000));
         synchronized (queue) {
-            queue.add(new Entry(node, SystemTimer.INSTANCE.milliTime() + (long) (delay * 1000)));
+            queue.add(entry);
         }
         return true;
     }
@@ -98,10 +99,11 @@ public class Resender {
      */
     public void resendScheduled() {
         List<RoutingNode> sendList;
+
+        long now = SystemTimer.INSTANCE.milliTime();
         synchronized (queue) {
             if (queue.isEmpty()) return;
             sendList = new LinkedList<>();
-            long now = SystemTimer.INSTANCE.milliTime();
             while (!queue.isEmpty() && queue.peek().time <= now) {
                 sendList.add(queue.poll().node);
             }
