@@ -234,7 +234,9 @@ BucketDBUpdater::onSetSystemState(
         return false;
     }
     ensureTransitionTimerStarted();
-
+    // Separate timer since _transitionTimer might span multiple pending states.
+    framework::MilliSecTimer process_timer(_distributorComponent.getClock());
+    
     removeSuperfluousBuckets(cmd->getClusterStateBundle());
     replyToPreviousPendingClusterStateIfAny();
 
@@ -254,6 +256,9 @@ BucketDBUpdater::onSetSystemState(
             _outdatedNodesMap,
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
+
+    _distributorComponent.getDistributor().getMetrics().set_cluster_state_processing_time.addValue(
+            process_timer.getElapsedTimeAsDouble());
 
     if (isPendingClusterStateCompleted()) {
         processCompletedPendingClusterState();
@@ -579,6 +584,8 @@ BucketDBUpdater::processCompletedPendingClusterState()
 void
 BucketDBUpdater::activatePendingClusterState()
 {
+    framework::MilliSecTimer process_timer(_distributorComponent.getClock());
+
     _pendingClusterState->mergeIntoBucketDatabases();
 
     if (_pendingClusterState->isVersionedTransition()) {
@@ -601,6 +608,9 @@ BucketDBUpdater::activatePendingClusterState()
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
     clearReadOnlyBucketRepoDatabases();
+
+    _distributorComponent.getDistributor().getMetrics().activate_cluster_state_processing_time.addValue(
+            process_timer.getElapsedTimeAsDouble());
 }
 
 void
