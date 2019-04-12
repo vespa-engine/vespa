@@ -110,7 +110,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
 
-        LogserverContainer container = new LogserverContainer(logServerCluster, deployState.getProperties().useSeparateServiceTypeForLogserverContainer());
+        LogserverContainer container = new LogserverContainer(logServerCluster);
         container.setHostResource(hostResource);
         container.initService(deployState.getDeployLogger());
         logServerCluster.addContainer(container);
