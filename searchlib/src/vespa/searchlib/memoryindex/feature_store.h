@@ -9,6 +9,9 @@
 
 namespace search::memoryindex {
 
+/**
+ * Class storing DocIdAndFeatures in an underlying DataStore, using 32-bit refs to access entries.
+ */
 class FeatureStore {
 public:
     using DataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2>>;
@@ -104,8 +107,9 @@ public:
 
 
     /**
-     * Get features from feature store.  Method signature is not
-     * const since feature decoder is written to during calculation.
+     * Get features from feature store.
+     *
+     * Method signature is not const since feature decoder is written to during calculation.
      *
      * @param packedIndex The field or field collection owning features
      * @param ref         Reference to stored features
@@ -115,8 +119,7 @@ public:
 
 
     /**
-     * Setup the given decoder to be used for the given field or field
-     * collection.
+     * Setup the given decoder to be used for the given field or field collection.
      *
      * @param packedIndex The field or field collection owning features
      * @param decoder     The feature decoder
@@ -126,8 +129,7 @@ public:
     }
 
     /**
-     * Setup the given decoder to later use readFeatures() to decode
-     * the stored features.
+     * Setup the given decoder to later use readFeatures() to decode the stored features.
      *
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
@@ -144,8 +146,7 @@ public:
     }
 
     /**
-     * Setup the given decoder to later use unpackFeatures() to decode
-     * the stored features.
+     * Setup the given decoder to later use unpackFeatures() to decode the stored features.
      *
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
@@ -155,8 +156,9 @@ public:
     }
 
     /**
-     * Calculate size of encoded features.  Method signature is not
-     * const since feature decoder is written to during calculation.
+     * Calculate size of encoded features.
+     *
+     * Method signature is not const since feature decoder is written to during calculation.
      *
      * @param packedIndex The field or field collection owning features
      * @param ref         Reference to stored features
@@ -167,7 +169,7 @@ public:
     /**
      * Get byte address of stored features
      *
-     * @param ref Referennce to stored features
+     * @param ref Reference to stored features
      * @return    byte address of stored features
      */
     const uint8_t *getBits(datastore::EntryRef ref) const {
@@ -184,11 +186,6 @@ public:
      */
     datastore::EntryRef moveFeatures(uint32_t packedIndex, datastore::EntryRef ref);
 
-    /**
-     * Return a const view of the fields params used by this feature store.
-     *
-     * @return const view of fields params.
-     */
     const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
 
     void trimHoldLists(generation_t usedGen) { _store.trimHoldLists(usedGen); }

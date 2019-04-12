@@ -18,6 +18,12 @@ namespace search::memoryindex {
 class IOrderedFieldIndexInserter;
 class FieldIndexRemover;
 
+/**
+ * Class used to invert a field for a set of documents, preparing for pushing changes into the corresponding FieldIndex.
+ *
+ * It creates a set of sorted {word, docId, features} tuples based on the field content of the documents,
+ * and uses this when updating the posting lists of the FieldIndex.
+ */
 class FieldInverter : public IFieldIndexRemoveListener {
 public:
     class PosInfo {
@@ -169,7 +175,7 @@ private:
     using SpanTermVector = std::vector<SpanTerm>;
     SpanTermVector                      _terms;
 
-    // info about aborted and pending documents.
+    // Info about aborted and pending documents.
     std::vector<PositionRange>      _abortedDocs;
     std::map<uint32_t, PositionRange> _pendingDocs;
     std::vector<uint32_t>             _removeDocs;
@@ -178,66 +184,37 @@ private:
     invertNormalDocTextField(const document::FieldValue &val);
 
 public:
-    /**
-     * Start a new element
-     *
-     * @param weight        element weight
-     */
     void startElement(int32_t weight);
 
-    /**
-     * End an element.
-     */
     void endElement();
 
 private:
     /**
-     * Save field value as word in word buffer.
-     *
-     * @param word      word to be saved
-     * @param len       length of word to be saved.
-     *
-     * @return          word reference
+     * Save the given word in the word buffer and return the word reference.
      */
     VESPA_DLL_LOCAL uint32_t saveWord(const vespalib::stringref word);
 
     /**
-     * Save field value as word in word buffer.
-     *
-     * @param fv        field value containing word to be stored
-     *
-     * @return          word reference
+     * Save the field value as a word in the word buffer and return the word reference.
      */
     VESPA_DLL_LOCAL uint32_t saveWord(const document::FieldValue &fv);
 
     /**
      * Get pointer to saved word from a word reference.
-     *
-     * @param wordRef       word reference
-     *
-     * @return          saved word
      */
     const char *getWordFromRef(uint32_t wordRef) const {
         return &_words[static_cast<size_t>(wordRef) << 2];
     }
 
     /**
-     * Get pointer to saved word from a word number
-     *
-     * @param wordNum       word number
-     *
-     * @return          saved word
+     * Get pointer to saved word from a word number.
      */
     const char *getWordFromNum(uint32_t wordNum) const {
         return getWordFromRef(_wordRefs[wordNum]);
     }
 
     /**
-     * Get word number from word reference
-     *
-     * @param wordRef       word reference
-     *
-     * @return          word number
+     * Get word number from word reference.
      */
     uint32_t getWordNum(uint32_t wordRef) const {
         const char *p = &_words[static_cast<size_t>(wordRef - 1) << 2];
@@ -245,10 +222,7 @@ private:
     }
 
     /**
-     * Update mapping from word reference to word number
-     *
-     * @param wordRef       word reference
-     * @param wordNum       word number
+     * Update mapping from word reference to word number.
      */
     void updateWordNum(uint32_t wordRef, uint32_t wordNum) {
         char *p = &_words[static_cast<size_t>(wordRef - 1) << 2];
@@ -256,14 +230,10 @@ private:
     }
 
     /**
-     * Add a word reference to posting list.  Don't step word pos.
-     *
-     *
-     * @param wordRef       word reference
+     * Add a word reference to posting list (but don't step word pos).
      */
     void add(uint32_t wordRef) {
-        _positions.emplace_back(wordRef, _docId, _elem,
-                                _wpos, _elems.size() - 1);
+        _positions.emplace_back(wordRef, _docId, _elem, _wpos, _elems.size() - 1);
     }
 
     void stepWordPos() { ++_wpos; }
@@ -282,11 +252,6 @@ private:
     void
     processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field);
 
-    /**
-     * Obtain the schema used by this index.
-     *
-     * @return schema used by this index
-     */
     const index::Schema &getSchema() const { return _schema; }
 
     /**
@@ -295,8 +260,7 @@ private:
     void reset();
 
     /**
-     * Calculate word numbers and replace word references with word
-     * numbers in internal memory structures.
+     * Calculate word numbers and replace word references with word numbers in internal memory structures.
      */
     void sortWords();
 
@@ -304,43 +268,36 @@ private:
 
     void trimAbortedDocs();
 
-    /*
+    /**
      * Abort a pending document that has already been inverted.
-     *
-     * @param docId            local id for document
-     *
      */
     void abortPendingDoc(uint32_t docId);
 
 public:
     /**
-     * Create a new memory index based on the given schema.
-     *
-     * @param schema the index schema to use
-     * @param schema the field to be inverted
+     * Create a new field inverter for the given fieldId, using the given schema.
      */
     FieldInverter(const index::Schema &schema, uint32_t fieldId);
 
-    /*
-     * Apply pending removes.
+    /**
+     * Apply pending removes using the given remover.
      *
-     * @param remover    document remover
+     * The remover is tracking all {word, docId} tuples that should removed,
+     * and forwards this to the remove() function in this class (via IFieldIndexRemoveListener interface).
      */
     void applyRemoves(FieldIndexRemover &remover);
 
     /**
-     * Push inverted documents to field index structure using the given inserter.
-     *
-     * Temporary restriction: Currently only one document at a time is supported.
+     * Push the current batch of inverted documents to the FieldIndex using the given inserter.
      */
     void pushDocuments(IOrderedFieldIndexInserter &inserter);
 
-    /*
+    /**
      * Invert a normal text field, based on annotations.
      */
     void invertField(uint32_t docId, const document::FieldValue::UP &val);
 
-    /*
+    /**
      * Setup remove of word in old version of document.
      */
     virtual void remove(const vespalib::stringref word, uint32_t docId) override;

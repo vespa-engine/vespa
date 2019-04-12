@@ -24,6 +24,11 @@ class FieldInverter;
 class UrlFieldInverter;
 class FieldIndexCollection;
 
+/**
+ * Class used to invert the fields for a set of documents, preparing for pushing changes info field indexes.
+ *
+ * Each text and uri field in the document is handled separately by a FieldInverter and UrlFieldInverter.
+ */
 class DocumentInverter {
 private:
     DocumentInverter(const DocumentInverter &) = delete;
@@ -48,18 +53,16 @@ private:
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
 
-    /**
-     * Obtain the schema used by this index.
-     *
-     * @return schema used by this index
-     */
     const index::Schema &getSchema() const { return _schema; }
 
 public:
     /**
-     * Create a new memory index based on the given schema.
+     * Create a new document inverter based on the given schema.
      *
-     * @param schema the index schema to use
+     * @param schema        the schema with which text and uri fields to consider.
+     * @param invertThreads the executor with threads for doing document inverting.
+     * @param pushThreads   the executor with threads for doing pushing of inverted documents
+     *                      to corresponding field indexes.
      */
     DocumentInverter(const index::Schema &schema,
                      ISequencedTaskExecutor &invertThreads,
@@ -68,23 +71,34 @@ public:
     ~DocumentInverter();
 
     /**
-     * Push inverted documents to memory field indexes.
+     * Push the current batch of inverted documents to corresponding field indexes.
+     *
+     * This function is async:
+     * For each field inverter a task for pushing the inverted documents to the corresponding field index
+     * is added to the 'push threads' executor, then this function returns.
+     * All tasks hold a reference to the 'onWriteDone' callback, so when the last task is completed,
+     * the callback is destructed.
+     *
+     * NOTE: The caller of this function should sync the 'invert threads' executor first,
+     * to ensure that inverting is completed before pushing starts.
      */
     void pushDocuments(FieldIndexCollection &fieldIndexes, const std::shared_ptr<IDestructorCallback> &onWriteDone);
 
     /**
-     * Invert a document.
+     * Invert (add) the given document.
      *
-     * @param docId            local id for document
-     * @param doc              the document
-     *
+     * This function is async:
+     * For each text and uri field in the document a task for inverting and adding that
+     * field (using a field inverter) is added to the 'invert threads' executor, then this function returns.
      **/
     void invertDocument(uint32_t docId, const document::Document &doc);
 
     /**
-     * Remove a document.
+     * Remove the given document.
      *
-     * @param docId            local id for document
+     * This function is async:
+     * For each text and uri field in the index schema a task for removing this document
+     * (using a field inverter) is added to the 'invert threads' executor', then this function returns.
      */
     void removeDocument(uint32_t docId);
 
