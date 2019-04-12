@@ -43,6 +43,13 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
+    public Record createTxt(RecordName name, RecordData txtData) {
+        Record record = new Record(Record.Type.TXT, name, txtData);
+        records.add(record);
+        return record;
+    }
+
+    @Override
     public List<Record> findRecords(Record.Type type, RecordName name) {
         return records.stream()
                       .filter(record -> record.type() == type && record.name().equals(name))
