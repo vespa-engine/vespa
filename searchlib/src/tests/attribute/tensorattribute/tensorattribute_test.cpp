@@ -40,9 +40,6 @@ static bool operator==(const Tensor &lhs, const Tensor &rhs)
 
 vespalib::string sparseSpec("tensor(x{},y{})");
 vespalib::string denseSpec("tensor(x[2],y[3])");
-vespalib::string denseAbstractSpec_xy("tensor(x[],y[])");
-vespalib::string denseAbstractSpec_x("tensor(x[2],y[])");
-vespalib::string denseAbstractSpec_y("tensor(x[],y[3])");
 
 struct Fixture
 {
@@ -307,7 +304,7 @@ Fixture::testSaveLoad()
 void
 Fixture::testCompaction()
 {
-    if (_useDenseTensorAttribute && _denseTensors && !_cfg.tensorType().is_abstract()) {
+    if (_useDenseTensorAttribute && _denseTensors) {
         LOG(info, "Skipping compaction test for tensor '%s' which is using free-lists", _cfg.tensorType().to_spec().c_str());
         return;
     }
@@ -409,36 +406,6 @@ TEST("Test dense tensors with generic tensor attribute")
 TEST("Test dense tensors with dense tensor attribute")
 {
     testAll([]() { return std::make_shared<Fixture>(denseSpec, true); });
-}
-
-TEST("Test dense tensors with generic tensor attribute with unbound x and y dims")
-{
-    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_xy); });
-}
-
-TEST("Test dense tensors with dense tensor attribute with unbound x and y dims")
-{
-    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_xy, true); });
-}
-
-TEST("Test dense tensors with generic tensor attribute with unbound x dim")
-{
-    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_x); });
-}
-
-TEST("Test dense tensors with dense tensor attribute with unbound x dim")
-{
-    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_x, true); });
-}
-
-TEST("Test dense tensors with generic tensor attribute with unbound y dim")
-{
-    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_y); });
-}
-
-TEST("Test dense tensors with dense tensor attribute with unbound y dim")
-{
-    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_y, true); });
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); vespalib::unlink("test.dat"); }
