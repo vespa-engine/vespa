@@ -78,11 +78,7 @@ public class Messenger implements Runnable {
      * @param handler The handler to return to.
      */
     public void deliverReply(final Reply reply, final ReplyHandler handler) {
-        if (destroyed.get()) {
-            reply.discard();
-        } else {
-            handler.handleReply(reply);
-        }
+        enqueue(new ReplyTask(reply, handler));
     }
 
     /**
@@ -210,6 +206,31 @@ public class Messenger implements Runnable {
          * never called.</p>
          */
         void destroy();
+    }
+
+    private static class ReplyTask implements Task {
+
+        final ReplyHandler handler;
+        Reply reply;
+
+        ReplyTask(final Reply reply, final ReplyHandler handler) {
+            this.reply = reply;
+            this.handler = handler;
+        }
+
+        @Override
+        public void run() {
+            final Reply reply = this.reply;
+            this.reply = null;
+            handler.handleReply(reply);
+        }
+
+        @Override
+        public void destroy() {
+            if (reply != null) {
+                reply.discard();
+            }
+        }
     }
 
     private static class SyncTask implements Task {
