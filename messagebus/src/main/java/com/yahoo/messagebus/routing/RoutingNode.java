@@ -12,7 +12,6 @@ import com.yahoo.messagebus.SendProxy;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceLevel;
 import com.yahoo.messagebus.TraceNode;
-import com.yahoo.messagebus.metrics.RouteMetricSet;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.ServiceAddress;
 
@@ -51,7 +50,6 @@ public class RoutingNode implements ReplyHandler {
     private ServiceAddress serviceAddress = null;
     private boolean isActive = true;
     private boolean shouldRetry = false;
-    private RouteMetricSet routeMetrics;
 
     /**
      * Constructs a new instance of this class. This is the root node constructor, and will be used by the different
@@ -73,10 +71,6 @@ public class RoutingNode implements ReplyHandler {
         this.trace = new Trace(msg.getTrace().getLevel());
         this.route = msg.getRoute();
         this.parent = null;
-
-        if (route != null) {
-            routeMetrics = mbus.getMetrics().getRouteMetrics(route);
-        }
     }
 
     /**
@@ -814,11 +808,6 @@ public class RoutingNode implements ReplyHandler {
     @Override
     public void handleReply(Reply reply) {
         setReply(reply);
-        if (routeMetrics != null) {
-            for (int i = 0; i < reply.getNumErrors(); i++) {
-                routeMetrics.addError(reply.getError(i));
-            }
-        }
         notifyParent();
     }
 }

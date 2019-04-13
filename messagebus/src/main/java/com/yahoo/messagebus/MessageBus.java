@@ -4,7 +4,6 @@ package com.yahoo.messagebus;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.metrics.MessageBusMetricSet;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.NetworkOwner;
 import com.yahoo.messagebus.routing.Resender;
@@ -74,7 +73,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private int pendingSize = 0;
     private final Thread careTaker = new Thread(this::sendBlockedMessages);
     private final ConcurrentHashMap<SendBlockedMessages, Long> blockedSenders = new ConcurrentHashMap<>();
-    private MessageBusMetricSet metrics = new MessageBusMetricSet();
 
     public interface SendBlockedMessages {
         /**
@@ -131,10 +129,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         maxPendingSize  = params.getMaxPendingSize();
         for (int i = 0, len = params.getNumProtocols(); i < len; ++i) {
             protocolRepository.putProtocol(params.getProtocol(i));
-
-            if (params.getProtocol(i).getMetrics() != null) {
-                metrics.protocols.addMetric(params.getProtocol(i).getMetrics());
-            }
         }
 
         // Attach and start network.
@@ -157,15 +151,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         careTaker.start();
 
         msn.start();
-    }
-
-    /**
-     * <p>Returns the metrics used by this messagebus.</p>
-     *
-     * @return The metric set.
-     */
-    public MessageBusMetricSet getMetrics() {
-        return metrics;
     }
 
     /**
