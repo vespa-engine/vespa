@@ -7,7 +7,12 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.metrics.MessageBusMetricSet;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.NetworkOwner;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.Resender;
+import com.yahoo.messagebus.routing.RetryPolicy;
+import com.yahoo.messagebus.routing.RoutingPolicy;
+import com.yahoo.messagebus.routing.RoutingSpec;
+import com.yahoo.messagebus.routing.RoutingTable;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
 
