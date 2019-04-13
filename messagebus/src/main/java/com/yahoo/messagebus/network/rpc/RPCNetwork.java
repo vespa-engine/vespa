@@ -17,7 +17,6 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.Register;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
