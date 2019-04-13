@@ -8,18 +8,15 @@ import com.yahoo.component.VersionSpecification;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import com.yahoo.documentapi.metrics.DocumentProtocolMetricSet;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Routable;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,8 +32,7 @@ import java.util.logging.Logger;
 public class DocumentProtocol implements Protocol {
 
     private static final Logger log = Logger.getLogger(DocumentProtocol.class.getName());
-    private final DocumentProtocolMetricSet metrics = new DocumentProtocolMetricSet();
-    private final RoutingPolicyRepository routingPolicyRepository = new RoutingPolicyRepository(metrics);
+    private final RoutingPolicyRepository routingPolicyRepository = new RoutingPolicyRepository();
     private final RoutableRepository routableRepository;
     private final DocumentTypeManager docMan;
 
@@ -233,7 +229,7 @@ public class DocumentProtocol implements Protocol {
 
         private final int val;
 
-        private Priority(int val) {
+        Priority(int val) {
             this.val = val;
         }
 
@@ -561,10 +557,6 @@ public class DocumentProtocol implements Protocol {
      */
     public List<Integer> getRoutableTypes(Version version) {
         return routableRepository.getRoutableTypes(version);
-    }
-
-    public MetricSet getMetrics() {
-        return metrics;
     }
 
     final public DocumentTypeManager getDocumentTypeManager() { return docMan; }

@@ -1,25 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.api.IMirror;
-import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
-import com.yahoo.cloud.config.SlobroksConfig;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 /**
  * Routing policy to load balance between nodes in a randomly distributed cluster, such as a docproc cluster.
@@ -33,37 +23,35 @@ import java.util.logging.Logger;
  * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
  */
 public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
-    String cluster = null;
-    String session = null;
-    private String pattern = null;
+    private final String session;
+    private final String pattern;
 
-    LoadBalancer.Metrics metrics;
-    LoadBalancer loadBalancer;
+    private LoadBalancer loadBalancer;
 
-    public LoadBalancerPolicy(String param) {
-        this(param, parse(param));
+    LoadBalancerPolicy(String param) {
+        this(parse(param));
     }
 
-    public LoadBalancerPolicy(String param, Map<String, String> params) {
+    private LoadBalancerPolicy(Map<String, String> params) {
         super(params);
 
-        cluster = params.get("cluster");
+        String cluster = params.get("cluster");
         session = params.get("session");
 
         if (cluster == null) {
             error = "Required parameter pattern not set";
+            pattern = null;
             return;
         }
 
         if (session == null) {
             error = "Required parameter session not set";
+            pattern = null;
             return;
         }
 
-        metrics = new LoadBalancer.Metrics(param);
-        metrics.setXmlTagName("loadbalancer");
         pattern = cluster + "/*/" + session;
-        loadBalancer = new LoadBalancer(cluster, session, metrics);
+        loadBalancer = new LoadBalancer(cluster);
     }
 
     @Override
@@ -86,7 +74,7 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
 
        @return Returns a hop representing the TCP address of the target, or null if none could be found.
     */
-    LoadBalancer.Node getRecipient(RoutingContext context) {
+    private LoadBalancer.Node getRecipient(RoutingContext context) {
         Mirror.Entry [] lastLookup = lookup(context, pattern);
         return loadBalancer.getRecipient(lastLookup);
     }
@@ -105,9 +93,5 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
         loadBalancer.received(target, busy);
 
         context.setReply(reply);
-    }
-
-    public MetricSet getMetrics() {
-        return metrics;
     }
 }

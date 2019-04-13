@@ -2,20 +2,13 @@
 package com.yahoo.messagebus.test;
 
 import com.yahoo.component.Version;
-import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Protocol;
-import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Routable;
-import com.yahoo.messagebus.metrics.MetricSet;
-import com.yahoo.messagebus.routing.Route;
-import com.yahoo.messagebus.routing.RoutingContext;
-import com.yahoo.messagebus.routing.RoutingNodeIterator;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8String;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,11 +59,6 @@ public class SimpleProtocol implements Protocol {
         } else {
             return null;
         }
-    }
-
-    @Override
-    public MetricSet getMetrics() {
-        return null;
     }
 
     /**

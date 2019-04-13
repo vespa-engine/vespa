@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -59,9 +58,5 @@ public class ANDPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     public void destroy() {
-    }
-
-    public MetricSet getMetrics() {
-        return null;
     }
 }

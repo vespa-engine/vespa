@@ -6,7 +6,6 @@ import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -117,9 +116,5 @@ public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     public void destroy() {
-    }
-
-    public MetricSet getMetrics() {
-        return null;
     }
 }

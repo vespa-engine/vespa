@@ -2,8 +2,10 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.messagebus.metrics.MetricSet;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.Hop;
+import com.yahoo.messagebus.routing.Route;
+import com.yahoo.messagebus.routing.RoutingContext;
+import com.yahoo.messagebus.routing.VerbatimDirective;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +20,7 @@ import java.util.Map;
 public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
 
     private final String localAddress;
-    private Map<String, CacheEntry> cache = new HashMap<String, CacheEntry>();
+    private Map<String, CacheEntry> cache = new HashMap<>();
 
     /**
      * Constructs a policy that will choose local services that match the slobrok pattern in which this policy occured.
@@ -26,7 +28,7 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
      *
      * @param param The address to use for this, if empty this will resolve to hostname.
      */
-    public LocalServicePolicy(String param) {
+    LocalServicePolicy(String param) {
         localAddress = (param != null && param.length() > 0) ? param : null;
     }
 
@@ -107,7 +109,7 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
      * Defines the necessary cache data.
      */
     private class CacheEntry {
-        private final List<Hop> recipients = new ArrayList<Hop>();
+        private final List<Hop> recipients = new ArrayList<>();
         private int generation = 0;
         private int offset = 0;
     }
@@ -130,9 +132,5 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
     }
 
     public void destroy() {
-    }
-
-    public MetricSet getMetrics() {
-        return null;
     }
 }

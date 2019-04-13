@@ -3,8 +3,15 @@ package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.component.Version;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
-import com.yahoo.messagebus.metrics.MetricSet;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Protocol;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.Routable;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingPolicy;
@@ -85,11 +92,6 @@ public class RPCNetworkTestCase {
 
         @Override
         public RoutingPolicy createPolicy(String name, String param) {
-            return null;
-        }
-
-        @Override
-        public MetricSet getMetrics() {
             return null;
         }
 

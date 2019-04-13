@@ -6,7 +6,9 @@ import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Routable;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -21,10 +23,6 @@ public class SimpleProtocolTestCase {
         assertEquals(SimpleProtocol.NAME, PROTOCOL.getName());
     }
 
-    @Test
-    public void requireThatMetricSetIsNull() {
-        assertNull(PROTOCOL.getMetrics());
-    }
 
     @Test
     public void requireThatMessageCanBeEncodedAndDecoded() {
