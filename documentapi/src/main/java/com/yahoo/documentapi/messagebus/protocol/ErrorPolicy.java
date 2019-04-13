@@ -2,7 +2,6 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.messagebus.EmptyReply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingContext;
 
 /**
@@ -35,10 +34,5 @@ public class ErrorPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     public void destroy() {
-    }
-
-
-    public MetricSet getMetrics() {
-        return null;
     }
 }

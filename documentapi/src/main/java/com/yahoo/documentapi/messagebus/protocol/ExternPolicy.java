@@ -6,7 +6,6 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.messagebus.ErrorCode;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -140,10 +139,5 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
         if (destroyed.getAndSet(true)) throw new RuntimeException("Already destroyed");
         mirror.shutdown();
         orb.transport().shutdown().join();
-    }
-
-    @Override
-    public MetricSet getMetrics() {
-        return null;
     }
 }

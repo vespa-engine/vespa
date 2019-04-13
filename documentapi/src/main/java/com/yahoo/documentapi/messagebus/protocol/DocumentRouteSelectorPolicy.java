@@ -2,15 +2,11 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentGet;
-import com.yahoo.document.DocumentPut;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.Result;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 
@@ -181,8 +177,4 @@ public class DocumentRouteSelectorPolicy
         }
     }
 
-    @Override
-    public MetricSet getMetrics() {
-        return null;
-    }
 }

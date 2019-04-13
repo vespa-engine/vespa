@@ -13,7 +13,6 @@ import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -46,7 +45,7 @@ import java.util.logging.Logger;
 public class StoragePolicy extends ExternalSlobrokPolicy {
 
     private static final Logger log = Logger.getLogger(StoragePolicy.class.getName());
-    private static final String owningBucketStates = "uim";
+    public static final String owningBucketStates = "uim";
     private static final String upStates = "ui";
 
     /** This class merely generates slobrok a host pattern for a given distributor. */
@@ -567,10 +566,5 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     @Override
     public void destroy() {
         distributorSelectionLogic.destroy();
-    }
-
-    @Override
-    public MetricSet getMetrics() {
-        return null;
     }
 }

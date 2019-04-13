@@ -4,7 +4,6 @@ package com.yahoo.documentapi.messagebus.protocol;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -27,14 +26,13 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
     private final String session;
     private final String pattern;
 
-    LoadBalancer.Metrics metrics;
     private LoadBalancer loadBalancer;
 
     LoadBalancerPolicy(String param) {
-        this(param, parse(param));
+        this(parse(param));
     }
 
-    private LoadBalancerPolicy(String param, Map<String, String> params) {
+    private LoadBalancerPolicy(Map<String, String> params) {
         super(params);
 
         String cluster = params.get("cluster");
@@ -52,10 +50,8 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
             return;
         }
 
-        metrics = new LoadBalancer.Metrics(param);
-        metrics.setXmlTagName("loadbalancer");
         pattern = cluster + "/*/" + session;
-        loadBalancer = new LoadBalancer(cluster, session, metrics);
+        loadBalancer = new LoadBalancer(cluster);
     }
 
     @Override
@@ -97,9 +93,5 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
         loadBalancer.received(target, busy);
 
         context.setReply(reply);
-    }
-
-    public MetricSet getMetrics() {
-        return metrics;
     }
 }

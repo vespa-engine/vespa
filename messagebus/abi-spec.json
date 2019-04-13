@@ -611,8 +611,7 @@
       "public abstract java.lang.String getName()",
       "public abstract byte[] encode(com.yahoo.component.Version, com.yahoo.messagebus.Routable)",
       "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.component.Version, byte[])",
-      "public abstract com.yahoo.messagebus.routing.RoutingPolicy createPolicy(java.lang.String, java.lang.String)",
-      "public abstract com.yahoo.messagebus.metrics.MetricSet getMetrics()"
+      "public abstract com.yahoo.messagebus.routing.RoutingPolicy createPolicy(java.lang.String, java.lang.String)"
     ],
     "fields": []
   },
