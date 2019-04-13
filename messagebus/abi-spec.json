@@ -307,7 +307,6 @@
       "public void register(com.yahoo.messagebus.MessageBus$SendBlockedMessages)",
       "public void <init>(com.yahoo.messagebus.network.Network, java.util.List)",
       "public void <init>(com.yahoo.messagebus.network.Network, com.yahoo.messagebus.MessageBusParams)",
-      "public com.yahoo.messagebus.metrics.MessageBusMetricSet getMetrics()",
       "public boolean destroy()",
       "public void sync()",
       "public com.yahoo.messagebus.SourceSession createSourceSession(com.yahoo.messagebus.ReplyHandler)",

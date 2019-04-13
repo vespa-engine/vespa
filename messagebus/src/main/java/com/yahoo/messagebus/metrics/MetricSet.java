@@ -3,8 +3,6 @@ package com.yahoo.messagebus.metrics;
 
 import com.yahoo.text.XMLWriter;
 
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
