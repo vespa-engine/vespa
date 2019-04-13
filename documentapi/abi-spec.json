@@ -1472,8 +1472,6 @@
     ],
     "methods": [
       "public static java.util.Map parse(java.lang.String)",
-      "public void <init>(java.util.Map)",
-      "public void needAsynchronousInitialization()",
       "public abstract void init()",
       "public abstract void doSelect(com.yahoo.messagebus.routing.RoutingContext)",
       "public void select(com.yahoo.messagebus.routing.RoutingContext)",
@@ -2239,8 +2237,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, java.util.Map)",
       "public void doSelect(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public com.yahoo.messagebus.metrics.MetricSet getMetrics()"
@@ -3023,21 +3019,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>()",
-      "public com.yahoo.document.BucketId handleBucketIdCalculation(com.yahoo.messagebus.routing.RoutingContext)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.documentapi.messagebus.protocol.StoragePolicy$DistributorSelectionLogic$InstabilityChecker": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(int)",
-      "public boolean tooManyFailures(int)",
-      "public void addFailure(java.lang.Integer)"
+      "public void <init>()"
     ],
     "fields": []
   },
@@ -3048,11 +3030,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.documentapi.messagebus.protocol.StoragePolicy$Parameters, com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)",
-      "public void destroy()",
-      "public java.lang.String getTargetSpec(com.yahoo.messagebus.routing.RoutingContext, com.yahoo.document.BucketId)",
-      "public void handleWrongDistribution(com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply, com.yahoo.messagebus.routing.RoutingContext)",
-      "public void handleErrorReply(com.yahoo.messagebus.Reply, java.lang.Object)"
+      "public void destroy()"
     ],
     "fields": []
   },
@@ -3065,10 +3043,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void setRequiredUpPercentageToSendToKnownGoodNodes(int)",
-      "public void updateValidTargets(com.yahoo.vdslib.state.ClusterState)",
       "public abstract java.lang.String getTargetSpec(java.lang.Integer, com.yahoo.messagebus.routing.RoutingContext)",
-      "public java.lang.String getRandomTargetSpec(com.yahoo.messagebus.routing.RoutingContext)",
       "public void close()"
     ],
     "fields": [
@@ -3087,15 +3062,12 @@
       "public java.lang.String getClusterName()",
       "public com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostPatternGenerator createPatternGenerator()",
       "public com.yahoo.documentapi.messagebus.protocol.StoragePolicy$HostFetcher createHostFetcher(com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)",
-      "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)",
-      "public int getAttemptRandomOnFailuresLimit()",
-      "public int maxOldClusterStatesSeenBeforeThrowingCachedState()",
-      "public int getRequiredUpPercentageToSendToKnownGoodNodes()"
+      "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)"
     ],
     "fields": [
-      "protected java.lang.String clusterName",
-      "protected java.lang.String distributionConfigId",
-      "protected com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostPatternGenerator slobrokHostPatternGenerator"
+      "protected final java.lang.String clusterName",
+      "protected final java.lang.String distributionConfigId",
+      "protected final com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostPatternGenerator slobrokHostPatternGenerator"
     ]
   },
   "com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostFetcher": {
@@ -3105,7 +3077,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostPatternGenerator, com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)",
       "public com.yahoo.jrt.slobrok.api.IMirror getMirror(com.yahoo.messagebus.routing.RoutingContext)",
       "public java.lang.String getTargetSpec(java.lang.Integer, com.yahoo.messagebus.routing.RoutingContext)"
     ],
@@ -3118,7 +3089,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String)",
       "public java.lang.String getDistributorHostPattern(java.lang.Integer)"
     ],
     "fields": []
@@ -3139,10 +3109,7 @@
       "public void destroy()",
       "public com.yahoo.messagebus.metrics.MetricSet getMetrics()"
     ],
-    "fields": [
-      "public static final java.lang.String owningBucketStates",
-      "public static final java.lang.String upStates"
-    ]
+    "fields": []
   },
   "com.yahoo.documentapi.messagebus.protocol.SubsetServicePolicy": {
     "superClass": "java.lang.Object",

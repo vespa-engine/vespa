@@ -4,9 +4,6 @@ package com.yahoo.documentapi.messagebus.protocol;
 import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * @author thomasg

@@ -19,7 +19,6 @@ import com.yahoo.messagebus.routing.RoutingNodeIterator;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;

@@ -3,9 +3,6 @@ package com.yahoo.documentapi.metrics;
 
 import com.yahoo.messagebus.metrics.MetricSet;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author thomasg
  */

@@ -29,7 +29,7 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
 
 
     public ExternalSlobrokPolicy(Map<String, String> param) {
-        super(param);
+        super();
 
         String conf = param.get("config");
         if (conf != null) {

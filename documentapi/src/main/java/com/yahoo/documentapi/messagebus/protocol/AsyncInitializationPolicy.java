@@ -2,13 +2,13 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
-import com.yahoo.messagebus.metrics.MetricSet;
+import com.yahoo.messagebus.EmptyReply;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.routing.RoutingContext;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -26,17 +26,17 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         NOT_STARTED,
         RUNNING,
         DONE
-    };
+    }
 
     private static final Logger log = Logger.getLogger(AsyncInitializationPolicy.class.getName());
 
-    InitState initState;
-    ScheduledThreadPoolExecutor executor;
-    Exception initException;
-    boolean syncInit = true;
+    private InitState initState;
+    private ScheduledThreadPoolExecutor executor;
+    private Exception initException;
+    private boolean syncInit = true;
 
     public static Map<String, String> parse(String param) {
-        Map<String, String> map = new TreeMap<String, String>();
+        Map<String, String> map = new TreeMap<>();
 
         if (param != null) {
             String[] p = param.split(";");
@@ -54,11 +54,11 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         return map;
     }
 
-    public AsyncInitializationPolicy(Map<String, String> params) {
+    AsyncInitializationPolicy() {
         initState = InitState.NOT_STARTED;
     }
 
-    public void needAsynchronousInitialization() {
+    void needAsynchronousInitialization() {
         syncInit = false;
     }
 
