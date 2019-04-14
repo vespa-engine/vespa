@@ -15,6 +15,7 @@ public class RPCNetworkParams {
     private Identity identity = new Identity("");
     private String slobrokConfigId = "admin/slobrok.0";
     private SlobroksConfig slobroksConfig = null;
+    private boolean sendInOwnThread = false;
     private int listenPort = 0;
     private int maxInputBufferSize = 256 * 1024;
     private int maxOutputBufferSize = 256 * 1024;
@@ -34,6 +35,7 @@ public class RPCNetworkParams {
      */
     public RPCNetworkParams(RPCNetworkParams params) {
         identity = new Identity(params.identity);
+        sendInOwnThread = params.sendInOwnThread;
         slobrokConfigId = params.slobrokConfigId;
         slobroksConfig = params.slobroksConfig;
         listenPort = params.listenPort;
@@ -59,6 +61,13 @@ public class RPCNetworkParams {
      */
     public RPCNetworkParams setIdentity(Identity identity) {
         this.identity = identity;
+        return this;
+    }
+
+    public boolean getSendInOwnThread() { return sendInOwnThread; }
+
+    public RPCNetworkParams setSendInOwnThread(boolean sendInOwnThread) {
+        this.sendInOwnThread = sendInOwnThread;
         return this;
     }
 
