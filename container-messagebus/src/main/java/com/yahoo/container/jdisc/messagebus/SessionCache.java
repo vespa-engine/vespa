@@ -120,8 +120,7 @@ public final class SessionCache extends AbstractComponent {
         RPCNetworkParams netParams = new RPCNetworkParams()
                 .setSlobrokConfigId(slobrokConfigId)
                 .setIdentity(new Identity(identity))
-                .setListenPort(mbusConfig.port())
-                .setSendInOwnThread(true);
+                .setListenPort(mbusConfig.port());
         return SharedMessageBus.newInstance(mbusParams, netParams);
     }
 

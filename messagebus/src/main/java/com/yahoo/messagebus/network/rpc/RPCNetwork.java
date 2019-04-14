@@ -56,7 +56,6 @@ public class RPCNetwork implements Network, MethodHandler {
     private static final Logger log = Logger.getLogger(RPCNetwork.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final Identity identity;
-    private final boolean useOwnThread;
     private final Supervisor orb;
     private final RPCTargetPool targetPool;
     private final RPCServicePool servicePool;
@@ -84,7 +83,6 @@ public class RPCNetwork implements Network, MethodHandler {
     public RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
         this.slobroksConfig = slobrokConfig;
         identity = params.getIdentity();
-        useOwnThread = params.getSendInOwnThread();
         orb = new Supervisor(new Transport());
         orb.setMaxInputBufferSize(params.getMaxInputBufferSize());
         orb.setMaxOutputBufferSize(params.getMaxOutputBufferSize());
@@ -259,12 +257,7 @@ public class RPCNetwork implements Network, MethodHandler {
                     String.format("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
                                   buildRecipientListString(ctx), identity.getHostname()));
         } else {
-            SendTask sendTask = new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx);
-            if ( ! useOwnThread ) {
-                executor.execute(sendTask);
-            } else {
-                sendTask.run();
-            }
+            executor.execute(new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx));
         }
     }
 
