@@ -71,7 +71,7 @@ public class DummyReceiver implements MessageHandler {
 
     private void init() {
         MessageBusParams params = new MessageBusParams(new LoadTypeSet());
-        params.setRPCNetworkParams(new RPCNetworkParams().setIdentity(new Identity(name)));
+        params.setRPCNetworkParams(new RPCNetworkParams().setIdentity(new Identity(name)).setSendInOwnThread(true));
         params.setDocumentManagerConfigId("client");
         params.getMessageBusParams().setMaxPendingCount(0);
         params.getMessageBusParams().setMaxPendingSize(0);
