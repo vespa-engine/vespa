@@ -59,6 +59,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
+    private final Map<DeploymentId, Set<String>> rotationCnames = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -179,6 +180,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         warnings.put(deployment, List.copyOf(logs));
     }
 
+    public Map<DeploymentId, Set<String>> rotationCnames() {
+        return Collections.unmodifiableMap(rotationCnames);
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -221,6 +226,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
+
+        this.rotationCnames.put(deployment, Set.copyOf(rotationCnames));
 
         return new PreparedApplication() {
 

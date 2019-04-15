@@ -58,6 +58,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -325,7 +326,10 @@ public class ApplicationController {
                 // Assign global rotation
                 application = withRotation(application, zone);
                 Application app = application.get();
+                // Include global DNS names
                 cnames = app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).collect(Collectors.toSet());
+                // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
+                app.rotation().map(RotationId::asString).ifPresent(cnames::add);
                 // Update application with information from application package
                 if (   ! preferOldestVersion
                     && ! application.get().deploymentJobs().deployedInternally()
