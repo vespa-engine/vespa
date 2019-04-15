@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Marketplace;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
-import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
+import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
@@ -24,13 +24,13 @@ public class CloudAccessControl implements AccessControl {
 
     private final Marketplace marketplace;
     private final UserManagement userManagement;
-    private final UserRoles userRoles;
+    private final Roles roles;
 
     @Inject
     public CloudAccessControl(Marketplace marketplace, UserManagement userManagement) {
         this.marketplace = marketplace;
         this.userManagement = userManagement;
-        this.userRoles = new UserRoles();
+        this.roles = new Roles();
     }
 
     @Override
@@ -38,7 +38,7 @@ public class CloudAccessControl implements AccessControl {
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
         CloudTenant tenant = new CloudTenant(spec.tenant(), marketplace.resolveCustomer(spec.getRegistrationToken()));
 
-        for (Role role : userRoles.tenantRoles(spec.tenant()))
+        for (Role role : roles.tenantRoles(spec.tenant()))
             userManagement.createRole(role);
         userManagement.addUsers(Role.tenantOwner(spec.tenant()), List.of(new UserId(credentials.user().getName())));
 
@@ -54,20 +54,20 @@ public class CloudAccessControl implements AccessControl {
     public void deleteTenant(TenantName tenant, Credentials credentials) {
         // Probably terminate customer subscription?
 
-        for (TenantRole role : userRoles.tenantRoles(tenant))
+        for (TenantRole role : roles.tenantRoles(tenant))
             userManagement.deleteRole(role);
     }
 
     @Override
     public void createApplication(ApplicationId id, Credentials credentials) {
-        for (Role role : userRoles.applicationRoles(id.tenant(), id.application()))
+        for (Role role : roles.applicationRoles(id.tenant(), id.application()))
             userManagement.createRole(role);
         userManagement.addUsers(Role.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
     }
 
     @Override
     public void deleteApplication(ApplicationId id, Credentials credentials) {
-        for (ApplicationRole role : userRoles.applicationRoles(id.tenant(), id.application()))
+        for (ApplicationRole role : roles.applicationRoles(id.tenant(), id.application()))
             userManagement.deleteRole(role);
     }
 

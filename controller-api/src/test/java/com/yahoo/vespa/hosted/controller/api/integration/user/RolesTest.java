@@ -12,59 +12,59 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author jonmv
  */
-public class UserRolesTest {
+public class RolesTest {
 
-    private static final UserRoles userRoles = new UserRoles();
+    private static final Roles roles = new Roles();
 
     @Test
     public void testSerialization() {
         TenantName tenant = TenantName.from("my-tenant");
-        for (TenantRole role : userRoles.tenantRoles(tenant))
-            assertEquals(role, userRoles.toRole(UserRoles.valueOf(role)));
+        for (TenantRole role : roles.tenantRoles(tenant))
+            assertEquals(role, roles.toRole(Roles.valueOf(role)));
 
         ApplicationName application = ApplicationName.from("my-application");
-        for (ApplicationRole role : userRoles.applicationRoles(tenant, application))
-            assertEquals(role, userRoles.toRole(UserRoles.valueOf(role)));
+        for (ApplicationRole role : roles.applicationRoles(tenant, application))
+            assertEquals(role, roles.toRole(Roles.valueOf(role)));
 
         assertEquals(Role.tenantOperator(tenant),
-                     userRoles.toRole("my-tenant.tenantOperator"));
+                     roles.toRole("my-tenant.tenantOperator"));
         assertEquals(Role.applicationReader(tenant, application),
-                     userRoles.toRole("my-tenant.my-application.applicationReader"));
+                     roles.toRole("my-tenant.my-application.applicationReader"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalTenantName() {
-        UserRoles.valueOf(Role.tenantAdmin(TenantName.from("my.tenant")));
+        Roles.valueOf(Role.tenantAdmin(TenantName.from("my.tenant")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalApplicationName() {
-        UserRoles.valueOf(Role.applicationOperator(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
+        Roles.valueOf(Role.applicationOperator(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalRole() {
-        UserRoles.valueOf(Role.tenantPipeline(TenantName.from("my-tenant"), ApplicationName.from("my-app")));
+        Roles.valueOf(Role.tenantPipeline(TenantName.from("my-tenant"), ApplicationName.from("my-app")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalRoleValue() {
-        userRoles.toRole("my-tenant.awesomePerson");
+        roles.toRole("my-tenant.awesomePerson");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalCombination() {
-        userRoles.toRole("my-tenant.my-application.tenantOwner");
+        roles.toRole("my-tenant.my-application.tenantOwner");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalValue() {
-        userRoles.toRole("everyone");
+        roles.toRole("everyone");
     }
 
     @Test
     public void allowHostedOperator() {
-        assertEquals(Role.hostedOperator(), userRoles.toRole("hostedOperator"));
+        assertEquals(Role.hostedOperator(), roles.toRole("hostedOperator"));
     }
 
 }

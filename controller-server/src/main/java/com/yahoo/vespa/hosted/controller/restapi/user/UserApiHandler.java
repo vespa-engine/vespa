@@ -15,7 +15,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
-import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
+import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
@@ -45,13 +45,13 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
     private static final String optionalPrefix = "/api";
 
-    private final UserRoles roles;
+    private final Roles roles;
     private final UserManagement users;
 
     @Inject
     public UserApiHandler(Context parentCtx, UserManagement users) {
         super(parentCtx);
-        this.roles = new UserRoles();
+        this.roles = new Roles();
         this.users = users;
     }
 

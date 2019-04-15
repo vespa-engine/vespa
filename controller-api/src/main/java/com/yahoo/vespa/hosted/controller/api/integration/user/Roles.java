@@ -14,10 +14,10 @@ import java.util.List;
  *
  * @author jonmv
  */
-public class UserRoles {
+public class Roles {
 
     /** Creates a new UserRoles which can be used for serialisation and listing of bound user roles. */
-    public UserRoles() { }
+    public Roles() { }
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
     public List<TenantRole> tenantRoles(TenantName tenant) {
