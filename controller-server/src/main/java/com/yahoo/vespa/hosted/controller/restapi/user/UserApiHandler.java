@@ -45,13 +45,11 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
     private static final String optionalPrefix = "/api";
 
-    private final Roles roles;
     private final UserManagement users;
 
     @Inject
     public UserApiHandler(Context parentCtx, UserManagement users) {
         super(parentCtx);
-        this.roles = new Roles();
         this.users = users;
     }
 
@@ -111,7 +109,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
         fillRoles(root,
-                  roles.tenantRoles(TenantName.from(tenantName)),
+                  Roles.tenantRoles(TenantName.from(tenantName)),
                   Collections.emptyList());
         return new SlimeJsonResponse(slime);
     }
@@ -122,8 +120,8 @@ public class UserApiHandler extends LoggingRequestHandler {
         root.setString("tenant", tenantName);
         root.setString("application", applicationName);
         fillRoles(root,
-                  roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)),
-                  roles.tenantRoles(TenantName.from(tenantName)));
+                  Roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)),
+                  Roles.tenantRoles(TenantName.from(tenantName)));
         return new SlimeJsonResponse(slime);
     }
 
@@ -158,7 +156,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = roles.toRole(TenantName.from(tenantName), roleName);
+        Role role = Roles.toRole(TenantName.from(tenantName), roleName);
         users.addUsers(role, List.of(user));
         return new MessageResponse(user + " is now a member of " + role);
     }
@@ -167,7 +165,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
+        Role role = Roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
         users.addUsers(role, List.of(user));
         return new MessageResponse(user + " is now a member of " + role);
     }
@@ -176,7 +174,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = roles.toRole(TenantName.from(tenantName), roleName);
+        Role role = Roles.toRole(TenantName.from(tenantName), roleName);
         if (   role.definition() == RoleDefinition.tenantOwner
             && users.listUsers(role).equals(List.of(user)))
             throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
@@ -189,7 +187,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Inspector requestObject = bodyInspector(request);
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
+        Role role = Roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
         users.removeUsers(role, List.of(user));
         return new MessageResponse(user + " is no longer a member of " + role);
     }

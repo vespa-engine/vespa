@@ -23,11 +23,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
+import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -82,7 +81,6 @@ public class Controller extends AbstractComponent {
     private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
-    private final UserRoles roles;
 
     /**
      * Creates a controller 
@@ -135,7 +133,6 @@ public class Controller extends AbstractComponent {
         );
         tenantController = new TenantController(this, curator, accessControl);
         auditLogger = new AuditLogger(curator, clock);
-        roles = new UserRoles(new Roles(zoneRegistry.system()));
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
@@ -298,16 +295,16 @@ public class Controller extends AbstractComponent {
 
     /** Returns all other roles the given tenant role implies. */
     public Set<Role> impliedRoles(TenantRole role) {
-        return Stream.concat(roles.tenantRoles(role.tenant()).stream(),
+        return Stream.concat(Roles.tenantRoles(role.tenant()).stream(),
                              applications().asList(role.tenant()).stream()
-                                           .flatMap(application -> roles.applicationRoles(application.id().tenant(), application.id().application()).stream()))
+                                           .flatMap(application -> Roles.applicationRoles(application.id().tenant(), application.id().application()).stream()))
                 .filter(role::implies)
                 .collect(Collectors.toUnmodifiableSet());
     }
 
     /** Returns all other roles the given application role implies. */
     public Set<Role> impliedRoles(ApplicationRole role) {
-        return roles.applicationRoles(role.tenant(), role.application()).stream()
+        return Roles.applicationRoles(role.tenant(), role.application()).stream()
                 .filter(role::implies)
                 .collect(Collectors.toUnmodifiableSet());
     }

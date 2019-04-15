@@ -24,13 +24,11 @@ public class CloudAccessControl implements AccessControl {
 
     private final Marketplace marketplace;
     private final UserManagement userManagement;
-    private final Roles roles;
 
     @Inject
     public CloudAccessControl(Marketplace marketplace, UserManagement userManagement) {
         this.marketplace = marketplace;
         this.userManagement = userManagement;
-        this.roles = new Roles();
     }
 
     @Override
@@ -38,7 +36,7 @@ public class CloudAccessControl implements AccessControl {
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
         CloudTenant tenant = new CloudTenant(spec.tenant(), marketplace.resolveCustomer(spec.getRegistrationToken()));
 
-        for (Role role : roles.tenantRoles(spec.tenant()))
+        for (Role role : Roles.tenantRoles(spec.tenant()))
             userManagement.createRole(role);
         userManagement.addUsers(Role.tenantOwner(spec.tenant()), List.of(new UserId(credentials.user().getName())));
 
@@ -54,20 +52,20 @@ public class CloudAccessControl implements AccessControl {
     public void deleteTenant(TenantName tenant, Credentials credentials) {
         // Probably terminate customer subscription?
 
-        for (TenantRole role : roles.tenantRoles(tenant))
+        for (TenantRole role : Roles.tenantRoles(tenant))
             userManagement.deleteRole(role);
     }
 
     @Override
     public void createApplication(ApplicationId id, Credentials credentials) {
-        for (Role role : roles.applicationRoles(id.tenant(), id.application()))
+        for (Role role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.createRole(role);
         userManagement.addUsers(Role.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
     }
 
     @Override
     public void deleteApplication(ApplicationId id, Credentials credentials) {
-        for (ApplicationRole role : roles.applicationRoles(id.tenant(), id.application()))
+        for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.deleteRole(role);
     }
 

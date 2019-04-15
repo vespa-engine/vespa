@@ -16,18 +16,17 @@ import java.util.List;
  */
 public class Roles {
 
-    /** Creates a new UserRoles which can be used for serialisation and listing of bound user roles. */
-    public Roles() { }
+    private Roles() { }
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
-    public List<TenantRole> tenantRoles(TenantName tenant) {
+    public static List<TenantRole> tenantRoles(TenantName tenant) {
         return List.of(Role.tenantOwner(tenant),
                        Role.tenantAdmin(tenant),
                        Role.tenantOperator(tenant));
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
-    public List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
+    public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
         return List.of(Role.applicationAdmin(tenant, application),
                        Role.applicationOperator(tenant, application),
                        Role.applicationDeveloper(tenant, application),
@@ -35,23 +34,16 @@ public class Roles {
     }
 
     /** Returns the {@link Role} the given value represents. */
-    public Role toRole(String value) {
+    public static Role toRole(String value) {
         String[] parts = value.split("\\.");
-        if (parts.length == 1) return toOperatorRole(parts[0]);
+        if (parts.length == 1 && parts[0].equals("hostedOperator")) return Role.hostedOperator();
         if (parts.length == 2) return toRole(TenantName.from(parts[0]), parts[1]);
         if (parts.length == 3) return toRole(TenantName.from(parts[0]), ApplicationName.from(parts[1]), parts[2]);
         throw new IllegalArgumentException("Malformed or illegal role value '" + value + "'.");
     }
 
-    public Role toOperatorRole(String roleName) {
-        switch (roleName) {
-            case "hostedOperator": return Role.hostedOperator();
-            default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
-        }
-    }
-
     /** Returns the {@link Role} the given tenant, application and role names correspond to. */
-    public Role toRole(TenantName tenant, String roleName) {
+    public static Role toRole(TenantName tenant, String roleName) {
         switch (roleName) {
             case "tenantOwner": return Role.tenantOwner(tenant);
             case "tenantAdmin": return Role.tenantAdmin(tenant);
@@ -61,7 +53,7 @@ public class Roles {
     }
 
     /** Returns the {@link Role} the given tenant and role names correspond to. */
-    public Role toRole(TenantName tenant, ApplicationName application, String roleName) {
+    public static Role toRole(TenantName tenant, ApplicationName application, String roleName) {
         switch (roleName) {
             case "applicationAdmin": return Role.applicationAdmin(tenant, application);
             case "applicationOperator": return Role.applicationOperator(tenant, application);

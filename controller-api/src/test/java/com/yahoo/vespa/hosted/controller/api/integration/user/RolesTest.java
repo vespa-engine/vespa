@@ -14,22 +14,22 @@ import static org.junit.Assert.assertEquals;
  */
 public class RolesTest {
 
-    private static final Roles roles = new Roles();
-
     @Test
     public void testSerialization() {
         TenantName tenant = TenantName.from("my-tenant");
-        for (TenantRole role : roles.tenantRoles(tenant))
-            assertEquals(role, roles.toRole(Roles.valueOf(role)));
+        for (TenantRole role : Roles.tenantRoles(tenant))
+            assertEquals(role, Roles.toRole(Roles.valueOf(role)));
 
         ApplicationName application = ApplicationName.from("my-application");
-        for (ApplicationRole role : roles.applicationRoles(tenant, application))
-            assertEquals(role, roles.toRole(Roles.valueOf(role)));
+        for (ApplicationRole role : Roles.applicationRoles(tenant, application))
+            assertEquals(role, Roles.toRole(Roles.valueOf(role)));
 
+        assertEquals(Role.hostedOperator(),
+                     Roles.toRole("hostedOperator"));
         assertEquals(Role.tenantOperator(tenant),
-                     roles.toRole("my-tenant.tenantOperator"));
+                     Roles.toRole("my-tenant.tenantOperator"));
         assertEquals(Role.applicationReader(tenant, application),
-                     roles.toRole("my-tenant.my-application.applicationReader"));
+                     Roles.toRole("my-tenant.my-application.applicationReader"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -49,22 +49,17 @@ public class RolesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalRoleValue() {
-        roles.toRole("my-tenant.awesomePerson");
+        Roles.toRole("my-tenant.awesomePerson");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalCombination() {
-        roles.toRole("my-tenant.my-application.tenantOwner");
+        Roles.toRole("my-tenant.my-application.tenantOwner");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalValue() {
-        roles.toRole("everyone");
-    }
-
-    @Test
-    public void allowHostedOperator() {
-        assertEquals(Role.hostedOperator(), roles.toRole("hostedOperator"));
+        Roles.toRole("everyone");
     }
 
 }
