@@ -20,6 +20,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
+            <version>7-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
