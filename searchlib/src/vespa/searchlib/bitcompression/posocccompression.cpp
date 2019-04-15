@@ -111,8 +111,9 @@ PosOccFieldParams::setParams(const PostingListParams &params, uint32_t idx)
         }
     }
     params.get(avgElemLenStr, _avgElemLen);
-    if (params.isSet(nameStr))
+    if (params.isSet(nameStr)) {
         _name = params.getStr(nameStr);
+    }
 }
 
 
@@ -244,8 +245,9 @@ PosOccFieldsParams::getParams(PostingListParams &params) const
     assert(_numFields == 1u); // Only single field for now
     params.set("numFields", _numFields);
     // Single posting file index format will have multiple fields in file
-    for (uint32_t field = 0; field < _numFields; ++field)
+    for (uint32_t field = 0; field < _numFields; ++field) {
         _fieldParams[field].getParams(params, field);
+    }
 }
 
 
@@ -259,8 +261,9 @@ PosOccFieldsParams::setParams(const PostingListParams &params)
     _params.resize(numFields);
     cacheParamsRef();
     // Single posting file index format will have multiple fields in file
-    for (uint32_t field = 0; field < numFields; ++field)
+    for (uint32_t field = 0; field < numFields; ++field) {
         _params[field].setParams(params, field);
+    }
 }
 
 
@@ -274,8 +277,9 @@ PosOccFieldsParams::setSchemaParams(const Schema &schema,
     _params.resize(1u);
     cacheParamsRef();
     const Schema::IndexField &field = schema.getIndexField(indexId);
-    if (!SchemaUtil::validateIndexField(field))
+    if (!SchemaUtil::validateIndexField(field)) {
         LOG_ABORT("should not be reached");
+    }
     _params[0].setSchemaParams(schema, indexId);
 }
 
@@ -524,8 +528,9 @@ readFeatures(search::index::DocIdAndFeatures &features)
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    if (__builtin_expect(oCompr >= valE, false))
+    if (__builtin_expect(oCompr >= valE, false)) {
         _readContext->readComprBuffer();
+    }
 }
 
 
@@ -765,8 +770,9 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
                 encodeExpGolomb(this->convertToUnsigned(elementWeight),
                                 K_VALUE_POSOCC_ELEMENTWEIGHT);
             }
-            if (__builtin_expect(_valI >= _valE, false))
+            if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
+            }
         } else {
             uint32_t elementId = element->getElementId();
             assert(elementId == 0);
@@ -786,8 +792,9 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
             wordPos = position->getWordPos();
             encodeExpGolomb(wordPos - lastWordPos - 1,
                             K_VALUE_POSOCC_FIRST_WORDPOS);
-            if (__builtin_expect(_valI >= _valE, false))
+            if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
+            }
             ++position;
         } while (0);
         uint32_t positionResidue = numPositions - 1;
@@ -796,8 +803,9 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
             wordPos = position->getWordPos();
             encodeExpGolomb(wordPos - lastWordPos - 1,
                             K_VALUE_POSOCC_DELTA_WORDPOS);
-            if (__builtin_expect(_valI >= _valE, false))
+            if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
+            }
             ++position;
             --positionResidue;
         }
@@ -865,8 +873,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                       EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
         if (fieldParams._hasElements) {
             UC64_SKIPEXPGOLOMB_SMALL_NS(o,
                                         K_VALUE_POSOCC_ELEMENTID,
@@ -958,8 +965,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
         numElements = static_cast<uint32_t>(val64) + 1;
     }
     uint32_t elementId = 0;
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone, ++elementId) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         if (fieldParams._hasElements) {
             UC64_DECODEEXPGOLOMB_SMALL_NS(o,
                                           K_VALUE_POSOCC_ELEMENTID,
@@ -1014,8 +1020,9 @@ readFeatures(search::index::DocIdAndFeatures &features)
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    if (__builtin_expect(oCompr >= valE, false))
+    if (__builtin_expect(oCompr >= valE, false)) {
         _readContext->readComprBuffer();
+    }
 }
 
 
@@ -1040,8 +1047,7 @@ skipFeatures(unsigned int count)
                                           EC);
             numElements = static_cast<uint32_t>(val64) + 1;
         }
-        for (uint32_t elementDone = 0; elementDone < numElements;
-             ++elementDone) {
+        for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
             if (fieldParams._hasElements) {
                 UC64_SKIPEXPGOLOMB_SMALL_NS(o,
                                             K_VALUE_POSOCC_ELEMENTID,
@@ -1099,8 +1105,7 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     TermFieldMatchData *tfmd = matchData[0];
     tfmd->reset(docId);
     uint32_t elementId = 0;
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone, ++elementId) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         int32_t elementWeight = 1;
         if (fieldParams._hasElements) {
             UC64_DECODEEXPGOLOMB_SMALL_NS(o,
@@ -1247,8 +1252,7 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         assert(numElements == 1);
     }
     uint32_t minElementId = 0;
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone, ++element) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
         if (fieldParams._hasElements) {
             uint32_t elementId = element->getElementId();
             assert(elementId >= minElementId);
@@ -1260,8 +1264,9 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
                 encodeExpGolomb(this->convertToUnsigned(elementWeight),
                                 K_VALUE_POSOCC_ELEMENTWEIGHT);
             }
-            if (__builtin_expect(_valI >= _valE, false))
+            if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
+            }
         } else {
             uint32_t elementId = element->getElementId();
             assert(elementId == 0);
@@ -1282,8 +1287,9 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
             wordPos = position->getWordPos();
             encodeExpGolomb(wordPos - lastWordPos - 1,
                             wordPosK);
-            if (__builtin_expect(_valI >= _valE, false))
+            if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
+            }
             ++position;
             --positionResidue;
         }

@@ -81,8 +81,9 @@ FieldReader::read()
         }
         --_residue;
         readDocIdAndFeatures();
-        if (_docIdAndFeatures._docId != NO_DOC)
+        if (_docIdAndFeatures._docId != NO_DOC) {
             return;
+        }
     }
 }
 
@@ -198,10 +199,12 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
                               const Schema &oldSchema)
 {
     assert(index.isValid());
-    if (index.hasMatchingOldFields(oldSchema, false))
+    if (index.hasMatchingOldFields(oldSchema, false)) {
         return std::make_unique<FieldReader>();      // The common case
-    if (!index.hasOldFields(oldSchema, false))
+    }
+    if (!index.hasOldFields(oldSchema, false)) {
         return std::make_unique<FieldReaderEmpty>(index); // drop data
+    }
     // field exists in old schema with different collection type setting
     return std::make_unique<FieldReaderStripInfo>(index);   // degraded
 }
@@ -261,8 +264,9 @@ FieldReaderStripInfo::read()
     for (;;) {
         FieldReader::read();
         DocIdAndFeatures &features = _docIdAndFeatures;
-        if (_wordNum == noWordNumHigh())
+        if (_wordNum == noWordNumHigh()) {
             return;
+        }
         assert(!features.getRaw());
         uint32_t numElements = features._elements.size();
         assert(numElements > 0);
@@ -270,15 +274,15 @@ FieldReaderStripInfo::read()
             features._elements.begin();
         if (_hasElements) {
             if (!_hasElementWeights) {
-                for (uint32_t elementDone = 0; elementDone < numElements;
-                     ++elementDone, ++element) {
+                for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
                     element->setWeight(1);
                 }
                 assert(element == features._elements.end());
             }
         } else {
-            if (element->getElementId() != 0)
+            if (element->getElementId() != 0) {
                 continue;   // Drop this entry, try to read new entry
+            }
             element->setWeight(1);
             features._wordPositions.resize(element->getNumOccs());
             if (numElements > 1) {
@@ -297,10 +301,11 @@ FieldReaderStripInfo::getFeatureParams(PostingListParams &params)
     vespalib::string paramsPrefix = PosOccFieldParams::getParamsPrefix(0);
     vespalib::string collStr = paramsPrefix + ".collectionType";
     if (_hasElements) {
-        if (_hasElementWeights)
+        if (_hasElementWeights) {
             params.setStr(collStr, "weightedSet");
-        else
+        } else {
             params.setStr(collStr, "array");
+        }
     } else
         params.setStr(collStr, "single");
     params.erase("encoding");

@@ -96,8 +96,9 @@ void
 Zc4PostingSeqRead::
 readCommonWordDocIdAndFeatures(DocIdAndFeatures &features)
 {
-    if (_zcDocIds._valI >= _zcDocIds._valE && _hasMore)
+    if ((_zcDocIds._valI >= _zcDocIds._valE) && _hasMore) {
         readWordStart();    // Read start of next chunk
+    }
     // Split docid & features.
     assert(_zcDocIds._valI < _zcDocIds._valE);
     uint32_t docIdPos = _zcDocIds.pos();
@@ -191,8 +192,9 @@ readDocIdAndFeatures(DocIdAndFeatures &features)
             DecodeContext &d = *_decodeContext;
             uint64_t curOffset = d.getReadOffset();
             assert(curOffset <= _rangeEndOffset);
-            if (curOffset < _rangeEndOffset)
+            if (curOffset < _rangeEndOffset) {
                 readWordStart();
+            }
         }
         if (_residue == 0) {
             // Don't read past end of posting list.
@@ -200,8 +202,9 @@ readDocIdAndFeatures(DocIdAndFeatures &features)
             return;
         }
     }
-    if (_lastDocId > 0)
+    if (_lastDocId > 0) {
         return readCommonWordDocIdAndFeatures(features);
+    }
     // Interleaves docid & features
     typedef FeatureEncodeContextBE EC;
     DecodeContext &d = *_decodeContext;
@@ -234,10 +237,11 @@ Zc4PostingSeqRead::readWordStartWithSkip()
     uint64_t val64;
     const uint64_t *valE = d._valE;
 
-    if (_hasMore)
+    if (_hasMore) {
         ++_chunkNo;
-    else
+    } else {
         _chunkNo = 0;
+    }
     assert(_numDocs >= _minSkipDocs || _hasMore);
     bool hasMore = false;
     if (__builtin_expect(_numDocs >= _minChunkDocs, false)) {
@@ -246,9 +250,10 @@ Zc4PostingSeqRead::readWordStartWithSkip()
         length = 1;
         UC64BE_READBITS_NS(o, EC);
     }
-    if (_dynamicK)
+    if (_dynamicK) {
         _docIdK = EC::calcDocIdK((_hasMore || hasMore) ? 1 : _numDocs,
                                  _docIdLimit);
+    }
     if (_hasMore || hasMore) {
         if (_rangeEndOffset == 0) {
             assert(hasMore == (_chunkNo + 1 < _counts._segments.size()));
@@ -360,35 +365,43 @@ Zc4PostingSeqRead::readWordStartWithSkip()
     _l4Skip.clearReserve(l4SkipSize);
     _decodeContext->readBytes(_zcDocIds._valI, docIdsSize);
     _zcDocIds._valE = _zcDocIds._valI + docIdsSize;
-    if (l1SkipSize > 0)
+    if (l1SkipSize > 0) {
         _decodeContext->readBytes(_l1Skip._valI, l1SkipSize);
+    }
     _l1Skip._valE = _l1Skip._valI + l1SkipSize;
-    if (l2SkipSize > 0)
+    if (l2SkipSize > 0) {
         _decodeContext->readBytes(_l2Skip._valI, l2SkipSize);
+    }
     _l2Skip._valE = _l2Skip._valI + l2SkipSize;
-    if (l3SkipSize > 0)
+    if (l3SkipSize > 0) {
         _decodeContext->readBytes(_l3Skip._valI, l3SkipSize);
+    }
     _l3Skip._valE = _l3Skip._valI + l3SkipSize;
-    if (l4SkipSize > 0)
+    if (l4SkipSize > 0) {
         _decodeContext->readBytes(_l4Skip._valI, l4SkipSize);
+    }
     _l4Skip._valE = _l4Skip._valI + l4SkipSize;
 
-    if (l1SkipSize > 0)
+    if (l1SkipSize > 0) {
         _l1SkipDocId = _l1Skip.decode() + 1 + _prevDocId;
-    else
+    } else {
         _l1SkipDocId = _lastDocId;
-    if (l2SkipSize > 0)
+    }
+    if (l2SkipSize > 0) {
         _l2SkipDocId = _l2Skip.decode() + 1 + _prevDocId;
-    else
+    } else {
         _l2SkipDocId = _lastDocId;
-    if (l3SkipSize > 0)
+    }
+    if (l3SkipSize > 0) {
         _l3SkipDocId = _l3Skip.decode() + 1 + _prevDocId;
-    else
+    } else {
         _l3SkipDocId = _lastDocId;
-    if (l4SkipSize > 0)
+    }
+    if (l4SkipSize > 0) {
         _l4SkipDocId = _l4Skip.decode() + 1 + _prevDocId;
-    else
+    } else {
         _l4SkipDocId = _lastDocId;
+    }
     _l1SkipDocIdPos = 0;
     _l1SkipFeaturesPos = _decodeContext->getReadOffset();
     _l2SkipDocIdPos = 0;
@@ -421,8 +434,9 @@ Zc4PostingSeqRead::readWordStart()
                               K_VALUE_ZCPOSTING_NUMDOCS,
                               EC);
     UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
-    if (oCompr >= valE)
+    if (oCompr >= valE) {
         _readContext.readComprBuffer();
+    }
     _numDocs = static_cast<uint32_t>(val64) + 1;
     _residue = _numDocs;
     _prevDocId = _hasMore ? _lastDocId : 0u;
@@ -437,8 +451,9 @@ Zc4PostingSeqRead::readWordStart()
         readWordStartWithSkip();
         // Decode context is not positioned at start of features
     } else {
-        if (_dynamicK)
+        if (_dynamicK) {
             _docIdK = EC::calcDocIdK(_numDocs, _docIdLimit);
+        }
         _lastDocId = 0u;
         // Decode context is not positioned at start of docids & features
     }
@@ -464,8 +479,9 @@ bool
 Zc4PostingSeqRead::open(const vespalib::string &name,
                         const TuneFileSeqRead &tuneFileRead)
 {
-    if (tuneFileRead.getWantDirectIO())
+    if (tuneFileRead.getWantDirectIO()) {
         _file.EnableDirectIO();
+    }
     bool res = _file.OpenReadOnly(name.c_str());
     if (res) {
         _readContext.setFile(&_file);
@@ -747,8 +763,9 @@ void
 Zc4PostingSeqWrite::
 setParams(const PostingListParams &params)
 {
-    if (_countFile != nullptr)
+    if (_countFile != nullptr) {
         _countFile->setParams(params);
+    }
     _writer.set_posting_list_params(params);
 }
 
@@ -808,8 +825,9 @@ readDocIdAndFeatures(DocIdAndFeatures &features)
             DecodeContext &d = *_decodeContext;
             uint64_t curOffset = d.getReadOffset();
             assert(curOffset <= _rangeEndOffset);
-            if (curOffset < _rangeEndOffset)
+            if (curOffset < _rangeEndOffset) {
                 readWordStart();
+            }
         }
         if (_residue == 0) {
             // Don't read past end of posting list.

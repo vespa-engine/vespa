@@ -97,8 +97,9 @@ PostingListFileRandReadPassThrough(PostingListFileRandRead *lower,
 
 PostingListFileRandReadPassThrough::~PostingListFileRandReadPassThrough()
 {
-    if (_ownLower)
+    if (_ownLower) {
         delete _lower;
+    }
 }
 
 search::queryeval::SearchIterator *

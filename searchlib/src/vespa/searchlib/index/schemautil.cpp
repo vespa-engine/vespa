@@ -26,18 +26,21 @@ SchemaUtil::getIndexSettings(const Schema &schema,
     bool someNotPositions = false;
 
     const Schema::IndexField &iField = schema.getIndexField(index);
-    if (iField.hasPhrases())
+    if (iField.hasPhrases()) {
         somePhrases = true;
-    else
+    } else {
         someNotPhrases = true;
-    if (iField.hasPrefix())
+    }
+    if (iField.hasPrefix()) {
         somePrefixes = true;
-    else
+    } else {
         someNotPrefixes = true;
-    if (iField.hasPositions())
+    }
+    if (iField.hasPositions()) {
         somePositions = true;
-    else
+    } else {
         someNotPositions = true;
+    }
     indexDataType = iField.getDataType();
     if (indexDataType != DataType::STRING) {
         error = true;
@@ -59,14 +62,17 @@ SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
         getSchema().getIndexField(getIndex());
     const vespalib::string &fieldName = newField.getName();
     uint32_t oldFieldId = oldSchema.getIndexFieldId(fieldName);
-    if (oldFieldId == Schema::UNKNOWN_FIELD_ID)
+    if (oldFieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
+    }
     const Schema::IndexField &oldField =
         oldSchema.getIndexField(oldFieldId);
-    if (oldField.getDataType() != newField.getDataType())
+    if (oldField.getDataType() != newField.getDataType()) {
         return false;   // wrong data type
-    if (!phrases)
+    }
+    if (!phrases) {
         return true;
+    }
     return oldField.hasPhrases();
 }
 
@@ -79,13 +85,15 @@ SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema,
         getSchema().getIndexField(getIndex());
     const vespalib::string &fieldName = newField.getName();
     uint32_t oldFieldId = oldSchema.getIndexFieldId(fieldName);
-    if (oldFieldId == Schema::UNKNOWN_FIELD_ID)
+    if (oldFieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
+    }
     if (phrases) {
         IndexIterator oldIterator(oldSchema, oldFieldId);
         IndexSettings settings = oldIterator.getIndexSettings();
-        if (!settings.hasPhrases())
+        if (!settings.hasPhrases()) {
             return false;
+        }
     }
     const Schema::IndexField &oldField =
         oldSchema.getIndexField(oldFieldId);
@@ -139,8 +147,9 @@ SchemaUtil::addIndexField(Schema &schema,
                           const Schema::IndexField &field)
 {
     bool ok = true;
-    if (!validateIndexField(field))
+    if (!validateIndexField(field)) {
         ok = false;
+    }
     uint32_t fieldId = schema.getIndexFieldId(field.getName());
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
         LOG(error,
@@ -148,8 +157,9 @@ SchemaUtil::addIndexField(Schema &schema,
             field.getName().c_str());
         ok = false;
     }
-    if (ok)
+    if (ok) {
         schema.addIndexField(field);
+    }
     return ok;
 }
 
@@ -160,8 +170,9 @@ SchemaUtil::validateSchema(const Schema &schema)
     for (IndexIterator it(schema); it.isValid(); ++it) {
         uint32_t fieldId = it.getIndex();
         const Schema::IndexField &field = schema.getIndexField(fieldId);
-        if (!validateIndexField(field))
+        if (!validateIndexField(field)) {
             ok = false;
+        }
         if (schema.getIndexFieldId(field.getName()) != fieldId) {
             LOG(error,
                 "Duplcate field %s",
@@ -189,10 +200,12 @@ SchemaUtil::getIndexIds(const Schema &schema,
     indexes.clear();
     for (IndexIterator i(schema); i.isValid(); ++i) {
         SchemaUtil::IndexSettings settings = i.getIndexSettings();
-        if (settings.hasError())
+        if (settings.hasError()) {
             return false;
-        if (settings.getDataType() == dataType)
+        }
+        if (settings.getDataType() == dataType) {
             indexes.push_back(i.getIndex());
+        }
     }
     return true;
 }

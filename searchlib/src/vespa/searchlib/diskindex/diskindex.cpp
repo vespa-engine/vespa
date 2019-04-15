@@ -136,8 +136,7 @@ DiskIndex::openField(const vespalib::string &fieldDir,
     }
 
     bDict.reset(new BitVectorDictionary());
-    if (!bDict->open(fieldDir, tuneFileSearch._read,
-                     BitVectorKeyScope::PERFIELD_WORDS)) {
+    if (!bDict->open(fieldDir, tuneFileSearch._read, BitVectorKeyScope::PERFIELD_WORDS)) {
         LOG(warning,
             "Could not open bit vector dictionary in '%s'",
             fieldDir.c_str());
@@ -152,13 +151,15 @@ DiskIndex::openField(const vespalib::string &fieldDir,
 bool
 DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
 {
-    if (!loadSchema() || !openDictionaries(tuneFileSearch))
+    if (!loadSchema() || !openDictionaries(tuneFileSearch)) {
         return false;
+    }
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
         vespalib::string fieldDir =
             _indexDir + "/" + itr.getName() + "/";
-        if (!openField(fieldDir, tuneFileSearch))
+        if (!openField(fieldDir, tuneFileSearch)) {
             return false;
+        }
     }
     _tuneFileSearch = tuneFileSearch;
     return true;
@@ -169,23 +170,26 @@ bool
 DiskIndex::setup(const TuneFileSearch &tuneFileSearch,
                  const DiskIndex &old)
 {
-    if (tuneFileSearch != old._tuneFileSearch)
+    if (tuneFileSearch != old._tuneFileSearch) {
         return setup(tuneFileSearch);
-    if (!loadSchema() || !openDictionaries(tuneFileSearch))
+    }
+    if (!loadSchema() || !openDictionaries(tuneFileSearch)) {
         return false;
+    }
     const Schema &oldSchema = old._schema;
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
         vespalib::string fieldDir =
             _indexDir + "/" + itr.getName() + "/";
         SchemaUtil::IndexSettings settings = itr.getIndexSettings();
-        if (settings.hasError())
+        if (settings.hasError()) {
             return false;
+        }
         bool hasPhraseOcc = settings.hasPhrases();
         SchemaUtil::IndexIterator oItr(oldSchema, itr);
-        if (!itr.hasMatchingOldFields(oldSchema, hasPhraseOcc) ||
-            !oItr.isValid()) {
-            if (!openField(fieldDir, tuneFileSearch))
+        if (!itr.hasMatchingOldFields(oldSchema, hasPhraseOcc) || !oItr.isValid()) {
+            if (!openField(fieldDir, tuneFileSearch)) {
                 return false;
+            }
         } else {
             uint32_t oldPacked = oItr.getIndex();
             _postingFiles.push_back(old._postingFiles[oldPacked]);

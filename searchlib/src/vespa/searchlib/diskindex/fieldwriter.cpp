@@ -108,8 +108,9 @@ FieldWriter::flush()
         assert(_compactWordNum != 0);
         _dictFile->writeWord(_word, counts);
         // Write bitmap entries
-        if (_bvc.getCrossedBitVectorLimit())
+        if (_bvc.getCrossedBitVectorLimit()) {
             _bmapfile.addWordSingle(_compactWordNum, _bvc.getBitVector());
+        }
         _bvc.clear();
         counts.clear();
     } else {

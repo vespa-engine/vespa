@@ -249,8 +249,9 @@ public:
     bool
     operator<(const SingleIterator &rhs) const
     {
-        if (_docId != rhs._docId)
+        if (_docId != rhs._docId) {
             return _docId < rhs._docId;
+        }
         return _localFieldId < rhs._localFieldId;
     }
 };
@@ -505,8 +506,9 @@ SingleIterator::appendFeatures(DocIdAndFeatures &features)
         }
     }
     ++_dFeatures;
-    if (_dFeatures != _dFeaturesE)
+    if (_dFeatures != _dFeaturesE) {
         _docId = _dFeatures->getDocId();
+    }
 }
 
 
@@ -529,8 +531,9 @@ IndexBuilder::IndexBuilder(const Schema &schema)
         const Schema::IndexField &iField = schema.getIndexField(i);
         FieldHandle fh(schema, i, this);
         // Only know how to handle string index for now.
-        if (iField.getDataType() == DataType::STRING)
+        if (iField.getDataType() == DataType::STRING) {
             fh.setValid();
+        }
         _fields.push_back(fh);
     }
 }
@@ -643,8 +646,9 @@ IndexBuilder::setPrefix(vespalib::stringref prefix)
 vespalib::string
 IndexBuilder::appendToPrefix(vespalib::stringref name)
 {
-    if (_prefix.empty())
+    if (_prefix.empty()) {
         return name;
+    }
     return _prefix + "/" + name;
 }
 
@@ -663,8 +667,9 @@ IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
     }
     // TODO: Filter for text indexes
     for (FieldHandle & fh : _fields) {
-        if (!fh.getValid())
+        if (!fh.getValid()) {
             continue;
+        }
         vespalib::mkdir(fh.getDir(), false);
         fh.open(docIdLimit, numWordIds, tuneFileIndexing._write,
                  fileHeaderContext);

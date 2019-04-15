@@ -51,10 +51,12 @@ public:
     static uint32_t getBitVectorLimit(uint32_t docIdLimit) {
         // Must match FastS_BinSizeParams::CalcMaxBinSize()
         uint32_t ret = (docIdLimit + 63) / 64;
-        if (ret < 16)
+        if (ret < 16) {
             ret = 16;
-        if (ret > docIdLimit)
+        }
+        if (ret > docIdLimit) {
             ret = docIdLimit;
+        }
         return ret;
     }
 

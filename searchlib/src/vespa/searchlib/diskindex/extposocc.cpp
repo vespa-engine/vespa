@@ -87,11 +87,12 @@ makePosOccWrite(const vespalib::string &name,
                 name.c_str());
         }
     }
-    if (dynamicK)
+    if (dynamicK) {
         posOccWrite =  new ZcPosOccSeqWrite(schema, indexId, posOccCountWrite);
-    else
+    } else {
         posOccWrite =
             new Zc4PosOccSeqWrite(schema, indexId, posOccCountWrite);
+    }
 
     posOccWrite->setFeatureParams(featureParams);
     posOccWrite->setParams(params);
@@ -132,10 +133,11 @@ makePosOccRead(const vespalib::string &name,
                 name.c_str());
         }
     }
-    if (dynamicK)
+    if (dynamicK) {
         posOccRead =  new ZcPosOccSeqRead(posOccCountRead);
-    else
+    } else {
         posOccRead =  new Zc4PosOccSeqRead(posOccCountRead);
+    }
 
     posOccRead->setFeatureParams(featureParams);
     return posOccRead;
