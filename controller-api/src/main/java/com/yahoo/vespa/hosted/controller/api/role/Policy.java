@@ -125,9 +125,9 @@ public enum Policy {
     }
 
     /** Returns whether action is allowed on path in given context */
-    public boolean evaluate(Action action, URI uri, Context context) {
+    public boolean evaluate(Action action, URI uri, Context context, SystemName system) {
         return privileges.stream().anyMatch(privilege -> privilege.actions().contains(action) &&
-                                                         privilege.systems().contains(context.system()) &&
+                                                         privilege.systems().contains(system) &&
                                                          privilege.pathGroups().stream()
                                                                   .anyMatch(pg -> pg.matches(uri, context)));
     }

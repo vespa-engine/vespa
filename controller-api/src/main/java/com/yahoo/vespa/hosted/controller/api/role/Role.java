@@ -24,15 +24,12 @@ public abstract class Role {
     public RoleDefinition definition() { return roleDefinition; }
 
     /** Returns whether this role is allowed to perform the given action on the given resource. */
-    public final boolean allows(Action action, URI uri) {
-        return roleDefinition.policies().stream().anyMatch(policy -> policy.evaluate(action, uri, context));
+    public final boolean allows(Action action, URI uri, Enforcer enforcer) {
+        return enforcer.allows(this, action, uri);
     }
 
     /** Returns whether the other role is a parent of this, and has a context included in this role's context. */
     public boolean implies(Role other) {
-        if ( ! context.system().equals(other.context.system()))
-            throw new IllegalStateException("Coexisting roles should always be in the same system.");
-
         return    (context.tenant().isEmpty() || context.tenant().equals(other.context.tenant()))
                && (context.application().isEmpty() || context.application().equals(other.context.application()))
                && roleDefinition.inherited().contains(other.roleDefinition);
