@@ -16,7 +16,6 @@ UriField::UriField()
 {
 }
 
-
 bool
 UriField::valid(const Schema &schema,
                 uint32_t fieldId,
@@ -34,7 +33,6 @@ UriField::valid(const Schema &schema,
     }
     return true;
 }
-
 
 bool
 UriField::broken(const Schema &schema,
@@ -64,7 +62,6 @@ UriField::valid(const Schema &schema,
         valid(schema, _fragment, collectionType);
 }
 
-
 void
 UriField::setup(const Schema &schema,
                 const vespalib::string &field)
@@ -79,7 +76,6 @@ UriField::setup(const Schema &schema,
     _hostname = schema.getIndexFieldId(field + ".hostname");
 }
 
-
 void
 UriField::markUsed(UsedFieldsMap &usedFields,
                    uint32_t field)
@@ -90,7 +86,6 @@ UriField::markUsed(UsedFieldsMap &usedFields,
     assert(usedFields.size() > field);
     usedFields[field] = true;
 }
-
 
 void
 UriField::markUsed(UsedFieldsMap &usedFields) const

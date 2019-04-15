@@ -5,11 +5,10 @@
 #include <memory>
 
 namespace search { class BitVector; }
-namespace search { namespace queryeval { class SearchIterator; } }
-namespace search { namespace fef { class TermFieldMatchDataArray; } }
+namespace search::queryeval { class SearchIterator; }
+namespace search::fef { class TermFieldMatchDataArray; }
 
-namespace search {
-namespace index {
+namespace search::index {
 
 class PostingListFileRandRead;
 
@@ -18,8 +17,7 @@ class PostingListFileRandRead;
  * posting list file, or referencing a chunk of memory containing the
  * posting list (if the file was memory mapped).
  */
-class PostingListHandle
-{
+class PostingListHandle {
 public:
     typedef std::unique_ptr<PostingListHandle> UP;
     // Key portion
@@ -36,20 +34,20 @@ public:
     size_t _allocSize;      // Size of allocated memory
 
     PostingListHandle()
-    : _file(NULL),
+    : _file(nullptr),
       _bitOffset(0),
       _bitLength(0),
       _firstSegment(0),
       _numSegments(0),
       _bitOffsetMem(0),
-      _mem(NULL),
-      _allocMem(NULL),
+      _mem(nullptr),
+      _allocMem(nullptr),
       _allocSize(0)
     { }
 
     ~PostingListHandle()
     {
-        if (_allocMem != NULL)
+        if (_allocMem != nullptr)
             free(_allocMem);
     }
 
@@ -73,16 +71,13 @@ public:
         _firstSegment = 0;
         _numSegments = 0;
         _bitOffsetMem = 0;
-        _mem = NULL;
-        if (_allocMem != NULL) {
+        _mem = nullptr;
+        if (_allocMem != nullptr) {
             free(_allocMem);
-            _allocMem = NULL;
+            _allocMem = nullptr;
         }
         _allocSize = 0;
     }
 };
 
-
-} // namespace search::index
-} // namespace search
-
+}

@@ -3,9 +3,7 @@
 #include "postinglisthandle.h"
 #include <vespa/searchlib/index/postinglistfile.h>
 
-namespace search {
-
-namespace index {
+namespace search::index {
 
 search::queryeval::SearchIterator *
 PostingListHandle::createIterator(const PostingListCounts &counts,
@@ -16,7 +14,4 @@ PostingListHandle::createIterator(const PostingListCounts &counts,
     return _file->createIterator(counts, *this, matchData, useBitVector);
 }
 
-
-} // namespace index
-
-} // namespace search
+}

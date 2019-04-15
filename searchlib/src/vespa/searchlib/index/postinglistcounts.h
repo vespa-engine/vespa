@@ -12,8 +12,7 @@ namespace search::index {
  * where in the posting list files to read data.  A posting list with
  * 64 or fewer documents does not have skip info.
  */
-class PostingListCounts
-{
+class PostingListCounts {
 public:
     /*
      * Nested class for describing a segment of a large posting list.
@@ -87,8 +86,7 @@ public:
 void swap(PostingListCounts & a, PostingListCounts & b);
 
 
-class PostingListOffsetAndCounts
-{
+class PostingListOffsetAndCounts {
 public:
     uint64_t _offset;
     uint64_t _accNumDocs;   // Used by prefix search for now.

@@ -6,12 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "countcompression.h"
 
-namespace search
-{
-
-namespace bitcompression
-{
-
+namespace search::bitcompression {
 
 class PageDict4StartOffset
 {
@@ -315,7 +310,7 @@ public:
  * L1 data (word ref delta, offset to counts, data file delta)
  * counts (sparse count)
  * padding
- * word strings (LCP + suffix + NULL)
+ * word strings (LCP + suffix + NUL)
  *
  * Alternate layout for overflow page:
  *
@@ -822,7 +817,4 @@ public:
                        Counts &counts);
 };
 
-} // namespace bitcompression
-
-} // namespace search
-
+}

@@ -6,8 +6,7 @@
 using search::index::PostingListCounts;
 using search::index::PostingListParams;
 
-namespace search::diskindex
-{
+namespace search::diskindex {
 
 Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
     : _minChunkDocs(1 << 30),

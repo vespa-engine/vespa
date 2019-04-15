@@ -723,8 +723,8 @@ public:
 
     EncodeContext64Base()
         : search::ComprFileEncodeContext(),
-          _valI(NULL),
-          _valE(NULL),
+          _valI(nullptr),
+          _valE(nullptr),
           _cacheInt(0),
           _cacheFree(64),
           _fileWriteBias(64)
@@ -1128,9 +1128,9 @@ public:
 
     DecodeContext64Base()
         : search::ComprFileDecodeContext(),
-          _valI(NULL),
-          _valE(NULL),
-          _realValE(NULL),
+          _valI(nullptr),
+          _valE(nullptr),
+          _realValE(nullptr),
           _val(0),
           _cacheInt(0),
           _preRead(0),
@@ -1230,9 +1230,9 @@ public:
 
     void emptyBuffer(uint64_t newBitPosition) override {
         _fileReadBias = newBitPosition;
-        _valI = NULL;
-        _valE = NULL;
-        _realValE = NULL;
+        _valI = nullptr;
+        _valE = nullptr;
+        _realValE = nullptr;
         _preRead = 0;
     }
 
@@ -1286,8 +1286,8 @@ public:
     DecodeContext64(const uint64_t *compr,
                     int bitOffset)
         : DecodeContext64Base(compr + 1,
-                              NULL,
-                              NULL,
+                              nullptr,
+                              nullptr,
                               0,
                               EC::bswap(*compr),
                               64 - bitOffset)
@@ -1306,8 +1306,8 @@ public:
                     int bitOffset,
                     uint64_t bitLength)
         : DecodeContext64Base(compr + 1,
-                              NULL,
-                              NULL,
+                              nullptr,
+                              nullptr,
                               0,
                               EC::bswap(*compr),
                               64 - bitOffset)
@@ -1490,14 +1490,14 @@ public:
 
     FeatureDecodeContext()
         : ParentClass(),
-          _readContext(NULL)
+          _readContext(nullptr)
     {
     }
 
     FeatureDecodeContext(const uint64_t *compr,
                          int bitOffset)
         : ParentClass(compr, bitOffset),
-          _readContext(NULL)
+          _readContext(nullptr)
     {
     }
 
@@ -1505,7 +1505,7 @@ public:
                          int bitOffset,
                          uint64_t bitLength)
         : ParentClass(compr, bitOffset, bitLength),
-          _readContext(NULL)
+          _readContext(nullptr)
     {
     }
 
@@ -1630,7 +1630,7 @@ public:
 public:
     FeatureEncodeContext()
         : ParentClass(),
-          _writeContext(NULL)
+          _writeContext(nullptr)
     {
     }
 

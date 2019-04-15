@@ -8,8 +8,7 @@ using search::index::DocIdAndFeatures;
 using search::index::PostingListCounts;
 using search::index::PostingListParams;
 
-namespace search::diskindex
-{
+namespace search::diskindex {
 
 template <bool bigEndian>
 Zc4PostingWriter<bigEndian>::Zc4PostingWriter(PostingListCounts &counts)

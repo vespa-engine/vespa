@@ -3,38 +3,23 @@
 #include "dictionaryfile.h"
 #include <vespa/fastos/file.h>
 
-namespace search {
-namespace index {
+namespace search::index {
 
+DictionaryFileSeqRead::~DictionaryFileSeqRead() = default;
 
-DictionaryFileSeqRead::~DictionaryFileSeqRead()
-{
-}
-
-
-DictionaryFileSeqWrite::~DictionaryFileSeqWrite()
-{
-}
-
+DictionaryFileSeqWrite::~DictionaryFileSeqWrite() = default;
 
 DictionaryFileRandRead::DictionaryFileRandRead()
     : _memoryMapped(false)
 {
 }
 
-
-DictionaryFileRandRead::~DictionaryFileRandRead()
-{
-}
-
+DictionaryFileRandRead::~DictionaryFileRandRead() = default;
 
 void
 DictionaryFileRandRead::afterOpen(FastOS_FileInterface &file)
 {
-    _memoryMapped = file.MemoryMapPtr(0) != NULL;
+    _memoryMapped = file.MemoryMapPtr(0) != nullptr;
 }
 
-
-} // namespace index
-
-} // namespace search
+}

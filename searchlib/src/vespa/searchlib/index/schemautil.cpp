@@ -50,7 +50,6 @@ SchemaUtil::getIndexSettings(const Schema &schema,
                          somePositions && !someNotPositions);
 }
 
-
 bool
 SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
                                         bool phrases) const
@@ -70,7 +69,6 @@ SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
         return true;
     return oldField.hasPhrases();
 }
-
 
 bool
 SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema,
@@ -96,7 +94,6 @@ SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema,
         return false;
     return true;
 }
-
 
 bool
 SchemaUtil::validateIndexField(const Schema::IndexField &field)
@@ -137,7 +134,6 @@ SchemaUtil::validateIndexField(const Schema::IndexField &field)
     return ok;
 }
 
-
 bool
 SchemaUtil::addIndexField(Schema &schema,
                           const Schema::IndexField &field)
@@ -156,7 +152,6 @@ SchemaUtil::addIndexField(Schema &schema,
         schema.addIndexField(field);
     return ok;
 }
-
 
 bool
 SchemaUtil::validateSchema(const Schema &schema)
@@ -185,7 +180,6 @@ SchemaUtil::validateSchema(const Schema &schema)
     }
     return ok;
 }
-
 
 bool
 SchemaUtil::getIndexIds(const Schema &schema,

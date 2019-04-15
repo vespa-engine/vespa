@@ -8,11 +8,9 @@ PostingListCountFileSeqRead::PostingListCountFileSeqRead()
 {
 }
 
-
 PostingListCountFileSeqRead::~PostingListCountFileSeqRead()
 {
 }
-
 
 void
 PostingListCountFileSeqRead::
@@ -21,16 +19,13 @@ getParams(PostingListParams &params)
     params.clear();
 }
 
-
 PostingListCountFileSeqWrite::PostingListCountFileSeqWrite()
 {
 }
 
-
 PostingListCountFileSeqWrite::~PostingListCountFileSeqWrite()
 {
 }
-
 
 void
 PostingListCountFileSeqWrite::
@@ -38,7 +33,6 @@ setParams(const PostingListParams &params)
 {
     (void) params;
 }
-
 
 void
 PostingListCountFileSeqWrite::

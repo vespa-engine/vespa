@@ -9,17 +9,14 @@
 
 class FastOS_FileInterface;
 
-namespace search {
+namespace search::common { class FileHeaderContext; }
 
-namespace common { class FileHeaderContext; }
-
-namespace index {
+namespace search::index {
 
 /**
  * Interface for dictionary file containing words and counts for words.
  */
-class DictionaryFileSeqRead : public PostingListCountFileSeqRead
-{
+class DictionaryFileSeqRead : public PostingListCountFileSeqRead {
 public:
     DictionaryFileSeqRead() { }
     ~DictionaryFileSeqRead();
@@ -40,9 +37,7 @@ public:
 /**
  * Interface for dictionary file containing words and count for words.
  */
-class DictionaryFileSeqWrite : public PostingListCountFileSeqWrite
-{
-protected:
+class DictionaryFileSeqWrite : public PostingListCountFileSeqWrite {
 public:
     DictionaryFileSeqWrite() { }
     ~DictionaryFileSeqWrite();
@@ -57,8 +52,7 @@ public:
 /**
  * Interface for dictionary file containing words and counts.
  */
-class DictionaryFileRandRead
-{
+class DictionaryFileRandRead {
 protected:
     // Can be examined after open
     bool _memoryMapped;
@@ -86,6 +80,4 @@ protected:
     void afterOpen(FastOS_FileInterface &file);
 };
 
-} // namespace index
-
-} // namespace search
+}

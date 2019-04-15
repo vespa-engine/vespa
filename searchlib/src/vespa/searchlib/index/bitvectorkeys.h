@@ -2,14 +2,9 @@
 
 #pragma once
 
-namespace search
-{
+namespace search::index {
 
-namespace index
-{
-
-class BitVectorWordSingleKey
-{
+class BitVectorWordSingleKey {
 public:
     uint64_t _wordNum;
     uint32_t _numDocs;
@@ -35,7 +30,4 @@ public:
     }
 };
 
-} // namespace index
-
-} // namespace search
-
+}

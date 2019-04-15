@@ -27,11 +27,7 @@
 #define K_VALUE_POSOCC_ELEMENTID 0
 #define K_VALUE_POSOCC_ELEMENTWEIGHT 9
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 class DocIdAndPosOccFeatures : public DocIdAndFeatures
 {
@@ -59,16 +55,9 @@ public:
     }
 };
 
-} // namespace search::index
+}
 
-} // namespace search
-
-
-namespace search
-{
-
-namespace bitcompression
-{
+namespace search::bitcompression {
 
 class PosOccFieldParams
 {
@@ -123,12 +112,12 @@ public:
 
     void cacheParamsRef() {
         _numFields = _params.size();
-        _fieldParams = _params.empty() ? NULL : &_params[0];
+        _fieldParams = _params.empty() ? nullptr : &_params[0];
     }
 
     void assertCachedParamsRef() const {
         assert(_numFields == _params.size());
-        assert(_fieldParams == (_params.empty() ? NULL : &_params[0]));
+        assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
     }
 
     uint32_t getNumFields() const { return _numFields; }
@@ -474,6 +463,4 @@ extern template class EGPosOccDecodeContextCooked<false>;
 extern template class EGPosOccEncodeContext<true>;
 extern template class EGPosOccEncodeContext<false>;
 
-} // namespace bitcompression
-
-} // namespace search
+}

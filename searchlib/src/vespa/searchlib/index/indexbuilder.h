@@ -3,17 +3,12 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 class Schema;
 class WordDocElementWordPosFeatures;
 
-class IndexBuilder
-{
+class IndexBuilder {
 protected:
     const Schema &_schema;
 
@@ -55,8 +50,4 @@ public:
     // TODO: methods for document summary.
 };
 
-
-} // namespace index
-
-} // namespace search
-
+}

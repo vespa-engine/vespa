@@ -4,16 +4,12 @@
 
 #include <vespa/searchcommon/common/schema.h>
 
-namespace search {
+namespace search::index {
 
-namespace index {
-
-class SchemaUtil
-{
+class SchemaUtil {
 public:
 
-    class IndexSettings
-    {
+    class IndexSettings {
         schema::DataType _dataType;
         bool _error;        // Schema is bad.
         bool _prefix;
@@ -73,8 +69,7 @@ public:
         }
     };
 
-    class IndexIterator
-    {
+    class IndexIterator {
         const Schema &_schema;
         uint32_t _index;
 
@@ -166,8 +161,4 @@ public:
     static bool getIndexIds(const Schema &schema, schema::DataType dataType, std::vector<uint32_t> &indexes);
 };
 
-
-} // namespace search::index
-
-} // namespace search
-
+}

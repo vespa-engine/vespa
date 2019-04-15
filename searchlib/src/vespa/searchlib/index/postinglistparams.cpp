@@ -22,14 +22,12 @@ PostingListParams::isSet(const vespalib::string &key) const
     return false;
 }
 
-
 void
 PostingListParams::setStr(const vespalib::string &key,
                           const vespalib::string &val)
 {
     _map[key] = val;
 }
-
 
 const vespalib::string &
 PostingListParams::getStr(const vespalib::string &key) const
@@ -42,20 +40,17 @@ PostingListParams::getStr(const vespalib::string &key) const
     return empty;
 }
 
-
 void
 PostingListParams::clear()
 {
     _map.clear();
 }
 
-
 void
 PostingListParams::erase(const vespalib::string &key)
 {
     _map.erase(key);
 }
-
 
 bool
 PostingListParams::operator!=(const PostingListParams &rhs) const
@@ -74,7 +69,6 @@ PostingListParams::set(const vespalib::string &key,
     _map[key] = os.str();
 }
 
-
 template <typename TYPE>
 void
 PostingListParams::get(const vespalib::string &key,
@@ -90,7 +84,6 @@ PostingListParams::get(const vespalib::string &key,
     }
 }
 
-
 template void
 PostingListParams::set<bool>(const vespalib::string &key,
                              const bool &val);
@@ -98,7 +91,6 @@ PostingListParams::set<bool>(const vespalib::string &key,
 template void
 PostingListParams::get<bool>(const vespalib::string &key,
                              bool &val) const;
-
 
 template void
 PostingListParams::set<int32_t>(const vespalib::string &key,
@@ -115,7 +107,6 @@ PostingListParams::set<uint32_t>(const vespalib::string &key,
 template void
 PostingListParams::get<uint32_t>(const vespalib::string &key,
                                  uint32_t &val) const;
-
 
 template void
 PostingListParams::set<uint64_t>(const vespalib::string &key,

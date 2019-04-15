@@ -9,11 +9,7 @@
 #include <vector>
 #include <string>
 
-namespace search {
-
-template <class IN>
-class PostingPriorityQueue;
-}
+namespace search { template <class IN> class PostingPriorityQueue; }
 
 namespace search::common {
     class TuneFileIndexing;

@@ -482,7 +482,7 @@ Fusion::readSchemaFiles()
     OldIndexIterator oldIndexIt = _oldIndexes.begin();
     OldIndexIterator oldIndexIte = _oldIndexes.end();
 
-    for(; oldIndexIt != oldIndexIte; ++oldIndexIt) {
+    for (; oldIndexIt != oldIndexIte; ++oldIndexIt) {
         OldIndex &oi = **oldIndexIt;
         vespalib::string oldcfname = oi.getPath() + "/schema.txt";
         Schema::SP schema(new Schema);
