@@ -17,8 +17,9 @@ PostingListParams::isSet(const vespalib::string &key) const
     Map::const_iterator it;
 
     it = _map.find(key);
-    if (it != _map.end())
+    if (it != _map.end()) {
         return true;
+    }
     return false;
 }
 
@@ -35,8 +36,9 @@ PostingListParams::getStr(const vespalib::string &key) const
     Map::const_iterator it;
 
     it = _map.find(key);
-    if (it != _map.end())
+    if (it != _map.end()) {
         return it->second;
+    }
     return empty;
 }
 

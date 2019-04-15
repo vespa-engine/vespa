@@ -139,9 +139,9 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     for (uint32_t i = 0; i < _schema.getNumAttributeFields(); ++i) {
         const Schema::AttributeField &field = _schema.getAttributeField(i);
         UsedFields::const_iterator usf = usedFields.find(field.getName());
-        if (usf != usedFields.end())
+        if (usf != usedFields.end()) {
             continue;   // taken as index field
-
+        }
         const DataType *primitiveType = convert(field.getDataType());
         if (primitiveType->getId() == DataType::T_TENSOR) {
             header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
@@ -155,8 +155,9 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     for (uint32_t i = 0; i < _schema.getNumSummaryFields(); ++i) {
         const Schema::SummaryField &field = _schema.getSummaryField(i);
         UsedFields::const_iterator usf = usedFields.find(field.getName());
-        if (usf != usedFields.end())
+        if (usf != usedFields.end()) {
             continue;   // taken as index field or attribute field
+        }
         const DataType *primitiveType(convert(field.getDataType()));
         if (primitiveType->getId() == DataType::T_TENSOR) {
             header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());

@@ -85,8 +85,9 @@ readCounts(PostingListCounts &counts)
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
-    if (__builtin_expect(oCompr >= valE, false))
+    if (__builtin_expect(oCompr >= valE, false)) {
         _readContext->readComprBuffer();
+    }
 }
 
 void
@@ -110,8 +111,9 @@ writeCounts(const PostingListCounts &counts)
     assert(numDocs > 0);
     encodeExpGolomb(numDocs - 1, K_VALUE_COUNTFILE_SPNUMDOCS);
     if (numDocs == 0) {
-        if (__builtin_expect(_valI >= _valE, false))
+        if (__builtin_expect(_valI >= _valE, false)) {
             _writeContext->writeComprBuffer(false);
+        }
         return;
     }
     uint64_t encodeVal = counts._bitLength;
@@ -119,8 +121,9 @@ writeCounts(const PostingListCounts &counts)
     uint32_t kVal = (expVal < 4) ? 1 : asmlog2(expVal);
     encodeExpGolomb(encodeVal, kVal);
     uint32_t numChunks = counts._segments.size();
-    if (numDocs >= _minChunkDocs)
+    if (numDocs >= _minChunkDocs) {
         encodeExpGolomb(numChunks, K_VALUE_COUNTFILE_NUMCHUNKS);
+    }
     if (numChunks != 0) {
         typedef std::vector<PostingListCounts::Segment>::const_iterator segit;
 
@@ -128,8 +131,9 @@ writeCounts(const PostingListCounts &counts)
 
         uint32_t prevLastDoc = 0u;
         for (segit it = counts._segments.begin(); it != ite; ++it) {
-            if (__builtin_expect(_valI >= _valE, false))
+            if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
+            }
             encodeExpGolomb(it->_numDocs - 1,
                             K_VALUE_COUNTFILE_CHUNKNUMDOCS);
             encodeExpGolomb(it->_bitLength,
@@ -139,8 +143,9 @@ writeCounts(const PostingListCounts &counts)
             prevLastDoc = it->_lastDoc;
         }
     }
-    if (__builtin_expect(_valI >= _valE, false))
+    if (__builtin_expect(_valI >= _valE, false)) {
         _writeContext->writeComprBuffer(false);
+    }
 }
 
 void

@@ -31,8 +31,9 @@ public:
     void expand();
 
     void maybeExpand() {
-        if (__builtin_expect(_valI >= _valE, false))
+        if (__builtin_expect(_valI >= _valE, false)) {
             expand();
+        }
     }
 
     void encode(uint32_t num) {

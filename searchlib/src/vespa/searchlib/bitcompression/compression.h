@@ -172,8 +172,9 @@ public:
     }                                                                 \
     val64 = (val >> (63 - olength - (k))) - (UINT64_C(1) << (k));     \
     val <<= olength + 1 + (k);                                        \
-    if (__builtin_expect(olength + 1 + (k) == 64, false))             \
+    if (__builtin_expect(olength + 1 + (k) == 64, false)) {           \
       val = 0;                                                        \
+    }                                                                 \
     length += olength + 1 + (k);                                      \
     UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
   } while (0)
@@ -236,8 +237,9 @@ public:
       length = 0;                                                     \
     }                                                                 \
     val <<= olength + 1 + (k);                                        \
-    if (__builtin_expect(olength + 1 + (k) == 64, false))             \
+    if (__builtin_expect(olength + 1 + (k) == 64, false)) {           \
       val = 0;                                                        \
+    }                                                                 \
     length += olength + 1 + (k);                                      \
     UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
   } while (0)
@@ -393,8 +395,9 @@ public:
       ::search::bitcompression::EncodeContext64LE::ffsl(val);       \
     length = olength + 1;                                           \
     val >>= length;                                                 \
-    if (__builtin_expect(length == 64, false))                      \
+    if (__builtin_expect(length == 64, false)) {                    \
       val = 0;                                                      \
+    }                                                               \
     if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {      \
       UC64LE_READBITS(val, valI, preRead, cacheInt, EC);            \
       length = 0;                                                   \
@@ -459,8 +462,9 @@ public:
       ::search::bitcompression::EncodeContext64LE::ffsl(val);     \
     length = olength + 1;                                         \
     val >>= length;                                               \
-    if (__builtin_expect(length == 64, false))                    \
+    if (__builtin_expect(length == 64, false)) {                  \
       val = 0;                                                    \
+    }                                                             \
     if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {    \
       UC64LE_READBITS(val, valI, preRead, cacheInt, EC);          \
       length = 0;                                                 \
@@ -897,8 +901,9 @@ public:
     }
 
     void smallPadBits(uint32_t length) {
-        if (length > 0)
+        if (length > 0) {
             writeBits(0, length);
+        }
     }
 
     virtual void padBits(uint32_t length) {
@@ -970,18 +975,20 @@ public:
             uint32_t upper32 = lower >> 32;
         if (upper32 != 0) {
             uint32_t upper16 = upper32 >> 16;
-            if (upper16 != 0)
+            if (upper16 != 0) {
                 retVal = 48 + CodingTables::_log2Table[upper16];
-            else
+            } else {
                 retVal = 32 + CodingTables::_log2Table[upper32];
+            }
         } else {
             uint32_t lower32 = static_cast<uint32_t>(x);
             uint32_t upper16 = lower32 >> 16;
 
-            if (upper16 != 0)
+            if (upper16 != 0) {
                 retVal = 16 + CodingTables::_log2Table[upper16];
-            else
+            } else {
                 retVal = CodingTables::_log2Table[lower32];
+            }
         }
 #endif
 
@@ -1010,9 +1017,9 @@ public:
             uint32_t log2qx2 = asmlog2((x >> k) + 1) * 2;
             uint64_t expGolomb = x + (UINT64_C(1) << k);
 
-            if (log2qx2 < 64 - k)
+            if (log2qx2 < 64 - k) {
                 writeBits(expGolomb, k + log2qx2 + 1);
-            else {
+            } else {
                 writeBits(0, k + log2qx2 + 1 - 64);
                 writeBits(expGolomb, 64);
             }
@@ -1022,9 +1029,9 @@ public:
             uint64_t expGolomb = x + (UINT64_C(1) << k) -
                                  (UINT64_C(1) << (k + log2q));
 
-            if (log2qx2 < 64 - k)
+            if (log2qx2 < 64 - k) {
                 writeBits(((expGolomb << 1) | 1) << log2q, k + log2qx2 + 1);
-            else {
+            } else {
                 writeBits(0, log2q);
                 writeBits((expGolomb << 1) | 1, log2q + k + 1);
             }
@@ -1055,10 +1062,12 @@ public:
     static uint32_t
     encodeDExpGolombSpace(uint64_t x, uint32_t k)
     {
-        if (x == 0)
+        if (x == 0) {
             return 1;
-        if (x == 1)
+        }
+        if (x == 1) {
             return 2;
+        }
         return 2 + encodeExpGolombSpace(x, k);
     }
 
@@ -1076,18 +1085,20 @@ public:
     static uint32_t
     encodeD0ExpGolombSpace(uint64_t x, uint32_t k)
     {
-        if (x == 0)
+        if (x == 0) {
             return 1;
+        }
         return 1 + encodeExpGolombSpace(x, k);
     }
 
     static uint64_t
     convertToUnsigned(int64_t val)
     {
-        if (val < 0)
+        if (val < 0) {
             return ((- val) << 1) - 1;
-        else
+        } else {
             return (val << 1);
+        }
     }
 };
 
@@ -1206,9 +1217,9 @@ public:
 
     uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const override {
         int intOffset = _realValE - _valI;
-        if (bitOffset == -1)
+        if (bitOffset == -1) {
             bitOffset = -64 - _preRead;
-
+        }
         return (bufferEndFilePos << 3) - (static_cast<uint64_t>(intOffset) << 6) + bitOffset;
     }
 
@@ -1245,10 +1256,11 @@ public:
      */
     void setEnd(unsigned int unitCount, bool moreData) {
         _valE = _realValE = _valI + unitCount;
-        if (moreData)
+        if (moreData) {
             _valE -= END_BUFFER_SAFETY;
-        else
+        } else {
             _valE += END_BUFFER_SAFETY;
+        }
     }
 
     const uint64_t *getCompr() const {
@@ -1260,10 +1272,11 @@ public:
     }
 
     static int64_t convertToSigned(uint64_t val) {
-        if ((val & 1) != 0)
+        if ((val & 1) != 0) {
             return - (val >> 1) - 1;
-        else
+        } else {
             return (val >> 1);
+        }
     }
 };
 
@@ -1364,10 +1377,11 @@ public:
 
         cacheInt = EC::bswap(*valI++);
         preRead = 64 - length;
-        if (bigEndian)
+        if (bigEndian) {
             val |= (cacheInt >> preRead);
-        else
+        } else {
             val |= (cacheInt << preRead);
+        }
     };
 
     void skipBits(int bits) override {
@@ -1377,10 +1391,11 @@ public:
             bits -= 64;
         }
         if (bits > 0) {
-            if (bigEndian)
+            if (bigEndian) {
                 _val <<= bits;
-            else
+            } else {
                 _val >>= bits;
+            }
             ReadBits(bits, _val, _cacheInt, _preRead, _valI);
         }
     }
@@ -1448,8 +1463,9 @@ public:
             (void) readBits(64);
             pad -= 64;
         }
-        if (pad > 0)
+        if (pad > 0) {
             (void) readBits(pad);
+        }
     }
 
     /*
@@ -1459,8 +1475,9 @@ public:
     smallAlign(uint32_t alignment)
     {
         uint64_t pad = _preRead & (alignment - 1);
-        if (pad > 0)
+        if (pad > 0) {
             (void) readBits(pad);
+        }
     }
 };
 
@@ -1538,8 +1555,9 @@ public:
     void
     readComprBufferIfNeeded()
     {
-        if (__builtin_expect(_valI >= _valE, false))
+        if (__builtin_expect(_valI >= _valE, false)) {
             readComprBuffer();
+        }
     }
 
     void
@@ -1586,10 +1604,11 @@ public:
             readComprBufferIfNeeded();
         }
         if (bits > 0) {
-            if (bigEndian)
+            if (bigEndian) {
                 _val <<= bits;
-            else
+            } else {
                 _val >>= bits;
+            }
             ReadBits(bits, _val, _cacheInt, _preRead, _valI);
             readComprBufferIfNeeded();
         }
@@ -1605,8 +1624,9 @@ public:
             pad -= 64;
             readComprBufferIfNeeded();
         }
-        if (pad > 0)
+        if (pad > 0) {
             (void) readBits(pad);
+        }
         readComprBufferIfNeeded();
     }
 };
@@ -1674,8 +1694,9 @@ public:
     void
     writeComprBufferIfNeeded()
     {
-        if (_valI >= _valE)
+        if (_valI >= _valE) {
             _writeContext->writeComprBuffer(false);
+        }
     }
 
     void

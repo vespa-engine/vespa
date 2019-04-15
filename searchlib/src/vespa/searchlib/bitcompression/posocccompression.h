@@ -40,8 +40,7 @@ public:
                uint32_t elementLen)
     {
         assert(wordPos < elementLen);
-        if (_elements.empty() ||
-            elementId > _elements.back().getElementId()) {
+        if (_elements.empty() || elementId > _elements.back().getElementId()) {
             _elements.emplace_back(elementId, elementWeight, elementLen);
         } else {
             assert(elementId == _elements.back().getElementId());

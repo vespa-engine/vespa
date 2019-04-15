@@ -57,8 +57,9 @@ Zc4RareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
     if (getUnpacked()) {
         clearUnpacked();
-        if (__builtin_expect(--_residue == 0, false))
+        if (__builtin_expect(--_residue == 0, false)) {
             goto atbreak;
+        }
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DELTA_DOCID, EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
@@ -70,8 +71,9 @@ Zc4RareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
         UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
         _decodeContext->skipFeatures(1);
         UC64_DECODECONTEXT_LOAD(o, _decodeContext->_);
-        if (__builtin_expect(--_residue == 0, false))
+        if (__builtin_expect(--_residue == 0, false)) {
             goto atbreak;
+        }
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DELTA_DOCID, EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
@@ -92,8 +94,9 @@ template <bool bigEndian>
 void
 Zc4RareWordPostingIterator<bigEndian>::doUnpack(uint32_t docId)
 {
-    if (!_matchData.valid() || getUnpacked())
+    if (!_matchData.valid() || getUnpacked()) {
         return;
+    }
     assert(docId == getDocId());
     _decodeContext->unpackFeatures(_matchData, docId);
     setUnpacked();
@@ -150,8 +153,9 @@ ZcRareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
     if (getUnpacked()) {
         clearUnpacked();
-        if (__builtin_expect(--_residue == 0, false))
+        if (__builtin_expect(--_residue == 0, false)) {
             goto atbreak;
+        }
         UC64_DECODEEXPGOLOMB_NS(o, _docIdK, EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
@@ -163,8 +167,9 @@ ZcRareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
         UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
         _decodeContext->skipFeatures(1);
         UC64_DECODECONTEXT_LOAD(o, _decodeContext->_);
-        if (__builtin_expect(--_residue == 0, false))
+        if (__builtin_expect(--_residue == 0, false)) {
             goto atbreak;
+        }
         UC64_DECODEEXPGOLOMB_NS(o, _docIdK, EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
@@ -264,8 +269,9 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
         }
         UC64_READBITS_NS(o, EC);
     }
-    if (_dynamicK)
+    if (_dynamicK) {
         _docIdK = EC::calcDocIdK((_hasMore || hasMore) ? 1 : _numDocs, docIdLimit);
+    }
     UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DOCIDSSIZE, EC);
     uint32_t docIdsSize = val64 + 1;
     UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L1SKIPSIZE, EC);
@@ -357,8 +363,9 @@ ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
 
     if (__builtin_expect(docId > _chunk._lastDocId, false)) {
         doChunkSkipSeek(docId);
-        if (docId <= _l4._skipDocId)
+        if (docId <= _l4._skipDocId) {
             return;
+        }
     }
     do {
         lastL4SkipDocId = _l4._skipDocId;
@@ -409,8 +416,9 @@ ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
 
     if (__builtin_expect(docId > _l4._skipDocId, false)) {
         doL4SkipSeek(docId);
-        if (docId <= _l3._skipDocId)
+        if (docId <= _l3._skipDocId) {
             return;
+        }
     }
     do {
         lastL3SkipDocId = _l3._skipDocId;
@@ -455,8 +463,9 @@ ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
 
     if (__builtin_expect(docId > _l3._skipDocId, false)) {
         doL3SkipSeek(docId);
-        if (docId <= _l2._skipDocId)
+        if (docId <= _l2._skipDocId) {
             return;
+        }
     }
     do {
         lastL2SkipDocId = _l2._skipDocId;
@@ -494,8 +503,9 @@ ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId)
     uint32_t lastL1SkipDocId;
     if (__builtin_expect(docId > _l2._skipDocId, false)) {
         doL2SkipSeek(docId);
-        if (docId <= _l1._skipDocId)
+        if (docId <= _l1._skipDocId) {
             return;
+        }
     }
     do {
         lastL1SkipDocId = _l1._skipDocId;
@@ -564,8 +574,9 @@ template <bool bigEndian>
 void
 ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
 {
-    if (!_matchData.valid() || getUnpacked())
+    if (!_matchData.valid() || getUnpacked()) {
         return;
+    }
     if (_featureSeekPos != 0) {
         // Handle deferred feature position seek now.
         featureSeek(_featureSeekPos);
@@ -573,8 +584,9 @@ ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
     }
     assert(docId == getDocId());
     uint32_t needUnpack = getNeedUnpack();
-    if (needUnpack > 1)
+    if (needUnpack > 1) {
         _decodeContext->skipFeatures(needUnpack - 1);
+    }
     _decodeContext->unpackFeatures(_matchData, docId);
     setUnpacked();
 }

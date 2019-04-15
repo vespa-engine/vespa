@@ -224,12 +224,14 @@ DocBuilder::IndexFieldHandle::IndexFieldHandle(const FixedTypeRepo & repo, const
     _str.reserve(1023);
 
     if (_sfield.getCollectionType() == CollectionType::SINGLE) {
-        if (*_value->getDataType() == document::UrlDataType::getInstance())
+        if (*_value->getDataType() == document::UrlDataType::getInstance()) {
             _uriField = true;
+        }
     } else {
         const CollectionFieldValue * value = dynamic_cast<CollectionFieldValue *>(_value.get());
-        if (value->getNestedType() == document::UrlDataType::getInstance())
+        if (value->getNestedType() == document::UrlDataType::getInstance()) {
             _uriField = true;
+        }
     }
     startAnnotate();
 }
@@ -245,10 +247,12 @@ void
 DocBuilder::IndexFieldHandle::addStr(const vespalib::string &val)
 {
     assert(_spanTree);
-    if (val.empty())
+    if (val.empty()) {
         return;
-    if (!_skipAutoSpace && _autoSpace)
+    }
+    if (!_skipAutoSpace && _autoSpace) {
         addSpace();
+    }
     _skipAutoSpace = false;
     _spanStart = _strSymbols;
     append(val);
@@ -273,15 +277,16 @@ void
 DocBuilder::IndexFieldHandle::addNoWordStr(const vespalib::string &val)
 {
     assert(_spanTree);
-    if (val.empty())
+    if (val.empty()) {
         return;
+    }
     _spanStart = _strSymbols;
     append(val);
     if (_autoAnnotate) {
         addSpan();
-        if (val[0] == ' ' || val[0] == '\t')
+        if (val[0] == ' ' || val[0] == '\t') {
             addSpaceTokenAnnotation();
-        else if (val[0] >= '0' && val[0] <= '9') {
+        } else if (val[0] >= '0' && val[0] <= '9') {
             addNumericTokenAnnotation();
         } else {
             addAlphabeticTokenAnnotation();
@@ -309,10 +314,11 @@ DocBuilder::IndexFieldHandle::addTokenizedString(const vespalib::string &val,
                        (urlMode && (c == '-' || c == '_'));
         if (oldWord != newWord) {
             if (!sbuf.empty()) {
-                if (oldWord)
+                if (oldWord) {
                     addStr(sbuf);
-                else
+                } else {
                     addNoWordStr(sbuf);
+                }
                 sbuf.clear();
             }
             oldWord = newWord;
@@ -320,10 +326,11 @@ DocBuilder::IndexFieldHandle::addTokenizedString(const vespalib::string &val,
         w.putChar(c);
     }
     if (!sbuf.empty()) {
-        if (oldWord)
+        if (oldWord) {
             addStr(sbuf);
-        else
+        } else {
             addNoWordStr(sbuf);
+        }
     }
 }
 
@@ -390,8 +397,9 @@ DocBuilder::IndexFieldHandle::onEndElement()
 {
     // Flush data for index field.
     assert(_subField.empty());
-    if (_uriField)
+    if (_uriField) {
         return;
+    }
     StringFieldValue * value;
     if (_sfield.getCollectionType() != CollectionType::SINGLE) {
         value = dynamic_cast<StringFieldValue *>(_element.get());
@@ -419,8 +427,9 @@ DocBuilder::IndexFieldHandle::onEndElement()
 void
 DocBuilder::IndexFieldHandle::onEndField()
 {
-    if (_sfield.getCollectionType() == CollectionType::SINGLE)
+    if (_sfield.getCollectionType() == CollectionType::SINGLE) {
         onEndElement();
+    }
 }
 
 void

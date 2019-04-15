@@ -57,8 +57,7 @@ public:
 
     uint32_t mapDocId(uint32_t docId) const {
         assert(docId < _docIdLimit);
-        if (_selector != nullptr &&
-            (docId >= _selectorLimit || _selector[docId] != _selectorId)) {
+        if (_selector != nullptr && (docId >= _selectorLimit || _selector[docId] != _selectorId)) {
             docId = noDocId();
         }
         return docId;

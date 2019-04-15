@@ -50,8 +50,9 @@ bool
 DocIdMapping::readDocIdLimit(const vespalib::string &mergedDir)
 {
     uint32_t docIdLimit = 0;
-    if (!search::docsummary::DocumentSummary::readDocIdLimit(mergedDir, docIdLimit))
+    if (!search::docsummary::DocumentSummary::readDocIdLimit(mergedDir, docIdLimit)) {
         return false;
+    }
     _docIdLimit = docIdLimit;
     return true;
 }

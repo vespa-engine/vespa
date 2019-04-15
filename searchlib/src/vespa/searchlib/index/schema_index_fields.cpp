@@ -33,8 +33,7 @@ SchemaIndexFields::setup(const Schema &schema)
                 if (uriField.valid(schema, field.getCollectionType())) {
                     _uriFields.push_back(uriField);
                     uriField.markUsed(usedFields);
-                } else if (uriField.broken(schema,
-                                   field.getCollectionType())) {
+                } else if (uriField.broken(schema, field.getCollectionType())) {
                     // Broken removal of unused URI fields.
                     uriField.markUsed(usedFields);
                 }

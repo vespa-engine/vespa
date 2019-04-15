@@ -33,8 +33,9 @@ FileHeader::taste(const vespalib::string &name,
     vespalib::FileHeader header;
     FastOS_File file;
 
-    if (tuneFileRead.getWantDirectIO())
+    if (tuneFileRead.getWantDirectIO()) {
         file.EnableDirectIO();
+    }
     bool res = file.OpenReadOnly(name.c_str());
     if (!res) {
         return false;
@@ -98,8 +99,9 @@ FileHeader::taste(const vespalib::string &name,
         vespalib::asciistream as;
         as << "format." << i;
         vespalib::stringref key(as.str());
-        if (!header.hasTag(key))
+        if (!header.hasTag(key)) {
             break;
+        }
         _formats.push_back(header.getTag(key).asString());
     }
     return true;
@@ -109,8 +111,9 @@ bool
 FileHeader::taste(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite)
 {
     TuneFileSeqRead tuneFileRead;
-    if (tuneFileWrite.getWantDirectIO())
+    if (tuneFileWrite.getWantDirectIO()) {
         tuneFileRead.setWantDirectIO();
+    }
     return taste(name, tuneFileRead);
 }
 
@@ -118,8 +121,9 @@ bool
 FileHeader::taste(const vespalib::string &name, const TuneFileRandRead &tuneFileSearch)
 {
     TuneFileSeqRead tuneFileRead;
-    if (tuneFileSearch.getWantDirectIO())
+    if (tuneFileSearch.getWantDirectIO()) {
         tuneFileRead.setWantDirectIO();
+    }
     return taste(name, tuneFileRead);
 }
 

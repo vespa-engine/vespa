@@ -62,10 +62,12 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
 
     assert( !_idxFile);
     _idxFile = std::make_unique<Fast_BufferedFile>(new FastOS_File());
-    if (tuneFileWrite.getWantSyncWrites())
+    if (tuneFileWrite.getWantSyncWrites()) {
         _idxFile->EnableSyncWrites();
-    if (tuneFileWrite.getWantDirectIO())
+    }
+    if (tuneFileWrite.getWantDirectIO()) {
         _idxFile->EnableDirectIO();
+    }
 
     // XXX no checking for success:
     _idxFile->OpenWriteOnly(idxname.c_str());
