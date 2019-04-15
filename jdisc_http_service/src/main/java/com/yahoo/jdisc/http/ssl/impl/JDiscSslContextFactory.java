@@ -13,7 +13,7 @@ import java.util.Objects;
  *
  * @author bjorncs
  */
-class JDiscSslContextFactory extends SslContextFactory.Server {
+class JDiscSslContextFactory extends SslContextFactory {
 
     private String trustStorePassword;
 

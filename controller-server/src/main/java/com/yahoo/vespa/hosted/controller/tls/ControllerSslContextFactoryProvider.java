@@ -56,7 +56,7 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
 
     /** Create a SslContextFactory backed by an in-memory key and trust store */
     private SslContextFactory createSslContextFactory(int port) {
-        SslContextFactory.Server factory = new SslContextFactory.Server();
+        SslContextFactory factory = new SslContextFactory();
         if (port != 443) {
             factory.setWantClientAuth(true);
         }
