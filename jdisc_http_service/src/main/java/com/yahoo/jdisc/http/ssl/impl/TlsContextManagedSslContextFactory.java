@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
  *
  * @author bjorncs
  */
-class TlsContextManagedSslContextFactory extends SslContextFactory {
+class TlsContextManagedSslContextFactory extends SslContextFactory.Server {
 
     private final TlsContext tlsContext;
 

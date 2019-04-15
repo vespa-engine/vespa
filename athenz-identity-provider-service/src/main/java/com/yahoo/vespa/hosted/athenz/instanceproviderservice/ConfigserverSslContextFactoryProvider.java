@@ -109,7 +109,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                                                                  AthenzService configserverIdentity,
                                                                  ZtsClient ztsClient,
                                                                  AthenzProviderServiceConfig.Zones zoneConfig) {
-        SslContextFactory factory = new SslContextFactory();
+        SslContextFactory.Server factory = new SslContextFactory.Server();
 
         factory.setWantClientAuth(true);
 
