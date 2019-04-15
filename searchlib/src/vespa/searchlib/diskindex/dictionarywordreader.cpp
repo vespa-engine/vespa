@@ -2,7 +2,6 @@
 
 #include "dictionarywordreader.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/index/olddictionaryfile.h>
 #include <vespa/vespalib/util/error.h>
 
 #include <vespa/log/log.h>
