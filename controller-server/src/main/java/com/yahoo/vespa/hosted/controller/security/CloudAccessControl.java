@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -25,15 +24,13 @@ public class CloudAccessControl implements AccessControl {
 
     private final Marketplace marketplace;
     private final UserManagement userManagement;
-    private final Roles roles;
     private final UserRoles userRoles;
 
     @Inject
-    public CloudAccessControl(Marketplace marketplace, UserManagement userManagement, Roles roles) {
+    public CloudAccessControl(Marketplace marketplace, UserManagement userManagement) {
         this.marketplace = marketplace;
         this.userManagement = userManagement;
-        this.roles = roles;
-        this.userRoles = new UserRoles(roles);
+        this.userRoles = new UserRoles();
     }
 
     @Override
@@ -43,7 +40,7 @@ public class CloudAccessControl implements AccessControl {
 
         for (Role role : userRoles.tenantRoles(spec.tenant()))
             userManagement.createRole(role);
-        userManagement.addUsers(roles.tenantOwner(spec.tenant()), List.of(new UserId(credentials.user().getName())));
+        userManagement.addUsers(Role.tenantOwner(spec.tenant()), List.of(new UserId(credentials.user().getName())));
 
         return tenant;
     }
@@ -65,7 +62,7 @@ public class CloudAccessControl implements AccessControl {
     public void createApplication(ApplicationId id, Credentials credentials) {
         for (Role role : userRoles.applicationRoles(id.tenant(), id.application()))
             userManagement.createRole(role);
-        userManagement.addUsers(roles.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
+        userManagement.addUsers(Role.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
     }
 
     @Override

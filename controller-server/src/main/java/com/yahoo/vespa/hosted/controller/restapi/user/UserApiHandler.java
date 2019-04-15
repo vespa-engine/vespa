@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserRoles;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -50,9 +49,9 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final UserManagement users;
 
     @Inject
-    public UserApiHandler(Context parentCtx, Roles roles, UserManagement users) {
+    public UserApiHandler(Context parentCtx, UserManagement users) {
         super(parentCtx);
-        this.roles = new UserRoles(roles);
+        this.roles = new UserRoles();
         this.users = users;
     }
 

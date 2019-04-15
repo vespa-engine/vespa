@@ -13,10 +13,8 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Action;
 import com.yahoo.vespa.hosted.controller.api.role.Enforcer;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 
-import java.security.Principal;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -30,7 +28,6 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
-    private final Roles roles;
     private final Enforcer enforcer;
 
     @Inject
@@ -42,7 +39,6 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     ControllerAuthorizationFilter(SystemName system,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
-        this.roles = new Roles(system);
         this.enforcer = new Enforcer(system);
     }
 
@@ -57,7 +53,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
             // Avoid expensive look-ups when request is always legal.
-            if (roles.everyone().allows(action, request.getUri(), enforcer))
+            if (Role.everyone().allows(action, request.getUri(), enforcer))
                 return Optional.empty();
 
             Set<Role> roles = securityContext.get().roles();

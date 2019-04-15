@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 
 import java.nio.charset.StandardCharsets;
@@ -64,7 +63,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         private final Request.Method method;
         private byte[] data = new byte[0];
         private Principal user = () -> "user@test";
-        private Set<Role> roles = Set.of(new Roles(system()).everyone());
+        private Set<Role> roles = Set.of(Role.everyone());
 
         private RequestBuilder(String path, Request.Method method) {
             this.path = path;
