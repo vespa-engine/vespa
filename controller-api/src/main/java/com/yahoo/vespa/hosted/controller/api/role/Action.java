@@ -18,11 +18,11 @@ public enum Action {
     update,
     delete;
 
-    public static EnumSet<Action> all() {
+    static EnumSet<Action> all() {
         return EnumSet.allOf(Action.class);
     }
 
-    public static EnumSet<Action> write() {
+    static EnumSet<Action> write() {
         return EnumSet.of(create, update, delete);
     }
 

@@ -16,7 +16,7 @@ import java.util.Set;
  *
  * @author mpolden
  */
-public enum Policy {
+enum Policy {
 
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
@@ -125,7 +125,7 @@ public enum Policy {
     }
 
     /** Returns whether action is allowed on path in given context */
-    public boolean evaluate(Action action, URI uri, Context context, SystemName system) {
+    boolean evaluate(Action action, URI uri, Context context, SystemName system) {
         return privileges.stream().anyMatch(privilege -> privilege.actions().contains(action) &&
                                                          privilege.systems().contains(system) &&
                                                          privilege.pathGroups().stream()

@@ -14,7 +14,7 @@ import java.util.Set;
  *
  * @author mpolden
  */
-public class Privilege {
+class Privilege {
 
     private final Set<SystemName> systems;
     private final Set<Action> actions;
@@ -30,17 +30,17 @@ public class Privilege {
     }
 
     /** Systems where this applies */
-    public Set<SystemName> systems() {
+    Set<SystemName> systems() {
         return systems;
     }
 
     /** Actions allowed by this */
-    public Set<Action> actions() {
+    Set<Action> actions() {
         return actions;
     }
 
     /** Path groups where this applies */
-    public Set<PathGroup> pathGroups() {
+    Set<PathGroup> pathGroups() {
         return pathGroups;
     }
 
@@ -59,15 +59,15 @@ public class Privilege {
         return Objects.hash(systems, actions, pathGroups);
     }
 
-    public static PrivilegeBuilder grant(Action... actions) {
+    static PrivilegeBuilder grant(Action... actions) {
         return grant(Set.of(actions));
     }
 
-    public static PrivilegeBuilder grant(Set<Action> actions) {
+    static PrivilegeBuilder grant(Set<Action> actions) {
         return new PrivilegeBuilder(actions);
     }
 
-    public static class PrivilegeBuilder {
+    static class PrivilegeBuilder {
 
         private Set<Action> actions;
         private Set<PathGroup> pathGroups;
@@ -77,20 +77,20 @@ public class Privilege {
             this.pathGroups = new LinkedHashSet<>();
         }
 
-        public PrivilegeBuilder on(PathGroup... pathGroups) {
+        PrivilegeBuilder on(PathGroup... pathGroups) {
             return on(Set.of(pathGroups));
         }
 
-        public PrivilegeBuilder on(Set<PathGroup> pathGroups) {
+        PrivilegeBuilder on(Set<PathGroup> pathGroups) {
             this.pathGroups.addAll(pathGroups);
             return this;
         }
 
-        public Privilege in(SystemName... systems) {
+        Privilege in(SystemName... systems) {
             return in(Set.of(systems));
         }
 
-        public Privilege in(Set<SystemName> systems) {
+        Privilege in(Set<SystemName> systems) {
             return new Privilege(systems, actions, pathGroups);
         }
 

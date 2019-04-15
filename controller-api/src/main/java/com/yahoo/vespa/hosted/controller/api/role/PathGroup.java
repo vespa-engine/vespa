@@ -17,7 +17,7 @@ import java.util.Set;
  * @author mpolden
  * @author jonmv
  */
-public enum PathGroup {
+enum PathGroup {
 
     /** Paths used for system management by operators. */
     operator("/controller/v1/{*}",
@@ -170,12 +170,12 @@ public enum PathGroup {
     }
 
     /** All known path groups */
-    public static Set<PathGroup> all() {
+    static Set<PathGroup> all() {
         return EnumSet.allOf(PathGroup.class);
     }
 
     /** Returns whether this group matches path in given context */
-    public boolean matches(URI uri, Context context) {
+    boolean matches(URI uri, Context context) {
         return get(uri).map(p -> {
             boolean match = true;
             String tenant = p.get(Matcher.tenant.name);

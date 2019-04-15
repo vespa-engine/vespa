@@ -13,7 +13,7 @@ import java.util.Optional;
  *
  * @author mpolden
  */
-public class Context {
+class Context {
 
     private final Optional<TenantName> tenant;
     private final Optional<ApplicationName> application;
@@ -24,27 +24,27 @@ public class Context {
     }
 
     /** A specific tenant this is valid for, if any */
-    public Optional<TenantName> tenant() {
+    Optional<TenantName> tenant() {
         return tenant;
     }
 
     /** A specific application this is valid for, if any */
-    public Optional<ApplicationName> application() {
+    Optional<ApplicationName> application() {
         return application;
     }
 
     /** Returns a context that has no restrictions on tenant or application */
-    public static Context unlimited() {
+    static Context unlimited() {
         return new Context(Optional.empty(), Optional.empty());
     }
 
     /** Returns a context that is limited to given tenant */
-    public static Context limitedTo(TenantName tenant) {
+    static Context limitedTo(TenantName tenant) {
         return new Context(Optional.of(tenant), Optional.empty());
     }
 
     /** Returns a context that is limited to given tenant, application */
-    public static Context limitedTo(TenantName tenant, ApplicationName application) {
+    static Context limitedTo(TenantName tenant, ApplicationName application) {
         return new Context(Optional.of(tenant), Optional.of(application));
     }
 
