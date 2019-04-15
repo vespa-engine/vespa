@@ -26,7 +26,9 @@ import com.yahoo.vespa.hosted.controller.restapi.application.EmptyJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -109,7 +111,9 @@ public class UserApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
-        fillRoles(root, roles.tenantRoles(TenantName.from(tenantName)));
+        fillRoles(root,
+                  roles.tenantRoles(TenantName.from(tenantName)),
+                  Collections.emptyList());
         return new SlimeJsonResponse(slime);
     }
 
@@ -118,17 +122,21 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
         root.setString("tenant", tenantName);
         root.setString("application", applicationName);
-        fillRoles(root, roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)));
+        fillRoles(root,
+                  roles.applicationRoles(TenantName.from(tenantName), ApplicationName.from(applicationName)),
+                  roles.tenantRoles(TenantName.from(tenantName)));
         return new SlimeJsonResponse(slime);
     }
 
-    private void fillRoles(Cursor root, List<? extends Role> roles) {
+    private void fillRoles(Cursor root, List<? extends Role> roles, List<? extends Role> superRoles) {
         Cursor rolesArray = root.setArray("roleNames");
         for (Role role : roles)
             rolesArray.addString(valueOf(role));
 
-        Map<UserId, List<Role>> memberships = new HashMap<>();
-        for (Role role : roles)
+        Map<UserId, List<Role>> memberships = new LinkedHashMap<>();
+        List<Role> allRoles = new ArrayList<>(superRoles); // Membership in a super role may imply membership in a role.
+        allRoles.addAll(roles);
+        for (Role role : allRoles)
             for (UserId user : users.listUsers(role)) {
                 memberships.putIfAbsent(user, new ArrayList<>());
                 memberships.get(user).add(role);
