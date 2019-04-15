@@ -4,8 +4,7 @@
 
 namespace search::index {
 
-class BitVectorWordSingleKey {
-public:
+struct BitVectorWordSingleKey {
     uint64_t _wordNum;
     uint32_t _numDocs;
     uint32_t _pad;

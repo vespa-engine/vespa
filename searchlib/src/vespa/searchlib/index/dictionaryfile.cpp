@@ -19,7 +19,7 @@ DictionaryFileRandRead::~DictionaryFileRandRead() = default;
 void
 DictionaryFileRandRead::afterOpen(FastOS_FileInterface &file)
 {
-    _memoryMapped = file.MemoryMapPtr(0) != nullptr;
+    _memoryMapped = (file.MemoryMapPtr(0) != nullptr);
 }
 
 }

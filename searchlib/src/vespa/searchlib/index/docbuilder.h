@@ -245,7 +245,7 @@ private:
         void endField() {
             _fieldHandle->onEndField();
             _doc->setValue(_type->getField(_fieldHandle->getField().getName()), *_fieldHandle->getValue());
-            _fieldHandle.reset(static_cast<FieldHandle *>(nullptr));
+            _fieldHandle.reset();
         }
         void endDocument(const document::Document::UP & doc) {
             (void) doc;

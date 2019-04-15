@@ -203,7 +203,7 @@ DocBuilder::CollectionFieldHandle::endElement()
     } else {
         throw Error(vespalib::make_string("Field '%s' not compatible", _sfield.getName().c_str()));
     }
-    _element.reset(nullptr);
+    _element.reset();
 }
 
 DocBuilder::IndexFieldHandle::IndexFieldHandle(const FixedTypeRepo & repo, const document::Field & dfield, const Schema::Field & sfield)

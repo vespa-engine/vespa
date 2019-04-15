@@ -47,8 +47,9 @@ public:
 
     ~PostingListHandle()
     {
-        if (_allocMem != nullptr)
+        if (_allocMem != nullptr) {
             free(_allocMem);
+        }
     }
 
     /**
