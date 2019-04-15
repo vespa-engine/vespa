@@ -523,8 +523,11 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns whether the time elapsed since the last real deployment in the given zone is more than the given timeout. */
-    private boolean timedOut(Deployment deployment, Duration timeout) {
-        return deployment.at().isBefore(controller.clock().instant().minus(timeout));
+    private boolean timedOut(Deployment deployment, Duration defaultTimeout) {
+        Duration timeout = controller.zoneRegistry().getDeploymentTimeToLive(deployment.zone())
+                                     .filter(zoneTimeout -> zoneTimeout.compareTo(defaultTimeout) < 0)
+                                     .orElse(defaultTimeout);
+        return deployment.at().isBefore(controller.clock().instant().minus(timeout.minus(Duration.ofMinutes(1))));
     }
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
