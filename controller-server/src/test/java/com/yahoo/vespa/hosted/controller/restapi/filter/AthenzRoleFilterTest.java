@@ -10,7 +10,7 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
@@ -66,55 +66,53 @@ public class AthenzRoleFilterTest {
     @Test
     public void testTranslations() {
 
-        Roles roles = new Roles(tester.controller().system());
-
         // Hosted operators are always members of the hostedOperator role.
-        assertEquals(Set.of(roles.hostedOperator()),
+        assertEquals(Set.of(Role.hostedOperator()),
                      filter.roles(HOSTED_OPERATOR, NO_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.hostedOperator()),
+        assertEquals(Set.of(Role.hostedOperator()),
                      filter.roles(HOSTED_OPERATOR, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.hostedOperator()),
+        assertEquals(Set.of(Role.hostedOperator()),
                      filter.roles(HOSTED_OPERATOR, APPLICATION_CONTEXT_PATH));
 
         // Tenant admins are members of the athenzTenantAdmin role within their tenant subtree.
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, NO_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.athenzTenantAdmin(TENANT)),
+        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
                      filter.roles(TENANT_ADMIN, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.athenzTenantAdmin(TENANT)),
+        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
                      filter.roles(TENANT_ADMIN, APPLICATION_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_ADMIN, TENANT2_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_ADMIN, APPLICATION2_CONTEXT_PATH));
 
         // Build services are members of the tenantPipeline role within their application subtree.
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, NO_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.tenantPipeline(TENANT, APPLICATION)),
+        assertEquals(Set.of(Role.tenantPipeline(TENANT, APPLICATION)),
                      filter.roles(TENANT_PIPELINE, APPLICATION_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH));
 
         // Unprivileged users are just members of the everyone role.
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(USER, NO_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(USER, TENANT_CONTEXT_PATH));
 
-        assertEquals(Set.of(roles.everyone()),
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(USER, APPLICATION_CONTEXT_PATH));
     }
 

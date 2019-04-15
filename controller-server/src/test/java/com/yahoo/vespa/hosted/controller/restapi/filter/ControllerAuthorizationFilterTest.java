@@ -7,7 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import org.junit.Test;
@@ -34,8 +34,7 @@ public class ControllerAuthorizationFilterTest {
     @Test
     public void operator() {
         ControllerTester tester = new ControllerTester();
-        Roles roles = new Roles(tester.controller().system());
-        SecurityContext securityContext = new SecurityContext(() -> "operator", Set.of(roles.hostedOperator()));
+        SecurityContext securityContext = new SecurityContext(() -> "operator", Set.of(Role.hostedOperator()));
         ControllerAuthorizationFilter filter = createFilter(tester);
 
         assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
@@ -46,8 +45,7 @@ public class ControllerAuthorizationFilterTest {
     @Test
     public void unprivileged() {
         ControllerTester tester = new ControllerTester();
-        Roles roles = new Roles(tester.controller().system());
-        SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(roles.everyone()));
+        SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(Role.everyone()));
         ControllerAuthorizationFilter filter = createFilter(tester);
 
         assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
@@ -59,8 +57,7 @@ public class ControllerAuthorizationFilterTest {
     public void unprivilegedInPublic() {
         ControllerTester tester = new ControllerTester();
         tester.zoneRegistry().setSystemName(SystemName.Public);
-        Roles roles = new Roles(tester.controller().system());
-        SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(roles.everyone()));
+        SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(Role.everyone()));
 
         ControllerAuthorizationFilter filter = createFilter(tester);
         assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));

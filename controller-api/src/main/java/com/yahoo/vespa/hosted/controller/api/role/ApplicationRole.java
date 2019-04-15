@@ -5,14 +5,14 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 
 /**
- * A {@link Role} with a {@link Context} of a {@link SystemName} a {@link TenantName} and an {@link ApplicationName}.
+ * A {@link Role} with a {@link Context} of a {@link TenantName} and an {@link ApplicationName}.
  *
  * @author jonmv
  */
 public class ApplicationRole extends Role {
 
-    ApplicationRole(RoleDefinition roleDefinition, SystemName system, TenantName tenant, ApplicationName application) {
-        super(roleDefinition, Context.limitedTo(tenant, application, system));
+    ApplicationRole(RoleDefinition roleDefinition, TenantName tenant, ApplicationName application) {
+        super(roleDefinition, Context.limitedTo(tenant, application));
     }
 
     /** Returns the {@link TenantName} this is bound to. */

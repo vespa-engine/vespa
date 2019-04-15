@@ -16,59 +16,61 @@ import static org.junit.Assert.assertTrue;
  */
 public class RoleTest {
 
+    private static final Enforcer mainEnforcer = new Enforcer(SystemName.main);
+    private static final Enforcer vaasEnforcer = new Enforcer(SystemName.vaas);
+
     @Test
     public void operator_membership() {
-        Role role = new Roles(SystemName.main).hostedOperator();
+        Role role = Role.hostedOperator();
 
         // Operator actions
-        assertFalse(role.allows(Action.create, URI.create("/not/explicitly/defined")));
-        assertTrue(role.allows(Action.create, URI.create("/controller/v1/foo")));
-        assertTrue(role.allows(Action.update, URI.create("/os/v1/bar")));
-        assertTrue(role.allows(Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
-        assertTrue(role.allows(Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
+        assertTrue(mainEnforcer.allows(role, Action.create, URI.create("/controller/v1/foo")));
+        assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/os/v1/bar")));
+        assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
     }
 
     @Test
     public void tenant_membership() {
-        Role role = new Roles(SystemName.main).athenzTenantAdmin(TenantName.from("t1"));
-        assertFalse(role.allows(Action.create, URI.create("/not/explicitly/defined")));
-        assertFalse("Deny access to operator API", role.allows(Action.create, URI.create("/controller/v1/foo")));
-        assertFalse("Deny access to other tenant and app", role.allows(Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
-        assertTrue(role.allows(Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        Role role = Role.athenzTenantAdmin(TenantName.from("t1"));
+        assertFalse(mainEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
+        assertFalse("Deny access to operator API", mainEnforcer.allows(role, Action.create, URI.create("/controller/v1/foo")));
+        assertFalse("Deny access to other tenant and app", mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t2/application/a2")));
+        assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
 
-        Role publicSystem = new Roles(SystemName.vaas).athenzTenantAdmin(TenantName.from("t1"));
-        assertFalse(publicSystem.allows(Action.read, URI.create("/controller/v1/foo")));
-        assertTrue(publicSystem.allows(Action.read, URI.create("/badge/v1/badge")));
-        assertTrue(publicSystem.allows(Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        Role publicSystem = Role.athenzTenantAdmin(TenantName.from("t1"));
+        assertFalse(vaasEnforcer.allows(publicSystem, Action.read, URI.create("/controller/v1/foo")));
+        assertTrue(vaasEnforcer.allows(publicSystem, Action.read, URI.create("/badge/v1/badge")));
+        assertTrue(vaasEnforcer.allows(publicSystem, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
     }
 
     @Test
     public void build_service_membership() {
-        Role role = new Roles(SystemName.vaas).tenantPipeline(TenantName.from("t1"), ApplicationName.from("a1"));
-        assertFalse(role.allows(Action.create, URI.create("/not/explicitly/defined")));
-        assertFalse(role.allows(Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
-        assertTrue(role.allows(Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
-        assertFalse("No global read access", role.allows(Action.read, URI.create("/controller/v1/foo")));
+        Role role = Role.tenantPipeline(TenantName.from("t1"), ApplicationName.from("a1"));
+        assertFalse(vaasEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
+        assertFalse(vaasEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertTrue(vaasEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
+        assertFalse("No global read access", vaasEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
     }
 
     @Test
     public void implications() {
-        Roles roles = new Roles(SystemName.main);
         TenantName tenant1 = TenantName.from("t1");
         ApplicationName application1 = ApplicationName.from("a1");
         TenantName tenant2 = TenantName.from("t2");
         ApplicationName application2 = ApplicationName.from("a2");
 
-        Role tenantOwner1 = roles.tenantOwner(tenant1);
-        Role tenantAdmin1 = roles.tenantAdmin(tenant1);
-        Role tenantAdmin2 = roles.tenantAdmin(tenant2);
-        Role tenantOperator1 = roles.tenantOperator(tenant1);
-        Role applicationAdmin11 = roles.applicationAdmin(tenant1, application1);
-        Role applicationOperator11 = roles.applicationOperator(tenant1, application1);
-        Role applicationDeveloper11 = roles.applicationDeveloper(tenant1, application1);
-        Role applicationReader11 = roles.applicationReader(tenant1, application1);
-        Role applicationReader12 = roles.applicationReader(tenant1, application2);
-        Role applicationReader22 = roles.applicationReader(tenant2, application2);
+        Role tenantOwner1 = Role.tenantOwner(tenant1);
+        Role tenantAdmin1 = Role.tenantAdmin(tenant1);
+        Role tenantAdmin2 = Role.tenantAdmin(tenant2);
+        Role tenantOperator1 = Role.tenantOperator(tenant1);
+        Role applicationAdmin11 = Role.applicationAdmin(tenant1, application1);
+        Role applicationOperator11 = Role.applicationOperator(tenant1, application1);
+        Role applicationDeveloper11 = Role.applicationDeveloper(tenant1, application1);
+        Role applicationReader11 = Role.applicationReader(tenant1, application1);
+        Role applicationReader12 = Role.applicationReader(tenant1, application2);
+        Role applicationReader22 = Role.applicationReader(tenant2, application2);
 
         assertFalse(tenantOwner1.implies(tenantOwner1));
         assertTrue(tenantOwner1.implies(tenantAdmin1));

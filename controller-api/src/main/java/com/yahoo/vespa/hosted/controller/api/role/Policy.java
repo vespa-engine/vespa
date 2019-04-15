@@ -11,12 +11,12 @@ import java.util.Set;
 /**
  * Policies for REST APIs in the controller. A policy is only considered when defined in a {@link Role}.
  * A policy describes a set of {@link Privilege}s, which are valid for a set of {@link SystemName}s.
- * A policy is evaluated with a {@link Context}, which provides the {@link SystemName} the policy is
- * evaluated in, and any limitations to a specific {@link TenantName} or {@link ApplicationName}.
+ * A policy is evaluated by an {@link Enforcer}, which holds the {@link SystemName} the evaluation is done in.
+ * A policy is evaluated with a {@link Context}, which may limit it to a specific {@link TenantName} or {@link ApplicationName}.
  *
  * @author mpolden
  */
-public enum Policy {
+enum Policy {
 
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
@@ -125,9 +125,9 @@ public enum Policy {
     }
 
     /** Returns whether action is allowed on path in given context */
-    public boolean evaluate(Action action, URI uri, Context context) {
+    boolean evaluate(Action action, URI uri, Context context, SystemName system) {
         return privileges.stream().anyMatch(privilege -> privilege.actions().contains(action) &&
-                                                         privilege.systems().contains(context.system()) &&
+                                                         privilege.systems().contains(system) &&
                                                          privilege.pathGroups().stream()
                                                                   .anyMatch(pg -> pg.matches(uri, context)));
     }

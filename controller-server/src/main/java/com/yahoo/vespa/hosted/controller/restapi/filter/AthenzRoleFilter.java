@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
@@ -44,14 +43,12 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
 
     private final AthenzFacade athenz;
     private final TenantController tenants;
-    private final Roles roles;
 
     @Inject
     public AthenzRoleFilter(CorsFilterConfig config, AthenzClientFactory athenzClientFactory, Controller controller) {
         super(Set.copyOf(config.allowedUrls()));
         this.athenz = new AthenzFacade(athenzClientFactory);
         this.tenants = controller.tenants();
-        this.roles = new Roles(controller.system());
     }
 
     @Override
@@ -80,18 +77,18 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
         AthenzIdentity identity = principal.getIdentity();
 
         if (athenz.hasHostedOperatorAccess(identity))
-            return Set.of(roles.hostedOperator());
+            return Set.of(Role.hostedOperator());
 
         if (tenant.isPresent() && isTenantAdmin(identity, tenant.get()))
-            return Set.of(roles.athenzTenantAdmin(tenant.get().name()));
+            return Set.of(Role.athenzTenantAdmin(tenant.get().name()));
 
         if (identity.getDomain().equals(SCREWDRIVER_DOMAIN) && application.isPresent() && tenant.isPresent())
             // NOTE: Only fine-grained deploy authorization for Athenz tenants
             if (   tenant.get().type() != Tenant.Type.athenz
                 || hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
-                    return Set.of(roles.tenantPipeline(tenant.get().name(), application.get()));
+                    return Set.of(Role.tenantPipeline(tenant.get().name(), application.get()));
 
-        return Set.of(roles.everyone());
+        return Set.of(Role.everyone());
     }
 
     private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {

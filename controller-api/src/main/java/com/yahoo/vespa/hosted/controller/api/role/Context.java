@@ -13,46 +13,39 @@ import java.util.Optional;
  *
  * @author mpolden
  */
-public class Context {
+class Context {
 
     private final Optional<TenantName> tenant;
     private final Optional<ApplicationName> application;
-    private final SystemName system;
 
-    private Context(Optional<TenantName> tenant, Optional<ApplicationName> application, SystemName system) {
+    private Context(Optional<TenantName> tenant, Optional<ApplicationName> application) {
         this.tenant = Objects.requireNonNull(tenant, "tenant must be non-null");
         this.application = Objects.requireNonNull(application, "application must be non-null");
-        this.system = Objects.requireNonNull(system, "system must be non-null");
     }
 
     /** A specific tenant this is valid for, if any */
-    public Optional<TenantName> tenant() {
+    Optional<TenantName> tenant() {
         return tenant;
     }
 
     /** A specific application this is valid for, if any */
-    public Optional<ApplicationName> application() {
+    Optional<ApplicationName> application() {
         return application;
     }
 
-    /** System in which this is valid */
-    public SystemName system() {
-        return system;
+    /** Returns a context that has no restrictions on tenant or application */
+    static Context unlimited() {
+        return new Context(Optional.empty(), Optional.empty());
     }
 
-    /** Returns a context that has no restrictions on tenant or application in given system */
-    public static Context unlimitedIn(SystemName system) {
-        return new Context(Optional.empty(), Optional.empty(), system);
+    /** Returns a context that is limited to given tenant */
+    static Context limitedTo(TenantName tenant) {
+        return new Context(Optional.of(tenant), Optional.empty());
     }
 
-    /** Returns a context that is limited to given tenant and system */
-    public static Context limitedTo(TenantName tenant, SystemName system) {
-        return new Context(Optional.of(tenant), Optional.empty(), system);
-    }
-
-    /** Returns a context that is limited to given tenant, application and system */
-    public static Context limitedTo(TenantName tenant, ApplicationName application, SystemName system) {
-        return new Context(Optional.of(tenant), Optional.of(application), system);
+    /** Returns a context that is limited to given tenant, application */
+    static Context limitedTo(TenantName tenant, ApplicationName application) {
+        return new Context(Optional.of(tenant), Optional.of(application));
     }
 
     @Override
@@ -61,19 +54,18 @@ public class Context {
         if (o == null || getClass() != o.getClass()) return false;
         Context context = (Context) o;
         return tenant.equals(context.tenant) &&
-               application.equals(context.application) &&
-               system == context.system;
+               application.equals(context.application);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tenant, application, system);
+        return Objects.hash(tenant, application);
     }
 
     @Override
     public String toString() {
         return "tenant " + tenant.map(TenantName::value).orElse("[none]") + ", application " +
-               application.map(ApplicationName::value).orElse("[none]") + ", system " + system;
+               application.map(ApplicationName::value).orElse("[none]");
     }
 
 }

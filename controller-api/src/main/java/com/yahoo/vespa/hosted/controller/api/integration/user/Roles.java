@@ -5,75 +5,60 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
-import com.yahoo.vespa.hosted.controller.api.role.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 
 import java.util.List;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Validation, utility and serialization methods for roles used in user management.
  *
  * @author jonmv
  */
-public class UserRoles {
+public class Roles {
 
-    private final Roles roles;
-
-    /** Creates a new UserRoles which can be used for serialisation and listing of bound user roles. */
-    public UserRoles(Roles roles) {
-        this.roles = requireNonNull(roles);
-    }
+    private Roles() { }
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
-    public List<TenantRole> tenantRoles(TenantName tenant) {
-        return List.of(roles.tenantOwner(tenant),
-                       roles.tenantAdmin(tenant),
-                       roles.tenantOperator(tenant));
+    public static List<TenantRole> tenantRoles(TenantName tenant) {
+        return List.of(Role.tenantOwner(tenant),
+                       Role.tenantAdmin(tenant),
+                       Role.tenantOperator(tenant));
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
-    public List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(roles.applicationAdmin(tenant, application),
-                       roles.applicationOperator(tenant, application),
-                       roles.applicationDeveloper(tenant, application),
-                       roles.applicationReader(tenant, application));
+    public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
+        return List.of(Role.applicationAdmin(tenant, application),
+                       Role.applicationOperator(tenant, application),
+                       Role.applicationDeveloper(tenant, application),
+                       Role.applicationReader(tenant, application));
     }
 
     /** Returns the {@link Role} the given value represents. */
-    public Role toRole(String value) {
+    public static Role toRole(String value) {
         String[] parts = value.split("\\.");
-        if (parts.length == 1) return toOperatorRole(parts[0]);
+        if (parts.length == 1 && parts[0].equals("hostedOperator")) return Role.hostedOperator();
         if (parts.length == 2) return toRole(TenantName.from(parts[0]), parts[1]);
         if (parts.length == 3) return toRole(TenantName.from(parts[0]), ApplicationName.from(parts[1]), parts[2]);
         throw new IllegalArgumentException("Malformed or illegal role value '" + value + "'.");
     }
 
-    public Role toOperatorRole(String roleName) {
-        switch (roleName) {
-            case "hostedOperator": return roles.hostedOperator();
-            default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
-        }
-    }
-
     /** Returns the {@link Role} the given tenant, application and role names correspond to. */
-    public Role toRole(TenantName tenant, String roleName) {
+    public static Role toRole(TenantName tenant, String roleName) {
         switch (roleName) {
-            case "tenantOwner": return roles.tenantOwner(tenant);
-            case "tenantAdmin": return roles.tenantAdmin(tenant);
-            case "tenantOperator": return roles.tenantOperator(tenant);
+            case "tenantOwner": return Role.tenantOwner(tenant);
+            case "tenantAdmin": return Role.tenantAdmin(tenant);
+            case "tenantOperator": return Role.tenantOperator(tenant);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
 
     /** Returns the {@link Role} the given tenant and role names correspond to. */
-    public Role toRole(TenantName tenant, ApplicationName application, String roleName) {
+    public static Role toRole(TenantName tenant, ApplicationName application, String roleName) {
         switch (roleName) {
-            case "applicationAdmin": return roles.applicationAdmin(tenant, application);
-            case "applicationOperator": return roles.applicationOperator(tenant, application);
-            case "applicationDeveloper": return roles.applicationDeveloper(tenant, application);
-            case "applicationReader": return roles.applicationReader(tenant, application);
+            case "applicationAdmin": return Role.applicationAdmin(tenant, application);
+            case "applicationOperator": return Role.applicationOperator(tenant, application);
+            case "applicationDeveloper": return Role.applicationDeveloper(tenant, application);
+            case "applicationReader": return Role.applicationReader(tenant, application);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
