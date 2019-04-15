@@ -17,9 +17,10 @@ CodingTables::CodingTables()
     unsigned int x;
     uint8_t log2Val;
 
-    for (x=0; x<65536; x++) {
+    for (x = 0; x < 65536; x++) {
         unsigned int val = x;
-        for (log2Val = 0; (val >>= 1) != 0; log2Val++) { }
+        for (log2Val = 0; (val >>= 1) != 0; log2Val++) {
+        }
         _log2Table[x] = log2Val;
     }
 }

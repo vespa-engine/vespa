@@ -96,7 +96,7 @@ void
 Zc4PostingSeqRead::
 readCommonWordDocIdAndFeatures(DocIdAndFeatures &features)
 {
-    if (_zcDocIds._valI >= _zcDocIds._valE && _hasMore) {
+    if ((_zcDocIds._valI >= _zcDocIds._valE) && _hasMore) {
         readWordStart();    // Read start of next chunk
     }
     // Split docid & features.

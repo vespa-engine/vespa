@@ -405,7 +405,8 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
         const Schema &oldSchema = oi.getSchema();
         if (!SchemaUtil::getIndexIds(oldSchema,
                                      DataType::STRING,
-                                     oldIndexes)) {
+                                     oldIndexes))
+        {
             return false;
         }
         if (oldIndexes.empty()) {

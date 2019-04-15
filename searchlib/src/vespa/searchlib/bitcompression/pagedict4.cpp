@@ -106,7 +106,7 @@ getLCP(vespalib::stringref word,
     size_t len2 = prevWord.size();
 
     size_t res = 0;
-    while (res < len1 && res < len2 && res < 254u && word[res] == prevWord[res]) {
+    while ((res < len1) && (res < len2) && (res < 254u) && (word[res] == prevWord[res])) {
         ++res;
     }
     return res;
@@ -492,7 +492,7 @@ PageDict4SPWriter::addL3Skip(vespalib::stringref word,
     addLCPWord(word, lcp, _words);
     _l3WordOffset = _words.size();
     _l3PageNum = pageNum;
-    if (_l3Size + _l4Size + _l5Size + _headerSize + 8 * _l3WordOffset > getPageBitSize()) {
+    if (_l3Size + _l4Size + _l5Size + _headerSize + (8 * _l3WordOffset) > getPageBitSize()) {
         // Cannot convert tentative writes to full writes due to overflow.
         // Flush existing full writes.
         flushPage();
