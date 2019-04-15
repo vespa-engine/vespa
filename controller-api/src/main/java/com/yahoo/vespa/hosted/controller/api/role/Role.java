@@ -86,11 +86,6 @@ public abstract class Role {
     /** Returns the role definition of this bound role. */
     public RoleDefinition definition() { return roleDefinition; }
 
-    /** Returns whether this role is allowed to perform the given action on the given resource. */
-    public final boolean allows(Action action, URI uri, Enforcer enforcer) {
-        return enforcer.allows(this, action, uri);
-    }
-
     /** Returns whether the other role is a parent of this, and has a context included in this role's context. */
     public boolean implies(Role other) {
         return    (context.tenant().isEmpty() || context.tenant().equals(other.context.tenant()))

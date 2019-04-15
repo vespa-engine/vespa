@@ -53,11 +53,11 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
             // Avoid expensive look-ups when request is always legal.
-            if (Role.everyone().allows(action, request.getUri(), enforcer))
+            if (enforcer.allows(Role.everyone(), action, request.getUri()))
                 return Optional.empty();
 
             Set<Role> roles = securityContext.get().roles();
-            if (roles.stream().anyMatch(role -> role.allows(action, request.getUri(), enforcer)))
+            if (roles.stream().anyMatch(role -> enforcer.allows(role, action, request.getUri())))
                 return Optional.empty();
         }
         catch (Exception e) {
