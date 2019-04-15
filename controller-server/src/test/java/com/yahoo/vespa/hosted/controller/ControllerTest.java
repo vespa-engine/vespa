@@ -12,6 +12,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -21,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
@@ -35,9 +35,11 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -283,6 +285,16 @@ public class ControllerTest {
                 .build();
 
         tester.deployCompletely(application, applicationPackage);
+        Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
+        assertFalse(deployments.isEmpty());
+        for (Deployment deployment : deployments) {
+            assertEquals("Rotation names are passed to config server in " + deployment.zone(),
+                         Set.of("rotation-id-01",
+                                "app1--tenant1.global.vespa.oath.cloud",
+                                "app1.tenant1.global.vespa.yahooapis.com",
+                                "app1--tenant1.global.vespa.yahooapis.com"),
+                         tester.configServer().rotationCnames().get(new DeploymentId(application.id(), deployment.zone())));
+        }
         assertEquals(3, tester.controllerTester().nameService().records().size());
 
         Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
