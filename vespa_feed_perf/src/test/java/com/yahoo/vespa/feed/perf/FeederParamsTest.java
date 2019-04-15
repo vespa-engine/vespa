@@ -85,4 +85,10 @@ public class FeederParamsTest {
         assertEquals(Route.parse("default"), new FeederParams().parseArgs("-s").getRoute());
     }
 
+    @Test
+    public void requireThatNumThreadsAreParsed() throws ParseException {
+        assertEquals(1, new FeederParams().getNumDispatchThreads());
+        assertEquals(17, new FeederParams().parseArgs("-n 17").getNumDispatchThreads());
+    }
+
 }

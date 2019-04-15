@@ -69,7 +69,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
             if (seqMap.containsKey(seqId)) {
                 Queue<Message> queue = seqMap.get(seqId);
                 if (queue == null) {
-                    queue = new LinkedList<Message>();
+                    queue = new LinkedList<>();
                     seqMap.put(seqId, queue);
                 }
                 if (msg.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
