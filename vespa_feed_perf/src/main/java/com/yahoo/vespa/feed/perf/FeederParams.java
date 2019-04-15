@@ -21,6 +21,7 @@ public class FeederParams {
     private Route route = Route.parse("default");
     private String configId = "client";
     private boolean serialTransferEnabled = false;
+    private int numDispatchThreads = 1;
 
     public InputStream getStdIn() {
         return stdIn;
@@ -76,12 +77,18 @@ public class FeederParams {
         return this;
     }
 
+    public int getNumDispatchThreads() { return numDispatchThreads; }
+
     public FeederParams parseArgs(String... args) throws ParseException {
         Options opts = new Options();
         opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation");
+        opts.addOption("n", "numthreads", true, "Number of clients for sending messages.");
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
         serialTransferEnabled = cmd.hasOption("s");
+        if (cmd.hasOption('n')) {
+            numDispatchThreads = Integer.valueOf(cmd.getOptionValue('n').trim());
+        }
         route = newRoute(cmd.getArgs());
         return this;
     }

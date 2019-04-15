@@ -1,16 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.network.Identity;
-import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * The RPCMessageBus class wraps a MessageBus with an RPCNetwork and handles reconfiguration. Please note that according
@@ -20,7 +16,6 @@ import java.util.logging.Logger;
  */
 public class RPCMessageBus extends NetworkMessageBus {
 
-    private static final Logger log = Logger.getLogger(RPCMessageBus.class.getName());
     private final ConfigAgent configAgent;
 
     /**

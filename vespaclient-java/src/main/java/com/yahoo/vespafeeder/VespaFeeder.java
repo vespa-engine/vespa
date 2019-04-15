@@ -11,7 +11,6 @@ import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.log.LogSetup;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.vespaclient.ClusterList;
 
 import java.io.BufferedInputStream;
 import java.io.File;

@@ -16,6 +16,6 @@ public interface FeedReader {
      * Reads the next operation from the stream.
      * @param operation The operation to fill in. Operation is unchanged if none was found.
      */
-    public abstract void read(Operation operation) throws Exception;
+    void read(Operation operation) throws Exception;
 
 }
