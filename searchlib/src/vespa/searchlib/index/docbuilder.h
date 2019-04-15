@@ -13,9 +13,9 @@
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace vespalib { namespace tensor { class Tensor; } }
-namespace search {
-namespace index {
+namespace vespalib::tensor { class Tensor; }
+
+namespace search::index {
 
 VESPA_DEFINE_EXCEPTION(DocBuilderError, vespalib::Exception);
 
@@ -23,8 +23,7 @@ VESPA_DEFINE_EXCEPTION(DocBuilderError, vespalib::Exception);
  * Builder class used to generate a search document that corresponds
  * to an index schema.
  **/
-class DocBuilder
-{
+class DocBuilder {
 public:
     typedef DocBuilderError Error;
 
@@ -153,8 +152,7 @@ private:
     /**
      * Class for handling the construction of the content of an index field.
      **/
-    class IndexFieldHandle : public CollectionFieldHandle
-    {
+    class IndexFieldHandle : public CollectionFieldHandle {
         vespalib::string _str; // adjusted as word comes along
         size_t _strSymbols; // symbols in string, assuming UTF8
         document::SpanList *_spanList; // owned by _spanTree
@@ -198,8 +196,7 @@ private:
     /**
      * Class for handling the construction of the content of an attribute field.
      **/
-    class AttributeFieldHandle : public CollectionFieldHandle
-    {
+    class AttributeFieldHandle : public CollectionFieldHandle {
     public:
         AttributeFieldHandle(const document::Field & dfield, const Schema::Field & sfield);
         void addStr(const vespalib::string & val) override;
@@ -248,7 +245,7 @@ private:
         void endField() {
             _fieldHandle->onEndField();
             _doc->setValue(_type->getField(_fieldHandle->getField().getName()), *_fieldHandle->getValue());
-            _fieldHandle.reset(static_cast<FieldHandle *>(NULL));
+            _fieldHandle.reset();
         }
         void endDocument(const document::Document::UP & doc) {
             (void) doc;
@@ -306,5 +303,4 @@ public:
     document::DocumenttypesConfig getDocumenttypesConfig() const { return _doctypes_config; }
 };
 
-} // namespace search::index
-} // namespace search
+}

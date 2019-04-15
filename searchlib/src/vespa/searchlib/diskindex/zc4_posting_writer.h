@@ -6,8 +6,7 @@
 
 namespace search::index { class DocIdAndFeatures; }
 
-namespace search::diskindex
-{
+namespace search::diskindex {
 
 /*
  * Class used to write posting lists of type "Zc.4" and "Zc.5" (dynamic k).

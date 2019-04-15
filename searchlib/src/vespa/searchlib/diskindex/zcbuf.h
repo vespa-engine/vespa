@@ -81,4 +81,4 @@ public:
     }
 };
 
-} // namespace search::diskindex
+}

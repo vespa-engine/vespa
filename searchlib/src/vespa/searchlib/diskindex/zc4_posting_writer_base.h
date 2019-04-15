@@ -11,8 +11,7 @@ class PostingListCounts;
 class PostingListParams;
 }
 
-namespace search::diskindex
-{
+namespace search::diskindex {
 
 /*
  * Base class for writing posting lists that might have basic skip info.

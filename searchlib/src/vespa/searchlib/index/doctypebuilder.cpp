@@ -66,17 +66,8 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
     cfg.datatype.back().id = structType.getId();
 }
 
-}
-
-DocTypeBuilder::DocTypeBuilder(const Schema &schema)
-    : _schema(schema),
-      _iFields()
-{
-    _iFields.setup(schema);
-}
-
-namespace {
 using namespace document::config_builder;
+
 TypeOrId makeCollection(TypeOrId datatype,
                         Schema::CollectionType collection_type) {
     switch (collection_type) {
@@ -103,7 +94,14 @@ struct TypeCache {
     }
 };
 
-}  // namespace
+}
+
+DocTypeBuilder::DocTypeBuilder(const Schema &schema)
+    : _schema(schema),
+      _iFields()
+{
+    _iFields.setup(schema);
+}
 
 document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     using namespace document::config_builder;

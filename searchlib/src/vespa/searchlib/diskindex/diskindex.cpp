@@ -427,7 +427,7 @@ createBlueprintHelper(LookupCache & cache, DiskIndex & diskIndex, const IRequest
     return Blueprint::UP(new EmptyBlueprint(field));
 }
 
-} // namespace <unnamed>
+}
 
 Blueprint::UP
 DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term)

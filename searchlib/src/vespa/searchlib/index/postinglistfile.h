@@ -8,11 +8,9 @@
 
 class FastOS_FileInterface;
 
-namespace search {
+namespace search::common { class FileHeaderContext; }
 
-namespace common { class FileHeaderContext; }
-
-namespace index {
+namespace search::index {
 
 class DocIdAndFeatures;
 
@@ -20,8 +18,7 @@ class DocIdAndFeatures;
  * Interface for posting list files containing document ids and features
  * for words.
  */
-class PostingListFileSeqRead
-{
+class PostingListFileSeqRead {
 protected:
     PostingListCounts _counts;
     unsigned int _residueDocs;  // Docids left to read for word
@@ -100,8 +97,7 @@ public:
  * Interface for posting list files containing document ids and features
  * for words.
  */
-class PostingListFileSeqWrite
-{
+class PostingListFileSeqWrite {
 protected:
     PostingListCounts _counts;
 public:
@@ -160,8 +156,7 @@ public:
  * Interface for posting list files containing document ids and features
  * for words.
  */
-class PostingListFileRandRead
-{
+class PostingListFileRandRead {
 protected:
     // Can be examined after open
     bool _memoryMapped;
@@ -215,8 +210,7 @@ protected:
 /**
  * Passthrough class.
  */
-class PostingListFileRandReadPassThrough : public PostingListFileRandRead
-{
+class PostingListFileRandReadPassThrough : public PostingListFileRandRead {
 protected:
     PostingListFileRandRead *_lower;
     bool _ownLower;
@@ -238,7 +232,4 @@ public:
     bool close() override;
 };
 
-
-} // namespace index
-
-} // namespace search
+}

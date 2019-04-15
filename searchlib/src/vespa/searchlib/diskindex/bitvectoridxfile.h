@@ -10,7 +10,6 @@
 
 namespace search::common { class FileHeaderContext; }
 
-
 namespace search::diskindex {
 
 class BitVectorIdxFileWrite

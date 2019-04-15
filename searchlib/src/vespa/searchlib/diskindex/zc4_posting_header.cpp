@@ -4,8 +4,7 @@
 #include "zc4_posting_params.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 
-namespace search::diskindex
-{
+namespace search::diskindex {
 
 Zc4PostingHeader::Zc4PostingHeader()
     : _has_more(false),

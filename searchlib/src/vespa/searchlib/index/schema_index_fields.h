@@ -9,8 +9,7 @@ namespace search::index {
 /**
  * Fields from an index schema to be used for indexing
  **/
-class SchemaIndexFields
-{
+class SchemaIndexFields {
 public:
     using FieldIdVector = std::vector<uint32_t>;
     using UriFieldIdVector = std::vector<UriField>;

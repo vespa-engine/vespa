@@ -25,19 +25,12 @@ namespace {
 
 vespalib::string PosOccId = "PosOcc.3";
 vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
-
-}
-
-namespace {
-
 vespalib::string EG64PosOccId = "EG64PosOcc.3"; // Dynamic k values
 vespalib::string EG64PosOccId2 = "EG64PosOcc.2";    // Fixed k values
 
 }
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 
 PosOccFieldParams::PosOccFieldParams()
@@ -214,14 +207,14 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
 
 PosOccFieldsParams::PosOccFieldsParams()
     : _numFields(0u),
-      _fieldParams(NULL),
+      _fieldParams(nullptr),
       _params()
 {
 }
 
 PosOccFieldsParams::PosOccFieldsParams(const PosOccFieldsParams &rhs)
     : _numFields(0u),
-      _fieldParams(NULL),
+      _fieldParams(nullptr),
       _params(rhs._params)
 {
     cacheParamsRef();
@@ -1337,6 +1330,4 @@ template class EGPosOccDecodeContextCooked<false>;
 template class EGPosOccEncodeContext<true>;
 template class EGPosOccEncodeContext<false>;
 
-} // namespace index
-
-} // namespace search
+}

@@ -856,4 +856,4 @@ ZcPostingSeqWrite::ZcPostingSeqWrite(PostingListCountFileSeqWrite *countFile)
     _writer.set_dynamic_k(true);
 }
 
-} // namespace search::diskindex
+}

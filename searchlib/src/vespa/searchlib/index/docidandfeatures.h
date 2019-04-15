@@ -18,8 +18,7 @@ namespace search::index {
  *
  * Present as member in DocIdAndFeatures.
  */
-class WordDocFeatures
-{
+class WordDocFeatures {
 public:
     // TODO: add support for user features
 
@@ -32,8 +31,7 @@ public:
  *
  * Present as vector element in DocIdAndFeatures.
  */
-class WordDocFieldFeatures
-{
+class WordDocFieldFeatures {
 public:
     uint32_t _numElements;  // Number of array indexes
     // TODO: add support for user features
@@ -52,8 +50,7 @@ public:
  *
  * Present as vector element in DocIdAndFeatures.
  */
-class WordDocElementFeatures
-{
+class WordDocElementFeatures {
 public:
     uint32_t _elementId;    // Array index
     uint32_t _numOccs;
@@ -101,8 +98,7 @@ public:
  *
  * Present as vector element in DocIdAndFeatures.
  */
-class WordDocElementWordPosFeatures
-{
+class WordDocElementWordPosFeatures {
 public:
     uint32_t _wordPos;
     // TODO: add support for user features
@@ -124,8 +120,7 @@ public:
  * (word, doc) pair, used by index fusion to shuffle information from
  * input files to the output file without having to know all the details.
  */
-class DocIdAndFeatures
-{
+class DocIdAndFeatures {
 public:
     uint32_t _docId;            // Current Docid
     // generic feature data, flattened to avoid excessive allocator usage

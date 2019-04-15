@@ -10,7 +10,6 @@
 
 namespace search::diskindex {
 
-
 class BitVectorFileWrite : public BitVectorIdxFileWrite
 {
 private:

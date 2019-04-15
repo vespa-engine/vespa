@@ -10,9 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".pagedict4");
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 namespace {
 
@@ -1511,7 +1509,7 @@ PageDict4PLookupRes()
       _startOffset(),
       _wordNum(1u),
       _res(false),
-      _nextWord(NULL)
+      _nextWord(nullptr)
 {
 }
 
@@ -1759,8 +1757,7 @@ PageDict4Reader::~PageDict4Reader()
 {
 }
 
-namespace
-{
+namespace {
 
 template <typename CheckVector>
 void checkWordOffset(CheckVector &skip, uint32_t &skipAdjust, uint32_t wordOffset, uint32_t wordEntryLen)
@@ -2233,6 +2230,4 @@ PageDict4Reader::readOverflowCounts(vespalib::string &word,
     }
 }
 
-} // namespace bitcompression
-
-} // namespace search
+}

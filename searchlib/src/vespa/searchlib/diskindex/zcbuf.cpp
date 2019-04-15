@@ -57,4 +57,4 @@ ZcBuf::expand()
     _valE = _mallocStart + newSize - zcSlack();
 }
 
-} // namespace search::diskindex
+}
