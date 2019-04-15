@@ -4,7 +4,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 
 /**
- * A {@link Role} with a {@link Context} of a {@link SystemName} and a {@link TenantName}.
+ * A {@link Role} with a {@link Context} of a {@link TenantName}.
  *
  * @author jonmv
  */
