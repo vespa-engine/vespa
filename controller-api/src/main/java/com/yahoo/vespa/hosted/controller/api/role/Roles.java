@@ -33,66 +33,66 @@ public class Roles {
     // General roles.
     /** Returns a {@link RoleDefinition#hostedOperator} for the current system. */
     public UnboundRole hostedOperator() {
-        return new UnboundRole(RoleDefinition.hostedOperator, system);
+        return new UnboundRole(RoleDefinition.hostedOperator);
     }
 
     /** Returns a {@link RoleDefinition#everyone} for the current system. */
     public UnboundRole everyone() {
-        return new UnboundRole(RoleDefinition.everyone, system);
+        return new UnboundRole(RoleDefinition.everyone);
     }
 
 
     // Athenz based roles.
     /** Returns a {@link RoleDefinition#athenzTenantAdmin} for the current system and given tenant. */
     public TenantRole athenzTenantAdmin(TenantName tenant) {
-        return new TenantRole(RoleDefinition.athenzTenantAdmin, system, tenant);
+        return new TenantRole(RoleDefinition.athenzTenantAdmin, tenant);
     }
 
     /** Returns a {@link RoleDefinition#tenantPipeline} for the current system and given tenant and application. */
     public ApplicationRole tenantPipeline(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.tenantPipeline, system, tenant, application);
+        return new ApplicationRole(RoleDefinition.tenantPipeline, tenant, application);
     }
 
 
     // Other identity provider based roles.
     /** Returns a {@link RoleDefinition#tenantOwner} for the current system and given tenant. */
     public TenantRole tenantOwner(TenantName tenant) {
-        return new TenantRole(RoleDefinition.tenantOwner, system, tenant);
+        return new TenantRole(RoleDefinition.tenantOwner, tenant);
     }
 
     /** Returns a {@link RoleDefinition#tenantAdmin} for the current system and given tenant. */
     public TenantRole tenantAdmin(TenantName tenant) {
-        return new TenantRole(RoleDefinition.tenantAdmin, system, tenant);
+        return new TenantRole(RoleDefinition.tenantAdmin, tenant);
     }
 
     /** Returns a {@link RoleDefinition#tenantOperator} for the current system and given tenant. */
     public TenantRole tenantOperator(TenantName tenant) {
-        return new TenantRole(RoleDefinition.tenantOperator, system, tenant);
+        return new TenantRole(RoleDefinition.tenantOperator, tenant);
     }
 
     /** Returns a {@link RoleDefinition#applicationAdmin} for the current system and given tenant and application. */
     public ApplicationRole applicationAdmin(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationAdmin, system, tenant, application);
+        return new ApplicationRole(RoleDefinition.applicationAdmin, tenant, application);
     }
 
     /** Returns a {@link RoleDefinition#applicationOperator} for the current system and given tenant and application. */
     public ApplicationRole applicationOperator(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationOperator, system, tenant, application);
+        return new ApplicationRole(RoleDefinition.applicationOperator, tenant, application);
     }
 
     /** Returns a {@link RoleDefinition#applicationDeveloper} for the current system and given tenant and application. */
     public ApplicationRole applicationDeveloper(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationDeveloper, system, tenant, application);
+        return new ApplicationRole(RoleDefinition.applicationDeveloper, tenant, application);
     }
 
     /** Returns a {@link RoleDefinition#applicationReader} for the current system and given tenant and application. */
     public ApplicationRole applicationReader(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.applicationReader, system, tenant, application);
+        return new ApplicationRole(RoleDefinition.applicationReader, tenant, application);
     }
 
     /** Returns a {@link RoleDefinition#buildService} for the current system and given tenant and application. */
     public ApplicationRole buildService(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.buildService, system, tenant, application);
+        return new ApplicationRole(RoleDefinition.buildService, tenant, application);
     }
 
 }

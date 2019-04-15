@@ -11,8 +11,8 @@ import com.yahoo.config.provision.TenantName;
  */
 public class ApplicationRole extends Role {
 
-    ApplicationRole(RoleDefinition roleDefinition, SystemName system, TenantName tenant, ApplicationName application) {
-        super(roleDefinition, Context.limitedTo(tenant, application, system));
+    ApplicationRole(RoleDefinition roleDefinition, TenantName tenant, ApplicationName application) {
+        super(roleDefinition, Context.limitedTo(tenant, application));
     }
 
     /** Returns the {@link TenantName} this is bound to. */

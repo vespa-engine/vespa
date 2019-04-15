@@ -9,8 +9,8 @@ import com.yahoo.config.provision.SystemName;
  */
 public class UnboundRole extends Role {
 
-    UnboundRole(RoleDefinition roleDefinition, SystemName system) {
-        super(roleDefinition, Context.unlimitedIn(system));
+    UnboundRole(RoleDefinition roleDefinition) {
+        super(roleDefinition, Context.unlimited());
     }
 
     @Override
