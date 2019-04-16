@@ -4,24 +4,14 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/testdocrepo.h>
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/select/parser.h>
 #include <memory>
+#include <gtest/gtest.h>
 
 using document::select::Node;
 using document::select::Parser;
 
 namespace document {
-
-struct OrderingSelectorTest : public CppUnit::TestFixture {
-    void testSimple();
-
-    CPPUNIT_TEST_SUITE(OrderingSelectorTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(OrderingSelectorTest);
 
 #define ASSERT_MATCH(expression, ordering, correct)     \
 { \
@@ -30,21 +20,21 @@ CPPUNIT_TEST_SUITE_REGISTRATION(OrderingSelectorTest);
     OrderingSelector selector;                                \
     Parser parser(repo.getTypeRepo(), idfactory); \
     std::unique_ptr<Node> node(parser.parse(expression)); \
-    CPPUNIT_ASSERT(node.get() != 0); \
+    ASSERT_TRUE(node); \
     OrderingSpecification::UP spec = selector.select(*node, ordering); \
     if (spec.get() == NULL && correct.get() == NULL) { \
         return;\
     }\
     if (spec.get() == NULL && correct.get() != NULL) { \
-        CPPUNIT_ASSERT_MSG(std::string("Was NULL, expected ") + correct->toString(), false); \
+        FAIL() << "Was NULL, expected " << correct->toString(); \
     } \
     if (correct.get() == NULL && spec.get() != NULL) { \
-        CPPUNIT_ASSERT_MSG(std::string("Expected NULL, was ") + spec->toString(), false); \
+        FAIL() << "Expected NULL, was " << spec->toString();  \
     } \
-    CPPUNIT_ASSERT_EQUAL(*correct, *spec); \
+    EXPECT_EQ(*correct, *spec);      \
 }
 
-void OrderingSelectorTest::testSimple()
+TEST(OrderingSelectorTest, testSimple)
 {
     ASSERT_MATCH("id.order(10,10) < 100", OrderingSpecification::DESCENDING,
                         OrderingSpecification::UP(

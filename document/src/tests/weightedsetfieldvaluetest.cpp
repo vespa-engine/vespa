@@ -3,28 +3,16 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using vespalib::nbostream;
+using namespace ::testing;
 
 namespace document {
-
-struct WeightedSetFieldValueTest : public CppUnit::TestFixture {
-
-    void testWeightedSet();
-    void testAddIgnoreZeroWeight();
-
-    CPPUNIT_TEST_SUITE(WeightedSetFieldValueTest);
-    CPPUNIT_TEST(testWeightedSet);
-    CPPUNIT_TEST(testAddIgnoreZeroWeight);
-    CPPUNIT_TEST_SUITE_END();
-
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(WeightedSetFieldValueTest);
 
 namespace {
 template <typename T>
@@ -41,15 +29,15 @@ void verifyFailedAssignment(Type1& lval, const Type2& rval)
 {
     try{
         lval = rval;
-        CPPUNIT_FAIL("Failed to check type equality in operator=");
+        FAIL() << "Failed to check type equality in operator=";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("Cannot assign value of type", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Cannot assign value of type"));
     }
     try{
         lval.assign(rval);
-        CPPUNIT_FAIL("Failed to check type equality in assign()");
+        FAIL() << "Failed to check type equality in assign()";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("Cannot assign value of type", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Cannot assign value of type"));
     }
 }
 
@@ -58,91 +46,91 @@ void verifyFailedUpdate(Type& lval, const FieldValue& rval)
 {
     try{
         lval.add(rval);
-        CPPUNIT_FAIL("Failed to check type equality in add()");
+        FAIL() << "Failed to check type equality in add()";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("These types are not compatible", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("These types are not compatible"));
     }
     try{
         lval.contains(rval);
-        CPPUNIT_FAIL("Failed to check type equality in contains()");
+        FAIL() << "Failed to check type equality in contains()";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("These types are not compatible", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("These types are not compatible"));
     }
     try{
         lval.remove(rval);
-        CPPUNIT_FAIL("Failed to check type equality in remove()");
+        FAIL() << "Failed to check type equality in remove()";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("These types are not compatible", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("These types are not compatible"));
     }
 }
 }  // namespace
 
-void WeightedSetFieldValueTest::testWeightedSet()
+TEST(WeightedSetFieldValueTest, testWeightedSet)
 {
     WeightedSetDataType type(*DataType::INT, false, false);
     WeightedSetFieldValue value(type);
 
         // Initially empty
-    CPPUNIT_ASSERT_EQUAL(size_t(0), value.size());
-    CPPUNIT_ASSERT(value.isEmpty());
-    CPPUNIT_ASSERT(!value.contains(IntFieldValue(1)));
+    EXPECT_EQ(size_t(0), value.size());
+    EXPECT_TRUE(value.isEmpty());
+    EXPECT_TRUE(!value.contains(IntFieldValue(1)));
 
-    CPPUNIT_ASSERT(value.add(IntFieldValue(1)));
+    EXPECT_TRUE(value.add(IntFieldValue(1)));
 
         // Not empty
-    CPPUNIT_ASSERT_EQUAL(size_t(1), value.size());
-    CPPUNIT_ASSERT(!value.isEmpty());
-    CPPUNIT_ASSERT(value.contains(IntFieldValue(1)));
+    EXPECT_EQ(size_t(1), value.size());
+    EXPECT_TRUE(!value.isEmpty());
+    EXPECT_TRUE(value.contains(IntFieldValue(1)));
 
         // Adding some more
-    CPPUNIT_ASSERT(value.add(IntFieldValue(2), 5));
-    CPPUNIT_ASSERT(value.add(IntFieldValue(3), 6));
+    EXPECT_TRUE(value.add(IntFieldValue(2), 5));
+    EXPECT_TRUE(value.add(IntFieldValue(3), 6));
 
         // Not empty
-    CPPUNIT_ASSERT_EQUAL(size_t(3), value.size());
-    CPPUNIT_ASSERT(!value.isEmpty());
-    CPPUNIT_ASSERT_EQUAL(1, value.get(IntFieldValue(1)));
-    CPPUNIT_ASSERT_EQUAL(5, value.get(IntFieldValue(2)));
-    CPPUNIT_ASSERT_EQUAL(6, value.get(IntFieldValue(3)));
+    EXPECT_EQ(size_t(3), value.size());
+    EXPECT_TRUE(!value.isEmpty());
+    EXPECT_EQ(1, value.get(IntFieldValue(1)));
+    EXPECT_EQ(5, value.get(IntFieldValue(2)));
+    EXPECT_EQ(6, value.get(IntFieldValue(3)));
 
         // Serialize & equality
     std::unique_ptr<ByteBuffer> buffer(value.serialize());
     buffer->flip();
     WeightedSetFieldValue value2(type);
-    CPPUNIT_ASSERT(value != value2);
+    EXPECT_TRUE(value != value2);
     deserialize(*buffer, value2);
-    CPPUNIT_ASSERT_EQUAL(value, value2);
+    EXPECT_EQ(value, value2);
 
         // Various ways of removing
     {
             // By value
         buffer->setPos(0);
         deserialize(*buffer, value2);
-        CPPUNIT_ASSERT_EQUAL(size_t(3), value2.size());
-        CPPUNIT_ASSERT(value2.remove(IntFieldValue(1)));
-        CPPUNIT_ASSERT(!value2.contains(IntFieldValue(1)));
-        CPPUNIT_ASSERT_EQUAL(size_t(2), value2.size());
+        EXPECT_EQ(size_t(3), value2.size());
+        EXPECT_TRUE(value2.remove(IntFieldValue(1)));
+        EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
+        EXPECT_EQ(size_t(2), value2.size());
 
             // Clearing all
         buffer->setPos(0);
         deserialize(*buffer, value2);
         value2.clear();
-        CPPUNIT_ASSERT(!value2.contains(IntFieldValue(1)));
-        CPPUNIT_ASSERT_EQUAL(size_t(0), value2.size());
-        CPPUNIT_ASSERT(value2.isEmpty());
+        EXPECT_TRUE(!value2.contains(IntFieldValue(1)));
+        EXPECT_EQ(size_t(0), value2.size());
+        EXPECT_TRUE(value2.isEmpty());
     }
 
         // Updating
     value2 = value;
-    CPPUNIT_ASSERT_EQUAL(value, value2);
-    CPPUNIT_ASSERT(!value2.add(IntFieldValue(2), 10)); // false = overwritten
-    CPPUNIT_ASSERT(value2.add(IntFieldValue(17), 9)); // true = added new
-    CPPUNIT_ASSERT_EQUAL(10, value2.get(IntFieldValue(2)));
-    CPPUNIT_ASSERT(value != value2);
+    EXPECT_EQ(value, value2);
+    EXPECT_TRUE(!value2.add(IntFieldValue(2), 10)); // false = overwritten
+    EXPECT_TRUE(value2.add(IntFieldValue(17), 9)); // true = added new
+    EXPECT_EQ(10, value2.get(IntFieldValue(2)));
+    EXPECT_TRUE(value != value2);
     value2.assign(value);
-    CPPUNIT_ASSERT_EQUAL(value, value2);
+    EXPECT_EQ(value, value2);
     WeightedSetFieldValue::UP valuePtr(value2.clone());
-    CPPUNIT_ASSERT_EQUAL(value, *valuePtr);
+    EXPECT_EQ(value, *valuePtr);
 
         // Iterating
     const WeightedSetFieldValue& constVal(value);
@@ -151,7 +139,7 @@ void WeightedSetFieldValueTest::testWeightedSet()
     {
         const FieldValue& fval1(*it->first);
         (void) fval1;
-        CPPUNIT_ASSERT_EQUAL((uint32_t) IntFieldValue::classId,
+        EXPECT_EQ((uint32_t) IntFieldValue::classId,
                              it->first->getClass().id());
         const IntFieldValue& val = dynamic_cast<const IntFieldValue&>(*it->second);
         (void) val;
@@ -163,22 +151,22 @@ void WeightedSetFieldValueTest::testWeightedSet()
         IntFieldValue& val = dynamic_cast<IntFieldValue&>(*it->second);
         val.setValue(7);
     }
-    CPPUNIT_ASSERT(value != value2);
-    CPPUNIT_ASSERT_EQUAL(7, value2.get(IntFieldValue(2)));
+    EXPECT_TRUE(value != value2);
+    EXPECT_EQ(7, value2.get(IntFieldValue(2)));
 
         // Comparison
     value2 = value;
-    CPPUNIT_ASSERT_EQUAL(0, value.compare(value2));
+    EXPECT_EQ(0, value.compare(value2));
     value2.remove(IntFieldValue(1));
-    CPPUNIT_ASSERT(value.compare(value2) > 0);
-    CPPUNIT_ASSERT(value2.compare(value) < 0);
+    EXPECT_TRUE(value.compare(value2) > 0);
+    EXPECT_TRUE(value2.compare(value) < 0);
     value2 = value;
     value2.add(IntFieldValue(7));
-    CPPUNIT_ASSERT(value.compare(value2) < 0);
-    CPPUNIT_ASSERT(value2.compare(value) > 0);
+    EXPECT_TRUE(value.compare(value2) < 0);
+    EXPECT_TRUE(value2.compare(value) > 0);
 
         // Output
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string(
                 "WeightedSet<Int>(\n"
                 "  1 - weight 1,\n"
@@ -186,7 +174,7 @@ void WeightedSetFieldValueTest::testWeightedSet()
                 "  3 - weight 6\n"
                 ")"),
             value.toString(false));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string(
                 "  WeightedSet<Int>(\n"
                 "..  1 - weight 1,\n"
@@ -194,7 +182,7 @@ void WeightedSetFieldValueTest::testWeightedSet()
                 "..  3 - weight 6\n"
                 "..)"),
             "  " + value.toString(true, ".."));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string(
                 "<value>\n"
                 "  <item weight=\"1\">1</item>\n"
@@ -209,10 +197,10 @@ void WeightedSetFieldValueTest::testWeightedSet()
     try{
         ArrayDataType arrayType(*DataType::STRING);
         WeightedSetFieldValue value6(arrayType);
-        CPPUNIT_FAIL("Didn't complain about non-weightedset type");
+        FAIL() << "Didn't complain about non-weightedset type";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("Cannot generate a weighted set value with "
-                               "non-weighted set type", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Cannot generate a weighted set value with "
+                                        "non-weighted set type"));
     }
 
         // Verify that datatypes are verified
@@ -257,68 +245,67 @@ void WeightedSetFieldValueTest::testWeightedSet()
         WeightedSetFieldValue value3(type3);
         WeightedSetFieldValue value4(type4);
         value4.add(subValue2);
-        CPPUNIT_ASSERT(value3.compare(value4) != 0);
+        EXPECT_TRUE(value3.compare(value4) != 0);
     }
 
         // Test createIfNonExisting and removeIfZero
     {
         WeightedSetDataType mytype1(*DataType::STRING, false, false);
         WeightedSetDataType mytype2(*DataType::STRING, true, true);
-        CPPUNIT_ASSERT_EQUAL(*DataType::TAG, static_cast<DataType &>(mytype2));
+        EXPECT_EQ(*DataType::TAG, static_cast<DataType &>(mytype2));
 
         WeightedSetFieldValue val1(mytype1);
         val1.add("foo", 4);
         try{
             val1.increment("bar", 2);
-            CPPUNIT_FAIL("Expected exception incrementing with "
-                         "createIfNonExistent set false");
+            FAIL() << "Expected exception incrementing with "
+                "createIfNonExistent set false";
         } catch (std::exception& e) {}
         try{
             val1.decrement("bar", 2);
-            CPPUNIT_FAIL("Expected exception incrementing with "
-                         "createIfNonExistent set false");
+            FAIL() << "Expected exception incrementing with "
+                "createIfNonExistent set false";
         } catch (std::exception& e) {}
         val1.increment("foo", 6);
-        CPPUNIT_ASSERT_EQUAL(10, val1.get("foo"));
+        EXPECT_EQ(10, val1.get("foo"));
         val1.decrement("foo", 3);
-        CPPUNIT_ASSERT_EQUAL(7, val1.get("foo"));
+        EXPECT_EQ(7, val1.get("foo"));
         val1.decrement("foo", 7);
-        CPPUNIT_ASSERT(val1.contains("foo"));
+        EXPECT_TRUE(val1.contains("foo"));
 
         WeightedSetFieldValue val2(mytype2);
         val2.add("foo", 4);
         val2.increment("bar", 2);
-        CPPUNIT_ASSERT_EQUAL(2, val2.get("bar"));
+        EXPECT_EQ(2, val2.get("bar"));
         val2.decrement("bar", 4);
-        CPPUNIT_ASSERT_EQUAL(-2, val2.get("bar"));
+        EXPECT_EQ(-2, val2.get("bar"));
         val2.increment("bar", 2);
-        CPPUNIT_ASSERT(!val2.contains("bar"));
+        EXPECT_TRUE(!val2.contains("bar"));
 
         val2.decrement("foo", 4);
-        CPPUNIT_ASSERT(!val2.contains("foo"));
+        EXPECT_TRUE(!val2.contains("foo"));
 
         val2.decrement("foo", 4);
-        CPPUNIT_ASSERT_EQUAL(-4, val2.get("foo"));
+        EXPECT_EQ(-4, val2.get("foo"));
 
         val2.add("foo", 0);
-        CPPUNIT_ASSERT(!val2.contains("foo"));
+        EXPECT_TRUE(!val2.contains("foo"));
     }
 }
 
-void
-WeightedSetFieldValueTest::testAddIgnoreZeroWeight()
+TEST(WeightedSetFieldValueTest, testAddIgnoreZeroWeight)
 {
     // Data type with auto-create and remove-if-zero set.
     WeightedSetDataType wsetType(*DataType::STRING, true, true);
     WeightedSetFieldValue ws(wsetType);
 
     ws.addIgnoreZeroWeight(StringFieldValue("yarn"), 0);
-    CPPUNIT_ASSERT(ws.contains("yarn"));
-    CPPUNIT_ASSERT_EQUAL(0, ws.get("yarn"));
+    EXPECT_TRUE(ws.contains("yarn"));
+    EXPECT_EQ(0, ws.get("yarn"));
 
     ws.addIgnoreZeroWeight(StringFieldValue("flarn"), 1);
-    CPPUNIT_ASSERT(ws.contains("flarn"));
-    CPPUNIT_ASSERT_EQUAL(1, ws.get("flarn"));
+    EXPECT_TRUE(ws.contains("flarn"));
+    EXPECT_EQ(1, ws.get("flarn"));
 }
 
 } // document
