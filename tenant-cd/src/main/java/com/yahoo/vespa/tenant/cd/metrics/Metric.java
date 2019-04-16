@@ -10,7 +10,7 @@ import static java.util.Map.copyOf;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
- * A set of statistics for a metric, for points over a String-indexed space.
+ * A set of statistics for a metric, for points over a space with named dimensions of arbitrary type.
  *
  * @author jonmv
  */
