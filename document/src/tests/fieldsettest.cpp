@@ -3,13 +3,12 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
+#include <gtest/gtest.h>
 
 using vespalib::nbostream;
 
@@ -17,23 +16,9 @@ using namespace document::config_builder;
 
 namespace document {
 
-struct FieldSetTest : public CppUnit::TestFixture {
-    void testParsing();
-    void testContains();
-    void testCopyDocumentFields();
-    void testDocumentSubsetCopy();
-    void testStripFields();
-    void testSerialize();
+class FieldSetTest : public ::testing::Test {
 
-    CPPUNIT_TEST_SUITE(FieldSetTest);
-    CPPUNIT_TEST(testParsing);
-    CPPUNIT_TEST(testSerialize);
-    CPPUNIT_TEST(testContains);
-    CPPUNIT_TEST(testCopyDocumentFields);
-    CPPUNIT_TEST(testDocumentSubsetCopy);
-    CPPUNIT_TEST(testStripFields);
-    CPPUNIT_TEST_SUITE_END();
-
+protected:
     std::string stringifyFields(const Document& doc) const;
     std::string doCopyFields(const Document& src,
                              const DocumentTypeRepo& docRepo,
@@ -48,9 +33,7 @@ struct FieldSetTest : public CppUnit::TestFixture {
     Document::UP createTestDocument(const TestDocMan& testDocMan) const;
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(FieldSetTest);
-
-void FieldSetTest::testParsing()
+TEST_F(FieldSetTest, testParsing)
 {
     TestDocMan testDocMan;
     const DocumentTypeRepo& docRepo = testDocMan.getTypeRepo();
@@ -73,7 +56,7 @@ void FieldSetTest::testParsing()
         ost << (*iter)->getName() << " ";
     }
 
-    CPPUNIT_ASSERT_EQUAL(std::string("content headerval "), ost.str());
+    EXPECT_EQ(std::string("content headerval "), ost.str());
 }
 
 namespace {
@@ -98,7 +81,7 @@ bool checkError(FieldSetRepo& r, const DocumentTypeRepo& repo,
 
 }
 
-void FieldSetTest::testContains()
+TEST_F(FieldSetTest, testContains)
 {
     TestDocMan testDocMan;
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
@@ -113,45 +96,44 @@ void FieldSetTest::testContains()
     HeaderFields h;
     BodyFields b;
 
-    CPPUNIT_ASSERT_EQUAL(false, headerField.contains(
-                                 type.getField("headerlongval")));
-    CPPUNIT_ASSERT_EQUAL(true, headerField.contains(headerField));
-    CPPUNIT_ASSERT_EQUAL(true, headerField.contains(id));
-    CPPUNIT_ASSERT_EQUAL(false, headerField.contains(all));
-    CPPUNIT_ASSERT_EQUAL(true, headerField.contains(none));
-    CPPUNIT_ASSERT_EQUAL(false, none.contains(headerField));
-    CPPUNIT_ASSERT_EQUAL(true, all.contains(headerField));
-    CPPUNIT_ASSERT_EQUAL(true, all.contains(none));
-    CPPUNIT_ASSERT_EQUAL(false, none.contains(all));
-    CPPUNIT_ASSERT_EQUAL(true, all.contains(id));
-    CPPUNIT_ASSERT_EQUAL(false, none.contains(id));
-    CPPUNIT_ASSERT_EQUAL(true, id.contains(none));
+    EXPECT_EQ(false, headerField.contains(type.getField("headerlongval")));
+    EXPECT_EQ(true, headerField.contains(headerField));
+    EXPECT_EQ(true, headerField.contains(id));
+    EXPECT_EQ(false, headerField.contains(all));
+    EXPECT_EQ(true, headerField.contains(none));
+    EXPECT_EQ(false, none.contains(headerField));
+    EXPECT_EQ(true, all.contains(headerField));
+    EXPECT_EQ(true, all.contains(none));
+    EXPECT_EQ(false, none.contains(all));
+    EXPECT_EQ(true, all.contains(id));
+    EXPECT_EQ(false, none.contains(id));
+    EXPECT_EQ(true, id.contains(none));
 
-    CPPUNIT_ASSERT_EQUAL(true, h.contains(headerField));
-    CPPUNIT_ASSERT_EQUAL(false, h.contains(bodyField));
+    EXPECT_EQ(true, h.contains(headerField));
+    EXPECT_EQ(false, h.contains(bodyField));
 
-    CPPUNIT_ASSERT_EQUAL(false, b.contains(headerField));
-    CPPUNIT_ASSERT_EQUAL(true, b.contains(bodyField));
+    EXPECT_EQ(false, b.contains(headerField));
+    EXPECT_EQ(true, b.contains(bodyField));
 
     FieldSetRepo r;
-    CPPUNIT_ASSERT_EQUAL(true, checkContains(r, repo, "[body]",
+    EXPECT_EQ(true, checkContains(r, repo, "[body]",
                                              "testdoctype1:content"));
-    CPPUNIT_ASSERT_EQUAL(false, checkContains(r, repo, "[header]",
+    EXPECT_EQ(false, checkContains(r, repo, "[header]",
                                               "testdoctype1:content"));
-    CPPUNIT_ASSERT_EQUAL(true, checkContains(r, repo,
+    EXPECT_EQ(true, checkContains(r, repo,
                                              "testdoctype1:content,headerval",
                                              "testdoctype1:content"));
-    CPPUNIT_ASSERT_EQUAL(false, checkContains(r, repo,
+    EXPECT_EQ(false, checkContains(r, repo,
                                               "testdoctype1:content",
                                               "testdoctype1:content,headerval"));
-    CPPUNIT_ASSERT_EQUAL(true, checkContains(r, repo,
+    EXPECT_EQ(true, checkContains(r, repo,
                                              "testdoctype1:headerval,content",
                                              "testdoctype1:content,headerval"));
 
-    CPPUNIT_ASSERT(checkError(r, repo, "nodoctype"));
-    CPPUNIT_ASSERT(checkError(r, repo, "unknowndoctype:foo"));
-    CPPUNIT_ASSERT(checkError(r, repo, "testdoctype1:unknownfield"));
-    CPPUNIT_ASSERT(checkError(r, repo, "[badid]"));
+    EXPECT_TRUE(checkError(r, repo, "nodoctype"));
+    EXPECT_TRUE(checkError(r, repo, "unknowndoctype:foo"));
+    EXPECT_TRUE(checkError(r, repo, "testdoctype1:unknownfield"));
+    EXPECT_TRUE(checkError(r, repo, "[badid]"));
 }
 
 std::string
@@ -221,33 +203,32 @@ FieldSetTest::createTestDocument(const TestDocMan& testDocMan) const
     return doc;
 }
 
-void
-FieldSetTest::testCopyDocumentFields()
+TEST_F(FieldSetTest, testCopyDocumentFields)
 {
     TestDocMan testDocMan;
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
     Document::UP src(createTestDocument(testDocMan));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"),
-                         doCopyFields(*src, repo, "[body]"));
-    CPPUNIT_ASSERT_EQUAL(std::string(""),
-                         doCopyFields(*src, repo, "[none]"));
-    CPPUNIT_ASSERT_EQUAL(std::string("headerval: 5678\n"
-                                     "hstringval: hello fantastic world\n"),
-                         doCopyFields(*src, repo, "[header]"));
-    CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"
-                                     "headerval: 5678\n"
-                                     "hstringval: hello fantastic world\n"),
-                         doCopyFields(*src, repo, "[all]"));
-    CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"
-                                     "hstringval: hello fantastic world\n"),
-                         doCopyFields(*src, repo, "testdoctype1:hstringval,content"));
+    EXPECT_EQ(std::string("content: megafoo megabar\n"),
+              doCopyFields(*src, repo, "[body]"));
+    EXPECT_EQ(std::string(""),
+              doCopyFields(*src, repo, "[none]"));
+    EXPECT_EQ(std::string("headerval: 5678\n"
+                          "hstringval: hello fantastic world\n"),
+              doCopyFields(*src, repo, "[header]"));
+    EXPECT_EQ(std::string("content: megafoo megabar\n"
+                          "headerval: 5678\n"
+                          "hstringval: hello fantastic world\n"),
+              doCopyFields(*src, repo, "[all]"));
+    EXPECT_EQ(std::string("content: megafoo megabar\n"
+                          "hstringval: hello fantastic world\n"),
+              doCopyFields(*src, repo, "testdoctype1:hstringval,content"));
     // Test that we overwrite already set fields in destination document
     {
         Document dest(src->getType(), DocumentId("doc:foo:bar"));
         dest.setValue(dest.getField("content"), StringFieldValue("overwriteme"));
-        CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"),
-                         doCopyFields(*src, repo, "[body]", &dest));
+        EXPECT_EQ(std::string("content: megafoo megabar\n"),
+                  doCopyFields(*src, repo, "[body]", &dest));
     }
 }
 
@@ -263,8 +244,7 @@ FieldSetTest::doCopyDocument(const Document& src,
 }
 
 
-void
-FieldSetTest::testDocumentSubsetCopy()
+TEST_F(FieldSetTest, testDocumentSubsetCopy)
 {
     TestDocMan testDocMan;
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
@@ -273,11 +253,11 @@ FieldSetTest::testDocumentSubsetCopy()
     {
         Document::UP doc(FieldSet::createDocumentSubsetCopy(*src, AllFields()));
         // Test that document id and type are copied correctly.
-        CPPUNIT_ASSERT(doc.get());
-        CPPUNIT_ASSERT_EQUAL(src->getId(), doc->getId());
-        CPPUNIT_ASSERT_EQUAL(src->getType(), doc->getType());
-        CPPUNIT_ASSERT_EQUAL(doCopyFields(*src, repo, "[all]"),
-                             stringifyFields(*doc));
+        EXPECT_TRUE(doc.get());
+        EXPECT_EQ(src->getId(), doc->getId());
+        EXPECT_EQ(src->getType(), doc->getType());
+        EXPECT_EQ(doCopyFields(*src, repo, "[all]"),
+                  stringifyFields(*doc));
     }
 
     const char* fieldSets[] = {
@@ -288,13 +268,12 @@ FieldSetTest::testDocumentSubsetCopy()
         "testdoctype1:hstringval,content"
     };
     for (size_t i = 0; i < sizeof(fieldSets) / sizeof(fieldSets[0]); ++i) {
-        CPPUNIT_ASSERT_EQUAL(doCopyFields(*src, repo, fieldSets[i]),
-                             doCopyDocument(*src, repo, fieldSets[i]));
+        EXPECT_EQ(doCopyFields(*src, repo, fieldSets[i]),
+                  doCopyDocument(*src, repo, fieldSets[i]));
     }
 }
 
-void
-FieldSetTest::testSerialize()
+TEST_F(FieldSetTest, testSerialize)
 {
     TestDocMan testDocMan;
     const DocumentTypeRepo& docRepo = testDocMan.getTypeRepo();
@@ -312,33 +291,32 @@ FieldSetTest::testSerialize()
     FieldSetRepo repo;
     for (size_t i = 0; i < sizeof(fieldSets) / sizeof(fieldSets[0]); ++i) {
         FieldSet::UP fs = repo.parse(docRepo, fieldSets[i]);
-        CPPUNIT_ASSERT_EQUAL(vespalib::string(fieldSets[i]), repo.serialize(*fs));
+        EXPECT_EQ(vespalib::string(fieldSets[i]), repo.serialize(*fs));
     }
 }
 
-void
-FieldSetTest::testStripFields()
+TEST_F(FieldSetTest, testStripFields)
 {
     TestDocMan testDocMan;
     const DocumentTypeRepo& repo = testDocMan.getTypeRepo();
     Document::UP src(createTestDocument(testDocMan));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"),
-                         doStripFields(*src, repo, "[body]"));
-    CPPUNIT_ASSERT_EQUAL(std::string(""),
-                         doStripFields(*src, repo, "[none]"));
-    CPPUNIT_ASSERT_EQUAL(std::string(""),
-                         doStripFields(*src, repo, "[id]"));
-    CPPUNIT_ASSERT_EQUAL(std::string("headerval: 5678\n"
-                                     "hstringval: hello fantastic world\n"),
-                         doStripFields(*src, repo, "[header]"));
-    CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"
-                                     "headerval: 5678\n"
-                                     "hstringval: hello fantastic world\n"),
-                         doStripFields(*src, repo, "[all]"));
-    CPPUNIT_ASSERT_EQUAL(std::string("content: megafoo megabar\n"
-                                     "hstringval: hello fantastic world\n"),
-                         doStripFields(*src, repo, "testdoctype1:hstringval,content"));
+    EXPECT_EQ(std::string("content: megafoo megabar\n"),
+              doStripFields(*src, repo, "[body]"));
+    EXPECT_EQ(std::string(""),
+              doStripFields(*src, repo, "[none]"));
+    EXPECT_EQ(std::string(""),
+              doStripFields(*src, repo, "[id]"));
+    EXPECT_EQ(std::string("headerval: 5678\n"
+                          "hstringval: hello fantastic world\n"),
+              doStripFields(*src, repo, "[header]"));
+    EXPECT_EQ(std::string("content: megafoo megabar\n"
+                          "headerval: 5678\n"
+                          "hstringval: hello fantastic world\n"),
+              doStripFields(*src, repo, "[all]"));
+    EXPECT_EQ(std::string("content: megafoo megabar\n"
+                          "hstringval: hello fantastic world\n"),
+              doStripFields(*src, repo, "testdoctype1:hstringval,content"));
 }
 
 } // document

@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/TestFixture.h>
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -21,34 +19,14 @@
 #include <vespa/document/select/parse_utils.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <limits>
+#include <gtest/gtest.h>
 
 using namespace document::config_builder;
 
 namespace document {
 
-class DocumentSelectParserTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(DocumentSelectParserTest);
-    CPPUNIT_TEST(testParseTerminals);
-    CPPUNIT_TEST(testParseBranches);
-    CPPUNIT_TEST(testOperators);
-    CPPUNIT_TEST(testVisitor);
-    CPPUNIT_TEST(testUtf8);
-    CPPUNIT_TEST(testThatSimpleFieldValuesHaveCorrectFieldName);
-    CPPUNIT_TEST(testThatComplexFieldValuesHaveCorrectFieldNames);
-    CPPUNIT_TEST(testBodyFieldDetection);
-    CPPUNIT_TEST(testDocumentUpdates);
-    CPPUNIT_TEST(testDocumentIdsInRemoves);
-    CPPUNIT_TEST(test_syntax_error_reporting);
-    CPPUNIT_TEST(test_operator_precedence);
-    CPPUNIT_TEST(test_token_used_as_ident_preserves_casing);
-    CPPUNIT_TEST(test_ambiguous_field_spec_expression_is_handled_correctly);
-    CPPUNIT_TEST(test_can_build_field_value_from_field_expr_node);
-    CPPUNIT_TEST(test_can_build_function_call_from_field_expr_node);
-    CPPUNIT_TEST(test_function_call_on_doctype_throws_exception);
-    CPPUNIT_TEST(test_parse_utilities_handle_well_formed_input);
-    CPPUNIT_TEST(test_parse_utilities_handle_malformed_input);
-    CPPUNIT_TEST_SUITE_END();
-
+class DocumentSelectParserTest : public ::testing::Test {
+protected:
     BucketIdFactory _bucketIdFactory;
     std::unique_ptr<select::Parser> _parser;
     std::vector<Document::SP > _doc;
@@ -71,17 +49,13 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
                                const ContainsType& t);
 
     std::string parse_to_tree(const std::string& str);
-public:
 
     DocumentSelectParserTest()
         : _bucketIdFactory() {}
 
-    void setUp() override;
+    void SetUp() override;
     void createDocs();
 
-    void testParseTerminals();
-    void testParseBranches();
-    void testOperators();
     void testOperators0();
     void testOperators1();
     void testOperators2();
@@ -92,36 +66,19 @@ public:
     void testOperators7();
     void testOperators8();
     void testOperators9();
-    void testVisitor();
-    void testUtf8();
-    void testThatSimpleFieldValuesHaveCorrectFieldName();
-    void testThatComplexFieldValuesHaveCorrectFieldNames();
-    void testBodyFieldDetection();
-    void testDocumentUpdates();
     void testDocumentUpdates0();
     void testDocumentUpdates1();
     void testDocumentUpdates2();
     void testDocumentUpdates3();
     void testDocumentUpdates4();
-    void testDocumentIdsInRemoves();
-    void test_syntax_error_reporting();
-    void test_operator_precedence();
-    void test_token_used_as_ident_preserves_casing();
-    void test_ambiguous_field_spec_expression_is_handled_correctly();
-    void test_can_build_field_value_from_field_expr_node();
-    void test_can_build_function_call_from_field_expr_node();
-    void test_function_call_on_doctype_throws_exception();
-    void test_parse_utilities_handle_well_formed_input();
-    void test_parse_utilities_handle_malformed_input();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(DocumentSelectParserTest);
 
 namespace {
     std::shared_ptr<const DocumentTypeRepo> _repo;
 }
 
-void DocumentSelectParserTest::setUp()
+void DocumentSelectParserTest::SetUp()
 {
     DocumenttypesConfigBuilderHelper builder(TestDocRepo::getDefaultConfig());
     builder.document(535424777, "notandor",
@@ -295,24 +252,24 @@ DocumentSelectParserTest::createDocs()
 namespace {
 void doVerifyParse(select::Node *node, const std::string &query, const char *expected) {
     std::string message("Query "+query+" failed to parse.");
-    CPPUNIT_ASSERT_MESSAGE(message, node != 0);
+    ASSERT_TRUE(node != nullptr) << message;
     std::ostringstream actual;
     actual << *node;
 
-    std::string exp(expected != 0 ? std::string(expected) : query);
-    CPPUNIT_ASSERT_EQUAL(exp, actual.str());
+    std::string exp(expected != nullptr ? std::string(expected) : query);
+    EXPECT_EQ(exp, actual.str());
     // Test that cloning gives the same result
     std::unique_ptr<select::Node> clonedNode(node->clone());
     std::ostringstream clonedStr;
     clonedStr << *clonedNode;
-    CPPUNIT_ASSERT_EQUAL(exp, clonedStr.str());
+    EXPECT_EQ(exp, clonedStr.str());
 }
 
 void verifySimpleParse(const std::string& query, const char* expected = 0) {
     BucketIdFactory factory;
     select::simple::SelectionParser parser(factory);
     std::string message("Query "+query+" failed to parse.");
-    CPPUNIT_ASSERT_MESSAGE(message, parser.parse(query));
+    EXPECT_TRUE(parser.parse(query)) << message;
     std::unique_ptr<select::Node> node(parser.getNode());
     doVerifyParse(node.get(), query, expected);
 }
@@ -330,19 +287,20 @@ void verifyParse(const std::string& query, const char* expected = 0) {
             TestDocRepo test_repo;
             select::Parser parser(test_repo.getTypeRepo(), factory);
             std::unique_ptr<select::Node> node(parser.parse(query));
-            CPPUNIT_FAIL("Expected exception parsing query '"+query+"'");
+            FAIL() << "Expected exception parsing query '" << query << "'";
         } catch (select::ParsingFailedException& e) {
             std::string message(e.what());
             if (message.size() > error.size())
                 message = message.substr(0, error.size());
             std::string failure("Expected: " + error + "\n- Actual  : "
                                 + std::string(e.what()));
-            CPPUNIT_ASSERT_MESSAGE(failure, error == message);
+            EXPECT_EQ(error, message) << failure;
         }
     }
 }
 
-void DocumentSelectParserTest::test_syntax_error_reporting() {
+TEST_F(DocumentSelectParserTest, test_syntax_error_reporting)
+{
     createDocs();
 
     verifyFailedParse("testdoctype1.headerval == aaa", "ParsingFailedException: "
@@ -376,7 +334,7 @@ void DocumentSelectParserTest::test_syntax_error_reporting() {
                       "doctype, bool or comparison at column 1 when parsing selection '(1 + 2)'");
 }
 
-void DocumentSelectParserTest::testParseTerminals()
+TEST_F(DocumentSelectParserTest, testParseTerminals)
 {
     createDocs();
 
@@ -401,8 +359,8 @@ void DocumentSelectParserTest::testParseTerminals()
     const select::StringValueNode& vnode(
             dynamic_cast<const select::StringValueNode&>(compnode.getRight()));
 
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("headerval"), fnode.getFieldName());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), vnode.getValue());
+    EXPECT_EQ(vespalib::string("headerval"), fnode.getFieldName());
+    EXPECT_EQ(vespalib::string("test"), vnode.getValue());
     // Test whitespace
     verifyParse("testdoctype1.headerval == \"te st \"");
     verifyParse(" \t testdoctype1.headerval\t==  \t \"test\"\t",
@@ -416,7 +374,7 @@ void DocumentSelectParserTest::testParseTerminals()
     select::Compare& escapednode(dynamic_cast<select::Compare&>(*node));
     const select::StringValueNode& escval(
         dynamic_cast<const select::StringValueNode&>(escapednode.getRight()));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("\ttH \n"), escval.getValue());
+    EXPECT_EQ(vespalib::string("\ttH \n"), escval.getValue());
     // Test <= <, > >=
     verifyParse("testdoctype1.headerval >= 123");
     verifyParse("testdoctype1.headerval > 123");
@@ -503,7 +461,7 @@ void DocumentSelectParserTest::testParseTerminals()
     verifyParse("usergroup");
 }
 
-void DocumentSelectParserTest::testParseBranches()
+TEST_F(DocumentSelectParserTest, testParseBranches)
 {
     createDocs();
 
@@ -540,25 +498,23 @@ DocumentSelectParserTest::doParse(vespalib::stringref expr,
     oss << "for expr: " << expr << "\n";
     select::ResultList tracedResult(root->trace(t, oss));
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE(expr, result, clonedResult);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE(oss.str(), result, tracedResult);
+    EXPECT_EQ(result, clonedResult) << expr;
+    EXPECT_EQ(result, tracedResult) << oss.str();
 
     return result;
 }
 
 #define PARSE(expr, doc, result) \
-    CPPUNIT_ASSERT_EQUAL_MESSAGE(expr, select::ResultList(select::Result::result), \
-                                 doParse(expr, (doc)));
+    EXPECT_EQ(select::ResultList(select::Result::result),       \
+              doParse(expr, (doc))) << expr;
 
 #define PARSEI(expr, doc, result) \
-    CPPUNIT_ASSERT_EQUAL_MESSAGE(std::string("Doc: ") + expr,          \
-                                 select::ResultList(select::Result::result), \
-                                 doParse(expr, (doc)));                 \
-    CPPUNIT_ASSERT_EQUAL_MESSAGE(std::string("Doc id: ") + expr,       \
-                                 select::ResultList(select::Result::result), \
-                                 doParse(expr, (doc).getId()));
+    EXPECT_EQ(select::ResultList(select::Result::result), \
+              doParse(expr, (doc))) << (std::string("Doc: ") + expr);  \
+    EXPECT_EQ(select::ResultList(select::Result::result), \
+              doParse(expr, (doc).getId())) << (std::string("Doc id: ") + expr);
 
-void DocumentSelectParserTest::testOperators()
+TEST_F(DocumentSelectParserTest, testOperators)
 {
     testOperators0();
     testOperators1();
@@ -1000,7 +956,7 @@ namespace {
 
 }
 
-void DocumentSelectParserTest::testVisitor()
+TEST_F(DocumentSelectParserTest, testVisitor)
 {
     createDocs();
 
@@ -1018,10 +974,10 @@ void DocumentSelectParserTest::testVisitor()
                           "COMPARE(testdoctype1.hstringval = \"ola\"))), "
                    "COMPARE(testdoctype1.headerval != null)))";
 
-    CPPUNIT_ASSERT_EQUAL(expected, v.getVisitString());
+    EXPECT_EQ(expected, v.getVisitString());
 }
 
-void DocumentSelectParserTest::testBodyFieldDetection()
+TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
 {
 
     {
@@ -1029,8 +985,8 @@ void DocumentSelectParserTest::testBodyFieldDetection()
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        CPPUNIT_ASSERT(!detector.foundBodyField);
-        CPPUNIT_ASSERT(detector.foundHeaderField);
+        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_TRUE(detector.foundHeaderField);
     }
 
     {
@@ -1038,8 +994,8 @@ void DocumentSelectParserTest::testBodyFieldDetection()
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        CPPUNIT_ASSERT(!detector.foundBodyField);
-        CPPUNIT_ASSERT(detector.foundHeaderField);
+        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_TRUE(detector.foundHeaderField);
     }
 
     {
@@ -1047,8 +1003,8 @@ void DocumentSelectParserTest::testBodyFieldDetection()
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        CPPUNIT_ASSERT(!detector.foundBodyField);
-        CPPUNIT_ASSERT(detector.foundHeaderField);
+        EXPECT_TRUE(!detector.foundBodyField);
+        EXPECT_TRUE(detector.foundHeaderField);
     }
 
     {
@@ -1056,7 +1012,7 @@ void DocumentSelectParserTest::testBodyFieldDetection()
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        CPPUNIT_ASSERT(detector.foundBodyField);
+        EXPECT_TRUE(detector.foundBodyField);
     }
 
     {
@@ -1067,12 +1023,12 @@ void DocumentSelectParserTest::testBodyFieldDetection()
         select::BodyFieldDetector detector(*_repo);
 
         root->visit(detector);
-        CPPUNIT_ASSERT(!detector.foundBodyField);
+        EXPECT_TRUE(!detector.foundBodyField);
     }
 
 }
 
-void DocumentSelectParserTest::testDocumentUpdates()
+TEST_F(DocumentSelectParserTest, testDocumentUpdates)
 {
     testDocumentUpdates0();
     testDocumentUpdates1();
@@ -1239,7 +1195,7 @@ void DocumentSelectParserTest::testDocumentUpdates4()
     PARSEI("-6 % 10 = -6", *_update[0], True);
 }
 
-void DocumentSelectParserTest::testDocumentIdsInRemoves()
+TEST_F(DocumentSelectParserTest, testDocumentIdsInRemoves)
 {
     PARSE("testdoctype1", DocumentId("id:ns:testdoctype1::1"), True);
     PARSE("testdoctype1", DocumentId("id:ns:null::1"), False);
@@ -1252,15 +1208,15 @@ void DocumentSelectParserTest::testDocumentIdsInRemoves()
     PARSE("testdoctype1 and testdoctype1.headerval == 0", DocumentId("id:ns:testdoctype1::1"), Invalid);
 }
 
-void DocumentSelectParserTest::testUtf8()
+TEST_F(DocumentSelectParserTest, testUtf8)
 {
     createDocs();
     std::string utf8name(u8"H\u00e5kon");
-    CPPUNIT_ASSERT_EQUAL(size_t(6), utf8name.size());
+    EXPECT_EQ(size_t(6), utf8name.size());
 
     /// \todo TODO (was warning):  UTF8 test for glob/regex support in selection language disabled. Known not to work
 //    boost::u32regex rx = boost::make_u32regex("H.kon");
-//    CPPUNIT_ASSERT_EQUAL(true, boost::u32regex_match(utf8name, rx));
+//    EXPECT_EQ(true, boost::u32regex_match(utf8name, rx));
 
     _doc.push_back(createDoc(
         "testdoctype1", "doc:myspace:utf8doc", 24, 2.0, utf8name, "bar"));
@@ -1274,22 +1230,24 @@ DocumentSelectParserTest::parseFieldValue(const std::string& expression) {
         dynamic_cast<const select::Compare &>(*_parser->parse(expression)).getLeft().clone().release()));
 }
 
-void DocumentSelectParserTest::testThatSimpleFieldValuesHaveCorrectFieldName() {
-    CPPUNIT_ASSERT_EQUAL(
+TEST_F(DocumentSelectParserTest, testThatSimpleFieldValuesHaveCorrectFieldName)
+{
+    EXPECT_EQ(
         vespalib::string("headerval"),
         parseFieldValue("testdoctype1.headerval")->getRealFieldName());
 }
 
-void DocumentSelectParserTest::testThatComplexFieldValuesHaveCorrectFieldNames() {
-    CPPUNIT_ASSERT_EQUAL(
+TEST_F(DocumentSelectParserTest, testThatComplexFieldValuesHaveCorrectFieldNames)
+{
+    EXPECT_EQ(
         vespalib::string("headerval"),
         parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
 
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
         vespalib::string("headerval"),
         parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
 
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
         vespalib::string("headerval"),
         parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
 }
@@ -1399,84 +1357,88 @@ std::string DocumentSelectParserTest::parse_to_tree(const std::string& str) {
     return node_to_string(*root);
 }
 
-void DocumentSelectParserTest::test_operator_precedence() {
+TEST_F(DocumentSelectParserTest, test_operator_precedence)
+{
     createDocs();
     using namespace std::string_literals;
 
-    CPPUNIT_ASSERT_EQUAL("(AND true false)"s, parse_to_tree("true and false"));
-    CPPUNIT_ASSERT_EQUAL("(AND (NOT false) true)"s, parse_to_tree("not false and true"));
-    CPPUNIT_ASSERT_EQUAL("(NOT (AND false true))"s, parse_to_tree("not (false and true)"));
-    CPPUNIT_ASSERT_EQUAL("(NOT (DOCTYPE testdoctype1))"s, parse_to_tree("not testdoctype1"));
-    CPPUNIT_ASSERT_EQUAL("(NOT (DOCTYPE (testdoctype1)))"s, parse_to_tree("not (testdoctype1)"));
-    CPPUNIT_ASSERT_EQUAL("(NOT (DOCTYPE (testdoctype1)))"s, parse_to_tree("(not (testdoctype1))"));
-    CPPUNIT_ASSERT_EQUAL("(OR (== 1 2) (== 3 4))"s, parse_to_tree("1==2 or 3==4"));
-    CPPUNIT_ASSERT_EQUAL("(!= (+ (+ 1 2) 3) 0)"s, parse_to_tree("1+2+3 != 0"));
-    CPPUNIT_ASSERT_EQUAL("(!= (+ (+ 1.1 2.2) 3.3) 4.4)"s, parse_to_tree("1.1+2.2+3.3 != 4.4"));
-    CPPUNIT_ASSERT_EQUAL("(!= (- (- 1 2) 3) 0)"s, parse_to_tree("1-2-3 != 0"));
-    CPPUNIT_ASSERT_EQUAL("(!= (+ (+ 1 2) 3) 0)"s, parse_to_tree("1 + 2 + 3 != 0"));
-    CPPUNIT_ASSERT_EQUAL("(!= (+ 1 (* 2 3)) 0)"s, parse_to_tree("1 + 2 * 3 != 0"));
-    CPPUNIT_ASSERT_EQUAL("(!= (- (/ (* 1 2) 3) 4) 0)"s, parse_to_tree("1 * 2 / 3 - 4 != 0"));
-    CPPUNIT_ASSERT_EQUAL("(!= (/ (* 1 2) (- 3 4)) 0)"s, parse_to_tree("1 * 2 / (3 - 4) != 0"));
-    CPPUNIT_ASSERT_EQUAL("(OR (AND true (NOT (== 1 2))) false)"s,
+    EXPECT_EQ("(AND true false)"s, parse_to_tree("true and false"));
+    EXPECT_EQ("(AND (NOT false) true)"s, parse_to_tree("not false and true"));
+    EXPECT_EQ("(NOT (AND false true))"s, parse_to_tree("not (false and true)"));
+    EXPECT_EQ("(NOT (DOCTYPE testdoctype1))"s, parse_to_tree("not testdoctype1"));
+    EXPECT_EQ("(NOT (DOCTYPE (testdoctype1)))"s, parse_to_tree("not (testdoctype1)"));
+    EXPECT_EQ("(NOT (DOCTYPE (testdoctype1)))"s, parse_to_tree("(not (testdoctype1))"));
+    EXPECT_EQ("(OR (== 1 2) (== 3 4))"s, parse_to_tree("1==2 or 3==4"));
+    EXPECT_EQ("(!= (+ (+ 1 2) 3) 0)"s, parse_to_tree("1+2+3 != 0"));
+    EXPECT_EQ("(!= (+ (+ 1.1 2.2) 3.3) 4.4)"s, parse_to_tree("1.1+2.2+3.3 != 4.4"));
+    EXPECT_EQ("(!= (- (- 1 2) 3) 0)"s, parse_to_tree("1-2-3 != 0"));
+    EXPECT_EQ("(!= (+ (+ 1 2) 3) 0)"s, parse_to_tree("1 + 2 + 3 != 0"));
+    EXPECT_EQ("(!= (+ 1 (* 2 3)) 0)"s, parse_to_tree("1 + 2 * 3 != 0"));
+    EXPECT_EQ("(!= (- (/ (* 1 2) 3) 4) 0)"s, parse_to_tree("1 * 2 / 3 - 4 != 0"));
+    EXPECT_EQ("(!= (/ (* 1 2) (- 3 4)) 0)"s, parse_to_tree("1 * 2 / (3 - 4) != 0"));
+    EXPECT_EQ("(OR (AND true (NOT (== 1 2))) false)"s,
                          parse_to_tree("true and not 1 == 2 or false"));
-    CPPUNIT_ASSERT_EQUAL("(AND (AND (AND (< 1 2) (> 3 4)) (<= 5 6)) (>= 7 8))"s,
+    EXPECT_EQ("(AND (AND (AND (< 1 2) (> 3 4)) (<= 5 6)) (>= 7 8))"s,
                          parse_to_tree("1 < 2 and 3 > 4 and 5 <= 6 and 7 >= 8"));
-    CPPUNIT_ASSERT_EQUAL("(OR (AND (AND (< 1 2) (> 3 4)) (<= 5 6)) (>= 7 8))"s,
+    EXPECT_EQ("(OR (AND (AND (< 1 2) (> 3 4)) (<= 5 6)) (>= 7 8))"s,
                          parse_to_tree("1 < 2 and 3 > 4 and 5 <= 6 or 7 >= 8"));
-    CPPUNIT_ASSERT_EQUAL("(OR (AND (< 1 2) (> 3 4)) (AND (<= 5 6) (>= 7 8)))"s,
+    EXPECT_EQ("(OR (AND (< 1 2) (> 3 4)) (AND (<= 5 6) (>= 7 8)))"s,
                          parse_to_tree("1 < 2 and 3 > 4 or 5 <= 6 and 7 >= 8"));
     // Unary plus is simply ignored by the parser.
-    CPPUNIT_ASSERT_EQUAL("(== 1 -2)"s, parse_to_tree("+1==-2"));
-    CPPUNIT_ASSERT_EQUAL("(== 1.23 -2.56)"s, parse_to_tree("+1.23==-2.56"));
-    CPPUNIT_ASSERT_EQUAL("(== (+ 1 2) (- 3 -4))"s, parse_to_tree("1 + +2==3 - -4"));
-    CPPUNIT_ASSERT_EQUAL("(== (+ 1 2) (- 3 -4))"s, parse_to_tree("1++2==3--4"));
+    EXPECT_EQ("(== 1 -2)"s, parse_to_tree("+1==-2"));
+    EXPECT_EQ("(== 1.23 -2.56)"s, parse_to_tree("+1.23==-2.56"));
+    EXPECT_EQ("(== (+ 1 2) (- 3 -4))"s, parse_to_tree("1 + +2==3 - -4"));
+    EXPECT_EQ("(== (+ 1 2) (- 3 -4))"s, parse_to_tree("1++2==3--4"));
 
     // Due to the way parentheses are handled by the AST, ((foo)) always gets
     // reduced down to (foo).
-    CPPUNIT_ASSERT_EQUAL("(DOCTYPE (testdoctype1))"s, parse_to_tree("(((testdoctype1)))"));
-    CPPUNIT_ASSERT_EQUAL("(AND (DOCTYPE (testdoctype1)) (DOCTYPE (testdoctype2)))"s,
+    EXPECT_EQ("(DOCTYPE (testdoctype1))"s, parse_to_tree("(((testdoctype1)))"));
+    EXPECT_EQ("(AND (DOCTYPE (testdoctype1)) (DOCTYPE (testdoctype2)))"s,
                          parse_to_tree("((((testdoctype1))) and ((testdoctype2)))"));
 
-    CPPUNIT_ASSERT_EQUAL("(== (ID id) \"foo\")"s, parse_to_tree("id == 'foo'"));
-    CPPUNIT_ASSERT_EQUAL("(== (ID id.group) \"foo\")"s, parse_to_tree("id.group == 'foo'"));
+    EXPECT_EQ("(== (ID id) \"foo\")"s, parse_to_tree("id == 'foo'"));
+    EXPECT_EQ("(== (ID id.group) \"foo\")"s, parse_to_tree("id.group == 'foo'"));
     // id_spec function apply
-    CPPUNIT_ASSERT_EQUAL("(== (hash (ID id)) 12345)"s, parse_to_tree("id.hash() == 12345"));
+    EXPECT_EQ("(== (hash (ID id)) 12345)"s, parse_to_tree("id.hash() == 12345"));
     // Combination of id_spec function apply and arith_expr function apply
-    CPPUNIT_ASSERT_EQUAL("(== (abs (hash (ID id))) 12345)"s, parse_to_tree("id.hash().abs() == 12345"));
+    EXPECT_EQ("(== (abs (hash (ID id))) 12345)"s, parse_to_tree("id.hash().abs() == 12345"));
 }
 
-void DocumentSelectParserTest::test_token_used_as_ident_preserves_casing() {
+TEST_F(DocumentSelectParserTest, test_token_used_as_ident_preserves_casing)
+{
     createDocs();
     using namespace std::string_literals;
 
     // TYPE, SCHEME, ORDER etc are tokens that may also be used as identifiers
     // without introducing parsing ambiguities. In this context their original
     // casing should be preserved.
-    CPPUNIT_ASSERT_EQUAL("(== (VAR Type) 123)"s, parse_to_tree("$Type == 123"));
-    CPPUNIT_ASSERT_EQUAL("(== (VAR giD) 123)"s, parse_to_tree("$giD == 123"));
-    CPPUNIT_ASSERT_EQUAL("(== (VAR ORDER) 123)"s, parse_to_tree("$ORDER == 123"));
+    EXPECT_EQ("(== (VAR Type) 123)"s, parse_to_tree("$Type == 123"));
+    EXPECT_EQ("(== (VAR giD) 123)"s, parse_to_tree("$giD == 123"));
+    EXPECT_EQ("(== (VAR ORDER) 123)"s, parse_to_tree("$ORDER == 123"));
 }
 
-void DocumentSelectParserTest::test_ambiguous_field_spec_expression_is_handled_correctly() {
+TEST_F(DocumentSelectParserTest, test_ambiguous_field_spec_expression_is_handled_correctly)
+{
     createDocs();
     using namespace std::string_literals;
     // In earlier revisions of LR(1)-grammar, this triggered a reduce/reduce conflict between
     // logical_expr and arith_expr for the sequence '(' field_spec ')', which failed to
     // parse in an expected manner. Test that we don't get regressions here.
-    CPPUNIT_ASSERT_EQUAL("(!= (FIELD testdoctype1 foo) null)"s, parse_to_tree("(testdoctype1.foo)"));
-    CPPUNIT_ASSERT_EQUAL("(AND (!= (FIELD testdoctype1 foo) null) (!= (FIELD testdoctype1 bar) null))"s,
+    EXPECT_EQ("(!= (FIELD testdoctype1 foo) null)"s, parse_to_tree("(testdoctype1.foo)"));
+    EXPECT_EQ("(AND (!= (FIELD testdoctype1 foo) null) (!= (FIELD testdoctype1 bar) null))"s,
                          parse_to_tree("(testdoctype1.foo) AND (testdoctype1.bar)"));
 }
 
-void DocumentSelectParserTest::test_can_build_field_value_from_field_expr_node() {
+TEST_F(DocumentSelectParserTest, test_can_build_field_value_from_field_expr_node)
+{
     using select::FieldExprNode;
     {
         // Simple field expression
         auto lhs = std::make_unique<FieldExprNode>("mydoctype");
         auto root = std::make_unique<FieldExprNode>(std::move(lhs), "foo");
         auto fv = root->convert_to_field_value();
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("mydoctype"), fv->getDocType());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("foo"), fv->getFieldName());
+        EXPECT_EQ(vespalib::string("mydoctype"), fv->getDocType());
+        EXPECT_EQ(vespalib::string("foo"), fv->getFieldName());
     }
     {
         // Nested field expression
@@ -1484,12 +1446,13 @@ void DocumentSelectParserTest::test_can_build_field_value_from_field_expr_node()
         auto lhs2 = std::make_unique<FieldExprNode>(std::move(lhs1), "foo");
         auto root = std::make_unique<FieldExprNode>(std::move(lhs2), "bar");
         auto fv = root->convert_to_field_value();
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("mydoctype"), fv->getDocType());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("foo.bar"), fv->getFieldName());
+        EXPECT_EQ(vespalib::string("mydoctype"), fv->getDocType());
+        EXPECT_EQ(vespalib::string("foo.bar"), fv->getFieldName());
     }
 }
 
-void DocumentSelectParserTest::test_can_build_function_call_from_field_expr_node() {
+TEST_F(DocumentSelectParserTest, test_can_build_function_call_from_field_expr_node)
+{
     using select::FieldExprNode;
     {
         // doctype.foo.lowercase()
@@ -1499,20 +1462,21 @@ void DocumentSelectParserTest::test_can_build_function_call_from_field_expr_node
         auto lhs2 = std::make_unique<FieldExprNode>(std::move(lhs1), "foo");
         auto root = std::make_unique<FieldExprNode>(std::move(lhs2), "lowercase");
         auto func = root->convert_to_function_call();
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("lowercase"), func->getFunctionName());
+        EXPECT_EQ(vespalib::string("lowercase"), func->getFunctionName());
         // TODO vespalib::string?
-        CPPUNIT_ASSERT_EQUAL(std::string("(FIELD mydoctype foo)"), node_to_string(func->getChild()));
+        EXPECT_EQ(std::string("(FIELD mydoctype foo)"), node_to_string(func->getChild()));
     }
 }
 
-void DocumentSelectParserTest::test_function_call_on_doctype_throws_exception() {
+TEST_F(DocumentSelectParserTest, test_function_call_on_doctype_throws_exception)
+{
     using select::FieldExprNode;
     auto lhs = std::make_unique<FieldExprNode>("mydoctype");
     auto root = std::make_unique<FieldExprNode>(std::move(lhs), "lowercase");
     try {
         root->convert_to_function_call();
     } catch (const vespalib::IllegalArgumentException& e) {
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("Cannot call function 'lowercase' directly on document type"),
+        EXPECT_EQ(vespalib::string("Cannot call function 'lowercase' directly on document type"),
                              e.getMessage());
     }
 }
@@ -1522,33 +1486,34 @@ namespace {
 void check_parse_i64(vespalib::stringref str, bool expect_ok, int64_t expected_output) {
     int64_t out = 0;
     bool ok = select::util::parse_i64(str.data(), str.size(), out);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Parsing did not returned expected success status for i64 input " + str, expect_ok, ok);
+    EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for i64 input " << str;
     if (expect_ok) {
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Parse output not as expected for i64 input " + str, expected_output, out);
+        EXPECT_EQ(expected_output, out) << "Parse output not as expected for i64 input " << str;
     }
 }
 
 void check_parse_hex_i64(vespalib::stringref str, bool expect_ok, int64_t expected_output) {
     int64_t out = 0;
     bool ok = select::util::parse_hex_i64(str.data(), str.size(), out);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Parsing did not returned expected success status for hex i64 input " + str, expect_ok, ok);
+    EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for hex i64 input " << str;
     if (expect_ok) {
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Parse output not as expected for hex i64 input " + str, expected_output, out);
+        EXPECT_EQ(expected_output, out) << "Parse output not as expected for hex i64 input " << str;
     }
 }
 
 void check_parse_double(vespalib::stringref str, bool expect_ok, double expected_output) {
     double out = 0;
     bool ok = select::util::parse_double(str.data(), str.size(), out);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Parsing did not returned expected success status for hex i64 input " + str, expect_ok, ok);
+    EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for hex i64 input " << str;
     if (expect_ok) {
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Parse output not as expected for double input " + str, expected_output, out);
+        EXPECT_EQ(expected_output, out) << "Parse output not as expected for double input " << str;
     }
 }
 
 }
 
-void DocumentSelectParserTest::test_parse_utilities_handle_well_formed_input() {
+TEST_F(DocumentSelectParserTest, test_parse_utilities_handle_well_formed_input)
+{
     check_parse_i64("0", true, 0);
     check_parse_i64("1", true, 1);
     check_parse_i64("9223372036854775807", true, INT64_MAX);
@@ -1568,7 +1533,8 @@ void DocumentSelectParserTest::test_parse_utilities_handle_well_formed_input() {
     check_parse_double("1.79769e+308", true, 1.79769e+308); // DBL_MAX
 }
 
-void DocumentSelectParserTest::test_parse_utilities_handle_malformed_input() {
+TEST_F(DocumentSelectParserTest, test_parse_utilities_handle_malformed_input)
+{
     check_parse_i64("9223372036854775808", false, 0); // INT64_MAX + 1
     check_parse_i64("18446744073709551615", false, 0); // UINT64_MAX
     check_parse_i64("", false, 0);

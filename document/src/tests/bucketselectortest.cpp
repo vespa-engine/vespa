@@ -3,25 +3,17 @@
 #include <vespa/document/bucket/bucketselector.h>
 
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/testdocrepo.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
+#include <iostream>
+#include <gtest/gtest.h>
 
 using document::select::Node;
 using document::select::Parser;
 
 namespace document {
-
-struct BucketSelectorTest : public CppUnit::TestFixture {
-    void testSimple();
-
-    CPPUNIT_TEST_SUITE(BucketSelectorTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketSelectorTest);
 
 #define ASSERT_BUCKET_COUNT(expression, count) \
 { \
@@ -30,14 +22,14 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketSelectorTest);
     BucketSelector selector(idfactory); \
     Parser parser(testRepo.getTypeRepo(), idfactory); \
     std::unique_ptr<Node> node(parser.parse(expression)); \
-    CPPUNIT_ASSERT(node.get() != 0); \
+    ASSERT_TRUE(node.get() != 0);                       \
     std::unique_ptr<BucketSelector::BucketVector> buckets( \
             selector.select(*node)); \
     size_t bcount(buckets.get() ? buckets->size() : 0); \
     std::ostringstream ost; \
     ost << "Expression " << expression << " did not contain " << count \
         << " buckets as expected"; \
-    CPPUNIT_ASSERT_EQUAL_MSG(ost.str(), (size_t) count, bcount); \
+    EXPECT_EQ((size_t) count, bcount) << ost.str(); \
 }
 
 #define ASSERT_BUCKET(expression, bucket) \
@@ -47,7 +39,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketSelectorTest);
     BucketSelector selector(idfactory); \
     Parser parser(testRepo.getTypeRepo(), idfactory); \
     std::unique_ptr<Node> node(parser.parse(expression)); \
-    CPPUNIT_ASSERT(node.get() != 0); \
+    ASSERT_TRUE(node.get() != 0);           \
     std::unique_ptr<BucketSelector::BucketVector> buckets( \
             selector.select(*node)); \
     std::ostringstream ost; \
@@ -58,12 +50,12 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketSelectorTest);
     } else { \
         ost << ". Matches all buckets"; \
     } \
-    CPPUNIT_ASSERT_MSG(ost.str(), buckets.get() && \
-                       std::find(buckets->begin(), buckets->end(), \
-                       bucket) != buckets->end()); \
+    EXPECT_TRUE(buckets.get() &&     \
+                std::find(buckets->begin(), buckets->end(),     \
+                          bucket) != buckets->end()) << ost.str();      \
 }
 
-void BucketSelectorTest::testSimple()
+TEST(BucketSelectorTest, testSimple)
 {
     ASSERT_BUCKET_COUNT("id = \"userdoc:ns:123:foobar\"", 1u);
     ASSERT_BUCKET_COUNT("id = \"userdoc:ns:123:foo*\"", 0u);
