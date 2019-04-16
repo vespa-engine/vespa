@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocrepo.h>
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -12,22 +11,11 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <gtest/gtest.h>
 
 using vespalib::StringTokenizer;
 
 namespace document {
-
-class TestXml : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(TestXml);
-    CPPUNIT_TEST(testSimpleUsage);
-    CPPUNIT_TEST(testDocumentUpdate);
-    CPPUNIT_TEST_SUITE_END();
-
-    void testSimpleUsage();
-    void testDocumentUpdate();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(TestXml);
 
 namespace {
 
@@ -91,7 +79,7 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
 
 } // anonymous ns
 
-void TestXml::testSimpleUsage()
+TEST(TestXml, testSimpleUsage)
 {
     DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("data/defaultdoctypes.cfg")));
     Document::UP doc1(createTestDocument(repo));
@@ -120,7 +108,7 @@ void TestXml::testSimpleUsage()
         "</document>";
 }
 
-void TestXml::testDocumentUpdate()
+TEST(TestXml, testDocumentUpdate)
 {
     DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("data/defaultdoctypes.cfg")));
     DocumentUpdate::UP up1(createTestDocumentUpdate(repo));
@@ -143,7 +131,7 @@ void TestXml::testDocumentUpdate()
         "    <remove>789</remove>\n"
         "  </alter>\n"
         "</document>";
-    CPPUNIT_ASSERT_EQUAL(expected, up1->toXml("  "));
+    EXPECT_EQ(expected, up1->toXml("  "));
 }
 
 } // document

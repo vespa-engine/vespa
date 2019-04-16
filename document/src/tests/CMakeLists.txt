@@ -20,7 +20,16 @@ vespa_add_executable(document_gtest_runner_app TEST
     gid_filter_test.cpp
     globalidtest.cpp
     gtest_runner.cpp
+    orderingselectortest.cpp
+    positiontypetest.cpp
+    primitivefieldvaluetest.cpp
+    stringtokenizertest.cpp
+    structfieldvaluetest.cpp
+    testdocmantest.cpp
     teststringutil.cpp
+    testxml.cpp
+    urltypetest.cpp
+    weightedsetfieldvaluetest.cpp
     DEPENDS
     document
     gtest
@@ -37,17 +46,8 @@ vespa_add_test(
 vespa_add_executable(document_testrunner_app TEST
     SOURCES
     testbytebuffer.cpp
-    stringtokenizertest.cpp
-    primitivefieldvaluetest.cpp
-    weightedsetfieldvaluetest.cpp
-    structfieldvaluetest.cpp
-    testdocmantest.cpp
-    testxml.cpp
-    orderingselectortest.cpp
     testrunner.cpp
     heapdebuggerother.cpp
-    positiontypetest.cpp
-    urltypetest.cpp
     DEPENDS
     document
     AFTER

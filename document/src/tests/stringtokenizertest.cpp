@@ -1,26 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <gtest/gtest.h>
 
 using vespalib::StringTokenizer;
 using std::string;
 
-class StringTokenizerTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(StringTokenizerTest);
-    CPPUNIT_TEST(testSimpleUsage);
-    CPPUNIT_TEST_SUITE_END();
-
-protected:
-    void testSimpleUsage();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(StringTokenizerTest);
-
-void StringTokenizerTest::testSimpleUsage()
+TEST(StringTokenizerTest, testSimpleUsage)
 {
     {
         string s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
@@ -37,16 +26,15 @@ void StringTokenizerTest::testSimpleUsage()
         result.push_back("tokens");
         result.push_back("");
 
-        CPPUNIT_ASSERT_EQUAL(result.size(),
-                             static_cast<size_t>(tokenizer.size()));
+        ASSERT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
         for (unsigned int i=0; i<result.size(); i++) {
-            CPPUNIT_ASSERT_EQUAL(result[i], tokenizer[i]);
+            EXPECT_EQ(result[i], tokenizer[i]);
         }
         std::set<string> sorted(tokenizer.begin(), tokenizer.end());
-        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(8u), sorted.size());
+        EXPECT_EQ(static_cast<size_t>(8u), sorted.size());
 
         tokenizer.removeEmptyTokens();
-        CPPUNIT_ASSERT_EQUAL(7u, tokenizer.size());
+        EXPECT_EQ(7u, tokenizer.size());
     }
     {
         string s("\tAnother list with some \ntokens, and stuff.");
@@ -62,27 +50,26 @@ void StringTokenizerTest::testSimpleUsage()
         result.push_back("and");
         result.push_back("stuff");
 
-        CPPUNIT_ASSERT_EQUAL(result.size(),
-                             static_cast<size_t>(tokenizer.size()));
+        ASSERT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
         for (unsigned int i=0; i<result.size(); i++) {
-            CPPUNIT_ASSERT_EQUAL(result[i], tokenizer[i]);
+            EXPECT_EQ(result[i], tokenizer[i]);
         }
         std::set<string> sorted(tokenizer.begin(), tokenizer.end());
-        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(8u), sorted.size());
+        EXPECT_EQ(static_cast<size_t>(8u), sorted.size());
 
         tokenizer.removeEmptyTokens();
-        CPPUNIT_ASSERT_EQUAL(7u, tokenizer.size());
+        EXPECT_EQ(7u, tokenizer.size());
     }
     {
         string s(" ");
         StringTokenizer tokenizer(s);
-        CPPUNIT_ASSERT_EQUAL(0u, tokenizer.size());
+        EXPECT_EQ(0u, tokenizer.size());
     }
 
     {
         string s("");
         StringTokenizer tokenizer(s);
-        CPPUNIT_ASSERT_EQUAL(0u, tokenizer.size());
+        EXPECT_EQ(0u, tokenizer.size());
     }
     {
         // Test that there aren't any problems with using signed chars.
@@ -94,15 +81,14 @@ void StringTokenizerTest::testSimpleUsage()
         result.push_back("dragons");
         result.push_back("");
 
-        CPPUNIT_ASSERT_EQUAL(result.size(),
-                             static_cast<size_t>(tokenizer.size()));
+        ASSERT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
         for (unsigned int i=0; i<result.size(); i++) {
-            CPPUNIT_ASSERT_EQUAL(result[i], tokenizer[i]);
+            EXPECT_EQ(result[i], tokenizer[i]);
         }
         std::set<string> sorted(tokenizer.begin(), tokenizer.end());
-        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(4u), sorted.size());
+        EXPECT_EQ(static_cast<size_t>(4u), sorted.size());
 
         tokenizer.removeEmptyTokens();
-        CPPUNIT_ASSERT_EQUAL(3u, tokenizer.size());
+        EXPECT_EQ(3u, tokenizer.size());
     }
 }

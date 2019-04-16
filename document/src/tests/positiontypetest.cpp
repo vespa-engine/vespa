@@ -1,52 +1,34 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/datatype/positiondatatype.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include <gtest/gtest.h>
 
 namespace document {
 
-class PositionTypeTest : public CppUnit::TestFixture {
-public:
-    void requireThatNameIsCorrect();
-    void requireThatExpectedFieldsAreThere();
-    void requireThatZCurveFieldMatchesJava();
-
-    CPPUNIT_TEST_SUITE(PositionTypeTest);
-    CPPUNIT_TEST(requireThatNameIsCorrect);
-    CPPUNIT_TEST(requireThatExpectedFieldsAreThere);
-    CPPUNIT_TEST(requireThatZCurveFieldMatchesJava);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(PositionTypeTest);
-
-void
-PositionTypeTest::requireThatNameIsCorrect()
+TEST(PositionTypeTest, requireThatNameIsCorrect)
 {
     const StructDataType &type = PositionDataType::getInstance();
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("position"), type.getName());
+    EXPECT_EQ(vespalib::string("position"), type.getName());
 }
 
-void
-PositionTypeTest::requireThatExpectedFieldsAreThere()
+TEST(PositionTypeTest, requireThatExpectedFieldsAreThere)
 {
     const StructDataType &type = PositionDataType::getInstance();
     Field field = type.getField("x");
-    CPPUNIT_ASSERT_EQUAL(*DataType::INT, field.getDataType());
+    EXPECT_EQ(*DataType::INT, field.getDataType());
 
     field = type.getField("y");
-    CPPUNIT_ASSERT_EQUAL(*DataType::INT, field.getDataType());
+    EXPECT_EQ(*DataType::INT, field.getDataType());
 }
 
-void
-PositionTypeTest::requireThatZCurveFieldMatchesJava()
+TEST(PositionTypeTest, requireThatZCurveFieldMatchesJava)
 {
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("foo_zcurve"),
+    EXPECT_EQ(vespalib::string("foo_zcurve"),
                          PositionDataType::getZCurveFieldName("foo"));
-    CPPUNIT_ASSERT( ! PositionDataType::isZCurveFieldName("foo"));
-    CPPUNIT_ASSERT( ! PositionDataType::isZCurveFieldName("_zcurve"));
-    CPPUNIT_ASSERT( PositionDataType::isZCurveFieldName("x_zcurve"));
-    CPPUNIT_ASSERT( ! PositionDataType::isZCurveFieldName("x_zcurvex"));
-    CPPUNIT_ASSERT_EQUAL(vespalib::stringref("x"), PositionDataType::cutZCurveFieldName("x_zcurve"));
+    EXPECT_TRUE( ! PositionDataType::isZCurveFieldName("foo"));
+    EXPECT_TRUE( ! PositionDataType::isZCurveFieldName("_zcurve"));
+    EXPECT_TRUE( PositionDataType::isZCurveFieldName("x_zcurve"));
+    EXPECT_TRUE( ! PositionDataType::isZCurveFieldName("x_zcurvex"));
+    EXPECT_EQ(vespalib::stringref("x"), PositionDataType::cutZCurveFieldName("x_zcurve"));
 }
 
 } // document
