@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # This program reads a Unicode database and emits all letters in lower
@@ -13,9 +13,9 @@ def add_character(unicodespec, characterstore):
 
 def main(raw, out):
     # Fetch upper and lower case characters in Unicode
-    characters = filter(lambda x: x[2] == 'Lu' or x[2] == 'Ll', raw)
-    image = [unichr(int(c[0], 16)) for c in characters]
-    output = u"\n".join(image)
+    characters = [x for x in raw if x[2] == 'Lu' or x[2] == 'Ll']
+    image = [chr(int(c[0], 16)) for c in characters]
+    output = "\n".join(image)
     out.write(output.encode("UTF-8"))
     out.write(u"\n".encode("UTF-8"))
 
