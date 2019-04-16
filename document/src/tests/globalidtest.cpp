@@ -1,80 +1,66 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <gtest/gtest.h>
 
 namespace document {
 
-struct GlobalIdTest : public CppUnit::TestFixture {
-    void testNormalUsage();
-    void testBucketIdConversion();
-    void testGidRangeConversion();
-    void testBucketOrderCmp();
+class GlobalIdTest : public ::testing::Test {
 
+protected:
     void verifyGlobalIdRange(const std::vector<DocumentId>& ids,
                              uint32_t countBits);
-
-    CPPUNIT_TEST_SUITE(GlobalIdTest);
-    CPPUNIT_TEST(testNormalUsage);
-    CPPUNIT_TEST(testBucketIdConversion);
-    CPPUNIT_TEST(testGidRangeConversion);
-    CPPUNIT_TEST(testBucketOrderCmp);
-    CPPUNIT_TEST_SUITE_END();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(GlobalIdTest);
-
-void
-GlobalIdTest::testNormalUsage()
+TEST_F(GlobalIdTest, testNormalUsage)
 {
     const char* emptystring = "\0\0\0\0\0\0\0\0\0\0\0\0";
     const char* teststring = "1234567890ABCDEF";
-    CPPUNIT_ASSERT(strlen(teststring) > GlobalId::LENGTH);
+    EXPECT_TRUE(strlen(teststring) > GlobalId::LENGTH);
 
     { // Test empty global id
         GlobalId id;
         for (uint32_t i=0; i<GlobalId::LENGTH; ++i) {
-            CPPUNIT_ASSERT_EQUAL((unsigned char) '\0', id.get()[i]);
+            EXPECT_EQ((unsigned char) '\0', id.get()[i]);
         }
         GlobalId id2(emptystring);
-        CPPUNIT_ASSERT_EQUAL(id, id2);
-        CPPUNIT_ASSERT(!(id != id2));
-        CPPUNIT_ASSERT(!(id < id2) && !(id2 < id));
-        CPPUNIT_ASSERT_EQUAL(std::string(emptystring, GlobalId::LENGTH),
-                             std::string((const char*) id.get(),
-                                         GlobalId::LENGTH));
+        EXPECT_EQ(id, id2);
+        EXPECT_TRUE(!(id != id2));
+        EXPECT_TRUE(!(id < id2) && !(id2 < id));
+        EXPECT_EQ(std::string(emptystring, GlobalId::LENGTH),
+                  std::string((const char*) id.get(), GlobalId::LENGTH));
     }
     { // Test non-empty global id
         GlobalId empty;
         GlobalId initialempty;
         initialempty.set(teststring);
         GlobalId id(teststring);
-        CPPUNIT_ASSERT_EQUAL(id, initialempty);
-        CPPUNIT_ASSERT(!(id != initialempty));
-        CPPUNIT_ASSERT(!(id < initialempty) && !(initialempty < id));
+        EXPECT_EQ(id, initialempty);
+        EXPECT_TRUE(!(id != initialempty));
+        EXPECT_TRUE(!(id < initialempty) && !(initialempty < id));
 
-        CPPUNIT_ASSERT(id != empty);
-        CPPUNIT_ASSERT(!(id == empty));
-        CPPUNIT_ASSERT(!(id < empty) && (empty < id));
+        EXPECT_TRUE(id != empty);
+        EXPECT_TRUE(!(id == empty));
+        EXPECT_TRUE(!(id < empty) && (empty < id));
 
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(
                 std::string(teststring, GlobalId::LENGTH),
                 std::string((const char*) id.get(), GlobalId::LENGTH));
-        CPPUNIT_ASSERT_EQUAL(std::string(teststring, GlobalId::LENGTH),
+        EXPECT_EQ(std::string(teststring, GlobalId::LENGTH),
                              std::string((const char*) initialempty.get(),
                                          GlobalId::LENGTH));
     }
     { // Test printing and parsing
         GlobalId id1("LIN!#LNKASD#!MYL#&NK");
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("gid(0x4c494e21234c4e4b41534423)"),
+        EXPECT_EQ(vespalib::string("gid(0x4c494e21234c4e4b41534423)"),
                              id1.toString());
         GlobalId id2 = GlobalId::parse(id1.toString());
-        CPPUNIT_ASSERT_EQUAL(id1, id2);
+        EXPECT_EQ(id1, id2);
             // Verify string representation too, to verify that operator== works
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("gid(0x4c494e21234c4e4b41534423)"),
+        EXPECT_EQ(vespalib::string("gid(0x4c494e21234c4e4b41534423)"),
                              id2.toString());
     }
 }
@@ -88,18 +74,15 @@ namespace {
         BucketId generated = gid.convertToBucketId();
         //std::cerr << bid << ", " << generated << "\n";
         if (bid != generated) {
-            std::ostringstream ost;
-            ost << "Document id " << s << " with gid " << gid
-                << " belongs to bucket " << bid
-                << ", but globalid convert function generated bucketid "
-                << generated;
-            CPPUNIT_FAIL(ost.str());
+            FAIL() << "Document id " << s << " with gid " << gid
+                   << " belongs to bucket " << bid
+                   << ", but globalid convert function generated bucketid "
+                   << generated;
         }
     }
 }
 
-void
-GlobalIdTest::testBucketIdConversion()
+TEST_F(GlobalIdTest, testBucketIdConversion)
 {
     verifyDocumentId("userdoc:ns:1:abc");
     verifyDocumentId("userdoc:ns:1000:abc");
@@ -144,32 +127,23 @@ GlobalIdTest::verifyGlobalIdRange(const std::vector<DocumentId>& ids,
                         << " should be in the range "
                         << first.convertToBucketId().toKey() << " - "
                         << last.convertToBucketId().toKey() << "\n";
-                    CPPUNIT_ASSERT_MESSAGE(msg.str(),
-                            gid.convertToBucketId().toKey() >=
-                                   first.convertToBucketId().toKey());
-                    CPPUNIT_ASSERT_MESSAGE(msg.str(),
-                            gid.convertToBucketId().toKey() <=
-                                   last.convertToBucketId().toKey());
+                    EXPECT_TRUE(gid.convertToBucketId().toKey() >= first.convertToBucketId().toKey()) << msg.str();
+                    EXPECT_TRUE(gid.convertToBucketId().toKey() <= last.convertToBucketId().toKey()) << msg.str();
                 }
             } else {
                 if ((gidKey >= first.convertToBucketId().toKey()) && (gidKey <= last.convertToBucketId().toKey())) {
                     std::ostringstream msg;
                     msg << gid << " should not be in the range " << first
                         << " - " << last;
-                    CPPUNIT_ASSERT_MESSAGE(msg.str(),
-                            (gid.convertToBucketId().toKey() <
-                                first.convertToBucketId().toKey())
-                            ||
-                            (gid.convertToBucketId().toKey() >
-                                last.convertToBucketId().toKey()));
+                    EXPECT_TRUE((gid.convertToBucketId().toKey() < first.convertToBucketId().toKey()) ||
+                                (gid.convertToBucketId().toKey() > last.convertToBucketId().toKey())) << msg.str();
                 }
             }
         }
     }
 }
 
-void
-GlobalIdTest::testGidRangeConversion()
+TEST_F(GlobalIdTest, testGidRangeConversion)
 {
         // Generate a lot of random document ids used for test
     std::vector<DocumentId> docIds;
@@ -194,7 +168,7 @@ GlobalIdTest::testGidRangeConversion()
                     }
                     ost << ":";
                     break;
-            default: CPPUNIT_ASSERT(false);
+            default: EXPECT_TRUE(false);
         }
         ost << "http://";
         for (uint32_t i=0, n=randomizer.nextUint32(1, 20); i<n; ++i) {
@@ -210,19 +184,18 @@ GlobalIdTest::testGidRangeConversion()
     }
 }
 
-void
-GlobalIdTest::testBucketOrderCmp()
+TEST_F(GlobalIdTest, testBucketOrderCmp)
 {
     typedef GlobalId::BucketOrderCmp C;
-    CPPUNIT_ASSERT(C::compareRaw(0, 0) == 0);
-    CPPUNIT_ASSERT(C::compareRaw(0, 1) == -1);
-    CPPUNIT_ASSERT(C::compareRaw(1, 0) == 1);
-    CPPUNIT_ASSERT(C::compareRaw(255, 255) == 0);
-    CPPUNIT_ASSERT(C::compareRaw(0, 255) == -255);
-    CPPUNIT_ASSERT(C::compareRaw(255, 0) == 255);
-    CPPUNIT_ASSERT(C::compareRaw(254, 254) == 0);
-    CPPUNIT_ASSERT(C::compareRaw(254, 255) == -1);
-    CPPUNIT_ASSERT(C::compareRaw(255, 254) == 1);
+    EXPECT_TRUE(C::compareRaw(0, 0) == 0);
+    EXPECT_TRUE(C::compareRaw(0, 1) == -1);
+    EXPECT_TRUE(C::compareRaw(1, 0) == 1);
+    EXPECT_TRUE(C::compareRaw(255, 255) == 0);
+    EXPECT_TRUE(C::compareRaw(0, 255) == -255);
+    EXPECT_TRUE(C::compareRaw(255, 0) == 255);
+    EXPECT_TRUE(C::compareRaw(254, 254) == 0);
+    EXPECT_TRUE(C::compareRaw(254, 255) == -1);
+    EXPECT_TRUE(C::compareRaw(255, 254) == 1);
     {
         // Test raw comparator object.
         GlobalId foo = GlobalId::parse("gid(0x000001103330333077700000)");
@@ -230,15 +203,15 @@ GlobalIdTest::testBucketOrderCmp()
         GlobalId baz = GlobalId::parse("gid(0x000000103330333000700000)");
 
         GlobalId::BucketOrderCmp cmp;
-        CPPUNIT_ASSERT(!cmp(foo, foo));
-        CPPUNIT_ASSERT(!cmp(bar, bar));
-        CPPUNIT_ASSERT(!cmp(baz, baz));
-        CPPUNIT_ASSERT(!cmp(foo, bar));
-        CPPUNIT_ASSERT( cmp(bar, foo));
-        CPPUNIT_ASSERT(!cmp(foo, baz));
-        CPPUNIT_ASSERT( cmp(baz, foo));
-        CPPUNIT_ASSERT(!cmp(baz, bar));
-        CPPUNIT_ASSERT( cmp(bar, baz));
+        EXPECT_TRUE(!cmp(foo, foo));
+        EXPECT_TRUE(!cmp(bar, bar));
+        EXPECT_TRUE(!cmp(baz, baz));
+        EXPECT_TRUE(!cmp(foo, bar));
+        EXPECT_TRUE( cmp(bar, foo));
+        EXPECT_TRUE(!cmp(foo, baz));
+        EXPECT_TRUE( cmp(baz, foo));
+        EXPECT_TRUE(!cmp(baz, bar));
+        EXPECT_TRUE( cmp(bar, baz));
     }
     {
         // Test sorting by bucket.
@@ -253,15 +226,15 @@ GlobalIdTest::testBucketOrderCmp()
         gidMap[baz] = 888;
 
         GidMap::iterator it = gidMap.begin();
-        CPPUNIT_ASSERT(it->first == bar);
-        CPPUNIT_ASSERT(it->second == 777);
+        EXPECT_TRUE(it->first == bar);
+        EXPECT_TRUE(it->second == 777);
         ++it;
-        CPPUNIT_ASSERT(it->first == baz);
-        CPPUNIT_ASSERT(it->second == 888);
+        EXPECT_TRUE(it->first == baz);
+        EXPECT_TRUE(it->second == 888);
         ++it;
-        CPPUNIT_ASSERT(it->first == foo);
-        CPPUNIT_ASSERT(it->second == 666);
+        EXPECT_TRUE(it->first == foo);
+        EXPECT_TRUE(it->second == 666);
     }
 }
 
-} // document
+}

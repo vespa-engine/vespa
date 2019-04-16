@@ -2,8 +2,6 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/repo/configbuilder.h>
@@ -15,9 +13,12 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <fcntl.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using vespalib::nbostream;
 using vespalib::compression::CompressionConfig;
+using namespace ::testing;
 
 using namespace document::config_builder;
 
@@ -25,67 +26,15 @@ namespace document {
 
 using namespace fieldvalue;
 
-struct DocumentTest : public CppUnit::TestFixture {
-    void testTraversing();
-    void testFieldPath();
-    void testModifyDocument();
-    void testVariables();
-    void testSimpleUsage();
-    void testReadSerializedFile();
-    void testReadSerializedFileCompressed();
-    void testReadSerializedAllVersions();
-    void testGenerateSerializedFile();
-    void testGetURIFromSerialized();
-    void testBogusserialize();
-    void testCRC32();
-    void testHasChanged();
-    void testSplitSerialization();
-    void testSliceSerialize();
-    void testCompression();
-    void testCompressionConfigured();
-    void testUnknownEntries();
-    void testAnnotationDeserialization();
-    void testGetSerializedSize();
-    void testDeserializeMultiple();
-    void testSizeOf();
-
-    CPPUNIT_TEST_SUITE(DocumentTest);
-    CPPUNIT_TEST(testFieldPath);
-    CPPUNIT_TEST(testTraversing);
-    CPPUNIT_TEST(testModifyDocument);
-    CPPUNIT_TEST(testVariables);
-    CPPUNIT_TEST(testSimpleUsage);
-    CPPUNIT_TEST(testReadSerializedFile);
-    CPPUNIT_TEST(testReadSerializedFileCompressed);
-    CPPUNIT_TEST(testReadSerializedAllVersions);
-    CPPUNIT_TEST(testGenerateSerializedFile);
-    CPPUNIT_TEST(testGetURIFromSerialized);
-    CPPUNIT_TEST(testBogusserialize);
-    CPPUNIT_TEST(testCRC32);
-    CPPUNIT_TEST(testHasChanged);
-    CPPUNIT_TEST(testSplitSerialization);
-    CPPUNIT_TEST(testSliceSerialize);
-    CPPUNIT_TEST(testCompression);
-    CPPUNIT_TEST(testCompressionConfigured);
-    CPPUNIT_TEST(testUnknownEntries);
-    CPPUNIT_TEST(testAnnotationDeserialization);
-    CPPUNIT_TEST(testGetSerializedSize);
-    CPPUNIT_TEST(testDeserializeMultiple);
-    CPPUNIT_TEST(testSizeOf);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DocumentTest);
-
-void DocumentTest::testSizeOf()
+TEST(DocumentTest, testSizeOf)
 {
-    CPPUNIT_ASSERT_EQUAL(136ul, sizeof(Document));
-    CPPUNIT_ASSERT_EQUAL(72ul, sizeof(StructFieldValue));
-    CPPUNIT_ASSERT_EQUAL(24ul, sizeof(StructuredFieldValue));
-    CPPUNIT_ASSERT_EQUAL(64ul, sizeof(SerializableArray));
+    EXPECT_EQ(136ul, sizeof(Document));
+    EXPECT_EQ(72ul, sizeof(StructFieldValue));
+    EXPECT_EQ(24ul, sizeof(StructuredFieldValue));
+    EXPECT_EQ(64ul, sizeof(SerializableArray));
 }
 
-void DocumentTest::testFieldPath()
+TEST(DocumentTest, testFieldPath)
 {
     const vespalib::string testValues[] = { "{}", "", "",
                                        "{}r", "", "r",
@@ -104,8 +53,8 @@ void DocumentTest::testFieldPath()
     for (size_t i(0); i < sizeof(testValues)/sizeof(testValues[0]); i+=3) {
         vespalib::stringref tmp = testValues[i];
         vespalib::string key = FieldPathEntry::parseKey(tmp);
-        CPPUNIT_ASSERT_EQUAL(testValues[i+1], key);
-        CPPUNIT_ASSERT_EQUAL(testValues[i+2], vespalib::string(tmp));
+        EXPECT_EQ(testValues[i+1], key);
+        EXPECT_EQ(testValues[i+2], vespalib::string(tmp));
     }
 }
 
@@ -133,7 +82,7 @@ Handler::Handler() = default;
 Handler::~Handler() = default;
 
 
-void DocumentTest::testTraversing()
+TEST(DocumentTest, testTraversing)
 {
     Field primitive1("primitive1", 1, *DataType::INT, true);
     Field primitive2("primitive2", 2, *DataType::INT, true);
@@ -191,7 +140,7 @@ void DocumentTest::testTraversing()
     Handler fullTraverser;
     FieldPath empty;
     doc.iterateNested(empty.getFullRange(), fullTraverser);
-    CPPUNIT_ASSERT_EQUAL(fullTraverser.getResult(),
+    EXPECT_EQ(fullTraverser.getResult(),
                          std::string("<0:P-0<0:P-0<0:P-0P-0[P-0P-1P-2][<0:P-0P-0><1:P-1P-1>]>>>"));
 }
 
@@ -212,8 +161,7 @@ public:
 VariableIteratorHandler::VariableIteratorHandler() {}
 VariableIteratorHandler::~VariableIteratorHandler() {}
 
-void
-DocumentTest::testVariables()
+TEST(DocumentTest, testVariables)
 {
     ArrayDataType iarr(*DataType::INT);
     ArrayDataType iiarr(static_cast<DataType &>(iarr));
@@ -274,7 +222,7 @@ DocumentTest::testVariables()
             "x: 2,y: 2,z: 1, - 18\n"
             "x: 2,y: 2,z: 2, - 27\n";
 
-        CPPUNIT_ASSERT_EQUAL(fasit, handler.retVal);
+        EXPECT_EQ(fasit, handler.retVal);
     }
 
 }
@@ -296,8 +244,7 @@ public:
     }
 };
 
-void
-DocumentTest::testModifyDocument()
+TEST(DocumentTest, testModifyDocument)
 {
     // Create test document type and content
     Field primitive1("primitive1", 1, *DataType::INT, true);
@@ -405,7 +352,7 @@ DocumentTest::testModifyDocument()
     doc->print(std::cerr, true, "");
 }
 
-void DocumentTest::testSimpleUsage()
+TEST(DocumentTest, testSimpleUsage)
 {
     DocumentType::SP type(new DocumentType("test"));
     Field intF("int", 1, *DataType::INT, true);
@@ -420,33 +367,33 @@ void DocumentTest::testSimpleUsage()
     Document value(*repo.getDocumentType("test"), DocumentId("doc::testdoc"));
 
         // Initially empty
-    CPPUNIT_ASSERT_EQUAL(size_t(0), value.getSetFieldCount());
-    CPPUNIT_ASSERT(!value.hasValue(intF));
+    EXPECT_EQ(size_t(0), value.getSetFieldCount());
+    EXPECT_TRUE(!value.hasValue(intF));
 
     value.setValue(intF, IntFieldValue(1));
 
         // Not empty
-    CPPUNIT_ASSERT_EQUAL(size_t(1), value.getSetFieldCount());
-    CPPUNIT_ASSERT(value.hasValue(intF));
+    EXPECT_EQ(size_t(1), value.getSetFieldCount());
+    EXPECT_TRUE(value.hasValue(intF));
 
         // Adding some more
     value.setValue(longF, LongFieldValue(2));
 
         // Not empty
-    CPPUNIT_ASSERT_EQUAL(size_t(2), value.getSetFieldCount());
-    CPPUNIT_ASSERT_EQUAL(1, value.getValue(intF)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(2, value.getValue(longF)->getAsInt());
+    EXPECT_EQ(size_t(2), value.getSetFieldCount());
+    EXPECT_EQ(1, value.getValue(intF)->getAsInt());
+    EXPECT_EQ(2, value.getValue(longF)->getAsInt());
 
         // Serialize & equality
     std::unique_ptr<ByteBuffer> buffer(value.serialize());
     buffer->flip();
     Document value2(*repo.getDocumentType("test"),
                     DocumentId("userdoc::3:foo"));
-    CPPUNIT_ASSERT(value != value2);
+    EXPECT_TRUE(value != value2);
     value2.deserialize(repo, *buffer);
-    CPPUNIT_ASSERT(value2.hasValue(intF));
-    CPPUNIT_ASSERT_EQUAL(value, value2);
-    CPPUNIT_ASSERT_EQUAL(DocumentId("doc::testdoc"), value2.getId());
+    EXPECT_TRUE(value2.hasValue(intF));
+    EXPECT_EQ(value, value2);
+    EXPECT_EQ(DocumentId("doc::testdoc"), value2.getId());
 
         // Various ways of removing
     {
@@ -454,29 +401,29 @@ void DocumentTest::testSimpleUsage()
         buffer->setPos(0);
         value2.deserialize(repo, *buffer);
         value2.remove(intF);
-        CPPUNIT_ASSERT(!value2.hasValue(intF));
-        CPPUNIT_ASSERT_EQUAL(size_t(1), value2.getSetFieldCount());
+        EXPECT_TRUE(!value2.hasValue(intF));
+        EXPECT_EQ(size_t(1), value2.getSetFieldCount());
 
             // Clearing all
         buffer->setPos(0);
         value2.deserialize(repo, *buffer);
         value2.clear();
-        CPPUNIT_ASSERT(!value2.hasValue(intF));
-        CPPUNIT_ASSERT_EQUAL(size_t(0), value2.getSetFieldCount());
+        EXPECT_TRUE(!value2.hasValue(intF));
+        EXPECT_EQ(size_t(0), value2.getSetFieldCount());
     }
 
         // Updating
     value2 = value;
-    CPPUNIT_ASSERT_EQUAL(value, value2);
+    EXPECT_EQ(value, value2);
     value2.setValue(strF, StringFieldValue("foo"));
-    CPPUNIT_ASSERT(value2.hasValue(strF));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("foo"),
+    EXPECT_TRUE(value2.hasValue(strF));
+    EXPECT_EQ(vespalib::string("foo"),
                          value2.getValue(strF)->getAsString());
-    CPPUNIT_ASSERT(value != value2);
+    EXPECT_TRUE(value != value2);
     value2.assign(value);
-    CPPUNIT_ASSERT_EQUAL(value, value2);
+    EXPECT_EQ(value, value2);
     Document::UP valuePtr(value2.clone());
-    CPPUNIT_ASSERT_EQUAL(value, *valuePtr);
+    EXPECT_EQ(value, *valuePtr);
 
         // Iterating
     const Document& constVal(value);
@@ -488,20 +435,20 @@ void DocumentTest::testSimpleUsage()
 
         // Comparison
     value2 = value;
-    CPPUNIT_ASSERT_EQUAL(0, value.compare(value2));
+    EXPECT_EQ(0, value.compare(value2));
     value2.remove(intF);
-    CPPUNIT_ASSERT(value.compare(value2) < 0);
-    CPPUNIT_ASSERT(value2.compare(value) > 0);
+    EXPECT_TRUE(value.compare(value2) < 0);
+    EXPECT_TRUE(value2.compare(value) > 0);
     value2 = value;
     value2.setValue(intF, IntFieldValue(5));
-    CPPUNIT_ASSERT(value.compare(value2) < 0);
-    CPPUNIT_ASSERT(value2.compare(value) > 0);
+    EXPECT_TRUE(value.compare(value2) < 0);
+    EXPECT_TRUE(value2.compare(value) > 0);
 
         // Output
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string("Document(doc::testdoc, DocumentType(test))"),
             value.toString(false));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string(
 "  Document(doc::testdoc\n"
 "    DocumentType(test, id -877171244)\n"
@@ -516,7 +463,7 @@ void DocumentTest::testSimpleUsage()
 "    long: 2\n"
 "  )"),
             "  " + value.toString(true, "  "));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string(
                 "<document documenttype=\"test\" documentid=\"doc::testdoc\">\n"
                 "  <int>1</int>\n"
@@ -530,81 +477,81 @@ void DocumentTest::testSimpleUsage()
         // (Would be nice if this failed, but whole idea to fetch by field
         // objects is to improve performance.)
     Field anotherIntF("int", 17, *DataType::INT, true);
-    CPPUNIT_ASSERT(!value.hasValue(anotherIntF));
-    CPPUNIT_ASSERT(value.getValue(anotherIntF).get() == 0);
+    EXPECT_TRUE(!value.hasValue(anotherIntF));
+    EXPECT_TRUE(!value.getValue(anotherIntF));
 
         // Refuse to accept non-document types
     try{
         StructDataType otherType("foo", 4);
         Document value6(otherType, DocumentId("doc::"));
-        CPPUNIT_FAIL("Didn't complain about non-document type");
+        FAIL() << "Didn't complain about non-document type";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("Cannot generate a document with "
-                               "non-document type", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Cannot generate a document with "
+                                        "non-document type"));
     }
 
         // Refuse to set wrong types
     try{
         value2.setValue(intF, StringFieldValue("bar"));
-        CPPUNIT_FAIL("Failed to check type equality in setValue");
+        FAIL() << "Failed to check type equality in setValue";
     } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("Cannot assign value of type", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Cannot assign value of type"));
     }
 }
 
 void verifyJavaDocument(Document& doc)
 {
     IntFieldValue intVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("intfield"), intVal));
-    CPPUNIT_ASSERT_EQUAL(5, intVal.getAsInt());
+    EXPECT_TRUE(doc.getValue(doc.getField("intfield"), intVal));
+    EXPECT_EQ(5, intVal.getAsInt());
 
     FloatFieldValue floatVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("floatfield"), floatVal));
-    CPPUNIT_ASSERT(floatVal.getAsFloat() == (float) -9.23);
+    EXPECT_TRUE(doc.getValue(doc.getField("floatfield"), floatVal));
+    EXPECT_TRUE(floatVal.getAsFloat() == (float) -9.23);
 
     StringFieldValue stringVal("");
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("stringfield"), stringVal));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("This is a string."),
+    EXPECT_TRUE(doc.getValue(doc.getField("stringfield"), stringVal));
+    EXPECT_EQ(vespalib::string("This is a string."),
                          stringVal.getAsString());
 
     LongFieldValue longVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("longfield"), longVal));
-    CPPUNIT_ASSERT_EQUAL((int64_t)398420092938472983LL, longVal.getAsLong());
+    EXPECT_TRUE(doc.getValue(doc.getField("longfield"), longVal));
+    EXPECT_EQ((int64_t)398420092938472983LL, longVal.getAsLong());
 
     DoubleFieldValue doubleVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("doublefield"), doubleVal));
-    CPPUNIT_ASSERT_EQUAL(doubleVal.getAsDouble(), 98374532.398820);
+    EXPECT_TRUE(doc.getValue(doc.getField("doublefield"), doubleVal));
+    EXPECT_EQ(doubleVal.getAsDouble(), 98374532.398820);
 
     ByteFieldValue byteVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("bytefield"), byteVal));
-    CPPUNIT_ASSERT_EQUAL(-2, byteVal.getAsInt());
+    EXPECT_TRUE(doc.getValue(doc.getField("bytefield"), byteVal));
+    EXPECT_EQ(-2, byteVal.getAsInt());
 
     RawFieldValue rawVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("rawfield"), rawVal));
-    CPPUNIT_ASSERT(memcmp(rawVal.getAsRaw().first, "RAW DATA", 8) == 0);
+    EXPECT_TRUE(doc.getValue(doc.getField("rawfield"), rawVal));
+    EXPECT_TRUE(memcmp(rawVal.getAsRaw().first, "RAW DATA", 8) == 0);
 
     Document embedDocVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("docfield"), embedDocVal));
+    EXPECT_TRUE(doc.getValue(doc.getField("docfield"), embedDocVal));
 
     ArrayFieldValue array(doc.getField("arrayoffloatfield").getDataType());
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("arrayoffloatfield"), array));
-    CPPUNIT_ASSERT_EQUAL((float)1.0, array[0].getAsFloat());
-    CPPUNIT_ASSERT_EQUAL((float)2.0, array[1].getAsFloat());
+    EXPECT_TRUE(doc.getValue(doc.getField("arrayoffloatfield"), array));
+    EXPECT_EQ((float)1.0, array[0].getAsFloat());
+    EXPECT_EQ((float)2.0, array[1].getAsFloat());
 
     WeightedSetFieldValue wset(doc.getField("wsfield").getDataType());
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("wsfield"), wset));
-    CPPUNIT_ASSERT_EQUAL(50, wset.get(StringFieldValue("Weighted 0")));
-    CPPUNIT_ASSERT_EQUAL(199, wset.get(StringFieldValue("Weighted 1")));
+    EXPECT_TRUE(doc.getValue(doc.getField("wsfield"), wset));
+    EXPECT_EQ(50, wset.get(StringFieldValue("Weighted 0")));
+    EXPECT_EQ(199, wset.get(StringFieldValue("Weighted 1")));
 
     MapFieldValue map(doc.getField("mapfield").getDataType());
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("mapfield"), map));
-    CPPUNIT_ASSERT(map.get(StringFieldValue("foo1")).get());
-    CPPUNIT_ASSERT(map.get(StringFieldValue("foo2")).get());
-    CPPUNIT_ASSERT_EQUAL(StringFieldValue("bar1"), dynamic_cast<StringFieldValue&>(*map.get(StringFieldValue("foo1"))));
-    CPPUNIT_ASSERT_EQUAL(StringFieldValue("bar2"), dynamic_cast<StringFieldValue&>(*map.get(StringFieldValue("foo2"))));
+    EXPECT_TRUE(doc.getValue(doc.getField("mapfield"), map));
+    EXPECT_TRUE(map.get(StringFieldValue("foo1")).get());
+    EXPECT_TRUE(map.get(StringFieldValue("foo2")).get());
+    EXPECT_EQ(StringFieldValue("bar1"), dynamic_cast<StringFieldValue&>(*map.get(StringFieldValue("foo1"))));
+    EXPECT_EQ(StringFieldValue("bar2"), dynamic_cast<StringFieldValue&>(*map.get(StringFieldValue("foo2"))));
 }
 
-void DocumentTest::testReadSerializedFile()
+TEST(DocumentTest, testReadSerializedFile)
 {
     // Reads a file serialized from java
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
@@ -629,16 +576,16 @@ void DocumentTest::testReadSerializedFile()
     Document doc2(repo, *buf2);
     verifyJavaDocument(doc2);
 
-    CPPUNIT_ASSERT_EQUAL(len, buf2->getPos());
-    CPPUNIT_ASSERT(memcmp(buf2->getBuffer(), buf.getBuffer(), buf2->getPos()) == 0);
+    EXPECT_EQ(len, buf2->getPos());
+    EXPECT_TRUE(memcmp(buf2->getBuffer(), buf.getBuffer(), buf2->getPos()) == 0);
 
     doc2.setValue("stringfield", StringFieldValue("hei"));
 
     std::unique_ptr<ByteBuffer> buf3 = doc2.serialize();
-    CPPUNIT_ASSERT(len != buf3->getPos());
+    EXPECT_TRUE(len != buf3->getPos());
 }
 
-void DocumentTest::testReadSerializedFileCompressed()
+TEST(DocumentTest, testReadSerializedFileCompressed)
 {
     // Reads a file serialized from java
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
@@ -698,7 +645,7 @@ namespace {
  * When adding new fields to the documents, use the version tagged with each
  * file to ignore these field for old types.
  */
-void DocumentTest::testReadSerializedAllVersions()
+TEST(DocumentTest,testReadSerializedAllVersions)
 {
     const int array_id = 1650586661;
     const int wset_id = 1328286588;
@@ -760,12 +707,12 @@ void DocumentTest::testReadSerializedAllVersions()
         {
             //doc.setCompression(CompressionConfig(CompressionConfig::NONE, 0, 0));
             std::unique_ptr<ByteBuffer> buf = doc.serialize();
-            CPPUNIT_ASSERT_EQUAL(buf->getLength(), buf->getPos());
+            EXPECT_EQ(buf->getLength(), buf->getPos());
             int fd = open(TEST_PATH("data/document-cpp-currentversion-uncompressed.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            CPPUNIT_ASSERT(fd > 0);
+            EXPECT_TRUE(fd > 0);
             size_t len = write(fd, buf->getBuffer(), buf->getPos());
-            CPPUNIT_ASSERT_EQUAL(buf->getPos(), len);
+            EXPECT_EQ(buf->getPos(), len);
             close(fd);
         }
         {
@@ -773,12 +720,12 @@ void DocumentTest::testReadSerializedAllVersions()
             CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
             const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
             std::unique_ptr<ByteBuffer> buf = doc.serialize();
-            CPPUNIT_ASSERT(buf->getPos() <= buf->getLength());
+            EXPECT_TRUE(buf->getPos() <= buf->getLength());
             int fd = open(TEST_PATH("data/document-cpp-currentversion-lz4-9.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            CPPUNIT_ASSERT(fd > 0);
+            EXPECT_TRUE(fd > 0);
             size_t len = write(fd, buf->getBuffer(), buf->getPos());
-            CPPUNIT_ASSERT_EQUAL(buf->getPos(), len);
+            EXPECT_EQ(buf->getPos(), len);
             close(fd);
             const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(oldCfg);
         }
@@ -795,7 +742,7 @@ void DocumentTest::testReadSerializedAllVersions()
         std::string name = tests[i]._dataFile;
         std::cerr << name << std::endl;
         if (!vespalib::fileExists(name)) {
-            CPPUNIT_FAIL("File " + name + " does not exist.");
+            FAIL() << "File " << name << " does not exist.";
         }
         int fd = open(tests[i]._dataFile.c_str(), O_RDONLY);
         int len = lseek(fd,0,SEEK_END);
@@ -809,54 +756,54 @@ void DocumentTest::testReadSerializedAllVersions()
         Document doc(repo, buf);
 
         IntFieldValue intVal;
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("intfield"), intVal));
-        CPPUNIT_ASSERT_EQUAL(5, intVal.getAsInt());
+        EXPECT_TRUE(doc.getValue(doc.getField("intfield"), intVal));
+        EXPECT_EQ(5, intVal.getAsInt());
 
         FloatFieldValue floatVal;
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("floatfield"), floatVal));
-        CPPUNIT_ASSERT(floatVal.getAsFloat() == (float) -9.23);
+        EXPECT_TRUE(doc.getValue(doc.getField("floatfield"), floatVal));
+        EXPECT_TRUE(floatVal.getAsFloat() == (float) -9.23);
 
         StringFieldValue stringVal("");
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("stringfield"), stringVal));
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("This is a string."),
+        EXPECT_TRUE(doc.getValue(doc.getField("stringfield"), stringVal));
+        EXPECT_EQ(vespalib::string("This is a string."),
                              stringVal.getAsString());
 
         LongFieldValue longVal;
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("longfield"), longVal));
-        CPPUNIT_ASSERT_EQUAL(static_cast<int64_t>(398420092938472983LL),
+        EXPECT_TRUE(doc.getValue(doc.getField("longfield"), longVal));
+        EXPECT_EQ(static_cast<int64_t>(398420092938472983LL),
                              longVal.getAsLong());
 
         DoubleFieldValue doubleVal;
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("doublefield"), doubleVal));
-        CPPUNIT_ASSERT_EQUAL(doubleVal.getAsDouble(), 98374532.398820);
+        EXPECT_TRUE(doc.getValue(doc.getField("doublefield"), doubleVal));
+        EXPECT_EQ(doubleVal.getAsDouble(), 98374532.398820);
 
         ByteFieldValue byteVal;
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("bytefield"), byteVal));
-        CPPUNIT_ASSERT_EQUAL(-2, byteVal.getAsInt());
+        EXPECT_TRUE(doc.getValue(doc.getField("bytefield"), byteVal));
+        EXPECT_EQ(-2, byteVal.getAsInt());
 
         RawFieldValue rawVal;
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("rawfield"), rawVal));
-        CPPUNIT_ASSERT(memcmp(rawVal.getAsRaw().first, "RAW DATA", 8) == 0);
+        EXPECT_TRUE(doc.getValue(doc.getField("rawfield"), rawVal));
+        EXPECT_TRUE(memcmp(rawVal.getAsRaw().first, "RAW DATA", 8) == 0);
 
         if (version > 6) {
             Document docInDoc;
-            CPPUNIT_ASSERT(doc.getValue(doc.getField("docfield"), docInDoc));
+            EXPECT_TRUE(doc.getValue(doc.getField("docfield"), docInDoc));
 
-            CPPUNIT_ASSERT(docInDoc.getValue(
+            EXPECT_TRUE(docInDoc.getValue(
                         docInDoc.getField("stringindocfield"), stringVal));
-            CPPUNIT_ASSERT_EQUAL(vespalib::string("Elvis is dead"),
+            EXPECT_EQ(vespalib::string("Elvis is dead"),
                                  stringVal.getAsString());
         }
 
         ArrayFieldValue array(doc.getField("arrayoffloatfield").getDataType());
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("arrayoffloatfield"), array));
-        CPPUNIT_ASSERT_EQUAL((float)1.0, array[0].getAsFloat());
-        CPPUNIT_ASSERT_EQUAL((float)2.0, array[1].getAsFloat());
+        EXPECT_TRUE(doc.getValue(doc.getField("arrayoffloatfield"), array));
+        EXPECT_EQ((float)1.0, array[0].getAsFloat());
+        EXPECT_EQ((float)2.0, array[1].getAsFloat());
 
         WeightedSetFieldValue wset(doc.getField("wsfield").getDataType());
-        CPPUNIT_ASSERT(doc.getValue(doc.getField("wsfield"), wset));
-        CPPUNIT_ASSERT_EQUAL(50, wset.get(StringFieldValue("Weighted 0")));
-        CPPUNIT_ASSERT_EQUAL(199, wset.get(StringFieldValue("Weighted 1")));
+        EXPECT_TRUE(doc.getValue(doc.getField("wsfield"), wset));
+        EXPECT_EQ(50, wset.get(StringFieldValue("Weighted 0")));
+        EXPECT_EQ(199, wset.get(StringFieldValue("Weighted 1")));
 
         // Check that serialization doesn't cause any problems.
         std::unique_ptr<ByteBuffer> buf2 = doc.serialize();
@@ -882,7 +829,7 @@ size_t getSerializedSizeBody(const Document &doc) {
     return stream.size();
 }
 
-void DocumentTest::testGenerateSerializedFile()
+TEST(DocumentTest, testGenerateSerializedFile)
 {
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
@@ -900,7 +847,7 @@ void DocumentTest::testGenerateSerializedFile()
     doc.set("rawfield", "RAW DATA");
 
     const DocumentType *docindoc_type = repo.getDocumentType("docindoc");
-    CPPUNIT_ASSERT(docindoc_type);
+    EXPECT_TRUE(docindoc_type);
     Document embedDoc(*docindoc_type,
                       DocumentId(DocIdString("docindoc", "http://embedded")));
 
@@ -964,7 +911,8 @@ void DocumentTest::testGenerateSerializedFile()
     }
     close(fd);
 }
-void DocumentTest::testGetURIFromSerialized()
+
+TEST(DocumentTest, testGetURIFromSerialized)
 {
     TestDocRepo test_repo;
     Document doc(*test_repo.getDocumentType("testdoctype1"),
@@ -974,11 +922,11 @@ void DocumentTest::testGetURIFromSerialized()
         std::unique_ptr<ByteBuffer> serialized = doc.serialize();
         serialized->flip();
 
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(
                 vespalib::string(DocIdString("ns", "testdoc").toString()),
                 Document::getIdFromSerialized(*serialized).toString());
 
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("testdoctype1"),
+        EXPECT_EQ(vespalib::string("testdoctype1"),
                              Document::getDocTypeFromSerialized(
                                      test_repo.getTypeRepo(),
                                      *serialized)->getName());
@@ -989,34 +937,34 @@ void DocumentTest::testGetURIFromSerialized()
         serialized->flip();
 
         Document doc2(test_repo.getTypeRepo(), *serialized, false, NULL);
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(
                 vespalib::string(DocIdString("ns", "testdoc").toString()), doc2.getId().toString());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("testdoctype1"), doc2.getType().getName());
+        EXPECT_EQ(vespalib::string("testdoctype1"), doc2.getType().getName());
     }
-};
+}
 
-void DocumentTest::testBogusserialize()
+TEST(DocumentTest, testBogusserialize)
 {
     TestDocRepo test_repo;
     try {
         std::unique_ptr<ByteBuffer> buf(
                 new ByteBuffer("aoifjweprjwoejr203r+2+4r823++!",100));
         Document doc(test_repo.getTypeRepo(), *buf);
-        CPPUNIT_ASSERT(false);
+        FAIL() << "Failed to throw exception deserializing bogus data";
     } catch (DeserializeException& e) {
-        CPPUNIT_ASSERT_CONTAIN("Unrecognized serialization version", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Unrecognized serialization version"));
     }
 
     try {
         std::unique_ptr<ByteBuffer> buf(new ByteBuffer("",0));
         Document doc(test_repo.getTypeRepo(), *buf);
-        CPPUNIT_ASSERT(false);
+        FAIL() << "Failed to throw exception deserializing empty buffer";
     } catch (DeserializeException& e) {
-        CPPUNIT_ASSERT_CONTAIN("Buffer out of bounds", e.what());
+        EXPECT_THAT(e.what(), HasSubstr("Buffer out of bounds"));
     }
 }
 
-void DocumentTest::testCRC32()
+TEST(DocumentTest, testCRC32)
 {
     TestDocRepo test_repo;
     Document doc(*test_repo.getDocumentType("testdoctype1"),
@@ -1026,7 +974,7 @@ void DocumentTest::testCRC32()
                  StringFieldValue("bla bla bla bla bla"));
 
     uint32_t crc = doc.calculateChecksum();
-    CPPUNIT_ASSERT_EQUAL(277496115u, crc);
+    EXPECT_EQ(277496115u, crc);
 
     std::unique_ptr<ByteBuffer> buf = doc.serialize();
     buf->flip();
@@ -1040,9 +988,9 @@ void DocumentTest::testCRC32()
     try {
         Document doc2(test_repo.getTypeRepo(), *buf);
         buf->setPos(0);
-        CPPUNIT_ASSERT(crc != doc2.calculateChecksum());
+        EXPECT_TRUE(crc != doc2.calculateChecksum());
     } catch (document::DeserializeException& e) {
-        CPPUNIT_ASSERT(false);
+        EXPECT_TRUE(false);
     }
         // Return original value and retry
     buf->getBuffer()[pos] ^= 72;
@@ -1050,19 +998,18 @@ void DocumentTest::testCRC32()
     /// \todo TODO (was warning):  Cannot test for in memory representation altered, as there is no syntax for getting internal refs to data from document. Add test when this is added.
 }
 
-void
-DocumentTest::testHasChanged()
+TEST(DocumentTest, testHasChanged)
 {
     TestDocRepo test_repo;
     Document doc(*test_repo.getDocumentType("testdoctype1"),
                  DocumentId(DocIdString("crawler", "http://www.ntnu.no/")));
         // Before deserialization we are changed.
-    CPPUNIT_ASSERT(doc.hasChanged());
+    EXPECT_TRUE(doc.hasChanged());
 
     doc.setValue(doc.getField("hstringval"),
                  StringFieldValue("bla bla bla bla bla"));
         // Still changed after setting a value of course.
-    CPPUNIT_ASSERT(doc.hasChanged());
+    EXPECT_TRUE(doc.hasChanged());
 
     std::unique_ptr<ByteBuffer> buf = doc.serialize();
     buf->flip();
@@ -1071,10 +1018,10 @@ DocumentTest::testHasChanged()
     {
         buf->setPos(0);
         Document doc2(test_repo.getTypeRepo(), *buf);
-        CPPUNIT_ASSERT(!doc2.hasChanged());
+        EXPECT_TRUE(!doc2.hasChanged());
 
         doc2.set("headerval", 13);
-        CPPUNIT_ASSERT(doc2.hasChanged());
+        EXPECT_TRUE(doc2.hasChanged());
     }
         // Overwriting a value in doc tags us changed.
     {
@@ -1082,7 +1029,7 @@ DocumentTest::testHasChanged()
         Document doc2(test_repo.getTypeRepo(), *buf);
 
         doc2.set("hstringval", "bla bla bla bla bla");
-        CPPUNIT_ASSERT(doc2.hasChanged());
+        EXPECT_TRUE(doc2.hasChanged());
     }
         // Clearing value tags us changed.
     {
@@ -1090,13 +1037,12 @@ DocumentTest::testHasChanged()
         Document doc2(test_repo.getTypeRepo(), *buf);
 
         doc2.clear();
-        CPPUNIT_ASSERT(doc2.hasChanged());
+        EXPECT_TRUE(doc2.hasChanged());
     }
         // Add more tests here when we allow non-const refs to internals
 }
 
-void
-DocumentTest::testSplitSerialization()
+TEST(DocumentTest, testSplitSerialization)
 {
     TestDocMan testDocMan;
     Document::UP doc = testDocMan.createDocument();
@@ -1110,22 +1056,22 @@ DocumentTest::testSplitSerialization()
     doc->serializeBody(buf2);
     buf2.flip();
 
-    CPPUNIT_ASSERT_EQUAL(size_t(65), buf.getLength());
-    CPPUNIT_ASSERT_EQUAL(size_t(73), buf2.getLength());
+    EXPECT_EQ(size_t(65), buf.getLength());
+    EXPECT_EQ(size_t(73), buf2.getLength());
 
     Document headerDoc(testDocMan.getTypeRepo(), buf);
-    CPPUNIT_ASSERT(headerDoc.hasValue("headerval"));
-    CPPUNIT_ASSERT(!headerDoc.hasValue("content"));
+    EXPECT_TRUE(headerDoc.hasValue("headerval"));
+    EXPECT_TRUE(!headerDoc.hasValue("content"));
 
     buf.setPos(0);
     Document fullDoc(testDocMan.getTypeRepo(), buf, buf2);
-    CPPUNIT_ASSERT(fullDoc.hasValue("headerval"));
-    CPPUNIT_ASSERT(fullDoc.hasValue("content"));
+    EXPECT_TRUE(fullDoc.hasValue("headerval"));
+    EXPECT_TRUE(fullDoc.hasValue("content"));
 
-    CPPUNIT_ASSERT_EQUAL(*doc, fullDoc);
+    EXPECT_EQ(*doc, fullDoc);
 }
 
-void DocumentTest::testSliceSerialize()
+TEST(DocumentTest, testSliceSerialize)
 {
         // Test that document doesn't need its own bytebuffer, such that we
         // can serialize multiple documents after each other in the same
@@ -1143,23 +1089,23 @@ void DocumentTest::testSliceSerialize()
 
     ByteBuffer buf(getSerializedSize(*doc) + getSerializedSize(*doc2));
     doc->serialize(buf);
-    CPPUNIT_ASSERT_EQUAL(getSerializedSize(*doc), buf.getPos());
+    EXPECT_EQ(getSerializedSize(*doc), buf.getPos());
     doc2->serialize(buf);
-    CPPUNIT_ASSERT_EQUAL(getSerializedSize(*doc) + getSerializedSize(*doc2),
+    EXPECT_EQ(getSerializedSize(*doc) + getSerializedSize(*doc2),
                          buf.getPos());
     buf.flip();
 
     Document doc3(testDocMan.getTypeRepo(), buf);
-    CPPUNIT_ASSERT_EQUAL(getSerializedSize(*doc), buf.getPos());
+    EXPECT_EQ(getSerializedSize(*doc), buf.getPos());
     Document doc4(testDocMan.getTypeRepo(), buf);
-    CPPUNIT_ASSERT_EQUAL(getSerializedSize(*doc) + getSerializedSize(*doc2),
+    EXPECT_EQ(getSerializedSize(*doc) + getSerializedSize(*doc2),
                          buf.getPos());
 
-    CPPUNIT_ASSERT_EQUAL(*doc, doc3);
-    CPPUNIT_ASSERT_EQUAL(*doc2, doc4);
+    EXPECT_EQ(*doc, doc3);
+    EXPECT_EQ(*doc2, doc4);
 }
 
-void DocumentTest::testCompression()
+TEST(DocumentTest, testCompression)
 {
     TestDocMan testDocMan;
     Document::UP doc = testDocMan.createDocument();
@@ -1181,14 +1127,14 @@ void DocumentTest::testCompression()
 
     const_cast<StructDataType &>(doc->getType().getFieldsType()).setCompressionConfig(oldCfg);
 
-    CPPUNIT_ASSERT(buf_lz4->getRemaining() < buf_uncompressed->getRemaining());
+    EXPECT_TRUE(buf_lz4->getRemaining() < buf_uncompressed->getRemaining());
 
     Document doc_lz4(testDocMan.getTypeRepo(), *buf_lz4);
 
-    CPPUNIT_ASSERT_EQUAL(*doc, doc_lz4);
+    EXPECT_EQ(*doc, doc_lz4);
 }
 
-void DocumentTest::testCompressionConfigured()
+TEST(DocumentTest, testCompressionConfigured)
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(43, "serializetest",
@@ -1225,23 +1171,22 @@ void DocumentTest::testCompressionConfigured()
     buf_compressed->flip();
     size_t compressedSize = buf_compressed->getRemaining();
 
-    CPPUNIT_ASSERT(compressedSize < uncompressedSize);
+    EXPECT_TRUE(compressedSize < uncompressedSize);
 
     Document doc2(repo2, *buf_compressed);
 
     std::unique_ptr<ByteBuffer> buf_compressed2 = doc2.serialize();
     buf_compressed2->flip();
 
-    CPPUNIT_ASSERT_EQUAL(compressedSize, buf_compressed2->getRemaining());
+    EXPECT_EQ(compressedSize, buf_compressed2->getRemaining());
 
     Document doc3(repo2, *buf_compressed2);
 
-    CPPUNIT_ASSERT_EQUAL(doc2, doc_uncompressed);
-    CPPUNIT_ASSERT_EQUAL(doc2, doc3);
+    EXPECT_EQ(doc2, doc_uncompressed);
+    EXPECT_EQ(doc2, doc3);
 }
 
-void
-DocumentTest::testUnknownEntries()
+TEST(DocumentTest, testUnknownEntries)
 {
     // We should be able to deserialize a document with unknown values in it.
     DocumentType type1("test", 0);
@@ -1289,40 +1234,40 @@ DocumentTest::testUnknownEntries()
     doc3.deserializeHeader(repo, header);
     doc3.deserializeBody(repo, body);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
+    EXPECT_EQ(std::string(
         "<document documenttype=\"test\" documentid=\"doc::testdoc\">\n"
         "<int3>3</int3>\n"
         "<int4>4</int4>\n"
         "</document>"), doc2.toXml());
-    CPPUNIT_ASSERT_EQUAL(std::string(
+    EXPECT_EQ(std::string(
         "<document documenttype=\"test\" documentid=\"doc::testdoc\">\n"
         "<int3>3</int3>\n"
         "<int4>4</int4>\n"
         "</document>"), doc3.toXml());
 
-    CPPUNIT_ASSERT_EQUAL(3, doc2.getValue(field3)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(4, doc2.getValue(field4)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(3, doc3.getValue(field3)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(4, doc3.getValue(field4)->getAsInt());
+    EXPECT_EQ(3, doc2.getValue(field3)->getAsInt());
+    EXPECT_EQ(4, doc2.getValue(field4)->getAsInt());
+    EXPECT_EQ(3, doc3.getValue(field3)->getAsInt());
+    EXPECT_EQ(4, doc3.getValue(field4)->getAsInt());
 
     // The fields are actually accessible as long as you ask with field of
     // correct type.
 
-    CPPUNIT_ASSERT(doc2.hasValue(field1));
-    CPPUNIT_ASSERT(doc2.hasValue(field2));
-    CPPUNIT_ASSERT(doc3.hasValue(field1));
-    CPPUNIT_ASSERT(doc3.hasValue(field2));
+    EXPECT_TRUE(doc2.hasValue(field1));
+    EXPECT_TRUE(doc2.hasValue(field2));
+    EXPECT_TRUE(doc3.hasValue(field1));
+    EXPECT_TRUE(doc3.hasValue(field2));
 
-    CPPUNIT_ASSERT_EQUAL(1, doc2.getValue(field1)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(2, doc2.getValue(field2)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(1, doc3.getValue(field1)->getAsInt());
-    CPPUNIT_ASSERT_EQUAL(2, doc3.getValue(field2)->getAsInt());
+    EXPECT_EQ(1, doc2.getValue(field1)->getAsInt());
+    EXPECT_EQ(2, doc2.getValue(field2)->getAsInt());
+    EXPECT_EQ(1, doc3.getValue(field1)->getAsInt());
+    EXPECT_EQ(2, doc3.getValue(field2)->getAsInt());
 
-    CPPUNIT_ASSERT_EQUAL(size_t(2), doc2.getSetFieldCount());
-    CPPUNIT_ASSERT_EQUAL(size_t(2), doc3.getSetFieldCount());
+    EXPECT_EQ(size_t(2), doc2.getSetFieldCount());
+    EXPECT_EQ(size_t(2), doc3.getSetFieldCount());
 }
 
-void DocumentTest::testAnnotationDeserialization()
+TEST(DocumentTest, testAnnotationDeserialization)
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(-1326249427, "dokk", Struct("dokk.header"),
@@ -1358,7 +1303,7 @@ void DocumentTest::testAnnotationDeserialization()
 
     Document doc(repo, buf);
     StringFieldValue strVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("story"), strVal));
+    EXPECT_TRUE(doc.getValue(doc.getField("story"), strVal));
 
     vespalib::nbostream stream;
     VespaDocumentSerializer serializer(stream);
@@ -1368,49 +1313,47 @@ void DocumentTest::testAnnotationDeserialization()
     VespaDocumentDeserializer deserializer(fixedRepo, stream, 8);
     StringFieldValue strVal2;
     deserializer.read(strVal2);
-    CPPUNIT_ASSERT_EQUAL(strVal.toString(), strVal2.toString());
-    CPPUNIT_ASSERT_EQUAL(strVal.toString(true), strVal2.toString(true));
+    EXPECT_EQ(strVal.toString(), strVal2.toString());
+    EXPECT_EQ(strVal.toString(true), strVal2.toString(true));
 
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("help me help me i'm stuck inside a computer!"),
+    EXPECT_EQ(vespalib::string("help me help me i'm stuck inside a computer!"),
                          strVal.getAsString());
     StringFieldValue::SpanTrees trees = strVal.getSpanTrees();
     const SpanTree *span_tree = StringFieldValue::findTree(trees, "fruits");
-    CPPUNIT_ASSERT(span_tree);
-    CPPUNIT_ASSERT_EQUAL(size_t(8), span_tree->numAnnotations());
+    EXPECT_TRUE(span_tree);
+    EXPECT_EQ(size_t(8), span_tree->numAnnotations());
     span_tree = StringFieldValue::findTree(trees, "ballooo");
-    CPPUNIT_ASSERT(span_tree);
-    CPPUNIT_ASSERT_EQUAL(size_t(8), span_tree->numAnnotations());
+    EXPECT_TRUE(span_tree);
+    EXPECT_EQ(size_t(8), span_tree->numAnnotations());
 
 
     ByteFieldValue byteVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("age"), byteVal));
-    CPPUNIT_ASSERT_EQUAL( 123, byteVal.getAsInt());
+    EXPECT_TRUE(doc.getValue(doc.getField("age"), byteVal));
+    EXPECT_EQ( 123, byteVal.getAsInt());
 
     IntFieldValue intVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("date"), intVal));
-    CPPUNIT_ASSERT_EQUAL(13829297, intVal.getAsInt());
+    EXPECT_TRUE(doc.getValue(doc.getField("date"), intVal));
+    EXPECT_EQ(13829297, intVal.getAsInt());
 
     LongFieldValue longVal;
-    CPPUNIT_ASSERT(doc.getValue(doc.getField("friend"), longVal));
-    CPPUNIT_ASSERT_EQUAL((int64_t)2384LL, longVal.getAsLong());
+    EXPECT_TRUE(doc.getValue(doc.getField("friend"), longVal));
+    EXPECT_EQ((int64_t)2384LL, longVal.getAsLong());
 }
 
-void
-DocumentTest::testGetSerializedSize()
+TEST(DocumentTest, testGetSerializedSize)
 {
     TestDocMan testDocMan;
     Document::UP doc = testDocMan.createDocument();
 
-    CPPUNIT_ASSERT_EQUAL(getSerializedSize(*doc), doc->getSerializedSize());
+    EXPECT_EQ(getSerializedSize(*doc), doc->getSerializedSize());
 }
 
-void
-DocumentTest::testDeserializeMultiple()
+TEST(DocumentTest, testDeserializeMultiple)
 {
     TestDocRepo testDocRepo;
     const DocumentTypeRepo& repo(testDocRepo.getTypeRepo());
     const DocumentType* docTypePtr(repo.getDocumentType("testdoctype1"));
-    CPPUNIT_ASSERT(docTypePtr != 0);
+    EXPECT_TRUE(docTypePtr != nullptr);
     const DocumentType & docType = *docTypePtr;
 
     StructFieldValue sv1(docType.getField("mystruct").getDataType());
@@ -1435,7 +1378,7 @@ DocumentTest::testDeserializeMultiple()
 
     correct.setValue(correct.getField("key"), IntFieldValue(1234));
     correct.setValue(correct.getField("value"), StringFieldValue("badger"));
-    CPPUNIT_ASSERT_EQUAL(correct, sv3);
+    EXPECT_EQ(correct, sv3);
 }
 
-} // document
+}
