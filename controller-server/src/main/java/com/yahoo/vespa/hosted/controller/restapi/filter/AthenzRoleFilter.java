@@ -17,15 +17,16 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
-import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -79,16 +80,20 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
         if (athenz.hasHostedOperatorAccess(identity))
             return Set.of(Role.hostedOperator());
 
+        // A principal can be both tenant admin and tenantPipeline
+        Set<Role> roleMemberships = new HashSet<>();
         if (tenant.isPresent() && isTenantAdmin(identity, tenant.get()))
-            return Set.of(Role.athenzTenantAdmin(tenant.get().name()));
+            roleMemberships.add(Role.athenzTenantAdmin(tenant.get().name()));
 
         if (identity.getDomain().equals(SCREWDRIVER_DOMAIN) && application.isPresent() && tenant.isPresent())
             // NOTE: Only fine-grained deploy authorization for Athenz tenants
             if (   tenant.get().type() != Tenant.Type.athenz
                 || hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
-                    return Set.of(Role.tenantPipeline(tenant.get().name(), application.get()));
+                    roleMemberships.add(Role.tenantPipeline(tenant.get().name(), application.get()));
 
-        return Set.of(Role.everyone());
+        return roleMemberships.isEmpty()
+                ? Set.of(Role.everyone())
+                : Set.copyOf(roleMemberships);
     }
 
     private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {

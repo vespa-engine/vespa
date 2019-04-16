@@ -34,6 +34,7 @@ public class AthenzRoleFilterTest {
     private static final AthenzDomain TENANT_DOMAIN2 = new AthenzDomain("tenantdomain2");
     private static final AthenzPrincipal TENANT_ADMIN = new AthenzPrincipal(new AthenzService(TENANT_DOMAIN, "adminservice"));
     private static final AthenzPrincipal TENANT_PIPELINE = new AthenzPrincipal(HostedAthenzIdentities.from(new ScrewdriverId("12345")));
+    private static final AthenzPrincipal TENANT_ADMIN_AND_PIPELINE = new AthenzPrincipal(HostedAthenzIdentities.from(new ScrewdriverId("56789")));
     private static final TenantName TENANT = TenantName.from("mytenant");
     private static final TenantName TENANT2 = TenantName.from("othertenant");
     private static final ApplicationName APPLICATION = ApplicationName.from("myapp");
@@ -58,7 +59,9 @@ public class AthenzRoleFilterTest {
         tester.createApplication(TENANT, APPLICATION.value(), "default", 12345);
         AthenzDbMock.Domain tenantDomain = tester.athenzDb().domains.get(TENANT_DOMAIN);
         tenantDomain.admins.add(TENANT_ADMIN.getIdentity());
+        tenantDomain.admins.add(TENANT_ADMIN_AND_PIPELINE.getIdentity());
         tenantDomain.applications.get(new ApplicationId(APPLICATION.value())).addRoleMember(ApplicationAction.deploy, TENANT_PIPELINE.getIdentity());
+        tenantDomain.applications.get(new ApplicationId(APPLICATION.value())).addRoleMember(ApplicationAction.deploy, TENANT_ADMIN_AND_PIPELINE.getIdentity());
         tester.createTenant(TENANT2.value(), TENANT_DOMAIN2.getName(), null);
         tester.createApplication(TENANT2, APPLICATION.value(), "default", 42);
     }
@@ -104,6 +107,13 @@ public class AthenzRoleFilterTest {
 
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(TENANT_PIPELINE, APPLICATION2_CONTEXT_PATH));
+
+        // Principals member of both tenantPipeline and tenantAdmin roles get correct roles
+        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT)),
+                     filter.roles(TENANT_ADMIN_AND_PIPELINE, TENANT_CONTEXT_PATH));
+
+        assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.tenantPipeline(TENANT, APPLICATION)),
+                     filter.roles(TENANT_ADMIN_AND_PIPELINE, APPLICATION_CONTEXT_PATH));
 
         // Unprivileged users are just members of the everyone role.
         assertEquals(Set.of(Role.everyone()),
