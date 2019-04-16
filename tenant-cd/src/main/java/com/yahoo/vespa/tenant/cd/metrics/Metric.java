@@ -1,5 +1,6 @@
 package com.yahoo.vespa.tenant.cd.metrics;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -18,7 +19,7 @@ public class Metric {
     private final Map<Map<String, ?>, Statistic> statistics;
 
     private Metric(Map<Map<String, ?>, Statistic> statistics) {
-        this.statistics = copyOf(statistics);
+        this.statistics = statistics;
     }
 
     /** Creates a new Metric with a copy of the given data. */
@@ -26,19 +27,16 @@ public class Metric {
         if (data.isEmpty())
             throw new IllegalArgumentException("No data given.");
 
+        Map<Map<String, ?>, Statistic> copies = new HashMap<>();
         Set<String> dimensions = data.keySet().iterator().next().keySet();
-        for (Map<String, ?> point : data.keySet()) {
-            if (point.keySet().contains(null))
-                throw new IllegalArgumentException("Dimensions may not be null: '" + point.keySet() + "'.");
-
+        data.forEach((point, statistic) -> {
             if ( ! point.keySet().equals(dimensions))
                 throw new IllegalArgumentException("Given data has inconsistent dimensions: '" + dimensions + "' vs '" + point.keySet() + "'.");
 
-            if (point.values().contains(null))
-                throw new IllegalArgumentException("Position along a dimension may not be null: '" + point + "'.");
-        }
+            copies.put(copyOf(point), statistic);
+        });
 
-        return new Metric(data);
+        return new Metric(copyOf(copies));
     }
 
     /** Returns a Metric view of the subset of points in the given hyperplane; its dimensions must be a subset of those of this Metric. */
@@ -46,6 +44,21 @@ public class Metric {
         return new Metric(statistics.keySet().stream()
                                     .filter(point -> point.entrySet().containsAll(hyperplane.entrySet()))
                                     .collect(toUnmodifiableMap(point -> point, statistics::get)));
+    }
+
+    /** Returns a version of this where statistics along the given hyperspace are aggregated. This does not preserve last, 95 and 99 percentile values. */
+    public Metric collapse(Set<String> hyperspace) {
+        return new Metric(statistics.keySet().stream()
+                                    .collect(toUnmodifiableMap(point -> point.keySet().stream()
+                                                                             .filter(dimension -> ! hyperspace.contains(dimension))
+                                                                             .collect(toUnmodifiableMap(dimension -> dimension, point::get)),
+                                                               statistics::get,
+                                                               Statistic::mergedWith)));
+    }
+
+    /** Returns a collapsed version of this, with all statistics aggregated. This does not preserve last, 95 and 99 percentile values. */
+    public Metric collapse() {
+        return collapse(statistics.keySet().iterator().next().keySet());
     }
 
     /** If this Metric contains a single point, returns the Statistic of that point; otherwise, throws an exception. */

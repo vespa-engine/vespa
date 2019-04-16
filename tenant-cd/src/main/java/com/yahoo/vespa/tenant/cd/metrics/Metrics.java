@@ -28,17 +28,14 @@ public class Metrics {
     private Metrics(Instant start, Instant end, Map<String, Metric> metrics) {
         this.start = start;
         this.end = end;
-        this.metrics = copyOf(metrics);
+        this.metrics = metrics;
     }
 
     public static Metrics of(Instant start, Instant end, Map<String, Metric> metrics) {
-        if (metrics.containsKey(null) || metrics.containsValue(null))
-            throw new IllegalArgumentException("Metrics may not contain null keys or values: '" + metrics + "'.");
-
         if ( ! start.isBefore(end))
             throw new IllegalArgumentException("Given time interval must be positive: '" + start + "' to '" + end + "'.");
 
-        return new Metrics(start, end, metrics);
+        return new Metrics(start, end, copyOf(metrics));
     }
 
     /** Returns the start of the time window from which these metrics were sampled, or throws if the status is {@code Status.down}. */

@@ -1,8 +1,11 @@
 package com.yahoo.vespa.tenant.cd.metrics;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringJoiner;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Map.copyOf;
 
@@ -17,14 +20,11 @@ public class Statistic {
 
     /** Creates a new Statistic with a copy of the given data. */
     private Statistic(Map<Type, Double> data) {
-        this.data = copyOf(data);
+        this.data = data;
     }
 
     public static Statistic of(Map<Type, Double> data) {
-        if (data.containsKey(null) || data.containsValue(null))
-            throw new IllegalArgumentException("Data may not contain null keys or values: '" + data + "'.");
-
-        return new Statistic(data);
+        return new Statistic(copyOf(data));
     }
 
     /** Returns the value of the given type, or throws a NoSuchElementException if this isn't known. */
@@ -38,6 +38,26 @@ public class Statistic {
     /** Returns the underlying, unmodifiable Map. */
     public Map<Type, Double> asMap() {
         return data;
+    }
+
+    Statistic mergedWith(Statistic other) {
+        if (data.keySet().equals(other.data.keySet()))
+            throw new IllegalArgumentException("Incompatible key sets '" + data.keySet() + "' and '" + other.data.keySet() + "'.");
+
+        Map<Type, Double> merged = new HashMap<>();
+        double n1 = get(Type.count), n2 = other.get(Type.count);
+        for (Type type : data.keySet()) switch (type) {
+            case count: merged.put(type, n1 + n2); break;
+            case rate: merged.put(type, get(Type.rate) + other.get(Type.rate)); break;
+            case max: merged.put(type, Math.max(get(Type.max), other.get(Type.max))); break;
+            case min: merged.put(type, Math.min(get(Type.min), other.get(Type.min))); break;
+            case average: merged.put(type, (n1 * get(Type.average) + n2 * other.get(Type.average)) / (n1 + n2)); break;
+            case last:
+            case percentile95:
+            case percentile99: break;
+            default: throw new IllegalArgumentException("Unexpected type '" + type + "'.");
+        }
+        return of(merged);
     }
 
     @Override
