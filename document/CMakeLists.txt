@@ -25,10 +25,6 @@ vespa_define_module(
     src/vespa/document/util
     src/vespa/document/test
 
-    TEST_DEPENDS
-    vdstestlib
-    cppunit
-
     TESTS
     src/tests
     src/tests/annotation

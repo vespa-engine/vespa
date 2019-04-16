@@ -25,6 +25,7 @@ vespa_add_executable(document_gtest_runner_app TEST
     primitivefieldvaluetest.cpp
     stringtokenizertest.cpp
     structfieldvaluetest.cpp
+    testbytebuffer.cpp
     testdocmantest.cpp
     teststringutil.cpp
     testxml.cpp
@@ -40,21 +41,4 @@ vespa_add_executable(document_gtest_runner_app TEST
 vespa_add_test(
     NAME document_gtest_runner_app
     COMMAND document_gtest_runner_app
-)
-
-# Runner for unit tests written in CppUnit (DEPRECATED).
-vespa_add_executable(document_testrunner_app TEST
-    SOURCES
-    testbytebuffer.cpp
-    testrunner.cpp
-    heapdebuggerother.cpp
-    DEPENDS
-    document
-    AFTER
-    document_documentconfig
-)
-
-vespa_add_test(
-    NAME document_testrunner_app
-    COMMAND document_testrunner_app
 )
