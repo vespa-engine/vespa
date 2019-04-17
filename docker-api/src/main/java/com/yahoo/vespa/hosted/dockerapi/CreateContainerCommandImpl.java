@@ -167,34 +167,34 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         List<Bind> volumeBinds = volumeBindSpecs.stream().map(Bind::parse).collect(Collectors.toList());
 
         final HostConfig hostConfig = new HostConfig()
-                .withSecurityOpts(new ArrayList<>(securityOpts));
+                .withSecurityOpts(new ArrayList<>(securityOpts))
+                .withBinds(volumeBinds)
+                .withUlimits(ulimits)
+                .withCapAdd(addCapabilities.toArray(new Capability[0]))
+                .withCapDrop(dropCapabilities.toArray(new Capability[0]))
+                .withPrivileged(privileged);
 
         containerResources.ifPresent(cr -> hostConfig
                 .withCpuShares(cr.cpuShares())
                 .withMemory(cr.memoryBytes())
                 // MemorySwap is the total amount of memory and swap, if MemorySwap == Memory, then container has no access swap
                 .withMemorySwap(cr.memoryBytes())
-                .withCpuPeriod(cr.cpuQuota() > 0 ? cr.cpuPeriod() : null)
-                .withCpuQuota(cr.cpuQuota() > 0 ? cr.cpuQuota() : null));
+                .withCpuPeriod(cr.cpuQuota() > 0 ? (long) cr.cpuPeriod() : null)
+                .withCpuQuota(cr.cpuQuota() > 0 ? (long) cr.cpuQuota() : null));
 
         final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
-                .withHostConfig(hostConfig) // MUST BE FIRST (some of the later setters are simply proxied to HostConfig)
+                .withHostConfig(hostConfig)
                 .withName(containerName.asString())
                 .withLabels(labels)
-                .withEnv(environmentAssignments)
-                .withBinds(volumeBinds)
-                .withUlimits(ulimits)
-                .withCapAdd(new ArrayList<>(addCapabilities))
-                .withCapDrop(new ArrayList<>(dropCapabilities))
-                .withPrivileged(privileged);
+                .withEnv(environmentAssignments);
 
         networkMode
                 .filter(mode -> ! mode.toLowerCase().equals("host"))
                 .ifPresent(mode -> containerCmd.withMacAddress(generateMACAddress(hostName, ipv4Address, ipv6Address)));
 
         hostName.ifPresent(containerCmd::withHostName);
-        networkMode.ifPresent(containerCmd::withNetworkMode);
+        networkMode.ifPresent(hostConfig::withNetworkMode);
         ipv4Address.ifPresent(containerCmd::withIpv4Address);
         ipv6Address.ifPresent(containerCmd::withIpv6Address);
         entrypoint.ifPresent(containerCmd::withEntrypoint);
