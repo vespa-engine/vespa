@@ -1,119 +1,95 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
+#include <gtest/gtest.h>
 
 using storage::spi::test::makeSpiBucket;
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
-struct ClusterStateTest : public CppUnit::TestFixture {
-    ClusterStateTest() {}
-
-    CPPUNIT_TEST_SUITE(ClusterStateTest);
-    CPPUNIT_TEST(testClusterUp);
-    CPPUNIT_TEST(testNodeUp);
-    CPPUNIT_TEST(testNodeInitializing);
-    CPPUNIT_TEST(testReady);
-    CPPUNIT_TEST(can_infer_own_node_retired_state);
-    CPPUNIT_TEST_SUITE_END();
-
-    void testClusterUp();
-    void testNodeUp();
-    void testNodeInitializing();
-    void testReady();
-    void can_infer_own_node_retired_state();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(ClusterStateTest);
-
-void
-ClusterStateTest::testClusterUp()
+TEST(ClusterStateTest, testClusterUp)
 {
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
 
     {
         lib::ClusterState s("version:1 storage:3 distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.clusterUp());
+        EXPECT_EQ(true, state.clusterUp());
     }
 
     {
         lib::ClusterState s("version:1 storage:3 .0.s:d distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.clusterUp());
+        EXPECT_EQ(true, state.clusterUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 .0.s:d distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(false, state.clusterUp());
+        EXPECT_EQ(false, state.clusterUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(false, state.clusterUp());
+        EXPECT_EQ(false, state.clusterUp());
     }
 }
 
-void
-ClusterStateTest::testNodeUp()
+TEST(ClusterStateTest, testNodeUp)
 {
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
 
     {
         lib::ClusterState s("version:1 storage:3 distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.nodeUp());
+        EXPECT_EQ(true, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 storage:3 .0.s:d distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(false, state.nodeUp());
+        EXPECT_EQ(false, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 storage:3 .0.s:d distributor:3");
         ClusterState state(s, 1, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.nodeUp());
+        EXPECT_EQ(true, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.nodeUp());
+        EXPECT_EQ(true, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 distributor:3 .0.s:d");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.nodeUp());
+        EXPECT_EQ(true, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 .0.s:d distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(false, state.nodeUp());
+        EXPECT_EQ(false, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 .0.s:r distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.nodeUp());
+        EXPECT_EQ(true, state.nodeUp());
     }
 
     {
         lib::ClusterState s("version:1 cluster:d storage:3 .0.s:i distributor:3");
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.nodeUp());
+        EXPECT_EQ(true, state.nodeUp());
     }
 }
 
@@ -131,28 +107,27 @@ nodeMarkedAsInitializingInState(const std::string& stateStr,
 
 } // anon ns
 
-void
-ClusterStateTest::testNodeInitializing()
+TEST(ClusterStateTest, testNodeInitializing)
 {
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
 
-    CPPUNIT_ASSERT(!nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(!nodeMarkedAsInitializingInState(
             "version:1 storage:3 distributor:3", d, 0));
-    CPPUNIT_ASSERT(nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(nodeMarkedAsInitializingInState(
             "version:1 storage:3 .0.s:i distributor:3", d, 0));
-    CPPUNIT_ASSERT(!nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(!nodeMarkedAsInitializingInState(
             "version:1 storage:3 .0.s:i distributor:3", d, 1));
     // To mirror nodeUp functionality, we ignore cluster state.
-    CPPUNIT_ASSERT(nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(nodeMarkedAsInitializingInState(
             "version:1 cluster:d storage:3 .0.s:i distributor:3", d, 0));
     // Distributors don't technically have init state, but just go with it.
-    CPPUNIT_ASSERT(!nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(!nodeMarkedAsInitializingInState(
             "version:1 storage:3 distributor:3 .0.s:i", d, 0));
-    CPPUNIT_ASSERT(!nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(!nodeMarkedAsInitializingInState(
             "version:1 storage:3 .0.s:d distributor:3", d, 0));
-    CPPUNIT_ASSERT(!nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(!nodeMarkedAsInitializingInState(
             "version:1 storage:3 .0.s:r distributor:3", d, 0));
-    CPPUNIT_ASSERT(!nodeMarkedAsInitializingInState(
+    EXPECT_TRUE(!nodeMarkedAsInitializingInState(
             "version:1 storage:3 .0.s:m distributor:3", d, 0));
 }
 
@@ -167,8 +142,7 @@ lib::Distribution::DistributionConfig getCfg(uint16_t redundancy, uint16_t ready
 
 }
 
-void
-ClusterStateTest::testReady()
+TEST(ClusterStateTest, testReady)
 {
     lib::ClusterState s("version:1 storage:3 distributor:3");
 
@@ -180,35 +154,35 @@ ClusterStateTest::testReady()
     {
         lib::Distribution d(getCfg(3, 0));
         ClusterState state(s, 0, d);
-        CPPUNIT_ASSERT_EQUAL(false, state.shouldBeReady(b));
+        EXPECT_EQ(false, state.shouldBeReady(b));
     }
 
     // Only node 0 with 1 ready copy.
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 1));
         ClusterState state(s, i, d);
-        CPPUNIT_ASSERT_EQUAL(i == 0, state.shouldBeReady(b));
+        EXPECT_EQ(i == 0, state.shouldBeReady(b));
     }
 
     // All of them with 3 ready copies
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 3));
         ClusterState state(s, i, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.shouldBeReady(b));
+        EXPECT_EQ(true, state.shouldBeReady(b));
     }
 
     // Node 0 and node 1 with 2 ready copies.
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 2));
         ClusterState state(s, i, d);
-        CPPUNIT_ASSERT_EQUAL(i == 0 || i == 2, state.shouldBeReady(b));
+        EXPECT_EQ(i == 0 || i == 2, state.shouldBeReady(b));
     }
 
     // All of them with 3 ready copies
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 3));
         ClusterState state(s, i, d);
-        CPPUNIT_ASSERT_EQUAL(true, state.shouldBeReady(b));
+        EXPECT_EQ(true, state.shouldBeReady(b));
     }
 
     lib::ClusterState s2("version:1 storage:3 .0.s:d distributor:3");
@@ -217,13 +191,13 @@ ClusterStateTest::testReady()
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 2));
         ClusterState state(s2, i, d);
-        CPPUNIT_ASSERT_EQUAL(i == 1 || i == 2, state.shouldBeReady(b));
+        EXPECT_EQ(i == 1 || i == 2, state.shouldBeReady(b));
     }
 
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 1));
         ClusterState state(s2, i, d);
-        CPPUNIT_ASSERT_EQUAL(i == 2, state.shouldBeReady(b));
+        EXPECT_EQ(i == 2, state.shouldBeReady(b));
     }
 }
 
@@ -241,17 +215,17 @@ node_marked_as_retired_in_state(const std::string& stateStr,
 
 }
 
-void ClusterStateTest::can_infer_own_node_retired_state() {
+TEST(ClusterStateTest, can_infer_own_node_retired_state)
+{
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
 
-    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3", d, 0));
-    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:i", d, 0));
-    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:d", d, 0));
-    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:m", d, 0));
-    CPPUNIT_ASSERT(node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:r", d, 0));
-    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:r", d, 1));
-    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .1.s:r", d, 0));
+    EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3", d, 0));
+    EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:i", d, 0));
+    EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:d", d, 0));
+    EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:m", d, 0));
+    EXPECT_TRUE(node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:r", d, 0));
+    EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:r", d, 1));
+    EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .1.s:r", d, 0));
 }
 
-} // spi
-} // storage
+}

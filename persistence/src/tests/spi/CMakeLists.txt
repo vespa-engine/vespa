@@ -3,6 +3,5 @@ vespa_add_library(persistence_testspi
     SOURCES
     clusterstatetest.cpp
     DEPENDS
-    persistence_persistence_conformancetest
     persistence
 )
