@@ -118,6 +118,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
 
     private File findActualApplicationDir(File application) {
         // If application is in e.g. application/, use that as root for UnpackedApplication
+        // TODO: Vespa 8: Remove application/ directory support
         File[] files = application.listFiles();
         if (files != null && files.length == 1 && files[0].isDirectory()) {
             application = files[0];
