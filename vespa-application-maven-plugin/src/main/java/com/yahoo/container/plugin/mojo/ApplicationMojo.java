@@ -36,7 +36,7 @@ public class ApplicationMojo extends AbstractMojo {
     private String destinationDir;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         File applicationPackage = new File(project.getBasedir(), sourceDir);
         File applicationDestination = new File(project.getBasedir(), destinationDir);
         copyApplicationPackage(applicationPackage, applicationDestination);
@@ -103,13 +103,9 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyModuleBundles(File moduleDir, File componentsDir) throws MojoExecutionException {
         File moduleTargetDir = new File(moduleDir, "target");
         if (moduleTargetDir.exists()) {
-            File[] bundles = moduleTargetDir.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith("-deploy.jar") || name.endsWith("-jar-with-dependencies.jar");
-                }
-            });
-
+            File[] bundles = moduleTargetDir.listFiles((dir, name) -> name.endsWith("-deploy.jar") ||
+                                                                      name.endsWith("-jar-with-dependencies.jar"));
+            if (bundles == null) return;
             for (File bundle : bundles) {
                 try {
                     copyFile(bundle, new File(componentsDir, bundle.getName()));
@@ -123,14 +119,12 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyFile(File source, File destination) throws IOException {
         try (FileInputStream sourceStream = new FileInputStream(source);
              FileOutputStream destinationStream = new FileOutputStream(destination)) {
-            Compression.copyBytes(sourceStream, destinationStream);
+            sourceStream.transferTo(destinationStream);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> List<T> emptyListIfNull(List<T> modules) {
-        return modules == null ?
-                Collections.emptyList():
-                modules;
+    private static <T> List<T> emptyListIfNull(List<T> modules) {
+        return modules == null ? Collections.emptyList(): modules;
     }
+
 }

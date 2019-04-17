@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -40,23 +38,11 @@ public class Compression {
         ZipEntry entry = new ZipEntry(composePath(zipTopLevelDir, composePath(relativePath, child.getName())));
         zipOutputStream.putNextEntry(entry);
         try {
-            FileInputStream fileInput = new FileInputStream(child);
-            try {
-                copyBytes(fileInput, zipOutputStream);
-            } finally {
-                fileInput.close();
+            try (FileInputStream fileInput = new FileInputStream(child)) {
+                fileInput.transferTo(zipOutputStream);
             }
         } finally {
             zipOutputStream.closeEntry();
-        }
-    }
-
-    public static void copyBytes(InputStream input, OutputStream output) throws IOException {
-        byte[] b = new byte[1024];
-        int numRead = 0;
-
-        while((numRead = input.read(b)) != -1) {
-            output.write(b, 0, numRead);
         }
     }
 
@@ -65,4 +51,5 @@ public class Compression {
                 subDir :
                 relativePath + File.separator + subDir;
     }
+
 }
