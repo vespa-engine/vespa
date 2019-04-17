@@ -4,7 +4,6 @@ package com.yahoo.container.plugin.mojo;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -13,7 +12,6 @@ import org.apache.maven.project.MavenProject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -47,7 +45,7 @@ public class ApplicationMojo extends AbstractMojo {
         copyBundlesForSubModules(componentsDir);
 
         try {
-            Compression.zipDirectory(applicationDestination);
+            Compression.zipDirectory(applicationDestination, "");
         } catch (Exception e) {
             throw new MojoExecutionException("Failed zipping application.", e);
         }

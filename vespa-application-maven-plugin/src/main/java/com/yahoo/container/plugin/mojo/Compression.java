@@ -12,11 +12,12 @@ import java.util.zip.ZipOutputStream;
  * @author Tony Vaagenes
  */
 public class Compression {
-    static public void zipDirectory(File dir) throws Exception {
+
+    public static void zipDirectory(File dir, String zipTopLevelDir) throws Exception {
         FileOutputStream zipFile = new FileOutputStream(new File(dir.getParent(), dir.getName() + ".zip"));
         ZipOutputStream zipOutputStream = new ZipOutputStream(zipFile);
         try {
-            addDirectory(zipOutputStream, dir.getName(), dir, "");
+            addDirectory(zipOutputStream, zipTopLevelDir, dir, "");
         } finally {
             zipOutputStream.close();
         }
