@@ -9,56 +9,7 @@
 #pragma once
 
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-
-// Use an ordering such that the most basic stuff is tested before more advanced
-// stuff, such that if there is a catastrophic failure crashing tests, it fails
-// on simple operations rather than complex, to ease debugging.
-#define DEFINE_CONFORMANCE_TESTS() \
-    CPPUNIT_TEST(testBasics); \
-    CPPUNIT_TEST(testPut); \
-    CPPUNIT_TEST(testPutNewDocumentVersion); \
-    CPPUNIT_TEST(testPutOlderDocumentVersion); \
-    CPPUNIT_TEST(testPutDuplicate); \
-    CPPUNIT_TEST(testRemove); \
-    CPPUNIT_TEST(testRemoveMerge); \
-    CPPUNIT_TEST(testUpdate); \
-    CPPUNIT_TEST(testGet); \
-    CPPUNIT_TEST(testIterateCreateIterator); \
-    CPPUNIT_TEST(testIterateWithUnknownId); \
-    CPPUNIT_TEST(testIterateDestroyIterator); \
-    CPPUNIT_TEST(testIterateAllDocs); \
-    CPPUNIT_TEST(testIterateAllDocsNewestVersionOnly); \
-    CPPUNIT_TEST(testIterateChunked); \
-    CPPUNIT_TEST(testMaxByteSize); \
-    CPPUNIT_TEST(testIterateMatchTimestampRange); \
-    CPPUNIT_TEST(testIterateExplicitTimestampSubset); \
-    CPPUNIT_TEST(testIterateRemoves); \
-    CPPUNIT_TEST(testIterateMatchSelection); \
-    CPPUNIT_TEST(testIterationRequiringDocumentIdOnlyMatching); \
-    CPPUNIT_TEST(testIterateBadDocumentSelection); \
-    CPPUNIT_TEST(testIterateAlreadyCompleted); \
-    CPPUNIT_TEST(testIterateEmptyBucket); \
-    CPPUNIT_TEST(testBucketInfo); \
-    CPPUNIT_TEST(testOrderIndependentBucketInfo); \
-    CPPUNIT_TEST(testDeleteBucket); \
-    CPPUNIT_TEST(testSplitNormalCase); \
-    CPPUNIT_TEST(testSplitTargetExists); \
-    CPPUNIT_TEST(testSplitSingleDocumentInSource); \
-    CPPUNIT_TEST(testJoinNormalCase); \
-    CPPUNIT_TEST(testJoinNormalCaseWithMultipleBitsDecreased); \
-    CPPUNIT_TEST(testJoinOneBucket); \
-    CPPUNIT_TEST(testJoinTargetExists); \
-    CPPUNIT_TEST(testJoinSameSourceBuckets); \
-    CPPUNIT_TEST(testJoinSameSourceBucketsWithMultipleBitsDecreased); \
-    CPPUNIT_TEST(testJoinSameSourceBucketsTargetExists); \
-    CPPUNIT_TEST(testMaintain); \
-    CPPUNIT_TEST(testGetModifiedBuckets); \
-    CPPUNIT_TEST(testBucketActivation); \
-    CPPUNIT_TEST(testBucketActivationSplitAndJoin); \
-    CPPUNIT_TEST(testRemoveEntry); \
-    CPPUNIT_TEST(testBucketSpaces); \
-    CPPUNIT_TEST(detectAndTestOptionalBehavior);
+#include <gtest/gtest.h>
 
 namespace document
 {
@@ -70,10 +21,11 @@ class TestDocMan;
 
 namespace document::internal { class InternalDocumenttypesType; }
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
-struct ConformanceTest : public CppUnit::TestFixture {
+class ConformanceTest : public ::testing::Test {
+
+public:
     struct PersistenceFactory {
         typedef std::unique_ptr<PersistenceFactory> UP;
         using DocumenttypesConfig = const document::internal::InternalDocumenttypesType;
@@ -107,9 +59,13 @@ struct ConformanceTest : public CppUnit::TestFixture {
         // If bucket spaces are supported then testdoctype2 is in bucket space 1
         virtual bool supportsBucketSpaces() const { return false; }
     };
+
+    // Set by test runner.
+    static std::unique_ptr<PersistenceFactory>(*_factoryFactory)(const std::string &docType);
+
+protected:
     PersistenceFactory::UP _factory;
 
-private:
     void populateBucket(const Bucket& b,
                         PersistenceProvider& spi,
                         Context& context,
@@ -193,90 +149,15 @@ private:
             const Bucket& source,
             const Bucket& target,
             document::TestDocMan& testDocMan);
-public:
-    ConformanceTest(PersistenceFactory::UP f) : _factory(std::move(f)) {}
 
-    /**
-     * Tests that one can put and remove entries to the persistence
-     * implementation, and iterate over the content. This functionality is
-     * needed by most other tests in order to verify correct behavior, so
-     * this needs to work for other tests to work.
-     */
-    void testBasics();
-
-    /**
-     * Test that listing of buckets works as intended.
-     */
-    void testListBuckets();
-
-    /**
-     * Test that bucket info is generated in a legal fashion. (Such that
-     * split/join/merge can work as intended)
-     */
-    void testBucketInfo();
-    /**
-     * Test that given a set of operations with certain timestamps, the bucket
-     * info is the same no matter what order we feed these in.
-     */
-    void testOrderIndependentBucketInfo();
-
-    /** Test that the various document operations work as intended. */
-    void testPut();
-    void testPutNewDocumentVersion();
-    void testPutOlderDocumentVersion();
-    void testPutDuplicate();
-    void testRemove();
-    void testRemoveMerge();
-    void testUpdate();
-    void testGet();
-
-    /** Test that iterating special cases works. */
-    void testIterateCreateIterator();
-    void testIterateWithUnknownId();
-    void testIterateDestroyIterator();
-    void testIterateAllDocs();
-    void testIterateAllDocsNewestVersionOnly();
-    void testIterateChunked();
-    void testMaxByteSize();
-    void testIterateMatchTimestampRange();
-    void testIterateExplicitTimestampSubset();
-    void testIterateRemoves();
-    void testIterateMatchSelection();
-    void testIterationRequiringDocumentIdOnlyMatching();
-    void testIterateBadDocumentSelection();
-    void testIterateAlreadyCompleted();
-    void testIterateEmptyBucket();
-
-    /** Test that the various bucket operations work as intended. */
-    void testCreateBucket();
-    void testDeleteBucket();
-    void testSplitTargetExists();
-    void testSplitNormalCase();
-    void testSplitSingleDocumentInSource();
-    void testJoinNormalCase();
-    void testJoinNormalCaseWithMultipleBitsDecreased();
-    void testJoinTargetExists();
-    void testJoinOneBucket();
-    void testJoinSameSourceBuckets();
-    void testJoinSameSourceBucketsWithMultipleBitsDecreased();
-    void testJoinSameSourceBucketsTargetExists();
-    void testMaintain();
-    void testGetModifiedBuckets();
-    void testBucketActivation();
-    void testBucketActivationSplitAndJoin();
-
-    void testRemoveEntry();
-
-    /** Test multiple bucket spaces */
-    void testBucketSpaces();
-
-    /**
-     * Reports what optional behavior is supported by implementation and not.
-     * Tests functionality if supported.
-     */
-    void detectAndTestOptionalBehavior();
+    ConformanceTest();
+    ConformanceTest(const std::string &docType);
 };
 
-} // spi
-} // storage
+class SingleDocTypeConformanceTest : public ConformanceTest
+{
+protected:
+    SingleDocTypeConformanceTest();
+};
 
+}

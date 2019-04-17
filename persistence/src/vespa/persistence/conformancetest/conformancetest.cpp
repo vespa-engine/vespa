@@ -3,7 +3,6 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -19,6 +18,7 @@
 #include <vespa/config-stor-distribution.h>
 #include <algorithm>
 #include <limits>
+#include <gtest/gtest.h>
 
 using document::BucketId;
 using document::BucketSpace;
@@ -35,8 +35,8 @@ PersistenceProvider::UP getSpi(ConformanceTest::PersistenceFactory &factory,
                                const document::TestDocMan &testDocMan) {
     PersistenceProvider::UP result(factory.getPersistenceImplementation(
                 testDocMan.getTypeRepoSP(), *testDocMan.getTypeConfig()));
-    CPPUNIT_ASSERT(!result->initialize().hasError());
-    CPPUNIT_ASSERT(!result->getPartitionStates().hasError());
+    EXPECT_TRUE(!result->initialize().hasError());
+    EXPECT_TRUE(!result->getPartitionStates().hasError());
     return result;
 }
 
@@ -157,7 +157,7 @@ doIterate(PersistenceProvider& spi,
         Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
         IterateResult result(spi.iterate(id, maxByteSize, context));
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
 
         chunks.push_back(Chunk{result.steal_entries()});
         if (result.isCompleted()
@@ -214,7 +214,7 @@ iterateBucket(PersistenceProvider& spi,
             versions,
             context);
 
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, iter.getErrorCode());
+    EXPECT_EQ(Result::NONE, iter.getErrorCode());
 
     while (true) {
         IterateResult result =
@@ -246,37 +246,33 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
             getEntriesFromChunks(chunks));
     size_t removeCount = getRemoveEntryCount(retrieved);
     // Ensure that we've got the correct number of puts and removes
-    CPPUNIT_ASSERT_EQUAL(removes.size(), removeCount);
-    CPPUNIT_ASSERT_EQUAL(wanted.size(), retrieved.size() - removeCount);
+    EXPECT_EQ(removes.size(), removeCount);
+    EXPECT_EQ(wanted.size(), retrieved.size() - removeCount);
 
     size_t wantedIdx = 0;
     for (size_t i = 0; i < retrieved.size(); ++i) {
         DocEntry& entry(*retrieved[i]);
         if (entry.getDocument() != 0) {
             if (!(*wanted[wantedIdx].doc == *entry.getDocument())) {
-                std::ostringstream ss;
-                ss << "Documents differ! Wanted:\n"
-                   << wanted[wantedIdx].doc->toString(true)
-                   << "\n\nGot:\n"
-                   << entry.getDocument()->toString(true);
-                CPPUNIT_FAIL(ss.str());
+                FAIL() << "Documents differ! Wanted:\n"
+                       << wanted[wantedIdx].doc->toString(true)
+                       << "\n\nGot:\n"
+                       << entry.getDocument()->toString(true);
             }
-            CPPUNIT_ASSERT_EQUAL(wanted[wantedIdx].timestamp, entry.getTimestamp());
+            EXPECT_EQ(wanted[wantedIdx].timestamp, entry.getTimestamp());
             size_t serSize = wanted[wantedIdx].doc->serialize()->getLength();
-            CPPUNIT_ASSERT_EQUAL(serSize + sizeof(DocEntry), size_t(entry.getSize()));
-            CPPUNIT_ASSERT_EQUAL(serSize, size_t(entry.getDocumentSize()));
+            EXPECT_EQ(serSize + sizeof(DocEntry), size_t(entry.getSize()));
+            EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
             ++wantedIdx;
         } else {
             // Remove-entry
-            CPPUNIT_ASSERT(entry.getDocumentId() != 0);
+            EXPECT_TRUE(entry.getDocumentId() != 0);
             size_t serSize = entry.getDocumentId()->getSerializedSize();
-            CPPUNIT_ASSERT_EQUAL(serSize + sizeof(DocEntry), size_t(entry.getSize()));
-            CPPUNIT_ASSERT_EQUAL(serSize, size_t(entry.getDocumentSize()));
+            EXPECT_EQ(serSize + sizeof(DocEntry), size_t(entry.getSize()));
+            EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
             if (removes.find(entry.getDocumentId()->toString()) == removes.end()) {
-                std::ostringstream ss;
-                ss << "Got unexpected remove entry for document id "
-                   << *entry.getDocumentId();
-                CPPUNIT_FAIL(ss.str());
+                FAIL() << "Got unexpected remove entry for document id "
+                       << *entry.getDocumentId();
             }
         }
     }
@@ -301,17 +297,42 @@ feedDocs(PersistenceProvider& spi,
                         minSize,
                         maxSize));
         Result result = spi.put(bucket, Timestamp(1000 + i), doc, context);
-        CPPUNIT_ASSERT(!result.hasError());
+        EXPECT_TRUE(!result.hasError());
         docs.push_back(DocAndTimestamp(doc, Timestamp(1000 + i)));
     }
     spi.flush(bucket, context);
-    CPPUNIT_ASSERT_EQUAL(Result(), Result(spi.flush(bucket, context)));
+    EXPECT_EQ(Result(), Result(spi.flush(bucket, context)));
     return docs;
 }
 
 }  // namespace
 
-void ConformanceTest::testBasics() {
+// Set by test runner.
+std::unique_ptr<ConformanceTest::PersistenceFactory>(*ConformanceTest::_factoryFactory)(const std::string &docType) = nullptr;
+
+ConformanceTest::ConformanceTest()
+    : ConformanceTest("")
+{
+}
+
+ConformanceTest::ConformanceTest(const std::string &docType)
+    : _factory(_factoryFactory(docType))
+{
+}
+
+SingleDocTypeConformanceTest::SingleDocTypeConformanceTest()
+    : ConformanceTest("testdoctype1")
+{
+}
+
+/**
+ * Tests that one can put and remove entries to the persistence
+ * implementation, and iterate over the content. This functionality is
+ * needed by most other tests in order to verify correct behavior, so
+ * this needs to work for other tests to work.
+ */
+TEST_F(ConformanceTest, testBasics)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -321,19 +342,19 @@ void ConformanceTest::testBasics() {
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
     spi->createBucket(bucket, context);
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             Result(),
             Result(spi->put(bucket, Timestamp(1), doc1, context)));
 
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             Result(),
             Result(spi->put(bucket, Timestamp(2), doc2, context)));
 
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             Result(),
             Result(spi->remove(bucket, Timestamp(3), doc1->getId(), context)));
 
-    CPPUNIT_ASSERT_EQUAL(Result(), Result(spi->flush(bucket, context)));
+    EXPECT_EQ(Result(), Result(spi->flush(bucket, context)));
 
     // Iterate first without removes, then with.
     for (int iterPass = 0; iterPass < 2; ++iterPass) {
@@ -350,14 +371,14 @@ void ConformanceTest::testBasics() {
                     ?  NEWEST_DOCUMENT_OR_REMOVE : NEWEST_DOCUMENT_ONLY,
                 context);
 
-        CPPUNIT_ASSERT_EQUAL(Result(), Result(iter));
+        EXPECT_EQ(Result(), Result(iter));
 
         IterateResult result =
             spi->iterate(iter.getIteratorId(),
                          std::numeric_limits<int64_t>().max(), context);
 
-        CPPUNIT_ASSERT_EQUAL(Result(), Result(result));
-        CPPUNIT_ASSERT(result.isCompleted());
+        EXPECT_EQ(Result(), Result(result));
+        EXPECT_TRUE(result.isCompleted());
         spi->destroyIterator(iter.getIteratorId(), context);
 
         Timestamp timeDoc1(0);
@@ -366,11 +387,11 @@ void ConformanceTest::testBasics() {
 
         for (uint32_t i=0; i<result.getEntries().size(); ++i) {
             const DocumentId* did = result.getEntries()[i]->getDocumentId();
-            CPPUNIT_ASSERT_MSG("Supplied FieldSet requires id", did != 0);
+            ASSERT_TRUE(did != nullptr) << "Supplied FieldSet requires id";
 
             if (*did == doc1->getId()) {
                 if (!includeRemoves) {
-                    CPPUNIT_FAIL("Got removed document 1 when iterating without removes");
+                    FAIL() << "Got removed document 1 when iterating without removes";
                 }
                 if (result.getEntries()[i]->isRemove()) {
                     timeRemoveDoc1 = result.getEntries()[i]->getTimestamp();
@@ -379,22 +400,26 @@ void ConformanceTest::testBasics() {
                 }
             } else if (*did == doc2->getId()) {
                 if (result.getEntries()[i]->isRemove()) {
-                    CPPUNIT_FAIL("Document 2 should not be removed");
+                    FAIL() << "Document 2 should not be removed";
                 } else {
                     timeDoc2 = result.getEntries()[i]->getTimestamp();
                 }
             } else {
-                CPPUNIT_FAIL("Unknown document " + did->toString());
+                FAIL() << "Unknown document " << did->toString();
             }
         }
 
-        CPPUNIT_ASSERT_EQUAL(Timestamp(2), timeDoc2);
-        CPPUNIT_ASSERT(timeDoc1 == Timestamp(0) || timeRemoveDoc1 != Timestamp(0));
+        EXPECT_EQ(Timestamp(2), timeDoc2);
+        EXPECT_TRUE(timeDoc1 == Timestamp(0) || timeRemoveDoc1 != Timestamp(0));
     }
 }
 
-void ConformanceTest::testListBuckets() {
-    //TODO: enable CPPUNIT_TEST(testListBuckets); when supported by provider in storage
+/**
+ * Test that listing of buckets works as intended.
+ */
+TEST_F(ConformanceTest, testListBuckets)
+{
+    //TODO: enable when supported by provider in storage
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -424,21 +449,25 @@ void ConformanceTest::testListBuckets() {
 
     {
         BucketIdListResult result = spi->listBuckets(makeBucketSpace(), PartitionId(1));
-        CPPUNIT_ASSERT(result.getList().empty());
+        EXPECT_TRUE(result.getList().empty());
     }
 
     {
         BucketIdListResult result = spi->listBuckets(makeBucketSpace(), partId);
         const BucketIdListResult::List &bucketList = result.getList();
-        CPPUNIT_ASSERT_EQUAL(3u, (uint32_t)bucketList.size());
-        CPPUNIT_ASSERT(std::find(bucketList.begin(), bucketList.end(), bucketId1) != bucketList.end());
-        CPPUNIT_ASSERT(std::find(bucketList.begin(), bucketList.end(), bucketId2) != bucketList.end());
-        CPPUNIT_ASSERT(std::find(bucketList.begin(), bucketList.end(), bucketId3) != bucketList.end());
+        EXPECT_EQ(3u, (uint32_t)bucketList.size());
+        EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), bucketId1) != bucketList.end());
+        EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), bucketId2) != bucketList.end());
+        EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), bucketId3) != bucketList.end());
     }
 }
 
-
-void ConformanceTest::testBucketInfo() {
+/**
+ * Test that bucket info is generated in a legal fashion. (Such that
+ * split/join/merge can work as intended)
+ */
+TEST_F(ConformanceTest, testBucketInfo)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -456,8 +485,8 @@ void ConformanceTest::testBucketInfo() {
     spi->flush(bucket, context);
 
     {
-        CPPUNIT_ASSERT_EQUAL(1, (int)info1.getDocumentCount());
-        CPPUNIT_ASSERT(info1.getChecksum() != 0);
+        EXPECT_EQ(1, (int)info1.getDocumentCount());
+        EXPECT_TRUE(info1.getChecksum() != 0);
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
@@ -466,9 +495,9 @@ void ConformanceTest::testBucketInfo() {
     spi->flush(bucket, context);
 
     {
-        CPPUNIT_ASSERT_EQUAL(2, (int)info2.getDocumentCount());
-        CPPUNIT_ASSERT(info2.getChecksum() != 0);
-        CPPUNIT_ASSERT(info2.getChecksum() != info1.getChecksum());
+        EXPECT_EQ(2, (int)info2.getDocumentCount());
+        EXPECT_TRUE(info2.getChecksum() != 0);
+        EXPECT_TRUE(info2.getChecksum() != info1.getChecksum());
     }
 
     spi->put(bucket, Timestamp(4), doc1, context);
@@ -477,9 +506,9 @@ void ConformanceTest::testBucketInfo() {
     spi->flush(bucket, context);
 
     {
-        CPPUNIT_ASSERT_EQUAL(2, (int)info3.getDocumentCount());
-        CPPUNIT_ASSERT(info3.getChecksum() != 0);
-        CPPUNIT_ASSERT(info3.getChecksum() != info2.getChecksum());
+        EXPECT_EQ(2, (int)info3.getDocumentCount());
+        EXPECT_TRUE(info3.getChecksum() != 0);
+        EXPECT_TRUE(info3.getChecksum() != info2.getChecksum());
     }
 
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
@@ -488,14 +517,17 @@ void ConformanceTest::testBucketInfo() {
     spi->flush(bucket, context);
 
     {
-        CPPUNIT_ASSERT_EQUAL(1, (int)info4.getDocumentCount());
-        CPPUNIT_ASSERT(info4.getChecksum() != 0);
-        CPPUNIT_ASSERT_EQUAL(info4.getChecksum(), info4.getChecksum());
+        EXPECT_EQ(1, (int)info4.getDocumentCount());
+        EXPECT_TRUE(info4.getChecksum() != 0);
+        EXPECT_EQ(info4.getChecksum(), info4.getChecksum());
     }
 }
 
-void
-ConformanceTest::testOrderIndependentBucketInfo()
+/**
+ * Test that given a set of operations with certain timestamps, the bucket
+ * info is the same no matter what order we feed these in.
+ */
+TEST_F(ConformanceTest, testOrderIndependentBucketInfo)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -516,14 +548,14 @@ ConformanceTest::testOrderIndependentBucketInfo()
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
 
         checksumOrdered = info.getChecksum();
-        CPPUNIT_ASSERT(checksumOrdered != 0);
+        EXPECT_TRUE(checksumOrdered != 0);
     }
 
     spi->deleteBucket(bucket, context);
     spi->createBucket(bucket, context);
     {
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
-        CPPUNIT_ASSERT_EQUAL(BucketChecksum(0), info.getChecksum());
+        EXPECT_EQ(BucketChecksum(0), info.getChecksum());
     }
 
     BucketChecksum checksumUnordered(0);
@@ -535,12 +567,14 @@ ConformanceTest::testOrderIndependentBucketInfo()
         const BucketInfo info(spi->getBucketInfo(bucket).getBucketInfo());
 
         checksumUnordered = info.getChecksum();
-        CPPUNIT_ASSERT(checksumUnordered != 0);
+        EXPECT_TRUE(checksumUnordered != 0);
     }
-    CPPUNIT_ASSERT_EQUAL(checksumOrdered, checksumUnordered);
+    EXPECT_EQ(checksumOrdered, checksumUnordered);
 }
 
-void ConformanceTest::testPut() {
+/** Test that the various document operations work as intended. */
+TEST_F(ConformanceTest, testPut)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -557,15 +591,16 @@ void ConformanceTest::testPut() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getEntryCount() >= info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
-        CPPUNIT_ASSERT(info.getDocumentSize() > 0);
-        CPPUNIT_ASSERT(info.getUsedSize() >= info.getDocumentSize());
+        EXPECT_EQ(1, (int)info.getDocumentCount());
+        EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
+        EXPECT_TRUE(info.getChecksum() != 0);
+        EXPECT_TRUE(info.getDocumentSize() > 0);
+        EXPECT_TRUE(info.getUsedSize() >= info.getDocumentSize());
     }
 }
 
-void ConformanceTest::testPutNewDocumentVersion() {
+TEST_F(ConformanceTest, testPutNewDocumentVersion)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -582,11 +617,11 @@ void ConformanceTest::testPutNewDocumentVersion() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getEntryCount() >= info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
-        CPPUNIT_ASSERT(info.getDocumentSize() > 0);
-        CPPUNIT_ASSERT(info.getUsedSize() >= info.getDocumentSize());
+        EXPECT_EQ(1, (int)info.getDocumentCount());
+        EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
+        EXPECT_TRUE(info.getChecksum() != 0);
+        EXPECT_TRUE(info.getDocumentSize() > 0);
+        EXPECT_TRUE(info.getUsedSize() >= info.getDocumentSize());
     }
 
     result = spi->put(bucket, Timestamp(4), doc2, context);
@@ -594,29 +629,30 @@ void ConformanceTest::testPutNewDocumentVersion() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getEntryCount() >= info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
-        CPPUNIT_ASSERT(info.getDocumentSize() > 0);
-        CPPUNIT_ASSERT(info.getUsedSize() >= info.getDocumentSize());
+        EXPECT_EQ(1, (int)info.getDocumentCount());
+        EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
+        EXPECT_TRUE(info.getChecksum() != 0);
+        EXPECT_TRUE(info.getDocumentSize() > 0);
+        EXPECT_TRUE(info.getUsedSize() >= info.getDocumentSize());
     }
 
     GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(),
                             context);
 
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, gr.getErrorCode());
-    CPPUNIT_ASSERT_EQUAL(Timestamp(4), gr.getTimestamp());
+    EXPECT_EQ(Result::NONE, gr.getErrorCode());
+    EXPECT_EQ(Timestamp(4), gr.getTimestamp());
 
     if (!((*doc2)==gr.getDocument())) {
         std::cerr << "Document returned is not the expected one: \n"
                   << "Expected: " << doc2->toString(true) << "\n"
                   << "Got: " << gr.getDocument().toString(true) << "\n";
 
-        CPPUNIT_ASSERT(false);
+        EXPECT_TRUE(false);
     }
 }
 
-void ConformanceTest::testPutOlderDocumentVersion() {
+TEST_F(ConformanceTest, testPutOlderDocumentVersion)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -632,11 +668,11 @@ void ConformanceTest::testPutOlderDocumentVersion() {
     const BucketInfo info1 = spi->getBucketInfo(bucket).getBucketInfo();
     spi->flush(bucket, context);
     {
-        CPPUNIT_ASSERT_EQUAL(1, (int)info1.getDocumentCount());
-        CPPUNIT_ASSERT(info1.getEntryCount() >= info1.getDocumentCount());
-        CPPUNIT_ASSERT(info1.getChecksum() != 0);
-        CPPUNIT_ASSERT(info1.getDocumentSize() > 0);
-        CPPUNIT_ASSERT(info1.getUsedSize() >= info1.getDocumentSize());
+        EXPECT_EQ(1, (int)info1.getDocumentCount());
+        EXPECT_TRUE(info1.getEntryCount() >= info1.getDocumentCount());
+        EXPECT_TRUE(info1.getChecksum() != 0);
+        EXPECT_TRUE(info1.getDocumentSize() > 0);
+        EXPECT_TRUE(info1.getUsedSize() >= info1.getDocumentSize());
     }
 
     result = spi->put(bucket, Timestamp(4), doc2, context);
@@ -644,23 +680,24 @@ void ConformanceTest::testPutOlderDocumentVersion() {
         const BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)info2.getDocumentCount());
-        CPPUNIT_ASSERT(info2.getEntryCount() >= info1.getDocumentCount());
-        CPPUNIT_ASSERT_EQUAL(info1.getChecksum(), info2.getChecksum());
-        CPPUNIT_ASSERT_EQUAL(info1.getDocumentSize(),
+        EXPECT_EQ(1, (int)info2.getDocumentCount());
+        EXPECT_TRUE(info2.getEntryCount() >= info1.getDocumentCount());
+        EXPECT_EQ(info1.getChecksum(), info2.getChecksum());
+        EXPECT_EQ(info1.getDocumentSize(),
                              info2.getDocumentSize());
-        CPPUNIT_ASSERT(info2.getUsedSize() >= info1.getDocumentSize());
+        EXPECT_TRUE(info2.getUsedSize() >= info1.getDocumentSize());
     }
 
     GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(),
                             context);
 
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, gr.getErrorCode());
-    CPPUNIT_ASSERT_EQUAL(Timestamp(5), gr.getTimestamp());
-    CPPUNIT_ASSERT_EQUAL(*doc1, gr.getDocument());
+    EXPECT_EQ(Result::NONE, gr.getErrorCode());
+    EXPECT_EQ(Timestamp(5), gr.getTimestamp());
+    EXPECT_EQ(*doc1, gr.getDocument());
 }
 
-void ConformanceTest::testPutDuplicate() {
+TEST_F(ConformanceTest, testPutDuplicate)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -669,31 +706,32 @@ void ConformanceTest::testPutDuplicate() {
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     spi->createBucket(bucket, context);
-    CPPUNIT_ASSERT_EQUAL(Result(),
+    EXPECT_EQ(Result(),
                          spi->put(bucket, Timestamp(3), doc1, context));
 
     BucketChecksum checksum;
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
+        EXPECT_EQ(1, (int)info.getDocumentCount());
         checksum = info.getChecksum();
     }
-    CPPUNIT_ASSERT_EQUAL(Result(),
+    EXPECT_EQ(Result(),
                          spi->put(bucket, Timestamp(3), doc1, context));
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT_EQUAL(checksum, info.getChecksum());
+        EXPECT_EQ(1, (int)info.getDocumentCount());
+        EXPECT_EQ(checksum, info.getChecksum());
     }
     std::vector<DocEntry::UP> entries(
             iterateBucket(*spi, bucket, ALL_VERSIONS));
-    CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
+    EXPECT_EQ(size_t(1), entries.size());
 }
 
-void ConformanceTest::testRemove() {
+TEST_F(ConformanceTest, testRemove)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -710,12 +748,12 @@ void ConformanceTest::testRemove() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
+        EXPECT_EQ(1, (int)info.getDocumentCount());
+        EXPECT_TRUE(info.getChecksum() != 0);
 
         std::vector<DocEntry::UP> entries(
                 iterateBucket(*spi, bucket, NEWEST_DOCUMENT_ONLY));
-        CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
+        EXPECT_EQ(size_t(1), entries.size());
     }
 
     // Add a remove entry
@@ -728,22 +766,22 @@ void ConformanceTest::testRemove() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(0, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT_EQUAL(0, (int)info.getChecksum());
-        CPPUNIT_ASSERT_EQUAL(true, result2.wasFound());
+        EXPECT_EQ(0, (int)info.getDocumentCount());
+        EXPECT_EQ(0, (int)info.getChecksum());
+        EXPECT_EQ(true, result2.wasFound());
     }
     {
         std::vector<DocEntry::UP> entries(iterateBucket(*spi,
                                                     bucket,
                                                     NEWEST_DOCUMENT_ONLY));
-        CPPUNIT_ASSERT_EQUAL(size_t(0), entries.size());
+        EXPECT_EQ(size_t(0), entries.size());
     }
     {
         std::vector<DocEntry::UP> entries(iterateBucket(*spi,
                                                     bucket,
                                                     NEWEST_DOCUMENT_OR_REMOVE));
 
-        CPPUNIT_ASSERT_EQUAL(size_t(1), entries.size());
+        EXPECT_EQ(size_t(1), entries.size());
     }
 
     // Result tagged as document not found
@@ -755,15 +793,15 @@ void ConformanceTest::testRemove() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(0, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT_EQUAL(0, (int)info.getChecksum());
-        CPPUNIT_ASSERT_EQUAL(false, result3.wasFound());
+        EXPECT_EQ(0, (int)info.getDocumentCount());
+        EXPECT_EQ(0, (int)info.getChecksum());
+        EXPECT_EQ(false, result3.wasFound());
     }
 
     Result result4 = spi->put(bucket, Timestamp(9), doc1, context);
     spi->flush(bucket, context);
 
-    CPPUNIT_ASSERT(!result4.hasError());
+    EXPECT_TRUE(!result4.hasError());
 
     RemoveResult result5 = spi->remove(bucket,
                                        Timestamp(9),
@@ -773,10 +811,10 @@ void ConformanceTest::testRemove() {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(0, (int)info.getDocumentCount());
-        CPPUNIT_ASSERT_EQUAL(0, (int)info.getChecksum());
-        CPPUNIT_ASSERT_EQUAL(true, result5.wasFound());
-        CPPUNIT_ASSERT(!result5.hasError());
+        EXPECT_EQ(0, (int)info.getDocumentCount());
+        EXPECT_EQ(0, (int)info.getChecksum());
+        EXPECT_EQ(true, result5.wasFound());
+        EXPECT_TRUE(!result5.hasError());
     }
 
     GetResult getResult = spi->get(bucket,
@@ -784,12 +822,13 @@ void ConformanceTest::testRemove() {
                                 doc1->getId(),
                                 context);
 
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, getResult.getErrorCode());
-    CPPUNIT_ASSERT_EQUAL(Timestamp(0), getResult.getTimestamp());
-    CPPUNIT_ASSERT(!getResult.hasDocument());
+    EXPECT_EQ(Result::NONE, getResult.getErrorCode());
+    EXPECT_EQ(Timestamp(0), getResult.getTimestamp());
+    EXPECT_TRUE(!getResult.hasDocument());
 }
 
-void ConformanceTest::testRemoveMerge() {
+TEST_F(ConformanceTest, testRemoveMerge)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -809,26 +848,26 @@ void ConformanceTest::testRemoveMerge() {
                                                 removeId,
                                                 context);
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, removeResult.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(false, removeResult.wasFound());
+        EXPECT_EQ(Result::NONE, removeResult.getErrorCode());
+        EXPECT_EQ(false, removeResult.wasFound());
     }
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
 
-        CPPUNIT_ASSERT_EQUAL(uint32_t(1), info.getDocumentCount());
-        CPPUNIT_ASSERT_EQUAL(uint32_t(2), info.getEntryCount());
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
+        EXPECT_EQ(uint32_t(1), info.getDocumentCount());
+        EXPECT_EQ(uint32_t(2), info.getEntryCount());
+        EXPECT_TRUE(info.getChecksum() != 0);
     }
 
     // Remove entry should exist afterwards
     {
         std::vector<DocEntry::UP> entries(iterateBucket(
                 *spi, bucket, ALL_VERSIONS));
-        CPPUNIT_ASSERT_EQUAL(size_t(2), entries.size());
+        EXPECT_EQ(size_t(2), entries.size());
         // Timestamp-sorted by iterateBucket
-        CPPUNIT_ASSERT_EQUAL(removeId, *entries.back()->getDocumentId());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(10), entries.back()->getTimestamp());
-        CPPUNIT_ASSERT(entries.back()->isRemove());
+        EXPECT_EQ(removeId, *entries.back()->getDocumentId());
+        EXPECT_EQ(Timestamp(10), entries.back()->getTimestamp());
+        EXPECT_TRUE(entries.back()->isRemove());
     }
     // Add a _newer_ remove for the same document ID we already removed
     {
@@ -837,24 +876,24 @@ void ConformanceTest::testRemoveMerge() {
                                                 removeId,
                                                 context);
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, removeResult.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(false, removeResult.wasFound());
+        EXPECT_EQ(Result::NONE, removeResult.getErrorCode());
+        EXPECT_EQ(false, removeResult.wasFound());
     }
     // Old entry may or may not be present, depending on the provider.
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
 
-        CPPUNIT_ASSERT_EQUAL(uint32_t(1), info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getEntryCount() >= 2);
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
+        EXPECT_EQ(uint32_t(1), info.getDocumentCount());
+        EXPECT_TRUE(info.getEntryCount() >= 2);
+        EXPECT_TRUE(info.getChecksum() != 0);
     }
     // Must have new remove. We don't check for the presence of the old remove.
     {
         std::vector<DocEntry::UP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
-        CPPUNIT_ASSERT(entries.size() >= 2);
-        CPPUNIT_ASSERT_EQUAL(removeId, *entries.back()->getDocumentId());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(11), entries.back()->getTimestamp());
-        CPPUNIT_ASSERT(entries.back()->isRemove());
+        EXPECT_TRUE(entries.size() >= 2);
+        EXPECT_EQ(removeId, *entries.back()->getDocumentId());
+        EXPECT_EQ(Timestamp(11), entries.back()->getTimestamp());
+        EXPECT_TRUE(entries.back()->isRemove());
     }
     // Add an _older_ remove for the same document ID we already removed.
     // It may or may not be present in a subsequent iteration, but the
@@ -865,27 +904,28 @@ void ConformanceTest::testRemoveMerge() {
                                                 removeId,
                                                 context);
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, removeResult.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(false, removeResult.wasFound());
+        EXPECT_EQ(Result::NONE, removeResult.getErrorCode());
+        EXPECT_EQ(false, removeResult.wasFound());
     }
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
 
-        CPPUNIT_ASSERT_EQUAL(uint32_t(1), info.getDocumentCount());
-        CPPUNIT_ASSERT(info.getEntryCount() >= 2);
-        CPPUNIT_ASSERT(info.getChecksum() != 0);
+        EXPECT_EQ(uint32_t(1), info.getDocumentCount());
+        EXPECT_TRUE(info.getEntryCount() >= 2);
+        EXPECT_TRUE(info.getChecksum() != 0);
     }
     // Must have newest remove. We don't check for the presence of the old remove.
     {
         std::vector<DocEntry::UP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
-        CPPUNIT_ASSERT(entries.size() >= 2);
-        CPPUNIT_ASSERT_EQUAL(removeId, *entries.back()->getDocumentId());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(11), entries.back()->getTimestamp());
-        CPPUNIT_ASSERT(entries.back()->isRemove());
+        EXPECT_TRUE(entries.size() >= 2);
+        EXPECT_EQ(removeId, *entries.back()->getDocumentId());
+        EXPECT_EQ(Timestamp(11), entries.back()->getTimestamp());
+        EXPECT_TRUE(entries.back()->isRemove());
     }
 }
 
-void ConformanceTest::testUpdate() {
+TEST_F(ConformanceTest, testUpdate)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -907,8 +947,8 @@ void ConformanceTest::testUpdate() {
         UpdateResult result = spi->update(bucket, Timestamp(3), update,
                                           context);
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(Result(), Result(result));
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getExistingTimestamp());
+        EXPECT_EQ(Result(), Result(result));
+        EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
@@ -917,8 +957,8 @@ void ConformanceTest::testUpdate() {
                                           context);
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(3), result.getExistingTimestamp());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(3), result.getExistingTimestamp());
     }
 
     {
@@ -927,9 +967,9 @@ void ConformanceTest::testUpdate() {
                                     doc1->getId(),
                                     context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(4), result.getTimestamp());
-        CPPUNIT_ASSERT_EQUAL(document::IntFieldValue(42),
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(4), result.getTimestamp());
+        EXPECT_EQ(document::IntFieldValue(42),
                              static_cast<document::IntFieldValue&>(
                                      *result.getDocument().getValue("headerval")));
     }
@@ -943,9 +983,9 @@ void ConformanceTest::testUpdate() {
                                     doc1->getId(),
                                     context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getTimestamp());
-        CPPUNIT_ASSERT(!result.hasDocument());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(0), result.getTimestamp());
+        EXPECT_TRUE(!result.hasDocument());
     }
 
     {
@@ -953,15 +993,15 @@ void ConformanceTest::testUpdate() {
                                           context);
         spi->flush(bucket, context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getExistingTimestamp());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
     }
 
     {
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getTimestamp());
-        CPPUNIT_ASSERT(!result.hasDocument());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(0), result.getTimestamp());
+        EXPECT_TRUE(!result.hasDocument());
     }
 
     update->setCreateIfNonExistent(true);
@@ -970,21 +1010,22 @@ void ConformanceTest::testUpdate() {
         // but since CreateIfNonExistent is set it should be auto-created anyway.
         UpdateResult result = spi->update(bucket, Timestamp(7), update, context);
         spi->flush(bucket, context);
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(7), result.getExistingTimestamp());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(7), result.getExistingTimestamp());
     }
 
     {
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(7), result.getTimestamp());
-        CPPUNIT_ASSERT_EQUAL(document::IntFieldValue(42),
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(7), result.getTimestamp());
+        EXPECT_EQ(document::IntFieldValue(42),
                              reinterpret_cast<document::IntFieldValue&>(
                                      *result.getDocument().getValue("headerval")));
     }
 }
 
-void ConformanceTest::testGet() {
+TEST_F(ConformanceTest, testGet)
+{
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
@@ -998,8 +1039,8 @@ void ConformanceTest::testGet() {
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getTimestamp());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(0), result.getTimestamp());
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
@@ -1008,8 +1049,8 @@ void ConformanceTest::testGet() {
     {
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
-        CPPUNIT_ASSERT_EQUAL(*doc1, result.getDocument());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(3), result.getTimestamp());
+        EXPECT_EQ(*doc1, result.getDocument());
+        EXPECT_EQ(Timestamp(3), result.getTimestamp());
     }
 
     spi->remove(bucket, Timestamp(4), doc1->getId(), context);
@@ -1019,13 +1060,13 @@ void ConformanceTest::testGet() {
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getTimestamp());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(0), result.getTimestamp());
     }
 }
 
-void
-ConformanceTest::testIterateCreateIterator()
+/** Test that iterating special cases works. */
+TEST_F(ConformanceTest, testIterateCreateIterator)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1036,16 +1077,15 @@ ConformanceTest::testIterateCreateIterator()
 
     spi::CreateIteratorResult result(
             createIterator(*spi, b, createSelection("")));
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
+    EXPECT_EQ(Result::NONE, result.getErrorCode());
     // Iterator ID 0 means invalid iterator, so cannot be returned
     // from a successful createIterator call.
-    CPPUNIT_ASSERT(result.getIteratorId() != IteratorId(0));
+    EXPECT_TRUE(result.getIteratorId() != IteratorId(0));
 
     spi->destroyIterator(result.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateWithUnknownId()
+TEST_F(ConformanceTest, testIterateWithUnknownId)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1056,11 +1096,10 @@ ConformanceTest::testIterateWithUnknownId()
 
     IteratorId unknownId(123);
     IterateResult result(spi->iterate(unknownId, 1024, context));
-    CPPUNIT_ASSERT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQ(Result::PERMANENT_ERROR, result.getErrorCode());
 }
 
-void
-ConformanceTest::testIterateDestroyIterator()
+TEST_F(ConformanceTest, testIterateDestroyIterator)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1072,28 +1111,27 @@ ConformanceTest::testIterateDestroyIterator()
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
     {
         IterateResult result(spi->iterate(iter.getIteratorId(), 1024, context));
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
     }
 
     {
         Result destroyResult(
                 spi->destroyIterator(iter.getIteratorId(), context));
-        CPPUNIT_ASSERT(!destroyResult.hasError());
+        EXPECT_TRUE(!destroyResult.hasError());
     }
     // Iteration should now fail
     {
         IterateResult result(spi->iterate(iter.getIteratorId(), 1024, context));
-        CPPUNIT_ASSERT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
+        EXPECT_EQ(Result::PERMANENT_ERROR, result.getErrorCode());
     }
     {
         Result destroyResult(
                 spi->destroyIterator(iter.getIteratorId(), context));
-        CPPUNIT_ASSERT(!destroyResult.hasError());
+        EXPECT_TRUE(!destroyResult.hasError());
     }
 }
 
-void
-ConformanceTest::testIterateAllDocs()
+TEST_F(ConformanceTest, testIterateAllDocs)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1111,8 +1149,7 @@ ConformanceTest::testIterateAllDocs()
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateAllDocsNewestVersionOnly()
+TEST_F(ConformanceTest, testIterateAllDocsNewestVersionOnly)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1141,8 +1178,7 @@ ConformanceTest::testIterateAllDocsNewestVersionOnly()
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateChunked()
+TEST_F(ConformanceTest, testIterateChunked)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1156,14 +1192,13 @@ ConformanceTest::testIterateChunked()
 
     // Max byte size is 1, so only 1 document should be included in each chunk.
     std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 1);
-    CPPUNIT_ASSERT_EQUAL(size_t(100), chunks.size());
+    EXPECT_EQ(size_t(100), chunks.size());
     verifyDocs(docs, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testMaxByteSize()
+TEST_F(ConformanceTest, testMaxByteSize)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1182,17 +1217,14 @@ ConformanceTest::testMaxByteSize()
     // Should receive no more than 3 docs in each chunk
     std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 10000);
     if (chunks.size() < 33) {
-        std::ostringstream ss;
-        ss << "Expected >= 33 chunks, but got "<< chunks.size();
-        CPPUNIT_FAIL(ss.str());
+        FAIL() << "Expected >= 33 chunks, but got " << chunks.size();
     }
     verifyDocs(docs, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateMatchTimestampRange()
+TEST_F(ConformanceTest, testIterateMatchTimestampRange)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1231,8 +1263,7 @@ ConformanceTest::testIterateMatchTimestampRange()
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateExplicitTimestampSubset()
+TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1260,7 +1291,7 @@ ConformanceTest::testIterateExplicitTimestampSubset()
     }
     // Timestamp subset should include removes without
     // having to explicitly specify it
-    CPPUNIT_ASSERT(spi->remove(b,
+    EXPECT_TRUE(spi->remove(b,
                                Timestamp(2000),
                                docsToVisit.front().doc->getId(), context)
                    .wasFound());
@@ -1282,8 +1313,7 @@ ConformanceTest::testIterateExplicitTimestampSubset()
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateRemoves()
+TEST_F(ConformanceTest, testIterateRemoves)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1300,7 +1330,7 @@ ConformanceTest::testIterateRemoves()
     for (int i = 0; i < docCount; ++i) {
         if (i % 3 == 0) {
             removedDocs.insert(docs[i].doc->getId().toString());
-            CPPUNIT_ASSERT(spi->remove(b,
+            EXPECT_TRUE(spi->remove(b,
                                        Timestamp(2000 + i),
                                        docs[i].doc->getId(),
                                        context)
@@ -1328,15 +1358,14 @@ ConformanceTest::testIterateRemoves()
 
         std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
         std::vector<DocEntry::UP> entries = getEntriesFromChunks(chunks);
-        CPPUNIT_ASSERT_EQUAL(docs.size(), entries.size());
+        EXPECT_EQ(docs.size(), entries.size());
         verifyDocs(nonRemovedDocs, chunks, removedDocs);
 
         spi->destroyIterator(iter.getIteratorId(), context);
     }
 }
 
-void
-ConformanceTest::testIterateMatchSelection()
+TEST_F(ConformanceTest, testIterateMatchSelection)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1371,8 +1400,7 @@ ConformanceTest::testIterateMatchSelection()
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterationRequiringDocumentIdOnlyMatching()
+TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1386,7 +1414,7 @@ ConformanceTest::testIterationRequiringDocumentIdOnlyMatching()
 
     // Document does not already exist, remove should create a
     // remove entry for it regardless.
-    CPPUNIT_ASSERT(
+    EXPECT_TRUE(
             !spi->remove(b, Timestamp(2000), removedId, context).wasFound());
     spi->flush(b, context);
 
@@ -1394,7 +1422,7 @@ ConformanceTest::testIterationRequiringDocumentIdOnlyMatching()
 
     CreateIteratorResult iter(
             createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
-    CPPUNIT_ASSERT(iter.getErrorCode() == Result::NONE);
+    EXPECT_TRUE(iter.getErrorCode() == Result::NONE);
 
     std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
     std::vector<DocAndTimestamp> docs;
@@ -1405,8 +1433,7 @@ ConformanceTest::testIterationRequiringDocumentIdOnlyMatching()
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateBadDocumentSelection()
+TEST_F(ConformanceTest, testIterateBadDocumentSelection)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1420,12 +1447,12 @@ ConformanceTest::testIterateBadDocumentSelection()
         if (iter.getErrorCode() == Result::NONE) {
             IterateResult result(
                     spi->iterate(iter.getIteratorId(), 4096, context));
-            CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-            CPPUNIT_ASSERT_EQUAL(size_t(0), result.getEntries().size());
-            CPPUNIT_ASSERT_EQUAL(true, result.isCompleted());
+            EXPECT_EQ(Result::NONE, result.getErrorCode());
+            EXPECT_EQ(size_t(0), result.getEntries().size());
+            EXPECT_EQ(true, result.isCompleted());
         } else {
-            CPPUNIT_ASSERT_EQUAL(Result::PERMANENT_ERROR, iter.getErrorCode());
-            CPPUNIT_ASSERT_EQUAL(IteratorId(0), iter.getIteratorId());
+            EXPECT_EQ(Result::PERMANENT_ERROR, iter.getErrorCode());
+            EXPECT_EQ(IteratorId(0), iter.getIteratorId());
         }
     }
     {
@@ -1437,18 +1464,17 @@ ConformanceTest::testIterateBadDocumentSelection()
         if (iter.getErrorCode() == Result::NONE) {
             IterateResult result(spi->iterate(
                     iter.getIteratorId(), 4096, context));
-            CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-            CPPUNIT_ASSERT_EQUAL(size_t(0), result.getEntries().size());
-            CPPUNIT_ASSERT_EQUAL(true, result.isCompleted());
+            EXPECT_EQ(Result::NONE, result.getErrorCode());
+            EXPECT_EQ(size_t(0), result.getEntries().size());
+            EXPECT_EQ(true, result.isCompleted());
         } else {
-            CPPUNIT_ASSERT_EQUAL(Result::PERMANENT_ERROR, iter.getErrorCode());
-            CPPUNIT_ASSERT_EQUAL(IteratorId(0), iter.getIteratorId());
+            EXPECT_EQ(Result::PERMANENT_ERROR, iter.getErrorCode());
+            EXPECT_EQ(IteratorId(0), iter.getIteratorId());
         }
     }
 }
 
-void
-ConformanceTest::testIterateAlreadyCompleted()
+TEST_F(ConformanceTest, testIterateAlreadyCompleted)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1465,15 +1491,14 @@ ConformanceTest::testIterateAlreadyCompleted()
     verifyDocs(docs, chunks);
 
     IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), result.getEntries().size());
-    CPPUNIT_ASSERT(result.isCompleted());
+    EXPECT_EQ(Result::NONE, result.getErrorCode());
+    EXPECT_EQ(size_t(0), result.getEntries().size());
+    EXPECT_TRUE(result.isCompleted());
 
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testIterateEmptyBucket()
+TEST_F(ConformanceTest, testIterateEmptyBucket)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1486,15 +1511,14 @@ ConformanceTest::testIterateEmptyBucket()
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
     IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
-    CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), result.getEntries().size());
-    CPPUNIT_ASSERT(result.isCompleted());
+    EXPECT_EQ(Result::NONE, result.getErrorCode());
+    EXPECT_EQ(size_t(0), result.getEntries().size());
+    EXPECT_TRUE(result.isCompleted());
 
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-void
-ConformanceTest::testDeleteBucket()
+TEST_F(ConformanceTest, testDeleteBucket)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1532,14 +1556,13 @@ testDeleteBucketPostCondition(const PersistenceProvider::UP &spi,
                                     doc1.getId(),
                                     context);
 
-        CPPUNIT_ASSERT_EQUAL(Result::NONE, result.getErrorCode());
-        CPPUNIT_ASSERT_EQUAL(Timestamp(0), result.getTimestamp());
+        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Timestamp(0), result.getTimestamp());
     }
 }
 
 
-void
-ConformanceTest::testSplitNormalCase()
+TEST_F(ConformanceTest, testSplitNormalCase)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1586,36 +1609,35 @@ testSplitNormalCasePostCondition(const PersistenceProvider::UP &spi,
                                  const Bucket &bucketC,
                                  document::TestDocMan &testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(10, (int)spi->getBucketInfo(bucketA).getBucketInfo().
+    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketA).getBucketInfo().
                          getDocumentCount());
-    CPPUNIT_ASSERT_EQUAL(10, (int)spi->getBucketInfo(bucketB).getBucketInfo().
+    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketB).getBucketInfo().
                          getDocumentCount());
 
     document::AllFields fs;
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
 
-void
-ConformanceTest::testSplitTargetExists()
+TEST_F(ConformanceTest, testSplitTargetExists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1642,7 +1664,7 @@ ConformanceTest::testSplitTargetExists()
         spi->put(bucketB, Timestamp(i + 1), doc1, context);
     }
     spi->flush(bucketB, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
@@ -1678,36 +1700,35 @@ testSplitTargetExistsPostCondition(const PersistenceProvider::UP &spi,
                                    const Bucket &bucketC,
                                    document::TestDocMan &testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(10, (int)spi->getBucketInfo(bucketA).getBucketInfo().
+    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketA).getBucketInfo().
                          getDocumentCount());
-    CPPUNIT_ASSERT_EQUAL(15, (int)spi->getBucketInfo(bucketB).getBucketInfo().
+    EXPECT_EQ(15, (int)spi->getBucketInfo(bucketB).getBucketInfo().
                          getDocumentCount());
 
     document::AllFields fs;
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 25; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
 
-void
-ConformanceTest::testSplitSingleDocumentInSource()
+TEST_F(ConformanceTest, testSplitSingleDocumentInSource)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1747,22 +1768,22 @@ ConformanceTest::testSplitSingleDocumentInSourcePostCondition(
         const Bucket& target2,
         document::TestDocMan& testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(uint32_t(0),
+    EXPECT_EQ(uint32_t(0),
                          spi->getBucketInfo(source).getBucketInfo().
                              getDocumentCount());
-    CPPUNIT_ASSERT_EQUAL(uint32_t(0),
+    EXPECT_EQ(uint32_t(0),
                          spi->getBucketInfo(target1).getBucketInfo().
                              getDocumentCount());
-    CPPUNIT_ASSERT_EQUAL(uint32_t(1),
+    EXPECT_EQ(uint32_t(1),
                          spi->getBucketInfo(target2).getBucketInfo().
                              getDocumentCount());
 
     document::AllFields fs;
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     Document::UP doc = testDocMan.createRandomDocumentAtLocation(0x06, 0);
-    CPPUNIT_ASSERT(spi->get(target2, fs, doc->getId(), context).hasDocument());
-    CPPUNIT_ASSERT(!spi->get(target1, fs, doc->getId(), context).hasDocument());
-    CPPUNIT_ASSERT(!spi->get(source, fs, doc->getId(), context).hasDocument());
+    EXPECT_TRUE(spi->get(target2, fs, doc->getId(), context).hasDocument());
+    EXPECT_TRUE(!spi->get(target1, fs, doc->getId(), context).hasDocument());
+    EXPECT_TRUE(!spi->get(source, fs, doc->getId(), context).hasDocument());
 }
 
 void
@@ -1819,8 +1840,7 @@ ConformanceTest::doTestJoinNormalCase(const Bucket& source1,
     }
 }
 
-void
-ConformanceTest::testJoinNormalCase()
+TEST_F(ConformanceTest, testJoinNormalCase)
 {
     Bucket source1(makeSpiBucket(BucketId(3, 0x02)));
     Bucket source2(makeSpiBucket(BucketId(3, 0x06)));
@@ -1828,8 +1848,7 @@ ConformanceTest::testJoinNormalCase()
     doTestJoinNormalCase(source1, source2, target);
 }
 
-void
-ConformanceTest::testJoinNormalCaseWithMultipleBitsDecreased()
+TEST_F(ConformanceTest, testJoinNormalCaseWithMultipleBitsDecreased)
 {
     Bucket source1(makeSpiBucket(BucketId(3, 0x02)));
     Bucket source2(makeSpiBucket(BucketId(3, 0x06)));
@@ -1845,7 +1864,7 @@ testJoinNormalCasePostCondition(const PersistenceProvider::UP &spi,
                                 const Bucket &bucketC,
                                 document::TestDocMan &testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(20, (int)spi->getBucketInfo(bucketC).
+    EXPECT_EQ(20, (int)spi->getBucketInfo(bucketC).
                          getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
@@ -1854,9 +1873,9 @@ testJoinNormalCasePostCondition(const PersistenceProvider::UP &spi,
         Document::UP doc(
                 testDocMan.createRandomDocumentAtLocation(
                     bucketA.getBucketId().getId(), i));
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketC, fs, doc->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketA, fs, doc->getId(), context).hasDocument());
     }
 
@@ -1864,16 +1883,15 @@ testJoinNormalCasePostCondition(const PersistenceProvider::UP &spi,
         Document::UP doc(
                 testDocMan.createRandomDocumentAtLocation(
                     bucketB.getBucketId().getId(), i));
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketC, fs, doc->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketB, fs, doc->getId(), context).hasDocument());
     }
 }
 
 
-void
-ConformanceTest::testJoinTargetExists()
+TEST_F(ConformanceTest, testJoinTargetExists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -1930,30 +1948,30 @@ testJoinTargetExistsPostCondition(const PersistenceProvider::UP &spi,
                                   const Bucket &bucketC,
                                   document::TestDocMan &testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(30, (int)spi->getBucketInfo(bucketC).getBucketInfo().
+    EXPECT_EQ(30, (int)spi->getBucketInfo(bucketC).getBucketInfo().
                          getDocumentCount());
 
     document::AllFields fs;
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 20; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 20; i < 30; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
@@ -1976,8 +1994,7 @@ ConformanceTest::populateBucket(const Bucket& b,
     spi.flush(b, context);
 }
 
-void
-ConformanceTest::testJoinOneBucket()
+TEST_F(ConformanceTest, testJoinOneBucket)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -2009,16 +2026,16 @@ testJoinOneBucketPostCondition(const PersistenceProvider::UP &spi,
                                const Bucket &bucketC,
                                document::TestDocMan &testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(10, (int)spi->getBucketInfo(bucketC).getBucketInfo().
+    EXPECT_EQ(10, (int)spi->getBucketInfo(bucketC).getBucketInfo().
                          getDocumentCount());
 
     document::AllFields fs;
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi->get(bucketC, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi->get(bucketA, fs, doc1->getId(), context).hasDocument());
     }
 }
@@ -2058,16 +2075,14 @@ ConformanceTest::doTestJoinSameSourceBuckets(const Bucket& source,
     }
 }
 
-void
-ConformanceTest::testJoinSameSourceBuckets()
+TEST_F(ConformanceTest, testJoinSameSourceBuckets)
 {
     Bucket source(makeSpiBucket(BucketId(3, 0x02)));
     Bucket target(makeSpiBucket(BucketId(2, 0x02)));
     doTestJoinSameSourceBuckets(source, target);
 }
 
-void
-ConformanceTest::testJoinSameSourceBucketsWithMultipleBitsDecreased()
+TEST_F(ConformanceTest, testJoinSameSourceBucketsWithMultipleBitsDecreased)
 {
     Bucket source(makeSpiBucket(BucketId(3, 0x02)));
     Bucket target(makeSpiBucket(BucketId(1, 0x00)));
@@ -2081,22 +2096,21 @@ ConformanceTest::testJoinSameSourceBucketsTargetExistsPostCondition(
         const Bucket& target,
         document::TestDocMan& testDocMan)
 {
-    CPPUNIT_ASSERT_EQUAL(20, (int)spi.getBucketInfo(target).getBucketInfo().
+    EXPECT_EQ(20, (int)spi.getBucketInfo(target).getBucketInfo().
                          getDocumentCount());
 
     document::AllFields fs;
     Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 20; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 spi.get(target, fs, doc1->getId(), context).hasDocument());
-        CPPUNIT_ASSERT(
+        EXPECT_TRUE(
                 !spi.get(source, fs, doc1->getId(), context).hasDocument());
     }
 }
 
-void
-ConformanceTest::testJoinSameSourceBucketsTargetExists()
+TEST_F(ConformanceTest, testJoinSameSourceBucketsTargetExists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -2124,7 +2138,7 @@ ConformanceTest::testJoinSameSourceBucketsTargetExists()
     }
 }
 
-void ConformanceTest::testMaintain()
+TEST_F(ConformanceTest, testMaintain)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
@@ -2138,20 +2152,20 @@ void ConformanceTest::testMaintain()
     spi->put(bucket, Timestamp(3), doc1, context);
     spi->flush(bucket, context);
 
-    CPPUNIT_ASSERT_EQUAL(Result::NONE,
+    EXPECT_EQ(Result::NONE,
                          spi->maintain(bucket, LOW).getErrorCode());
 }
 
-void ConformanceTest::testGetModifiedBuckets()
+TEST_F(ConformanceTest, testGetModifiedBuckets)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProvider::UP spi(getSpi(*_factory, testDocMan));
-    CPPUNIT_ASSERT_EQUAL(0,
+    EXPECT_EQ(0,
                          (int)spi->getModifiedBuckets(makeBucketSpace()).getList().size());
 }
 
-void ConformanceTest::testBucketActivation()
+TEST_F(ConformanceTest, testBucketActivation)
 {
     if (!_factory->supportsActiveState()) {
         return;
@@ -2165,36 +2179,36 @@ void ConformanceTest::testBucketActivation()
 
     spi->setClusterState(makeBucketSpace(), createClusterState());
     spi->createBucket(bucket, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
     spi->setActiveState(bucket, BucketInfo::ACTIVE);
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
         // Add and remove a document, so document goes to zero, to check that
         // active state isn't cleared then.
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             Result(),
             Result(spi->put(bucket, Timestamp(1), doc1, context)));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             Result(),
             Result(spi->remove(bucket, Timestamp(5), doc1->getId(), context)));
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
         // Setting node down should clear active flag.
     spi->setClusterState(makeBucketSpace(), createClusterState(lib::State::DOWN));
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
     spi->setClusterState(makeBucketSpace(), createClusterState(lib::State::UP));
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
         // Actively clearing it should of course also clear it
     spi->setActiveState(bucket, BucketInfo::ACTIVE);
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucket).getBucketInfo().isActive());
     spi->setActiveState(bucket, BucketInfo::NOT_ACTIVE);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucket).getBucketInfo().isActive());
 }
 
-void ConformanceTest::testBucketActivationSplitAndJoin()
+TEST_F(SingleDocTypeConformanceTest, testBucketActivationSplitAndJoin)
 {
     if (!_factory->supportsActiveState()) {
         return;
@@ -2218,29 +2232,29 @@ void ConformanceTest::testBucketActivationSplitAndJoin()
     spi->flush(bucketC, context);
 
     spi->setActiveState(bucketC, BucketInfo::ACTIVE);
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
     spi->split(bucketC, bucketA, bucketB, context);
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
 
     spi->setActiveState(bucketA, BucketInfo::NOT_ACTIVE);
     spi->setActiveState(bucketB, BucketInfo::NOT_ACTIVE);
     spi->join(bucketA, bucketB, bucketC, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
 
     spi->split(bucketC, bucketA, bucketB, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
 
     spi->setActiveState(bucketA, BucketInfo::ACTIVE);
     spi->join(bucketA, bucketB, bucketC, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
 
         // Redo test with empty bucket, to ensure new buckets are generated
         // even if empty
@@ -2251,12 +2265,12 @@ void ConformanceTest::testBucketActivationSplitAndJoin()
     spi->createBucket(bucketC, context);
     spi->setActiveState(bucketC, BucketInfo::NOT_ACTIVE);
     spi->split(bucketC, bucketA, bucketB, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
     spi->join(bucketA, bucketB, bucketC, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
 
     spi->deleteBucket(bucketA, context);
     spi->deleteBucket(bucketB, context);
@@ -2265,16 +2279,16 @@ void ConformanceTest::testBucketActivationSplitAndJoin()
     spi->createBucket(bucketC, context);
     spi->setActiveState(bucketC, BucketInfo::ACTIVE);
     spi->split(bucketC, bucketA, bucketB, context);
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketC).getBucketInfo().isActive());
     spi->join(bucketA, bucketB, bucketC, context);
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
-    CPPUNIT_ASSERT(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketA).getBucketInfo().isActive());
+    EXPECT_TRUE(!spi->getBucketInfo(bucketB).getBucketInfo().isActive());
+    EXPECT_TRUE(spi->getBucketInfo(bucketC).getBucketInfo().isActive());
 }
 
-void ConformanceTest::testRemoveEntry()
+TEST_F(ConformanceTest, testRemoveEntry)
 {
     if (!_factory->supportsRemoveEntry()) {
         return;
@@ -2299,7 +2313,7 @@ void ConformanceTest::testRemoveEntry()
         spi->removeEntry(bucket, Timestamp(4), context);
         spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-        CPPUNIT_ASSERT_EQUAL(info1, info2);
+        EXPECT_EQ(info1, info2);
     }
 
     // Test case where there exists a previous version of the document.
@@ -2309,7 +2323,7 @@ void ConformanceTest::testRemoveEntry()
         spi->removeEntry(bucket, Timestamp(5), context);
         spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-        CPPUNIT_ASSERT_EQUAL(info1, info2);
+        EXPECT_EQ(info1, info2);
     }
 
     // Test case where the newest document version after removeEntrying is a remove.
@@ -2317,25 +2331,25 @@ void ConformanceTest::testRemoveEntry()
         spi->remove(bucket, Timestamp(6), doc1->getId(), context);
         spi->flush(bucket, context);
         BucketInfo info2 = spi->getBucketInfo(bucket).getBucketInfo();
-        CPPUNIT_ASSERT_EQUAL(uint32_t(0), info2.getDocumentCount());
+        EXPECT_EQ(uint32_t(0), info2.getDocumentCount());
 
         spi->put(bucket, Timestamp(7), doc1, context);
         spi->flush(bucket, context);
         spi->removeEntry(bucket, Timestamp(7), context);
         spi->flush(bucket, context);
         BucketInfo info3 = spi->getBucketInfo(bucket).getBucketInfo();
-        CPPUNIT_ASSERT_EQUAL(info2, info3);
+        EXPECT_EQ(info2, info3);
     }
 }
 
 void assertBucketInfo(PersistenceProvider &spi, const Bucket &bucket, uint32_t expDocCount)
 {
     const BucketInfo info = spi.getBucketInfo(bucket).getBucketInfo();
-    CPPUNIT_ASSERT_EQUAL(expDocCount, info.getDocumentCount());
-    CPPUNIT_ASSERT(info.getEntryCount() >= info.getDocumentCount());
-    CPPUNIT_ASSERT(info.getChecksum() != 0);
-    CPPUNIT_ASSERT(info.getDocumentSize() > 0);
-    CPPUNIT_ASSERT(info.getUsedSize() >= info.getDocumentSize());
+    EXPECT_EQ(expDocCount, info.getDocumentCount());
+    EXPECT_TRUE(info.getEntryCount() >= info.getDocumentCount());
+    EXPECT_TRUE(info.getChecksum() != 0);
+    EXPECT_TRUE(info.getDocumentSize() > 0);
+    EXPECT_TRUE(info.getUsedSize() >= info.getDocumentSize());
 }
 
 void assertBucketList(PersistenceProvider &spi,
@@ -2345,13 +2359,13 @@ void assertBucketList(PersistenceProvider &spi,
 {
     BucketIdListResult result = spi.listBuckets(bucketSpace, partId);
     const BucketIdListResult::List &bucketList = result.getList();
-    CPPUNIT_ASSERT_EQUAL(expBuckets.size(), bucketList.size());
+    EXPECT_EQ(expBuckets.size(), bucketList.size());
     for (const auto &expBucket : expBuckets) {
-        CPPUNIT_ASSERT(std::find(bucketList.begin(), bucketList.end(), expBucket) != bucketList.end());
+        EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), expBucket) != bucketList.end());
     }
 }
 
-void ConformanceTest::testBucketSpaces()
+TEST_F(ConformanceTest, testBucketSpaces)
 {
     if (!_factory->supportsBucketSpaces()) {
         return;
@@ -2394,7 +2408,8 @@ void ConformanceTest::testBucketSpaces()
     assertBucketInfo(*spi, bucket12, 1);
 }
 
-void ConformanceTest::detectAndTestOptionalBehavior() {
+TEST_F(ConformanceTest, detectAndTestOptionalBehavior)
+{
     // Report if implementation supports setting bucket size info.
 
     // Report if joining same bucket on multiple partitions work.
@@ -2402,6 +2417,5 @@ void ConformanceTest::detectAndTestOptionalBehavior() {
     // layer must die if a bucket is found during init on multiple partitions)
     // Test functionality if it works.
 }
-
 
 }

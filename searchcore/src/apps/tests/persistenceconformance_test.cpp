@@ -376,6 +376,10 @@ public:
           _engineOwner(),
           _writeFilter()
     {
+        clear();
+    }
+    ~MyPersistenceFactory() override {
+        clear();
     }
     virtual PersistenceProvider::UP getPersistenceImplementation(const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                                  const DocumenttypesConfig &typesCfg) override {
@@ -399,228 +403,17 @@ public:
 };
 
 
-struct FixtureBaseBase
+std::unique_ptr<PersistenceFactory>
+makeMyPersistenceFactory(const std::string &docType)
 {
-    FixtureBaseBase()
-    {
-        FastOS_FileInterface::EmptyAndRemoveDirectory("testdb");
-    }
-
-    ~FixtureBaseBase()
-    {
-        FastOS_FileInterface::EmptyAndRemoveDirectory("testdb");
-    }
-};
-
-
-struct FixtureBase : public FixtureBaseBase
-{
-    ConformanceTest test;
-    FixtureBase(const SchemaConfigFactory::SP &schemaFactory,
-                const vespalib::string &docType = "")
-        : FixtureBaseBase(),
-          test(PersistenceFactory::UP(new MyPersistenceFactory("testdb", 9017,
-                                                               schemaFactory,
-                                                               docType)))
-    {
-    }
-    ~FixtureBase()
-    {
-    }
-};
-
-
-struct TestFixture : public FixtureBase {
-    TestFixture() : FixtureBase(SchemaConfigFactory::get()) {}
-};
-
-
-struct SingleDocTypeFixture : public FixtureBase {
-    SingleDocTypeFixture() : FixtureBase(SchemaConfigFactory::get(), "testdoctype1") {}
-};
-
-TEST_F("require that testBucketActivation() works", TestFixture)
-{
-    f.test.testBucketActivation();
+    return std::make_unique<MyPersistenceFactory>("testdb", 9017, SchemaConfigFactory::get(), docType);
 }
 
-TEST_F("require that testListBuckets() works", TestFixture)
+int
+main(int argc, char* argv[])
 {
-    f.test.testListBuckets();
-}
-
-TEST_F("require that testBucketInfo() works", TestFixture)
-{
-    f.test.testBucketInfo();
-}
-
-TEST_F("require that testPut() works", TestFixture)
-{
-    f.test.testPut();
-}
-
-TEST_F("require that testRemove() works", TestFixture)
-{
-    f.test.testRemove();
-}
-
-TEST_F("require that testRemoveMerge() works", TestFixture)
-{
-    f.test.testRemoveMerge();
-}
-
-TEST_F("require that testUpdate() works", TestFixture)
-{
-    f.test.testUpdate();
-}
-
-TEST_F("require that testGet() works", TestFixture)
-{
-    f.test.testGet();
-}
-
-TEST_F("require that testIterateCreateIterator() works", TestFixture)
-{
-    f.test.testIterateCreateIterator();
-}
-
-TEST_F("require that testIterateWithUnknownId() works", TestFixture)
-{
-    f.test.testIterateWithUnknownId();
-}
-
-TEST_F("require that testIterateDestroyIterator() works", TestFixture)
-{
-    f.test.testIterateDestroyIterator();
-}
-
-TEST_F("require that testIterateAllDocs() works", TestFixture)
-{
-    f.test.testIterateAllDocs();
-}
-
-TEST_F("require that testIterateChunked() works", TestFixture)
-{
-    f.test.testIterateChunked();
-}
-
-TEST_F("require that testMaxByteSize() works", TestFixture)
-{
-    f.test.testMaxByteSize();
-}
-
-TEST_F("require that testIterateMatchTimestampRange() works", TestFixture)
-{
-    f.test.testIterateMatchTimestampRange();
-}
-
-TEST_F("require that testIterateExplicitTimestampSubset() works", TestFixture)
-{
-    f.test.testIterateExplicitTimestampSubset();
-}
-
-TEST_F("require that testIterateRemoves() works", TestFixture)
-{
-    f.test.testIterateRemoves();
-}
-
-TEST_F("require that testIterateMatchSelection() works", TestFixture)
-{
-    f.test.testIterateMatchSelection();
-}
-
-TEST_F(
-  "require that testIterationRequiringDocumentIdOnlyMatching() works",
-  TestFixture)
-{
-    f.test.testIterationRequiringDocumentIdOnlyMatching();
-}
-
-TEST_F("require that testIterateBadDocumentSelection() works", TestFixture)
-{
-    f.test.testIterateBadDocumentSelection();
-}
-
-TEST_F("require that testIterateAlreadyCompleted() works", TestFixture)
-{
-    f.test.testIterateAlreadyCompleted();
-}
-
-TEST_F("require that testIterateEmptyBucket() works", TestFixture)
-{
-    f.test.testIterateEmptyBucket();
-}
-
-TEST_F("require that testDeleteBucket() works", TestFixture)
-{
-    f.test.testDeleteBucket();
-}
-
-TEST_F("require that testSplitNormalCase() works", TestFixture)
-{
-    f.test.testSplitNormalCase();
-}
-
-TEST_F("require that testSplitTargetExists() works", TestFixture)
-{
-    f.test.testSplitTargetExists();
-}
-
-TEST_F("require that testJoinNormalCase() works", TestFixture)
-{
-    f.test.testJoinNormalCase();
-}
-
-TEST_F("require that testJoinOneBucket() works", TestFixture)
-{
-    f.test.testJoinOneBucket();
-}
-
-TEST_F("require that testJoinTargetExists() works", TestFixture)
-{
-    f.test.testJoinTargetExists();
-}
-
-TEST_F("require that testBucketActivationSplitAndJoin() works", SingleDocTypeFixture)
-{
-    f.test.testBucketActivationSplitAndJoin();
-}
-
-TEST_F("require thant testJoinSameSourceBuckets() works", TestFixture)
-{
-    f.test.testJoinSameSourceBuckets();
-}
-
-TEST_F("require thant testJoinSameSourceBucketsTargetExists() works",
-       TestFixture)
-{
-    f.test.testJoinSameSourceBucketsTargetExists();
-}
-
-TEST_F("require that multiple bucket spaces works", TestFixture)
-{
-    f.test.testBucketSpaces();
-}
-
-// *** Run all conformance tests, but ignore the results BEGIN ***
-
-#define CONVERT_TEST(testFunction)                                    \
-namespace ns_ ## testFunction {                                       \
-IGNORE_TEST_F(TEST_STR(testFunction) " (generated)", TestFixture()) { \
-    f.test.testFunction();                                            \
-}                                                                     \
-} // namespace testFunction
-
-#undef CPPUNIT_TEST
-#define CPPUNIT_TEST(testFunction) CONVERT_TEST(testFunction)
-#if 0
-DEFINE_CONFORMANCE_TESTS();
-#endif
-
-// *** Run all conformance tests, but ignore the results END ***
-
-TEST_MAIN()
-{
+    ::testing::InitGoogleTest(&argc, argv);
     DummyFileHeaderContext::setCreator("persistenceconformance_test");
-    TEST_RUN_ALL();
+    ConformanceTest::_factoryFactory = &makeMyPersistenceFactory;
+    return RUN_ALL_TESTS();
 }

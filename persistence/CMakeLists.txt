@@ -20,7 +20,7 @@ vespa_define_module(
     src/vespa/persistence/spi
 
     TEST_DEPENDS
-    vdstestlib
+    gtest
 
     TESTS
     src/tests
