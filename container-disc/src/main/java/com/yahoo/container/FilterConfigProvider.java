@@ -57,7 +57,11 @@ public final class FilterConfigProvider implements Provider<FilterConfig> {
     private final FilterConfig filterConfig;
 
     public FilterConfigProvider(HttpFilterConfig vespaConfig) {
-        filterConfig = new MapFilterConfig(toMap(vespaConfig), vespaConfig.filterName(), vespaConfig.filterClass());
+        this(new MapFilterConfig(toMap(vespaConfig), vespaConfig.filterName(), vespaConfig.filterClass()));
+    }
+
+    private FilterConfigProvider(FilterConfig filterConfig) {
+        this.filterConfig = filterConfig;
     }
 
     private static Map<String, String> toMap(HttpFilterConfig vespaConfig) {
@@ -65,6 +69,10 @@ public final class FilterConfigProvider implements Provider<FilterConfig> {
         for (HttpFilterConfig.Param param : vespaConfig.param())
             parameters.put(param.name(), param.value());
         return parameters;
+    }
+
+    public static FilterConfigProvider from(String filterName, String filterClass, Map<String, String> initParameters) {
+        return new FilterConfigProvider(new MapFilterConfig(initParameters, filterName, filterClass));
     }
 
     @Override

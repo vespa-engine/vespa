@@ -2,28 +2,23 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.application.container.handler.Request.Method;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.container.FilterConfigProvider;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.FilterTester.Request;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
-import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author mpolden
  */
 public class AuthorizationFilterTest {
 
-    private FilterTester tester;
-
-    @Before
-    public void before() {
-        tester = filterTester(SystemName.main);
-    }
+    private final FilterTester tester = filterTester();
 
     @Test
     public void filter() {
@@ -43,11 +38,12 @@ public class AuthorizationFilterTest {
         tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/foo").commonName("foo"));
     }
 
-    private static FilterTester filterTester(SystemName system) {
-        Zone zone = new Zone(system, Environment.prod, RegionName.defaultName());
+    private static FilterTester filterTester() {
+        Map<String, String> params = Stream.of("controller", "configserver", "proxy", "tenant-host")
+                .collect(Collectors.toMap(e -> e + ".identity", e -> "vespa." + e));
         return new FilterTester(new AuthorizationFilter(
-                zone,
-                new MockNodeRepository(new MockCurator(), new MockNodeFlavors())));
+                new MockNodeRepository(new MockCurator(), new MockNodeFlavors()),
+                FilterConfigProvider.from("my-filter", AuthorizationFilter.class.getName(), params).get()));
     }
 
 }
