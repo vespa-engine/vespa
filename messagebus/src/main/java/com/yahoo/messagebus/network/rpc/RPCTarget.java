@@ -2,7 +2,11 @@
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.component.Version;
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
 import com.yahoo.log.LogLevel;
 
 import java.util.LinkedList;
