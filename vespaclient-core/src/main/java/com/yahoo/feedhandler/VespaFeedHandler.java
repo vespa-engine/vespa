@@ -86,7 +86,7 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
             sender.addMessageProcessor(properties);
             sender.addMessageProcessor(new DocprocMessageProcessor(getDocprocChain(request), getDocprocServiceRegistry(request)));
             ThreadedFeedAccess feedAccess = new ThreadedFeedAccess(numThreads, sender);
-            Feeder feeder = createFeeder(sender, request);
+            Feeder feeder = createFeeder(feedAccess, request);
             feeder.setAbortOnDocumentError(properties.getAbortOnDocumentError());
             feeder.setCreateIfNonExistent(properties.getCreateIfNonExistent());
             response.setAbortOnFeedError(properties.getAbortOnFeedError());
