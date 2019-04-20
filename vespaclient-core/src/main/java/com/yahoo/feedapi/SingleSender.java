@@ -27,10 +27,6 @@ public class SingleSender implements SimpleFeedAccess {
         this.blockingQueue = blockingQueue;
     }
 
-    public SingleSender(SharedSender.ResultCallback owner, SharedSender sender) {
-        this(owner, sender, true);
-    }
-
     @Override
     public void put(Document doc) {
         send(new PutDocumentMessage(new DocumentPut(doc)));

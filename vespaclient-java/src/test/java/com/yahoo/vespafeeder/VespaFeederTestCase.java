@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespafeeder;
 
-import static org.junit.Assert.*;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -16,16 +13,22 @@ import com.yahoo.clientmetrics.RouteMetricSet;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.feedapi.DummySessionFactory;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespaclient.config.FeederConfig;
-import com.yahoo.vespafeeder.Arguments.HelpShownException;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class VespaFeederTestCase {
 
@@ -203,8 +206,7 @@ public class VespaFeederTestCase {
         feed("src/test/files/malformedfeed.json", false);
     }
 
-    protected FeedFixture feed(String feed, boolean abortOnDataError) throws HelpShownException,
-            FileNotFoundException, Exception {
+    protected FeedFixture feed(String feed, boolean abortOnDataError) throws Exception {
         String abortOnDataErrorArgument = abortOnDataError ? "" : " --abortondataerror no";
         FeedFixture feedFixture = new FeedFixture();
         Arguments arguments = new Arguments(("--file "
