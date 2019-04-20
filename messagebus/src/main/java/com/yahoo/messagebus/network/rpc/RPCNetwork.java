@@ -257,7 +257,7 @@ public class RPCNetwork implements Network, MethodHandler {
                     String.format("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
                                   buildRecipientListString(ctx), identity.getHostname()));
         } else {
-            executor.execute(new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx));
+            new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx).run();
         }
     }
 
