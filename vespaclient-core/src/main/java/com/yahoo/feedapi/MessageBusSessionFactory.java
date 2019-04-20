@@ -3,8 +3,6 @@ package com.yahoo.feedapi;
 
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.documentapi.VisitorParameters;
-import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
@@ -30,7 +28,6 @@ public class MessageBusSessionFactory implements SessionFactory {
         String NUM_UPDATES = "num_updates";
     }
 
-    @SuppressWarnings("unused") // used from extensions
     public MessageBusSessionFactory(MessagePropertyProcessor processor) {
         this(processor, null, null);
     }
@@ -64,15 +61,6 @@ public class MessageBusSessionFactory implements SessionFactory {
 
     public void shutDown() {
         access.shutdown();
-    }
-
-    @Override
-    public synchronized VisitorSession createVisitorSession(VisitorParameters params) {
-        try {
-            return access.createVisitorSession(params);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private class SourceSessionWrapper extends SendSession {

@@ -40,10 +40,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
     private LoadTypeSet loadTypes = null;
     private boolean configChanged = false;
 
-    public MessagePropertyProcessor(String configId, String loadTypeConfig) {
-        new ConfigSubscriber().subscribe(this, FeederConfig.class, configId);
-        loadTypes = new LoadTypeSet(loadTypeConfig);
-    }
 
     public MessagePropertyProcessor(FeederConfig config, LoadTypeConfig loadTypeCfg) {
         loadTypes = new LoadTypeSet();
@@ -280,14 +276,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
 
         public void setPriority(DocumentProtocol.Priority priority) {
             this.priority = priority;
-        }
-
-        public LoadType getLoadType() {
-            return loadType;
-        }
-
-        public void setLoadType(LoadType loadType) {
-            this.loadType = loadType;
         }
 
         public boolean getAbortOnDocumentError() {

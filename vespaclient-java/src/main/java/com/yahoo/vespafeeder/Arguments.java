@@ -22,19 +22,19 @@ import static java.lang.System.out;
  * Argument parsing class for the vespa feeder.
  */
 public class Arguments {
-    public FeederConfig getFeederConfig() {
+    FeederConfig getFeederConfig() {
         return new FeederConfig(feederConfigBuilder);
     }
 
-    public List<String> getFiles() {
+    List<String> getFiles() {
         return files;
     }
 
-    public String getMode() {
+    String getMode() {
         return mode;
     }
 
-    public boolean isVerbose() {
+    boolean isVerbose() {
         return verbose;
     }
 
@@ -44,12 +44,12 @@ public class Arguments {
     private String mode = "standard";
     private boolean validateOnly = false;
     private boolean verbose = false;
-    SessionFactory sessionFactory;
-    MessagePropertyProcessor propertyProcessor = null;
+    private SessionFactory sessionFactory;
+    private MessagePropertyProcessor propertyProcessor = null;
     private String priority = null;
     private int numThreads = 1;
 
-    public MessagePropertyProcessor getPropertyProcessor() {
+    MessagePropertyProcessor getPropertyProcessor() {
         return propertyProcessor;
     }
 
@@ -89,11 +89,11 @@ public class Arguments {
                 "  -v [ --verbose ]              Enable verbose output of progress.\n");
     }
 
-    public class HelpShownException extends Exception {
+    class HelpShownException extends Exception {
 
     }
 
-    public Arguments(String[] argList, SessionFactory factory) throws HelpShownException, FileNotFoundException {
+    Arguments(String[] argList, SessionFactory factory) throws HelpShownException, FileNotFoundException {
         parse(argList);
 
         if (factory != null) {
@@ -101,17 +101,17 @@ public class Arguments {
         } else if (validateOnly) {
             if (dumpDocumentsFile != null) {
                 BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dumpDocumentsFile));
-                sessionFactory = new DummySessionFactory(null, out);
+                sessionFactory = new DummySessionFactory(out);
             } else {
-                sessionFactory = new DummySessionFactory(null, null);
+                sessionFactory = new DummySessionFactory(null);
             }
         } else {
             sessionFactory = new MessageBusSessionFactory(propertyProcessor);
         }
     }
 
-    void parse(String[] argList) throws HelpShownException {
-        List<String> args = new LinkedList<String>();
+    private void parse(String[] argList) throws HelpShownException {
+        List<String> args = new LinkedList<>();
         args.addAll(Arrays.asList(argList));
 
         while (!args.isEmpty()) {
@@ -187,11 +187,11 @@ public class Arguments {
         return priority;
     }
 
-    public int getNumThreads() {
+    int getNumThreads() {
         return numThreads;
     }
 
-    public SessionFactory getSessionFactory() {
+    SessionFactory getSessionFactory() {
         return sessionFactory;
     }
 
