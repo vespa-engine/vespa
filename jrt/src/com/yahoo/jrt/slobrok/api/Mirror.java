@@ -5,6 +5,7 @@ import com.yahoo.jrt.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -81,7 +82,7 @@ public class Mirror implements IMirror {
     }
 
     @Override
-    public Entry[] lookup(String pattern) {
+    public List<Entry> lookup(String pattern) {
         ArrayList<Entry> found = new ArrayList<>();
         char[] p = pattern.toCharArray();
         for (Entry specEntry : specs) {
@@ -89,7 +90,7 @@ public class Mirror implements IMirror {
                 found.add(specEntry);
             }
         }
-        return found.toArray(new Entry[found.size()]);
+        return found;
     }
 
     @Override

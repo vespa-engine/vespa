@@ -2035,10 +2035,9 @@
       "abstract"
     ],
     "methods": [
-      "public void <init>(java.util.Map)",
       "public void init()",
       "public com.yahoo.jrt.slobrok.api.IMirror getMirror()",
-      "public com.yahoo.jrt.slobrok.api.Mirror$Entry[] lookup(com.yahoo.messagebus.routing.RoutingContext, java.lang.String)",
+      "public java.util.List lookup(com.yahoo.messagebus.routing.RoutingContext, java.lang.String)",
       "public synchronized void configure(com.yahoo.cloud.config.SlobroksConfig)",
       "public void destroy()",
       "public bridge synthetic void configure(com.yahoo.config.ConfigInstance)"
@@ -2207,7 +2206,7 @@
       "public void <init>(java.lang.String)",
       "public java.util.List getNodeWeights()",
       "public int getIndex(java.lang.String)",
-      "public com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node getRecipient(com.yahoo.jrt.slobrok.api.Mirror$Entry[])",
+      "public com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node getRecipient(java.util.List)",
       "public void received(com.yahoo.documentapi.messagebus.protocol.LoadBalancer$Node, boolean)"
     ],
     "fields": []

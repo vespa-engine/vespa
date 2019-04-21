@@ -82,7 +82,7 @@ public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
             entry.generation = upd;
             entry.recipients.clear();
             for (int i = 0; i < ctx.getNumRecipients(); ++i) {
-                Mirror.Entry[] arr = ctx.getMirror().lookup(ctx.getRecipient(i).getHop(0).toString());
+                List<Mirror.Entry> arr = ctx.getMirror().lookup(ctx.getRecipient(i).getHop(0).toString());
                 for (Mirror.Entry item : arr) {
                     entry.recipients.add(Hop.parse(item.getName()));
                 }

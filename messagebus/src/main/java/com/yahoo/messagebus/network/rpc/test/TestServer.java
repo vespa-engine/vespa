@@ -17,6 +17,7 @@ import com.yahoo.messagebus.routing.RoutingSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.SimpleProtocol;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -121,8 +122,8 @@ public class TestServer {
         for (int i = 0; i < 6000 && !Thread.currentThread().isInterrupted(); ++i) {
             boolean done = true;
             for (String pattern : slobrokState.getPatterns()) {
-                Mirror.Entry[] res = net.getMirror().lookup(pattern);
-                if (res.length != slobrokState.getCount(pattern)) {
+                List<Mirror.Entry> res = net.getMirror().lookup(pattern);
+                if (res.size() != slobrokState.getCount(pattern)) {
                     done = false;
                 }
             }

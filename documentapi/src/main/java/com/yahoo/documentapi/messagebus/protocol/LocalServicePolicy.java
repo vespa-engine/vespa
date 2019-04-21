@@ -83,7 +83,7 @@ public class LocalServicePolicy implements DocumentProtocolRoutingPolicy {
             entry.generation = upd;
             entry.recipients.clear();
 
-            Mirror.Entry[] arr = ctx.getMirror().lookup(ctx.getHopPrefix() + "*" + ctx.getHopSuffix());
+            List<Mirror.Entry> arr = ctx.getMirror().lookup(ctx.getHopPrefix() + "*" + ctx.getHopSuffix());
             String self = localAddress != null ? localAddress : toAddress(ctx.getMessageBus().getConnectionSpec());
             for (Mirror.Entry item : arr) {
                 if (self.equals(toAddress(item.getSpec()))) {

@@ -31,8 +31,8 @@ public class SlobrokTestCase {
             lst.add(new Mirror.Entry(fullName, spec));
             return this;
         }
-        public Mirror.Entry[] toArray() {
-            return lst.toArray(new Mirror.Entry[lst.size()]);
+        public List<Mirror.Entry> toArray() {
+            return lst;
         }
     }
 
@@ -44,18 +44,18 @@ public class SlobrokTestCase {
     int        port2;
     int        port3;
 
-    void check(RPCNetwork net, String pattern, Mirror.Entry[] expect) {
+    void check(RPCNetwork net, String pattern, List<Mirror.Entry> expect) {
         Comparator<Mirror.Entry> cmp = new Comparator<Mirror.Entry>() {
             public int compare(Mirror.Entry a, Mirror.Entry b) {
                 return a.compareTo(b);
             }
         };
-        Arrays.sort(expect, cmp);
-        Mirror.Entry[] actual = null;
+        expect.sort(cmp);
+        List<Mirror.Entry> actual = null;
         for (int i = 0; i < 1000; i++) {
             actual = net.getMirror().lookup(pattern);
-            Arrays.sort(actual, cmp);
-            if (Arrays.equals(actual, expect)) {
+            actual.sort(cmp);
+            if (actual.equals(expect)) {
                 System.out.printf("lookup successful for pattern: %s\n", pattern);
                 return;
             }
@@ -65,7 +65,7 @@ public class SlobrokTestCase {
         }
         System.out.printf("lookup failed for pattern: %s\n", pattern);
         System.out.printf("actual values:\n");
-        if (actual == null || actual.length == 0) {
+        if (actual == null || actual.isEmpty()) {
             System.out.printf("  { EMPTY }\n");
         } else {
             for (Mirror.Entry entry : actual) {
@@ -73,7 +73,7 @@ public class SlobrokTestCase {
             }
         }
         System.out.printf("expected values:\n");
-        if (expect.length == 0) {
+        if (expect.isEmpty()) {
             System.out.printf("  { EMPTY }\n");
         } else {
             for (Mirror.Entry entry : expect) {

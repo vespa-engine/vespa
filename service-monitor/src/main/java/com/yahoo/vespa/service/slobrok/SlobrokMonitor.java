@@ -67,7 +67,7 @@ public class SlobrokMonitor implements AutoCloseable {
     }
 
     List<Mirror.Entry> lookup(String pattern) {
-        return Arrays.asList(mirror.lookup(pattern));
+        return mirror.lookup(pattern);
     }
 
     @Override
@@ -76,6 +76,6 @@ public class SlobrokMonitor implements AutoCloseable {
     }
 
     boolean registeredInSlobrok(String slobrokServiceName) {
-        return mirror.lookup(slobrokServiceName).length > 0;
+        return !mirror.lookup(slobrokServiceName).isEmpty();
     }
 }

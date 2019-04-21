@@ -9,6 +9,7 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -75,7 +76,7 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
        @return Returns a hop representing the TCP address of the target, or null if none could be found.
     */
     private LoadBalancer.Node getRecipient(RoutingContext context) {
-        Mirror.Entry [] lastLookup = lookup(context, pattern);
+        List<Mirror.Entry> lastLookup = lookup(context, pattern);
         return loadBalancer.getRecipient(lastLookup);
     }
 

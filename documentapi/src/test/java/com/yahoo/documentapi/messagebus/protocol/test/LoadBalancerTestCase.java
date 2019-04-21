@@ -5,6 +5,7 @@ import com.yahoo.documentapi.messagebus.protocol.LoadBalancer;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -42,9 +43,9 @@ public class LoadBalancerTestCase {
     public void testLoadBalancer() {
         LoadBalancer lb = new LoadBalancer("foo");
 
-        Mirror.Entry[] entries = new Mirror.Entry[]{ new Mirror.Entry("foo/0/default", "tcp/bar:1"),
-                                                     new Mirror.Entry("foo/1/default", "tcp/bar:2"),
-                                                     new Mirror.Entry("foo/2/default", "tcp/bar:3") };
+        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
+                                                   new Mirror.Entry("foo/1/default", "tcp/bar:2"),
+                                                   new Mirror.Entry("foo/2/default", "tcp/bar:3"));
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
 
         {
@@ -100,7 +101,7 @@ public class LoadBalancerTestCase {
     public void testLoadBalancerOneItemOnly() {
         LoadBalancer lb = new LoadBalancer("foo");
 
-        Mirror.Entry[] entries = new Mirror.Entry[]{ new Mirror.Entry("foo/0/default", "tcp/bar:1") };
+        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1") );
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
 
         assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());

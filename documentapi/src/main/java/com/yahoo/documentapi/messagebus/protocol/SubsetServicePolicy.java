@@ -109,10 +109,10 @@ public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
             entry.generation = upd;
             entry.recipients.clear();
 
-            Mirror.Entry[] arr = ctx.getMirror().lookup(ctx.getHopPrefix() + "*" + ctx.getHopSuffix());
+            List<Mirror.Entry> arr = ctx.getMirror().lookup(ctx.getHopPrefix() + "*" + ctx.getHopSuffix());
             int pos = ctx.getMessageBus().getConnectionSpec().hashCode();
-            for (int i = 0; i < subsetSize && i < arr.length; ++i) {
-                entry.recipients.add(Hop.parse(arr[((pos + i) & Integer.MAX_VALUE) % arr.length].getName()));
+            for (int i = 0; i < subsetSize && i < arr.size(); ++i) {
+                entry.recipients.add(Hop.parse(arr.get(((pos + i) & Integer.MAX_VALUE) % arr.size()).getName()));
             }
         }
         return entry;
