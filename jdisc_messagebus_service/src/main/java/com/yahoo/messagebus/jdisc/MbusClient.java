@@ -36,7 +36,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
     private final ResourceReference sessionReference;
 
     @Inject
-    public MbusClient(final ClientSession session) {
+    public MbusClient(ClientSession session) {
         this.session = session;
         this.sessionReference = session.refer();
     }
@@ -47,7 +47,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
     }
 
     @Override
-    public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+    public ContentChannel handleRequest(Request request, ResponseHandler handler) {
         if (!(request instanceof MbusRequest)) {
             throw new RequestDeniedException(request);
         }
@@ -61,12 +61,12 @@ public final class MbusClient extends AbstractResource implements ClientProvider
         }
         msg.setContext(handler);
         msg.pushHandler(this);
-        queue.add((MbusRequest)request);
+        sendBlocking((MbusRequest)request);
         return null;
     }
 
     @Override
-    public void handleTimeout(final Request request, final ResponseHandler handler) {
+    public void handleTimeout(Request request, final ResponseHandler handler) {
         // ignore, mbus has guaranteed reply
     }
 
@@ -90,17 +90,17 @@ public final class MbusClient extends AbstractResource implements ClientProvider
         }
     }
 
-    private void sendBlocking(final MbusRequest request) {
+    private void sendBlocking(MbusRequest request) {
         while (!sendMessage(request)) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(5);
             } catch (final InterruptedException e) {
                 // ignore
             }
         }
     }
 
-    private boolean sendMessage(final MbusRequest request) {
+    private boolean sendMessage(MbusRequest request) {
         Error error;
         final Long millis = request.timeRemaining(TimeUnit.MILLISECONDS);
         if (millis != null && millis <= 0) {
