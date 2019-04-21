@@ -158,7 +158,7 @@ public class IndexedTest extends ContentBaseTest {
         assertEquals("jdisc/chain.indexing", spec.getHop(1).getName());
 
         assertRoute(spec.getRoute(0), "default", "indexing");
-        assertRoute(spec.getRoute(1), "default-get", "indexing");
+        assertRoute(spec.getRoute(1), "default-get", "[Content:cluster=test]");
         assertRoute(spec.getRoute(2), "storage/cluster.test", "route:test");
         assertRoute(spec.getRoute(3), "test", "[MessageType:test]");
         assertRoute(spec.getRoute(4), "test-direct", "[Content:cluster=test]");
