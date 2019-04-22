@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -163,14 +162,6 @@ public class IndexedTest extends ContentBaseTest {
         assertRoute(spec.getRoute(3), "test", "[MessageType:test]");
         assertRoute(spec.getRoute(4), "test-direct", "[Content:cluster=test]");
         assertRoute(spec.getRoute(5), "test-index", "jdisc/chain.indexing", "[Content:cluster=test]");
-    }
-
-    private static void assertRoute(RouteSpec r, String name, String... hops) {
-        assertEquals(name, r.getName());
-        assertEquals(hops.length, r.getNumHops());
-        for(int i = 0; i < hops.length; i++) {
-            assertEquals(hops[i], r.getHop(i));
-        }
     }
 
     @Test
