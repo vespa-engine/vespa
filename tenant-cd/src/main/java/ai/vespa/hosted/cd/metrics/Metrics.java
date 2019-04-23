@@ -1,6 +1,6 @@
-package com.yahoo.vespa.tenant.cd.metrics;
+package ai.vespa.hosted.cd.metrics;
 
-import com.yahoo.vespa.tenant.cd.Endpoint;
+import ai.vespa.hosted.cd.Endpoint;
 
 import java.time.Instant;
 import java.util.Map;

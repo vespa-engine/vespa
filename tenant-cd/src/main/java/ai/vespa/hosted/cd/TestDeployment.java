@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 /**
  * A deployment of a Vespa application, which also contains endpoints for document manipulation.

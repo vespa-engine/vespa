@@ -1,6 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
-
-import java.util.concurrent.Future;
+package ai.vespa.hosted.cd;
 
 /**
  * An endpoint in a Vespa application {@link TestDeployment}, which also translates {@link Feed}s to {@link Digest}s.

@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 import java.util.Map;
 import java.util.stream.Stream;

@@ -226,7 +226,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${surefire_version}</version>
                         <configuration>
-                            <groups>com.yahoo.vespa.tenant.cd.SystemTest</groups>
+                            <groups>ai.vespa.hosted.cd.SystemTest</groups>
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -254,7 +254,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${surefire_version}</version>
                         <configuration>
-                            <groups>com.yahoo.vespa.tenant.cd.StagingTest</groups>
+                            <groups>ai.vespa.hosted.cd.StagingTest</groups>
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -282,7 +282,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${surefire_version}</version>
                         <configuration>
-                            <groups>com.yahoo.vespa.tenant.cd.ProductionTest</groups>
+                            <groups>ai.vespa.hosted.cd.ProductionTest</groups>
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -373,9 +373,9 @@
                 <configuration>
                     <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                     <excludedGroups>
-                        com.yahoo.vespa.tenant.cd.SystemTest,
-                        com.yahoo.vespa.tenant.cd.StagingTest,
-                        com.yahoo.vespa.tenant.cd.ProductionTest
+                        ai.vespa.hosted.cd.SystemTest,
+                        ai.vespa.hosted.cd.StagingTest,
+                        ai.vespa.hosted.cd.ProductionTest
                     </excludedGroups>
                 </configuration>
             </plugin>

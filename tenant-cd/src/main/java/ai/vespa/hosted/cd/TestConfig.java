@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.ArrayTraverser;
@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 /**
  * The place to obtain environment-dependent configuration for the current test run.

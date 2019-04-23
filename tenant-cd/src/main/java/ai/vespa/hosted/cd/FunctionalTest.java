@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 /**
  * Tests that compare the behaviour of a Vespa application deployment against a fixed specification.

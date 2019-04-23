@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 /**
  * A remote endpoint in a Vespa application {@link Deployment}, which translates {@link Selection}s to {@link Visit}s.

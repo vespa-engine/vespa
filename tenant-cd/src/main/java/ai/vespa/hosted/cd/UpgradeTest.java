@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 /**
  * Tests that assert continuity of behaviour for Vespa application deployments, through upgrades.

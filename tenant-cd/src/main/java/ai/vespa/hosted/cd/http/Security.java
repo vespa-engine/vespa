@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd.http;
+package ai.vespa.hosted.cd.http;
 
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;

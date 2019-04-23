@@ -1,6 +1,6 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
-import com.yahoo.vespa.tenant.cd.metrics.Metrics;
+import ai.vespa.hosted.cd.metrics.Metrics;
 
 /**
  * An endpoint in a Vespa application {@link Deployment}, which allows document and metrics retrieval.

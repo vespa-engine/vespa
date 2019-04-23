@@ -1,11 +1,9 @@
-package com.yahoo.vespa.tenant.cd.metrics;
+package ai.vespa.hosted.cd.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringJoiner;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Map.copyOf;
 

@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd.metrics;
+package ai.vespa.hosted.cd.metrics;
 
 /**
  * Known statistic types.

@@ -1,4 +1,4 @@
-package com.yahoo.vespa.tenant.cd;
+package ai.vespa.hosted.cd;
 
 /**
  * A document selection expression, type and cluster, which can be used to visit an {@link Endpoint}.

@@ -1,24 +1,22 @@
-package com.yahoo.vespa.tenant.cd.http;
+package ai.vespa.hosted.cd.http;
 
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.tenant.cd.Digest;
-import com.yahoo.vespa.tenant.cd.Feed;
-import com.yahoo.vespa.tenant.cd.Query;
-import com.yahoo.vespa.tenant.cd.Search;
-import com.yahoo.vespa.tenant.cd.Selection;
-import com.yahoo.vespa.tenant.cd.TestEndpoint;
-import com.yahoo.vespa.tenant.cd.Visit;
-import com.yahoo.vespa.tenant.cd.metrics.Metrics;
+import ai.vespa.hosted.cd.Digest;
+import ai.vespa.hosted.cd.Feed;
+import ai.vespa.hosted.cd.Query;
+import ai.vespa.hosted.cd.Search;
+import ai.vespa.hosted.cd.Selection;
+import ai.vespa.hosted.cd.TestEndpoint;
+import ai.vespa.hosted.cd.Visit;
+import ai.vespa.hosted.cd.metrics.Metrics;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
