@@ -51,9 +51,6 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         for (String s : errors) {
             response.addXMLParseError(s);
         }
-        if (errors.size() > 0 && feeder instanceof XMLFeeder) {
-            response.addXMLParseError("If you are trying to feed JSON, set the Content-Type header to application/json.");
-        }
 
         sender.done();
         feedAccess.close();
