@@ -18,9 +18,9 @@ class Connection extends Target {
 
     private static Logger log = Logger.getLogger(Connection.class.getName());
 
-    private static final int READ_SIZE  = 8192;
+    private static final int READ_SIZE  = 16384;
     private static final int READ_REDO  = 10;
-    private static final int WRITE_SIZE = 8192;
+    private static final int WRITE_SIZE = 16384;
     private static final int WRITE_REDO = 10;
 
     private static final int INITIAL    = 0;
