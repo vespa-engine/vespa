@@ -51,7 +51,7 @@ public class MessageTypeMetricSet extends MetricSet {
     public MessageTypeMetricSet(String msgName, MetricSet owner) {
         super(msgName.toLowerCase(), "", "", owner);
         this.msgName = msgName;
-        latency = new ValueMetric<Long>("latency", "", "Latency (in ms)", this).averageMetric();
+        latency = new ValueMetric<Long>("latency", "", "Latency (in ms)", this).averageMetric().createAverageOnJoin();
         count = new CountMetric("count", "", "Number received", this);
         ignored = new CountMetric("ignored", "", "Number ignored due to no matching document routing selectors", this);
         errors = new SimpleMetricSet("errors", "", "The errors returned", this);

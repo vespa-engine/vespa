@@ -2,7 +2,6 @@
 package com.yahoo.metrics;
 
 import com.yahoo.metrics.util.ValueType;
-import com.yahoo.metrics.util.HasCopy;
 
 import java.util.Collection;
 
