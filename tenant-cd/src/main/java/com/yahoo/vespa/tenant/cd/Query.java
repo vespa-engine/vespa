@@ -51,4 +51,10 @@ public class Query {
                                   .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
+    /** Returns the raw string representation of this query. */
+    public String rawQuery() { return rawQuery; }
+
+    /** Returns the parameters of this query. */
+    public Map<String, String> parameters() { return parameters; }
+
 }
