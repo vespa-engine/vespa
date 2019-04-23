@@ -19,12 +19,10 @@ public class SingleSender implements SimpleFeedAccess {
     private final SharedSender.ResultCallback owner;
     private final SharedSender sender;
     private final List<MessageProcessor> messageProcessors = new ArrayList<>();
-    private boolean blockingQueue;
 
-    public SingleSender(SharedSender.ResultCallback owner, SharedSender sender, boolean blockingQueue) {
+    public SingleSender(SharedSender.ResultCallback owner, SharedSender sender) {
         this.owner = owner;
         this.sender = sender;
-        this.blockingQueue = blockingQueue;
     }
 
     @Override
@@ -86,7 +84,7 @@ public class SingleSender implements SimpleFeedAccess {
      * @param m          The message to send
      */
     public void send(Message m) {
-        sender.send(processMessage(m), owner, blockingQueue);
+        sender.send(processMessage(m), owner, true);
     }
 
     public void done() {

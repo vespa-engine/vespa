@@ -80,7 +80,7 @@
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                             <manifestEntries>
                                 <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                                <Export-Package>com.yahoo.messagebus,com.yahoo.messagebus.jdisc,com.yahoo.messagebus.metrics,com.yahoo.messagebus.network,
+                                <Export-Package>com.yahoo.messagebus,com.yahoo.messagebus.jdisc,com.yahoo.messagebus.network,
                                     com.yahoo.messagebus.network.rpc,com.yahoo.messagebus.routing,com.yahoo.messagebus.shared,com.yahoo.messagebus.test</Export-Package>
                                 <Import-Package>
                                     com.google.inject;version="1.3",
