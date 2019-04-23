@@ -382,6 +382,11 @@
                 <artifactId>xml-apis</artifactId>
                 <version>1.4.01</version>
             </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.5.1</version>
+            </dependency>
 
             <!--  NOTE: The dependencies below are not provided from the jdisc container runtime, but had to be moved
                         here from 'parent' because factorylib reads the text in parent/pom.xml and this pom file to

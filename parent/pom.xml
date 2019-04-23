@@ -734,11 +734,6 @@
                 <artifactId>aws-java-sdk-core</artifactId>
                 <version>${aws.sdk.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>1.5.1</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
