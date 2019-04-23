@@ -3,7 +3,6 @@ package com.yahoo.feedapi;
 
 import com.yahoo.document.Document;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
@@ -47,7 +46,7 @@ public class DummySessionFactory implements SessionFactory {
     }
 
     @Override
-    public SendSession createSendSession(ReplyHandler r, Metric metric) {
+    public SendSession createSendSession(ReplyHandler r) {
         if (output != null) {
             return new DumpDocuments(output, r, this);
         }

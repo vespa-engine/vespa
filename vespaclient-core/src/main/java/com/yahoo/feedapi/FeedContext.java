@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
-import com.yahoo.jdisc.Metric;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.clientmetrics.ClientMetrics;
 
@@ -14,22 +13,16 @@ public class FeedContext {
     private final MessagePropertyProcessor propertyProcessor;
     private final DocumentTypeManager docTypeManager;
     private final ClientMetrics metrics;
-    private final Metric metric;
     private Map<String, SharedSender> senders = new TreeMap<>();
 
     public static final Object sync = new Object();
     public static FeedContext instance = null;
 
-    public FeedContext(MessagePropertyProcessor propertyProcessor, SessionFactory factory, DocumentTypeManager manager, Metric metric) {
+    public FeedContext(MessagePropertyProcessor propertyProcessor, SessionFactory factory, DocumentTypeManager manager) {
         this.propertyProcessor = propertyProcessor;
         this.factory = factory;
         docTypeManager = manager;
         metrics = new ClientMetrics();
-        this.metric = metric;
-    }
-
-    public Metric getMetricAPI() {
-        return metric;
     }
 
     private void shutdownSenders() {
@@ -43,7 +36,7 @@ public class FeedContext {
             Map<String, SharedSender> newSenders = new TreeMap<>();
 
             for (Map.Entry<String, SharedSender> sender : senders.entrySet()) {
-                newSenders.put(sender.getKey(), new SharedSender(sender.getKey(), factory, sender.getValue(), metric));
+                newSenders.put(sender.getKey(), new SharedSender(sender.getKey(), factory, sender.getValue()));
             }
 
             shutdownSenders();
@@ -58,7 +51,7 @@ public class FeedContext {
         SharedSender sender = senders.get(route);
 
         if (sender == null) {
-            sender = new SharedSender(route, factory, null, metric);
+            sender = new SharedSender(route, factory, null);
             senders.put(route, sender);
             metrics.addRouteMetricSet(sender.getMetrics());
         }
