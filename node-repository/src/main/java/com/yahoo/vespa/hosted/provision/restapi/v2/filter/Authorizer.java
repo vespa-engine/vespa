@@ -2,9 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.apache.http.NameValuePair;
@@ -15,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,19 +29,15 @@ import java.util.stream.Collectors;
 public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     private final NodeRepository nodeRepository;
     private final AthenzIdentity controllerIdentity;
-    private final AthenzIdentity configServerIdentity = new AthenzService("vespa.vespa", "configserver");
-    private final AthenzIdentity proxyIdentity = new AthenzService("vespa.vespa", "proxy");
-    private final AthenzIdentity tenantIdentity = new AthenzService("vespa.vespa", "tenant-host");
     private final Set<AthenzIdentity> trustedIdentities;
     private final Set<AthenzIdentity> hostAdminIdentities;
 
-    public Authorizer(SystemName system, NodeRepository nodeRepository) {
+    Authorizer(NodeRepository nodeRepository, AthenzIdentity controllerIdentity, AthenzIdentity configServerIdentity,
+               AthenzIdentity proxyIdentity, AthenzIdentity tenantIdentity) {
         this.nodeRepository = nodeRepository;
-        controllerIdentity = system == SystemName.main
-                ? new AthenzService("vespa.vespa", "hosting")
-                : new AthenzService("vespa.vespa.cd", "hosting");
-        this.trustedIdentities = new HashSet<>(Arrays.asList(controllerIdentity, configServerIdentity));
-        this.hostAdminIdentities = new HashSet<>(Arrays.asList(controllerIdentity, configServerIdentity, proxyIdentity, tenantIdentity));
+        this.controllerIdentity = controllerIdentity;
+        this.trustedIdentities = Set.of(controllerIdentity, configServerIdentity);
+        this.hostAdminIdentities = Set.of(controllerIdentity, configServerIdentity, proxyIdentity, tenantIdentity);
     }
 
     /** Returns whether principal is authorized to access given URI */

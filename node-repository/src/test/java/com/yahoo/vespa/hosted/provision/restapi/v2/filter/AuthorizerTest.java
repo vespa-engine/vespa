@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -26,14 +25,22 @@ import static org.junit.Assert.assertTrue;
  */
 public class AuthorizerTest {
 
+    private static final String CONTROLLER_IDENTITY = "vespa.controller";
+    private static final String CONFIG_SERVER_IDENTITY = "vespa.configserver";
+    private static final String PROXY_IDENTITY = "vespa.proxy";
+    private static final String TENANT_HOST_IDENTITY = "vespa.tenant-host";
+
     private Authorizer authorizer;
-    private MockNodeRepository nodeRepository;
 
     @Before
     public void before() {
         NodeFlavors flavors = new MockNodeFlavors();
-        nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
-        authorizer = new Authorizer(SystemName.main, nodeRepository);
+        MockNodeRepository nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
+        authorizer = new Authorizer(nodeRepository,
+                AthenzIdentities.from(CONTROLLER_IDENTITY),
+                AthenzIdentities.from(CONFIG_SERVER_IDENTITY),
+                AthenzIdentities.from(PROXY_IDENTITY),
+                AthenzIdentities.from(TENANT_HOST_IDENTITY));
 
         Set<String> ipAddresses = Set.of("127.0.0.1", "::1");
         Flavor flavor = flavors.getFlavorOrThrow("default");
@@ -98,13 +105,11 @@ public class AuthorizerTest {
         assertTrue(authorizedTenantHostNode("host1", "/athenz/v1/provider/identity-document/node/child1-1"));
 
         // Trusted services can access everything in their own system
-        assertFalse(authorizedController("vespa.vespa.cd.hosting", "/")); // Wrong system
-        assertTrue(new Authorizer(SystemName.cd, nodeRepository).test(NodePrincipal.withAthenzIdentity("vespa.vespa.cd.hosting", emptyList()), uri("/")));
-        assertTrue(authorizedController("vespa.vespa.hosting", "/"));
-        assertTrue(authorizedController("vespa.vespa.configserver", "/"));
-        assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/"));
-        assertTrue(authorizedController("vespa.vespa.hosting", "/nodes/v2/node/node1"));
-        assertTrue(authorizedController("vespa.vespa.configserver", "/nodes/v2/node/node1"));
+        assertTrue(authorizedController(CONTROLLER_IDENTITY, "/"));
+        assertTrue(authorizedController(CONFIG_SERVER_IDENTITY, "/"));
+        assertTrue(authorizedController(CONTROLLER_IDENTITY, "/nodes/v2/node/"));
+        assertTrue(authorizedController(CONTROLLER_IDENTITY, "/nodes/v2/node/node1"));
+        assertTrue(authorizedController(CONFIG_SERVER_IDENTITY, "/nodes/v2/node/node1"));
     }
 
     @Test
@@ -145,14 +150,14 @@ public class AuthorizerTest {
         assertTrue(authorizedTenantHostNode("proxy1-host", "/flags/v1/data"));
         assertFalse(authorizedTenantHostNode("proxy1-host", "/flags/v1/data/flagid"));
         assertFalse(authorizedTenantHostNode("proxy1-host", "/flags/v1/foo"));
-        assertTrue(authorizedController("vespa.vespa.configserver", "/flags/v1/data"));
-        assertFalse(authorizedController("vespa.vespa.configserver", "/flags/v1/data/flagid"));
-        assertFalse(authorizedController("vespa.vespa.configserver", "/flags/v1/foo"));
+        assertTrue(authorizedController(CONFIG_SERVER_IDENTITY, "/flags/v1/data"));
+        assertFalse(authorizedController(CONFIG_SERVER_IDENTITY, "/flags/v1/data/flagid"));
+        assertFalse(authorizedController(CONFIG_SERVER_IDENTITY, "/flags/v1/foo"));
 
         // Controller can access everything
-        assertTrue(authorizedController("vespa.vespa.hosting", "/flags/v1/data"));
-        assertTrue(authorizedController("vespa.vespa.hosting", "/flags/v1/data/flagid"));
-        assertTrue(authorizedController("vespa.vespa.hosting", "/flags/v1/foo"));
+        assertTrue(authorizedController(CONTROLLER_IDENTITY, "/flags/v1/data"));
+        assertTrue(authorizedController(CONTROLLER_IDENTITY, "/flags/v1/data/flagid"));
+        assertTrue(authorizedController(CONTROLLER_IDENTITY, "/flags/v1/foo"));
     }
 
     @Test
@@ -170,19 +175,19 @@ public class AuthorizerTest {
     }
 
     private boolean authorizedTenantNode(String hostname, String path) {
-        return authorized(NodePrincipal.withAthenzIdentity("vespa.vespa.tenant", hostname, emptyList()), path);
+        return authorized(NodePrincipal.withAthenzIdentity("vespa.vespa.tenant", hostname, List.of()), path);
     }
 
     private boolean authorizedTenantHostNode(String hostname, String path) {
-        return authorized(NodePrincipal.withAthenzIdentity("vespa.vespa.tenant-host", hostname, emptyList()), path);
+        return authorized(NodePrincipal.withAthenzIdentity(TENANT_HOST_IDENTITY, hostname, List.of()), path);
     }
 
     private boolean authorizedLegacyNode(String hostname, String path) {
-        return authorized(NodePrincipal.withLegacyIdentity(hostname, emptyList()), path);
+        return authorized(NodePrincipal.withLegacyIdentity(hostname, List.of()), path);
     }
 
     private boolean authorizedController(String controllerIdentity, String path) {
-        return authorized(NodePrincipal.withAthenzIdentity(controllerIdentity, emptyList()), path);
+        return authorized(NodePrincipal.withAthenzIdentity(controllerIdentity, List.of()), path);
     }
 
     private boolean authorized(NodePrincipal principal, String path) {
