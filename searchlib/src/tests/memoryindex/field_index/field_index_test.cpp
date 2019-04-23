@@ -15,11 +15,11 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
-#include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("dictionary_test");
+LOG_SETUP("field_index_test");
 
 namespace search {
 
@@ -32,11 +32,11 @@ using document::Document;
 using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
-using test::SearchIteratorVerifier;
 using vespalib::GenerationHandler;
 
 namespace memoryindex {
 
+using test::WrapInserter;
 typedef FieldIndex::PostingList PostingList;
 typedef PostingList::ConstIterator PostingConstItr;
 
@@ -448,61 +448,6 @@ myremove(uint32_t docId, DocumentInverter &inv, FieldIndexCollection &fieldIndex
     inv.pushDocuments(fieldIndexes, std::shared_ptr<IDestructorCallback>());
 }
 
-
-class WrapInserter
-{
-    OrderedFieldIndexInserter &_inserter;
-public:
-    WrapInserter(FieldIndexCollection &fieldIndexes, uint32_t fieldId)
-        : _inserter(fieldIndexes.getFieldIndex(fieldId)->getInserter())
-    {
-    }
-
-    WrapInserter &word(vespalib::stringref word_)
-    {
-        _inserter.setNextWord(word_);
-        return *this;
-    }
-
-    WrapInserter &add(uint32_t docId, const index::DocIdAndFeatures &features)
-    {
-        _inserter.add(docId, features);
-        return *this;
-    }
-
-    WrapInserter &add(uint32_t docId)
-    {
-        DocIdAndPosOccFeatures features;
-        features.addNextOcc(0, 0, 1, 1);
-        return add(docId, features);
-    }
-
-    WrapInserter &remove(uint32_t docId)
-    {
-        _inserter.remove(docId);
-        return *this;
-    }
-
-    WrapInserter &flush()
-    {
-        _inserter.flush();
-        return *this;
-    }
-
-    WrapInserter &rewind()
-    {
-        _inserter.rewind();
-        return *this;
-    }
-
-    datastore::EntryRef
-    getWordRef()
-    {
-        return _inserter.getWordRef();
-    }
-};
-
-
 class MyDrainRemoves : IFieldIndexRemoveListener
 {
     FieldIndexRemover &_remover;
@@ -742,42 +687,7 @@ TEST_F("requireThatFeaturesAreInPostingLists", Fixture)
                                   featureStorePtr(fic, 1)));
 }
 
-class Verifier : public SearchIteratorVerifier {
-public:
-    Verifier(const Schema & schema);
-    ~Verifier();
 
-    SearchIterator::UP create(bool strict) const override {
-        (void) strict;
-        TermFieldMatchDataArray matchData;
-        matchData.add(&_tfmd);
-        return std::make_unique<PostingIterator>(_fieldIndexes.find("a", 0), featureStoreRef(_fieldIndexes, 0), 0, matchData);
-    }
-
-private:
-    mutable TermFieldMatchData _tfmd;
-    FieldIndexCollection _fieldIndexes;
-};
-
-
-Verifier::Verifier(const Schema & schema)
-    : _tfmd(),
-      _fieldIndexes(schema)
-{
-    WrapInserter inserter(_fieldIndexes, 0);
-    inserter.word("a");
-    for (uint32_t docId : getExpectedDocIds()) {
-        inserter.add(docId);
-    }
-    inserter.flush();
-}
-Verifier::~Verifier() {}
-
-TEST_F("require that postingiterator conforms", Fixture) {
-    Verifier verifier(f.getSchema());
-    verifier.verify();
-
-}
 
 TEST_F("requireThatPostingIteratorIsWorking", Fixture)
 {
