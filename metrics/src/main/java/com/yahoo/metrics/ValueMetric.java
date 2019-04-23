@@ -2,7 +2,11 @@
 package com.yahoo.metrics;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.metrics.util.*;
+import com.yahoo.metrics.util.HasCopy;
+import com.yahoo.metrics.util.MetricValueKeeper;
+import com.yahoo.metrics.util.SimpleMetricValueKeeper;
+import com.yahoo.metrics.util.ThreadLocalDirectoryValueKeeper;
+import com.yahoo.metrics.util.ValueType;
 import com.yahoo.text.XMLWriter;
 import com.yahoo.text.Utf8String;
 
@@ -18,7 +22,7 @@ public class ValueMetric<N extends Number>
     private static Logger log = Logger.getLogger(ValueMetric.class.getName());
     private static AtomicBoolean hasWarnedOnNonFinite = new AtomicBoolean(false);
 
-    public static interface Value<N extends Number> extends ValueType, HasCopy<Value<N>> {
+    public interface Value<N extends Number> extends ValueType, HasCopy<Value<N>> {
         void add(N v);
         void join(Value<N> v2, boolean createAverageOnJoin);
         boolean overflow(Value<N> v2);
@@ -61,17 +65,17 @@ public class ValueMetric<N extends Number>
     public ValueMetric(String name, String tags, String description, MetricSet owner) {
         super(name, tags, description, owner);
         //values = new MetricValueSet();
-        values = new ThreadLocalDirectoryValueKeeper<Value<N>>();
+        values = new ThreadLocalDirectoryValueKeeper<>();
     }
 
     public ValueMetric(ValueMetric<N> other, CopyType copyType, MetricSet owner) {
         super(other, owner);
         if (copyType == CopyType.INACTIVE || other.values instanceof SimpleMetricValueKeeper) {
-            values = new SimpleMetricValueKeeper<Value<N>>();
+            values = new SimpleMetricValueKeeper<>();
             values.set(other.values.get(getJoinBehavior()));
         } else {
             //values = new MetricValueSet((MetricValueSet) other.values, ((MetricValueSet) other.values).size());
-            values = new ThreadLocalDirectoryValueKeeper<Value<N>>(other.values);
+            values = new ThreadLocalDirectoryValueKeeper<>(other.values);
         }
         this.flags = other.flags;
     }
@@ -215,7 +219,7 @@ public class ValueMetric<N extends Number>
 
     @Override
     public ValueMetric<N> clone(CopyType type, MetricSet owner, boolean includeUnused) {
-        return new ValueMetric<N>(this, type, owner);
+        return new ValueMetric<>(this, type, owner);
     }
 
     @Override
@@ -228,7 +232,7 @@ public class ValueMetric<N extends Number>
             return;
         }
         logger.value(fullName, val == null ? 0
-                : isAverageMetric() ? val.getAverage().doubleValue()
+                : isAverageMetric() ? val.getAverage()
                                     : val.getLast().doubleValue());
     }
 

@@ -3,7 +3,12 @@ package com.yahoo.metrics;
 
 import com.yahoo.text.XMLWriter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 public abstract class MetricSet extends Metric {
@@ -147,7 +152,7 @@ public abstract class MetricSet extends Metric {
     }
 
     Map<String, Metric> createMetricMap() {
-        Map<String, Metric> map = new TreeMap<String, Metric>();
+        Map<String, Metric> map = new TreeMap<>();
 
         for (Metric m : metricOrder) {
             map.put(m.getName(), m);
@@ -161,7 +166,7 @@ public abstract class MetricSet extends Metric {
         MetricSet o = (MetricSet)snapshotMetric;
 
         Map<String, Metric> map1 = createMetricMap();
-        Set<String> seen = new HashSet<String>();
+        Set<String> seen = new HashSet<>();
 
         // For all the metrics in the other's order, join ours to the snapshot.
         for (Metric m : o.metricOrder) {
