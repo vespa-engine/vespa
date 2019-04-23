@@ -11,7 +11,6 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
-import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;

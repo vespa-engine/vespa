@@ -2,7 +2,6 @@
 package com.yahoo.feedapi;
 
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Message;
@@ -31,8 +30,8 @@ public class SharedSender implements ReplyHandler {
      * Creates a new shared sender.
      * If oldsender != null, we copy that status information from that sender.
      */
-    SharedSender(String route, SessionFactory factory, SharedSender oldSender, Metric metric) {
-        sender = (factory != null) ? factory.createSendSession(this, metric) : null;
+    SharedSender(String route, SessionFactory factory, SharedSender oldSender) {
+        sender = (factory != null) ? factory.createSendSession(this) : null;
         metrics = (oldSender != null) ? oldSender.metrics : new RouteMetricSet(route, null);
     }
 

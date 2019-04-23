@@ -5,34 +5,21 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
-import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
-import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
-import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
-
-import java.util.Collections;
 
 public class MessageBusSessionFactory implements SessionFactory {
 
     private final MessageBusDocumentAccess access;
     private final MessagePropertyProcessor processor;
 
-    private interface Metrics {
-        String NUM_OPERATIONS = "num_operations";
-        String NUM_PUTS = "num_puts";
-        String NUM_REMOVES = "num_removes";
-        String NUM_UPDATES = "num_updates";
-    }
-
     public MessageBusSessionFactory(MessagePropertyProcessor processor) {
         this(processor, null, null);
     }
     
-    public MessageBusSessionFactory(MessagePropertyProcessor processor, 
+    private MessageBusSessionFactory(MessagePropertyProcessor processor,
                                     DocumentmanagerConfig documentmanagerConfig,
                                     SlobroksConfig slobroksConfig) {
         this.processor = processor;
@@ -53,10 +40,9 @@ public class MessageBusSessionFactory implements SessionFactory {
     }
 
     @Override
-    public synchronized SendSession createSendSession(ReplyHandler handler, Metric metric) {
+    public synchronized SendSession createSendSession(ReplyHandler handler) {
         return new SourceSessionWrapper(
-                access.getMessageBus().createSourceSession(handler, processor.getFeederOptions().toSourceSessionParams()),
-                metric);
+                access.getMessageBus().createSourceSession(handler, processor.getFeederOptions().toSourceSessionParams()));
     }
 
     public void shutDown() {
@@ -66,34 +52,17 @@ public class MessageBusSessionFactory implements SessionFactory {
     private class SourceSessionWrapper extends SendSession {
 
         private final SourceSession session;
-        private final Metric metric;
-        private final Metric.Context context;
 
-        private SourceSessionWrapper(SourceSession session, Metric metric) {
+        private SourceSessionWrapper(SourceSession session) {
             this.session = session;
-            this.metric = metric;
-            this.context = metric.createContext(Collections.<String, String>emptyMap());
         }
 
         @Override
         protected com.yahoo.messagebus.Result onSend(Message m, boolean blockIfQueueFull) throws InterruptedException {
-            updateCounters(m);
             if (blockIfQueueFull) {
                 return session.sendBlocking(m);
             } else {
                 return session.send(m);
-            }
-        }
-
-        private void updateCounters(Message m) {
-            metric.add(Metrics.NUM_OPERATIONS, 1, context);
-
-            if (m instanceof PutDocumentMessage) {
-                metric.add(Metrics.NUM_PUTS, 1, context);
-            } else if (m instanceof RemoveDocumentMessage) {
-                metric.add(Metrics.NUM_REMOVES, 1, context);
-            } else if (m instanceof UpdateDocumentMessage) {
-                metric.add(Metrics.NUM_UPDATES, 1, context);
             }
         }
 

@@ -2,8 +2,6 @@
 package com.yahoo.feedhandler;
 
 import com.yahoo.clientmetrics.RouteMetricSet;
-import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
@@ -14,18 +12,13 @@ import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.text.Utf8String;
-import com.yahoo.text.XMLWriter;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-public final class FeedResponse extends HttpResponse implements SharedSender.ResultCallback {
+public final class FeedResponse implements SharedSender.ResultCallback {
 
     private final static Logger log = Logger.getLogger(FeedResponse.class.getName());
     private final List<ErrorMessage> errorMessages = new ArrayList<>();
@@ -37,7 +30,6 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
     private final SharedSender.Pending pendingNumber = new SharedSender.Pending();
 
     FeedResponse(RouteMetricSet metrics) {
-        super(com.yahoo.jdisc.http.HttpResponse.Status.OK);
         this.metrics = metrics;
     }
 
@@ -47,41 +39,6 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
 
     void setAbortOnFeedError(boolean abort) {
         abortOnError = abort;
-    }
-
-    @Override
-    public void render(OutputStream outputStream) throws IOException {
-        if ( ! errorMessages.isEmpty())
-            setStatus(VespaHeaders.getStatus(false, errorMessages.get(0), errorMessages.iterator()));
-
-        XMLWriter writer = new XMLWriter(new OutputStreamWriter(outputStream));
-        writer.openTag("result");
-
-        if (traces.length() > 0) {
-            writer.openTag("trace");
-            writer.append(traces);
-            writer.closeTag();
-        }
-        if (!errors.isEmpty()) {
-            writer.openTag("errors");
-            writer.attribute(new Utf8String("count"), errors.size());
-
-            for (int i = 0; i < errors.size() && i < 10; ++i) {
-                writer.openTag("error");
-                writer.attribute(new Utf8String("message"), errors.get(i));
-                writer.closeTag();
-            }
-            writer.closeTag();
-        }
-
-        writer.closeTag();
-        writer.flush();
-        outputStream.close();
-    }
-
-    @Override
-    public java.lang.String getContentType() {
-        return "application/xml";
     }
 
     private String prettyPrint(Message m) {

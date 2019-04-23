@@ -2,12 +2,10 @@
 package com.yahoo.vespafeeder;
 
 import com.yahoo.clientmetrics.RouteMetricSet;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedhandler.FeedResponse;
-import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.log.LogSetup;
 import com.yahoo.concurrent.SystemTimer;
@@ -20,14 +18,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class VespaFeeder {
 
-    Arguments args;
-    DocumentTypeManager manager;
-    Executor threadPool = Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("vespa-feeder"));
+    private final Arguments args;
+    private final DocumentTypeManager manager;
 
     public VespaFeeder(Arguments args, DocumentTypeManager manager) {
         this.args = args;
@@ -37,7 +32,7 @@ public class VespaFeeder {
     public static class FeedErrorException extends Exception {
         String message;
 
-        public FeedErrorException(String message) {
+        FeedErrorException(String message) {
             this.message = message;
         }
 
@@ -66,7 +61,7 @@ public class VespaFeeder {
         return new FeedErrorException(buffer.toString());
     }
 
-    public RouteMetricSet.ProgressCallback createProgressCallback(PrintStream output) {
+    RouteMetricSet.ProgressCallback createProgressCallback(PrintStream output) {
         if ("benchmark".equals(args.getMode())) {
             return new BenchmarkProgressPrinter(SystemTimer.INSTANCE, output);
         } else {
@@ -75,15 +70,15 @@ public class VespaFeeder {
     }
 
     void parseFiles(InputStream stdin, PrintStream output) throws Exception {
-        FeedContext context = new FeedContext(args.getPropertyProcessor(), args.getSessionFactory(), manager, new NullFeedMetric(true));
+        FeedContext context = new FeedContext(args.getPropertyProcessor(), args.getSessionFactory(), manager);
 
         final BufferedInputStream input = new BufferedInputStream(stdin);
-        VespaFeedHandler handler = VespaFeedHandler.createFromContext(context, threadPool);
+        VespaFeedHandler handler = VespaFeedHandler.createFromContext(context);
 
         if (args.getFiles().isEmpty()) {
             InputStreamRequest req = new InputStreamRequest(input);
             setProperties(req, input);
-            FeedResponse response = (FeedResponse)handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
+            FeedResponse response = handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
             if ( ! response.isSuccess()) {
                 throw renderErrors(response.getErrorList());
             }
@@ -101,7 +96,7 @@ public class VespaFeeder {
                 final BufferedInputStream inputSnooper = new BufferedInputStream(new FileInputStream(fileName));
                 setProperties(req, inputSnooper);
                 inputSnooper.close();
-                FeedResponse response = (FeedResponse)handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
+                FeedResponse response = handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
                 if (!response.isSuccess()) {
                     throw renderErrors(response.getErrorList());
                 }
