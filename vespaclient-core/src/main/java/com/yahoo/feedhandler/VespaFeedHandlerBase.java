@@ -1,22 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedhandler;
 
-import com.google.inject.Inject;
-import com.yahoo.clientmetrics.ClientMetrics;
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.docproc.DocprocService;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.feedapi.SharedSender;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.search.query.ParameterParser;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
-import com.yahoo.vespaclient.config.FeederConfig;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,23 +22,11 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
     protected FeedContext context;
     private final long defaultTimeoutMillis;
 
-    @Inject
-    public VespaFeedHandlerBase(FeederConfig feederConfig,
-                                LoadTypeConfig loadTypeConfig,
-                                DocumentmanagerConfig documentmanagerConfig,
-                                SlobroksConfig slobroksConfig,
-                                Executor executor,
-                                Metric metric) {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
-                                     slobroksConfig, metric),
-             executor, (long)feederConfig.timeout() * 1000);
-    }
-
     VespaFeedHandlerBase(FeedContext context, Executor executor) {
         this(context, executor, context.getPropertyProcessor().getDefaultTimeoutMillis());
     }
 
-    VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) {
+    private VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) {
         super(executor, context.getMetricAPI());
         this.context = context;
         this.defaultTimeoutMillis = defaultTimeoutMillis;
@@ -86,10 +68,6 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
 
     protected DocumentTypeManager getDocumentTypeManager() {
         return context.getDocumentTypeManager();
-    }
-
-    public ClientMetrics getMetrics() {
-        return context.getMetrics();
     }
 
     protected long getTimeoutMillis(HttpRequest request) {

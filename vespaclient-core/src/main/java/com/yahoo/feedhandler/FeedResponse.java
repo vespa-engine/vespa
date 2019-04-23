@@ -57,9 +57,6 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         XMLWriter writer = new XMLWriter(new OutputStreamWriter(outputStream));
         writer.openTag("result");
 
-        if (metrics != null) {
-            metrics.printXml(writer, 0, 0);
-        }
         if (traces.length() > 0) {
             writer.openTag("trace");
             writer.append(traces);

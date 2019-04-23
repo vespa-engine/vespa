@@ -71,7 +71,7 @@ public class BenchmarkProgressPrinterTest {
 
         String val = output.toString().split("\n")[1];
 
-        String correctPattern = "62000,\\s*3,\\s*2,\\s*\\d+,\\s*\\d+,\\s*\\d+$";
+        String correctPattern = "62000, \\d+, \\d+, \\d+, \\d+, \\d+$";
         assertTrue("Value '" + val + "' does not match pattern '" + correctPattern + "'", val.matches(correctPattern));
     }
 
