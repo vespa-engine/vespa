@@ -62,8 +62,8 @@ public class LoadBalancer {
      * @param choices the node choices, represented as Slobrok entries
      * @return the chosen node, or null only if the given choices were zero
      */
-    public Node getRecipient(Mirror.Entry[] choices) {
-        if (choices.length == 0) return null;
+    public Node getRecipient(List<Mirror.Entry> choices) {
+        if (choices.isEmpty()) return null;
 
         double weightSum = 0.0;
         Node selectedNode = null;
@@ -79,7 +79,7 @@ public class LoadBalancer {
         }
         if (selectedNode == null) { // Position>sum of all weights: Wrap around (but keep the remainder for some reason)
             position -= weightSum;
-            selectedNode = new Node(choices[0], getNodeMetrics(choices[0]));
+            selectedNode = new Node(choices.get(0), getNodeMetrics(choices.get(0)));
         }
         position += 1.0;
         selectedNode.metrics.sent.incrementAndGet();

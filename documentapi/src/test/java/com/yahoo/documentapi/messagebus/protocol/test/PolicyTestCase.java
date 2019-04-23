@@ -1,21 +1,61 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol.test;
 
-import com.yahoo.document.*;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentTypeManagerConfigurer;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.documentapi.messagebus.protocol.ANDPolicy;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentRouteSelectorPolicy;
+import com.yahoo.documentapi.messagebus.protocol.ErrorPolicy;
+import com.yahoo.documentapi.messagebus.protocol.ExternPolicy;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.LoadBalancerPolicy;
+import com.yahoo.documentapi.messagebus.protocol.LocalServicePolicy;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RoundRobinPolicy;
+import com.yahoo.documentapi.messagebus.protocol.SubsetServicePolicy;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.IntermediateSession;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.HopBlueprint;
+import com.yahoo.messagebus.routing.HopSpec;
+import com.yahoo.messagebus.routing.PolicyDirective;
+import com.yahoo.messagebus.routing.Route;
+import com.yahoo.messagebus.routing.RouteSpec;
+import com.yahoo.messagebus.routing.RoutingNode;
+import com.yahoo.messagebus.routing.RoutingPolicy;
+import com.yahoo.messagebus.routing.RoutingSpec;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.Receptor;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -721,7 +761,7 @@ public class PolicyTestCase {
             throws InterruptedException, TimeoutException
     {
         for (int i = 0; i < TIMEOUT_MILLIS / 10; ++i) {
-            if (slobrok.lookup(pattern).length == numEntries) {
+            if (slobrok.lookup(pattern).size() == numEntries) {
                 return;
             }
             Thread.sleep(10);

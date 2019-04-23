@@ -5,14 +5,17 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.FieldReader;
+import com.yahoo.document.serialization.FieldWriter;
+import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.Serializer;
-import com.yahoo.document.config.DocumentmanagerConfig.Datatype.Structtype.Compresstype;
 
 /**
  * @author Einar M R Rosenvinge

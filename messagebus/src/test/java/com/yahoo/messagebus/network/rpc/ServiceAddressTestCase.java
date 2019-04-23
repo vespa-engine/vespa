@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -67,8 +68,8 @@ public class ServiceAddressTestCase {
 
     private boolean waitSlobrok(String pattern, int num) {
         for (int i = 0; i < 1000 && !Thread.currentThread().isInterrupted(); ++i) {
-            Mirror.Entry[] res = network.getMirror().lookup(pattern);
-            if (res.length == num) {
+            List<Mirror.Entry> res = network.getMirror().lookup(pattern);
+            if (res.size() == num) {
                 return true;
             }
             try {

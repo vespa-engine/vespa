@@ -107,7 +107,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             this.policy = policy;
         }
 
-        private Mirror.Entry[] getEntries(String hostPattern, RoutingContext context) {
+        private List<Mirror.Entry> getEntries(String hostPattern, RoutingContext context) {
             return policy.lookup(context, hostPattern);
         }
 
@@ -116,16 +116,16 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         public IMirror getMirror(RoutingContext context) { return context.getMirror(); }
 
         public String getTargetSpec(Integer distributor, RoutingContext context) {
-            Mirror.Entry[] arr = getEntries(patternGenerator.getDistributorHostPattern(distributor), context);
-            if (arr.length == 0) return null;
+            List<Mirror.Entry> arr = getEntries(patternGenerator.getDistributorHostPattern(distributor), context);
+            if (arr.isEmpty()) return null;
             if (distributor != null) {
-                if (arr.length == 1) {
-                    return convertSlobrokNameToSessionName(arr[0].getSpec());
+                if (arr.size() == 1) {
+                    return convertSlobrokNameToSessionName(arr.get(0).getSpec());
                 } else {
-                    log.log(LogLevel.WARNING, "Got " + arr.length + " matches for a distributor.");
+                    log.log(LogLevel.WARNING, "Got " + arr.size() + " matches for a distributor.");
                 }
             } else {
-                return convertSlobrokNameToSessionName(arr[randomizer.nextInt(arr.length)].getSpec());
+                return convertSlobrokNameToSessionName(arr.get(randomizer.nextInt(arr.size())).getSpec());
             }
             return null;
         }

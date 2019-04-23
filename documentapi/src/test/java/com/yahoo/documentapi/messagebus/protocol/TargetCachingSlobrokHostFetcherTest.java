@@ -7,6 +7,8 @@ import com.yahoo.messagebus.routing.RoutingContext;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -23,26 +25,25 @@ import static org.mockito.Mockito.when;
  */
 public class TargetCachingSlobrokHostFetcherTest {
 
-    static String idOfIndex(int index) {
+    private static String idOfIndex(int index) {
         return String.format("storage/cluster.foo/distributor/%d/default", index);
     }
 
-    static String idOfWildcardLookup() {
+    private static String idOfWildcardLookup() {
         return "storage/cluster.foo/distributor/*/default";
     }
 
-    static String lookupSpecOfIndex(int index) {
+    private static String lookupSpecOfIndex(int index) {
         return String.format("tcp/localhost:%d", index);
     }
 
-    static String resolvedSpecOfIndex(int index) {
+    private static String resolvedSpecOfIndex(int index) {
         return String.format("tcp/localhost:%d/default", index);
     }
 
-    static Mirror.Entry[] dummyEntries(int... indices) {
+    private static List<Mirror.Entry> dummyEntries(int... indices) {
         return Arrays.stream(indices)
-                .mapToObj(index -> new Mirror.Entry(idOfIndex(index), lookupSpecOfIndex(index)))
-                .toArray(Mirror.Entry[]::new);
+                .mapToObj(index -> new Mirror.Entry(idOfIndex(index), lookupSpecOfIndex(index))).collect(Collectors.toList());
     }
 
     static class Fixture {

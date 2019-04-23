@@ -11,6 +11,7 @@ import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.cloud.config.SlobroksConfig;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,16 +20,16 @@ import java.util.Map;
  */
 public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy implements ConfigSubscriber.SingleSubscriber<SlobroksConfig> {
     String error;
-    Supervisor orb = null;
-    Mirror mirror = null;
-    SlobrokList slobroks = null;
-    boolean firstTry = true;
+    private Supervisor orb = null;
+    private Mirror mirror = null;
+    private SlobrokList slobroks = null;
+    private boolean firstTry = true;
     private ConfigSubscriber subscriber;
     String[] configSources = null;
-    String slobrokConfigId = "admin/slobrok.0";
+    private final static String slobrokConfigId = "admin/slobrok.0";
 
 
-    public ExternalSlobrokPolicy(Map<String, String> param) {
+    ExternalSlobrokPolicy(Map<String, String> param) {
         super();
 
         String conf = param.get("config");
@@ -72,16 +73,16 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
         return mirror;
     }
 
-    public  Mirror.Entry[] lookup(RoutingContext context, String pattern) {
+    public  List<Mirror.Entry> lookup(RoutingContext context, String pattern) {
         IMirror mirror1 = (mirror != null ? mirror : context.getMirror());
 
-        Mirror.Entry[] arr = mirror1.lookup(pattern);
+        List<Mirror.Entry> arr = mirror1.lookup(pattern);
 
-        if ((arr.length == 0) && firstTry) {
+        if ((arr.isEmpty()) && firstTry) {
             synchronized(this)  {
                 try {
                     int count = 0;
-                    while (arr.length == 0 && count < 100) {
+                    while (arr.isEmpty() && count < 100) {
                         Thread.sleep(50);
                         arr = mirror1.lookup(pattern);
                         count++;

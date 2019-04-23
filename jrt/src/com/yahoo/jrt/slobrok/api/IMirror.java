@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.slobrok.api;
 
+import java.util.List;
+
 /**
  * Defines an interface for the name server lookup.
  *
@@ -21,7 +23,7 @@ public interface IMirror {
      * @return a list of all matching services, with corresponding connect specs
      * @param pattern The pattern used for matching
      **/
-    Mirror.Entry[] lookup(String pattern);
+    List<Mirror.Entry> lookup(String pattern);
 
     /**
      * Obtain the number of updates seen by this mirror. The value may wrap, but will never become 0 again. This can be

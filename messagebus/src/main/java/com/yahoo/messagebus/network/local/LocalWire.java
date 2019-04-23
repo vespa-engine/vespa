@@ -41,7 +41,7 @@ public class LocalWire implements IMirror {
     }
 
     @Override
-    public Mirror.Entry[] lookup(String pattern) {
+    public List<Mirror.Entry> lookup(String pattern) {
         List<Mirror.Entry> out = new ArrayList<>();
         Pattern regex = Pattern.compile(pattern.replace("*", "[a-zA-Z0-9_-]+"));
         for (String key : services.keySet()) {
@@ -49,7 +49,7 @@ public class LocalWire implements IMirror {
                 out.add(new Mirror.Entry(key, key));
             }
         }
-        return out.toArray(new Mirror.Entry[out.size()]);
+        return out;
     }
 
     @Override

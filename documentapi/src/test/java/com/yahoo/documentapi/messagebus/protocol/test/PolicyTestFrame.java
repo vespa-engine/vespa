@@ -6,19 +6,32 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.ServiceAddress;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.HopSpec;
+import com.yahoo.messagebus.routing.Route;
+import com.yahoo.messagebus.routing.RoutingNode;
+import com.yahoo.messagebus.routing.RoutingSpec;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
@@ -272,8 +285,8 @@ public class PolicyTestFrame {
      */
     public boolean waitSlobrok(String pattern, int cnt) {
         for (int i = 0; i < 1000 && !Thread.currentThread().isInterrupted(); ++i) {
-            Mirror.Entry[] res = net.getMirror().lookup(pattern);
-            if (res.length == cnt) {
+            List<Mirror.Entry> res = net.getMirror().lookup(pattern);
+            if (res.size() == cnt) {
                 return true;
             }
             try { Thread.sleep(10); } catch (InterruptedException e) { /* ignore */ }

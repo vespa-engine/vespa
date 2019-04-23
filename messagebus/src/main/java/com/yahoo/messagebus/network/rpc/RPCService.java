@@ -4,6 +4,7 @@ package com.yahoo.messagebus.network.rpc;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -18,7 +19,7 @@ public class RPCService {
     private final String pattern;
     private int addressIdx = ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
     private int addressGen = 0;
-    private Mirror.Entry[] addressList = null;
+    private List<Mirror.Entry> addressList = null;
 
     /**
      * Create a new RPCService backed by the given network and using the given service pattern.
@@ -51,9 +52,9 @@ public class RPCService {
                 addressGen = mirror.updates();
                 addressList = mirror.lookup(pattern);
             }
-            if (addressList != null && addressList.length > 0) {
-                addressIdx = ++addressIdx % addressList.length;
-                Mirror.Entry entry = addressList[addressIdx];
+            if (addressList != null && !addressList.isEmpty()) {
+                addressIdx = ++addressIdx % addressList.size();
+                Mirror.Entry entry = addressList.get(addressIdx);
                 return new RPCServiceAddress(entry.getName(), entry.getSpec());
             }
         }
