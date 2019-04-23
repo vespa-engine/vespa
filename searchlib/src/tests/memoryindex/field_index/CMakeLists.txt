@@ -5,6 +5,7 @@ vespa_add_executable(searchlib_field_index_test_app TEST
     DEPENDS
     searchlib
     searchlib_test
+    gtest
 )
 vespa_add_test(NAME searchlib_field_index_test_app COMMAND searchlib_field_index_test_app)
 
