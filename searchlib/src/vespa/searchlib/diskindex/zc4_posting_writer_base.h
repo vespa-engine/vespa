@@ -47,7 +47,7 @@ protected:
     Zc4PostingWriterBase &operator=(Zc4PostingWriterBase &&) = delete;
     Zc4PostingWriterBase(index::PostingListCounts &counts);
     ~Zc4PostingWriterBase();
-    void calc_skip_info(bool encodeFeatures);
+    void calc_skip_info(bool encode_features);
     void clear_skip_info();
 
 public:
