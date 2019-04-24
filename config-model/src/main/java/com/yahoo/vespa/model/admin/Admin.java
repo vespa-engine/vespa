@@ -152,8 +152,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                         userpc(true).
                         use(logServerContainerCluster.isPresent() || !isHostedVespa).
                         host(logserver.getHostName()).
-                        rpcport(logserver.getRelativePort(0)).
-                        port(logserver.getRelativePort(1)));
+                        rpcport(logserver.getRelativePort(0)));
         }
      }
 
