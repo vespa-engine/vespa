@@ -51,6 +51,7 @@ GetConfig::usage()
     fprintf(stderr, "-i configId       (config id, optional)\n");
     fprintf(stderr, "-j                (output config as json, optional)\n");
     fprintf(stderr, "-l                (output config in legacy cfg format, optional)\n");
+    fprintf(stderr, "-g generation     (config generation, optional)\n");
     fprintf(stderr, "-a schema         (config def schema file, optional)\n");
     fprintf(stderr, "-v defVersion     (config definition version, optional, deprecated)\n");
     fprintf(stderr, "-m defMd5         (definition md5sum, optional)\n");
@@ -107,6 +108,7 @@ GetConfig::Main()
     bool printAsJson = false;
     int traceLevel = config::protocol::readTraceLevel();
     const char *vespaVersionString = nullptr;
+    int64_t generation = 0;
 
     if (configId == NULL) {
         configId = "";
@@ -119,7 +121,7 @@ GetConfig::Main()
 
     const char *optArg = NULL;
     int optInd = 0;
-    while ((c = GetOpt("a:n:v:i:jlm:c:t:V:w:r:s:p:dh", optArg, optInd)) != -1) {
+    while ((c = GetOpt("a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh", optArg, optInd)) != -1) {
         int retval = 1;
         switch (c) {
         case 'a':
@@ -129,6 +131,9 @@ GetConfig::Main()
             defName = optArg;
             break;
         case 'v':
+            break;
+        case 'g':
+            generation = atoll(optArg);
             break;
         case 'i':
             configId = optArg;
@@ -220,7 +225,7 @@ GetConfig::Main()
     FRTConfigRequestFactory requestFactory(protocolVersion, traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
     FRTConnection connection(spec, *_supervisor, TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-    ConfigState state(configMD5, 0, false);
+    ConfigState state(configMD5, generation, false);
     FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout * 1000);
 
     _target->InvokeSync(request->getRequest(), clientTimeout); // seconds
