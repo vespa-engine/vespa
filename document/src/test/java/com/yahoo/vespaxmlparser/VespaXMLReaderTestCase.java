@@ -810,7 +810,6 @@ public class VespaXMLReaderTestCase {
         assertEquals(VespaXMLFeedReader.OperationType.DOCUMENT, op.getType());
         assertNull(op.getRemove());
         assertNull(op.getDocumentUpdate());
-        assertNull(op.getFeedOperation());
         assertNotNull(op.getDocument());
 
         Document doc = op.getDocument();

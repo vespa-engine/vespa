@@ -36,7 +36,7 @@ public class SimpleFeederTest {
     private static final String CONFIG_DIR = "target/test-classes/";
 
     @Test
-    public void requireThatFeederWorks() throws Throwable {
+    public void requireThatXMLFeederWorks() throws Throwable {
         assertFeed("<vespafeed>" +
                    "    <document documenttype='simple' documentid='doc:scheme:0'>" +
                    "        <my_str>foo</my_str>" +
@@ -58,6 +58,27 @@ public class SimpleFeederTest {
                    "",
                    "(.+\n)+" +
                    "\\s*\\d+,\\s*3,.+\n");
+    }
+
+    @Test
+    public void requireThatJsonFeederWorks() throws Throwable {
+        assertFeed("[" +
+                        "  { \"put\": \"id:simple:simple::0\", \"fields\": { \"my_str\":\"foo\"}}," +
+                        "  { \"update\": \"id:simple:simple::1\", \"fields\": { \"my_str\": { \"assign\":\"bar\"}}}," +
+                        "  { \"remove\": \"id:simple:simple::2\"}" +
+                        "]",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
     }
 
     @Test
@@ -175,7 +196,7 @@ public class SimpleFeederTest {
         final SimpleFeeder feeder;
         final SimpleServer server;
 
-        public TestDriver(FeederParams params, String in, MessageHandler validator)
+        TestDriver(FeederParams params, String in, MessageHandler validator)
                 throws IOException, ListenFailedException {
             server = new SimpleServer(CONFIG_DIR, validator);
             feeder = new SimpleFeeder(params.setConfigId("dir:" + CONFIG_DIR)

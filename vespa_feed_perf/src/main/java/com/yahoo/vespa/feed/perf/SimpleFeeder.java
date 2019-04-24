@@ -4,6 +4,7 @@ package com.yahoo.vespa.feed.perf;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.json.JsonFeedReader;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
@@ -19,6 +20,7 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
@@ -86,6 +88,18 @@ public class SimpleFeeder implements ReplyHandler {
         } catch (InterruptedException e) {}
     }
 
+    private FeedReader createFeedReader() throws Exception {
+        in.mark(8);
+        byte b[] = new byte[1];
+        in.read(b);
+        in.reset();
+        if (b[0] == '[') {
+            return new JsonFeedReader(in, docTypeMgr);
+        } else {
+             return new VespaXMLFeedReader(in, docTypeMgr);
+        }
+    }
+
     SimpleFeeder run() throws Throwable {
         ExecutorService executor = (numThreads > 1)
                 ? new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS,
@@ -93,7 +107,7 @@ public class SimpleFeeder implements ReplyHandler {
                                          ThreadFactoryFactory.getDaemonThreadFactory("perf-feeder"),
                                          new ThreadPoolExecutor.CallerRunsPolicy())
                 : null;
-        VespaXMLFeedReader reader = new VespaXMLFeedReader(in, docTypeMgr);
+        FeedReader reader = createFeedReader();
 
         printHeader();
         long numMessages = 0;

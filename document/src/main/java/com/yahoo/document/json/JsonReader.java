@@ -4,7 +4,6 @@ package com.yahoo.document.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.google.common.annotations.Beta;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentType;

@@ -56,7 +56,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
     /**
      * Skips the initial "vespafeed" tag.
      */
-    void readInitial() throws Exception {
+    private void readInitial() throws Exception {
         boolean found = false;
 
         while (reader.hasNext()) {
@@ -93,7 +93,6 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
         private Document doc;
         private DocumentId remove;
         private DocumentUpdate docUpdate;
-        private FeedOperation feedOperation;
         private TestAndSetCondition condition;
 
         public Operation() {
@@ -105,7 +104,6 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
             doc = null;
             remove = null;
             docUpdate = null;
-            feedOperation = null;
             condition = null;
         }
 
@@ -140,10 +138,6 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
             this.docUpdate = docUpdate;
         }
 
-        public FeedOperation getFeedOperation() {
-            return feedOperation;
-        }
-
         public void setCondition(TestAndSetCondition condition) {
             this.condition = condition;
         }
@@ -159,39 +153,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
                    ", doc=" + doc +
                    ", remove=" + remove +
                    ", docUpdate=" + docUpdate +
-                   ", feedOperation=" + feedOperation +
                    '}';
-        }
-    }
-
-    public static class FeedOperation {
-
-        private String name;
-        private Integer generation;
-        private Integer increment;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Integer getGeneration() {
-            return generation;
-        }
-
-        public void setGeneration(int generation) {
-            this.generation = generation;
-        }
-
-        public Integer getIncrement() {
-            return increment;
-        }
-
-        public void setIncrement(int increment) {
-            this.increment = increment;
         }
     }
 
@@ -203,7 +165,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
      * @return The list of all read operations.
      */
     public List<Operation> readAll() throws Exception {
-        List<Operation> list = new ArrayList<Operation>();
+        List<Operation> list = new ArrayList<>();
         while (true) {
             Operation op = new Operation();
             read(op);
@@ -280,32 +242,6 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
             }
 
             throw(e);
-        }
-    }
-
-    public void read(FeedOperation fo) throws XMLStreamException {
-        while (reader.hasNext()) {
-            int type = reader.next();
-
-            if (type == XMLStreamReader.START_ELEMENT) {
-                if ("name".equals(reader.getName().toString())) {
-                    fo.setName(reader.getElementText().toString());
-                    skipToEnd("name");
-                } else if ("generation".equals(reader.getName().toString())) {
-                    fo.setGeneration(Integer.parseInt(reader.getElementText().toString()));
-                    skipToEnd("generation");
-                } else if ("increment".equals(reader.getName().toString())) {
-                    String text = reader.getElementText();
-                    if ("autodetect".equals(text)) {
-                        fo.setIncrement(-1);
-                    } else {
-                        fo.setIncrement(Integer.parseInt(text));
-                    }
-                    skipToEnd("increment");
-                }
-            } else if (type == XMLStreamReader.END_ELEMENT) {
-                return;
-            }
         }
     }
 
