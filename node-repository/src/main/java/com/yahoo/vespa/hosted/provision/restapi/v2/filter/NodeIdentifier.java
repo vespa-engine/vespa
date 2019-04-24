@@ -5,7 +5,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provisioning.ConfigServerFilterConfig;
+import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -38,13 +38,13 @@ class NodeIdentifier {
 
     private final Supplier<List<Node>> nodeCache;
 
-    NodeIdentifier(Zone zone, NodeRepository nodeRepository, ConfigServerFilterConfig filterConfig) {
+    NodeIdentifier(Zone zone, NodeRepository nodeRepository, ConfigServerSecurityConfig securityConfig) {
         this.zone = zone;
         this.nodeRepository = nodeRepository;
-        this.athenzProviderHostname = filterConfig.athenzProviderHostname();
-        this.configServerLikeIdentities = Set.of(filterConfig.controllerHostIdentity(), filterConfig.configServerHostIdentity());
-        this.tenantAndProxyHostIndentities = Set.of(filterConfig.tenantHostIdentity(), filterConfig.proxyHostIdentity());
-        this.tenantIdentity = filterConfig.tenantIdentity();
+        this.athenzProviderHostname = securityConfig.athenzProviderHostname();
+        this.configServerLikeIdentities = Set.of(securityConfig.controllerHostIdentity(), securityConfig.configServerHostIdentity());
+        this.tenantAndProxyHostIndentities = Set.of(securityConfig.tenantHostIdentity(), securityConfig.proxyHostIdentity());
+        this.tenantIdentity = securityConfig.tenantIdentity();
         nodeCache = Suppliers.memoizeWithExpiration(nodeRepository::getNodes, 1, TimeUnit.MINUTES);
     }
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provisioning.ConfigServerFilterConfig;
+import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -35,18 +35,18 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     private final Set<AthenzIdentity> trustedIdentities;
     private final Set<AthenzIdentity> hostAdminIdentities;
 
-    Authorizer(NodeRepository nodeRepository, ConfigServerFilterConfig filterConfig) {
-        AthenzIdentity configServerHostIdentity = AthenzIdentities.from(filterConfig.configServerHostIdentity());
+    Authorizer(NodeRepository nodeRepository, ConfigServerSecurityConfig securityConfig) {
+        AthenzIdentity configServerHostIdentity = AthenzIdentities.from(securityConfig.configServerHostIdentity());
 
         this.nodeRepository = nodeRepository;
-        this.athenzProviderHostname = filterConfig.athenzProviderHostname();
-        this.controllerHostIdentity = AthenzIdentities.from(filterConfig.controllerHostIdentity());
+        this.athenzProviderHostname = securityConfig.athenzProviderHostname();
+        this.controllerHostIdentity = AthenzIdentities.from(securityConfig.controllerHostIdentity());
         this.trustedIdentities = Set.of(controllerHostIdentity, configServerHostIdentity);
         this.hostAdminIdentities = Set.of(
                 controllerHostIdentity,
                 configServerHostIdentity,
-                AthenzIdentities.from(filterConfig.tenantHostIdentity()),
-                AthenzIdentities.from(filterConfig.proxyHostIdentity()));
+                AthenzIdentities.from(securityConfig.tenantHostIdentity()),
+                AthenzIdentities.from(securityConfig.proxyHostIdentity()));
     }
 
     /** Returns whether principal is authorized to access given URI */

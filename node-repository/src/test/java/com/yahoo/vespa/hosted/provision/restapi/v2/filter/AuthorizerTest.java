@@ -19,7 +19,7 @@ import java.util.Set;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.ATHENZ_PROVIDER_HOSTNAME;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.CONFIG_SERVER_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.CONTROLLER_IDENTITY;
-import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.FILTER_CONFIG;
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.SECURITY_CONFIG;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.TENANT_HOST_IDENTITY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -35,7 +35,7 @@ public class AuthorizerTest {
     public void before() {
         NodeFlavors flavors = new MockNodeFlavors();
         MockNodeRepository nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
-        authorizer = new Authorizer(nodeRepository, FILTER_CONFIG);
+        authorizer = new Authorizer(nodeRepository, SECURITY_CONFIG);
 
         Set<String> ipAddresses = Set.of("127.0.0.1", "::1");
         Flavor flavor = flavors.getFlavorOrThrow("default");

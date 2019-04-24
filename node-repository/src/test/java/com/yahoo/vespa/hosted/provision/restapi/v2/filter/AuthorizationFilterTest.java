@@ -15,7 +15,7 @@ public class AuthorizationFilterTest {
 
     private final FilterTester tester = new FilterTester(new AuthorizationFilter(
             new MockNodeRepository(new MockCurator(), new MockNodeFlavors()),
-            NodeIdentifierTest.FILTER_CONFIG));
+            NodeIdentifierTest.SECURITY_CONFIG));
 
     @Test
     public void filter() {

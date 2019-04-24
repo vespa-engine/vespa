@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provisioning.ConfigServerFilterConfig;
+import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
@@ -30,8 +30,8 @@ public class NodeIdentifierFilter extends JsonSecurityRequestFilterBase {
     private final NodeIdentifier nodeIdentifier;
 
     @Inject
-    public NodeIdentifierFilter(Zone zone, NodeRepository nodeRepository, ConfigServerFilterConfig filterConfig) {
-        this.nodeIdentifier = new NodeIdentifier(zone, nodeRepository, filterConfig);
+    public NodeIdentifierFilter(Zone zone, NodeRepository nodeRepository, ConfigServerSecurityConfig securityConfig) {
+        this.nodeIdentifier = new NodeIdentifier(zone, nodeRepository, securityConfig);
     }
 
     @Override

@@ -11,7 +11,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provisioning.ConfigServerFilterConfig;
+import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -59,7 +59,7 @@ public class NodeIdentifierTest {
     static final String PROXY_HOST_IDENTITY = "vespa.proxy";
     static final String TENANT_HOST_IDENTITY = "vespa.tenant-host";
     static final String TENANT_IDENTITY = "vespa.tenant";
-    static final ConfigServerFilterConfig FILTER_CONFIG = new ConfigServerFilterConfig.Builder()
+    static final ConfigServerSecurityConfig SECURITY_CONFIG = new ConfigServerSecurityConfig.Builder()
             .athenzProviderHostname(ATHENZ_PROVIDER_HOSTNAME)
             .controllerHostIdentity(CONTROLLER_IDENTITY)
             .configServerHostIdentity(CONFIG_SERVER_IDENTITY)
@@ -87,7 +87,7 @@ public class NodeIdentifierTest {
                 .fromKeypair(
                         KEYPAIR, new X500Principal("CN=" + HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         expectedException.expect(NodeIdentifier.NodeIdentifierException.class);
         expectedException.expectMessage("(subject=myhostname, issuer=[myhostname])");
         identifier.resolveNode(singletonList(certificate));
@@ -105,7 +105,7 @@ public class NodeIdentifierTest {
                 .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.provider-name.ostk.yahoo.cloud")
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
@@ -124,7 +124,7 @@ public class NodeIdentifierTest {
                 .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
@@ -143,7 +143,7 @@ public class NodeIdentifierTest {
                 .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(PROXY_HOSTNAME, identity.getHostname().get());
@@ -160,7 +160,7 @@ public class NodeIdentifierTest {
                 .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertEquals(CONFIG_SERVER_IDENTITY, identity.getHostIdentityName());
     }
@@ -170,7 +170,7 @@ public class NodeIdentifierTest {
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(KEYPAIR, new X500Principal("CN=" + ATHENZ_PROVIDER_HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, new NodeRepositoryTester().nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, new NodeRepositoryTester().nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertEquals(ATHENZ_PROVIDER_HOSTNAME, identity.getHostIdentityName());
         assertEquals(NodePrincipal.Type.LEGACY, identity.getType());
@@ -195,7 +195,7 @@ public class NodeIdentifierTest {
                 .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(vespaUniqueInstanceId.asDottedString() + ".instanceid.athenz.provider-name.vespa.yahoo.cloud")
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
@@ -211,7 +211,7 @@ public class NodeIdentifierTest {
         X509Certificate certificate = X509CertificateBuilder
                 .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertFalse(identity.getHostname().isPresent());
         assertEquals(CONTROLLER_IDENTITY, identity.getHostIdentityName());
@@ -229,7 +229,7 @@ public class NodeIdentifierTest {
                 .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.ostk.yahoo.cloud")
                 .build();
-        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), FILTER_CONFIG);
+        NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository(), SECURITY_CONFIG);
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
         assertTrue(identity.getHostname().isPresent());
         assertEquals(HOSTNAME, identity.getHostname().get());
