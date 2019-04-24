@@ -5,14 +5,16 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.config.provisioning.ConfigServerFilterConfig;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -25,23 +27,24 @@ import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
  */
 class NodeIdentifier {
 
-    static final String TENANT_DOCKER_HOST_IDENTITY = "vespa.vespa.tenant-host";
-    static final String PROXY_HOST_IDENTITY = "vespa.vespa.proxy";
-    static final String CONFIGSERVER_HOST_IDENTITY = "vespa.vespa.configserver";
-    static final String TENANT_DOCKER_CONTAINER_IDENTITY = "vespa.vespa.tenant";
-    static final String ZTS_ON_PREM_IDENTITY = "zts.athens.yahoo.com";
-    static final String ZTS_AWS_IDENTITY = "zts.athenz.ouroath.com";
     private static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
     private final Zone zone;
     private final NodeRepository nodeRepository;
-
+    private final String athenzProviderHostname;
+    private final Set<String> configServerLikeIdentities;
+    private final Set<String> tenantAndProxyHostIndentities;
+    private final String tenantIdentity;
 
     private final Supplier<List<Node>> nodeCache;
 
-    NodeIdentifier(Zone zone, NodeRepository nodeRepository) {
+    NodeIdentifier(Zone zone, NodeRepository nodeRepository, ConfigServerFilterConfig filterConfig) {
         this.zone = zone;
         this.nodeRepository = nodeRepository;
+        this.athenzProviderHostname = filterConfig.athenzProviderHostname();
+        this.configServerLikeIdentities = Set.of(filterConfig.controllerHostIdentity(), filterConfig.configServerHostIdentity());
+        this.tenantAndProxyHostIndentities = Set.of(filterConfig.tenantHostIdentity(), filterConfig.proxyHostIdentity());
+        this.tenantIdentity = filterConfig.tenantIdentity();
         nodeCache = Suppliers.memoizeWithExpiration(nodeRepository::getNodes, 1, TimeUnit.MINUTES);
     }
 
@@ -52,17 +55,17 @@ class NodeIdentifier {
                 .orElseThrow(() -> new NodeIdentifierException("Certificate subject common name is missing!"));
         if (isAthenzIssued(clientCertificate)) {
             List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(clientCertificate);
-            switch (subjectCommonName) {
-                case TENANT_DOCKER_HOST_IDENTITY:
-                case PROXY_HOST_IDENTITY:
-                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoOrAwsCertificate(sans), certificateChain);
-                case TENANT_DOCKER_CONTAINER_IDENTITY:
-                    return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
-                case CONFIGSERVER_HOST_IDENTITY:
-                default:
-                    return NodePrincipal.withAthenzIdentity(subjectCommonName, certificateChain);
+            if (configServerLikeIdentities.contains(subjectCommonName)) {
+                return NodePrincipal.withAthenzIdentity(subjectCommonName, certificateChain);
+            } else if (tenantAndProxyHostIndentities.contains(subjectCommonName)) {
+                return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromCalypsoCertificate(sans), certificateChain);
+            } else if (subjectCommonName.equals(tenantIdentity)) {
+                return NodePrincipal.withAthenzIdentity(subjectCommonName, getHostFromVespaCertificate(sans), certificateChain);
             }
-        } else if (subjectCommonName.equals(ZTS_ON_PREM_IDENTITY) || subjectCommonName.equals(ZTS_AWS_IDENTITY)) {
+
+            throw new NodeIdentifierException(String.format(
+                    "Subject common name (%s) does not match any expected identity", subjectCommonName));
+        } else if (subjectCommonName.contains(athenzProviderHostname)) {
             // ZTS treated as a node principal even though its not a Vespa node
             return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
         } else {
@@ -77,11 +80,6 @@ class NodeIdentifier {
                 .findFirst()
                 .orElseThrow(() -> new NodeIdentifierException("Certificate issuer common name is missing!"));
         return issuerCommonName.equals("Yahoo Athenz CA") || issuerCommonName.equals("Athenz AWS CA");
-    }
-
-    // NOTE: AWS instance id is currently stored as the attribute 'openstack-id' in node repository.
-    private String getHostFromCalypsoOrAwsCertificate(List<SubjectAlternativeName> sans) {
-        return getHostFromCalypsoCertificate(sans);
     }
 
     private String getHostFromCalypsoCertificate(List<SubjectAlternativeName> sans) {
