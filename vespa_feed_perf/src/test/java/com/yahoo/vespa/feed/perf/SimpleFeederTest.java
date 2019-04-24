@@ -61,6 +61,76 @@ public class SimpleFeederTest {
     }
 
     @Test
+    public void requireThatXML2JsonFeederWorks() throws Throwable {
+        ByteArrayOutputStream dump = new ByteArrayOutputStream();
+        assertFeed(new FeederParams().setDumpStream(dump),
+                "<vespafeed>" +
+                        "    <document documenttype='simple' documentid='id:simple:simple::0'>" +
+                        "        <my_str>foo</my_str>" +
+                        "    </document>" +
+                        "    <update documenttype='simple' documentid='id:simple:simple::1'>" +
+                        "        <assign field='my_str'>bar</assign>" +
+                        "    </update>" +
+                        "    <remove documenttype='simple' documentid='id:simple:simple::2'/>" +
+                        "</vespafeed>",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
+        assertEquals(58, dump.size());
+        assertEquals("[\n{\"id\":\"id:simple:simple::0\",\"fields\":{\"my_str\":\"foo\"}}\n]", dump.toString());
+    }
+
+    @Test
+    public void requireThatDualPutXML2JsonFeederWorks() throws Throwable {
+        ByteArrayOutputStream dump = new ByteArrayOutputStream();
+        assertFeed(new FeederParams().setDumpStream(dump),
+                "<vespafeed>" +
+                        "    <document documenttype='simple' documentid='id:simple:simple::0'>" +
+                        "        <my_str>foo</my_str>" +
+                        "    </document>" +
+                        "    <document documenttype='simple' documentid='id:simple:simple::1'>" +
+                        "        <my_str>bar</my_str>" +
+                        "    </document>" +
+                        "    <remove documenttype='simple' documentid='id:simple:simple::2'/>" +
+                        "</vespafeed>",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
+        assertEquals(115, dump.size());
+        assertEquals("[\n{\"id\":\"id:simple:simple::0\",\"fields\":{\"my_str\":\"foo\"}},\n {\"id\":\"id:simple:simple::1\",\"fields\":{\"my_str\":\"bar\"}}\n]", dump.toString());
+        assertFeed(dump.toString(),
+                new MessageHandler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*2,.+\n");
+    }
+
+    @Test
     public void requireThatJsonFeederWorks() throws Throwable {
         assertFeed("[" +
                         "  { \"put\": \"id:simple:simple::0\", \"fields\": { \"my_str\":\"foo\"}}," +
@@ -105,7 +175,7 @@ public class SimpleFeederTest {
                                            "    <document documenttype='simple' documentid='doc:scheme:0'/>" +
                                            "</vespafeed>",
                                            null);
-        getSourceSession(driver).close();
+        driver.feeder.getSourceSession().close();
         try {
             driver.run();
             fail();
@@ -156,12 +226,8 @@ public class SimpleFeederTest {
         assertTrue(driver.close());
     }
 
-    private static SourceSession getSourceSession(TestDriver driver) {
-        return (SourceSession)getField(driver.feeder, "session");
-    }
-
     private static ThrottlePolicy getThrottlePolicy(TestDriver driver) {
-        return (ThrottlePolicy)getField(getSourceSession(driver), "throttlePolicy");
+        return (ThrottlePolicy)getField(driver.feeder.getSourceSession(), "throttlePolicy");
     }
 
     private static Object getField(Object obj, String fieldName) {
@@ -174,9 +240,12 @@ public class SimpleFeederTest {
         }
     }
 
-    private static void assertFeed(String in, MessageHandler validator, String expectedErr, String expectedOut)
+    private static void assertFeed(String in, MessageHandler validator, String expectedErr, String expectedOut) throws Throwable {
+        assertFeed(new FeederParams(), in, validator, expectedErr, expectedOut);
+    }
+    private static void assertFeed(FeederParams params, String in, MessageHandler validator, String expectedErr, String expectedOut)
             throws Throwable {
-        TestDriver driver = new TestDriver(new FeederParams(), in, validator);
+        TestDriver driver = new TestDriver(params, in, validator);
         driver.run();
         assertMatches(expectedErr, new String(driver.err.toByteArray(), StandardCharsets.UTF_8));
         assertMatches(expectedOut, new String(driver.out.toByteArray(), StandardCharsets.UTF_8));
@@ -209,7 +278,7 @@ public class SimpleFeederTest {
             feeder.run();
         }
 
-        boolean close() {
+        boolean close() throws Exception {
             feeder.close();
             server.close();
             return true;

@@ -5,6 +5,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.json.JsonFeedReader;
+import com.yahoo.document.json.JsonWriter;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
@@ -25,6 +26,7 @@ import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -43,9 +45,7 @@ public class SimpleFeeder implements ReplyHandler {
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final InputStream in;
     private final PrintStream out;
-    private final PrintStream err;
     private final RPCMessageBus mbus;
-    private final Route route;
     private final SourceSession session;
     private final long startTime = System.currentTimeMillis();
     private final AtomicReference<Throwable> failure = new AtomicReference<>(null);
@@ -56,43 +56,115 @@ public class SimpleFeeder implements ReplyHandler {
     private long nextReport = startTime + REPORT_INTERVAL;
     private long sumLatency = 0;
     private final int numThreads;
+    private final Destination destination;
 
     public static void main(String[] args) throws Throwable {
         new SimpleFeeder(new FeederParams().parseArgs(args)).run().close();
     }
 
+    private interface Destination {
+        void send(VespaXMLFeedReader.Operation op);
+        void close() throws Exception;
+    }
+
+    private static class MbusDestination implements Destination {
+        private final PrintStream err;
+        private final Route route;
+        private final SourceSession session;
+        private final AtomicReference<Throwable> failure;
+        MbusDestination(SourceSession session, Route route, AtomicReference<Throwable> failure, PrintStream err) {
+            this.route = route;
+            this.err = err;
+            this.session = session;
+            this.failure = failure;
+        }
+        public void send(VespaXMLFeedReader.Operation op) {
+            Message msg = newMessage(op);
+            if (msg == null) {
+                err.println("ignoring operation; " + op.getType());
+                return;
+            }
+            msg.setContext(System.currentTimeMillis());
+            msg.setRoute(route);
+            try {
+                Error err = session.sendBlocking(msg).getError();
+                if (err != null) {
+                    failure.set(new IOException(err.toString()));
+                }
+            } catch (InterruptedException e) {}
+        }
+        public void close() throws Exception {
+            session.destroy();
+        }
+    }
+
+    private static class JsonDestination implements Destination {
+        private final OutputStream outputStream;
+        private final JsonWriter writer;
+        private final AtomicLong numReplies;
+        private final AtomicReference<Throwable> failure;
+        private boolean isFirst = true;
+        JsonDestination(OutputStream outputStream, AtomicReference<Throwable> failure, AtomicLong numReplies) {
+            this.outputStream = outputStream;
+            writer = new JsonWriter(outputStream);
+            this.numReplies = numReplies;
+            this.failure = failure;
+            try {
+                outputStream.write('[');
+                outputStream.write('\n');
+            } catch (IOException e) {
+                failure.set(e);
+            }
+        }
+        public void send(VespaXMLFeedReader.Operation op) {
+            if (op.getType() == VespaXMLFeedReader.OperationType.DOCUMENT) {
+                if (!isFirst) {
+                    try {
+                        outputStream.write(',');
+                        outputStream.write('\n');
+                    } catch (IOException e) {
+                        failure.set(e);
+                    }
+                } else {
+                    isFirst = false;
+                }
+                writer.write(op.getDocument());
+            }
+            numReplies.incrementAndGet();
+        }
+        public void close() throws Exception {
+            outputStream.write('\n');
+            outputStream.write(']');
+            outputStream.close();
+        }
+
+    }
+
     SimpleFeeder(FeederParams params) {
-        this.in = params.getStdIn();
-        this.out = params.getStdOut();
-        this.err = params.getStdErr();
-        this.route = params.getRoute();
-        this.numThreads = params.getNumDispatchThreads();
-        this.mbus = newMessageBus(docTypeMgr, params.getConfigId());
-        this.session = newSession(mbus, this, params.isSerialTransferEnabled());
-        this.docTypeMgr.configure(params.getConfigId());
+        in = params.getStdIn();
+        out = params.getStdOut();
+        numThreads = params.getNumDispatchThreads();
+        mbus = newMessageBus(docTypeMgr, params.getConfigId());
+        session = newSession(mbus, this, params.isSerialTransferEnabled());
+        docTypeMgr.configure(params.getConfigId());
+        destination = (params.getDumpStream() != null)
+                ? new JsonDestination(params.getDumpStream(), failure, numReplies)
+                : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
     }
 
     private void sendOperation(VespaXMLFeedReader.Operation op) {
-        Message msg = newMessage(op);
-        if (msg == null) {
-            err.println("ignoring operation; " + op.getType());
-            return;
-        }
-        msg.setContext(System.currentTimeMillis());
-        msg.setRoute(route);
-        try {
-            Error err = session.sendBlocking(msg).getError();
-            if (err != null) {
-                failure.set(new IOException(err.toString()));
-            }
-        } catch (InterruptedException e) {}
+        destination.send(op);
     }
 
+    SourceSession getSourceSession() { return session; }
     private FeedReader createFeedReader() throws Exception {
         in.mark(8);
-        byte b[] = new byte[1];
-        in.read(b);
+        byte [] b = new byte[1];
+        int numRead = in.read(b);
         in.reset();
+        if (numRead != b.length) {
+            throw new IllegalArgumentException("Need to read " + b.length + " bytes to detect format. Got " + numRead + " bytes.");
+        }
         if (b[0] == '[') {
             return new JsonFeedReader(in, docTypeMgr);
         } else {
@@ -134,12 +206,12 @@ public class SimpleFeeder implements ReplyHandler {
         return this;
     }
 
-    void close() {
-        session.destroy();
+    void close() throws Exception {
+        destination.close();
         mbus.destroy();
     }
 
-    private Message newMessage(VespaXMLFeedReader.Operation op) {
+    private static Message newMessage(VespaXMLFeedReader.Operation op) {
         switch (op.getType()) {
         case DOCUMENT: {
             PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(op.getDocument()));
