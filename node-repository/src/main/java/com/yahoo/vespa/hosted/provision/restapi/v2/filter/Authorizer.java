@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.apache.http.NameValuePair;
@@ -28,16 +30,23 @@ import java.util.stream.Collectors;
  */
 public class Authorizer implements BiPredicate<NodePrincipal, URI> {
     private final NodeRepository nodeRepository;
-    private final AthenzIdentity controllerIdentity;
+    private final String athenzProviderHostname;
+    private final AthenzIdentity controllerHostIdentity;
     private final Set<AthenzIdentity> trustedIdentities;
     private final Set<AthenzIdentity> hostAdminIdentities;
 
-    Authorizer(NodeRepository nodeRepository, AthenzIdentity controllerIdentity, AthenzIdentity configServerIdentity,
-               AthenzIdentity proxyIdentity, AthenzIdentity tenantIdentity) {
+    Authorizer(NodeRepository nodeRepository, ConfigServerSecurityConfig securityConfig) {
+        AthenzIdentity configServerHostIdentity = AthenzIdentities.from(securityConfig.configServerHostIdentity());
+
         this.nodeRepository = nodeRepository;
-        this.controllerIdentity = controllerIdentity;
-        this.trustedIdentities = Set.of(controllerIdentity, configServerIdentity);
-        this.hostAdminIdentities = Set.of(controllerIdentity, configServerIdentity, proxyIdentity, tenantIdentity);
+        this.athenzProviderHostname = securityConfig.athenzProviderHostname();
+        this.controllerHostIdentity = AthenzIdentities.from(securityConfig.controllerHostIdentity());
+        this.trustedIdentities = Set.of(controllerHostIdentity, configServerHostIdentity);
+        this.hostAdminIdentities = Set.of(
+                controllerHostIdentity,
+                configServerHostIdentity,
+                AthenzIdentities.from(securityConfig.tenantHostIdentity()),
+                AthenzIdentities.from(securityConfig.proxyHostIdentity()));
     }
 
     /** Returns whether principal is authorized to access given URI */
@@ -51,7 +60,7 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
 
             // Only controller can access everything else in flags
             if (uri.getPath().startsWith("/flags/v1/")) {
-                return principal.getAthenzIdentityName().get().equals(controllerIdentity);
+                return principal.getAthenzIdentityName().get().equals(controllerHostIdentity);
             }
 
             // Trusted services can access everything
@@ -63,7 +72,7 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
         if (principal.getHostname().isPresent()) {
             String hostname = principal.getHostname().get();
             if (isAthenzProviderApi(uri)) {
-                return hostname.equals(NodeIdentifier.ZTS_AWS_IDENTITY) || hostname.equals(NodeIdentifier.ZTS_ON_PREM_IDENTITY);
+                return athenzProviderHostname.equals(hostname);
             }
 
             // Individual nodes can only access their own resources

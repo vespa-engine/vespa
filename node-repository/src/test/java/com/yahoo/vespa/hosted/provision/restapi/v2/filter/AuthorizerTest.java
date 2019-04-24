@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
@@ -17,6 +16,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.ATHENZ_PROVIDER_HOSTNAME;
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.CONFIG_SERVER_IDENTITY;
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.CONTROLLER_IDENTITY;
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.SECURITY_CONFIG;
+import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifierTest.TENANT_HOST_IDENTITY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -25,22 +29,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class AuthorizerTest {
 
-    private static final String CONTROLLER_IDENTITY = "vespa.controller";
-    private static final String CONFIG_SERVER_IDENTITY = "vespa.configserver";
-    private static final String PROXY_IDENTITY = "vespa.proxy";
-    private static final String TENANT_HOST_IDENTITY = "vespa.tenant-host";
-
     private Authorizer authorizer;
 
     @Before
     public void before() {
         NodeFlavors flavors = new MockNodeFlavors();
         MockNodeRepository nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
-        authorizer = new Authorizer(nodeRepository,
-                AthenzIdentities.from(CONTROLLER_IDENTITY),
-                AthenzIdentities.from(CONFIG_SERVER_IDENTITY),
-                AthenzIdentities.from(PROXY_IDENTITY),
-                AthenzIdentities.from(TENANT_HOST_IDENTITY));
+        authorizer = new Authorizer(nodeRepository, SECURITY_CONFIG);
 
         Set<String> ipAddresses = Set.of("127.0.0.1", "::1");
         Flavor flavor = flavors.getFlavorOrThrow("default");
@@ -170,8 +165,8 @@ public class AuthorizerTest {
 
     @Test
     public void zts_allowed_for_athenz_provider_api() {
-        assertTrue(authorizedLegacyNode(NodeIdentifier.ZTS_AWS_IDENTITY, "/athenz/v1/provider/refresh"));
-        assertTrue(authorizedLegacyNode(NodeIdentifier.ZTS_ON_PREM_IDENTITY, "/athenz/v1/provider/instance"));
+        assertTrue(authorizedLegacyNode(ATHENZ_PROVIDER_HOSTNAME, "/athenz/v1/provider/refresh"));
+        assertTrue(authorizedLegacyNode(ATHENZ_PROVIDER_HOSTNAME, "/athenz/v1/provider/instance"));
     }
 
     private boolean authorizedTenantNode(String hostname, String path) {
