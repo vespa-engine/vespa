@@ -189,7 +189,7 @@ L4SkipEncoder::write_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip)
     encode_skip(zc_buf, l3_skip);
 }
 
-};
+}
 
 Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
     : _minChunkDocs(1 << 30),
