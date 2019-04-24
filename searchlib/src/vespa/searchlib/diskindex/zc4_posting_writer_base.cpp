@@ -8,6 +8,189 @@ using search::index::PostingListParams;
 
 namespace search::diskindex {
 
+namespace {
+
+class DocIdEncoder {
+protected:
+    uint32_t _doc_id;
+    uint32_t _doc_id_pos;
+    uint32_t _feature_pos;
+    using DocIdAndFeatureSize = std::pair<uint32_t, uint32_t>;
+
+public:
+    DocIdEncoder()
+        : _doc_id(0u),
+          _doc_id_pos(0u),
+          _feature_pos(0u)
+    {
+    }
+
+    void write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size);
+    void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
+    uint32_t get_doc_id() const { return _doc_id; }
+    uint32_t get_doc_id_pos() const { return _doc_id_pos; }
+    uint32_t get_feature_pos() const { return _feature_pos; }
+};
+
+class L1SkipEncoder : public DocIdEncoder {
+protected:
+    uint32_t _stride_check;
+    uint32_t _l1_skip_pos;
+    const bool _encode_features;
+
+public:
+    L1SkipEncoder(bool encode_features)
+        : DocIdEncoder(),
+          _stride_check(0u),
+          _l1_skip_pos(0u),
+          _encode_features(encode_features)
+    {
+    }
+
+    void encode_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder);
+    void write_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder);
+    bool should_write_skip(uint32_t stride) { return ++_stride_check >= stride; }
+    void dec_stride_check() { --_stride_check; }
+    void write_partial_skip(ZcBuf &zc_buf, uint32_t doc_id);
+    uint32_t get_l1_skip_pos() const { return _l1_skip_pos; }
+};
+
+struct L2SkipEncoder : public L1SkipEncoder {
+protected:
+    uint32_t _l2_skip_pos;
+
+public:
+    L2SkipEncoder(bool encode_features)
+        : L1SkipEncoder(encode_features),
+          _l2_skip_pos(0u)
+    {
+    }
+
+    void encode_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip);
+    void write_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip);
+    uint32_t get_l2_skip_pos() const { return _l2_skip_pos; }
+};
+
+class L3SkipEncoder : public L2SkipEncoder {
+protected:
+    uint32_t _l3_skip_pos;
+
+public:
+    L3SkipEncoder(bool encode_features)
+        : L2SkipEncoder(encode_features),
+          _l3_skip_pos(0u)
+    {
+    }
+
+    void encode_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip);
+    void write_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip);
+    uint32_t get_l3_skip_pos() const { return _l3_skip_pos; }
+};
+
+class L4SkipEncoder : public L3SkipEncoder {
+
+public:
+    L4SkipEncoder(bool encode_features)
+        : L3SkipEncoder(encode_features)
+    {
+    }
+
+    void encode_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip);
+    void write_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip);
+};
+
+void
+DocIdEncoder::write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size)
+{
+    _feature_pos += doc_id_and_feature_size.second;
+    zc_buf.encode(doc_id_and_feature_size.first - _doc_id - 1);
+    _doc_id = doc_id_and_feature_size.first;
+    _doc_id_pos = zc_buf.size();
+}
+
+void
+L1SkipEncoder::encode_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder)
+{
+    _stride_check = 0;
+    // doc id
+    uint32_t doc_id_delta = doc_id_encoder.get_doc_id() - _doc_id;
+    assert(static_cast<int32_t>(doc_id_delta) > 0);
+    zc_buf.encode(doc_id_delta - 1);
+    _doc_id = doc_id_encoder.get_doc_id();
+    // doc id pos
+    zc_buf.encode(doc_id_encoder.get_doc_id_pos() - _doc_id_pos - 1);
+    _doc_id_pos = doc_id_encoder.get_doc_id_pos();
+    if (_encode_features) {
+        // features pos
+        zc_buf.encode(doc_id_encoder.get_feature_pos() - _feature_pos - 1);
+        _feature_pos = doc_id_encoder.get_feature_pos();
+    }
+}
+
+void
+L1SkipEncoder::write_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder)
+{
+    encode_skip(zc_buf, doc_id_encoder);
+    _l1_skip_pos = zc_buf.size();
+}
+
+void
+L1SkipEncoder::write_partial_skip(ZcBuf &zc_buf, uint32_t doc_id)
+{
+    if (zc_buf.size() > 0) {
+        zc_buf.encode(doc_id - _doc_id - 1);
+    }
+}
+
+void
+L2SkipEncoder::encode_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip)
+{
+    L1SkipEncoder::encode_skip(zc_buf, l1_skip);
+    // L1 skip pos
+    zc_buf.encode(l1_skip.get_l1_skip_pos() - _l1_skip_pos - 1);
+    _l1_skip_pos = l1_skip.get_l1_skip_pos();
+}
+
+void
+L2SkipEncoder::write_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip)
+{
+    encode_skip(zc_buf, l1_skip);
+    _l2_skip_pos = zc_buf.size();
+}
+
+void
+L3SkipEncoder::encode_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip)
+{
+    L2SkipEncoder::encode_skip(zc_buf, l2_skip);
+    // L2 skip pos
+    zc_buf.encode(l2_skip.get_l2_skip_pos() - _l2_skip_pos - 1);
+    _l2_skip_pos = l2_skip.get_l2_skip_pos();
+}
+
+void
+L3SkipEncoder::write_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip)
+{
+    encode_skip(zc_buf, l2_skip);
+    _l3_skip_pos = zc_buf.size();
+}
+
+void
+L4SkipEncoder::encode_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip)
+{
+    L3SkipEncoder::encode_skip(zc_buf, l3_skip);
+    // L3 skip pos
+    zc_buf.encode(l3_skip.get_l3_skip_pos() - _l3_skip_pos - 1);
+    _l3_skip_pos = l3_skip.get_l3_skip_pos();
+}
+
+void
+L4SkipEncoder::write_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip)
+{
+    encode_skip(zc_buf, l3_skip);
+}
+
+};
+
 Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
     : _minChunkDocs(1 << 30),
       _minSkipDocs(64),
@@ -45,159 +228,42 @@ Zc4PostingWriterBase::~Zc4PostingWriterBase()
 #define L4SKIPSTRIDE 8
 
 void
-Zc4PostingWriterBase::calc_skip_info(bool encodeFeatures)
+Zc4PostingWriterBase::calc_skip_info(bool encode_features)
 {
-    uint32_t lastDocId = 0u;
-    uint32_t lastL1SkipDocId = 0u;
-    uint32_t lastL1SkipDocIdPos = 0;
-    uint32_t lastL1SkipFeaturePos = 0;
-    uint32_t lastL2SkipDocId = 0u;
-    uint32_t lastL2SkipDocIdPos = 0;
-    uint32_t lastL2SkipFeaturePos = 0;
-    uint32_t lastL2SkipL1SkipPos = 0;
-    uint32_t lastL3SkipDocId = 0u;
-    uint32_t lastL3SkipDocIdPos = 0;
-    uint32_t lastL3SkipFeaturePos = 0;
-    uint32_t lastL3SkipL1SkipPos = 0;
-    uint32_t lastL3SkipL2SkipPos = 0;
-    uint32_t lastL4SkipDocId = 0u;
-    uint32_t lastL4SkipDocIdPos = 0;
-    uint32_t lastL4SkipFeaturePos = 0;
-    uint32_t lastL4SkipL1SkipPos = 0;
-    uint32_t lastL4SkipL2SkipPos = 0;
-    uint32_t lastL4SkipL3SkipPos = 0;
-    unsigned int l1SkipCnt = 0;
-    unsigned int l2SkipCnt = 0;
-    unsigned int l3SkipCnt = 0;
-    unsigned int l4SkipCnt = 0;
-    uint64_t featurePos = 0;
-
-    std::vector<DocIdAndFeatureSize>::const_iterator dit = _docIds.begin();
-    std::vector<DocIdAndFeatureSize>::const_iterator dite = _docIds.end();
-
+    DocIdEncoder doc_id_encoder;
+    L1SkipEncoder l1_skip_encoder(encode_features);
+    L2SkipEncoder l2_skip_encoder(encode_features);
+    L3SkipEncoder l3_skip_encoder(encode_features);
+    L4SkipEncoder l4_skip_encoder(encode_features);
+    l1_skip_encoder.dec_stride_check();
     if (!_counts._segments.empty()) {
-        lastDocId = _counts._segments.back()._lastDoc;
-        lastL1SkipDocId = lastDocId;
-        lastL2SkipDocId = lastDocId;
-        lastL3SkipDocId = lastDocId;
-        lastL4SkipDocId = lastDocId;
+        uint32_t doc_id = _counts._segments.back()._lastDoc;
+        doc_id_encoder.set_doc_id(doc_id);
+        l1_skip_encoder.set_doc_id(doc_id);
+        l2_skip_encoder.set_doc_id(doc_id);
+        l3_skip_encoder.set_doc_id(doc_id);
+        l4_skip_encoder.set_doc_id(doc_id);
     }
-
-    for (; dit != dite; ++dit) {
-        if (l1SkipCnt >= L1SKIPSTRIDE) {
-            // L1 docid delta
-            uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
-            assert(static_cast<int32_t>(docIdDelta) > 0);
-            _l1Skip.encode(docIdDelta - 1);
-            lastL1SkipDocId = lastDocId;
-            // L1 docid pos
-            uint64_t docIdPos = _zcDocIds.size();
-            _l1Skip.encode(docIdPos - lastL1SkipDocIdPos - 1);
-            lastL1SkipDocIdPos = docIdPos;
-            if (encodeFeatures) {
-                // L1 features pos
-                _l1Skip.encode(featurePos - lastL1SkipFeaturePos - 1);
-                lastL1SkipFeaturePos = featurePos;
-            }
-            l1SkipCnt = 0;
-            ++l2SkipCnt;
-            if (l2SkipCnt >= L2SKIPSTRIDE) {
-                // L2 docid delta
-                docIdDelta = lastDocId - lastL2SkipDocId;
-                assert(static_cast<int32_t>(docIdDelta) > 0);
-                _l2Skip.encode(docIdDelta - 1);
-                lastL2SkipDocId = lastDocId;
-                // L2 docid pos
-                docIdPos = _zcDocIds.size();
-                _l2Skip.encode(docIdPos - lastL2SkipDocIdPos - 1);
-                lastL2SkipDocIdPos = docIdPos;
-                if (encodeFeatures) {
-                    // L2 features pos
-                    _l2Skip.encode(featurePos - lastL2SkipFeaturePos - 1);
-                    lastL2SkipFeaturePos = featurePos;
-                }
-                // L2 L1Skip pos
-                uint64_t l1SkipPos = _l1Skip.size();
-                _l2Skip.encode(l1SkipPos - lastL2SkipL1SkipPos - 1);
-                lastL2SkipL1SkipPos = l1SkipPos;
-                l2SkipCnt = 0;
-                ++l3SkipCnt;
-                if (l3SkipCnt >= L3SKIPSTRIDE) {
-                    // L3 docid delta
-                    docIdDelta = lastDocId - lastL3SkipDocId;
-                    assert(static_cast<int32_t>(docIdDelta) > 0);
-                    _l3Skip.encode(docIdDelta - 1);
-                    lastL3SkipDocId = lastDocId;
-                    // L3 docid pos
-                    docIdPos = _zcDocIds.size();
-                    _l3Skip.encode(docIdPos - lastL3SkipDocIdPos - 1);
-                    lastL3SkipDocIdPos = docIdPos;
-                    if (encodeFeatures) {
-                        // L3 features pos
-                        _l3Skip.encode(featurePos - lastL3SkipFeaturePos - 1);
-                        lastL3SkipFeaturePos = featurePos;
-                    }
-                    // L3 L1Skip pos
-                    l1SkipPos = _l1Skip.size();
-                    _l3Skip.encode(l1SkipPos - lastL3SkipL1SkipPos - 1);
-                    lastL3SkipL1SkipPos = l1SkipPos;
-                    // L3 L2Skip pos
-                    uint64_t l2SkipPos = _l2Skip.size();
-                    _l3Skip.encode(l2SkipPos - lastL3SkipL2SkipPos - 1);
-                    lastL3SkipL2SkipPos = l2SkipPos;
-                    l3SkipCnt = 0;
-                    ++l4SkipCnt;
-                    if (l4SkipCnt >= L4SKIPSTRIDE) {
-                        // L4 docid delta
-                        docIdDelta = lastDocId - lastL4SkipDocId;
-                        assert(static_cast<int32_t>(docIdDelta) > 0);
-                        _l4Skip.encode(docIdDelta - 1);
-                        lastL4SkipDocId = lastDocId;
-                        // L4 docid pos
-                        docIdPos = _zcDocIds.size();
-                        _l4Skip.encode(docIdPos - lastL4SkipDocIdPos - 1);
-                        lastL4SkipDocIdPos = docIdPos;
-                        if (encodeFeatures) {
-                            // L4 features pos
-                            _l4Skip.encode(featurePos - lastL4SkipFeaturePos - 1);
-                            lastL4SkipFeaturePos = featurePos;
-                        }
-                        // L4 L1Skip pos
-                        l1SkipPos = _l1Skip.size();
-                        _l4Skip.encode(l1SkipPos - lastL4SkipL1SkipPos - 1);
-                        lastL4SkipL1SkipPos = l1SkipPos;
-                        // L4 L2Skip pos
-                        l2SkipPos = _l2Skip.size();
-                        _l4Skip.encode(l2SkipPos - lastL4SkipL2SkipPos - 1);
-                        lastL4SkipL2SkipPos = l2SkipPos;
-                        // L4 L3Skip pos
-                        uint64_t l3SkipPos = _l3Skip.size();
-                        _l4Skip.encode(l3SkipPos - lastL4SkipL3SkipPos - 1);
-                        lastL4SkipL3SkipPos = l3SkipPos;
-                        l4SkipCnt = 0;
+    for (const auto &doc_id_and_feature_size : _docIds) {
+        if (l1_skip_encoder.should_write_skip(L1SKIPSTRIDE)) {
+            l1_skip_encoder.write_skip(_l1Skip, doc_id_encoder);
+            if (l2_skip_encoder.should_write_skip(L2SKIPSTRIDE)) {
+                l2_skip_encoder.write_skip(_l2Skip, l1_skip_encoder);
+                if (l3_skip_encoder.should_write_skip(L3SKIPSTRIDE)) {
+                    l3_skip_encoder.write_skip(_l3Skip, l2_skip_encoder);
+                    if (l4_skip_encoder.should_write_skip(L4SKIPSTRIDE)) {
+                        l4_skip_encoder.write_skip(_l4Skip, l3_skip_encoder);
                     }
                 }
             }
         }
-        uint32_t docId = dit->first;
-        featurePos += dit->second;
-        _zcDocIds.encode(docId - lastDocId - 1);
-        lastDocId = docId;
-        ++l1SkipCnt;
+        doc_id_encoder.write(_zcDocIds, doc_id_and_feature_size);
     }
     // Extra partial entries for skip tables to simplify iterator during search
-    if (_l1Skip.size() > 0) {
-        _l1Skip.encode(lastDocId - lastL1SkipDocId - 1);
-    }
-    if (_l2Skip.size() > 0) {
-        _l2Skip.encode(lastDocId - lastL2SkipDocId - 1);
-    }
-    if (_l3Skip.size() > 0) {
-        _l3Skip.encode(lastDocId - lastL3SkipDocId - 1);
-    }
-    if (_l4Skip.size() > 0) {
-        _l4Skip.encode(lastDocId - lastL4SkipDocId - 1);
-    }
+    l1_skip_encoder.write_partial_skip(_l1Skip, doc_id_encoder.get_doc_id());
+    l2_skip_encoder.write_partial_skip(_l2Skip, doc_id_encoder.get_doc_id());
+    l3_skip_encoder.write_partial_skip(_l3Skip, doc_id_encoder.get_doc_id());
+    l4_skip_encoder.write_partial_skip(_l4Skip, doc_id_encoder.get_doc_id());
 }
 
 void
