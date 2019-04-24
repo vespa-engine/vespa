@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -13,10 +12,8 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 public class TimeBudgetTest {
-    private final Clock clock = mock(Clock.class);
 
     @Test
     public void testBasics() {
