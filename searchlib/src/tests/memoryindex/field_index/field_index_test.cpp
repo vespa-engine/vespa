@@ -519,8 +519,6 @@ struct FieldIndexCollectionTest : public ::testing::Test {
     ~FieldIndexCollectionTest() {}
 };
 
-// TODO: Rewrite most tests to use FieldIndex directly instead of going via FieldIndexCollection.
-
 TEST_F(FieldIndexTest, require_that_fresh_insert_works)
 {
     EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
