@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -36,7 +35,6 @@ public class LoadBalancerExpirerTest {
                                                               Duration.ofDays(1),
                                                               new JobControl(tester.nodeRepository().database()),
                                                               tester.loadBalancerService());
-        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, true);
         Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
 
         // Deploy two applications with load balancers

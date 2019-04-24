@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import org.junit.Test;
 
@@ -57,15 +56,9 @@ public class AclProvisioningTest {
         Supplier<List<NodeAcl>> nodeAcls = () -> tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is active nodes in same application, proxy nodes and config servers
-        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost), nodeAcls.get());
-
-        // Allocate load balancer
-        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, application, true);
-        deploy(application, 2);
-
-        // Load balancer networks are added to ACLs
         assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost),
-                   ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"), nodeAcls.get());
+                   ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
+                   nodeAcls.get());
     }
 
     @Test

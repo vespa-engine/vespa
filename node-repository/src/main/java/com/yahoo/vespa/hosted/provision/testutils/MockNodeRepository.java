@@ -20,7 +20,6 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -85,8 +84,10 @@ public class MockNodeRepository extends NodeRepository {
 
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
-        nodes.add(createNode("node7", "host7.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
-        // 8 and 9 are added by web service calls
+        Node node7 = createNode("node7", "host7.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+        nodes.add(node7);
+
+        // 8, 9, 11 and 12 are added by web service calls
         Node node10 = createNode("node10", "host10.yahoo.com", ipAddresses, Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
@@ -94,6 +95,11 @@ public class MockNodeRepository extends NodeRepository {
                 .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:5.104.142"));
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
+
+        Node node13 = createNode("node13", "host13.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.tenant);
+        Node node14 = createNode("node14", "host14.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.tenant);
+        nodes.add(node13);
+        nodes.add(node14);
 
         Node node55 = createNode("node55", "host55.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodes.add(node55.with(node55.status().withWantToRetire(true).withWantToDeprovision(true)));
@@ -109,18 +115,17 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(createNode("cfg1", "cfg1.yahoo.com", Collections.singleton("127.0.1.1"), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.config));
         nodes.add(createNode("cfg2", "cfg2.yahoo.com", Collections.singleton("127.0.1.2"), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.config));
 
+        // Ready all nodes, except 7 and 55
         nodes = addNodes(nodes);
-        nodes.remove(6);
-        nodes.remove(7);
+        nodes.remove(node7);
+        nodes.remove(node55);
         nodes = setDirty(nodes, Agent.system, getClass().getSimpleName());
         setReady(nodes, Agent.system, getClass().getSimpleName());
 
-        fail("host5.yahoo.com", Agent.system, getClass().getSimpleName());
-        dirtyRecursively("host55.yahoo.com", Agent.system, getClass().getSimpleName());
+        fail(node5.hostname(), Agent.system, getClass().getSimpleName());
+        dirtyRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
-        // TODO: Remove this once feature flag is removed
-        this.flags().setEnabled(FlagId.exclusiveLoadBalancer, zoneApp, true);
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,
                                                       ClusterSpec.Id.from("node-admin"),
                                                       Version.fromString("6.42"),
@@ -148,6 +153,13 @@ public class MockNodeRepository extends NodeRepository {
                                                    Version.fromString("6.42"),
                                                    false, Collections.emptySet());
         activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2, Optional.of("docker"), false, true), 1, null), app3, provisioner);
+
+        ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
+        ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container,
+                                                   ClusterSpec.Id.from("id4"),
+                                                   Version.fromString("6.42"),
+                                                   false, Collections.emptySet());
+        activate(provisioner.prepare(app4, cluster4, Capacity.fromNodeCount(2, Optional.of("large"), false, true), 1, null), app4, provisioner);
     }
 
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {

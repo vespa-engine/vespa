@@ -10,7 +10,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
@@ -44,7 +43,6 @@ public class LoadBalancerProvisionerTest {
         ClusterSpec.Id containerCluster1 = ClusterSpec.Id.from("qrs1");
         ClusterSpec.Id contentCluster = ClusterSpec.Id.from("content");
         Set<RotationName> rotationsCluster1 = Set.of(RotationName.from("r1-1"), RotationName.from("r1-2"));
-        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, true);
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1, rotationsCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));

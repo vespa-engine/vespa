@@ -15,7 +15,6 @@ import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.hosted.provision.flag.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
@@ -87,7 +86,6 @@ public class NodeRepository extends AbstractComponent {
     private final OsVersions osVersions;
     private final FirmwareChecks firmwareChecks;
     private final DockerImages dockerImages;
-    private final Flags flags;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -112,7 +110,6 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this.db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
-        this.flags = new Flags(this.db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -136,11 +133,6 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the docker images to use for nodes in this. */
     public DockerImages dockerImages() { return dockerImages; }
-
-    /** Returns feature flags of this node repository */
-    public Flags flags() {
-        return flags;
-    }
 
     // ---------------- Query API ----------------------------------------------------------------
 
