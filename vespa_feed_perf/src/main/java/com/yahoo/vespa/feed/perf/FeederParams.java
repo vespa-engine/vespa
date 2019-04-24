@@ -7,100 +7,103 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class FeederParams {
+class FeederParams {
 
     private InputStream stdIn = System.in;
     private PrintStream stdErr = System.err;
     private PrintStream stdOut = System.out;
     private Route route = Route.parse("default");
     private String configId = "client";
+    private OutputStream dumpStream = null;
     private boolean serialTransferEnabled = false;
     private int numDispatchThreads = 1;
 
-    public InputStream getStdIn() {
+    InputStream getStdIn() {
         return stdIn;
     }
 
-    public FeederParams setStdIn(InputStream stdIn) {
+    FeederParams setStdIn(InputStream stdIn) {
         this.stdIn = stdIn;
         return this;
     }
 
-    public PrintStream getStdErr() {
+    PrintStream getStdErr() {
         return stdErr;
     }
 
-    public FeederParams setStdErr(PrintStream stdErr) {
+    FeederParams setStdErr(PrintStream stdErr) {
         this.stdErr = stdErr;
         return this;
     }
 
-    public PrintStream getStdOut() {
+    PrintStream getStdOut() {
         return stdOut;
     }
 
-    public FeederParams setStdOut(PrintStream stdOut) {
+    FeederParams setStdOut(PrintStream stdOut) {
         this.stdOut = stdOut;
         return this;
     }
 
-    public Route getRoute() {
+    Route getRoute() {
         return route;
     }
-
-    public FeederParams setRoute(Route route) {
-        this.route = new Route(route);
+    OutputStream getDumpStream() { return dumpStream; }
+    FeederParams setDumpStream(OutputStream dumpStream) {
+        this.dumpStream = dumpStream;
         return this;
     }
 
-    public String getConfigId() {
+    String getConfigId() {
         return configId;
     }
 
-    public FeederParams setConfigId(String configId) {
+    FeederParams setConfigId(String configId) {
         this.configId = configId;
         return this;
     }
 
-    public boolean isSerialTransferEnabled() {
+    boolean isSerialTransferEnabled() {
         return serialTransferEnabled;
     }
 
-    public FeederParams setSerialTransfer(boolean serial) {
+    FeederParams setSerialTransfer(boolean serial) {
         this.serialTransferEnabled = serial;
         return this;
     }
 
-    public int getNumDispatchThreads() { return numDispatchThreads; }
+    int getNumDispatchThreads() { return numDispatchThreads; }
 
-    public FeederParams parseArgs(String... args) throws ParseException {
+    FeederParams parseArgs(String... args) throws ParseException, FileNotFoundException {
         Options opts = new Options();
         opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation");
-        opts.addOption("n", "numthreads", true, "Number of clients for sending messages.");
+        opts.addOption("n", "numthreads", true, "Number of clients for sending messages. Anything, but 1 will bypass sequencing by document id.");
+        opts.addOption("r", "route", true, "Route for sending messages. default is 'default'....");
+        opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .v8) json will be produced if no extension.");
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
-        serialTransferEnabled = cmd.hasOption("s");
+        serialTransferEnabled = cmd.hasOption('s');
         if (cmd.hasOption('n')) {
             numDispatchThreads = Integer.valueOf(cmd.getOptionValue('n').trim());
         }
-        route = newRoute(cmd.getArgs());
+        if (cmd.hasOption('r')) {
+            route = Route.parse(cmd.getOptionValue('r').trim());
+        }
+        if (cmd.hasOption('o')) {
+            dumpStream = new FileOutputStream(new File(cmd.getOptionValue('o').trim()));
+        }
+
         return this;
     }
 
-    private static Route newRoute(String... args) {
-        if (args.length == 0) {
-            return Route.parse("default");
-        }
-        StringBuilder out = new StringBuilder();
-        for (String arg : args) {
-            out.append(arg).append(' ');
-        }
-        return Route.parse(out.toString());
-    }
 }
