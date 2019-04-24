@@ -279,6 +279,13 @@ public:
         }
     }
 
+    void transfer_meta_information_to(api::StorageReply& dest) {
+        dest.forceMsgId(_hdr.message_id());
+        dest.setPriority(static_cast<uint8_t>(_hdr.priority()));
+        dest.setResult(api::ReturnCode(static_cast<api::ReturnCode::Result>(_hdr.return_code_id()),
+                                       _hdr.return_code_message()));
+    }
+
     ProtobufType& response() noexcept { return *_proto_obj; }
     const ProtobufType& response() const noexcept { return *_proto_obj; }
 };
@@ -314,6 +321,7 @@ ProtocolSerialization7::decode_response(document::ByteBuffer& in_buf, Func&& f) 
     ResponseDecoder<ProtobufType> dec(in_buf);
     const auto& res = dec.response();
     auto reply = f(res);
+    dec.transfer_meta_information_to(*reply);
     return reply;
 }
 
@@ -374,9 +382,7 @@ std::unique_ptr<api::StorageReply>
 ProtocolSerialization7::decode_bucket_info_response(document::ByteBuffer& in_buf, Func&& f) const {
     return decode_bucket_response<ProtobufType>(in_buf, [&](const ProtobufType& res) {
         auto reply = f(res);
-        if (res.has_bucket_info()) {
-            reply->setBucketInfo(get_bucket_info(res.bucket_info()));
-        }
+        reply->setBucketInfo(get_bucket_info(res.bucket_info())); // If not present, default of all zeroes is correct
         return reply;
     });
 }

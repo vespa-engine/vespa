@@ -108,7 +108,7 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 // TODO replace with INSTANTIATE_TEST_SUITE_P on newer gtest versions
 INSTANTIATE_TEST_CASE_P(MultiVersionTest, StorageProtocolTest,
                         Values(vespalib::Version(6, 240, 0),
-                               vespalib::Version(7, 40, 5)),
+                               vespalib::Version(7, 41, 19)),
                         version_as_gtest_string);
 
 namespace {
@@ -191,7 +191,58 @@ TEST_P(StorageProtocolTest, response_without_remapped_bucket_preserves_original_
     EXPECT_FALSE(reply2->hasBeenRemapped());
     EXPECT_EQ(_bucket_id, reply2->getBucketId());
     EXPECT_EQ(document::BucketId(), reply2->getOriginalBucketId());
+}
 
+TEST_P(StorageProtocolTest, invalid_bucket_info_is_propagated) {
+    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    auto cmd2 = copyCommand(cmd);
+    auto reply = std::make_shared<PutReply>(*cmd2);
+    BucketInfo invalid_info;
+    EXPECT_FALSE(invalid_info.valid());
+    reply->setBucketInfo(invalid_info);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_EQ(invalid_info, reply2->getBucketInfo());
+    EXPECT_FALSE(reply2->getBucketInfo().valid());
+}
+
+TEST_P(StorageProtocolTest, all_zero_bucket_info_is_propagated) {
+    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    auto cmd2 = copyCommand(cmd);
+    auto reply = std::make_shared<PutReply>(*cmd2);
+    BucketInfo zero_info(0, 0, 0, 0, 0, false, false, 0);
+    reply->setBucketInfo(zero_info);
+    auto reply2 = copyReply(reply);
+
+    EXPECT_EQ(zero_info, reply2->getBucketInfo());
+}
+
+TEST_P(StorageProtocolTest, request_metadata_is_propagated) {
+    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    cmd->forceMsgId(12345);
+    cmd->setPriority(50);
+    cmd->setLoadType(_loadTypes["foo"]);
+    cmd->setSourceIndex(321);
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ(12345, cmd2->getMsgId());
+    EXPECT_EQ(50, cmd2->getPriority());
+    EXPECT_EQ(_loadTypes["foo"].getId(), cmd2->getLoadType().getId());
+    EXPECT_EQ(321, cmd2->getSourceIndex());
+}
+
+TEST_P(StorageProtocolTest, response_metadata_is_propagated) {
+    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    auto cmd2 = copyCommand(cmd);
+    auto reply = std::make_shared<PutReply>(*cmd2);
+    reply->forceMsgId(1234);
+    reply->setPriority(101);
+    ReturnCode result(ReturnCode::TEST_AND_SET_CONDITION_FAILED, "foo is not bar");
+    reply->setResult(result);
+
+    auto reply2 = copyReply(reply);
+    EXPECT_EQ(result, reply2->getResult());
+    EXPECT_EQ(1234, reply->getMsgId());
+    EXPECT_EQ(101, reply->getPriority());
 }
 
 TEST_P(StorageProtocolTest, update) {

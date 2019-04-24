@@ -34,7 +34,7 @@ StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const
 }
 
 namespace {
-    vespalib::Version version7_0(7, 40, 5);
+    vespalib::Version version7_0(7, 41, 19);
     vespalib::Version version6_0(6, 240, 0);
     vespalib::Version version5_2(5, 93, 30);
     vespalib::Version version5_1(5, 1, 0);
