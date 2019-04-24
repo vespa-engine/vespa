@@ -166,8 +166,9 @@ toString(FieldPositionsIterator posItr,
         first = false;
         if (hasElements) {
             ss << "[e=" << posItr.getElementId();
-            if (hasWeights)
+            if (hasWeights) {
                 ss << ",w=" << posItr.getElementWeight();
+            }
             ss << ",l=" << posItr.getElementLen() << "]";
         }
     }
@@ -410,6 +411,11 @@ public:
     {
     }
 
+    MyDrainRemoves(FieldIndex& field_index)
+            : _remover(field_index.getDocumentRemover())
+    {
+    }
+
     void drain(uint32_t docId) {
         _remover.remove(docId, *this);
     }
@@ -473,52 +479,76 @@ myCompactFeatures(FieldIndexCollection &fieldIndexes, ISequencedTaskExecutor &pu
 
 }
 
+Schema
+make_single_field_schema()
+{
+    Schema result;
+    result.addIndexField(Schema::IndexField("f0", DataType::STRING));
+    return result;
+}
+
 struct FieldIndexTest : public ::testing::Test {
-    Schema _schema;
-    FieldIndexTest() : _schema() {
-        _schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
-        _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
-        _schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
-        _schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
+    Schema schema;
+    FieldIndex idx;
+    FieldIndexTest()
+        : schema(make_single_field_schema()),
+          idx(schema, 0)
+    {
     }
-    const Schema & getSchema() const { return _schema; }
+};
+
+Schema
+make_multi_field_schema()
+{
+    Schema result;
+    result.addIndexField(Schema::IndexField("f0", DataType::STRING));
+    result.addIndexField(Schema::IndexField("f1", DataType::STRING));
+    result.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
+    result.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
+    return result;
+}
+
+struct FieldIndexCollectionTest : public ::testing::Test {
+    Schema schema;
+    FieldIndexCollection fic;
+    FieldIndexCollectionTest()
+        : schema(make_multi_field_schema()),
+          fic(schema)
+    {
+    }
+    ~FieldIndexCollectionTest() {}
 };
 
 // TODO: Rewrite most tests to use FieldIndex directly instead of going via FieldIndexCollection.
 
-TEST_F(FieldIndexTest, requireThatFreshInsertWorks)
+TEST_F(FieldIndexTest, require_that_fresh_insert_works)
 {
-    FieldIndexCollection fic(getSchema());
-    SequencedTaskExecutor pushThreads(2);
-    EXPECT_TRUE(assertPostingList("[]", fic.find("a", 0)));
-    EXPECT_TRUE(assertPostingList("[]", fic.findFrozen("a", 0)));
-    EXPECT_EQ(0u, fic.getNumUniqueWords());
-    WrapInserter(fic, 0).word("a").add(10).flush();
-    EXPECT_TRUE(assertPostingList("[10]", fic.find("a", 0)));
-    EXPECT_TRUE(assertPostingList("[]", fic.findFrozen("a", 0)));
-    myCommit(fic, pushThreads);
-    EXPECT_TRUE(assertPostingList("[10]", fic.findFrozen("a", 0)));
-    EXPECT_EQ(1u, fic.getNumUniqueWords());
+    EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
+    EXPECT_EQ(0u, idx.getNumUniqueWords());
+    WrapInserter(idx).word("a").add(10).flush();
+    EXPECT_TRUE(assertPostingList("[10]", idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
+    idx.commit();
+    EXPECT_TRUE(assertPostingList("[10]", idx.findFrozen("a")));
+    EXPECT_EQ(1u, idx.getNumUniqueWords());
 }
 
-TEST_F(FieldIndexTest, requireThatAppendInsertWorks)
+TEST_F(FieldIndexTest, require_that_append_insert_works)
 {
-    FieldIndexCollection fic(getSchema());
-    SequencedTaskExecutor pushThreads(2);
-    WrapInserter(fic, 0).word("a").add(10).flush().rewind().
-        word("a").add(5).flush();
-    EXPECT_TRUE(assertPostingList("[5,10]", fic.find("a", 0)));
-    EXPECT_TRUE(assertPostingList("[]", fic.findFrozen("a", 0)));
-    WrapInserter(fic, 0).rewind().word("a").add(20).flush();
-    EXPECT_TRUE(assertPostingList("[5,10,20]", fic.find("a", 0)));
-    EXPECT_TRUE(assertPostingList("[]", fic.findFrozen("a", 0)));
-    myCommit(fic, pushThreads);
-    EXPECT_TRUE(assertPostingList("[5,10,20]", fic.findFrozen("a", 0)));
+    WrapInserter(idx).word("a").add(10).flush().rewind().
+            word("a").add(5).flush();
+    EXPECT_TRUE(assertPostingList("[5,10]", idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
+    WrapInserter(idx).rewind().word("a").add(20).flush();
+    EXPECT_TRUE(assertPostingList("[5,10,20]", idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
+    idx.commit();
+    EXPECT_TRUE(assertPostingList("[5,10,20]", idx.findFrozen("a")));
 }
 
-TEST_F(FieldIndexTest, requireThatMultiplePostingListsCanExist)
+TEST_F(FieldIndexCollectionTest, require_that_multiple_posting_lists_across_multiple_fields_can_exist)
 {
-    FieldIndexCollection fic(getSchema());
     WrapInserter(fic, 0).word("a").add(10).word("b").add(11).add(15).flush();
     WrapInserter(fic, 1).word("a").add(5).word("b").add(12).flush();
     EXPECT_EQ(4u, fic.getNumUniqueWords());
@@ -530,28 +560,27 @@ TEST_F(FieldIndexTest, requireThatMultiplePostingListsCanExist)
     EXPECT_TRUE(assertPostingList("[]", fic.find("c", 0)));
 }
 
-TEST_F(FieldIndexTest, requireThatRemoveWorks)
+TEST_F(FieldIndexTest, require_that_remove_works)
 {
-    FieldIndexCollection fic(getSchema());
-    WrapInserter(fic, 0).word("a").remove(10).flush();
-    EXPECT_TRUE(assertPostingList("[]", fic.find("a", 0)));
-    WrapInserter(fic, 0).add(10).add(20).add(30).flush();
-    EXPECT_TRUE(assertPostingList("[10,20,30]", fic.find("a", 0)));
-    WrapInserter(fic, 0).rewind().word("a").remove(10).flush();
-    EXPECT_TRUE(assertPostingList("[20,30]", fic.find("a", 0)));
-    WrapInserter(fic, 0).remove(20).flush();
-    EXPECT_TRUE(assertPostingList("[30]", fic.find("a", 0)));
-    WrapInserter(fic, 0).remove(30).flush();
-    EXPECT_TRUE(assertPostingList("[]", fic.find("a", 0)));
-    EXPECT_EQ(1u, fic.getNumUniqueWords());
-    MyDrainRemoves(fic, 0).drain(10);
-    WrapInserter(fic, 0).rewind().word("a").add(10).flush();
-    EXPECT_TRUE(assertPostingList("[10]", fic.find("a", 0)));
+    WrapInserter(idx).word("a").remove(10).flush();
+    EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
+    WrapInserter(idx).add(10).add(20).add(30).flush();
+    EXPECT_TRUE(assertPostingList("[10,20,30]", idx.find("a")));
+    WrapInserter(idx).rewind().word("a").remove(10).flush();
+    EXPECT_TRUE(assertPostingList("[20,30]", idx.find("a")));
+    WrapInserter(idx).remove(20).flush();
+    EXPECT_TRUE(assertPostingList("[30]", idx.find("a")));
+    WrapInserter(idx).remove(30).flush();
+    EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
+    EXPECT_EQ(1u, idx.getNumUniqueWords());
+    MyDrainRemoves(idx).drain(10);
+    WrapInserter(idx).rewind().word("a").add(10).flush();
+    EXPECT_TRUE(assertPostingList("[10]", idx.find("a")));
 }
 
-TEST_F(FieldIndexTest, requireThatMultipleInsertAndRemoveWorks)
+TEST_F(FieldIndexCollectionTest, require_that_multiple_insert_and_remove_works)
 {
-    MyInserter inserter(getSchema());
+    MyInserter inserter(schema);
     uint32_t numFields = 4;
     for (uint32_t fi = 0; fi < numFields; ++fi) {
         inserter.setNextField(fi);
@@ -614,9 +643,8 @@ getFeatures(uint32_t elemLen, uint32_t numOccs, int32_t weight = 1)
     return f;
 }
 
-TEST_F(FieldIndexTest, requireThatFeaturesAreInPostingLists)
+TEST_F(FieldIndexCollectionTest, require_that_features_are_in_posting_lists)
 {
-    FieldIndexCollection fic(getSchema());
     WrapInserter(fic, 0).word("a").add(1, getFeatures(4, 2)).flush();
     EXPECT_TRUE(assertPostingList("[1{4:0,1}]",
                                   fic.find("a", 0),
@@ -632,10 +660,9 @@ TEST_F(FieldIndexTest, requireThatFeaturesAreInPostingLists)
                                   featureStorePtr(fic, 1)));
 }
 
-TEST_F(FieldIndexTest, requireThatPostingIteratorIsWorking)
+TEST_F(FieldIndexTest, require_that_posting_iterator_is_working)
 {
-    FieldIndexCollection fic(getSchema());
-    WrapInserter(fic, 0).word("a").add(10, getFeatures(4, 1)).
+    WrapInserter(idx).word("a").add(10, getFeatures(4, 1)).
         add(20, getFeatures(5, 2)).
         add(30, getFeatures(6, 1)).
         add(40, getFeatures(7, 2)).flush();
@@ -643,15 +670,15 @@ TEST_F(FieldIndexTest, requireThatPostingIteratorIsWorking)
     TermFieldMatchDataArray matchData;
     matchData.add(&tfmd);
     {
-        PostingIterator itr(fic.find("not", 0),
-                            featureStoreRef(fic, 0),
+        PostingIterator itr(idx.find("not"),
+                            idx.getFeatureStore(),
                             0, matchData);
         itr.initFullRange();
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        PostingIterator itr(fic.find("a", 0),
-                            featureStoreRef(fic, 0),
+        PostingIterator itr(idx.find("a"),
+                            idx.getFeatureStore(),
                             0, matchData);
         itr.initFullRange();
         EXPECT_EQ(10u, itr.getDocId());
@@ -670,107 +697,107 @@ TEST_F(FieldIndexTest, requireThatPostingIteratorIsWorking)
     }
 }
 
-TEST_F(FieldIndexTest, requireThatDumpingToIndexBuilderIsWorking)
+TEST_F(FieldIndexCollectionTest, require_that_basic_dumping_to_index_builder_is_working)
 {
-    {
-        MyBuilder b(getSchema());
-        WordDocElementWordPosFeatures wpf;
-        b.startField(4);
-        b.startWord("a");
-        b.startDocument(2);
-        b.startElement(0, 10, 20);
-        wpf.setWordPos(1);
-        b.addOcc(wpf);
-        wpf.setWordPos(3);
-        b.addOcc(wpf);
-        b.endElement();
-        b.endDocument();
-        b.endWord();
-        b.endField();
-        EXPECT_EQ("f=4[w=a[d=2[e=0,w=10,l=20[1,3]]]]", b.toStr());
-    }
-    {
-        FieldIndexCollection fic(getSchema());
-        MyBuilder b(getSchema());
-        DocIdAndFeatures df;
-        WrapInserter(fic, 1).word("a").add(5, getFeatures(2, 1)).
+    MyBuilder b(schema);
+    WordDocElementWordPosFeatures wpf;
+    b.startField(4);
+    b.startWord("a");
+    b.startDocument(2);
+    b.startElement(0, 10, 20);
+    wpf.setWordPos(1);
+    b.addOcc(wpf);
+    wpf.setWordPos(3);
+    b.addOcc(wpf);
+    b.endElement();
+    b.endDocument();
+    b.endWord();
+    b.endField();
+    EXPECT_EQ("f=4[w=a[d=2[e=0,w=10,l=20[1,3]]]]", b.toStr());
+}
+
+TEST_F(FieldIndexCollectionTest, require_that_dumping_of_multiple_fields_to_index_builder_is_working)
+{
+    MyBuilder b(schema);
+    DocIdAndFeatures df;
+    WrapInserter(fic, 1).word("a").add(5, getFeatures(2, 1)).
             add(7, getFeatures(3, 2)).
             word("b").add(5, getFeatures(12, 2)).flush();
 
-        df = getFeatures(4, 1);
-        addElement(df, 5, 2);
-        WrapInserter(fic, 2).word("a").add(5, df);
-        df = getFeatures(6, 1);
-        addElement(df, 7, 2);
-        WrapInserter(fic, 2).add(7, df).flush();
+    df = getFeatures(4, 1);
+    addElement(df, 5, 2);
+    WrapInserter(fic, 2).word("a").add(5, df);
+    df = getFeatures(6, 1);
+    addElement(df, 7, 2);
+    WrapInserter(fic, 2).add(7, df).flush();
 
-        df = getFeatures(8, 1, 12);
-        addElement(df, 9, 2, 13);
-        WrapInserter(fic, 3).word("a").add(5, df);
-        df = getFeatures(10, 1, 14);
-        addElement(df, 11, 2, 15);
-        WrapInserter(fic, 3).add(7, df).flush();
+    df = getFeatures(8, 1, 12);
+    addElement(df, 9, 2, 13);
+    WrapInserter(fic, 3).word("a").add(5, df);
+    df = getFeatures(10, 1, 14);
+    addElement(df, 11, 2, 15);
+    WrapInserter(fic, 3).add(7, df).flush();
 
-        fic.dump(b);
+    fic.dump(b);
 
-        EXPECT_EQ("f=0[],"
-                  "f=1[w=a[d=5[e=0,w=1,l=2[0]],d=7[e=0,w=1,l=3[0,1]]],"
-                  "w=b[d=5[e=0,w=1,l=12[0,1]]]],"
-                  "f=2[w=a[d=5[e=0,w=1,l=4[0],e=1,w=1,l=5[0,1]],"
-                  "d=7[e=0,w=1,l=6[0],e=1,w=1,l=7[0,1]]]],"
-                  "f=3[w=a[d=5[e=0,w=12,l=8[0],e=1,w=13,l=9[0,1]],"
-                  "d=7[e=0,w=14,l=10[0],e=1,w=15,l=11[0,1]]]]",
-                  b.toStr());
-    }
-    { // test word with no docs
-        FieldIndexCollection fic(getSchema());
-        WrapInserter(fic, 0).word("a").add(2, getFeatures(2, 1)).
+    EXPECT_EQ("f=0[],"
+              "f=1[w=a[d=5[e=0,w=1,l=2[0]],d=7[e=0,w=1,l=3[0,1]]],"
+              "w=b[d=5[e=0,w=1,l=12[0,1]]]],"
+              "f=2[w=a[d=5[e=0,w=1,l=4[0],e=1,w=1,l=5[0,1]],"
+              "d=7[e=0,w=1,l=6[0],e=1,w=1,l=7[0,1]]]],"
+              "f=3[w=a[d=5[e=0,w=12,l=8[0],e=1,w=13,l=9[0,1]],"
+              "d=7[e=0,w=14,l=10[0],e=1,w=15,l=11[0,1]]]]",
+              b.toStr());
+}
+
+TEST_F(FieldIndexCollectionTest, require_that_dumping_words_with_no_docs_to_index_builder_is_working)
+{
+    WrapInserter(fic, 0).word("a").add(2, getFeatures(2, 1)).
             word("b").add(4, getFeatures(4, 1)).flush().rewind().
             word("a").remove(2).flush();
-        {
-            MyBuilder b(getSchema());
-            fic.dump(b);
-            EXPECT_EQ("f=0[w=b[d=4[e=0,w=1,l=4[0]]]],f=1[],f=2[],f=3[]",
-                      b.toStr());
-        }
-        {
-            search::diskindex::IndexBuilder b(getSchema());
-            b.setPrefix("dump");
-            TuneFileIndexing tuneFileIndexing;
-            DummyFileHeaderContext fileHeaderContext;
-            b.open(5, 2, tuneFileIndexing, fileHeaderContext);
-            fic.dump(b);
-            b.close();
-        }
+    {
+        MyBuilder b(schema);
+        fic.dump(b);
+        EXPECT_EQ("f=0[w=b[d=4[e=0,w=1,l=4[0]]]],f=1[],f=2[],f=3[]",
+                  b.toStr());
+    }
+    {
+        search::diskindex::IndexBuilder b(schema);
+        b.setPrefix("dump");
+        TuneFileIndexing tuneFileIndexing;
+        DummyFileHeaderContext fileHeaderContext;
+        b.open(5, 2, tuneFileIndexing, fileHeaderContext);
+        fic.dump(b);
+        b.close();
     }
 }
 
-template <typename TestBase>
-class InverterTest : public TestBase
-{
+class InverterTest : public ::testing::Test {
 public:
-    using TestBase::getSchema;
+    Schema _schema;
     FieldIndexCollection _fic;
     DocBuilder _b;
     SequencedTaskExecutor _invertThreads;
     SequencedTaskExecutor _pushThreads;
     DocumentInverter _inv;
 
-    InverterTest()
-        : TestBase(),
-          _fic(getSchema()),
-          _b(getSchema()),
+    InverterTest(const Schema& schema)
+        : _schema(schema),
+          _fic(_schema),
+          _b(_schema),
           _invertThreads(2),
           _pushThreads(2),
-          _inv(getSchema(), _invertThreads, _pushThreads)
+          _inv(_schema, _invertThreads, _pushThreads)
     {
     }
 };
 
-using BasicInverterTest = InverterTest<FieldIndexTest>;
+class BasicInverterTest : public InverterTest {
+public:
+    BasicInverterTest() : InverterTest(make_multi_field_schema()) {}
+};
 
-
-TEST_F(BasicInverterTest, requireThatInversionIsWorking)
+TEST_F(BasicInverterTest, require_that_inversion_is_working)
 {
     Document::UP doc;
 
@@ -972,7 +999,7 @@ TEST_F(BasicInverterTest, requireThatInversionIsWorking)
     }
 }
 
-TEST_F(BasicInverterTest, requireThatInverterHandlesRemoveViaDocumentRemover)
+TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remover)
 {
     Document::UP doc;
 
@@ -1009,23 +1036,22 @@ TEST_F(BasicInverterTest, requireThatInverterHandlesRemoveViaDocumentRemover)
     EXPECT_TRUE(assertPostingList("[]", _fic.find("c", 1)));
 }
 
-class UriTest : public ::testing::Test {
+Schema
+make_uri_schema()
+{
+    Schema result;
+    result.addUriIndexFields(Schema::IndexField("iu", DataType::STRING));
+    result.addUriIndexFields(Schema::IndexField("iau", DataType::STRING, CollectionType::ARRAY));
+    result.addUriIndexFields(Schema::IndexField("iwu", DataType::STRING, CollectionType::WEIGHTEDSET));
+    return result;
+}
+
+class UriInverterTest : public InverterTest {
 public:
-    Schema _schema;
-    UriTest()
-        : _schema()
-    {
-        _schema.addUriIndexFields(Schema::IndexField("iu", DataType::STRING));
-        _schema.addUriIndexFields(Schema::IndexField("iau", DataType::STRING, CollectionType::ARRAY));
-        _schema.addUriIndexFields(Schema::IndexField("iwu", DataType::STRING, CollectionType::WEIGHTEDSET));
-    }
-    const Schema & getSchema() const { return _schema; }
+    UriInverterTest() : InverterTest(make_uri_schema()) {}
 };
 
-using UriInverterTest = InverterTest<UriTest>;
-
-
-TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
+TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 {
     Document::UP doc;
 
@@ -1160,7 +1186,7 @@ TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
     TermFieldMatchDataArray matchData;
     matchData.add(&tfmd);
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("iu");
+        uint32_t fieldId = _schema.getIndexFieldId("iu");
         PostingIterator itr(_fic.findFrozen("not", fieldId),
                             featureStoreRef(_fic, fieldId),
                             fieldId, matchData);
@@ -1168,7 +1194,7 @@ TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("iu");
+        uint32_t fieldId = _schema.getIndexFieldId("iu");
         PostingIterator itr(_fic.findFrozen("example", fieldId),
                             featureStoreRef(_fic, fieldId),
                             fieldId, matchData);
@@ -1180,7 +1206,7 @@ TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("iau");
+        uint32_t fieldId = _schema.getIndexFieldId("iau");
         PostingIterator itr(_fic.findFrozen("example", fieldId),
                             featureStoreRef(_fic, fieldId),
                             fieldId, matchData);
@@ -1193,7 +1219,7 @@ TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("iwu");
+        uint32_t fieldId = _schema.getIndexFieldId("iwu");
         PostingIterator itr(_fic.findFrozen("example", fieldId),
                             featureStoreRef(_fic, fieldId),
                             fieldId, matchData);
@@ -1206,7 +1232,7 @@ TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        search::diskindex::IndexBuilder dib(getSchema());
+        search::diskindex::IndexBuilder dib(_schema);
         dib.setPrefix("urldump");
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
@@ -1217,26 +1243,17 @@ TEST_F(UriInverterTest, requireThatUriIndexingIsWorking)
     }
 }
 
-
-class SingleFieldTest : public ::testing::Test {
+class CjkInverterTest : public InverterTest {
 public:
-    Schema _schema;
-    SingleFieldTest()
-        : _schema()
-    {
-        _schema.addIndexField(Schema::IndexField("i", DataType::STRING));
-    }
-    const Schema & getSchema() const { return _schema; }
+    CjkInverterTest() : InverterTest(make_single_field_schema()) {}
 };
 
-using CjkInverterTest = InverterTest<SingleFieldTest>;
-
-TEST_F(CjkInverterTest, requireThatCjkIndexingIsWorking)
+TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
 {
     Document::UP doc;
 
     _b.startDocument("doc::10");
-    _b.startIndexField("i").
+    _b.startIndexField("f0").
         addStr("我就是那个").
         setAutoSpace(false).
         addStr("大灰狼").
@@ -1252,8 +1269,8 @@ TEST_F(CjkInverterTest, requireThatCjkIndexingIsWorking)
     TermFieldMatchData tfmd;
     TermFieldMatchDataArray matchData;
     matchData.add(&tfmd);
+    uint32_t fieldId = _schema.getIndexFieldId("f0");
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("i");
         PostingIterator itr(_fic.findFrozen("not", fieldId),
                             featureStoreRef(_fic, fieldId),
                             fieldId, matchData);
@@ -1261,7 +1278,6 @@ TEST_F(CjkInverterTest, requireThatCjkIndexingIsWorking)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("i");
         PostingIterator itr(_fic.findFrozen("我就"
                                     "是那个",
                                     fieldId),
@@ -1275,7 +1291,6 @@ TEST_F(CjkInverterTest, requireThatCjkIndexingIsWorking)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        uint32_t fieldId = getSchema().getIndexFieldId("i");
         PostingIterator itr(_fic.findFrozen("大灰"
                                     "狼",
                                     fieldId),
@@ -1300,26 +1315,23 @@ insertAndAssertTuple(const vespalib::string &word, uint32_t fieldId, uint32_t do
     MyDrainRemoves(dict, fieldId).drain(docId);
 }
 
-TEST_F(FieldIndexTest, require_that_insert_tells_which_word_ref_that_was_inserted)
+TEST_F(FieldIndexCollectionTest, require_that_insert_tells_which_word_ref_that_was_inserted)
 {
-    FieldIndexCollection d(getSchema());
-    insertAndAssertTuple("a", 1, 11, d);
-    insertAndAssertTuple("b", 1, 11, d);
-    insertAndAssertTuple("a", 2, 11, d);
+    insertAndAssertTuple("a", 1, 11, fic);
+    insertAndAssertTuple("b", 1, 11, fic);
+    insertAndAssertTuple("a", 2, 11, fic);
 
-    insertAndAssertTuple("a", 1, 22, d);
-    insertAndAssertTuple("b", 2, 22, d);
-    insertAndAssertTuple("c", 2, 22, d);
+    insertAndAssertTuple("a", 1, 22, fic);
+    insertAndAssertTuple("b", 2, 22, fic);
+    insertAndAssertTuple("c", 2, 22, fic);
 }
 
-struct RemoverTest : public FieldIndexTest {
-    FieldIndexCollection  _fic;
+struct RemoverTest : public FieldIndexCollectionTest {
     SequencedTaskExecutor _invertThreads;
     SequencedTaskExecutor _pushThreads;
 
     RemoverTest()
-        : FieldIndexTest(),
-          _fic(getSchema()),
+        : FieldIndexCollectionTest(),
           _invertThreads(2),
           _pushThreads(2)
     {
@@ -1327,24 +1339,24 @@ struct RemoverTest : public FieldIndexTest {
     void assertPostingLists(const vespalib::string &e1,
                             const vespalib::string &e2,
                             const vespalib::string &e3) {
-        EXPECT_TRUE(assertPostingList(e1, _fic.find("a", 1)));
-        EXPECT_TRUE(assertPostingList(e2, _fic.find("a", 2)));
-        EXPECT_TRUE(assertPostingList(e3, _fic.find("b", 1)));
+        EXPECT_TRUE(assertPostingList(e1, fic.find("a", 1)));
+        EXPECT_TRUE(assertPostingList(e2, fic.find("a", 2)));
+        EXPECT_TRUE(assertPostingList(e3, fic.find("b", 1)));
     }
     void remove(uint32_t docId) {
-        DocumentInverter inv(getSchema(), _invertThreads, _pushThreads);
-        myremove(docId, inv, _fic, _invertThreads);
+        DocumentInverter inv(schema, _invertThreads, _pushThreads);
+        myremove(docId, inv, fic, _invertThreads);
         _pushThreads.sync();
-        EXPECT_FALSE(_fic.getFieldIndex(0u)->getDocumentRemover().
+        EXPECT_FALSE(fic.getFieldIndex(0u)->getDocumentRemover().
                      getStore().get(docId).valid());
     }
 };
 
 TEST_F(RemoverTest, require_that_document_remover_can_remove_several_documents)
 {
-    WrapInserter(_fic, 1).word("a").add(11).add(13).add(15).
+    WrapInserter(fic, 1).word("a").add(11).add(13).add(15).
             word("b").add(11).add(15).flush();
-    WrapInserter(_fic, 2).word("a").add(11).add(13).flush();
+    WrapInserter(fic, 2).word("a").add(11).add(13).flush();
     assertPostingLists("[11,13,15]", "[11,13]", "[11,15]");
 
     remove(13);
@@ -1359,8 +1371,8 @@ TEST_F(RemoverTest, require_that_document_remover_can_remove_several_documents)
 
 TEST_F(RemoverTest, require_that_removal_of_non_existing_document_does_not_do_anything)
 {
-    WrapInserter(_fic, 1).word("a").add(11).word("b").add(11).flush();
-    WrapInserter(_fic, 2).word("a").add(11).flush();
+    WrapInserter(fic, 1).word("a").add(11).word("b").add(11).flush();
+    WrapInserter(fic, 2).word("a").add(11).flush();
     assertPostingLists("[11]", "[11]", "[11]");
     remove(13);
     assertPostingLists("[11]", "[11]", "[11]");
