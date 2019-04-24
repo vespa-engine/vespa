@@ -27,6 +27,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Christian Andersen
  */
+@SuppressWarnings("removal") // For RoutingProducer
 public class RoutingProducerTest {
     @Test
     public void testNodesFromRoutingAppOnly() throws Exception {
