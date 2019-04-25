@@ -16,7 +16,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * This class wires up the Session API using MultiClusterHandler and MultiClusterSessionOutputStream.
+ *
+ * @deprecated
  */
+@Deprecated // TODO: Remove on Vespa 8
 public class SessionImpl implements Session {
 
     private final OperationProcessor operationProcessor;

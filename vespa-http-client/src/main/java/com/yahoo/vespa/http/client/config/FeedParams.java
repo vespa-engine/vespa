@@ -6,8 +6,7 @@ import com.google.common.annotations.Beta;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Parameters given to a {@link com.yahoo.vespa.http.client.SessionFactory}
- * when creating {@link com.yahoo.vespa.http.client.Session}s. This class is immutable
+ * Feed level parameters. This class is immutable
  * and has no public constructor - to instantiate one, use a {@link Builder}.
 
  * @author Einar M R Rosenvinge
@@ -25,8 +24,8 @@ public final class FeedParams {
     public boolean getSilentUpgrade() { return silentUpgrade; }
 
     /**
-     * Enumeration of data formats that are acceptable by the OutputStream
-     * returned by {@link com.yahoo.vespa.http.client.Session#stream(CharSequence)}.
+     * Enumeration of data formats that are acceptable by the
+     * {@link com.yahoo.vespa.http.client.FeedClient} methods.
      */
     public enum DataFormat {
         /** UTF-8-encoded XML. Preamble is not necessary. */
@@ -117,9 +116,7 @@ public final class FeedParams {
          *
          * Note that the TOTAL timeout of any one operation in this API would be
          * {@link #getServerTimeout(java.util.concurrent.TimeUnit)} +
-         * {@link #getClientTimeout(java.util.concurrent.TimeUnit)},
-         * after which {@link com.yahoo.vespa.http.client.Session#results()} is guaranteed
-         * to produce a Result.
+         * {@link #getClientTimeout(java.util.concurrent.TimeUnit)}.
          *
          * @param serverTimeout timeout value
          * @param unit unit of timeout value
@@ -135,14 +132,13 @@ public final class FeedParams {
 
         /**
          * Sets the client-side timeout for each operation.&nbsp;If BOTH the server-side
-         * timeout AND this timeout has passed, {@link com.yahoo.vespa.http.client.Session}
+         * timeout AND this timeout has passed, the {@link com.yahoo.vespa.http.client.FeedClient}
          * will synthesize a {@link com.yahoo.vespa.http.client.Result}.
          *
          * Note that the TOTAL timeout of any one operation in this API would be
          * {@link #getServerTimeout(java.util.concurrent.TimeUnit)} +
          * {@link #getClientTimeout(java.util.concurrent.TimeUnit)},
-         * after which {@link com.yahoo.vespa.http.client.Session#results()} is guaranteed
-         * to produce a Result.
+         * after which a result callback is guaranteed to be made.
          *
          * @param clientTimeout timeout value
          * @param unit unit of timeout value
