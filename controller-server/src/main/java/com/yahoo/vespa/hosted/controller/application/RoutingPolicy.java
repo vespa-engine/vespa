@@ -23,26 +23,21 @@ import java.util.Set;
 public class RoutingPolicy {
 
     private final ApplicationId owner;
+    private final ClusterSpec.Id cluster;
     private final ZoneId zone;
-    private final HostName alias;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(ApplicationId owner, ZoneId zone, HostName alias, HostName canonicalName,
+    public RoutingPolicy(ApplicationId owner, ClusterSpec.Id cluster, ZoneId zone, HostName canonicalName,
                          Optional<String> dnsZone, Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
+        this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
         this.zone = Objects.requireNonNull(zone, "zone must be non-null");
-        this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
-    }
-
-    public RoutingPolicy(ApplicationId owner, ZoneId zone, ClusterSpec.Id cluster, SystemName system, HostName canonicalName,
-                         Optional<String> dnsZone, Set<RotationName> rotations) {
-        this(owner, zone, HostName.from(endpointOf(cluster, owner, zone, system).dnsName()), canonicalName, dnsZone, rotations);
     }
 
     /** The application owning this */
@@ -55,9 +50,9 @@ public class RoutingPolicy {
         return zone;
     }
 
-    /** This alias (lhs of a CNAME or ALIAS record) */
-    public HostName alias() {
-        return alias;
+    /** The cluster this applies to */
+    public ClusterSpec.Id cluster() {
+        return cluster;
     }
 
     /** The canonical name for this (rhs of a CNAME or ALIAS record) */
@@ -75,6 +70,11 @@ public class RoutingPolicy {
         return rotations;
     }
 
+    /** Returns the endpoint of this */
+    public Endpoint endpointIn(SystemName system) {
+        return Endpoint.of(owner).target(cluster, zone).on(Port.tls()).directRouting().in(system);
+    }
+
     /** Endpoints for this routing policy */
     public EndpointList endpointsIn(SystemName system) {
         return EndpointList.of(rotations.stream().map(rotation -> endpointOf(owner, rotation, system)));
@@ -86,30 +86,27 @@ public class RoutingPolicy {
         if (o == null || getClass() != o.getClass()) return false;
         RoutingPolicy policy = (RoutingPolicy) o;
         return owner.equals(policy.owner) &&
+               cluster.equals(policy.cluster) &&
                zone.equals(policy.zone) &&
-               canonicalName.equals(policy.canonicalName);
+               canonicalName.equals(policy.canonicalName) &&
+               dnsZone.equals(policy.dnsZone);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, zone, canonicalName);
+        return Objects.hash(owner, cluster, zone, canonicalName, dnsZone);
     }
 
     @Override
     public String toString() {
-        return String.format("%s -> %s [rotations: %s%s], owned by %s, in %s", alias, canonicalName, rotations,
-                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), owner.toShortString(),
+        return String.format("%s [rotations: %s%s], %s owned by %s, in %s", canonicalName, rotations,
+                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), cluster, owner.toShortString(),
                              zone.value());
     }
 
     /** Returns the endpoint of given rotation */
     public static Endpoint endpointOf(ApplicationId application, RotationName rotation, SystemName system) {
         return Endpoint.of(application).target(rotation).on(Port.tls()).directRouting().in(system);
-    }
-
-    /** Returns the endpoint of given cluster */
-    public static Endpoint endpointOf(ClusterSpec.Id cluster, ApplicationId application, ZoneId zone, SystemName system) {
-        return Endpoint.of(application).target(cluster, zone).on(Port.tls()).directRouting().in(system);
     }
 
 }
