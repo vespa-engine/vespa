@@ -93,7 +93,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
         private Document doc;
         private DocumentId remove;
         private DocumentUpdate docUpdate;
-        private TestAndSetCondition condition;
+        private TestAndSetCondition condition = TestAndSetCondition.NOT_PRESENT_CONDITION;
 
         public Operation() {
             setInvalid();
@@ -104,7 +104,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
             doc = null;
             remove = null;
             docUpdate = null;
-            condition = null;
+            condition = TestAndSetCondition.NOT_PRESENT_CONDITION;
         }
 
         public OperationType getType() {

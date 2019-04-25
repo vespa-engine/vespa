@@ -2,14 +2,23 @@
 package com.yahoo.vespa.feed.perf;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.json.JsonFeedReader;
 import com.yahoo.document.json.JsonWriter;
+import com.yahoo.document.serialization.DocumentDeserializer;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.DocumentWriter;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBusParams;
@@ -23,11 +32,14 @@ import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
+import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -100,7 +112,7 @@ public class SimpleFeeder implements ReplyHandler {
 
     private static class JsonDestination implements Destination {
         private final OutputStream outputStream;
-        private final JsonWriter writer;
+        private final DocumentWriter writer;
         private final AtomicLong numReplies;
         private final AtomicReference<Throwable> failure;
         private boolean isFirst = true;
@@ -140,6 +152,116 @@ public class SimpleFeeder implements ReplyHandler {
 
     }
 
+    static final int NONE = 0;
+    static final int DOCUMENT = 1;
+    static final int UPDATE = 2;
+    static final int REMOVE = 3;
+    private static class VespaV1Destination implements Destination {
+        private final OutputStream outputStream;
+        GrowableByteBuffer buffer = new GrowableByteBuffer(16384);
+        ByteBuffer header = ByteBuffer.allocate(16);
+        private final AtomicLong numReplies;
+        private final AtomicReference<Throwable> failure;
+        VespaV1Destination(OutputStream outputStream, AtomicReference<Throwable> failure, AtomicLong numReplies) {
+            this.outputStream = outputStream;
+            this.numReplies = numReplies;
+            this.failure = failure;
+            try {
+                outputStream.write('V');
+                outputStream.write('1');
+            } catch (IOException e) {
+                failure.set(e);
+            }
+        }
+        public void send(VespaXMLFeedReader.Operation op) {
+            DocumentSerializer writer = DocumentSerializerFactory.createHead(buffer);
+            int type = NONE;
+            if (op.getType() == VespaXMLFeedReader.OperationType.DOCUMENT) {
+                writer.write(op.getDocument());
+                type = DOCUMENT;
+            } else if (op.getType() == VespaXMLFeedReader.OperationType.UPDATE) {
+                writer.write(op.getDocumentUpdate());
+                type = UPDATE;
+            } else if (op.getType() == VespaXMLFeedReader.OperationType.REMOVE) {
+                writer.write(op.getRemove());
+                type = REMOVE;
+            }
+            int sz = buffer.position();
+            long hash = hash(buffer.array(), 0, sz);
+            try {
+
+                header.putInt(sz);
+                header.putInt(type);
+                header.putLong(hash);
+                outputStream.write(header.array(), 0, header.position());
+                outputStream.write(buffer.array(), 0, buffer.position());
+                header.clear();
+                buffer.clear();
+            } catch (IOException e) {
+                failure.set(e);
+            }
+            numReplies.incrementAndGet();
+        }
+        public void close() throws Exception {
+            outputStream.close();
+        }
+        static long hash(byte [] buf, int offset, int length) {
+            return XXHashFactory.fastestJavaInstance().hash64().hash(buf, offset, length, 0);
+        }
+    }
+
+    static class VespaV1FeedReader implements FeedReader {
+        private final InputStream in;
+        private final DocumentTypeManager mgr;
+        private final byte[] prefix = new byte[16];
+        VespaV1FeedReader(InputStream in, DocumentTypeManager mgr) throws IOException {
+            this.in = in;
+            this.mgr = mgr;
+            byte [] header = new byte[2];
+            in.read(header);
+            if ((header[0] != 'V') && (header[1] != '1')) {
+                throw new IllegalArgumentException("Invalid Header " + Arrays.toString(header));
+            }
+        }
+        @Override
+        public void read(VespaXMLFeedReader.Operation operation) throws Exception {
+            int read = in.read(prefix);
+            if (read != prefix.length) {
+                operation.setInvalid();
+                return;
+            }
+            ByteBuffer header = ByteBuffer.wrap(prefix);
+            int sz = header.getInt();
+            int type = header.getInt();
+            long hash = header.getLong();
+            byte [] blob = new byte[sz];
+            read = in.read(blob);
+            if (read != blob.length) {
+                throw new IllegalArgumentException("Underflow, failed reading " + blob.length + "bytes. Got " + read);
+            }
+            long computedHash = VespaV1Destination.hash(blob, 0, blob.length);
+            if (computedHash != hash) {
+                throw new IllegalArgumentException("Hash mismatch, expected " + hash + ", got " + computedHash);
+            }
+            DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, GrowableByteBuffer.wrap(blob));
+            if (type == DOCUMENT) {
+                operation.setDocument(new Document(deser));
+            } else if (type == UPDATE) {
+                operation.setDocumentUpdate(new DocumentUpdate(deser));
+            } else if (type == REMOVE) {
+                operation.setRemove(new DocumentId(deser));
+            } else {
+                throw new IllegalArgumentException("Unknown operation " + type);
+            }
+        }
+    }
+
+    Destination createDumper(FeederParams params) {
+        if (params.getDumpFormat() == FeederParams.DumpFormat.VESPA) {
+            return new VespaV1Destination(params.getDumpStream(), failure, numReplies);
+        }
+        return new JsonDestination(params.getDumpStream(), failure, numReplies);
+    }
     SimpleFeeder(FeederParams params) {
         in = params.getStdIn();
         out = params.getStdOut();
@@ -148,7 +270,7 @@ public class SimpleFeeder implements ReplyHandler {
         session = newSession(mbus, this, params.isSerialTransferEnabled());
         docTypeMgr.configure(params.getConfigId());
         destination = (params.getDumpStream() != null)
-                ? new JsonDestination(params.getDumpStream(), failure, numReplies)
+                ? createDumper(params)
                 : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
     }
 
@@ -159,7 +281,7 @@ public class SimpleFeeder implements ReplyHandler {
     SourceSession getSourceSession() { return session; }
     private FeedReader createFeedReader() throws Exception {
         in.mark(8);
-        byte [] b = new byte[1];
+        byte [] b = new byte[2];
         int numRead = in.read(b);
         in.reset();
         if (numRead != b.length) {
@@ -167,6 +289,8 @@ public class SimpleFeeder implements ReplyHandler {
         }
         if (b[0] == '[') {
             return new JsonFeedReader(in, docTypeMgr);
+        } else if ((b[0] == 'V') && (b[1] == '1')) {
+            return new VespaV1FeedReader(in, docTypeMgr);
         } else {
              return new VespaXMLFeedReader(in, docTypeMgr);
         }
