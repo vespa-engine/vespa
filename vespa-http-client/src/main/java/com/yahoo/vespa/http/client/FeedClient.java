@@ -9,12 +9,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * API for feeding document operations (add, removes or updates) to one or many Vespa clusters.
- * Use the factory to configure and set up an instance of this API.
+ * Use the factory to configure and set up an instance of this. Instances are expensive - create one instance of this
+ * and use it for all feed operations (from multiple threads, if desired) for the duration of your client runtime.
  * The feedclient does automatic error recovery and reconnects to hosts when connections die.
  *
  * A {@link FeedClientFactory} is provided to instantiate Sessions.
  *
  * See com.yahoo.text.Text.stripInvalidCharacters(String) to remove invalid characters from string fields before feeding
+ *
+ * Instances of this are multithread safe.
  *
  * @author dybis
  * @see FeedClientFactory
@@ -22,10 +25,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface FeedClient extends AutoCloseable {
 
     /**
-     * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
-     * Documents might time out before they are sent. Failed documents are not retried.
-     * Don't call stream() after close is called.
-     * 
+     * Issues a document operation to the configured cluster(s).
+     * If the pipeline and buffers are full, this call will be blocking, ensuring that operations are not
+     * produced faster than the can be handled. Transient failured are retried internally by this client.
+     * Exactly one callback will always be received for each (completed) call to this.
+     *
      * @param documentId the document id of the document.
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      */
@@ -34,10 +38,11 @@ public interface FeedClient extends AutoCloseable {
     }
 
     /**
-     * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
-     * Documents might time out before they are sent. Failed documents are not retried.
-     * Don't call stream() after close is called.
-     * 
+     * Issues a document operation to the configured cluster(s).
+     * If the pipeline and buffers are full, this call will be blocking, ensuring that operations are not
+     * produced faster than the can be handled. Transient failured are retried internally by this client.
+     * Exactly one callback will always be received for each (completed) call to this.
+     *
      * @param documentId the document id of the document.
      * @param documentData the document data as JSON or XML (as specified when using the factory to create the API)
      * @param context a context object which will be accessible in the result of the callback, or null if none
@@ -47,9 +52,10 @@ public interface FeedClient extends AutoCloseable {
     }
 
     /**
-     * Streams a document to cluster(s). If the pipeline and buffers are full, this call will be blocking.
-     * Documents might time out before they are sent. Failed documents are not retried.
-     * Don't call stream() after close is called.
+     * Issues a document operation to the configured cluster(s).
+     * If the pipeline and buffers are full, this call will be blocking, ensuring that operations are not
+     * produced faster than the can be handled. Transient failured are retried internally by this client.
+     * Exactly one callback will always be received for each (completed) call to this.
      *
      * @param documentId the document id of the document.
      * @param operationId the id to use for this operation, or null to let the client decide an operation id.
@@ -59,30 +65,6 @@ public interface FeedClient extends AutoCloseable {
      * @param context a context object which will be accessible in the result of the callback, or null if none
      */
     void stream(String documentId, String operationId, CharSequence documentData, Object context);
-
-    /**
-     * This callback is executed when new results are arriving or an error occur.
-     * Don't do any heavy lifting in this thread (no IO, disk, or heavy CPU usage).
-     * This call back will run in a different thread than your main program so use e.g.
-     * AtomicInteger for counters and follow general guides for thread-safe programming.
-     * There is an example implementation in class SimpleLoggerResultCallback.
-     */
-    interface ResultCallback {
-
-        void onCompletion(String docId, Result documentResult);
-
-        /**
-         * Called with an exception whenever an endpoint specific error occurs during feeding.
-         * The error may or may not be transient - the operation will in both cases be retried until it's successful.
-         * This callback is intended for application level monitoring (logging, metrics, altering etc).
-         * Document specific errors will be reported back through {@link #onCompletion(String, Result)}.
-         *
-         * @see FeedEndpointException
-         * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
-         */
-        default void onEndpointException(FeedEndpointException exception) {}
-
-    }
 
     /**
      * Waits for all results to arrive and closes the FeedClient. Don't call any other method after calling close().
@@ -126,6 +108,34 @@ public interface FeedClient extends AutoCloseable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * This callback is executed when new results are arriving or an error occur.
+     * Don't do any heavy lifting in this thread (no IO, disk, or heavy CPU usage).
+     * This call back will run in a different thread than your main program so use e.g.
+     * AtomicInteger for counters and follow general guides for thread-safe programming.
+     * There is an example implementation in class SimpleLoggerResultCallback.
+     */
+    interface ResultCallback {
+
+        /**
+         * This callback is always called exactly once for each feed operation passed to the client
+         * instance, whether or not it was successful.
+         */
+        void onCompletion(String docId, Result documentResult);
+
+        /**
+         * Called with an exception whenever an endpoint specific error occurs during feeding.
+         * The error may or may not be transient - the operation will in both cases be retried until it's successful.
+         * This callback is intended for application level monitoring (logging, metrics, altering etc).
+         * Document specific errors will be reported back through {@link #onCompletion(String, Result)}.
+         *
+         * @see FeedEndpointException
+         * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
+         */
+        default void onEndpointException(FeedEndpointException exception) {}
+
     }
 
 }
