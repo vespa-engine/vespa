@@ -9,9 +9,11 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.vespaxmlparser.DocumentFeedOperation;
+import com.yahoo.vespaxmlparser.DocumentUpdateFeedOperation;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader.Operation;
+import com.yahoo.vespaxmlparser.RemoveFeedOperation;
 
 
 /**
@@ -37,25 +39,21 @@ public class JsonFeedReader implements FeedReader {
     @Override
     public FeedOperation read() throws Exception {
         DocumentOperation documentOperation = reader.next();
-        Operation operation = new Operation();
 
         if (documentOperation == null) {
             stream.close();
-            return operation;
+            return FeedOperation.INVALID;
         }
 
         if (documentOperation instanceof DocumentUpdate) {
-            operation.setDocumentUpdate((DocumentUpdate) documentOperation);
+            return new DocumentUpdateFeedOperation((DocumentUpdate) documentOperation, documentOperation.getCondition());
         } else if (documentOperation instanceof DocumentRemove) {
-            operation.setRemove(documentOperation.getId());
+            return new RemoveFeedOperation(documentOperation.getId(), documentOperation.getCondition());
         } else if (documentOperation instanceof DocumentPut) {
-            operation.setDocument(((DocumentPut) documentOperation).getDocument());
+            return new DocumentFeedOperation(((DocumentPut) documentOperation).getDocument(), documentOperation.getCondition());
         } else {
             throw new IllegalStateException("Got unknown class from JSON reader: " + documentOperation.getClass().getName());
         }
-
-        operation.setCondition(documentOperation.getCondition());
-        return operation;
     }
 
 }

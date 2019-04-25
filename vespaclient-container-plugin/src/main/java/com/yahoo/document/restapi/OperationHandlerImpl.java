@@ -25,6 +25,7 @@ import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import com.yahoo.yolean.concurrent.ResourceFactory;
@@ -201,7 +202,7 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
+    public void put(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {
@@ -225,7 +226,7 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
+    public void update(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {

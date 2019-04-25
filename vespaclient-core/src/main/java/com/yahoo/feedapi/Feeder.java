@@ -12,7 +12,6 @@ import javax.xml.stream.XMLStreamException;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 /**
  * Base class for unpacking document operation streams and pushing to feed

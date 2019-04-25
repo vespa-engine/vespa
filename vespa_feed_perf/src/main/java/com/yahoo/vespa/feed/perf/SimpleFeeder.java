@@ -30,8 +30,11 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.vespaxmlparser.DocumentFeedOperation;
+import com.yahoo.vespaxmlparser.DocumentUpdateFeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.FeedOperation;
+import com.yahoo.vespaxmlparser.RemoveFeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -226,10 +229,9 @@ public class SimpleFeeder implements ReplyHandler {
         }
         @Override
         public FeedOperation read() throws Exception {
-            VespaXMLFeedReader.Operation operation = new VespaXMLFeedReader.Operation();
             int read = in.read(prefix);
             if (read != prefix.length) {
-                return operation;
+                return FeedOperation.INVALID;
             }
             ByteBuffer header = ByteBuffer.wrap(prefix);
             int sz = header.getInt();
@@ -246,15 +248,14 @@ public class SimpleFeeder implements ReplyHandler {
             }
             DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, GrowableByteBuffer.wrap(blob));
             if (type == DOCUMENT) {
-                operation.setDocument(new Document(deser));
+                return new DocumentFeedOperation(new Document(deser));
             } else if (type == UPDATE) {
-                operation.setDocumentUpdate(new DocumentUpdate(deser));
+                return new DocumentUpdateFeedOperation(new DocumentUpdate(deser));
             } else if (type == REMOVE) {
-                operation.setRemove(new DocumentId(deser));
+                return new RemoveFeedOperation(new DocumentId(deser));
             } else {
                 throw new IllegalArgumentException("Unknown operation " + type);
             }
-            return operation;
         }
     }
 
