@@ -30,8 +30,6 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.vespaxmlparser.DocumentFeedOperation;
-import com.yahoo.vespaxmlparser.DocumentUpdateFeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.RemoveFeedOperation;
@@ -214,6 +212,10 @@ public class SimpleFeeder implements ReplyHandler {
         }
     }
 
+    private static int readExact(InputStream in, byte [] buf) throws IOException {
+        return in.readNBytes(buf, 0, buf.length);
+    }
+
     static class VespaV1FeedReader implements FeedReader {
         private final InputStream in;
         private final DocumentTypeManager mgr;
@@ -222,7 +224,7 @@ public class SimpleFeeder implements ReplyHandler {
             this.in = in;
             this.mgr = mgr;
             byte [] header = new byte[2];
-            int read = in.read(header);
+            int read = readExact(in, header);
             if ((read != header.length) || (header[0] != 'V') || (header[1] != '1')) {
                 throw new IllegalArgumentException("Invalid Header " + Arrays.toString(header));
             }
@@ -254,7 +256,7 @@ public class SimpleFeeder implements ReplyHandler {
         }
         @Override
         public FeedOperation read() throws Exception {
-            int read = in.read(prefix);
+            int read = readExact(in, prefix);
             if (read != prefix.length) {
                 return FeedOperation.INVALID;
             }
@@ -263,7 +265,7 @@ public class SimpleFeeder implements ReplyHandler {
             int type = header.getInt();
             long hash = header.getLong();
             byte [] blob = new byte[sz];
-            read = in.read(blob);
+            read = readExact(in, blob);
             if (read != blob.length) {
                 throw new IllegalArgumentException("Underflow, failed reading " + blob.length + "bytes. Got " + read);
             }
@@ -310,7 +312,7 @@ public class SimpleFeeder implements ReplyHandler {
     private FeedReader createFeedReader() throws Exception {
         in.mark(8);
         byte [] b = new byte[2];
-        int numRead = in.read(b);
+        int numRead = readExact(in, b);
         in.reset();
         if (numRead != b.length) {
             throw new IllegalArgumentException("Need to read " + b.length + " bytes to detect format. Got " + numRead + " bytes.");
