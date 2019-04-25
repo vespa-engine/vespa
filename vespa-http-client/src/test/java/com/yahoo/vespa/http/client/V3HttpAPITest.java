@@ -28,6 +28,7 @@ import static org.junit.Assert.assertThat;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
 
     public static final List<TestDocument> documents;
