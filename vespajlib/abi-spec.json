@@ -792,10 +792,10 @@
       "com.yahoo.tensor.Tensor"
     ],
     "attributes": [
-      "public"
+      "public",
+      "abstract"
     ],
     "methods": [
-      "public long size()",
       "public java.util.Iterator cellIterator()",
       "public com.yahoo.tensor.IndexedTensor$SubspaceIterator cellIterator(com.yahoo.tensor.PartialAddress, com.yahoo.tensor.DimensionSizes)",
       "public java.util.Iterator valueIterator()",
@@ -803,14 +803,13 @@
       "public java.util.Iterator subspaceIterator(java.util.Set)",
       "public varargs double get(long[])",
       "public double get(com.yahoo.tensor.TensorAddress)",
-      "public double get(long)",
+      "public abstract double get(long)",
       "public com.yahoo.tensor.TensorType type()",
-      "public com.yahoo.tensor.IndexedTensor withType(com.yahoo.tensor.TensorType)",
+      "public abstract com.yahoo.tensor.IndexedTensor withType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.DimensionSizes dimensionSizes()",
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor merge(java.util.function.DoubleBinaryOperator, java.util.Map)",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
-      "public int hashCode()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public bridge synthetic com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)"
