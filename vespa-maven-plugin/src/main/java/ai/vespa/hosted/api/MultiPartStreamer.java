@@ -70,15 +70,15 @@ public class MultiPartStreamer {
      * This method can be used multiple times, to create new requests.
      * The request builder's method and content should not be set after it has been obtained.
      */
-    public HttpRequest.Builder newBuilderFor(Method method) {
-        InputStream aggregate = aggregate(); // Get the streams now, not when the aggregate is used.
+    public HttpRequest.Builder requestBuilder(Method method) {
+        InputStream aggregate = data(); // Get the streams now, not when the aggregate is used.
         return HttpRequest.newBuilder()
                           .setHeader("Content-Type", "multipart/form-data; boundary=" + boundary)
                           .method(method.name(), HttpRequest.BodyPublishers.ofInputStream(() -> aggregate));
     }
 
     /** Returns an input stream which is an aggregate of all current parts in this, plus an end marker. */
-    InputStream aggregate() {
+    public InputStream data() {
         InputStream aggregate = new SequenceInputStream(Collections.enumeration(Stream.concat(streams.stream().map(Supplier::get),
                                                                                               Stream.of(end()))
                                                                                       .collect(Collectors.toList())));

@@ -24,7 +24,7 @@ public class MultiPartStreamerTest {
         MultiPartStreamer streamer = new MultiPartStreamer("My boundary");
 
         assertEquals("--My boundary--",
-                     new String(streamer.aggregate().readAllBytes()));
+                     new String(streamer.data().readAllBytes()));
 
         streamer.addData("data", "uss/enterprise", "lore")
                 .addJson("json", "{\"xml\":false}")
@@ -54,14 +54,14 @@ public class MultiPartStreamerTest {
                           "--My boundary--";
 
         assertEquals(expected,
-                     new String(streamer.aggregate().readAllBytes()));
+                     new String(streamer.data().readAllBytes()));
 
         // Verify that all data is read again for a new builder.
         assertEquals(expected,
-                     new String(streamer.aggregate().readAllBytes()));
+                     new String(streamer.data().readAllBytes()));
 
         assertEquals(List.of("multipart/form-data; boundary=My boundary"),
-                     streamer.newBuilderFor(Method.POST)
+                     streamer.requestBuilder(Method.POST)
                              .uri(URI.create("https://uri/path"))
                              .build().headers().allValues("Content-Type"));
     }
