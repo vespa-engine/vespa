@@ -26,7 +26,7 @@ public class PositionParserTestCase {
         mgr.registerDocumentType(docType);
 
         VespaXMLFeedReader parser = new VespaXMLFeedReader("src/test/vespaxmlparser/test_position.xml", mgr);
-        Iterator<VespaXMLFeedReader.Operation> it = parser.readAll().iterator();
+        Iterator<FeedOperation> it = parser.readAll().iterator();
         assertTrue(it.hasNext());
         assertDocument(PositionDataType.valueOf(1, 2), it.next());
         assertTrue(it.hasNext());
@@ -38,9 +38,9 @@ public class PositionParserTestCase {
         assertFalse(it.hasNext());
     }
 
-    private static void assertDocument(Struct expected, VespaXMLFeedReader.Operation operation) {
+    private static void assertDocument(Struct expected, FeedOperation operation) {
         assertNotNull(operation);
-        assertEquals(VespaXMLFeedReader.OperationType.DOCUMENT, operation.getType());
+        assertEquals(FeedOperation.Type.DOCUMENT, operation.getType());
         Document doc = operation.getDocument();
         assertNotNull(doc);
         assertEquals(expected, doc.getFieldValue("my_pos"));

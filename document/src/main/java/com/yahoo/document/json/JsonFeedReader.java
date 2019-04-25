@@ -9,6 +9,7 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader.Operation;
 
@@ -34,13 +35,13 @@ public class JsonFeedReader implements FeedReader {
     }
 
     @Override
-    public void read(Operation operation) throws Exception {
+    public FeedOperation read() throws Exception {
         DocumentOperation documentOperation = reader.next();
+        Operation operation = new Operation();
 
         if (documentOperation == null) {
             stream.close();
-            operation.setInvalid();
-            return;
+            return operation;
         }
 
         if (documentOperation instanceof DocumentUpdate) {
@@ -54,6 +55,7 @@ public class JsonFeedReader implements FeedReader {
         }
 
         operation.setCondition(documentOperation.getCondition());
+        return operation;
     }
 
 }

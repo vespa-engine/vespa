@@ -45,9 +45,10 @@ public class MockReader implements FeedReader {
     }
 
     @Override
-    public void read(Operation operation) throws Exception {
+    public FeedOperation read() throws Exception {
+        Operation operation = new Operation();
         if (finished) {
-            return;
+            return operation;
         }
 
         byte whatToDo = stream.getNextOperation();
@@ -70,6 +71,7 @@ public class MockReader implements FeedReader {
         case 4:
             throw new RuntimeException("boom");
         }
+        return operation;
     }
 
 }

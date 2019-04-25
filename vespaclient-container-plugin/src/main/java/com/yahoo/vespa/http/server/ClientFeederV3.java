@@ -17,6 +17,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.Exceptions;
 
@@ -274,7 +275,7 @@ class ClientFeederV3 {
     /** Returns the next message in the stream, or null if none */
     protected DocumentOperationMessageV3 getNextMessage(
             String operationId, InputStream requestInputStream, FeederSettings settings) throws Exception {
-        VespaXMLFeedReader.Operation operation = streamReaderV3.getNextOperation(requestInputStream, settings);
+        FeedOperation operation = streamReaderV3.getNextOperation(requestInputStream, settings);
 
         // This is a bit hard to set up while testing, so we accept that things are not perfect.
         if (sourceSession.getResource().session() != null) {

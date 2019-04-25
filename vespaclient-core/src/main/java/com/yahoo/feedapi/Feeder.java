@@ -10,6 +10,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
@@ -80,14 +81,13 @@ public abstract class Feeder {
 
         while (!sender.isAborted()) {
             try {
-                VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
-                reader.read(op);
+                FeedOperation op = reader.read();
                 if (createIfNonExistent && op.getDocumentUpdate() != null) {
                     op.getDocumentUpdate().setCreateIfNonExistent(true);
                 }
 
                 // Done feeding.
-                if (op.getType() == VespaXMLFeedReader.OperationType.INVALID) {
+                if (op.getType() == FeedOperation.Type.INVALID) {
                     break;
                 } else {
                     sender.sendOperation(op);

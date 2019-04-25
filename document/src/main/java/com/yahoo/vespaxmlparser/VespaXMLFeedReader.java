@@ -74,22 +74,14 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
         }
     }
 
-    public enum OperationType {
-        DOCUMENT,
-        REMOVE,
-        UPDATE,
-        INVALID
-    }
-
     /**
      * Represents a feed operation found by the parser. Can be one of the following types:
      * - getType() == DOCUMENT: getDocument() is valid.
      * - getType() == REMOVE: getRemove() is valid.
      * - getType() == UPDATE: getUpdate() is valid.
      */
-    public static class Operation {
+    public static class Operation extends FeedOperation {
 
-        private OperationType type;
         private Document doc;
         private DocumentId remove;
         private DocumentUpdate docUpdate;
@@ -100,41 +92,38 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
         }
 
         public void setInvalid() {
-            type = OperationType.INVALID;
             doc = null;
             remove = null;
             docUpdate = null;
             condition = TestAndSetCondition.NOT_PRESENT_CONDITION;
         }
 
-        public OperationType getType() {
-            return type;
-        }
-
+        @Override
         public Document getDocument() {
             return doc;
         }
 
         public void setDocument(Document doc) {
-            this.type = OperationType.DOCUMENT;
+            setType(Type.DOCUMENT);
             this.doc = doc;
         }
 
+        @Override
         public DocumentId getRemove() {
             return remove;
         }
 
         public void setRemove(DocumentId remove) {
-            this.type = OperationType.REMOVE;
+            setType(Type.REMOVE);
             this.remove = remove;
         }
-
+        @Override
         public DocumentUpdate getDocumentUpdate() {
             return docUpdate;
         }
 
         public void setDocumentUpdate(DocumentUpdate docUpdate) {
-            this.type = OperationType.UPDATE;
+            setType(Type.UPDATE);
             this.docUpdate = docUpdate;
         }
 
@@ -142,19 +131,11 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
             this.condition = condition;
         }
 
+        @Override
         public TestAndSetCondition getCondition() {
             return condition;
         }
 
-        @Override
-        public String toString() {
-            return "Operation{" +
-                   "type=" + type +
-                   ", doc=" + doc +
-                   ", remove=" + remove +
-                   ", docUpdate=" + docUpdate +
-                   '}';
-        }
     }
 
     /**
@@ -164,12 +145,11 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
      *
      * @return The list of all read operations.
      */
-    public List<Operation> readAll() throws Exception {
-        List<Operation> list = new ArrayList<>();
+    public List<FeedOperation> readAll() throws Exception {
+        List<FeedOperation> list = new ArrayList<>();
         while (true) {
-            Operation op = new Operation();
-            read(op);
-            if (op.getType() == OperationType.INVALID) {
+            FeedOperation op = read();
+            if (op.getType() == FeedOperation.Type.INVALID) {
                 return list;
             } else {
                 list.add(op);
@@ -181,10 +161,9 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
      * @see com.yahoo.vespaxmlparser.FeedReader#read(com.yahoo.vespaxmlparser.VespaXMLFeedReader.Operation)
      */
     @Override
-    public void read(Operation operation) throws Exception {
+    public FeedOperation read() throws Exception {
+        Operation operation = new Operation();
         String startTag = null;
-        operation.setInvalid();
-
         try {
             while (reader.hasNext()) {
                 int type = reader.next();
@@ -197,13 +176,13 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
                         Document document = new Document(documentReader);
                         operation.setDocument(document);
                         operation.setCondition(TestAndSetCondition.fromConditionString(documentReader.getCondition()));
-                        return;
+                        return operation;
                     } else if ("update".equals(startTag)) {
                         VespaXMLUpdateReader updateReader = new VespaXMLUpdateReader(reader, docTypeManager);
                         DocumentUpdate update = new DocumentUpdate(updateReader);
                         operation.setDocumentUpdate(update);
                         operation.setCondition(TestAndSetCondition.fromConditionString(updateReader.getCondition()));
-                        return;
+                        return operation;
                     } else if ("remove".equals(startTag)) {
                         boolean documentIdFound = false;
 
@@ -224,7 +203,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
 
                         operation.setCondition(TestAndSetCondition.fromConditionString(condition));
 
-                        return;
+                        return operation;
                     } else {
                         throw newDeserializeException("Element \"" + startTag + "\" not allowed in this context");
                     }
@@ -243,6 +222,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
 
             throw(e);
         }
+        return operation;
     }
 
 }

@@ -28,7 +28,7 @@ public class UriParserTestCase {
         mgr.registerDocumentType(docType);
 
         VespaXMLFeedReader parser = new VespaXMLFeedReader("src/test/vespaxmlparser/test_uri.xml", mgr);
-        Iterator<VespaXMLFeedReader.Operation> it = parser.readAll().iterator();
+        Iterator<FeedOperation> it = parser.readAll().iterator();
 
         Document doc = nextDocument(it);
         assertNotNull(doc);
@@ -59,21 +59,21 @@ public class UriParserTestCase {
         assertFalse(it.hasNext());
     }
 
-    private static Document nextDocument(Iterator<VespaXMLFeedReader.Operation> it) {
+    private static Document nextDocument(Iterator<FeedOperation> it) {
         assertTrue(it.hasNext());
-        VespaXMLFeedReader.Operation op = it.next();
+        FeedOperation op = it.next();
         assertNotNull(op);
-        assertEquals(VespaXMLFeedReader.OperationType.DOCUMENT, op.getType());
+        assertEquals(FeedOperation.Type.DOCUMENT, op.getType());
         Document doc = op.getDocument();
         assertNotNull(doc);
         return doc;
     }
 
-    private static DocumentUpdate nextUpdate(Iterator<VespaXMLFeedReader.Operation> it) {
+    private static DocumentUpdate nextUpdate(Iterator<FeedOperation> it) {
         assertTrue(it.hasNext());
-        VespaXMLFeedReader.Operation op = it.next();
+        FeedOperation op = it.next();
         assertNotNull(op);
-        assertEquals(VespaXMLFeedReader.OperationType.UPDATE, op.getType());
+        assertEquals(FeedOperation.Type.UPDATE, op.getType());
         DocumentUpdate upd = op.getDocumentUpdate();
         assertNotNull(upd);
         return upd;
