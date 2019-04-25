@@ -61,7 +61,7 @@ public class FileDBRegistry implements FileRegistry {
     }
 
     private static String uriToRelativeFile(String uri) {
-        String relative = "uri/" + String.valueOf(XXHashFactory.nativeInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0));
+        String relative = "uri/" + XXHashFactory.fastestJavaInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0);
         if (uri.endsWith(".json")) {
             relative += ".json";
         } else if (uri.endsWith(".json.lz4")) {
