@@ -156,10 +156,10 @@ public class SimpleFeeder implements ReplyHandler {
 
     }
 
-    static final int NONE = 0;
-    static final int DOCUMENT = 1;
-    static final int UPDATE = 2;
-    static final int REMOVE = 3;
+    static private final int NONE = 0;
+    static private final int DOCUMENT = 1;
+    static private final int UPDATE = 2;
+    static private final int REMOVE = 3;
     private static class VespaV1Destination implements Destination {
         private final OutputStream outputStream;
         GrowableByteBuffer buffer = new GrowableByteBuffer(16384);
@@ -222,9 +222,34 @@ public class SimpleFeeder implements ReplyHandler {
             this.in = in;
             this.mgr = mgr;
             byte [] header = new byte[2];
-            in.read(header);
-            if ((header[0] != 'V') && (header[1] != '1')) {
+            int read = in.read(header);
+            if ((read != header.length) || (header[0] != 'V') || (header[1] != '1')) {
                 throw new IllegalArgumentException("Invalid Header " + Arrays.toString(header));
+            }
+        }
+
+        class LazyDocumentOperation extends FeedOperation {
+            private final DocumentDeserializer deserializer;
+            LazyDocumentOperation(DocumentDeserializer deserializer) {
+                super(Type.DOCUMENT);
+                this.deserializer = deserializer;
+            }
+
+            @Override
+            public Document getDocument() {
+                return new Document(deserializer);
+            }
+        }
+        class LazyUpdateOperation extends FeedOperation {
+            private final DocumentDeserializer deserializer;
+            LazyUpdateOperation(DocumentDeserializer deserializer) {
+                super(Type.UPDATE);
+                this.deserializer = deserializer;
+            }
+
+            @Override
+            public DocumentUpdate getDocumentUpdate() {
+                return new DocumentUpdate(deserializer);
             }
         }
         @Override
@@ -248,9 +273,9 @@ public class SimpleFeeder implements ReplyHandler {
             }
             DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, GrowableByteBuffer.wrap(blob));
             if (type == DOCUMENT) {
-                return new DocumentFeedOperation(new Document(deser));
+                return new LazyDocumentOperation(deser);
             } else if (type == UPDATE) {
-                return new DocumentUpdateFeedOperation(new DocumentUpdate(deser));
+                return new LazyUpdateOperation(deser);
             } else if (type == REMOVE) {
                 return new RemoveFeedOperation(new DocumentId(deser));
             } else {
@@ -259,7 +284,7 @@ public class SimpleFeeder implements ReplyHandler {
         }
     }
 
-    Destination createDumper(FeederParams params) {
+    private Destination createDumper(FeederParams params) {
         if (params.getDumpFormat() == FeederParams.DumpFormat.VESPA) {
             return new VespaV1Destination(params.getDumpStream(), failure, numReplies);
         }
