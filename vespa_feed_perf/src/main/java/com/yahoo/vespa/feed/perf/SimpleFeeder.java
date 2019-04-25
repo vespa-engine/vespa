@@ -187,7 +187,7 @@ public class SimpleFeeder implements ReplyHandler {
                 type = REMOVE;
             }
             int sz = buffer.position();
-            long hash = XXHashFactory.fastestJavaInstance().hash64().hash(buffer.array(), 0, sz, 0);
+            long hash = hash(buffer.array(), 0, sz);
             try {
 
                 header.putInt(sz);
@@ -205,9 +205,12 @@ public class SimpleFeeder implements ReplyHandler {
         public void close() throws Exception {
             outputStream.close();
         }
+        static long hash(byte [] buf, int offset, int length) {
+            return XXHashFactory.fastestJavaInstance().hash64().hash(buf, offset, length, 0);
+        }
     }
 
-    class VespaV1FeedReader implements FeedReader {
+    static class VespaV1FeedReader implements FeedReader {
         private final InputStream in;
         private final DocumentTypeManager mgr;
         private final byte[] prefix = new byte[16];
@@ -235,6 +238,10 @@ public class SimpleFeeder implements ReplyHandler {
             read = in.read(blob);
             if (read != blob.length) {
                 throw new IllegalArgumentException("Underflow, failed reading " + blob.length + "bytes. Got " + read);
+            }
+            long computedHash = VespaV1Destination.hash(blob, 0, blob.length);
+            if (computedHash != hash) {
+                throw new IllegalArgumentException("Hash mismatch, expected " + hash + ", got " + computedHash);
             }
             DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, GrowableByteBuffer.wrap(blob));
             if (type == DOCUMENT) {
