@@ -23,10 +23,9 @@ import static org.junit.Assert.fail;
 
 /**
  * Only runs on screwdriver to save time!
- *
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @since 5.1.27
  */
-@SuppressWarnings("deprecation")
 public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
 
     private void writeDocuments(Session session) throws IOException {

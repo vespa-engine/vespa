@@ -361,12 +361,12 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     @Override
     public void handshake() throws ServerResponseException, IOException {
-        boolean useCompression = false;
-        boolean drain = false;
-        boolean handshake = true;
+        final boolean useCompression = false;
+        final boolean drain = false;
+        final boolean handshake = true;
         HttpPost httpPost = createPost(drain, useCompression, handshake);
 
-        String oldSessionID = sessionId;
+        final String oldSessionID = sessionId;
         sessionId = null;
         try (InputStream stream = executePost(httpPost)) {
             if (oldSessionID != null && !oldSessionID.equals(sessionId)) {

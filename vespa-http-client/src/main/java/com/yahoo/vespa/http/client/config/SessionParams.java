@@ -8,12 +8,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Parameters given to a {@link com.yahoo.vespa.http.client.FeedClientFactory}
- * when creating {@link com.yahoo.vespa.http.client.FeedClient}s. This class is immutable
+ * Parameters given to a {@link com.yahoo.vespa.http.client.SessionFactory}
+ * when creating {@link com.yahoo.vespa.http.client.Session}s. This class is immutable
  * and has no public constructor - to instantiate one, use a {@link Builder}.
  *
  * @author Einar M R Rosenvinge
- * @see com.yahoo.vespa.http.client.FeedClientFactory
+ * @see com.yahoo.vespa.http.client.SessionFactory
  * @see Builder
  */
 public final class SessionParams {
@@ -85,7 +85,8 @@ public final class SessionParams {
 
         /**
          * Sets the maximum number of document operations to hold in memory, waiting to be
-         * sent to Vespa. When this threshold is reached, {@link java.io.OutputStream#close()} will block.
+         * sent to Vespa. When this threshold is reached, {@link java.io.OutputStream#close()} will block,
+         * see {@link com.yahoo.vespa.http.client.Session#stream(CharSequence)}.
          *
          * @param clientQueueSize the maximum number of document operations to hold in memory.
          * @return pointer to builder.
@@ -110,7 +111,7 @@ public final class SessionParams {
         }
 
         /**
-         * Instantiates a {@link SessionParams} that can be given to a {@link com.yahoo.vespa.http.client.FeedClientFactory}.
+         * Instantiates a {@link SessionParams} that can be given to a {@link com.yahoo.vespa.http.client.SessionFactory}.
          *
          * @return a SessionParams object with the parameters of this Builder
          */
@@ -132,7 +133,6 @@ public final class SessionParams {
             return throttlerMinSize;
         }
     }
-
     private final List<Cluster> clusters;
     private final FeedParams feedParams;
     private final ConnectionParams connectionParams;
