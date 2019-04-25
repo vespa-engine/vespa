@@ -98,7 +98,6 @@ FieldWriter::open(const vespalib::string &prefix,
     return true;
 }
 
-
 void
 FieldWriter::flush()
 {
@@ -120,7 +119,6 @@ FieldWriter::flush()
     }
 }
 
-
 void
 FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
 {
@@ -134,13 +132,11 @@ FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
     _prevDocId = 0;
 }
 
-
 void
 FieldWriter::newWord(vespalib::stringref word)
 {
     newWord(_wordNum + 1, word);
 }
-
 
 bool
 FieldWriter::close()
@@ -183,7 +179,6 @@ FieldWriter::getFeatureParams(PostingListParams &params)
     _posoccfile->getFeatureParams(params);
 }
 
-
 static const char *termOccNames[] =
 {
     "boolocc.bdat",
@@ -198,7 +193,6 @@ static const char *termOccNames[] =
     "dictionary.words",
     nullptr,
 };
-
 
 void
 FieldWriter::remove(const vespalib::string &prefix)

@@ -33,8 +33,7 @@ noWordPos()
 }
 
 
-class FileHandle
-{
+class FileHandle {
 public:
     FieldWriter *_fieldWriter;
     DocIdAndFeatures _docIdAndFeatures;
@@ -43,22 +42,18 @@ public:
 
     ~FileHandle();
 
-    void
-    open(vespalib::stringref dir,
-         const SchemaUtil::IndexIterator &index,
-         uint32_t docIdLimit, uint64_t numWordIds,
-         const TuneFileSeqWrite &tuneFileWrite,
-         const FileHeaderContext &fileHeaderContext);
+    void open(vespalib::stringref dir,
+              const SchemaUtil::IndexIterator &index,
+              uint32_t docIdLimit, uint64_t numWordIds,
+              const TuneFileSeqWrite &tuneFileWrite,
+              const FileHeaderContext &fileHeaderContext);
 
-    void
-    close();
+    void close();
 };
-
 
 }
 
-class IndexBuilder::FieldHandle
-{
+class IndexBuilder::FieldHandle {
 public:
     FieldHandle(const Schema &schema,
                 uint32_t fieldId,
@@ -66,20 +61,15 @@ public:
 
     ~FieldHandle();
 
-    static uint32_t
-    noDocRef()
-    {
+    static uint32_t noDocRef() {
         return std::numeric_limits<uint32_t>::max();
     }
 
-    static uint32_t
-    noElRef()
-    {
+    static uint32_t noElRef() {
         return std::numeric_limits<uint32_t>::max();
     }
 
-    class FHWordDocFieldFeatures
-    {
+    class FHWordDocFieldFeatures {
     public:
         uint32_t _docId;
         uint32_t _numElements;
@@ -90,28 +80,12 @@ public:
         {
         }
 
-        uint32_t
-        getDocId() const
-        {
-            return _docId;
-        }
-
-        uint32_t
-        getNumElements() const
-        {
-            return _numElements;
-        }
-
-        void
-        incNumElements()
-        {
-            ++_numElements;
-        }
+        uint32_t getDocId() const { return _docId; }
+        uint32_t getNumElements() const { return _numElements; }
+        void incNumElements() { ++_numElements; }
     };
 
-    class FHWordDocElementFeatures
-        : public WordDocElementFeatures
-    {
+    class FHWordDocElementFeatures : public WordDocElementFeatures {
     public:
         uint32_t _docRef;
 
@@ -127,24 +101,21 @@ public:
         }
     };
 
-    class FHWordDocElementWordPosFeatures
-        : public WordDocElementWordPosFeatures
-    {
+    class FHWordDocElementWordPosFeatures : public WordDocElementWordPosFeatures {
     public:
         uint32_t _elementRef;
 
-        FHWordDocElementWordPosFeatures(
-                const WordDocElementWordPosFeatures &features,
-                uint32_t elementRef)
+        FHWordDocElementWordPosFeatures(const WordDocElementWordPosFeatures &features,
+                                        uint32_t elementRef)
             : WordDocElementWordPosFeatures(features),
               _elementRef(elementRef)
         {
         }
     };
 
-    typedef vespalib::Array<FHWordDocFieldFeatures>          FHWordDocFieldFeaturesVector;
-    typedef vespalib::Array<FHWordDocElementFeatures>        FHWordDocElementFeaturesVector;
-    typedef vespalib::Array<FHWordDocElementWordPosFeatures> FHWordDocElementWordPosFeaturesVector;
+    using FHWordDocFieldFeaturesVector = vespalib::Array<FHWordDocFieldFeatures>;
+    using FHWordDocElementFeaturesVector = vespalib::Array<FHWordDocElementFeatures>;
+    using FHWordDocElementWordPosFeaturesVector = vespalib::Array<FHWordDocElementWordPosFeatures>;
 
     FHWordDocFieldFeaturesVector          _wdff;
     FHWordDocElementFeaturesVector        _wdfef;
@@ -162,72 +133,35 @@ public:
 
     FileHandle _files;
 
-    void
-    startWord(vespalib::stringref word);
+    void startWord(vespalib::stringref word);
+    void endWord();
+    void startDocument(uint32_t docId);
+    void endDocument();
+    void startElement(uint32_t elementId,
+                      int32_t weight,
+                      uint32_t elementLen);
+    void endElement();
+    void addOcc(const WordDocElementWordPosFeatures &features);
 
-    void
-    endWord();
+    const Schema::IndexField &getSchemaField();
+    const vespalib::string &getName();
+    vespalib::string getDir();
+    void open(uint32_t docIdLimit, uint64_t numWordIds,
+              const TuneFileSeqWrite &tuneFileWrite,
+              const FileHeaderContext &fileHeaderContext);
+    void close();
 
-    void
-    startDocument(uint32_t docId);
-
-    void
-    endDocument();
-
-    void
-    startElement(uint32_t elementId,
-                 int32_t weight,
-                 uint32_t elementLen);
-
-    void
-    endElement();
-
-    void
-    addOcc(const WordDocElementWordPosFeatures &features);
-
-    void
-    setValid()
-    {
-        _valid = true;
-    }
-
-    bool
-    getValid() const
-    {
-        return _valid;
-    }
-
-    const Schema::IndexField &
-    getSchemaField();
-
-    const vespalib::string &
-    getName();
-
-    vespalib::string
-    getDir();
-
-    void
-    open(uint32_t docIdLimit, uint64_t numWordIds,
-         const TuneFileSeqWrite &tuneFileWrite,
-         const FileHeaderContext &fileHeaderContext);
-
-    void
-    close();
-
-    uint32_t
-    getIndexId() const
-    {
-        return _fieldId;
-    }
+    void setValid() { _valid = true; }
+    bool getValid() const { return _valid; }
+    uint32_t getIndexId() const { return _fieldId; }
 };
 
 
 namespace {
 
-class SingleIterator
-{
+class SingleIterator {
 public:
-    typedef IndexBuilder::FieldHandle FH;
+    using FH = IndexBuilder::FieldHandle;
     FH::FHWordDocFieldFeaturesVector::const_iterator _dFeatures;
     FH::FHWordDocFieldFeaturesVector::const_iterator _dFeaturesE;
     FH::FHWordDocElementFeaturesVector::const_iterator _elFeatures;
@@ -237,18 +171,13 @@ public:
 
     SingleIterator(FH &fieldHandle, uint32_t localFieldId);
 
-    void
-    appendFeatures(DocIdAndFeatures &features);
+    void appendFeatures(DocIdAndFeatures &features);
 
-    bool
-    isValid() const
-    {
+    bool isValid() const {
         return _dFeatures != _dFeaturesE;
     }
 
-    bool
-    operator<(const SingleIterator &rhs) const
-    {
+    bool operator<(const SingleIterator &rhs) const {
         if (_docId != rhs._docId) {
             return _docId < rhs._docId;
         }
@@ -256,9 +185,7 @@ public:
     }
 };
 
-
 }
-
 
 FileHandle::FileHandle()
     : _fieldWriter(nullptr),
@@ -266,12 +193,10 @@ FileHandle::FileHandle()
 {
 }
 
-
 FileHandle::~FileHandle()
 {
     delete _fieldWriter;
 }
-
 
 void
 FileHandle::open(vespalib::stringref dir,
@@ -293,7 +218,6 @@ FileHandle::open(vespalib::stringref dir,
     }
 }
 
-
 void
 FileHandle::close()
 {
@@ -311,7 +235,6 @@ FileHandle::close()
     assert(ret);
     (void) ret;
 }
-
 
 IndexBuilder::FieldHandle::FieldHandle(const Schema &schema,
                                        uint32_t fieldId,
@@ -331,9 +254,7 @@ IndexBuilder::FieldHandle::FieldHandle(const Schema &schema,
 {
 }
 
-
 IndexBuilder::FieldHandle::~FieldHandle() = default;
-
 
 void
 IndexBuilder::FieldHandle::startWord(vespalib::stringref word)
@@ -341,7 +262,6 @@ IndexBuilder::FieldHandle::startWord(vespalib::stringref word)
     assert(_valid);
     _files._fieldWriter->newWord(word);
 }
-
 
 void
 IndexBuilder::FieldHandle::endWord()
@@ -362,7 +282,6 @@ IndexBuilder::FieldHandle::endWord()
     _elRef = noElRef();
 }
 
-
 void
 IndexBuilder::FieldHandle::startDocument(uint32_t docId)
 {
@@ -372,7 +291,6 @@ IndexBuilder::FieldHandle::startDocument(uint32_t docId)
     _docRef = _wdff.size() - 1;
     _lowestOKElementId = 0u;
 }
-
 
 void
 IndexBuilder::FieldHandle::endDocument()
@@ -385,12 +303,10 @@ IndexBuilder::FieldHandle::endDocument()
     _docRef = noDocRef();
 }
 
-
 void
-IndexBuilder::FieldHandle::
-startElement(uint32_t elementId,
-             int32_t weight,
-             uint32_t elementLen)
+IndexBuilder::FieldHandle::startElement(uint32_t elementId,
+                                        int32_t weight,
+                                        uint32_t elementLen)
 {
     assert(_docRef != noDocRef());
     assert(_elRef == noElRef());
@@ -407,7 +323,6 @@ startElement(uint32_t elementId,
     _lowestOKWordPos = 0u;
 }
 
-
 void
 IndexBuilder::FieldHandle::endElement()
 {
@@ -418,10 +333,8 @@ IndexBuilder::FieldHandle::endElement()
     _lowestOKElementId = ef.getElementId() + 1;
 }
 
-
 void
-IndexBuilder::FieldHandle::
-addOcc(const WordDocElementWordPosFeatures &features)
+IndexBuilder::FieldHandle::addOcc(const WordDocElementWordPosFeatures &features)
 {
     assert(_elRef != noElRef());
     FHWordDocElementFeatures &ef = _wdfef[_elRef];
@@ -435,28 +348,23 @@ addOcc(const WordDocElementWordPosFeatures &features)
     ef.incNumOccs();
 }
 
-
 const Schema::IndexField &
 IndexBuilder::FieldHandle::getSchemaField()
 {
     return _schema->getIndexField(_fieldId);
 }
 
-
 const vespalib::string &
 IndexBuilder::FieldHandle::getName()
 {
     return getSchemaField().getName();
-
 }
-
 
 vespalib::string
 IndexBuilder::FieldHandle::getDir()
 {
     return _ib->appendToPrefix(getName());
 }
-
 
 void
 IndexBuilder::FieldHandle::open(uint32_t docIdLimit, uint64_t numWordIds,
@@ -468,13 +376,11 @@ IndexBuilder::FieldHandle::open(uint32_t docIdLimit, uint64_t numWordIds,
                 docIdLimit, numWordIds, tuneFileWrite, fileHeaderContext);
 }
 
-
 void
 IndexBuilder::FieldHandle::close()
 {
     _files.close();
 }
-
 
 SingleIterator::SingleIterator(FH &fieldHandle, uint32_t localFieldId)
     : _dFeatures(fieldHandle._wdff.begin()),
@@ -485,7 +391,6 @@ SingleIterator::SingleIterator(FH &fieldHandle, uint32_t localFieldId)
       _localFieldId(localFieldId)
 {
 }
-
 
 void
 SingleIterator::appendFeatures(DocIdAndFeatures &features)
@@ -510,7 +415,6 @@ SingleIterator::appendFeatures(DocIdAndFeatures &features)
         _docId = _dFeatures->getDocId();
     }
 }
-
 
 IndexBuilder::IndexBuilder(const Schema &schema)
     : index::IndexBuilder(schema),
@@ -541,6 +445,27 @@ IndexBuilder::IndexBuilder(const Schema &schema)
 IndexBuilder::~IndexBuilder() = default;
 
 void
+IndexBuilder::startField(uint32_t fieldId)
+{
+    assert(_curDocId == noDocId());
+    assert(_currentField == nullptr);
+    assert(fieldId < _fields.size());
+    assert(fieldId >= _lowestOKFieldId);
+    _currentField = &_fields[fieldId];
+    assert(_currentField != nullptr);
+}
+
+void
+IndexBuilder::endField()
+{
+    assert(_curDocId == noDocId());
+    assert(!_inWord);
+    assert(_currentField != nullptr);
+    _lowestOKFieldId = _currentField->_fieldId + 1;
+    _currentField = nullptr;
+}
+
+void
 IndexBuilder::startWord(vespalib::stringref word)
 {
     assert(_currentField != nullptr);
@@ -551,7 +476,6 @@ IndexBuilder::startWord(vespalib::stringref word)
     _currentField->startWord(word);
 }
 
-
 void
 IndexBuilder::endWord()
 {
@@ -561,7 +485,6 @@ IndexBuilder::endWord()
     _inWord = false;
     _lowestOKDocId = 1u;
 }
-
 
 void
 IndexBuilder::startDocument(uint32_t docId)
@@ -575,7 +498,6 @@ IndexBuilder::startDocument(uint32_t docId)
     _currentField->startDocument(docId);
 }
 
-
 void
 IndexBuilder::endDocument()
 {
@@ -586,30 +508,6 @@ IndexBuilder::endDocument()
     _curDocId = noDocId();
 }
 
-
-void
-IndexBuilder::startField(uint32_t fieldId)
-{
-    assert(_curDocId == noDocId());
-    assert(_currentField == nullptr);
-    assert(fieldId < _fields.size());
-    assert(fieldId >= _lowestOKFieldId);
-    _currentField = &_fields[fieldId];
-    assert(_currentField != nullptr);
-}
-
-
-void
-IndexBuilder::endField()
-{
-    assert(_curDocId == noDocId());
-    assert(!_inWord);
-    assert(_currentField != nullptr);
-    _lowestOKFieldId = _currentField->_fieldId + 1;
-    _currentField = nullptr;
-}
-
-
 void
 IndexBuilder::startElement(uint32_t elementId,
                            int32_t weight,
@@ -619,14 +517,12 @@ IndexBuilder::startElement(uint32_t elementId,
     _currentField->startElement(elementId, weight, elementLen);
 }
 
-
 void
 IndexBuilder::endElement()
 {
     assert(_currentField != nullptr);
     _currentField->endElement();
 }
-
 
 void
 IndexBuilder::addOcc(const WordDocElementWordPosFeatures &features)
@@ -635,13 +531,11 @@ IndexBuilder::addOcc(const WordDocElementWordPosFeatures &features)
     _currentField->addOcc(features);
 }
 
-
 void
 IndexBuilder::setPrefix(vespalib::stringref prefix)
 {
     _prefix = prefix;
 }
-
 
 vespalib::string
 IndexBuilder::appendToPrefix(vespalib::stringref name)
@@ -651,7 +545,6 @@ IndexBuilder::appendToPrefix(vespalib::stringref name)
     }
     return _prefix + "/" + name;
 }
-
 
 void
 IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
@@ -681,7 +574,6 @@ IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
         LOG_ABORT("should not be reached");
     }
 }
-
 
 void
 IndexBuilder::close()
