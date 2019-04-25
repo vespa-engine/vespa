@@ -1,5 +1,16 @@
 package ai.vespa.hosted.api;
 
-public class Method {
+/**
+ * HTTP methods.
+ *
+ * @author jonmv
+ */
+public enum Method {
+
+    GET,
+    PUT,
+    POST,
+    PATCH,
+    DELETE;
 
 }
