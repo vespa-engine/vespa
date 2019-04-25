@@ -15,9 +15,7 @@ import java.util.concurrent.BlockingQueue;
  *
  * @author Einar M R Rosenvinge
  * @see SessionFactory
- * @deprecated use either FeedClient or SyncFeedClient // TODO: Remove on Vespa 8
  */
-@Deprecated
 public interface Session extends AutoCloseable {
 
     /**

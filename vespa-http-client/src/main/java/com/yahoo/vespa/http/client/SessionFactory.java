@@ -14,9 +14,7 @@ import java.util.concurrent.ThreadFactory;
  * Factory for creating {@link Session} instances.
  *
  * @author Einar M R Rosenvinge
- * @deprecated use either FeedClient or SyncFeedClient // TODO: Remove on Vespa 8
  */
-@Deprecated
 public final class SessionFactory {
 
     /**
