@@ -13,7 +13,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This represents a system-level application in hosted Vespa. E.g. the zone-application.
+ * This represents a system-level application in hosted Vespa. All infrastructure nodes in a hosted Vespa zones are
+ * allocated to a system application.
  *
  * @author mpolden
  */
