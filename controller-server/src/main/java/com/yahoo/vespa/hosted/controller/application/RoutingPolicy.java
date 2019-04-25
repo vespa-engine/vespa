@@ -75,8 +75,8 @@ public class RoutingPolicy {
         return Endpoint.of(owner).target(cluster, zone).on(Port.tls()).directRouting().in(system);
     }
 
-    /** Endpoints for this routing policy */
-    public EndpointList endpointsIn(SystemName system) {
+    /** Returns rotation endpoints of this */
+    public EndpointList rotationEndpointsIn(SystemName system) {
         return EndpointList.of(rotations.stream().map(rotation -> endpointOf(owner, rotation, system)));
     }
 
