@@ -28,12 +28,6 @@ public class Highlight implements Cloneable {
     public Highlight() {}
 
     private void addHighlightItem(String key, Item value) {
-        /*List<IndexedItem> l = highlightItems.get(key);
-        if (l == null) {
-            l = new ArrayList<IndexedItem>();
-            highlightItems.put(key, l);
-        }
-        l.addField(value);*/
         AndItem item = highlightItems.get(key);
         if (item == null) {
             item = new AndItem();
@@ -54,6 +48,7 @@ public class Highlight implements Cloneable {
 
     /**
      * Add custom highlight phrase
+     *
      * @param field Field name
      * @param phrase List of terms to be highlighted as a phrase
      */
