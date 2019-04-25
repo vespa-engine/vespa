@@ -13,12 +13,16 @@ namespace search::diskindex {
 
 class BitVectorCandidate;
 
-class IndexBuilder : public index::IndexBuilder
-{
+/**
+ * Class used to build a disk index for the set of index fields specified in a schema.
+ *
+ * The resulting disk index consists of field indexes that are independent of each other.
+ */
+class IndexBuilder : public index::IndexBuilder {
 public:
     class FieldHandle;
 
-    typedef index::Schema Schema;
+    using Schema = index::Schema;
 private:
     // Text fields
     FieldHandle             *_currentField;
@@ -49,19 +53,16 @@ public:
     IndexBuilder(const Schema &schema); 
     ~IndexBuilder() override;
 
+    void startField(uint32_t fieldId) override;
+    void endField() override;
     void startWord(vespalib::stringref word) override;
     void endWord() override;
     void startDocument(uint32_t docId) override;
     void endDocument() override;
-    void startField(uint32_t fieldId) override;
-    void endField() override;
     void startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) override;
     void endElement() override;
     void addOcc(const WordDocElementWordPosFeatures &features) override;
 
-    // TODO: methods for attribute vectors.
-
-    // TODO: methods for document summary.
     void setPrefix(vespalib::stringref prefix);
 
     vespalib::string appendToPrefix(vespalib::stringref name);
