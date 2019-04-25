@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.SessionParams;
-import com.yahoo.vespa.http.client.core.api.SessionImpl;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -31,7 +30,7 @@ public final class SessionFactory {
 
     @SuppressWarnings("deprecation")
     static Session createInternal(SessionParams params) {
-        return new SessionImpl(params, createTimeoutExecutor());
+        return new com.yahoo.vespa.http.client.core.api.SessionImpl(params, createTimeoutExecutor());
     }
 
     static ScheduledThreadPoolExecutor createTimeoutExecutor() {
