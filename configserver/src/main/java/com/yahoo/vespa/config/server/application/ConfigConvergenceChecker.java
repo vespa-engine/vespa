@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 
 /**
@@ -43,12 +44,12 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER
 public class ConfigConvergenceChecker extends AbstractComponent {
 
     private static final ApplicationId routingApplicationId = ApplicationId.from("hosted-vespa", "routing", "default");
-    private static final String nodeAdminName = "node-admin";
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
     private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
             CONTAINER.serviceName,
             QRSERVER.serviceName,
+            LOGSERVER_CONTAINER.serviceName,
             "searchnode",
             "storagenode",
             "distributor"
