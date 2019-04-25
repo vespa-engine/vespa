@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -23,7 +22,7 @@ public enum SystemApplication {
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
     configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config, configServerHost),
-    zone(ApplicationId.from("hosted-vespa", "routing", "default"), ImmutableSet.of(NodeType.proxy, NodeType.host),
+    zone(ApplicationId.from("hosted-vespa", "routing", "default"), Set.of(NodeType.proxy, NodeType.host),
          configServerHost, proxyHost, configServer);
 
     private final ApplicationId id;
@@ -39,7 +38,7 @@ public enum SystemApplication {
             throw new IllegalArgumentException("Node types must be non-empty");
         }
         this.id = id;
-        this.nodeTypes = ImmutableSet.copyOf(nodeTypes);
+        this.nodeTypes = Set.copyOf(nodeTypes);
         this.dependencies = List.of(dependencies);
     }
 
