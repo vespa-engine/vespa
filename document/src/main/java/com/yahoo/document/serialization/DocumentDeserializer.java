@@ -15,7 +15,7 @@ public interface DocumentDeserializer extends DocumentReader, DocumentUpdateRead
     /**
      * Returns the underlying buffer used for de-serialization.
      */
-    public GrowableByteBuffer getBuf();
+    GrowableByteBuffer getBuf();
 
 }
 

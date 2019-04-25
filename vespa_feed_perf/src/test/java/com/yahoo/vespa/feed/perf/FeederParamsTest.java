@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 
 import static org.junit.Assert.assertEquals;
@@ -25,7 +24,9 @@ import static org.junit.Assert.assertTrue;
  * @author Simon Thoresen Hult
  */
 public class FeederParamsTest {
-    static final String TESTFILE = "test.json";
+    static final String TESTFILE_JSON = "test.json";
+    static final String TESTFILE_VESPA = "test.vespa";
+    static final String TESTFILE_UNKNOWN = "test.xyz";
 
     @Test
     public void requireThatAccessorsWork() {
@@ -94,10 +95,25 @@ public class FeederParamsTest {
     @Test
     public void requireThatDumpStreamAreParsed() throws ParseException, IOException {
         assertNull(new FeederParams().getDumpStream());
-        OutputStream dumpStream = new FeederParams().parseArgs("-o " + TESTFILE).getDumpStream();
-        assertNotNull(dumpStream);
-        dumpStream.close();
-        assertTrue(new File(TESTFILE).delete());
+
+        FeederParams p = new FeederParams().parseArgs("-o " + TESTFILE_JSON);
+        assertNotNull(p.getDumpStream());
+        assertEquals(FeederParams.DumpFormat.JSON, p.getDumpFormat());
+        p.getDumpStream().close();
+
+        p = new FeederParams().parseArgs("-o " + TESTFILE_VESPA);
+        assertNotNull(p.getDumpStream());
+        assertEquals(FeederParams.DumpFormat.VESPA, p.getDumpFormat());
+        p.getDumpStream().close();
+
+        p = new FeederParams().parseArgs("-o " + TESTFILE_UNKNOWN);
+        assertNotNull(p.getDumpStream());
+        assertEquals(FeederParams.DumpFormat.JSON, p.getDumpFormat());
+        p.getDumpStream().close();
+
+        assertTrue(new File(TESTFILE_JSON).delete());
+        assertTrue(new File(TESTFILE_VESPA).delete());
+        assertTrue(new File(TESTFILE_UNKNOWN).delete());
     }
 
 }

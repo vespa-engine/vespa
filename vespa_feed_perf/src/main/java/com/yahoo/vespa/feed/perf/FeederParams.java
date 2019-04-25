@@ -19,12 +19,14 @@ import java.io.PrintStream;
  */
 class FeederParams {
 
+    enum DumpFormat {JSON, VESPA};
     private InputStream stdIn = System.in;
     private PrintStream stdErr = System.err;
     private PrintStream stdOut = System.out;
     private Route route = Route.parse("default");
     private String configId = "client";
     private OutputStream dumpStream = null;
+    private DumpFormat dumpFormat = DumpFormat.JSON;
     private boolean serialTransferEnabled = false;
     private int numDispatchThreads = 1;
 
@@ -64,6 +66,12 @@ class FeederParams {
         return this;
     }
 
+    DumpFormat getDumpFormat() { return dumpFormat; }
+    FeederParams setDumpFormat(DumpFormat dumpFormat) {
+        this.dumpFormat = dumpFormat;
+        return this;
+    }
+
     String getConfigId() {
         return configId;
     }
@@ -89,7 +97,7 @@ class FeederParams {
         opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation");
         opts.addOption("n", "numthreads", true, "Number of clients for sending messages. Anything, but 1 will bypass sequencing by document id.");
         opts.addOption("r", "route", true, "Route for sending messages. default is 'default'....");
-        opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .v8) json will be produced if no extension.");
+        opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .vespa) json will be produced if no extension.");
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
         serialTransferEnabled = cmd.hasOption('s');
@@ -100,7 +108,11 @@ class FeederParams {
             route = Route.parse(cmd.getOptionValue('r').trim());
         }
         if (cmd.hasOption('o')) {
-            dumpStream = new FileOutputStream(new File(cmd.getOptionValue('o').trim()));
+            String fileName = cmd.getOptionValue('o').trim();
+            dumpStream = new FileOutputStream(new File(fileName));
+            if (fileName.endsWith(".vespa")) {
+                dumpFormat = DumpFormat.VESPA;
+            }
         }
 
         return this;

@@ -21,15 +21,15 @@ import com.yahoo.document.update.TensorRemoveUpdate;
  * @since 5.1.27
  */
 public interface DocumentUpdateWriter {
-    public void write(DocumentUpdate update);
-    public void write(FieldUpdate update);
-    public void write(AddValueUpdate update, DataType superType);
-    public void write(MapValueUpdate update, DataType superType);
-    public void write(ArithmeticValueUpdate update);
-    public void write(AssignValueUpdate update, DataType superType);
-    public void write(RemoveValueUpdate update, DataType superType);
-    public void write(ClearValueUpdate clearValueUpdate, DataType superType);
-    public void write(TensorModifyUpdate update);
-    public void write(TensorAddUpdate update);
-    public void write(TensorRemoveUpdate update);
+    void write(DocumentUpdate update);
+    void write(FieldUpdate update);
+    void write(AddValueUpdate update, DataType superType);
+    void write(MapValueUpdate update, DataType superType);
+    void write(ArithmeticValueUpdate update);
+    void write(AssignValueUpdate update, DataType superType);
+    void write(RemoveValueUpdate update, DataType superType);
+    void write(ClearValueUpdate clearValueUpdate, DataType superType);
+    void write(TensorModifyUpdate update);
+    void write(TensorAddUpdate update);
+    void write(TensorRemoveUpdate update);
 }
