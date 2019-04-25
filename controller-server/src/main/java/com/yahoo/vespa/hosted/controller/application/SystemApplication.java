@@ -1,16 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
-import com.yahoo.config.provision.zone.ZoneId;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,7 +22,7 @@ public enum SystemApplication {
 
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
-    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
+    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config, configServerHost),
     zone(ApplicationId.from("hosted-vespa", "routing", "default"), ImmutableSet.of(NodeType.proxy, NodeType.host),
          configServerHost, proxyHost, configServer);
 
@@ -33,7 +31,7 @@ public enum SystemApplication {
     private final List<SystemApplication> dependencies;
 
     SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... dependencies) {
-        this(id, Collections.singleton(nodeType), dependencies);
+        this(id, Set.of(nodeType), dependencies);
     }
 
     SystemApplication(ApplicationId id, Set<NodeType> nodeTypes, SystemApplication... dependencies) {
@@ -42,7 +40,7 @@ public enum SystemApplication {
         }
         this.id = id;
         this.nodeTypes = ImmutableSet.copyOf(nodeTypes);
-        this.dependencies = ImmutableList.copyOf(dependencies);
+        this.dependencies = List.of(dependencies);
     }
 
     public ApplicationId id() {
@@ -79,7 +77,7 @@ public enum SystemApplication {
 
     /** All known system applications */
     public static List<SystemApplication> all() {
-        return ImmutableList.copyOf(values());
+        return List.of(values());
     }
 
     @Override
