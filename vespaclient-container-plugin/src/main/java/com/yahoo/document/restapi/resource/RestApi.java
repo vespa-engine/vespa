@@ -33,6 +33,8 @@ import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
+import com.yahoo.vespaxmlparser.DocumentFeedOperation;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
@@ -236,23 +238,21 @@ public class RestApi extends LoggingRequestHandler {
         return new Response(200, resultJson, Optional.of(restUri));
     }
 
-    private VespaXMLFeedReader.Operation createPutOperation(HttpRequest request, String id, String condition) {
-        final VespaXMLFeedReader.Operation operationPut =
-                singleDocumentParser.parsePut(request.getData(), id);
+    private FeedOperation createPutOperation(HttpRequest request, String id, String condition) {
+        FeedOperation put = singleDocumentParser.parsePut(request.getData(), id);
         if (condition != null && ! condition.isEmpty()) {
-            operationPut.setCondition(new TestAndSetCondition(condition));
+            return new DocumentFeedOperation(put.getDocument(), new TestAndSetCondition(condition));
         }
-        return operationPut;
+        return put;
     }
 
-    private VespaXMLFeedReader.Operation createUpdateOperation(HttpRequest request, String id, String condition, Optional<Boolean> create) {
-        final VespaXMLFeedReader.Operation operationUpdate =
-                singleDocumentParser.parseUpdate(request.getData(), id);
+    private FeedOperation createUpdateOperation(HttpRequest request, String id, String condition, Optional<Boolean> create) {
+        FeedOperation update = singleDocumentParser.parseUpdate(request.getData(), id);
         if (condition != null && ! condition.isEmpty()) {
-            operationUpdate.getDocumentUpdate().setCondition(new TestAndSetCondition(condition));
+            update.getDocumentUpdate().setCondition(new TestAndSetCondition(condition));
         }
-        create.ifPresent(c -> operationUpdate.getDocumentUpdate().setCreateIfNonExistent(c));
-        return operationUpdate;
+        create.ifPresent(c -> update.getDocumentUpdate().setCreateIfNonExistent(c));
+        return update;
     }
 
     private HttpResponse handleGet(RestUri restUri, HttpRequest request) throws RestApiException {

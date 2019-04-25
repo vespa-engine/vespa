@@ -30,7 +30,11 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.vespaxmlparser.DocumentFeedOperation;
+import com.yahoo.vespaxmlparser.DocumentUpdateFeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
+import com.yahoo.vespaxmlparser.FeedOperation;
+import com.yahoo.vespaxmlparser.RemoveFeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -75,7 +79,7 @@ public class SimpleFeeder implements ReplyHandler {
     }
 
     private interface Destination {
-        void send(VespaXMLFeedReader.Operation op);
+        void send(FeedOperation op);
         void close() throws Exception;
     }
 
@@ -90,7 +94,7 @@ public class SimpleFeeder implements ReplyHandler {
             this.session = session;
             this.failure = failure;
         }
-        public void send(VespaXMLFeedReader.Operation op) {
+        public void send(FeedOperation op) {
             Message msg = newMessage(op);
             if (msg == null) {
                 err.println("ignoring operation; " + op.getType());
@@ -128,8 +132,8 @@ public class SimpleFeeder implements ReplyHandler {
                 failure.set(e);
             }
         }
-        public void send(VespaXMLFeedReader.Operation op) {
-            if (op.getType() == VespaXMLFeedReader.OperationType.DOCUMENT) {
+        public void send(FeedOperation op) {
+            if (op.getType() == FeedOperation.Type.DOCUMENT) {
                 if (!isFirst) {
                     try {
                         outputStream.write(',');
@@ -152,10 +156,10 @@ public class SimpleFeeder implements ReplyHandler {
 
     }
 
-    static final int NONE = 0;
-    static final int DOCUMENT = 1;
-    static final int UPDATE = 2;
-    static final int REMOVE = 3;
+    static private final int NONE = 0;
+    static private final int DOCUMENT = 1;
+    static private final int UPDATE = 2;
+    static private final int REMOVE = 3;
     private static class VespaV1Destination implements Destination {
         private final OutputStream outputStream;
         GrowableByteBuffer buffer = new GrowableByteBuffer(16384);
@@ -173,16 +177,16 @@ public class SimpleFeeder implements ReplyHandler {
                 failure.set(e);
             }
         }
-        public void send(VespaXMLFeedReader.Operation op) {
+        public void send(FeedOperation op) {
             DocumentSerializer writer = DocumentSerializerFactory.createHead(buffer);
             int type = NONE;
-            if (op.getType() == VespaXMLFeedReader.OperationType.DOCUMENT) {
+            if (op.getType() == FeedOperation.Type.DOCUMENT) {
                 writer.write(op.getDocument());
                 type = DOCUMENT;
-            } else if (op.getType() == VespaXMLFeedReader.OperationType.UPDATE) {
+            } else if (op.getType() == FeedOperation.Type.UPDATE) {
                 writer.write(op.getDocumentUpdate());
                 type = UPDATE;
-            } else if (op.getType() == VespaXMLFeedReader.OperationType.REMOVE) {
+            } else if (op.getType() == FeedOperation.Type.REMOVE) {
                 writer.write(op.getRemove());
                 type = REMOVE;
             }
@@ -218,17 +222,41 @@ public class SimpleFeeder implements ReplyHandler {
             this.in = in;
             this.mgr = mgr;
             byte [] header = new byte[2];
-            in.read(header);
-            if ((header[0] != 'V') && (header[1] != '1')) {
+            int read = in.read(header);
+            if ((read != header.length) || (header[0] != 'V') || (header[1] != '1')) {
                 throw new IllegalArgumentException("Invalid Header " + Arrays.toString(header));
             }
         }
+
+        class LazyDocumentOperation extends FeedOperation {
+            private final DocumentDeserializer deserializer;
+            LazyDocumentOperation(DocumentDeserializer deserializer) {
+                super(Type.DOCUMENT);
+                this.deserializer = deserializer;
+            }
+
+            @Override
+            public Document getDocument() {
+                return new Document(deserializer);
+            }
+        }
+        class LazyUpdateOperation extends FeedOperation {
+            private final DocumentDeserializer deserializer;
+            LazyUpdateOperation(DocumentDeserializer deserializer) {
+                super(Type.UPDATE);
+                this.deserializer = deserializer;
+            }
+
+            @Override
+            public DocumentUpdate getDocumentUpdate() {
+                return new DocumentUpdate(deserializer);
+            }
+        }
         @Override
-        public void read(VespaXMLFeedReader.Operation operation) throws Exception {
+        public FeedOperation read() throws Exception {
             int read = in.read(prefix);
             if (read != prefix.length) {
-                operation.setInvalid();
-                return;
+                return FeedOperation.INVALID;
             }
             ByteBuffer header = ByteBuffer.wrap(prefix);
             int sz = header.getInt();
@@ -245,18 +273,18 @@ public class SimpleFeeder implements ReplyHandler {
             }
             DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, GrowableByteBuffer.wrap(blob));
             if (type == DOCUMENT) {
-                operation.setDocument(new Document(deser));
+                return new LazyDocumentOperation(deser);
             } else if (type == UPDATE) {
-                operation.setDocumentUpdate(new DocumentUpdate(deser));
+                return new LazyUpdateOperation(deser);
             } else if (type == REMOVE) {
-                operation.setRemove(new DocumentId(deser));
+                return new RemoveFeedOperation(new DocumentId(deser));
             } else {
                 throw new IllegalArgumentException("Unknown operation " + type);
             }
         }
     }
 
-    Destination createDumper(FeederParams params) {
+    private Destination createDumper(FeederParams params) {
         if (params.getDumpFormat() == FeederParams.DumpFormat.VESPA) {
             return new VespaV1Destination(params.getDumpStream(), failure, numReplies);
         }
@@ -274,7 +302,7 @@ public class SimpleFeeder implements ReplyHandler {
                 : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
     }
 
-    private void sendOperation(VespaXMLFeedReader.Operation op) {
+    private void sendOperation(FeedOperation op) {
         destination.send(op);
     }
 
@@ -308,9 +336,8 @@ public class SimpleFeeder implements ReplyHandler {
         printHeader();
         long numMessages = 0;
         while (failure.get() == null) {
-            VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
-            reader.read(op);
-            if (op.getType() == VespaXMLFeedReader.OperationType.INVALID) {
+            FeedOperation op = reader.read();
+            if (op.getType() == FeedOperation.Type.INVALID) {
                 break;
             }
             if (executor != null) {
@@ -335,7 +362,7 @@ public class SimpleFeeder implements ReplyHandler {
         mbus.destroy();
     }
 
-    private static Message newMessage(VespaXMLFeedReader.Operation op) {
+    private static Message newMessage(FeedOperation op) {
         switch (op.getType()) {
         case DOCUMENT: {
             PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(op.getDocument()));

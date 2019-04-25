@@ -9,11 +9,7 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.Message;
-import com.yahoo.messagebus.routing.ErrorDirective;
-import com.yahoo.messagebus.routing.Hop;
-import com.yahoo.messagebus.routing.Route;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
-import com.yahoo.yolean.Exceptions;
+import com.yahoo.vespaxmlparser.FeedOperation;
 
 /**
  * Keeps an operation with its message.
@@ -40,18 +36,7 @@ class DocumentOperationMessageV3 {
         return operationId;
     }
 
-    static DocumentOperationMessageV3 newErrorMessage(String operationId, Exception exception) {
-        Message feedErrorMessageV3 = new FeedErrorMessage(operationId);
-        DocumentOperationMessageV3 msg = new DocumentOperationMessageV3(operationId, feedErrorMessageV3);
-        Hop hop = new Hop();
-        hop.addDirective(new ErrorDirective(Exceptions.toMessageString(exception)));
-        Route route = new Route();
-        route.addHop(hop);
-        feedErrorMessageV3.setRoute(route);
-        return msg;
-    }
-
-    static DocumentOperationMessageV3 newUpdateMessage(VespaXMLFeedReader.Operation op, String operationId) {
+    private static DocumentOperationMessageV3 newUpdateMessage(FeedOperation op, String operationId) {
         DocumentUpdate update = op.getDocumentUpdate();
         update.setCondition(op.getCondition());
         Message msg = new UpdateDocumentMessage(update);
@@ -60,7 +45,7 @@ class DocumentOperationMessageV3 {
         return new DocumentOperationMessageV3(id, msg);
     }
 
-    static DocumentOperationMessageV3 newRemoveMessage(VespaXMLFeedReader.Operation op, String operationId) {
+    static DocumentOperationMessageV3 newRemoveMessage(FeedOperation op, String operationId) {
         DocumentRemove remove = new DocumentRemove(op.getRemove());
         remove.setCondition(op.getCondition());
         Message msg = new RemoveDocumentMessage(remove);
@@ -69,7 +54,7 @@ class DocumentOperationMessageV3 {
         return new DocumentOperationMessageV3(id, msg);
     }
 
-    static DocumentOperationMessageV3 newPutMessage(VespaXMLFeedReader.Operation op, String operationId) {
+    private static DocumentOperationMessageV3 newPutMessage(FeedOperation op, String operationId) {
         DocumentPut put = new DocumentPut(op.getDocument());
         put.setCondition(op.getCondition());
         Message msg = new PutDocumentMessage(put);
@@ -78,7 +63,7 @@ class DocumentOperationMessageV3 {
         return new DocumentOperationMessageV3(id, msg);
     }
 
-    static DocumentOperationMessageV3 create(VespaXMLFeedReader.Operation operation, String operationId, Metric metric) {
+    static DocumentOperationMessageV3 create(FeedOperation operation, String operationId, Metric metric) {
         switch (operation.getType()) {
             case DOCUMENT:
                 metric.add(MetricNames.NUM_PUTS, 1, null /*metricContext*/);

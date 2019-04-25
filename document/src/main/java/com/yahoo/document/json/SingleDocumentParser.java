@@ -7,7 +7,9 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.json.document.DocumentParser;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
+import com.yahoo.vespaxmlparser.DocumentFeedOperation;
+import com.yahoo.vespaxmlparser.DocumentUpdateFeedOperation;
+import com.yahoo.vespaxmlparser.FeedOperation;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,32 +27,26 @@ public class SingleDocumentParser {
         this.docMan = docMan;
     }
 
-    public VespaXMLFeedReader.Operation parsePut(InputStream inputStream, String docId) {
+    public FeedOperation parsePut(InputStream inputStream, String docId) {
         return parse(inputStream, docId, DocumentParser.SupportedOperation.PUT);
     }
 
-    public VespaXMLFeedReader.Operation parseUpdate(InputStream inputStream, String docId)  {
+    public FeedOperation parseUpdate(InputStream inputStream, String docId)  {
         return parse(inputStream, docId, DocumentParser.SupportedOperation.UPDATE);
     }
 
-    private VespaXMLFeedReader.Operation parse(InputStream inputStream, String docId, DocumentParser.SupportedOperation supportedOperation)  {
+    private FeedOperation parse(InputStream inputStream, String docId, DocumentParser.SupportedOperation supportedOperation)  {
         final JsonReader reader = new JsonReader(docMan, inputStream, jsonFactory);
         final DocumentOperation documentOperation = reader.readSingleDocument(supportedOperation, docId);
-        VespaXMLFeedReader.Operation operation = new VespaXMLFeedReader.Operation();
         try {
             inputStream.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         if (supportedOperation == DocumentParser.SupportedOperation.PUT) {
-            operation.setDocument(((DocumentPut) documentOperation).getDocument());
+            return new DocumentFeedOperation(((DocumentPut) documentOperation).getDocument(), documentOperation.getCondition());
         } else {
-            operation.setDocumentUpdate((DocumentUpdate) documentOperation);
+            return new DocumentUpdateFeedOperation((DocumentUpdate) documentOperation, documentOperation.getCondition());
         }
-
-        // (A potentially empty) test-and-set condition is always set by JsonReader
-        operation.setCondition(documentOperation.getCondition());
-
-        return operation;
     }
 }

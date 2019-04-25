@@ -5,8 +5,8 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.vespa.http.client.core.Encoder;
 import com.yahoo.vespa.http.server.util.ByteLimitedInputStream;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,15 +30,14 @@ public class StreamReaderV3 {
         this.docTypeManager = docTypeManager;
     }
 
-    public VespaXMLFeedReader.Operation getNextOperation(
-            InputStream requestInputStream, FeederSettings settings) throws Exception {
-        VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
+    public FeedOperation getNextOperation(InputStream requestInputStream, FeederSettings settings) throws Exception {
+        FeedOperation op = null;
 
         int length = readByteLength(requestInputStream);
 
         try (InputStream limitedInputStream = new ByteLimitedInputStream(requestInputStream, length)){
             FeedReader reader = feedReaderFactory.createReader(limitedInputStream, docTypeManager, settings.dataFormat);
-            reader.read(op);
+            op = reader.read();
         }
         return op;
     }

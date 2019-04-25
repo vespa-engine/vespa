@@ -18,8 +18,8 @@ import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.http.client.core.Headers;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.MockFeedReaderFactory;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,8 +45,7 @@ public class V3CongestionTestCase {
         ClientFeederWithMocks(ReferencedResource<SharedSourceSession> sourceSession, FeedReaderFactory feedReaderFactory, DocumentTypeManager docTypeManager, String clientId, Metric metric, ReplyHandler feedReplyHandler, AtomicInteger threadsAvailableForFeeding) {
             super(sourceSession, feedReaderFactory, docTypeManager, clientId, metric, feedReplyHandler, threadsAvailableForFeeding);
             // The operation to return from the client feeder.
-            VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
-            docOp = DocumentOperationMessageV3.newRemoveMessage(op, "operation id");
+            docOp = DocumentOperationMessageV3.newRemoveMessage(FeedOperation.INVALID, "operation id");
 
         }
 
