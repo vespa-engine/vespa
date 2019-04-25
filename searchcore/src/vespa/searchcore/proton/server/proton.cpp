@@ -456,7 +456,7 @@ Proton::~Proton()
         if (pcsp) {
             const std::shared_ptr<proton::BootstrapConfig> bcp = pcsp->getBootstrapConfig();
             if (bcp) {
-                numCores = std::max(bcp->getHwInfo().cpu().cores(), 1);
+                numCores = std::max(bcp->getHwInfo().cpu().cores(), 1u);
             }
         }
 
