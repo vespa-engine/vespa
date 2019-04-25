@@ -102,11 +102,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void addNodes(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
+                NodeType nodeType = type.orElseGet(() -> {
+                    // Zone application has two node types. Use proxy
+                    if (application == SystemApplication.zone) return NodeType.proxy;
+                    if (application.nodeTypes().size() != 1) throw new IllegalArgumentException(application + " has several node types. Unable to detect type automatically");
+                    return application.nodeTypes().iterator().next();
+                });
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    Node.State.active, type.orElseGet(() -> application.nodeTypes().iterator().next()),
+                                                    Node.State.active, nodeType,
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion
