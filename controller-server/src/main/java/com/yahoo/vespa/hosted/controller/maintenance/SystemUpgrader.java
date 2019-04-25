@@ -1,15 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -23,7 +23,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     private static final Logger log = Logger.getLogger(SystemUpgrader.class.getName());
 
-    private static final Set<Node.State> upgradableNodeStates = ImmutableSet.of(Node.State.active, Node.State.reserved);
+    private static final Set<Node.State> upgradableNodeStates = EnumSet.of(Node.State.active, Node.State.reserved);
 
     public SystemUpgrader(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy(), null);

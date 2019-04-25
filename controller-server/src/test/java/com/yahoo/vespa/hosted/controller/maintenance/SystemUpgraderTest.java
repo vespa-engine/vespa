@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
@@ -195,10 +195,11 @@ public class SystemUpgraderTest {
 
         // System upgrades in zone 1:
         systemUpgrader.maintain();
-        List<SystemApplication> allExceptZone = List.of(SystemApplication.configServerHost,
-                                                              SystemApplication.proxyHost,
-                                                              SystemApplication.configServer);
-        completeUpgrade(allExceptZone, version2, zone1);
+        List<SystemApplication> allExceptZoneAndConfig = List.of(SystemApplication.configServerHost,
+                                                                 SystemApplication.proxyHost);
+        completeUpgrade(allExceptZoneAndConfig, version2, zone1);
+        systemUpgrader.maintain();
+        completeUpgrade(SystemApplication.configServer, version2, zone1);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);
         convergeServices(SystemApplication.zone, zone1);
@@ -206,7 +207,9 @@ public class SystemUpgraderTest {
 
         // zone 2 and 3:
         systemUpgrader.maintain();
-        completeUpgrade(allExceptZone, version2, zone2, zone3);
+        completeUpgrade(allExceptZoneAndConfig, version2, zone2, zone3);
+        systemUpgrader.maintain();
+        completeUpgrade(SystemApplication.configServer, version2, zone2, zone3);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
         convergeServices(SystemApplication.zone, zone2, zone3);
@@ -214,7 +217,9 @@ public class SystemUpgraderTest {
 
         // zone 4:
         systemUpgrader.maintain();
-        completeUpgrade(allExceptZone, version2, zone4);
+        completeUpgrade(allExceptZoneAndConfig, version2, zone4);
+        systemUpgrader.maintain();
+        completeUpgrade(SystemApplication.configServer, version2, zone4);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone4);
 
