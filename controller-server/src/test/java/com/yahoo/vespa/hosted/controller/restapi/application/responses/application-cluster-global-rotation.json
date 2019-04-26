@@ -1,0 +1,19 @@
+{
+  "tenant": "tenant1",
+  "application": "application1",
+  "instance": "default",
+  "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/",
+  "deployedInternally": false,
+  "deploymentJobs": [],
+  "changeBlockers": [],
+  "compileVersion": "(ignore)",
+  "globalRotations": [
+    "https://c0.application1.tenant1.global.vespa.oath.cloud/"
+  ],
+  "instances": [],
+  "metrics": {
+    "queryServiceQuality": 0.0,
+    "writeServiceQuality": 0.0
+  },
+  "activity": {}
+}

@@ -4,9 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -17,23 +15,23 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 
 import java.io.File;
 import java.time.Duration;
@@ -94,28 +92,6 @@ public class ContainerControllerTester {
         controller().applications().deploy(application.id(), zone, Optional.of(applicationPackage),
                                            new DeployOptions(false, Optional.empty(), false, false));
         return application;
-    }
-
-    public void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
-                                 boolean failStaging) {
-        jobCompletion(JobType.component).application(application)
-                                        .projectId(projectId)
-                                        .uploadArtifact(applicationPackage)
-                                        .submit();
-        DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
-        boolean succeeding = true;
-        for (var job : steps.jobs()) {
-            if (!succeeding) return;
-            var zone = job.zone(controller().system());
-            deploy(application, applicationPackage, zone);
-            if (failStaging && zone.environment() == Environment.staging) {
-                succeeding = false;
-            }
-            if (zone.environment().isTest()) {
-                controller().applications().deactivate(application.id(), zone);
-            }
-            jobCompletion(job).application(application).success(succeeding).projectId(projectId).submit();
-        }
     }
 
     /** Notify the controller about a job completing */

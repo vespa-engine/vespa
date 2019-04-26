@@ -137,10 +137,11 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
     /** Register DNS alias for given load balancer */
     private RoutingPolicy registerCname(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
-        RoutingPolicy routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone,
+        RoutingPolicy routingPolicy = new RoutingPolicy(application, zone,
+                                                        loadBalancer.cluster(), controller().system(),
                                                         loadBalancer.hostname(), loadBalancer.dnsZone(),
                                                         loadBalancer.rotations());
-        RecordName name = RecordName.from(routingPolicy.endpointIn(controller().system()).dnsName());
+        RecordName name = RecordName.from(routingPolicy.alias().value());
         RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
         List<Record> existingRecords = nameService.findRecords(Record.Type.CNAME, name);
         if (existingRecords.size() > 1) {
@@ -169,12 +170,11 @@ public class RoutingPolicyMaintainer extends Maintainer {
             // Remove any active load balancers
             removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()));
             for (RoutingPolicy policy : removalCandidates) {
-                String dnsName = policy.endpointIn(controller().system()).dnsName();
                 try {
-                    List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(dnsName));
+                    List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(policy.alias().value()));
                     nameService.removeRecords(records);
                 } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to remove record '" + dnsName +
+                    log.log(LogLevel.WARNING, "Failed to remove record '" + policy.alias() +
                                               "'. Retrying in " + maintenanceInterval());
                 }
             }
