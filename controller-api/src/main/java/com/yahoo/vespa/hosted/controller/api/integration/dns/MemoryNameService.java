@@ -24,18 +24,18 @@ public class MemoryNameService implements NameService {
 
     @Override
     public Record createCname(RecordName name, RecordData canonicalName) {
-        Record record = new Record(Record.Type.CNAME, name, canonicalName);
+        var record = new Record(Record.Type.CNAME, name, canonicalName);
         records.add(record);
         return record;
     }
 
     @Override
     public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) {
-        List<Record> records = targets.stream()
-                                     .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
-                                     .map(target -> new Record(Record.Type.ALIAS, name,
-                                                               RecordData.fqdn(target.name().value())))
-                                     .collect(Collectors.toList());
+        var records = targets.stream()
+                             .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
+                             .map(target -> new Record(Record.Type.ALIAS, name,
+                                                       RecordData.fqdn(target.name().value())))
+                             .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         removeRecords(findRecords(Record.Type.ALIAS, name));
         this.records.addAll(records);
@@ -44,9 +44,9 @@ public class MemoryNameService implements NameService {
 
     @Override
     public List<Record> createTxtRecords(RecordName name, List<RecordData> txtData) {
-        List<Record> records = txtData.stream()
-                .map(data -> new Record(Record.Type.TXT, name, data))
-                .collect(Collectors.toList());
+        var records = txtData.stream()
+                             .map(data -> new Record(Record.Type.TXT, name, data))
+                             .collect(Collectors.toList());
         this.records.addAll(records);
         return records;
     }
@@ -67,7 +67,7 @@ public class MemoryNameService implements NameService {
 
     @Override
     public void updateRecord(Record record, RecordData newData) {
-        List<Record> records = findRecords(record.type(), record.name());
+        var records = findRecords(record.type(), record.name());
         if (records.isEmpty()) {
             throw new IllegalArgumentException("No record with data '" + newData.asString() + "' exists");
         }
@@ -75,7 +75,7 @@ public class MemoryNameService implements NameService {
             throw new IllegalArgumentException("Cannot update multi-value record '" + record.name().asString() +
                                                "' with '" + newData.asString() + "'");
         }
-        Record existing = records.get(0);
+        var existing = records.get(0);
         this.records.remove(existing);
         this.records.add(new Record(existing.type(), existing.name(), newData));
     }
