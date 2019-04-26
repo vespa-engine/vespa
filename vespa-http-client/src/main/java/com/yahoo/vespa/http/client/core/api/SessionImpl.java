@@ -3,7 +3,6 @@ package com.yahoo.vespa.http.client.core.api;
 
 import com.yahoo.vespa.http.client.FeedClient;
 import com.yahoo.vespa.http.client.Result;
-import com.yahoo.vespa.http.client.Session;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.ThrottlePolicy;
 import com.yahoo.vespa.http.client.core.operationProcessor.IncompleteResultsThrottler;
@@ -20,7 +19,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @deprecated
  */
 @Deprecated // TODO: Remove on Vespa 8
-public class SessionImpl implements Session {
+public class SessionImpl implements com.yahoo.vespa.http.client.Session {
 
     private final OperationProcessor operationProcessor;
     private final BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();

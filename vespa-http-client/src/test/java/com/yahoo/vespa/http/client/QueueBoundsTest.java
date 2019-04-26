@@ -6,7 +6,6 @@ import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.config.SessionParams;
-import com.yahoo.vespa.http.client.core.api.SessionImpl;
 import com.yahoo.vespa.http.client.handlers.V3MockParsingRequestHandler;
 import org.junit.Test;
 
@@ -65,7 +64,7 @@ public class QueueBoundsTest extends TestOnCiBuildingSystemOnly {
         mockXmlParsingRequestHandler.setScenario(V3MockParsingRequestHandler.Scenario.DONT_ACCEPT_VERSION);
         try (Server server = new Server(mockXmlParsingRequestHandler, 0);
              Session session =
-                     new SessionImpl(
+                     new com.yahoo.vespa.http.client.core.api.SessionImpl(
                              new SessionParams.Builder()
                                      .addCluster(new Cluster.Builder()
                                                          .addEndpoint(Endpoint.create("localhost", server.getPort(), false))
@@ -109,7 +108,7 @@ public class QueueBoundsTest extends TestOnCiBuildingSystemOnly {
 
         try (Server serverA = new Server(new V3MockParsingRequestHandler("A"), 0);
              Server serverB = new Server(slowHandler, 0);
-             SessionImpl session = new SessionImpl(
+             com.yahoo.vespa.http.client.core.api.SessionImpl session = new com.yahoo.vespa.http.client.core.api.SessionImpl(
                      new SessionParams.Builder()
                              .addCluster(new Cluster.Builder()
                                                  .addEndpoint(Endpoint.create("localhost", serverA.getPort(), false))
@@ -196,7 +195,7 @@ public class QueueBoundsTest extends TestOnCiBuildingSystemOnly {
         mockXmlParsingRequestHandler.setScenario(V3MockParsingRequestHandler.Scenario.DONT_ACCEPT_VERSION);
         try (Server server = new Server(mockXmlParsingRequestHandler, 0);
              Session session =
-                     new SessionImpl(
+                     new com.yahoo.vespa.http.client.core.api.SessionImpl(
                              new SessionParams.Builder()
                                      .addCluster(new Cluster.Builder()
                                              .addEndpoint(Endpoint.create("localhost", server.getPort(), false))
@@ -278,7 +277,7 @@ public class QueueBoundsTest extends TestOnCiBuildingSystemOnly {
         }
     }
 
-    private void assertIncompleteResultQueueSize(SessionImpl session, int size, long timeout, TimeUnit timeUnit) throws InterruptedException {
+    private void assertIncompleteResultQueueSize(com.yahoo.vespa.http.client.core.api.SessionImpl session, int size, long timeout, TimeUnit timeUnit) throws InterruptedException {
         long timeoutMs = TimeUnit.MILLISECONDS.convert(timeout, timeUnit);
         long waitTimeMs = 0;
         while (true) {
