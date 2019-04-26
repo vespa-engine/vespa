@@ -3,7 +3,12 @@ package com.yahoo.vdslib.state;
 import com.yahoo.text.StringUtilities;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Be careful about changing this class, as it mirrors the ClusterState in C++.
@@ -127,7 +132,7 @@ public class ClusterState implements Cloneable {
     }
 
     private Set<Node> unionNodeSetWith(final Set<Node> otherNodes) {
-        final Set<Node> unionNodeSet = new TreeSet<Node>(nodeStates.keySet());
+        final Set<Node> unionNodeSet = new TreeSet<>(nodeStates.keySet());
         unionNodeSet.addAll(otherNodes);
         return unionNodeSet;
     }
@@ -181,7 +186,7 @@ public class ClusterState implements Cloneable {
         Node node = new Node(NodeType.STORAGE, 0);
         StringBuilder sb = new StringBuilder();
 
-        public void addNodeState() throws ParseException {
+        void addNodeState() throws ParseException {
             if (!empty) {
                 NodeState ns = NodeState.deserialize(node.getType(), sb.toString());
                 if (!ns.equals(defaultUpNodeState(node.getType()))) {
@@ -234,13 +239,11 @@ public class ClusterState implements Cloneable {
                 break;
             case 'v':
                 if (key.equals("version")) {
-                    Integer version;
                     try{
-                        version = Integer.valueOf(value);
+                        setVersion(Integer.valueOf(value));
                     } catch (Exception e) {
                         throw new ParseException("Illegal version '" + value + "'. Must be an integer, in state: " + serialized, 0);
-                        }
-                    setVersion(version);
+                    }
                     continue;
                 }
                 break;
@@ -308,7 +311,7 @@ public class ClusterState implements Cloneable {
         return getDiff(other).toHtml();
     }
 
-    public Diff getDiff(ClusterState other) {
+    private Diff getDiff(ClusterState other) {
         Diff diff = new Diff();
 
         if (version != other.version) {
