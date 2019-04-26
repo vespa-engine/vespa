@@ -118,6 +118,17 @@ public class UserInputTestCase {
     }
 
     @Test
+    public void testNegativeNumberComparison() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("myinput", "-5");
+        builder.setParameter("yql",
+                             "select * from ecitem where rank(([{\"defaultIndex\":\"myfield\"}](userInput(@myinput))));");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from ecitem where rank(myfield = (-5));", query.yqlRepresentation());
+        assertEquals("RANK myfield:-5", query.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
     public void testAnnotatedUserInputUnrankedTerms() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",

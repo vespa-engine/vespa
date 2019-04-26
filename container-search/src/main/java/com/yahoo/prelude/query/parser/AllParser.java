@@ -13,7 +13,8 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 /**
  * Parser for queries of type all.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @author bratseth
  */
 public class AllParser extends SimpleParser {
 
@@ -32,37 +33,37 @@ public class AllParser extends SimpleParser {
 
     protected Item parseItemsBody() {
         // Algorithm: Collect positive, negative, and and'ed items, then combine.
-        AndItem and=null;
-        NotItem not=null; // Store negatives here as we go
+        AndItem and = null;
+        NotItem not = null; // Store negatives here as we go
         Item current;
 
         // Find all items
         do {
-            current=negativeItem();
-            if (current!=null) {
-                not=addNot(current,not);
+            current = negativeItem();
+            if (current != null) {
+                not = addNot(current, not);
                 continue;
             }
 
-            current=positiveItem();
-            if (current==null)
+            current = positiveItem();
+            if (current == null)
                 current = indexableItem();
             if (current == null)
                 current = compositeItem();
 
-            if (current!=null)
-                and=addAnd(current,and);
+            if (current != null)
+                and = addAnd(current, and);
 
             if (current == null)
                 tokens.skip();
         } while (tokens.hasNext());
 
         // Combine the items
-        Item topLevel=and;
+        Item topLevel = and;
 
-        if (not!=null && topLevel!=null) {
+        if (not != null && topLevel != null) {
             not.setPositiveItem(topLevel);
-            topLevel=not;
+            topLevel = not;
         }
 
         return simplifyUnnecessaryComposites(topLevel);
@@ -78,23 +79,23 @@ public class AllParser extends SimpleParser {
         return root.getRoot() instanceof NullItem ? null : root.getRoot();
     }
 
-    protected AndItem addAnd(Item item,AndItem and) {
-        if (and==null)
-            and=new AndItem();
+    protected AndItem addAnd(Item item, AndItem and) {
+        if (and == null)
+            and = new AndItem();
         and.addItem(item);
         return and;
     }
 
     protected OrItem addOr(Item item,OrItem or) {
-        if (or==null)
-            or=new OrItem();
+        if (or == null)
+            or = new OrItem();
         or.addItem(item);
         return or;
     }
 
     protected NotItem addNot(Item item,NotItem not) {
-        if (not==null)
-            not=new NotItem();
+        if (not == null)
+            not = new NotItem();
         not.addNegativeItem(item);
         return not;
     }
@@ -103,8 +104,7 @@ public class AllParser extends SimpleParser {
         int position = tokens.getPosition();
         Item item = null;
         try {
-            if (!tokens.skipMultiple(MINUS)) return null;
-
+            if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
 
             item = indexableItem();
@@ -122,8 +122,18 @@ public class AllParser extends SimpleParser {
                     }
                 }
             }
-            if (item!=null)
+            if (item != null)
                 item.setProtected(true);
+
+            // Heuristic overdrive engaged!
+            // Interpret -N as a positive item matching a negative number (by backtracking out of this)
+            // but not if there is an explicit index (such as -a:b)
+            // but interpret --N as a negative item matching a negative number
+            if ( item instanceof IntItem &&
+                 ((IntItem)item).getIndexName().isEmpty() &&
+                 ! ((IntItem)item).getNumber().startsWith(("-")))
+                item = null;
+
             return item;
         } finally {
             if (item == null) {
