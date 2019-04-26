@@ -19,9 +19,6 @@ class DocIdAndFeatures;
  * for words.
  */
 class PostingListFileSeqRead {
-protected:
-    PostingListCounts _counts;
-    unsigned int _residueDocs;  // Docids left to read for word
 public:
     PostingListFileSeqRead();
 
@@ -63,34 +60,6 @@ public:
      * Get current (word, docid) feature parameters.
      */
     virtual void getFeatureParams(PostingListParams &params);
-
-    // Methods used when generating posting list for common word pairs.
-
-    /*
-     * Get current posting offset, measured in bits.  First posting list
-     * starts at 0, i.e.  file header is not accounted for here.
-     *
-     * @return current posting offset, measured in bits.
-     */
-    virtual uint64_t getCurrentPostingOffset() const = 0;
-
-    /**
-     * Set current posting offset, measured in bits.  First posting
-     * list starts at 0, i.e.  file header is not accounted for here.
-     *
-     * @param Offset start of posting lists for word pair.
-     * @param endOffset end of posting lists for word pair.
-     * @param readAheadOffset end of posting list for either this or a
-     *               later word pair, depending on disk seek cost.
-     */
-    virtual void setPostingOffset(uint64_t offset, uint64_t endOffset, uint64_t readAheadOffset) = 0;
-
-    /**
-     * Get counts read by last readCounts().
-     */
-    const PostingListCounts &getCounts() const { return _counts; }
-
-    PostingListCounts &getCounts() { return _counts; }
 };
 
 /**

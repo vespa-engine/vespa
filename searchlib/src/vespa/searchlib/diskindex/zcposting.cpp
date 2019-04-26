@@ -29,60 +29,19 @@ using bitcompression::FeatureEncodeContextBE;
 using vespalib::getLastErrorString;
 
 
-Zc4PostingSeqRead::
-Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile)
+Zc4PostingSeqRead::Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile, bool dynamic_k)
     : PostingListFileSeqRead(),
-      _decodeContext(),
-      _docIdK(0),
-      _prevDocId(0),
-      _numDocs(0),
-      _readContext(sizeof(uint64_t)),
+      _reader(dynamic_k),
       _file(),
-      _hasMore(false),
-      _dynamicK(false),
-      _lastDocId(0),
-      _minChunkDocs(1 << 30),
-      _minSkipDocs(64),
-      _docIdLimit(10000000),
-      _zcDocIds(),
-      _l1Skip(),
-      _l2Skip(),
-      _l3Skip(),
-      _l4Skip(),
       _numWords(0),
       _fileBitSize(0),
-      _chunkNo(0),
-      _l1SkipDocId(0),
-      _l1SkipDocIdPos(0),
-      _l1SkipFeaturesPos(0),
-      _l2SkipDocId(0),
-      _l2SkipDocIdPos(0),
-      _l2SkipL1SkipPos(0),
-      _l2SkipFeaturesPos(0),
-      _l3SkipDocId(0),
-      _l3SkipDocIdPos(0),
-      _l3SkipL1SkipPos(0),
-      _l3SkipL2SkipPos(0),
-      _l3SkipFeaturesPos(0),
-      _l4SkipDocId(0),
-      _l4SkipDocIdPos(0),
-      _l4SkipL1SkipPos(0),
-      _l4SkipL2SkipPos(0),
-      _l4SkipL3SkipPos(0),
-      _l4SkipFeaturesPos(0),
-      _featuresSize(0),
-      _countFile(countFile),
-      _headerBitLen(0),
-      _rangeEndOffset(0),
-      _readAheadEndOffset(0),
-      _wordStart(0),
-      _residue(0)
+      _countFile(countFile)
 {
     if (_countFile != nullptr) {
         PostingListParams params;
         _countFile->getParams(params);
-        params.get("docIdLimit", _docIdLimit);
-        params.get("minChunkDocs", _minChunkDocs);
+        params.get("docIdLimit", _reader.get_posting_params()._doc_id_limit);
+        params.get("minChunkDocs", _reader.get_posting_params()._min_chunk_docs);
     }
 }
 
@@ -91,387 +50,16 @@ Zc4PostingSeqRead::~Zc4PostingSeqRead()
 {
 }
 
-
 void
-Zc4PostingSeqRead::
-readCommonWordDocIdAndFeatures(DocIdAndFeatures &features)
+Zc4PostingSeqRead::readDocIdAndFeatures(DocIdAndFeatures &features)
 {
-    if ((_zcDocIds._valI >= _zcDocIds._valE) && _hasMore) {
-        readWordStart();    // Read start of next chunk
-    }
-    // Split docid & features.
-    assert(_zcDocIds._valI < _zcDocIds._valE);
-    uint32_t docIdPos = _zcDocIds.pos();
-    uint32_t docId = _prevDocId + 1 + _zcDocIds.decode();
-    features._docId = docId;
-    _prevDocId = docId;
-    assert(docId <= _lastDocId);
-    if (docId > _l1SkipDocId) {
-        _l1SkipDocIdPos += _l1Skip.decode() + 1;
-        assert(docIdPos == _l1SkipDocIdPos);
-        _l1SkipFeaturesPos += _l1Skip.decode() + 1;
-        uint64_t featuresPos = _decodeContext->getReadOffset();
-        assert(featuresPos == _l1SkipFeaturesPos);
-        (void) featuresPos;
-        if (docId > _l2SkipDocId) {
-            _l2SkipDocIdPos += _l2Skip.decode() + 1;
-            assert(docIdPos == _l2SkipDocIdPos);
-            _l2SkipFeaturesPos += _l2Skip.decode() + 1;
-            assert(featuresPos == _l2SkipFeaturesPos);
-            _l2SkipL1SkipPos += _l2Skip.decode() + 1;
-            assert(_l1Skip.pos() == _l2SkipL1SkipPos);
-            if (docId > _l3SkipDocId) {
-                _l3SkipDocIdPos += _l3Skip.decode() + 1;
-                assert(docIdPos == _l3SkipDocIdPos);
-                _l3SkipFeaturesPos += _l3Skip.decode() + 1;
-                assert(featuresPos == _l3SkipFeaturesPos);
-                _l3SkipL1SkipPos += _l3Skip.decode() + 1;
-                assert(_l1Skip.pos() == _l3SkipL1SkipPos);
-                _l3SkipL2SkipPos += _l3Skip.decode() + 1;
-                assert(_l2Skip.pos() == _l3SkipL2SkipPos);
-                if (docId > _l4SkipDocId) {
-                    _l4SkipDocIdPos += _l4Skip.decode() + 1;
-                    assert(docIdPos == _l4SkipDocIdPos);
-                    (void) docIdPos;
-                    _l4SkipFeaturesPos += _l4Skip.decode() + 1;
-                    assert(featuresPos == _l4SkipFeaturesPos);
-                    _l4SkipL1SkipPos += _l4Skip.decode() + 1;
-                    assert(_l1Skip.pos() == _l4SkipL1SkipPos);
-                    _l4SkipL2SkipPos += _l4Skip.decode() + 1;
-                    assert(_l2Skip.pos() == _l4SkipL2SkipPos);
-                    _l4SkipL3SkipPos += _l4Skip.decode() + 1;
-                    assert(_l3Skip.pos() == _l4SkipL3SkipPos);
-                    _l4SkipDocId += _l4Skip.decode() + 1;
-                    assert(_l4SkipDocId <= _lastDocId);
-                    assert(_l4SkipDocId >= docId);
-                }
-                _l3SkipDocId += _l3Skip.decode() + 1;
-                assert(_l3SkipDocId <= _lastDocId);
-                assert(_l3SkipDocId <= _l4SkipDocId);
-                assert(_l3SkipDocId >= docId);
-            }
-            _l2SkipDocId += _l2Skip.decode() + 1;
-            assert(_l2SkipDocId <= _lastDocId);
-            assert(_l2SkipDocId <= _l4SkipDocId);
-            assert(_l2SkipDocId <= _l3SkipDocId);
-            assert(_l2SkipDocId >= docId);
-        }
-        _l1SkipDocId += _l1Skip.decode() + 1;
-        assert(_l1SkipDocId <= _lastDocId);
-        assert(_l1SkipDocId <= _l4SkipDocId);
-        assert(_l1SkipDocId <= _l3SkipDocId);
-        assert(_l1SkipDocId <= _l2SkipDocId);
-        assert(_l1SkipDocId >= docId);
-    }
-    if (docId < _lastDocId) {
-        // Assert more space available when not yet at last docid
-        assert(_zcDocIds._valI < _zcDocIds._valE);
-    } else {
-        // Assert that space has been used when at last docid
-        assert(_zcDocIds._valI == _zcDocIds._valE);
-        // Assert that we've read to end of skip info
-        assert(_l1SkipDocId == _lastDocId);
-        assert(_l2SkipDocId == _lastDocId);
-        assert(_l3SkipDocId == _lastDocId);
-        assert(_l4SkipDocId == _lastDocId);
-        if (!_hasMore) {
-            _chunkNo = 0;
-        }
-    }
-    _decodeContext->readFeatures(features);
-    --_residue;
+    _reader.read_doc_id_and_features(features);
 }
-
-
-void
-Zc4PostingSeqRead::
-readDocIdAndFeatures(DocIdAndFeatures &features)
-{
-    if (_residue == 0 && !_hasMore) {
-        if (_rangeEndOffset != 0) {
-            DecodeContext &d = *_decodeContext;
-            uint64_t curOffset = d.getReadOffset();
-            assert(curOffset <= _rangeEndOffset);
-            if (curOffset < _rangeEndOffset) {
-                readWordStart();
-            }
-        }
-        if (_residue == 0) {
-            // Don't read past end of posting list.
-            features.clear(static_cast<uint32_t>(-1));
-            return;
-        }
-    }
-    if (_lastDocId > 0) {
-        return readCommonWordDocIdAndFeatures(features);
-    }
-    // Interleaves docid & features
-    typedef FeatureEncodeContextBE EC;
-    DecodeContext &d = *_decodeContext;
-    uint32_t length;
-    uint64_t val64;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-
-    UC64BE_DECODEEXPGOLOMB_SMALL_NS(o,
-                                    K_VALUE_ZCPOSTING_DELTA_DOCID,
-                                    EC);
-    uint32_t docId = _prevDocId + 1 + val64;
-    features._docId = docId;
-    _prevDocId = docId;
-    UC64_DECODECONTEXT_STORE(o, d._);
-    if (__builtin_expect(oCompr >= d._valE, false)) {
-        _readContext.readComprBuffer();
-    }
-    _decodeContext->readFeatures(features);
-    --_residue;
-}
-
-
-void
-Zc4PostingSeqRead::readWordStartWithSkip()
-{
-    typedef FeatureEncodeContextBE EC;
-    DecodeContext &d = *_decodeContext;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-    uint32_t length;
-    uint64_t val64;
-    const uint64_t *valE = d._valE;
-
-    if (_hasMore) {
-        ++_chunkNo;
-    } else {
-        _chunkNo = 0;
-    }
-    assert(_numDocs >= _minSkipDocs || _hasMore);
-    bool hasMore = false;
-    if (__builtin_expect(_numDocs >= _minChunkDocs, false)) {
-        hasMore = static_cast<int64_t>(oVal) < 0;
-        oVal <<= 1;
-        length = 1;
-        UC64BE_READBITS_NS(o, EC);
-    }
-    if (_dynamicK) {
-        _docIdK = EC::calcDocIdK((_hasMore || hasMore) ? 1 : _numDocs,
-                                 _docIdLimit);
-    }
-    if (_hasMore || hasMore) {
-        if (_rangeEndOffset == 0) {
-            assert(hasMore == (_chunkNo + 1 < _counts._segments.size()));
-            assert(_numDocs == _counts._segments[_chunkNo]._numDocs);
-        }
-        if (hasMore) {
-            assert(_numDocs >= _minSkipDocs);
-            assert(_numDocs >= _minChunkDocs);
-        }
-    } else {
-        assert(_numDocs >= _minSkipDocs);
-        if (_rangeEndOffset == 0) {
-            assert(_numDocs == _counts._numDocs);
-        }
-    }
-    if (__builtin_expect(oCompr >= valE, false)) {
-        UC64_DECODECONTEXT_STORE(o, d._);
-        _readContext.readComprBuffer();
-        valE = d._valE;
-        UC64_DECODECONTEXT_LOAD(o, d._);
-    }
-    UC64BE_DECODEEXPGOLOMB_NS(o,
-                              K_VALUE_ZCPOSTING_DOCIDSSIZE,
-                              EC);
-    uint32_t docIdsSize = val64 + 1;
-    UC64BE_DECODEEXPGOLOMB_NS(o,
-                              K_VALUE_ZCPOSTING_L1SKIPSIZE,
-                              EC);
-    uint32_t l1SkipSize = val64;
-    if (__builtin_expect(oCompr >= valE, false)) {
-        UC64_DECODECONTEXT_STORE(o, d._);
-        _readContext.readComprBuffer();
-        valE = d._valE;
-        UC64_DECODECONTEXT_LOAD(o, d._);
-    }
-    uint32_t l2SkipSize = 0;
-    if (l1SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o,
-                                  K_VALUE_ZCPOSTING_L2SKIPSIZE,
-                                  EC);
-        l2SkipSize = val64;
-    }
-    uint32_t l3SkipSize = 0;
-    if (l2SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o,
-                                  K_VALUE_ZCPOSTING_L3SKIPSIZE,
-                                  EC);
-        l3SkipSize = val64;
-    }
-    if (__builtin_expect(oCompr >= valE, false)) {
-        UC64_DECODECONTEXT_STORE(o, d._);
-        _readContext.readComprBuffer();
-        valE = d._valE;
-        UC64_DECODECONTEXT_LOAD(o, d._);
-    }
-    uint32_t l4SkipSize = 0;
-    if (l3SkipSize != 0) {
-        UC64BE_DECODEEXPGOLOMB_NS(o,
-                                  K_VALUE_ZCPOSTING_L4SKIPSIZE,
-                                  EC);
-        l4SkipSize = val64;
-    }
-    UC64BE_DECODEEXPGOLOMB_NS(o,
-                              K_VALUE_ZCPOSTING_FEATURESSIZE,
-                              EC);
-    _featuresSize = val64;
-    if (__builtin_expect(oCompr >= valE, false)) {
-        UC64_DECODECONTEXT_STORE(o, d._);
-        _readContext.readComprBuffer();
-        valE = d._valE;
-        UC64_DECODECONTEXT_LOAD(o, d._);
-    }
-    if (_dynamicK) {
-        UC64BE_DECODEEXPGOLOMB_NS(o,
-                                  _docIdK,
-                                  EC);
-    } else {
-        UC64BE_DECODEEXPGOLOMB_NS(o,
-                                  K_VALUE_ZCPOSTING_LASTDOCID,
-                                  EC);
-    }
-    _lastDocId = _docIdLimit - 1 - val64;
-    if (_hasMore || hasMore) {
-        if (_rangeEndOffset == 0) {
-            assert(_lastDocId == _counts._segments[_chunkNo]._lastDoc);
-        }
-    }
-
-    if (__builtin_expect(oCompr >= valE, false)) {
-        UC64_DECODECONTEXT_STORE(o, d._);
-        _readContext.readComprBuffer();
-        valE = d._valE;
-        UC64_DECODECONTEXT_LOAD(o, d._);
-    }
-    uint64_t bytePad = oPreRead & 7;
-    if (bytePad > 0) {
-        length = bytePad;
-        oVal <<= length;
-        UC64BE_READBITS_NS(o, EC);
-    }
-    UC64_DECODECONTEXT_STORE(o, d._);
-    if (__builtin_expect(oCompr >= valE, false)) {
-        _readContext.readComprBuffer();
-    }
-    _zcDocIds.clearReserve(docIdsSize);
-    _l1Skip.clearReserve(l1SkipSize);
-    _l2Skip.clearReserve(l2SkipSize);
-    _l3Skip.clearReserve(l3SkipSize);
-    _l4Skip.clearReserve(l4SkipSize);
-    _decodeContext->readBytes(_zcDocIds._valI, docIdsSize);
-    _zcDocIds._valE = _zcDocIds._valI + docIdsSize;
-    if (l1SkipSize > 0) {
-        _decodeContext->readBytes(_l1Skip._valI, l1SkipSize);
-    }
-    _l1Skip._valE = _l1Skip._valI + l1SkipSize;
-    if (l2SkipSize > 0) {
-        _decodeContext->readBytes(_l2Skip._valI, l2SkipSize);
-    }
-    _l2Skip._valE = _l2Skip._valI + l2SkipSize;
-    if (l3SkipSize > 0) {
-        _decodeContext->readBytes(_l3Skip._valI, l3SkipSize);
-    }
-    _l3Skip._valE = _l3Skip._valI + l3SkipSize;
-    if (l4SkipSize > 0) {
-        _decodeContext->readBytes(_l4Skip._valI, l4SkipSize);
-    }
-    _l4Skip._valE = _l4Skip._valI + l4SkipSize;
-
-    if (l1SkipSize > 0) {
-        _l1SkipDocId = _l1Skip.decode() + 1 + _prevDocId;
-    } else {
-        _l1SkipDocId = _lastDocId;
-    }
-    if (l2SkipSize > 0) {
-        _l2SkipDocId = _l2Skip.decode() + 1 + _prevDocId;
-    } else {
-        _l2SkipDocId = _lastDocId;
-    }
-    if (l3SkipSize > 0) {
-        _l3SkipDocId = _l3Skip.decode() + 1 + _prevDocId;
-    } else {
-        _l3SkipDocId = _lastDocId;
-    }
-    if (l4SkipSize > 0) {
-        _l4SkipDocId = _l4Skip.decode() + 1 + _prevDocId;
-    } else {
-        _l4SkipDocId = _lastDocId;
-    }
-    _l1SkipDocIdPos = 0;
-    _l1SkipFeaturesPos = _decodeContext->getReadOffset();
-    _l2SkipDocIdPos = 0;
-    _l2SkipL1SkipPos = 0;
-    _l2SkipFeaturesPos = _decodeContext->getReadOffset();
-    _l3SkipDocIdPos = 0;
-    _l3SkipL1SkipPos = 0;
-    _l3SkipL2SkipPos = 0;
-    _l3SkipFeaturesPos = _decodeContext->getReadOffset();
-    _l4SkipDocIdPos = 0;
-    _l4SkipL1SkipPos = 0;
-    _l4SkipL2SkipPos = 0;
-    _l4SkipL3SkipPos = 0;
-    _l4SkipFeaturesPos = _decodeContext->getReadOffset();
-    _hasMore = hasMore;
-    // Decode context is now positioned at start of features
-}
-
-
-void
-Zc4PostingSeqRead::readWordStart()
-{
-    typedef FeatureEncodeContextBE EC;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
-    uint32_t length;
-    uint64_t val64;
-    const uint64_t *valE = _decodeContext->_valE;
-
-    UC64BE_DECODEEXPGOLOMB_NS(o,
-                              K_VALUE_ZCPOSTING_NUMDOCS,
-                              EC);
-    UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
-    if (oCompr >= valE) {
-        _readContext.readComprBuffer();
-    }
-    _numDocs = static_cast<uint32_t>(val64) + 1;
-    _residue = _numDocs;
-    _prevDocId = _hasMore ? _lastDocId : 0u;
-    if (_rangeEndOffset == 0) {
-        assert(_numDocs <= _counts._numDocs);
-        assert(_numDocs == _counts._numDocs ||
-               _numDocs >= _minChunkDocs ||
-               _hasMore);
-    }
-
-    if (_numDocs >= _minSkipDocs || _hasMore) {
-        readWordStartWithSkip();
-        // Decode context is not positioned at start of features
-    } else {
-        if (_dynamicK) {
-            _docIdK = EC::calcDocIdK(_numDocs, _docIdLimit);
-        }
-        _lastDocId = 0u;
-        // Decode context is not positioned at start of docids & features
-    }
-}
-
 
 void
 Zc4PostingSeqRead::readCounts(const PostingListCounts &counts)
 {
-    assert(!_hasMore);  // Previous words must have been read.
-
-    _counts = counts;
-
-    assert((_counts._numDocs == 0) == (_counts._bitLength == 0));
-    if (_counts._numDocs > 0) {
-        _wordStart = _decodeContext->getReadOffset();
-        readWordStart();
-    }
+    _reader.set_counts(counts);
 }
 
 
@@ -484,16 +72,17 @@ Zc4PostingSeqRead::open(const vespalib::string &name,
     }
     bool res = _file.OpenReadOnly(name.c_str());
     if (res) {
-        _readContext.setFile(&_file);
-        _readContext.setFileSize(_file.GetSize());
-        DecodeContext &d = *_decodeContext;
-        _readContext.allocComprBuf(65536u, 32768u);
+        auto &readContext = _reader.get_read_context();
+        readContext.setFile(&_file);
+        readContext.setFileSize(_file.GetSize());
+        auto &d = _reader.get_decode_features();
+        readContext.allocComprBuf(65536u, 32768u);
         d.emptyBuffer(0);
-        _readContext.readComprBuffer();
+        readContext.readComprBuffer();
 
         readHeader();
         if (d._valI >= d._valE) {
-            _readContext.readComprBuffer();
+            readContext.readComprBuffer();
         }
     } else {
         LOG(error, "could not open %s: %s",
@@ -506,9 +95,10 @@ Zc4PostingSeqRead::open(const vespalib::string &name,
 bool
 Zc4PostingSeqRead::close()
 {
-    _readContext.dropComprBuf();
+    auto &readContext = _reader.get_read_context();
+    readContext.dropComprBuf();
     _file.Close();
-    _readContext.setFile(nullptr);
+    readContext.setFile(nullptr);
     return true;
 }
 
@@ -524,29 +114,30 @@ Zc4PostingSeqRead::getParams(PostingListParams &params)
         uint32_t countMinChunkDocs = 0;
         countParams.get("docIdLimit", countDocIdLimit);
         countParams.get("minChunkDocs", countMinChunkDocs);
-        assert(_docIdLimit == countDocIdLimit);
-        assert(_minChunkDocs == countMinChunkDocs);
+        assert(_reader.get_posting_params()._doc_id_limit == countDocIdLimit);
+        assert(_reader.get_posting_params()._min_chunk_docs == countMinChunkDocs);
     } else {
         params.clear();
-        params.set("docIdLimit", _docIdLimit);
-        params.set("minChunkDocs", _minChunkDocs);
+        params.set("docIdLimit", _reader.get_posting_params()._doc_id_limit);
+        params.set("minChunkDocs", _reader.get_posting_params()._min_chunk_docs);
     }
-    params.set("minSkipDocs", _minSkipDocs);
+    params.set("minSkipDocs", _reader.get_posting_params()._min_skip_docs);
 }
 
 
 void
 Zc4PostingSeqRead::getFeatureParams(PostingListParams &params)
 {
-    _decodeContext->getParams(params);
+    _reader.get_decode_features().getParams(params);
 }
 
 
 void
 Zc4PostingSeqRead::readHeader()
 {
-    FeatureDecodeContextBE &d = *_decodeContext;
-    const vespalib::string &myId = _dynamicK ? myId5 : myId4;
+    FeatureDecodeContextBE &d = _reader.get_decode_features();
+    auto &posting_params = _reader.get_posting_params();
+    const vespalib::string &myId = posting_params._dynamic_k ? myId5 : myId4;
 
     vespalib::FileHeader header;
     d.readHeader(header, _file.getSize());
@@ -571,9 +162,9 @@ Zc4PostingSeqRead::readHeader()
     (void) myId;
     assert(header.getTag("format.1").asString() == d.getIdentifier());
     _numWords = header.getTag("numWords").asInteger();
-    _minChunkDocs = header.getTag("minChunkDocs").asInteger();
-    _docIdLimit = header.getTag("docIdLimit").asInteger();
-    _minSkipDocs = header.getTag("minSkipDocs").asInteger();
+    posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
+    posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
+    posting_params._min_skip_docs = header.getTag("minSkipDocs").asInteger();
     assert(header.getTag("endian").asString() == "big");
     // Read feature decoding specific subheader
     d.readHeader(header, "features.");
@@ -585,38 +176,9 @@ Zc4PostingSeqRead::readHeader()
 
 
 const vespalib::string &
-Zc4PostingSeqRead::getIdentifier()
+Zc4PostingSeqRead::getIdentifier(bool dynamic_k)
 {
-    return myId4;
-}
-
-
-uint64_t
-Zc4PostingSeqRead::getCurrentPostingOffset() const
-{
-    FeatureDecodeContextBE &d = *_decodeContext;
-    return d.getReadOffset() - _headerBitLen;
-}
-
-
-void
-Zc4PostingSeqRead::setPostingOffset(uint64_t offset,
-                                    uint64_t endOffset,
-                                    uint64_t readAheadOffset)
-{
-    assert(_residue == 0);  // Only to be called between posting lists
-
-    FeatureDecodeContextBE &d = *_decodeContext;
-
-    _rangeEndOffset = endOffset + _headerBitLen;
-    _readAheadEndOffset = readAheadOffset +  _headerBitLen;
-    _readContext.setStopOffset(_readAheadEndOffset, false);
-    uint64_t newOffset = offset + _headerBitLen;
-    if (newOffset != d.getReadOffset()) {
-        _readContext.setPosition(newOffset);
-        assert(newOffset == d.getReadOffset());
-        _readContext.readComprBuffer();
-    }
+    return (dynamic_k ? myId5 : myId4);
 }
 
 
@@ -806,65 +368,6 @@ Zc4PostingSeqWrite::
 getFeatureParams(PostingListParams &params)
 {
     _writer.get_encode_features().getParams(params);
-}
-
-
-ZcPostingSeqRead::ZcPostingSeqRead(PostingListCountFileSeqRead *countFile)
-    : Zc4PostingSeqRead(countFile)
-{
-    _dynamicK = true;
-}
-
-
-void
-ZcPostingSeqRead::
-readDocIdAndFeatures(DocIdAndFeatures &features)
-{
-    if (_residue == 0 && !_hasMore) {
-        if (_rangeEndOffset != 0) {
-            DecodeContext &d = *_decodeContext;
-            uint64_t curOffset = d.getReadOffset();
-            assert(curOffset <= _rangeEndOffset);
-            if (curOffset < _rangeEndOffset) {
-                readWordStart();
-            }
-        }
-        if (_residue == 0) {
-            // Don't read past end of posting list.
-            features.clear(static_cast<uint32_t>(-1));
-            return;
-        }
-    }
-    if (_lastDocId > 0) {
-        readCommonWordDocIdAndFeatures(features);
-        return;
-    }
-    // Interleaves docid & features
-    typedef FeatureEncodeContextBE EC;
-    DecodeContext &d = *_decodeContext;
-    uint32_t length;
-    uint64_t val64;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-
-    UC64BE_DECODEEXPGOLOMB_SMALL_NS(o,
-                                    _docIdK,
-                                    EC);
-    uint32_t docId = _prevDocId + 1 + val64;
-    features._docId = docId;
-    _prevDocId = docId;
-    UC64_DECODECONTEXT_STORE(o, d._);
-    if (__builtin_expect(oCompr >= d._valE, false)) {
-        _readContext.readComprBuffer();
-    }
-    _decodeContext->readFeatures(features);
-    --_residue;
-}
-
-
-const vespalib::string &
-ZcPostingSeqRead::getIdentifier()
-{
-    return myId5;
 }
 
 

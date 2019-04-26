@@ -6,8 +6,6 @@
 namespace search::index {
 
 PostingListFileSeqRead::PostingListFileSeqRead()
-    : _counts(),
-      _residueDocs(0)
 {
 }
 
