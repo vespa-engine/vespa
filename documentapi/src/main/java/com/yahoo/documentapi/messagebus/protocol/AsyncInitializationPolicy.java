@@ -58,7 +58,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
         initState = InitState.NOT_STARTED;
     }
 
-    void needAsynchronousInitialization() {
+    synchronized void needAsynchronousInitialization() {
         syncInit = false;
     }
 
@@ -117,7 +117,7 @@ public abstract class AsyncInitializationPolicy implements DocumentProtocolRouti
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (executor != null) {
             executor.shutdownNow();
         }

@@ -13,6 +13,8 @@ import com.yahoo.cloud.config.SlobroksConfig;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Abstract class for policies that allow you to specify which slobrok to use for the
@@ -21,9 +23,9 @@ import java.util.Map;
 public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy implements ConfigSubscriber.SingleSubscriber<SlobroksConfig> {
     String error;
     private Supervisor orb = null;
-    private Mirror mirror = null;
+    private final AtomicReference<Mirror> safeMirror = new AtomicReference<>(null);
     private SlobrokList slobroks = null;
-    private boolean firstTry = true;
+    private final AtomicBoolean firstTry = new AtomicBoolean(true);
     private ConfigSubscriber subscriber;
     String[] configSources = null;
     private final static String slobrokConfigId = "admin/slobrok.0";
@@ -49,14 +51,14 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         if (slobroks != null) {
             orb = new Supervisor(new Transport());
-            mirror = new Mirror(orb, slobroks);
+            safeMirror.set(new Mirror(orb, slobroks));
         }
 
         if (configSources != null) {
-            if (mirror == null) {
+            if (safeMirror.get() == null) {
                 orb = new Supervisor(new Transport());
                 subscriber = subscribe(slobrokConfigId, new ConfigSourceSet(configSources));
             }
@@ -70,15 +72,18 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
     }
 
     public IMirror getMirror() {
-        return mirror;
+        return safeMirror.get();
     }
 
     public  List<Mirror.Entry> lookup(RoutingContext context, String pattern) {
-        IMirror mirror1 = (mirror != null ? mirror : context.getMirror());
+        IMirror mirror1 = getMirror();
+        if (mirror1 == null) {
+            mirror1 = context.getMirror();
+        }
 
         List<Mirror.Entry> arr = mirror1.lookup(pattern);
 
-        if ((arr.isEmpty()) && firstTry) {
+        if ((arr.isEmpty()) && firstTry.get()) {
             synchronized(this)  {
                 try {
                     int count = 0;
@@ -93,7 +98,7 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
             }
         }
 
-        firstTry = false;
+        firstTry.set(false);
         return arr;
     }
 
@@ -108,14 +113,14 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
             slobroks = new SlobrokList();
         }
         slobroks.setup(slist);
-        if (mirror == null) {
-            mirror = new Mirror(orb, slobroks);
+        if (safeMirror.get() == null) {
+            safeMirror.set(new Mirror(orb, slobroks));
         }
 
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (subscriber!=null) subscriber.close();
     }
 
