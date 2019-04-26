@@ -6,7 +6,7 @@ import com.yahoo.language.Language;
 /**
  * Interface for providers of text transformations such as accent removal.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @authorMathias Mølster Lidal
  */
 public interface Transformer {
 
