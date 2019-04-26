@@ -103,7 +103,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform (ignore), application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -117,7 +117,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform (ignore), application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -131,7 +131,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform (ignore), application 1.0.42-commit1)",
         "at": "(ignore)"
       }
     },
