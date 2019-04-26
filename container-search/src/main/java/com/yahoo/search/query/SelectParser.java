@@ -976,6 +976,7 @@ public class SelectParser implements Parser {
 
         PhraseItem phrase = new PhraseItem();
         phrase.setIndexName(field);
+        phrase.setExplicit(true);
         HashMap<Integer, Inspector> children = childMap(value);
 
         for (Inspector word :  children.values()) {
