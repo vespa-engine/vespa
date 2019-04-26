@@ -9,6 +9,7 @@ import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher.FillHitsResult;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
@@ -26,7 +27,6 @@ import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.hitIterator;
  * @author ollivir
  */
 public class FS4FillInvoker extends FillInvoker {
-
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
 
@@ -156,10 +156,10 @@ public class FS4FillInvoker extends FillInvoker {
             result.getQuery().trace((summaryNeedsQuery ? "Resending " : "Not resending ") + "query during document summary fetching", 3);
 
         GetDocSumsPacket docsumsPacket = GetDocSumsPacket.create(result, summaryClass, summaryNeedsQuery);
-        int compressionLimit = result.getQuery().properties().getInteger(FastSearcher.PACKET_COMPRESSION_LIMIT, 0);
+        int compressionLimit = result.getQuery().properties().getInteger(FS4SearchInvoker.PACKET_COMPRESSION_LIMIT, 0);
         docsumsPacket.setCompressionLimit(compressionLimit);
         if (compressionLimit != 0) {
-            docsumsPacket.setCompressionType(result.getQuery().properties().getString(FastSearcher.PACKET_COMPRESSION_TYPE, "lz4"));
+            docsumsPacket.setCompressionType(result.getQuery().properties().getString(FS4SearchInvoker.PACKET_COMPRESSION_TYPE, "lz4"));
         }
 
         boolean couldSend = channel.sendPacket(docsumsPacket);

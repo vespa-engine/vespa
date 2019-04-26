@@ -168,10 +168,17 @@ public class ProtobufSerialization {
         result.setTotalHitCount(protobuf.getTotalHitCount());
         result.setCoverage(convertToCoverage(protobuf));
 
-        if (protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty()) {
-            ArrayList<Grouping> list = new ArrayList<>();
+        int hitItems = protobuf.getHitsCount();
+        var haveGrouping = protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty();
+        if(haveGrouping) {
+            hitItems++;
+        }
+        result.hits().ensureCapacity(hitItems);
+
+        if (haveGrouping) {
             BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(protobuf.getGroupingBlob().asReadOnlyByteBuffer()));
             int cnt = buf.getInt(null);
+            ArrayList<Grouping> list = new ArrayList<>(cnt);
             for (int i = 0; i < cnt; i++) {
                 Grouping g = new Grouping();
                 g.deserialize(buf);
