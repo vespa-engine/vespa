@@ -191,6 +191,10 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return hits.size();
     }
 
+    public void ensureCapacity(int minCapacity) {
+        hits.ensureCapacity(minCapacity);
+    }
+
     /**
      * <p>Returns the number of concrete hits contained in this group
      * and all subgroups. This should equal the

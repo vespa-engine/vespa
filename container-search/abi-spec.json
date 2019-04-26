@@ -7252,6 +7252,7 @@
       "public void setId(com.yahoo.net.URI)",
       "public void setOrdered(boolean)",
       "public int size()",
+      "public void ensureCapacity(int)",
       "public int getConcreteSize()",
       "public int getConcreteSizeShallow()",
       "public int getSubgroupCount()",
