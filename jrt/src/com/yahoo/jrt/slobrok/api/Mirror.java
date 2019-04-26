@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -37,7 +38,7 @@ public class Mirror implements IMirror {
     private final BackOffPolicy     backOff;
     private volatile int      updates    = 0;
     private boolean requestDone = false;
-    private volatile Entry[]  specs = new Entry[0];
+    private AtomicReference<Entry[]>  specs = new AtomicReference<>(new Entry[0]);
     private int specsGeneration = 0;
     private final Task updateTask;
     private final RequestWaiter reqWait;
@@ -90,7 +91,7 @@ public class Mirror implements IMirror {
     public List<Entry> lookup(String pattern) {
         ArrayList<Entry> found = new ArrayList<>();
         char[] p = pattern.toCharArray();
-        for (Entry specEntry : specs) {
+        for (Entry specEntry : specs.get()) {
             if (match(specEntry.getNameArray(), p)) {
                 found.add(specEntry);
             }
@@ -211,7 +212,7 @@ public class Mirror implements IMirror {
                 for (int idx = 0; idx < numNames; idx++) {
                     newSpecs[idx] = new Entry(n[idx], s[idx]);
                 }
-                specs = newSpecs;
+                specs.set(newSpecs);
 
                 specsGeneration = answer.get(2).asInt32();
                 int u = (updates + 1);
@@ -259,7 +260,7 @@ public class Mirror implements IMirror {
                 }
             } else {
                 Map<String, Entry> map = new HashMap<>();
-                for (Entry e : specs) {
+                for (Entry e : specs.get()) {
                     map.put(e.getName(), e);
                 }
                 for (String rem : r) {
@@ -275,7 +276,7 @@ public class Mirror implements IMirror {
                 }
             }
 
-            specs = newSpecs;
+            specs.set(newSpecs);
 
             specsGeneration = diffToGeneration;
             int u = (updates + 1);
@@ -301,7 +302,7 @@ public class Mirror implements IMirror {
             target.close();
             target = null;
         }
-        specs = new Entry[0];
+        specs.set(new Entry[0]);
     }
 
     /**
