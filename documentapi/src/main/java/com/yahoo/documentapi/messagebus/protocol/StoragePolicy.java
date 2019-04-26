@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -317,7 +318,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         private final Distribution distribution;
         private final InstabilityChecker persistentFailureChecker;
         private AtomicReference<ClusterState> safeCachedClusterState = new AtomicReference<>(null);
-        private int oldClusterVersionGottenCount = 0;
+        private final AtomicInteger oldClusterVersionGottenCount = new AtomicInteger(0);
         private final int maxOldClusterVersionBeforeSendingRandom; // Reset cluster version protection
 
         DistributorSelectionLogic(Parameters params, ExternalSlobrokPolicy policy) {
@@ -456,8 +457,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         private void resetCachedStateIfClusterStateVersionLikelyRolledBack(ClusterState newState) {
             ClusterState cachedClusterState = safeCachedClusterState.get();
             if (cachedClusterState != null && cachedClusterState.getVersion() > newState.getVersion()) {
-                if (++oldClusterVersionGottenCount >= maxOldClusterVersionBeforeSendingRandom) {
-                    oldClusterVersionGottenCount = 0;
+                if (oldClusterVersionGottenCount.incrementAndGet() >= maxOldClusterVersionBeforeSendingRandom) {
+                    oldClusterVersionGottenCount.set(0);
                     safeCachedClusterState.set(null);
                 }
             }
