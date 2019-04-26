@@ -110,6 +110,7 @@ public abstract class StoragePolicyTestEnvironment {
         private Integer avoidPickingAtRandom = null;
 
         public TestHostFetcher(String clusterName, Set<Integer> nodes) {
+            super(60);
             this.clusterName = clusterName;
             this.nodes = nodes;
         }
@@ -154,7 +155,7 @@ public abstract class StoragePolicyTestEnvironment {
         }
 
         @Override
-        public StoragePolicy.HostFetcher createHostFetcher(ExternalSlobrokPolicy policy) { return hostFetcher; }
+        public StoragePolicy.HostFetcher createHostFetcher(ExternalSlobrokPolicy policy, int percent) { return hostFetcher; }
 
         @Override
         public Distribution createDistribution(ExternalSlobrokPolicy policy) { return distribution; }
@@ -170,13 +171,13 @@ public abstract class StoragePolicyTestEnvironment {
         }
         public DocumentProtocolRoutingPolicy createPolicy(String parameters) {
             parameterInstances.addLast(new TestParameters(parameters, nodes));
-            ((TestHostFetcher) parameterInstances.getLast().createHostFetcher(null)).setAvoidPickingAtRandom(avoidPickingAtRandom);
+            ((TestHostFetcher) parameterInstances.getLast().createHostFetcher(null, 60)).setAvoidPickingAtRandom(avoidPickingAtRandom);
             return new StoragePolicy(parameterInstances.getLast(), AsyncInitializationPolicy.parse(parameters));
         }
         public void avoidPickingAtRandom(Integer distributor) {
             avoidPickingAtRandom = distributor;
             for (TestParameters params : parameterInstances) {
-                ((TestHostFetcher) params.createHostFetcher(null)).setAvoidPickingAtRandom(avoidPickingAtRandom);
+                ((TestHostFetcher) params.createHostFetcher(null, 60)).setAvoidPickingAtRandom(avoidPickingAtRandom);
             }
         }
         public TestParameters getLastParameters() { return parameterInstances.getLast(); }
