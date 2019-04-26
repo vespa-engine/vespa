@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.SessionParams;
-import com.yahoo.vespa.http.client.core.api.SessionImpl;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -14,7 +13,9 @@ import java.util.concurrent.ThreadFactory;
  * Factory for creating {@link Session} instances.
  *
  * @author Einar M R Rosenvinge
+ * @deprecated use either FeedClient or SyncFeedClient // TODO: Remove on Vespa 8
  */
+@Deprecated
 public final class SessionFactory {
 
     /**
@@ -29,7 +30,7 @@ public final class SessionFactory {
 
     @SuppressWarnings("deprecation")
     static Session createInternal(SessionParams params) {
-        return new SessionImpl(params, createTimeoutExecutor());
+        return new com.yahoo.vespa.http.client.core.api.SessionImpl(params, createTimeoutExecutor());
     }
 
     static ScheduledThreadPoolExecutor createTimeoutExecutor() {
