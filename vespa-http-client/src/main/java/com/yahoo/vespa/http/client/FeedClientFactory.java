@@ -5,7 +5,9 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.api.FeedClientImpl;
 
-import static com.yahoo.vespa.http.client.SessionFactory.createTimeoutExecutor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Factory for creating FeedClient.
@@ -15,7 +17,7 @@ import static com.yahoo.vespa.http.client.SessionFactory.createTimeoutExecutor;
 public class FeedClientFactory {
 
     /**
-     * Creates a FeedClient.
+     * Creates a FeedClient. Call this sparingly: Feed clients are expensive and should be as long-lived as possible.
      *
      * @param sessionParams parameters for connection, hosts, cluster configurations and more.
      * @param resultCallback on each result, this callback is called.
@@ -23,6 +25,33 @@ public class FeedClientFactory {
      */
     public static FeedClient create(SessionParams sessionParams, FeedClient.ResultCallback resultCallback) {
         return new FeedClientImpl(sessionParams, resultCallback, createTimeoutExecutor());
+    }
+
+    static ScheduledThreadPoolExecutor createTimeoutExecutor() {
+        ScheduledThreadPoolExecutor timeoutExecutor;
+        timeoutExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("timeout-"));
+        timeoutExecutor.setRemoveOnCancelPolicy(true);
+        timeoutExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+        timeoutExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        return timeoutExecutor;
+    }
+
+    private static class DaemonThreadFactory implements ThreadFactory {
+
+        private final ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
+        private final String prefix;
+
+        private DaemonThreadFactory(String prefix) {
+            this.prefix = prefix;
+        }
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            Thread t = defaultThreadFactory.newThread(runnable);
+            t.setDaemon(true);
+            t.setName(prefix + t.getName());
+            return t;
+        }
     }
 
 }
