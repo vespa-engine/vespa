@@ -262,10 +262,7 @@ public class TenantRepository {
      */
     private synchronized void writeTenantPath(TenantName name) {
         Path tenantPath = getTenantPath(name);
-        curator.createAtomically(tenantPath,
-                                 tenantPath.append(Tenant.SESSIONS),
-                                 tenantPath.append(Tenant.APPLICATIONS),
-                                 tenantPath.append(Tenant.LOCKS));
+        curator.createAtomically(tenantPath, tenantPath.append(Tenant.SESSIONS), tenantPath.append(Tenant.APPLICATIONS));
     }
 
     /**
@@ -407,13 +404,6 @@ public class TenantRepository {
      */
     public static Path getApplicationsPath(TenantName tenantName) {
         return getTenantPath(tenantName).append(Tenant.APPLICATIONS);
-    }
-
-    /**
-     * Gets zookeeper path for locks for a tenant's applications
-     */
-    public static Path getLocksPath(TenantName tenantName) {
-        return getTenantPath(tenantName).append(Tenant.LOCKS);
     }
 
 }

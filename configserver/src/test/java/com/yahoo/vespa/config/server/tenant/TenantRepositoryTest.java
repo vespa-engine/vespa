@@ -81,8 +81,6 @@ public class TenantRepositoryTest {
 
     @Test
     public void testListenersAdded() throws IOException, SAXException {
-        tenantRepository.getTenant(tenant1).getApplicationRepo().createApplication(ApplicationId.defaultId());
-        tenantRepository.getTenant(tenant1).getApplicationRepo().createPutTransaction(ApplicationId.defaultId(), 4).commit();
         tenantRepository.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(
                 new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                 new ServerCache(),
