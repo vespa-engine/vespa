@@ -235,8 +235,7 @@ public abstract class IndexedTensor implements Tensor {
             }
 
             if (type.valueType() == TensorType.Value.FLOAT)
-                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
-                // return new IndexedFloatTensor.BoundFloatBuilder(type, sizes); TODO
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
             else if (type.valueType() == TensorType.Value.FLOAT)
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
             else
@@ -258,7 +257,7 @@ public abstract class IndexedTensor implements Tensor {
 
         private DimensionSizes sizes;
 
-        static DimensionSizes dimensionSizesOf(TensorType type) {
+        private static DimensionSizes dimensionSizesOf(TensorType type) {
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size());
             for (int i = 0; i < type.dimensions().size(); i++)
                 b.set(i, type.dimensions().get(i).size().get());

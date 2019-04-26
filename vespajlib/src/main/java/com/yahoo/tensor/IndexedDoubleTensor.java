@@ -46,10 +46,6 @@ class IndexedDoubleTensor extends IndexedTensor {
 
         private double[] values;
 
-        BoundDoubleBuilder(TensorType type) {
-            this(type, dimensionSizesOf(type));
-        }
-
         BoundDoubleBuilder(TensorType type, DimensionSizes sizes) {
             super(type, sizes);
             values = new double[(int)sizes.totalSize()];

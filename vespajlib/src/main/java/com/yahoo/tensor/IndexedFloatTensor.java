@@ -41,4 +41,61 @@ class IndexedFloatTensor extends IndexedTensor {
     @Override
     public int hashCode() { return Arrays.hashCode(values); }
 
+    /** A bound builder can create the float array directly */
+    public static class BoundFloatBuilder extends BoundBuilder {
+
+        private float[] values;
+
+        BoundFloatBuilder(TensorType type, DimensionSizes sizes) {
+            super(type, sizes);
+            values = new float[(int)sizes.totalSize()];
+        }
+
+        @Override
+        public IndexedTensor.BoundBuilder cell(double value, long ... indexes) {
+            values[(int)toValueIndex(indexes, sizes())] = (float)value;
+            return this;
+        }
+
+        @Override
+        public CellBuilder cell() {
+            return new CellBuilder(type, this);
+        }
+
+        @Override
+        public Builder cell(TensorAddress address, double value) {
+            values[(int)toValueIndex(address, sizes())] = (float)value;
+            return this;
+        }
+
+        @Override
+        public IndexedTensor build() {
+            IndexedTensor tensor = new IndexedFloatTensor(type, sizes(), values);
+            // prevent further modification
+            values = null;
+            return tensor;
+        }
+
+        @Override
+        public Builder cell(Cell cell, double value) {
+            long directIndex = cell.getDirectIndex();
+            if (directIndex >= 0) // optimization
+                values[(int)directIndex] = (float)value;
+            else
+                super.cell(cell, value);
+            return this;
+        }
+
+        /**
+         * Set a cell value by the index in the internal layout of this cell.
+         * This requires knowledge of the internal layout of cells in this implementation, and should therefore
+         * probably not be used (but when it can be used it is fast).
+         */
+        @Override
+        public void cellByDirectIndex(long index, double value) {
+            values[(int)index] = (float)value;
+        }
+
+    }
+
 }
