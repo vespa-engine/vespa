@@ -730,6 +730,23 @@ BucketDBUpdater::BucketListGenerator::process(BucketDatabase::Entry& e)
     return true;
 }
 
+BucketDBUpdater::NodeRemover::NodeRemover(
+        const lib::ClusterState& oldState,
+        const lib::ClusterState& s,
+        uint16_t localIndex,
+        const lib::Distribution& distribution,
+        const char* upStates)
+    : _oldState(oldState),
+      _state(s),
+      _nonOwnedBuckets(),
+      _removedBuckets(),
+      _localIndex(localIndex),
+      _distribution(distribution),
+      _upStates(upStates),
+      _cachedDecisionSuperbucket(UINT64_MAX),
+      _cachedOwned(false)
+{}
+
 void
 BucketDBUpdater::NodeRemover::logRemove(const document::BucketId& bucketId, const char* msg) const
 {
@@ -737,14 +754,35 @@ BucketDBUpdater::NodeRemover::logRemove(const document::BucketId& bucketId, cons
     LOG_BUCKET_OPERATION_NO_LOCK(bucketId, msg);    
 }
 
+namespace {
+
+uint64_t superbucket_from_id(const document::BucketId& id, uint16_t distribution_bits) noexcept {
+    // The n LSBs of the bucket ID contain the superbucket number. Mask off the rest.
+    return id.getRawId() & ~(UINT64_MAX << distribution_bits);
+}
+
+}
+
 bool
 BucketDBUpdater::NodeRemover::distributorOwnsBucket(
         const document::BucketId& bucketId) const
 {
+    // TODO "no distributors available" case is the same for _all_ buckets; cache once in constructor.
+    // TODO "too few bits used" case can be cheaply checked without needing exception
     try {
-        uint16_t distributor(
-                _distribution.getIdealDistributorNode(_state, bucketId, "uim"));
-        if (distributor != _localIndex) {
+        const auto bits = _state.getDistributionBitCount();
+        const auto this_superbucket = superbucket_from_id(bucketId, bits);
+        if (_cachedDecisionSuperbucket == this_superbucket) {
+            if (!_cachedOwned) {
+                logRemove(bucketId, "bucket now owned by another distributor (cached)");
+            }
+            return _cachedOwned;
+        }
+
+        uint16_t distributor = _distribution.getIdealDistributorNode(_state, bucketId, "uim");
+        _cachedDecisionSuperbucket = this_superbucket;
+        _cachedOwned = (distributor == _localIndex);
+        if (!_cachedOwned) {
             logRemove(bucketId, "bucket now owned by another distributor");
             return false;
         }

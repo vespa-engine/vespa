@@ -201,16 +201,9 @@ private:
                     const lib::ClusterState& s,
                     uint16_t localIndex,
                     const lib::Distribution& distribution,
-                    const char* upStates)
-            : _oldState(oldState),
-              _state(s),
-              _nonOwnedBuckets(),
-              _removedBuckets(),
-              _localIndex(localIndex),
-              _distribution(distribution),
-              _upStates(upStates) {}
-
+                    const char* upStates);
         ~NodeRemover() override;
+
         bool process(BucketDatabase::Entry& e) override;
         void logRemove(const document::BucketId& bucketId, const char* msg) const;
         bool distributorOwnsBucket(const document::BucketId&) const;
@@ -233,6 +226,9 @@ private:
         uint16_t _localIndex;
         const lib::Distribution& _distribution;
         const char* _upStates;
+
+        mutable uint64_t _cachedDecisionSuperbucket;
+        mutable bool _cachedOwned;
     };
 
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
