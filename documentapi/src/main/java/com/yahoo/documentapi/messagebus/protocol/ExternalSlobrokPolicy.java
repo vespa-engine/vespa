@@ -25,7 +25,7 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
     private Supervisor orb = null;
     private final AtomicReference<Mirror> safeMirror = new AtomicReference<>(null);
     private SlobrokList slobroks = null;
-    private final AtomicBoolean firstTry = new AtomicBoolean(true);
+    private boolean firstTry = true;
     private ConfigSubscriber subscriber;
     String[] configSources = null;
     private final static String slobrokConfigId = "admin/slobrok.0";
@@ -83,22 +83,24 @@ public abstract class ExternalSlobrokPolicy extends AsyncInitializationPolicy im
 
         List<Mirror.Entry> arr = mirror1.lookup(pattern);
 
-        if ((arr.isEmpty()) && firstTry.get()) {
+        if (arr.isEmpty()) {
             synchronized(this)  {
-                try {
-                    int count = 0;
-                    while (arr.isEmpty() && count < 100) {
-                        Thread.sleep(50);
-                        arr = mirror1.lookup(pattern);
-                        count++;
+                if (firstTry) {
+                    try {
+                        int count = 0;
+                        while (arr.isEmpty() && count < 100) {
+                            Thread.sleep(50);
+                            arr = mirror1.lookup(pattern);
+                            count++;
+                        }
+                    } catch (InterruptedException e) {
                     }
-                } catch (InterruptedException e) {
+                    firstTry = true;
                 }
 
             }
         }
 
-        firstTry.set(false);
         return arr;
     }
 
