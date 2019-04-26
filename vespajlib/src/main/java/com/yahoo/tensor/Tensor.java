@@ -370,9 +370,9 @@ public interface Tensor {
     class Cell implements Map.Entry<TensorAddress, Double> {
 
         private final TensorAddress address;
-        private final Double value;
+        private final Number value;
 
-        Cell(TensorAddress address, Double value) {
+        Cell(TensorAddress address, Number value) {
             this.address = address;
             this.value = value;
         }
@@ -387,8 +387,15 @@ public interface Tensor {
          */
         long getDirectIndex() { return -1; }
 
+        /** Returns the value as a double */
         @Override
-        public Double getValue() { return value; }
+        public Double getValue() { return value.doubleValue(); }
+
+        /** Returns the value as a float */
+        public float getFloatValue() { return value.floatValue(); }
+
+        /** Returns the value as a double */
+        public double getDoubleValue() { return value.doubleValue(); }
 
         @Override
         public Double setValue(Double value) {
@@ -446,9 +453,11 @@ public interface Tensor {
 
         /** Add a cell */
         Builder cell(TensorAddress address, double value);
+        Builder cell(TensorAddress address, float value);
 
         /** Add a cell */
         Builder cell(double value, long ... labels);
+        Builder cell(float value, long ... labels);
 
         /**
          * Add a cell
@@ -457,6 +466,9 @@ public interface Tensor {
          * @param value the value to assign to the cell
          */
         default Builder cell(Cell cell, double value) {
+            return cell(cell.getKey(), value);
+        }
+        default Builder cell(Cell cell, float value) {
             return cell(cell.getKey(), value);
         }
 
@@ -482,6 +494,9 @@ public interface Tensor {
             }
 
             public Builder value(double cellValue) {
+                return tensorBuilder.cell(addressBuilder.build(), cellValue);
+            }
+            public Builder value(float cellValue) {
                 return tensorBuilder.cell(addressBuilder.build(), cellValue);
             }
 

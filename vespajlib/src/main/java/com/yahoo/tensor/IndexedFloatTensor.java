@@ -53,7 +53,12 @@ class IndexedFloatTensor extends IndexedTensor {
 
         @Override
         public IndexedTensor.BoundBuilder cell(double value, long ... indexes) {
-            values[(int)toValueIndex(indexes, sizes())] = (float)value;
+            return cell((float)value, indexes);
+        }
+
+        @Override
+        public IndexedTensor.BoundBuilder cell(float value, long ... indexes) {
+            values[(int)toValueIndex(indexes, sizes())] = value;
             return this;
         }
 
@@ -64,7 +69,12 @@ class IndexedFloatTensor extends IndexedTensor {
 
         @Override
         public Builder cell(TensorAddress address, double value) {
-            values[(int)toValueIndex(address, sizes())] = (float)value;
+            return cell(address, (float)value);
+        }
+
+        @Override
+        public Builder cell(TensorAddress address, float value) {
+            values[(int)toValueIndex(address, sizes())] = value;
             return this;
         }
 
@@ -78,22 +88,27 @@ class IndexedFloatTensor extends IndexedTensor {
 
         @Override
         public Builder cell(Cell cell, double value) {
+            return cell(cell, (float)value);
+        }
+
+        @Override
+        public Builder cell(Cell cell, float value) {
             long directIndex = cell.getDirectIndex();
             if (directIndex >= 0) // optimization
-                values[(int)directIndex] = (float)value;
+                values[(int)directIndex] = value;
             else
                 super.cell(cell, value);
             return this;
         }
 
-        /**
-         * Set a cell value by the index in the internal layout of this cell.
-         * This requires knowledge of the internal layout of cells in this implementation, and should therefore
-         * probably not be used (but when it can be used it is fast).
-         */
         @Override
         public void cellByDirectIndex(long index, double value) {
-            values[(int)index] = (float)value;
+            cellByDirectIndex(index, (float)value);
+        }
+
+        @Override
+        public void cellByDirectIndex(long index, float value) {
+            values[(int)index] = value;
         }
 
     }

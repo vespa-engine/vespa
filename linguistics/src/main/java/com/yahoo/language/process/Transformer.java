@@ -6,7 +6,7 @@ import com.yahoo.language.Language;
 /**
  * Interface for providers of text transformations such as accent removal.
  *
- * @authorMathias Mølster Lidal
+ * @author Mathias Mølster Lidal
  */
 public interface Transformer {
 

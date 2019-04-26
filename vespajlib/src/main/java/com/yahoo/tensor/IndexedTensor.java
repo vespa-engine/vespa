@@ -243,6 +243,7 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         public abstract Builder cell(double value, long ... indexes);
+        public abstract Builder cell(float value, long ... indexes);
 
         @Override
         public TensorType type() { return type; }
@@ -274,6 +275,8 @@ public abstract class IndexedTensor implements Tensor {
         DimensionSizes sizes() { return sizes; }
 
         public abstract void cellByDirectIndex(long index, double value);
+
+        public abstract void cellByDirectIndex(long index, float value);
 
     }
 
@@ -353,6 +356,11 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         @Override
+        public Builder cell(TensorAddress address, float value) {
+            return cell(address, (double)value);
+        }
+
+        @Override
         public Builder cell(TensorAddress address, double value) {
             long[] indexes = new long[address.size()];
             for (int i = 0; i < address.size(); i++) {
@@ -360,6 +368,11 @@ public abstract class IndexedTensor implements Tensor {
             }
             cell(value, indexes);
             return this;
+        }
+
+        @Override
+        public Builder cell(float value, long... indexes) {
+            return cell((double)value, indexes);
         }
 
         /**

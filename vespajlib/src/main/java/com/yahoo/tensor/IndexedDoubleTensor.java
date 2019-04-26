@@ -52,6 +52,11 @@ class IndexedDoubleTensor extends IndexedTensor {
         }
 
         @Override
+        public IndexedTensor.BoundBuilder cell(float value, long ... indexes) {
+            return cell((double)value, indexes);
+        }
+
+        @Override
         public IndexedTensor.BoundBuilder cell(double value, long ... indexes) {
             values[(int)toValueIndex(indexes, sizes())] = value;
             return this;
@@ -60,6 +65,11 @@ class IndexedDoubleTensor extends IndexedTensor {
         @Override
         public CellBuilder cell() {
             return new CellBuilder(type, this);
+        }
+
+        @Override
+        public Builder cell(TensorAddress address, float value) {
+            return cell(address, (double)value);
         }
 
         @Override
@@ -77,6 +87,11 @@ class IndexedDoubleTensor extends IndexedTensor {
         }
 
         @Override
+        public Builder cell(Cell cell, float value) {
+            return cell(cell, (double)value);
+        }
+
+        @Override
         public Builder cell(Cell cell, double value) {
             long directIndex = cell.getDirectIndex();
             if (directIndex >= 0) // optimization
@@ -86,11 +101,11 @@ class IndexedDoubleTensor extends IndexedTensor {
             return this;
         }
 
-        /**
-         * Set a cell value by the index in the internal layout of this cell.
-         * This requires knowledge of the internal layout of cells in this implementation, and should therefore
-         * probably not be used (but when it can be used it is fast).
-         */
+        @Override
+        public void cellByDirectIndex(long index, float value) {
+            cellByDirectIndex(index, (double)value);
+        }
+
         @Override
         public void cellByDirectIndex(long index, double value) {
             values[(int)index] = value;
