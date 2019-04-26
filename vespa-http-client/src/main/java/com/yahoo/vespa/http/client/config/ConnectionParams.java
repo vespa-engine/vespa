@@ -16,7 +16,10 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Connection level parameters.
+ * Parameters given to a {@link com.yahoo.vespa.http.client.SessionFactory}
+ * when creating {@link com.yahoo.vespa.http.client.Session}s. The parameters
+ * contained in this class are related to the connections from the node running
+ * the Session to the Vespa clusters.
  * This class is immutable
  * and has no public constructor - to instantiate one, use a {@link Builder}.
  *
@@ -28,9 +31,9 @@ public final class ConnectionParams {
      * Builder for {@link ConnectionParams}.
      */
     public static final class Builder {
-
         private SSLContext sslContext = null;
         private HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.getDefaultHostnameVerifier();
+        private long connectionTimeout = TimeUnit.SECONDS.toMillis(60);
         private final Multimap<String, String> headers = ArrayListMultimap.create();
         private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
         private int numPersistentConnectionsPerEndpoint = 1;
@@ -222,6 +225,7 @@ public final class ConnectionParams {
             return new ConnectionParams(
                     sslContext,
                     hostnameVerifier,
+                    connectionTimeout,
                     headers,
                     headerProviders,
                     numPersistentConnectionsPerEndpoint,
@@ -276,6 +280,7 @@ public final class ConnectionParams {
     }
     private final SSLContext sslContext;
     private final HostnameVerifier hostnameVerifier;
+    private final long connectionTimeout;
     private final Multimap<String, String> headers = ArrayListMultimap.create();
     private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
     private final int numPersistentConnectionsPerEndpoint;
@@ -292,6 +297,7 @@ public final class ConnectionParams {
     private ConnectionParams(
             SSLContext sslContext,
             HostnameVerifier hostnameVerifier,
+            long connectionTimeout,
             Multimap<String, String> headers,
             Map<String, HeaderProvider> headerProviders,
             int numPersistentConnectionsPerEndpoint,
@@ -306,6 +312,7 @@ public final class ConnectionParams {
             boolean printTraceToStdErr) {
         this.sslContext = sslContext;
         this.hostnameVerifier = hostnameVerifier;
+        this.connectionTimeout = connectionTimeout;
         this.headers.putAll(headers);
         this.headerProviders.putAll(headerProviders);
         this.numPersistentConnectionsPerEndpoint = numPersistentConnectionsPerEndpoint;

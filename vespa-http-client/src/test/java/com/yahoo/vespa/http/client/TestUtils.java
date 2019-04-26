@@ -13,11 +13,10 @@ import java.util.zip.GZIPInputStream;
 import static org.junit.Assert.assertNull;
 
 /**
- * @author Einar M R Rosenvinge
+ * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @since 5.1.20
  */
-@SuppressWarnings("deprecation")
 public class TestUtils {
-
     public static void writeDocuments(Session session, List<TestDocument> documents) throws IOException {
         for (TestDocument document : documents) {
             writeDocument(session, document);
@@ -58,5 +57,4 @@ public class TestUtils {
         }
         return rawContent.toString();
     }
-
 }

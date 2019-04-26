@@ -33,7 +33,6 @@ import static org.junit.Assert.fail;
  *
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("deprecation")
 public class QueueBoundsTest extends TestOnCiBuildingSystemOnly {
 
     public static final List<TestDocument> documents;
