@@ -3,13 +3,27 @@ package com.yahoo.vdslib.distribution;
 
 import com.yahoo.collections.BobHash;
 import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.DiskState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.vdslib.state.*;
 import com.yahoo.document.BucketId;
 
-import java.util.*;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Distribution {
 
@@ -27,7 +41,7 @@ public class Distribution {
         return redundancy;
     }
 
-    private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = new ConfigSubscriber.SingleSubscriber<StorDistributionConfig>() {
+    private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = new ConfigSubscriber.SingleSubscriber<>() {
         private int[] getGroupPath(String path) {
             if (path.equals("invalid")) { return new int[0]; }
             StringTokenizer st = new StringTokenizer(path, ".");
@@ -65,7 +79,6 @@ public class Distribution {
                     if (path.length == 0) {
                         root = group;
                     } else {
-                        assert(root != null);
                         Group parent = root;
                         for (int j=0; j<path.length - 1; ++j) {
                             parent = parent.getSubgroups().get(path[j]);
@@ -90,19 +103,12 @@ public class Distribution {
     };
 
     public Distribution(String configId) {
-        this(configId, null);
-    }
-    public Distribution(String configId, ConfigSourceSet configSources) {
         int mask = 0;
         for (int i=0; i<=64; ++i) {
             distributionBitMasks[i] = mask;
             mask = (mask << 1) | 1;
         }
-        if (configSources==null) {
-            configSub = new ConfigSubscriber();
-        } else {
-            configSub = new ConfigSubscriber(configSources);
-        }
+        configSub = new ConfigSubscriber();
         configSub.subscribe(configSubscriber, StorDistributionConfig.class, configId);
     }
 
@@ -213,7 +219,7 @@ public class Distribution {
             return group.compareTo(o.group);
         }
     }
-    public void getIdealGroups(BucketId bucketId, ClusterState clusterState, Group parent,
+    private void getIdealGroups(BucketId bucketId, ClusterState clusterState, Group parent,
                                int redundancy, List<ResultGroup> results) {
         if (parent.isLeafGroup()) {
             results.add(new ResultGroup(parent, redundancy));
@@ -311,7 +317,7 @@ public class Distribution {
         return idealDisk;
     }
 
-    public List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket,
+    List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket,
                                               String upStates) throws TooFewBucketBitsInUseException {
         List<Integer> resultNodes = new ArrayList<>();
 
@@ -399,12 +405,12 @@ public class Distribution {
     }
 
     public static class TooFewBucketBitsInUseException extends Exception {
-        public TooFewBucketBitsInUseException(String message) {
+        TooFewBucketBitsInUseException(String message) {
             super(message);
         }
     }
     public static class NoDistributorsAvailableException extends Exception {
-        public NoDistributorsAvailableException(String message) {
+        NoDistributorsAvailableException(String message) {
             super(message);
         }
     }
@@ -504,7 +510,7 @@ public class Distribution {
     public static String getSimpleGroupConfig(int redundancy, int nodeCount) {
         return getSimpleGroupConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.Enum.MODULO_BID);
     }
-    public static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
+    private static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
         StringBuilder sb = new StringBuilder();
         sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
 

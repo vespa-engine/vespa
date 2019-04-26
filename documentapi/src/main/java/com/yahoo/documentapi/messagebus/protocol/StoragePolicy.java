@@ -2,7 +2,6 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.jrt.slobrok.api.IMirror;
@@ -46,7 +45,7 @@ import java.util.logging.Logger;
  *
  * @author Haakon Humberset
  */
-public class StoragePolicy extends ExternalSlobrokPolicy {
+public class StoragePolicy extends SlobrokPolicy {
 
     private static final Logger log = Logger.getLogger(StoragePolicy.class.getName());
     public static final String owningBucketStates = "uim";
@@ -123,9 +122,9 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     /** Host fetcher using a slobrok mirror to find the hosts. */
     public static class SlobrokHostFetcher extends HostFetcher {
         private final SlobrokHostPatternGenerator patternGenerator;
-        private final ExternalSlobrokPolicy policy;
+        private final SlobrokPolicy policy;
 
-        SlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy, int percent) {
+        SlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, SlobrokPolicy policy, int percent) {
             super(percent);
             this.patternGenerator = patternGenerator;
             this.policy = policy;
@@ -182,7 +181,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
         private final AtomicReference<GenerationCache> generationCache = new AtomicReference<>(null);
 
-        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy, int percent) {
+        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, SlobrokPolicy policy, int percent) {
             super(patternGenerator, policy, percent);
         }
 
@@ -240,13 +239,11 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         public SlobrokHostPatternGenerator createPatternGenerator() {
             return new SlobrokHostPatternGenerator(getClusterName());
         }
-        public HostFetcher createHostFetcher(ExternalSlobrokPolicy policy, int percent) {
+        public HostFetcher createHostFetcher(SlobrokPolicy policy, int percent) {
             return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy, percent);
         }
-        public Distribution createDistribution(ExternalSlobrokPolicy policy) {
-            return (policy.configSources != null ?
-                    new Distribution(getDistributionConfigId(), new ConfigSourceSet(policy.configSources))
-                  : new Distribution(getDistributionConfigId()));
+        public Distribution createDistribution(SlobrokPolicy policy) {
+            return new Distribution(getDistributionConfigId());
         }
 
         /**
@@ -351,7 +348,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         private final AtomicInteger oldClusterVersionGottenCount = new AtomicInteger(0);
         private final int maxOldClusterVersionBeforeSendingRandom; // Reset cluster version protection
 
-        DistributorSelectionLogic(Parameters params, ExternalSlobrokPolicy policy) {
+        DistributorSelectionLogic(Parameters params, SlobrokPolicy policy) {
             this.hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
             this.distribution = params.createDistribution(policy);
             persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
@@ -534,7 +531,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     }
 
     private final BucketIdCalculator bucketIdCalculator = new BucketIdCalculator();
-    private final AtomicReference<DistributorSelectionLogic> distributorSelectionLogic = new AtomicReference<>();
+    private final DistributorSelectionLogic distributorSelectionLogic;
     private final Parameters parameters;
 
     /** Constructor used in production. */
@@ -543,23 +540,18 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     }
 
     public StoragePolicy(Map<String, String> params) {
-        this(new Parameters(params), params);
+        this(new Parameters(params));
     }
 
     /** Constructor specifying a bit more in detail, so we can override what needs to be overridden in tests */
-    public StoragePolicy(Parameters p, Map<String, String> params) {
-        super(params);
+    public StoragePolicy(Parameters p) {
+        super();
         parameters = p;
+        distributorSelectionLogic = new DistributorSelectionLogic(parameters, this);
     }
 
     @Override
-    public void init() {
-        super.init();
-        this.distributorSelectionLogic.set(new DistributorSelectionLogic(parameters, this));
-    }
-
-    @Override
-    public void doSelect(RoutingContext context) {
+    public void select(RoutingContext context) {
         if (context.shouldTrace(1)) {
             context.trace(1, "Selecting route");
         }
@@ -567,7 +559,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         BucketId bucketId = bucketIdCalculator.handleBucketIdCalculation(context);
         if (context.hasReply()) return;
 
-        String targetSpec = distributorSelectionLogic.get().getTargetSpec(context, bucketId);
+        String targetSpec = distributorSelectionLogic.getTargetSpec(context, bucketId);
         if (context.hasReply()) return;
         if (targetSpec != null) {
             Route route = new Route(context.getRoute());
@@ -590,9 +582,9 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         }
 
         if (reply instanceof WrongDistributionReply) {
-            distributorSelectionLogic.get().handleWrongDistribution((WrongDistributionReply) reply, context);
+            distributorSelectionLogic.handleWrongDistribution((WrongDistributionReply) reply, context);
         } else if (reply.hasErrors()) {
-            distributorSelectionLogic.get().handleErrorReply(reply, context.getContext());
+            distributorSelectionLogic.handleErrorReply(reply, context.getContext());
         } else if (reply instanceof WriteDocumentReply) {
             if (context.shouldTrace(9)) {
                 context.trace(9, "Modification timestamp: " + ((WriteDocumentReply)reply).getHighestModificationTimestamp());
@@ -603,6 +595,6 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
     @Override
     public void destroy() {
-        distributorSelectionLogic.get().destroy();
+        distributorSelectionLogic.destroy();
     }
 }

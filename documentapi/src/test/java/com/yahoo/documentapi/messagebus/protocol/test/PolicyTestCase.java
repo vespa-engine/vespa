@@ -59,9 +59,11 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -101,7 +103,7 @@ public class PolicyTestCase {
         policy = new DocumentProtocol(manager).createPolicy("SubsetService", null);
         assertTrue(policy instanceof SubsetServicePolicy);
 
-        policy = new DocumentProtocol(manager).createPolicy("LoadBalancer", null);
+        policy = new DocumentProtocol(manager).createPolicy("LoadBalancer", "cluster=docproc/cluster.default;session=chain.default");
         assertTrue(policy instanceof LoadBalancerPolicy);
     }
 

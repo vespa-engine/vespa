@@ -33,7 +33,7 @@ public class ContentPolicy extends StoragePolicy {
     }
 
     public ContentPolicy(Map<String, String> params) {
-        super(new ContentParameters(params), params);
+        super(new ContentParameters(params));
     }
 
     public ContentPolicy(String parameters) {

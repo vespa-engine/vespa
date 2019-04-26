@@ -23,32 +23,28 @@ import java.util.Map;
  *
  * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
  */
-public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
+public class LoadBalancerPolicy extends SlobrokPolicy {
     private final String session;
     private final String pattern;
 
-    private LoadBalancer loadBalancer;
+    private final LoadBalancer loadBalancer;
 
     LoadBalancerPolicy(String param) {
         this(parse(param));
     }
 
     private LoadBalancerPolicy(Map<String, String> params) {
-        super(params);
+        super();
 
         String cluster = params.get("cluster");
         session = params.get("session");
 
         if (cluster == null) {
-            error = "Required parameter pattern not set";
-            pattern = null;
-            return;
+            throw new IllegalArgumentException("Required parameter 'cluster' not set");
         }
 
         if (session == null) {
-            error = "Required parameter session not set";
-            pattern = null;
-            return;
+            throw new IllegalArgumentException("Required parameter 'session' not set");
         }
 
         pattern = cluster + "/*/" + session;
@@ -56,7 +52,7 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
     }
 
     @Override
-    public void doSelect(RoutingContext context) {
+    public void select(RoutingContext context) {
         LoadBalancer.Node node = getRecipient(context);
 
         if (node != null) {
@@ -65,8 +61,7 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
             route.setHop(0, Hop.parse(node.entry.getSpec() + "/" + session));
             context.addChild(route);
         } else {
-            context.setError(ErrorCode.NO_ADDRESS_FOR_SERVICE,
-                             "Could not resolve any nodes to send to in pattern " + pattern);
+            context.setError(ErrorCode.NO_ADDRESS_FOR_SERVICE, "Could not resolve any nodes to send to in pattern " + pattern);
         }
     }
 
@@ -94,5 +89,10 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
         loadBalancer.received(target, busy);
 
         context.setReply(reply);
+    }
+
+    @Override
+    public void destroy() {
+
     }
 }
