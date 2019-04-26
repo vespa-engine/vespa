@@ -97,6 +97,16 @@ public abstract class IndexedTensor implements Tensor {
         return get((int)toValueIndex(indexes, dimensionSizes));
     }
 
+    /**
+     * Returns the value at the given indexes as a float
+     *
+     * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
+     * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
+     */
+    public float getFloat(long ... indexes) {
+        return getFloat((int)toValueIndex(indexes, dimensionSizes));
+    }
+
     /** Returns the value at this address, or NaN if there is no value at this address */
     @Override
     public double get(TensorAddress address) {
