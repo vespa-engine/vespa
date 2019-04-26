@@ -72,7 +72,7 @@ public class RoutingPolicyMaintainerTest {
         assertEquals("lb-0--tenant1:app1:default--prod.us-central-1.", records2.get().get(0).data().asString());
         assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records2.get().get(1).data().asString());
         assertEquals(2, tester.controller().applications().routingPolicies(app1.id()).iterator().next()
-                              .endpointsIn(SystemName.main).asList().size());
+                              .rotationEndpointsIn(SystemName.main).asList().size());
 
         // Applications gains a new deployment
         ApplicationPackage updatedApplicationPackage = new ApplicationPackageBuilder()
