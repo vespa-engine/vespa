@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -65,7 +67,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     /** Helper class to match a host pattern with node to use. */
     public abstract static class HostFetcher {
         private int requiredUpPercentageToSendToKnownGoodNodes = 60;
-        private List<Integer> validRandomTargets = new ArrayList<>();
+        private AtomicReference<List<Integer>> safeValidRandomTargets = new AtomicReference<>(new CopyOnWriteArrayList<>());
         private int totalTargets = 1;
         protected final Random randomizer = new Random(12345); // Use same randomizer each time to make unit testing easy.
 
@@ -76,11 +78,12 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             for (int i=0; i<state.getNodeCount(NodeType.DISTRIBUTOR); ++i) {
                 if (state.getNodeState(new Node(NodeType.DISTRIBUTOR, i)).getState().oneOf(upStates)) validRandomTargets.add(i);
             }
-            this.validRandomTargets = validRandomTargets;
+            this.safeValidRandomTargets.set(new CopyOnWriteArrayList<>(validRandomTargets));
             this.totalTargets = state.getNodeCount(NodeType.DISTRIBUTOR);
         }
         public abstract String getTargetSpec(Integer distributor, RoutingContext context);
         String getRandomTargetSpec(RoutingContext context) {
+            List<Integer> validRandomTargets = safeValidRandomTargets.get();
             // Try to use list of random targets, if at least X % of the nodes are up
             while (100 * validRandomTargets.size() / totalTargets >= requiredUpPercentageToSendToKnownGoodNodes) {
                 int randIndex = randomizer.nextInt(validRandomTargets.size());
