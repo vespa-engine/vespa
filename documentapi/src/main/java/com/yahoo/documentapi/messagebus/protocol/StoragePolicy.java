@@ -25,6 +25,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,35 +73,46 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
     /** Helper class to match a host pattern with node to use. */
     public abstract static class HostFetcher {
-        private AtomicInteger safeRequiredUpPercentageToSendToKnownGoodNodes = new AtomicInteger(60);
-        private AtomicReference<List<Integer>> safeValidRandomTargets = new AtomicReference<>(new CopyOnWriteArrayList<>());
-        private AtomicInteger safeTotalTargets = new AtomicInteger(1);
+
+        private class Targets {
+            private final List<Integer> list;
+            private final int total;
+            Targets() {
+                this(Collections.emptyList(), 1);
+            }
+            Targets(List<Integer> list, int total) {
+                this.list = list;
+                this.total = total;
+            }
+        }
+
+        private final int requiredUpPercentageToSendToKnownGoodNodes;
+        private final AtomicReference<Targets> validTargets = new AtomicReference<>(new Targets());
         protected final Random randomizer = new Random(12345); // Use same randomizer each time to make unit testing easy.
 
-        void setRequiredUpPercentageToSendToKnownGoodNodes(int percent) { this.safeRequiredUpPercentageToSendToKnownGoodNodes.set(percent); }
+        protected HostFetcher(int percent) {
+            requiredUpPercentageToSendToKnownGoodNodes = percent;
+        }
 
         void updateValidTargets(ClusterState state) {
             List<Integer> validRandomTargets = new ArrayList<>();
             for (int i=0; i<state.getNodeCount(NodeType.DISTRIBUTOR); ++i) {
                 if (state.getNodeState(new Node(NodeType.DISTRIBUTOR, i)).getState().oneOf(upStates)) validRandomTargets.add(i);
             }
-            this.safeValidRandomTargets.set(new CopyOnWriteArrayList<>(validRandomTargets));
-            safeTotalTargets.set(state.getNodeCount(NodeType.DISTRIBUTOR));
+            validTargets.set(new Targets(new CopyOnWriteArrayList<>(validRandomTargets), state.getNodeCount(NodeType.DISTRIBUTOR)));
         }
         public abstract String getTargetSpec(Integer distributor, RoutingContext context);
         String getRandomTargetSpec(RoutingContext context) {
-            List<Integer> validRandomTargets = safeValidRandomTargets.get();
+            Targets targets = validTargets.get();
             // Try to use list of random targets, if at least X % of the nodes are up
-            int totalTargets = safeTotalTargets.get();
-            int requiredUpPercentageToSendToKnownGoodNodes = safeRequiredUpPercentageToSendToKnownGoodNodes.get();
-            while (100 * validRandomTargets.size() / totalTargets >= requiredUpPercentageToSendToKnownGoodNodes) {
-                int randIndex = randomizer.nextInt(validRandomTargets.size());
-                String targetSpec = getTargetSpec(validRandomTargets.get(randIndex), context);
+            while (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes) {
+                int randIndex = randomizer.nextInt(targets.list.size());
+                String targetSpec = getTargetSpec(targets.list.get(randIndex), context);
                 if (targetSpec != null) {
                     context.trace(3, "Sending to random node seen up in cluster state");
                     return targetSpec;
                 }
-                validRandomTargets.remove(randIndex);
+                targets.list.remove(randIndex);
             }
             context.trace(3, "Too few nodes seen up in state. Sending totally random.");
             return getTargetSpec(null, context);
@@ -113,7 +125,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         private final SlobrokHostPatternGenerator patternGenerator;
         final ExternalSlobrokPolicy policy;
 
-        SlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy) {
+        SlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy, int percent) {
+            super(percent);
             this.patternGenerator = patternGenerator;
             this.policy = policy;
         }
@@ -169,8 +182,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
         private final AtomicReference<GenerationCache> generationCache = new AtomicReference<>(null);
 
-        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy) {
-            super(patternGenerator, policy);
+        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy, int percent) {
+            super(patternGenerator, policy, percent);
         }
 
         @Override
@@ -227,8 +240,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         public SlobrokHostPatternGenerator createPatternGenerator() {
             return new SlobrokHostPatternGenerator(getClusterName());
         }
-        public HostFetcher createHostFetcher(ExternalSlobrokPolicy policy) {
-            return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy);
+        public HostFetcher createHostFetcher(ExternalSlobrokPolicy policy, int percent) {
+            return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy, percent);
         }
         public Distribution createDistribution(ExternalSlobrokPolicy policy) {
             return (policy.configSources != null ?
@@ -325,13 +338,12 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         private final HostFetcher hostFetcher;
         private final Distribution distribution;
         private final InstabilityChecker persistentFailureChecker;
-        private AtomicReference<ClusterState> safeCachedClusterState = new AtomicReference<>(null);
+        private final AtomicReference<ClusterState> safeCachedClusterState = new AtomicReference<>(null);
         private final AtomicInteger oldClusterVersionGottenCount = new AtomicInteger(0);
         private final int maxOldClusterVersionBeforeSendingRandom; // Reset cluster version protection
 
         DistributorSelectionLogic(Parameters params, ExternalSlobrokPolicy policy) {
-            this.hostFetcher = params.createHostFetcher(policy);
-            this.hostFetcher.setRequiredUpPercentageToSendToKnownGoodNodes(params.getRequiredUpPercentageToSendToKnownGoodNodes());
+            this.hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
             this.distribution = params.createDistribution(policy);
             persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
             maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
