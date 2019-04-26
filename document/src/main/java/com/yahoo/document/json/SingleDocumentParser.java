@@ -20,6 +20,7 @@ import java.io.InputStream;
  * @author dybis
  */
 public class SingleDocumentParser {
+
     private static final JsonFactory jsonFactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
     private DocumentTypeManager docMan;
 
@@ -36,12 +37,12 @@ public class SingleDocumentParser {
     }
 
     private FeedOperation parse(InputStream inputStream, String docId, DocumentParser.SupportedOperation supportedOperation)  {
-        final JsonReader reader = new JsonReader(docMan, inputStream, jsonFactory);
-        final DocumentOperation documentOperation = reader.readSingleDocument(supportedOperation, docId);
+        JsonReader reader = new JsonReader(docMan, inputStream, jsonFactory);
+        DocumentOperation documentOperation = reader.readSingleDocument(supportedOperation, docId);
         try {
             inputStream.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         if (supportedOperation == DocumentParser.SupportedOperation.PUT) {
             return new DocumentFeedOperation(((DocumentPut) documentOperation).getDocument(), documentOperation.getCondition());
@@ -49,4 +50,5 @@ public class SingleDocumentParser {
             return new DocumentUpdateFeedOperation((DocumentUpdate) documentOperation, documentOperation.getCondition());
         }
     }
+
 }
