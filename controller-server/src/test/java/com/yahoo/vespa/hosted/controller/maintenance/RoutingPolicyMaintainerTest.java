@@ -67,10 +67,10 @@ public class RoutingPolicyMaintainerTest {
         Supplier<List<Record>> records2 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r1.app1.tenant1.global.vespa.oath.cloud"));
         assertEquals(2, records1.get().size());
         assertEquals(records1.get().size(), records2.get().size());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1.", records1.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records1.get().get(1).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1.", records2.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records2.get().get(1).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records1.get().get(0).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records1.get().get(1).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records2.get().get(0).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records2.get().get(1).data().asString());
         assertEquals(2, tester.controller().applications().routingPolicies(app1.id()).iterator().next()
                               .rotationEndpointsIn(SystemName.main).asList().size());
 
@@ -88,9 +88,9 @@ public class RoutingPolicyMaintainerTest {
         provisionLoadBalancers(app1, 2, rotations);
         maintainer.maintain();
         assertEquals(numberOfDeployments, records1.get().size());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1.", records1.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-east-3.", records1.get().get(1).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1.", records1.get().get(2).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records1.get().get(0).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-east-3/dns-zone-1/prod.us-east-3", records1.get().get(1).data().asString());
+        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records1.get().get(2).data().asString());
 
         // Another application is deployed
         Supplier<List<Record>> records3 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app2.tenant1.global.vespa.oath.cloud"));
@@ -98,8 +98,8 @@ public class RoutingPolicyMaintainerTest {
         provisionLoadBalancers(app2, 1, Map.of(0, Set.of(RotationName.from("r0"))));
         maintainer.maintain();
         assertEquals(2, records3.get().size());
-        assertEquals("lb-0--tenant1:app2:default--prod.us-central-1.", records3.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app2:default--prod.us-west-1.", records3.get().get(1).data().asString());
+        assertEquals("lb-0--tenant1:app2:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records3.get().get(0).data().asString());
+        assertEquals("lb-0--tenant1:app2:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records3.get().get(1).data().asString());
 
         // All rotations for app1 are removed
         provisionLoadBalancers(app1, clustersPerZone, Collections.emptyMap());

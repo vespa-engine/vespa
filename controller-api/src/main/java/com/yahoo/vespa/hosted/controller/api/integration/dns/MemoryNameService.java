@@ -33,8 +33,7 @@ public class MemoryNameService implements NameService {
     public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) {
         var records = targets.stream()
                              .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
-                             .map(target -> new Record(Record.Type.ALIAS, name,
-                                                       RecordData.fqdn(target.name().value())))
+                             .map(target -> new Record(Record.Type.ALIAS, name, target.asData()))
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         removeRecords(findRecords(Record.Type.ALIAS, name));

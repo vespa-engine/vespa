@@ -38,6 +38,11 @@ public class AliasTarget {
         return zone;
     }
 
+    /** Returns the fields in this encoded as record data */
+    public RecordData asData() {
+        return RecordData.from(name.value() + "/" + dnsZone + "/" + zone.value());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -54,6 +59,15 @@ public class AliasTarget {
     @Override
     public String toString() {
         return String.format("rotation target %s [zone: %s] in %s", name, dnsZone, zone);
+    }
+
+    public static AliasTarget from(RecordData data) {
+        var parts = data.asString().split("/");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Expected data to be on format [hostname]/[DNS zone]/[zone], but got " +
+                                               data.asString());
+        }
+        return new AliasTarget(HostName.from(parts[0]), parts[1], ZoneId.from(parts[2]));
     }
 
 }
