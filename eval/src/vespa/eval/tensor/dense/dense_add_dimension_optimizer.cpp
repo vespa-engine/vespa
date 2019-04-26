@@ -20,7 +20,7 @@ using namespace eval::operation;
 namespace {
 
 bool is_concrete_dense_tensor(const ValueType &type) {
-    return (type.is_dense() && !type.is_abstract());
+    return type.is_dense();
 }
 
 bool not_overlapping(const ValueType &a, const ValueType &b) {

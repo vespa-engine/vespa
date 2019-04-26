@@ -20,11 +20,6 @@ size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::st
     return ValueType::Dimension::npos;
 }
 
-Dimension *find_dimension(std::vector<Dimension> &list, const vespalib::string &name) {
-    size_t idx = my_dimension_index(list, name);
-    return (idx != ValueType::Dimension::npos) ? &list[idx] : nullptr;
-}
-
 const Dimension *find_dimension(const std::vector<Dimension> &list, const vespalib::string &name) {
     size_t idx = my_dimension_index(list, name);
     return (idx != ValueType::Dimension::npos) ? &list[idx] : nullptr;
@@ -35,50 +30,71 @@ void sort_dimensions(DimensionList &dimensions) {
               [](const auto &a, const auto &b){ return (a.name < b.name); });
 }
 
-bool has_duplicates(const DimensionList &dimensions) {
-    for (size_t i = 1; i < dimensions.size(); ++i) {
-        if (dimensions[i - 1].name == dimensions[i].name) {
-            return true;
+bool verify_dimensions(const DimensionList &dimensions) {
+    for (size_t i = 0; i < dimensions.size(); ++i) {
+        if (dimensions[i].size == 0) {
+            return false;
+        }
+        if ((i > 0) && (dimensions[i - 1].name == dimensions[i].name)) {
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
-struct DimensionResult {
+struct MyJoin {
     bool mismatch;
     DimensionList dimensions;
-    DimensionResult() : mismatch(false), dimensions() {}
+    vespalib::string concat_dim;
+    MyJoin(const DimensionList &lhs, const DimensionList &rhs)
+        : mismatch(false), dimensions(), concat_dim() { my_join(lhs, rhs); }
+    MyJoin(const DimensionList &lhs, const DimensionList &rhs, vespalib::string concat_dim_in)
+        : mismatch(false), dimensions(), concat_dim(concat_dim_in) { my_join(lhs, rhs); }
+    ~MyJoin();
+private:
     void add(const Dimension &a) {
-        dimensions.push_back(a);
+        if (a.name == concat_dim) {
+            if (a.is_indexed()) {
+                dimensions.emplace_back(a.name, a.size + 1);
+            } else {
+                mismatch = true;
+            }
+        } else {
+            dimensions.push_back(a);
+        }
     }
     void unify(const Dimension &a, const Dimension &b) {
-        if (a.is_mapped() == b.is_mapped()) {
-            add(Dimension(a.name, std::min(a.size, b.size)));
+        if (a.name == concat_dim) {
+            if (a.is_indexed() && b.is_indexed()) {
+                dimensions.emplace_back(a.name, a.size + b.size);
+            } else {
+                mismatch = true;
+            }
+        } else if (a == b) {
+            add(a);
         } else {
             mismatch = true;
         }
     }
+    void my_join(const DimensionList &lhs, const DimensionList &rhs) {
+        auto pos = rhs.begin();
+        auto end = rhs.end();
+        for (const Dimension &dim: lhs) {
+            while ((pos != end) && (pos->name < dim.name)) {
+                add(*pos++);
+            }
+            if ((pos != end) && (pos->name == dim.name)) {
+                unify(dim, *pos++);
+            } else {
+                add(dim);
+            }
+        }
+        while (pos != end) {
+            add(*pos++);
+        }
+    }
 };
-
-DimensionResult my_join(const DimensionList &lhs, const DimensionList &rhs) {
-    DimensionResult result;
-    auto pos = rhs.begin();
-    auto end = rhs.end();
-    for (const Dimension &dim: lhs) {
-        while ((pos != end) && (pos->name < dim.name)) {
-            result.add(*pos++);
-        }
-        if ((pos != end) && (pos->name == dim.name)) {
-            result.unify(dim, *pos++);
-        } else {
-            result.add(dim);
-        }
-    }
-    while (pos != end) {
-        result.add(*pos++);
-    }
-    return result;
-}
+MyJoin::~MyJoin() = default;
 
 struct Renamer {
     const std::vector<vespalib::string> &from;
@@ -104,10 +120,11 @@ struct Renamer {
 constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
 
 ValueType::~ValueType() = default;
+
 bool
 ValueType::is_sparse() const
 {
-    if (!is_tensor() || dimensions().empty()) {
+    if (dimensions().empty()) {
         return false;
     }
     for (const auto &dim : dimensions()) {
@@ -121,7 +138,7 @@ ValueType::is_sparse() const
 bool
 ValueType::is_dense() const
 {
-    if (!is_tensor() || dimensions().empty()) {
+    if (dimensions().empty()) {
         return false;
     }
     for (const auto &dim : dimensions()) {
@@ -150,14 +167,10 @@ ValueType::dimension_names() const
 ValueType
 ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
 {
-    if (is_error() || is_any()) {
-        return *this;
+    if (is_error()) {
+        return error_type();
     } else if (dimensions_in.empty()) {
         return double_type();
-    } else if (!is_tensor()) {
-        return error_type();
-    } else if (_dimensions.empty()) {
-        return any_type();
     }
     size_t removed = 0;
     std::vector<Dimension> result;
@@ -171,9 +184,6 @@ ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
     if (removed != dimensions_in.size()) {
         return error_type();
     }
-    if (result.empty()) {
-        return double_type();
-    }
     return tensor_type(std::move(result));
 }
 
@@ -181,11 +191,8 @@ ValueType
 ValueType::rename(const std::vector<vespalib::string> &from,
                   const std::vector<vespalib::string> &to) const
 {
-    if (!maybe_tensor() || from.empty() || (from.size() != to.size())) {
+    if (from.empty() || (from.size() != to.size())) {
         return error_type();
-    }
-    if (unknown_dimensions()) {
-        return any_type();
     }
     Renamer renamer(from, to);
     std::vector<Dimension> dim_list;
@@ -201,8 +208,11 @@ ValueType::rename(const std::vector<vespalib::string> &from,
 ValueType
 ValueType::tensor_type(std::vector<Dimension> dimensions_in)
 {
+    if (dimensions_in.empty()) {
+        return double_type();
+    }
     sort_dimensions(dimensions_in);
-    if (has_duplicates(dimensions_in)) {
+    if (!verify_dimensions(dimensions_in)) {
         return error_type();
     }
     return ValueType(Type::TENSOR, std::move(dimensions_in));
@@ -229,10 +239,8 @@ ValueType::join(const ValueType &lhs, const ValueType &rhs)
         return rhs;
     } else if (rhs.is_double()) {
         return lhs;
-    } else if (lhs.unknown_dimensions() || rhs.unknown_dimensions()) {
-        return any_type();
     }
-    DimensionResult result = my_join(lhs._dimensions, rhs._dimensions);
+    MyJoin result(lhs._dimensions, rhs._dimensions);
     if (result.mismatch) {
         return error_type();
     }
@@ -244,22 +252,12 @@ ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::st
 {
     if (lhs.is_error() || rhs.is_error()) {
         return error_type();
-    } else if (lhs.unknown_dimensions() || rhs.unknown_dimensions()) {
-        return any_type();
     }
-    DimensionResult result = my_join(lhs._dimensions, rhs._dimensions);
-    auto lhs_dim = find_dimension(lhs.dimensions(), dimension);
-    auto rhs_dim = find_dimension(rhs.dimensions(), dimension);
-    auto res_dim = find_dimension(result.dimensions, dimension);
-    if (result.mismatch || (res_dim && res_dim->is_mapped())) {
+    MyJoin result(lhs._dimensions, rhs._dimensions, dimension);
+    if (result.mismatch) {
         return error_type();
     }
-    if (res_dim) {
-        if (res_dim->is_bound()) {
-            res_dim->size = (lhs_dim ? lhs_dim->size : 1)
-                            + (rhs_dim ? rhs_dim->size : 1);
-        }
-    } else {
+    if (!find_dimension(result.dimensions, dimension)) {
         result.dimensions.emplace_back(dimension, 2);
     }
     return tensor_type(std::move(result.dimensions));
@@ -268,35 +266,10 @@ ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::st
 ValueType
 ValueType::either(const ValueType &one, const ValueType &other)
 {
-    if (one.is_error() || other.is_error()) {
+    if (one != other) {
         return error_type();
     }
-    if (one == other) {
-        return one;
-    }
-    if (!one.is_tensor() || !other.is_tensor()) {
-        return any_type();
-    }
-    if (one.dimensions().size() != other.dimensions().size()) {
-        return tensor_type({});
-    }
-    std::vector<Dimension> dims;
-    for (size_t i = 0; i < one.dimensions().size(); ++i) {
-        const Dimension &a = one.dimensions()[i];
-        const Dimension &b = other.dimensions()[i];
-        if (a.name != b.name) {
-            return tensor_type({});
-        }
-        if (a.is_mapped() != b.is_mapped()) {
-            return tensor_type({});
-        }
-        if (a.size == b.size) {
-            dims.push_back(a);
-        } else {
-            dims.emplace_back(a.name, 0);
-        }
-    }
-    return tensor_type(std::move(dims));
+    return one;
 }
 
 std::ostream &

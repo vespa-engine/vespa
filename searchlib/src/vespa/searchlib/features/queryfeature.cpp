@@ -98,12 +98,15 @@ QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
     vespalib::string queryFeatureType = type::QueryFeature::lookup(env.getProperties(), _key);
     if (!queryFeatureType.empty()) {
         _valueType = ValueType::from_spec(queryFeatureType);
+        if (_valueType.is_error()) {
+            LOG(error, "%s: invalid type: '%s'", getName().c_str(), queryFeatureType.c_str());
+        }
     }
-    FeatureType output_type = _valueType.is_tensor()
-                              ? FeatureType::object(_valueType)
-                              : FeatureType::number();
+    FeatureType output_type = _valueType.is_double()
+                              ? FeatureType::number()
+                              : FeatureType::object(_valueType);
     describeOutput("out", "The value looked up in query properties using the given key.", output_type);
-    return true;
+    return !_valueType.is_error();
 }
 
 namespace {

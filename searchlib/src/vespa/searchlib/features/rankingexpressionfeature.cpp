@@ -239,9 +239,6 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         LOG(error, "rank expression contains type errors: %s\n", script.c_str());
         return false;
     }
-    if (root_type.is_any()) {
-        LOG(warning, "rank expression could produce run-time type errors: %s\n", script.c_str());
-    }
     auto compile_issues = CompiledFunction::detect_issues(rank_function);
     auto interpret_issues = InterpretedFunction::detect_issues(rank_function);
     if (do_compile && compile_issues && !interpret_issues) {

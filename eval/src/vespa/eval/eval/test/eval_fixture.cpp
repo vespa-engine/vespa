@@ -68,7 +68,6 @@ std::vector<Value::UP> make_params(const TensorEngine &engine, const Function &f
         auto pos = param_repo.map.find(function.param_name(i));
         ASSERT_TRUE(pos != param_repo.map.end());
         result.push_back(engine.from_spec(pos->second.value));
-        ASSERT_TRUE(!result.back()->type().is_abstract());
     }
     return result;
 }

@@ -26,7 +26,6 @@ EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("x1y5z1", spec({x(1),y(5),z(1)}, N()))
         .add("x1y1z1", spec({x(1),y(1),z(1)}, N()))
-        .add("x1y5z1_u", spec({x(1),y(5),z(1)}, N()), "tensor(x[1],y[5],z[])")
         .add("x1y5z_m", spec({x(1),y(5),z({"a"})}, N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -74,8 +73,6 @@ TEST("require that full reduce is not optimized") {
 }
 
 TEST("require that inappropriate tensor types cannot be optimized") {
-    TEST_DO(verify_not_optimized("reduce(x1y5z1_u,sum,x)"));
-    TEST_DO(verify_not_optimized("reduce(x1y5z1_u,sum,z)"));
     TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,x)"));
     TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,z)"));
 }

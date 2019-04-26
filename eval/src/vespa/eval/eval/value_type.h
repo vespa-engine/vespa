@@ -15,7 +15,7 @@ namespace vespalib::eval {
 class ValueType
 {
 public:
-    enum class Type { ANY, ERROR, DOUBLE, TENSOR };
+    enum class Type { ERROR, DOUBLE, TENSOR };
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
@@ -51,7 +51,6 @@ public:
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     Type type() const { return _type; }
-    bool is_any() const { return (_type == Type::ANY); }
     bool is_error() const { return (_type == Type::ERROR); }
     bool is_double() const { return (_type == Type::DOUBLE); }
     bool is_tensor() const { return (_type == Type::TENSOR); }
@@ -60,16 +59,6 @@ public:
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
-    bool maybe_tensor() const { return (is_any() || is_tensor()); }
-    bool unknown_dimensions() const { return (maybe_tensor() && _dimensions.empty()); }
-    bool is_abstract() const {
-        for (const auto &dimension: _dimensions) {
-            if (dimension.is_indexed() && !dimension.is_bound()) {
-                return true;
-            }
-        }
-        return (is_any() || (is_tensor() && (dimensions().empty())));
-    }
     bool operator==(const ValueType &rhs) const {
         return ((_type == rhs._type) && (_dimensions == rhs._dimensions));
     }
@@ -79,8 +68,7 @@ public:
     ValueType rename(const std::vector<vespalib::string> &from,
                      const std::vector<vespalib::string> &to) const;
 
-    static ValueType any_type() { return ValueType(Type::ANY); }
-    static ValueType error_type() { return ValueType(Type::ERROR); };
+    static ValueType error_type() { return ValueType(Type::ERROR); }
     static ValueType double_type() { return ValueType(Type::DOUBLE); }
     static ValueType tensor_type(std::vector<Dimension> dimensions_in);
     static ValueType from_spec(const vespalib::string &spec);

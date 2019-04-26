@@ -295,10 +295,13 @@ AttributeBlueprint::setup(const search::fef::IIndexEnvironment & env,
     vespalib::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
     if (!attrType.empty()) {
         _tensorType = ValueType::from_spec(attrType);
+        if (_tensorType.is_error()) {
+            LOG(error, "%s: invalid type: '%s'", getName().c_str(), attrType.c_str());
+        }
     }
-    FeatureType output_type = _tensorType.is_tensor()
-                              ? FeatureType::object(_tensorType)
-                              : FeatureType::number();
+    FeatureType output_type = _tensorType.is_double()
+                              ? FeatureType::number()
+                              : FeatureType::object(_tensorType);
     describeOutput("value", "The value of a single value attribute, "
                    "the value at the given index of an array attribute, "
                    "the given key of a weighted set attribute, or"
@@ -309,7 +312,7 @@ AttributeBlueprint::setup(const search::fef::IIndexEnvironment & env,
         describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
     }
     env.hintAttributeAccess(_attrName);
-    return true;
+    return !_tensorType.is_error();
 }
 
 search::fef::Blueprint::UP

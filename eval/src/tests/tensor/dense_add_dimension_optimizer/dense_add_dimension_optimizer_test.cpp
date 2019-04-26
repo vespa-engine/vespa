@@ -27,7 +27,6 @@ EvalFixture::ParamRepo make_params() {
         .add("x5", spec({x(5)}, N()))
         .add("x5y1", spec({x(5),y(1)}, N()))
         .add("y1z1", spec({y(1),z(1)}, N()))
-        .add("x5_u", spec({x(5)}, N()), "tensor(x[])")
         .add("x_m", spec({x({"a"})}, N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -80,15 +79,11 @@ TEST("require that non-canonical dimension addition is not optimized") {
 }
 
 TEST("require that dimension addition with overlapping dimensions is not optimized") {
-    TEST_DO(verify_not_optimized("x5*tensor(x[1],y[1])(1)"));
-    TEST_DO(verify_not_optimized("tensor(x[1],y[1])(1)*x5"));
     TEST_DO(verify_not_optimized("x5y1*tensor(y[1],z[1])(1)"));
     TEST_DO(verify_not_optimized("tensor(y[1],z[1])(1)*x5y1"));
 }
 
 TEST("require that dimension addition with inappropriate dimensions is not optimized") {
-    TEST_DO(verify_not_optimized("x5_u*tensor(y[1])(1)"));
-    TEST_DO(verify_not_optimized("tensor(y[1])(1)*x5_u"));
     TEST_DO(verify_not_optimized("x_m*tensor(y[1])(1)"));
     TEST_DO(verify_not_optimized("tensor(y[1])(1)*x_m"));
 }

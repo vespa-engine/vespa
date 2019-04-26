@@ -60,55 +60,12 @@ TEST_F("require that we can store 1d bound tensor", Fixture("tensor(x[3])"))
                                        add({{"x", 2}}, 5));
 }
 
-TEST_F("require that we can store 1d un-bound tensor", Fixture("tensor(x[])"))
-{
-    f.assertSetAndGetTensor(TensorSpec("tensor(x[3])").
-                                       add({{"x", 0}}, 2).
-                                       add({{"x", 1}}, 3).
-                                       add({{"x", 2}}, 5));
-}
-
-TEST_F("require that un-bound dimension is concrete in returned 2d tensor", Fixture("tensor(x[3],y[])"))
-{
-    f.assertSetAndGetTensor(TensorSpec("tensor(x[3],y[2])").
-                                       add({{"x", 0}, {"y", 0}}, 2).
-                                       add({{"x", 0}, {"y", 1}}, 3).
-                                       add({{"x", 1}, {"y", 0}}, 5).
-                                       add({{"x", 1}, {"y", 1}}, 7).
-                                       add({{"x", 2}, {"y", 0}}, 11).
-                                       add({{"x", 2}, {"y", 1}}, 13));
-}
-
-TEST_F("require that un-bound dimensions are concrete in returned 3d tensor", Fixture("tensor(x[],y[2],z[])"))
-{
-    f.assertSetAndGetTensor(TensorSpec("tensor(x[1],y[2],z[2])").
-                                       add({{"x", 0}, {"y", 0}, {"z", 0}}, 2).
-                                       add({{"x", 0}, {"y", 0}, {"z", 1}}, 3).
-                                       add({{"x", 0}, {"y", 1}, {"z", 0}}, 5).
-                                       add({{"x", 0}, {"y", 1}, {"z", 1}}, 7));
-}
-
 TEST_F("require that correct empty tensor is returned for 1d bound tensor", Fixture("tensor(x[3])"))
 {
     f.assertEmptyTensor(TensorSpec("tensor(x[3])").
                                    add({{"x", 0}}, 0).
                                    add({{"x", 1}}, 0).
                                    add({{"x", 2}}, 0));
-}
-
-TEST_F("require that empty 2d tensor has size 1 in un-bound dimension", Fixture("tensor(x[3],y[])"))
-{
-    f.assertEmptyTensor(TensorSpec("tensor(x[3],y[1])").
-                                   add({{"x", 0}, {"y", 0}}, 0).
-                                   add({{"x", 1}, {"y", 0}}, 0).
-                                   add({{"x", 2}, {"y", 0}}, 0));
-}
-
-TEST_F("require that empty 3d tensor has size 1 in un-bound dimensions", Fixture("tensor(x[],y[2],z[])"))
-{
-    f.assertEmptyTensor(TensorSpec("tensor(x[1],y[2],z[1])").
-                                   add({{"x", 0}, {"y", 0}, {"z", 0}}, 0).
-                                   add({{"x", 0}, {"y", 1}, {"z", 0}}, 0));
 }
 
 void
@@ -122,13 +79,7 @@ TEST("require that array size is calculated correctly")
     TEST_DO(assertArraySize("tensor(x[1])", 32));
     TEST_DO(assertArraySize("tensor(x[10])", 96));
     TEST_DO(assertArraySize("tensor(x[3])", 32));
-    TEST_DO(assertArraySize("tensor(x[3],y[])", 32));
-    TEST_DO(assertArraySize("tensor(x[3],y[],z[])", 32));
-    TEST_DO(assertArraySize("tensor(x[3],y[],z[],z2[])", 64));
     TEST_DO(assertArraySize("tensor(x[10],y[10])", 800));
-    TEST_DO(assertArraySize("tensor(x[])", 32));
-    TEST_DO(assertArraySize("tensor(x[],x2[],x3[],x4[],x5[],x6[])", 32));
-    TEST_DO(assertArraySize("tensor(x[],x2[],x3[],x4[],x5[],x6[],x7[])", 64));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

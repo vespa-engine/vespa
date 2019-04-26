@@ -261,11 +261,16 @@ TEST("require that if_node result is mutable only when both children produce mut
     const Node &cond = inject(DoubleValue::double_type(), 0, stash);
     const Node &a = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
     const Node &b = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
+    const Node &c = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
     const Node &tmp = concat(a, b, "x", stash); // will be mutable
-    const Node &if_con_con = if_node(cond, a, b, stash);
-    const Node &if_mut_con = if_node(cond, tmp, b, stash);
-    const Node &if_con_mut = if_node(cond, a, tmp, stash);
+    const Node &if_con_con = if_node(cond, c, c, stash);
+    const Node &if_mut_con = if_node(cond, tmp, c, stash);
+    const Node &if_con_mut = if_node(cond, c, tmp, stash);
     const Node &if_mut_mut = if_node(cond, tmp, tmp, stash);
+    EXPECT_EQUAL(if_con_con.result_type(), c.result_type());
+    EXPECT_EQUAL(if_con_mut.result_type(), c.result_type());
+    EXPECT_EQUAL(if_mut_con.result_type(), c.result_type());
+    EXPECT_EQUAL(if_mut_mut.result_type(), c.result_type());
     EXPECT_TRUE(!if_con_con.result_is_mutable());
     EXPECT_TRUE(!if_mut_con.result_is_mutable());
     EXPECT_TRUE(!if_con_mut.result_is_mutable());
@@ -277,21 +282,12 @@ TEST("require that if_node gets expected result type") {
     const Node &a = inject(DoubleValue::double_type(), 0, stash);
     const Node &b = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
     const Node &c = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
-    const Node &d = inject(ValueType::from_spec("tensor(x[])"), 0, stash);
-    const Node &e = inject(ValueType::from_spec("tensor(y[3])"), 0, stash);
-    const Node &f = inject(ValueType::from_spec("double"), 0, stash);
-    const Node &g = inject(ValueType::from_spec("error"), 0, stash);
+    const Node &d = inject(ValueType::from_spec("error"), 0, stash);
     const Node &if_same = if_node(a, b, b, stash);
-    const Node &if_similar = if_node(a, b, c, stash);
-    const Node &if_subtype = if_node(a, b, d, stash);
-    const Node &if_different = if_node(a, b, e, stash);
-    const Node &if_different_types = if_node(a, b, f, stash);
-    const Node &if_with_error = if_node(a, b, g, stash);
+    const Node &if_different = if_node(a, b, c, stash);
+    const Node &if_with_error = if_node(a, b, d, stash);
     EXPECT_EQUAL(if_same.result_type(), ValueType::from_spec("tensor(x[2])"));
-    EXPECT_EQUAL(if_similar.result_type(), ValueType::from_spec("tensor(x[])"));
-    EXPECT_EQUAL(if_subtype.result_type(), ValueType::from_spec("tensor(x[])"));
-    EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("tensor"));
-    EXPECT_EQUAL(if_different_types.result_type(), ValueType::from_spec("any"));
+    EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("error"));
     EXPECT_EQUAL(if_with_error.result_type(), ValueType::from_spec("error"));
 }
 

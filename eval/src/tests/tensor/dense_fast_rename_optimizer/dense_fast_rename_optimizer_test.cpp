@@ -25,7 +25,6 @@ const TensorEngine &prod_engine = DefaultTensorEngine::ref();
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("x5", spec({x(5)}, N()))
-        .add("x5_u", spec({x(5)}, N()), "tensor(x[])")
         .add("x_m", spec({x({"a", "b", "c"})}, N()))
         .add("x5y3", spec({x(5),y(3)}, N()));
 }
@@ -62,10 +61,6 @@ TEST("require that transposing dense renames are not optimized") {
     TEST_DO(verify_not_optimized("rename(x5y3,(x,y),(y,x))"));
     TEST_DO(verify_not_optimized("rename(x5y3,(x,y),(b,a))"));
     TEST_DO(verify_not_optimized("rename(x5y3,(y,x),(a,b))"));
-}
-
-TEST("require that abstract dense renames are not optimized") {
-    TEST_DO(verify_not_optimized("rename(x5_u,x,y)"));
 }
 
 TEST("require that non-dense renames are not optimized") {
