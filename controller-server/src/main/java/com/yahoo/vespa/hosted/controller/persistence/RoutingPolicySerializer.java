@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.slime.ArrayTraverser;
@@ -22,12 +21,11 @@ import java.util.function.Function;
  * Serializer and deserializer for a {@link RoutingPolicy}.
  *
  * @author mortent
- * @author mpolden
  */
 public class RoutingPolicySerializer {
 
     private static final String routingPoliciesField = "routingPolicies";
-    private static final String clusterField = "cluster";
+    private static final String aliasField = "alias";
     private static final String canonicalNameField = "canonicalName";
     private static final String zoneField = "zone";
     private static final String dnsZoneField = "dnsZone";
@@ -39,7 +37,7 @@ public class RoutingPolicySerializer {
         Cursor policyArray = root.setArray(routingPoliciesField);
         routingPolicies.forEach(policy -> {
             Cursor policyObject = policyArray.addObject();
-            policyObject.setString(clusterField, policy.cluster().value());
+            policyObject.setString(aliasField, policy.alias().value());
             policyObject.setString(zoneField, policy.zone().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
             policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
@@ -59,18 +57,13 @@ public class RoutingPolicySerializer {
             Set<RotationName> rotations = new LinkedHashSet<>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, rotation) -> rotations.add(RotationName.from(rotation.asString())));
             policies.add(new RoutingPolicy(owner,
-                                           clusterId(inspect.field(clusterField)),
                                            ZoneId.from(inspect.field(zoneField).asString()),
+                                           HostName.from(inspect.field(aliasField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            optionalField(inspect.field(dnsZoneField), Function.identity()),
                                            rotations));
         });
         return Collections.unmodifiableSet(policies);
-    }
-
-    // TODO: Remove and inline after Vespa 7.43
-    private static ClusterSpec.Id clusterId(Inspector field) {
-        return optionalField(field, ClusterSpec.Id::from).orElseGet(() -> new ClusterSpec.Id("default"));
     }
 
     private static <T> Optional<T> optionalField(Inspector field, Function<String, T> fieldMapper) {

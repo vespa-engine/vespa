@@ -5,15 +5,18 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -27,6 +30,13 @@ import java.util.stream.Collectors;
 public class DeploymentApiTest extends ControllerContainerTest {
 
     private final static String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/deployment/responses/";
+
+    private ContainerControllerTester tester;
+
+    @Before
+    public void before() {
+        tester = new ContainerControllerTester(container, responseFiles);
+    }
 
     @Test
     public void testDeploymentApi() {
@@ -45,11 +55,11 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                                                      "application2");
         Application applicationWithoutDeployment = tester.createApplication("domain3", "tenant3",
                                                                              "application3");
-        tester.deployCompletely(failingApplication, applicationPackage, 1L, false);
-        tester.deployCompletely(productionApplication, applicationPackage, 2L, false);
+        deployCompletely(failingApplication, applicationPackage, 1L, true);
+        deployCompletely(productionApplication, applicationPackage, 2L, true);
 
         // Deploy once so that job information is stored, then remove the deployment
-        tester.deployCompletely(applicationWithoutDeployment, applicationPackage, 3L, false);
+        deployCompletely(applicationWithoutDeployment, applicationPackage, 3L, true);
         tester.controller().applications().deactivate(applicationWithoutDeployment.id(), ZoneId.from("prod", "us-west-1"));
 
         // New version released
@@ -60,8 +70,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
         tester.upgrader().maintain();
         tester.controller().applications().deploymentTrigger().triggerReadyJobs();
         tester.controller().applications().deploymentTrigger().triggerReadyJobs();
-        tester.deployCompletely(failingApplication, applicationPackage, 1L, true);
-        tester.deployCompletely(productionApplication, applicationPackage, 2L, false);
+        deployCompletely(failingApplication, applicationPackage, 1L, false);
+        deployCompletely(productionApplication, applicationPackage, 2L, true);
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller()),
                                                                     tester.controller()));
@@ -86,6 +96,36 @@ public class DeploymentApiTest extends ControllerContainerTest {
             censored.add(version);
         }
         return new VersionStatus(censored);
+    }
+
+    private void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
+                                  boolean success) {
+        tester.jobCompletion(JobType.component)
+              .application(application)
+              .projectId(projectId)
+              .uploadArtifact(applicationPackage)
+              .submit();
+        tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1"))
+        );
+        tester.jobCompletion(JobType.systemTest)
+              .application(application)
+              .projectId(projectId)
+              .submit();
+        tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3"))
+        );
+        tester.jobCompletion(JobType.stagingTest)
+              .application(application)
+              .projectId(projectId)
+              .success(success)
+              .submit();
+        if (success) {
+            tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod,
+                                                                       RegionName.from("us-west-1")));
+            tester.jobCompletion(JobType.productionUsWest1)
+                  .application(application)
+                  .projectId(projectId)
+                  .submit();
+        }
     }
 
 }

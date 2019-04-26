@@ -508,7 +508,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies(application.id());
         for (RoutingPolicy policy : routingPolicies) {
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
+            policy.endpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalRotationsArray::addString);
@@ -584,6 +584,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
+
         response.setString("tenant", deploymentId.applicationId().tenant().value());
         response.setString("application", deploymentId.applicationId().application().value());
         response.setString("instance", deploymentId.applicationId().instance().value()); // pointless
@@ -596,11 +597,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.applications().getDeploymentEndpoints(deploymentId)
                   .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
-
-        // Add endpoint(s) for routing policies
-        for (RoutingPolicy policy : controller.applications().routingPolicies(deploymentId.applicationId())) {
-            serviceUrlArray.addString(policy.endpointIn(controller.system()).url().toString());
-        }
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
