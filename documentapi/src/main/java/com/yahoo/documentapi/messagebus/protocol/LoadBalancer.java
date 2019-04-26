@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.yahoo.jrt.slobrok.api.Mirror;
 
 import java.util.List;
@@ -28,10 +29,10 @@ public class LoadBalancer {
     }
 
     /** Statistics on each node we are load balancing over. Populated lazily. */
-    private List<NodeMetrics> nodeWeights = new CopyOnWriteArrayList<>();
+    private final List<NodeMetrics> nodeWeights = new CopyOnWriteArrayList<>();
 
-    private String cluster;
-    private double position = 0.0;
+    private final String cluster;
+    private final AtomicDouble safePosition = new AtomicDouble(0.0);
 
     public LoadBalancer(String cluster) {
         this.cluster = cluster;
@@ -67,6 +68,7 @@ public class LoadBalancer {
 
         double weightSum = 0.0;
         Node selectedNode = null;
+        double position = safePosition.get();
         for (Mirror.Entry entry : choices) {
             NodeMetrics nodeMetrics = getNodeMetrics(entry);
 
@@ -82,6 +84,7 @@ public class LoadBalancer {
             selectedNode = new Node(choices.get(0), getNodeMetrics(choices.get(0)));
         }
         position += 1.0;
+        safePosition.set(position);
         selectedNode.metrics.sent.incrementAndGet();
         return selectedNode;
     }

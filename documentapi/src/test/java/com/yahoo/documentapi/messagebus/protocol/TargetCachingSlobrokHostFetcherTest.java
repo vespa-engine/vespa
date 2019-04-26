@@ -47,10 +47,10 @@ public class TargetCachingSlobrokHostFetcherTest {
     }
 
     static class Fixture {
-        ExternalSlobrokPolicy mockSlobrokPolicy = mock(ExternalSlobrokPolicy.class);
+        SlobrokPolicy mockSlobrokPolicy = mock(SlobrokPolicy.class);
         IMirror mockMirror = mock(IMirror.class);
         StoragePolicy.SlobrokHostPatternGenerator patternGenerator = new StoragePolicy.SlobrokHostPatternGenerator("foo");
-        StoragePolicy.TargetCachingSlobrokHostFetcher hostFetcher = new StoragePolicy.TargetCachingSlobrokHostFetcher(patternGenerator, mockSlobrokPolicy);
+        StoragePolicy.TargetCachingSlobrokHostFetcher hostFetcher = new StoragePolicy.TargetCachingSlobrokHostFetcher(patternGenerator, mockSlobrokPolicy, 60);
         RoutingContext routingContext = mock(RoutingContext.class);
 
         Fixture() {

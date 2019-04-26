@@ -1441,44 +1441,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy$InitState": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final",
-      "enum"
-    ],
-    "methods": [
-      "public static com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy$InitState[] values()",
-      "public static com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy$InitState valueOf(java.lang.String)"
-    ],
-    "fields": [
-      "public static final enum com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy$InitState NOT_STARTED",
-      "public static final enum com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy$InitState RUNNING",
-      "public static final enum com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy$InitState DONE"
-    ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy",
-      "java.lang.Runnable"
-    ],
-    "attributes": [
-      "public",
-      "abstract"
-    ],
-    "methods": [
-      "public static java.util.Map parse(java.lang.String)",
-      "public abstract void init()",
-      "public abstract void doSelect(com.yahoo.messagebus.routing.RoutingContext)",
-      "public void select(com.yahoo.messagebus.routing.RoutingContext)",
-      "public void run()",
-      "public void destroy()"
-    ],
-    "fields": []
-  },
   "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$ContentParameters": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.StoragePolicy$Parameters",
     "interfaces": [],
@@ -2025,25 +1987,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy",
-    "interfaces": [
-      "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber"
-    ],
-    "attributes": [
-      "public",
-      "abstract"
-    ],
-    "methods": [
-      "public void init()",
-      "public com.yahoo.jrt.slobrok.api.IMirror getMirror()",
-      "public java.util.List lookup(com.yahoo.messagebus.routing.RoutingContext, java.lang.String)",
-      "public synchronized void configure(com.yahoo.cloud.config.SlobroksConfig)",
-      "public void destroy()",
-      "public bridge synthetic void configure(com.yahoo.config.ConfigInstance)"
-    ],
-    "fields": []
-  },
   "com.yahoo.documentapi.messagebus.protocol.GetBucketListMessage": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
     "interfaces": [],
@@ -2212,14 +2155,15 @@
     "fields": []
   },
   "com.yahoo.documentapi.messagebus.protocol.LoadBalancerPolicy": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy",
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
     "interfaces": [],
     "attributes": [
       "public"
     ],
     "methods": [
-      "public void doSelect(com.yahoo.messagebus.routing.RoutingContext)",
-      "public void merge(com.yahoo.messagebus.routing.RoutingContext)"
+      "public void select(com.yahoo.messagebus.routing.RoutingContext)",
+      "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
+      "public void destroy()"
     ],
     "fields": []
   },
@@ -2955,6 +2899,22 @@
     ],
     "fields": []
   },
+  "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "protected java.util.List lookup(com.yahoo.messagebus.routing.RoutingContext, java.lang.String)",
+      "public static java.util.Map parse(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.documentapi.messagebus.protocol.StatBucketMessage": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.DocumentMessage",
     "interfaces": [],
@@ -3017,7 +2977,7 @@
       "abstract"
     ],
     "methods": [
-      "public void <init>()",
+      "protected void <init>(int)",
       "public abstract java.lang.String getTargetSpec(java.lang.Integer, com.yahoo.messagebus.routing.RoutingContext)",
       "public void close()"
     ],
@@ -3033,11 +2993,10 @@
     ],
     "methods": [
       "public void <init>(java.util.Map)",
-      "public java.lang.String getDistributionConfigId()",
       "public java.lang.String getClusterName()",
       "public com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostPatternGenerator createPatternGenerator()",
-      "public com.yahoo.documentapi.messagebus.protocol.StoragePolicy$HostFetcher createHostFetcher(com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)",
-      "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy)"
+      "public com.yahoo.documentapi.messagebus.protocol.StoragePolicy$HostFetcher createHostFetcher(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy, int)",
+      "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy)"
     ],
     "fields": [
       "protected final java.lang.String clusterName",
@@ -3069,7 +3028,7 @@
     "fields": []
   },
   "com.yahoo.documentapi.messagebus.protocol.StoragePolicy": {
-    "superClass": "com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy",
+    "superClass": "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy",
     "interfaces": [],
     "attributes": [
       "public"
@@ -3077,9 +3036,8 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public void <init>(java.util.Map)",
-      "public void <init>(com.yahoo.documentapi.messagebus.protocol.StoragePolicy$Parameters, java.util.Map)",
-      "public void init()",
-      "public void doSelect(com.yahoo.messagebus.routing.RoutingContext)",
+      "public void <init>(com.yahoo.documentapi.messagebus.protocol.StoragePolicy$Parameters)",
+      "public void select(com.yahoo.messagebus.routing.RoutingContext)",
       "public void merge(com.yahoo.messagebus.routing.RoutingContext)",
       "public void destroy()"
     ],

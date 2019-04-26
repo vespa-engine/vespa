@@ -2,7 +2,6 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.jrt.slobrok.api.IMirror;
@@ -25,10 +24,14 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -42,7 +45,7 @@ import java.util.logging.Logger;
  *
  * @author Haakon Humberset
  */
-public class StoragePolicy extends ExternalSlobrokPolicy {
+public class StoragePolicy extends SlobrokPolicy {
 
     private static final Logger log = Logger.getLogger(StoragePolicy.class.getName());
     public static final String owningBucketStates = "uim";
@@ -50,46 +53,65 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
     /** This class merely generates slobrok a host pattern for a given distributor. */
     public static class SlobrokHostPatternGenerator {
-        private final String clusterName;
-        SlobrokHostPatternGenerator(String clusterName) { this.clusterName = clusterName; }
+        private final String base;
+        private final String all;
+        SlobrokHostPatternGenerator(String clusterName) {
+            base = "storage/cluster." + clusterName + "/distributor/";
+            all = base + "*/default";
+
+        }
 
         /**
          * Find host pattern of the hosts that are valid targets for this request.
          * @param distributor Set to -1 if any distributor is valid target.
          */
         public String getDistributorHostPattern(Integer distributor) {
-            return "storage/cluster." + clusterName + "/distributor/" + (distributor == null ? "*" : distributor) + "/default";
+            return (distributor == null) ? all : (base + distributor + "/default");
         }
     }
 
     /** Helper class to match a host pattern with node to use. */
     public abstract static class HostFetcher {
-        private int requiredUpPercentageToSendToKnownGoodNodes = 60;
-        private List<Integer> validRandomTargets = new ArrayList<>();
-        private int totalTargets = 1;
+
+        private static class Targets {
+            private final List<Integer> list;
+            private final int total;
+            Targets() {
+                this(Collections.emptyList(), 1);
+            }
+            Targets(List<Integer> list, int total) {
+                this.list = list;
+                this.total = total;
+            }
+        }
+
+        private final int requiredUpPercentageToSendToKnownGoodNodes;
+        private final AtomicReference<Targets> validTargets = new AtomicReference<>(new Targets());
         protected final Random randomizer = new Random(12345); // Use same randomizer each time to make unit testing easy.
 
-        void setRequiredUpPercentageToSendToKnownGoodNodes(int percent) { this.requiredUpPercentageToSendToKnownGoodNodes = percent; }
+        protected HostFetcher(int percent) {
+            requiredUpPercentageToSendToKnownGoodNodes = percent;
+        }
 
         void updateValidTargets(ClusterState state) {
             List<Integer> validRandomTargets = new ArrayList<>();
             for (int i=0; i<state.getNodeCount(NodeType.DISTRIBUTOR); ++i) {
                 if (state.getNodeState(new Node(NodeType.DISTRIBUTOR, i)).getState().oneOf(upStates)) validRandomTargets.add(i);
             }
-            this.validRandomTargets = validRandomTargets;
-            this.totalTargets = state.getNodeCount(NodeType.DISTRIBUTOR);
+            validTargets.set(new Targets(new CopyOnWriteArrayList<>(validRandomTargets), state.getNodeCount(NodeType.DISTRIBUTOR)));
         }
         public abstract String getTargetSpec(Integer distributor, RoutingContext context);
         String getRandomTargetSpec(RoutingContext context) {
+            Targets targets = validTargets.get();
             // Try to use list of random targets, if at least X % of the nodes are up
-            while (100 * validRandomTargets.size() / totalTargets >= requiredUpPercentageToSendToKnownGoodNodes) {
-                int randIndex = randomizer.nextInt(validRandomTargets.size());
-                String targetSpec = getTargetSpec(validRandomTargets.get(randIndex), context);
+            while (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes) {
+                int randIndex = randomizer.nextInt(targets.list.size());
+                String targetSpec = getTargetSpec(targets.list.get(randIndex), context);
                 if (targetSpec != null) {
                     context.trace(3, "Sending to random node seen up in cluster state");
                     return targetSpec;
                 }
-                validRandomTargets.remove(randIndex);
+                targets.list.remove(randIndex);
             }
             context.trace(3, "Too few nodes seen up in state. Sending totally random.");
             return getTargetSpec(null, context);
@@ -100,9 +122,10 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     /** Host fetcher using a slobrok mirror to find the hosts. */
     public static class SlobrokHostFetcher extends HostFetcher {
         private final SlobrokHostPatternGenerator patternGenerator;
-        ExternalSlobrokPolicy policy;
+        private final SlobrokPolicy policy;
 
-        SlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy) {
+        SlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, SlobrokPolicy policy, int percent) {
+            super(percent);
             this.patternGenerator = patternGenerator;
             this.policy = policy;
         }
@@ -115,6 +138,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
         public IMirror getMirror(RoutingContext context) { return context.getMirror(); }
 
+        @Override
         public String getTargetSpec(Integer distributor, RoutingContext context) {
             List<Mirror.Entry> arr = getEntries(patternGenerator.getDistributorHostPattern(distributor), context);
             if (arr.isEmpty()) return null;
@@ -155,21 +179,21 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             }
         }
 
-        private volatile GenerationCache generationCache = null;
+        private final AtomicReference<GenerationCache> generationCache = new AtomicReference<>(null);
 
-        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy) {
-            super(patternGenerator, policy);
+        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, SlobrokPolicy policy, int percent) {
+            super(patternGenerator, policy, percent);
         }
 
         @Override
         public String getTargetSpec(Integer distributor, RoutingContext context) {
-            GenerationCache cache = generationCache;
+            GenerationCache cache = generationCache.get();
             int currentGeneration = getMirror(context).updates();
             // The below code might race with other threads during a generation change. That is OK, as the cache
             // is thread safe and will quickly converge to a stable state for the new generation.
             if (cache == null || currentGeneration != cache.generation()) {
                 cache = new GenerationCache(currentGeneration);
-                generationCache = cache;
+                generationCache.set(cache);
             }
             if (distributor != null) {
                 return cachingGetTargetSpec(distributor, context, cache);
@@ -206,7 +230,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             if (clusterName == null) throw new IllegalArgumentException("Required parameter cluster with clustername not set");
         }
 
-        public String getDistributionConfigId() {
+        String getDistributionConfigId() {
             return (distributionConfigId == null ? "storage/cluster." + clusterName : distributionConfigId);
         }
         public String getClusterName() {
@@ -215,13 +239,11 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         public SlobrokHostPatternGenerator createPatternGenerator() {
             return new SlobrokHostPatternGenerator(getClusterName());
         }
-        public HostFetcher createHostFetcher(ExternalSlobrokPolicy policy) {
-            return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy);
+        public HostFetcher createHostFetcher(SlobrokPolicy policy, int percent) {
+            return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy, percent);
         }
-        public Distribution createDistribution(ExternalSlobrokPolicy policy) {
-            return (policy.configSources != null ?
-                    new Distribution(getDistributionConfigId(), new ConfigSourceSet(policy.configSources))
-                  : new Distribution(getDistributionConfigId()));
+        public Distribution createDistribution(SlobrokPolicy policy) {
+            return new Distribution(getDistributionConfigId());
         }
 
         /**
@@ -278,8 +300,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     public static class DistributorSelectionLogic {
         /** Class that tracks a failure of a given type per node. */
         static class InstabilityChecker {
-            private List<Integer> nodeFailures = new ArrayList<>();
-            private int failureLimit;
+            private final List<Integer> nodeFailures = new CopyOnWriteArrayList<>();
+            private final int failureLimit;
 
             InstabilityChecker(int failureLimit) { this.failureLimit = failureLimit; }
 
@@ -299,10 +321,19 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         }
         /** Message context class. Contains data we want to inspect about a request at reply time. */
         private static class MessageContext {
-            Integer calculatedDistributor;
-            ClusterState usedState;
+            final Integer calculatedDistributor;
+            final ClusterState usedState;
 
-            MessageContext(ClusterState usedState) { this.usedState = usedState; }
+            MessageContext() {
+                this(null, null);
+            }
+            MessageContext(ClusterState usedState) {
+                this(usedState, null);
+            }
+            MessageContext(ClusterState usedState, Integer calculatedDistributor) {
+                this.calculatedDistributor = calculatedDistributor;
+                this.usedState = usedState;
+            }
 
             public String toString() {
                 return "Context(Distributor " + calculatedDistributor +
@@ -313,13 +344,12 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         private final HostFetcher hostFetcher;
         private final Distribution distribution;
         private final InstabilityChecker persistentFailureChecker;
-        private ClusterState cachedClusterState = null;
-        private int oldClusterVersionGottenCount = 0;
+        private final AtomicReference<ClusterState> safeCachedClusterState = new AtomicReference<>(null);
+        private final AtomicInteger oldClusterVersionGottenCount = new AtomicInteger(0);
         private final int maxOldClusterVersionBeforeSendingRandom; // Reset cluster version protection
 
-        DistributorSelectionLogic(Parameters params, ExternalSlobrokPolicy policy) {
-            this.hostFetcher = params.createHostFetcher(policy);
-            this.hostFetcher.setRequiredUpPercentageToSendToKnownGoodNodes(params.getRequiredUpPercentageToSendToKnownGoodNodes());
+        DistributorSelectionLogic(Parameters params, SlobrokPolicy policy) {
+            this.hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
             this.distribution = params.createDistribution(policy);
             persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
             maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
@@ -332,8 +362,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
 
         String getTargetSpec(RoutingContext context, BucketId bucketId) {
             String sendRandomReason = null;
-            MessageContext messageContext = new MessageContext(cachedClusterState);
-            context.setContext(messageContext);
+            ClusterState cachedClusterState = safeCachedClusterState.get();
+
             if (cachedClusterState != null) { // If we have a cached cluster state (regular case), we use that to calculate correct node.
                 try{
                     Integer target = distribution.getIdealDistributorNode(cachedClusterState, bucketId, owningBucketStates);
@@ -344,19 +374,20 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
                     }
                     // If we have found a target, and the target exists in slobrok, send to it.
                     if (target != null) {
-                        messageContext.calculatedDistributor = target;
+                        context.setContext(new MessageContext(cachedClusterState, target));
                         String targetSpec = hostFetcher.getTargetSpec(target, context);
                         if (targetSpec != null) {
                             if (context.shouldTrace(1)) {
-                                context.trace(1, "Using distributor " + messageContext.calculatedDistributor + " for " +
+                                context.trace(1, "Using distributor " + target + " for " +
                                         bucketId + " as our state version is " + cachedClusterState.getVersion());
                             }
-                            messageContext.usedState = cachedClusterState;
                             return targetSpec;
                         } else {
-                            sendRandomReason = "Want to use distributor " + messageContext.calculatedDistributor + " but it is not in slobrok. Sending to random.";
+                            sendRandomReason = "Want to use distributor " + target + " but it is not in slobrok. Sending to random.";
                             log.log(LogLevel.DEBUG, "Target distributor is not in slobrok");
                         }
+                    } else {
+                        context.setContext(new MessageContext(cachedClusterState));
                     }
                 } catch (Distribution.TooFewBucketBitsInUseException e) {
                     Reply reply = new WrongDistributionReply(cachedClusterState.toString(true));
@@ -366,10 +397,11 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
                     return null;
                 } catch (Distribution.NoDistributorsAvailableException e) {
                     log.log(LogLevel.DEBUG, "No distributors available; clearing cluster state");
-                    cachedClusterState = null;
+                    safeCachedClusterState.set(null);
                     sendRandomReason = "No distributors available. Sending to random distributor.";
                 }
             } else {
+                context.setContext(new MessageContext(null));
                 sendRandomReason = "No cluster state cached. Sending to random distributor.";
             }
             if (context.shouldTrace(1)) {
@@ -406,13 +438,14 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         }
 
         private void updateCachedRoutingStateFromWrongDistribution(MessageContext context, ClusterState newState) {
+            ClusterState cachedClusterState = safeCachedClusterState.get();
             if (cachedClusterState == null || newState.getVersion() >= cachedClusterState.getVersion()) {
-                cachedClusterState = newState;
+                safeCachedClusterState.set(newState);
                 if (newState.getClusterState().equals(State.UP)) {
                     hostFetcher.updateValidTargets(newState);
                 }
             } else if (newState.getVersion() + 2000000000 < cachedClusterState.getVersion()) {
-                cachedClusterState = null;
+                safeCachedClusterState.set(null);
             } else if (context.calculatedDistributor != null) {
                 persistentFailureChecker.addFailure(context.calculatedDistributor);
             }
@@ -449,10 +482,11 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         }
 
         private void resetCachedStateIfClusterStateVersionLikelyRolledBack(ClusterState newState) {
+            ClusterState cachedClusterState = safeCachedClusterState.get();
             if (cachedClusterState != null && cachedClusterState.getVersion() > newState.getVersion()) {
-                if (++oldClusterVersionGottenCount >= maxOldClusterVersionBeforeSendingRandom) {
-                    oldClusterVersionGottenCount = 0;
-                    cachedClusterState = null;
+                if (oldClusterVersionGottenCount.incrementAndGet() >= maxOldClusterVersionBeforeSendingRandom) {
+                    oldClusterVersionGottenCount.set(0);
+                    safeCachedClusterState.set(null);
                 }
             }
         }
@@ -473,6 +507,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             if (!reply.getTrace().shouldTrace(1)) {
                 return;
             }
+            ClusterState cachedClusterState = safeCachedClusterState.get();
             if (cachedClusterState == null) {
                 reply.getTrace().trace(1, "Message sent to * with no previous state, received version " + newState.getVersion());
             } else if (newState.getVersion() == cachedClusterState.getVersion()) {
@@ -496,8 +531,8 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     }
 
     private final BucketIdCalculator bucketIdCalculator = new BucketIdCalculator();
-    private DistributorSelectionLogic distributorSelectionLogic = null;
-    private Parameters parameters;
+    private final DistributorSelectionLogic distributorSelectionLogic;
+    private final Parameters parameters;
 
     /** Constructor used in production. */
     public StoragePolicy(String param) {
@@ -505,23 +540,18 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     }
 
     public StoragePolicy(Map<String, String> params) {
-        this(new Parameters(params), params);
+        this(new Parameters(params));
     }
 
     /** Constructor specifying a bit more in detail, so we can override what needs to be overridden in tests */
-    public StoragePolicy(Parameters p, Map<String, String> params) {
-        super(params);
+    public StoragePolicy(Parameters p) {
+        super();
         parameters = p;
+        distributorSelectionLogic = new DistributorSelectionLogic(parameters, this);
     }
 
     @Override
-    public void init() {
-        super.init();
-        this.distributorSelectionLogic = new DistributorSelectionLogic(parameters, this);
-    }
-
-    @Override
-    public void doSelect(RoutingContext context) {
+    public void select(RoutingContext context) {
         if (context.shouldTrace(1)) {
             context.trace(1, "Selecting route");
         }

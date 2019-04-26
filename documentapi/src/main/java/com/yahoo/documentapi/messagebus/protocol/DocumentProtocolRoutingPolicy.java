@@ -3,7 +3,6 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.messagebus.routing.RoutingPolicy;
 
-
 /**
  * @author thomasg
  */
