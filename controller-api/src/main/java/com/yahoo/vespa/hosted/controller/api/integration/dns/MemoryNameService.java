@@ -43,10 +43,12 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
-    public Record createTxt(RecordName name, RecordData txtData) {
-        Record record = new Record(Record.Type.TXT, name, txtData);
-        records.add(record);
-        return record;
+    public List<Record> createTxtRecords(RecordName name, List<RecordData> txtData) {
+        List<Record> records = txtData.stream()
+                .map(data -> new Record(Record.Type.TXT, name, data))
+                .collect(Collectors.toList());
+        this.records.addAll(records);
+        return records;
     }
 
     @Override

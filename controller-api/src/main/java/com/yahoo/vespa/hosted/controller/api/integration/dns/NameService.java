@@ -32,10 +32,10 @@ public interface NameService {
     /**
      * Create a new TXT record containing the provided data.
      * @param name Name of the created record
-     * @param txtData TXT data for the record, consisting of one or more space-separated <em>double-quoted</em> strings: "string1" "string2"
-     * @return The created record
+     * @param txtRecords TXT data values for the record, each consisting of one or more space-separated <em>double-quoted</em> strings: "string1" "string2"
+     * @return The created records
      */
-    Record createTxt(RecordName name, RecordData txtData);
+    List<Record> createTxtRecords(RecordName name, List<RecordData> txtRecords);
 
     /** Find all records matching given type and name */
     List<Record> findRecords(Record.Type type, RecordName name);
