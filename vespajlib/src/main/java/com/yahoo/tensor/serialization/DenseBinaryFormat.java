@@ -38,7 +38,7 @@ public class DenseBinaryFormat implements BinaryFormat {
         if ( ! ( tensor instanceof IndexedTensor))
             throw new RuntimeException("The dense format is only supported for indexed tensors");
         encodeDimensions(buffer, (IndexedTensor)tensor);
-        encodeCells(buffer, tensor);
+        encodeCells(buffer, (IndexedTensor)tensor);
     }
 
     private void encodeDimensions(GrowableByteBuffer buffer, IndexedTensor tensor) {
@@ -49,25 +49,21 @@ public class DenseBinaryFormat implements BinaryFormat {
         }
     }
 
-    private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
+    private void encodeCells(GrowableByteBuffer buffer, IndexedTensor tensor) {
         switch (serializationValueType) {
             case DOUBLE: encodeDoubleCells(tensor, buffer); break;
             case FLOAT: encodeFloatCells(tensor, buffer); break;
         }
     }
 
-    private void encodeDoubleCells(Tensor tensor, GrowableByteBuffer buffer) {
-        Iterator<Double> i = tensor.valueIterator();
-        while (i.hasNext()) {
-            buffer.putDouble(i.next());
-        }
+    private void encodeDoubleCells(IndexedTensor tensor, GrowableByteBuffer buffer) {
+        for (int i = 0; i < tensor.size(); i++)
+            buffer.putDouble(tensor.get(i));
     }
 
-    private void encodeFloatCells(Tensor tensor, GrowableByteBuffer buffer) {
-        Iterator<Double> i = tensor.valueIterator(); // TODO: floatValueIterator
-        while (i.hasNext()) {
-            buffer.putFloat(i.next().floatValue());
-        }
+    private void encodeFloatCells(IndexedTensor tensor, GrowableByteBuffer buffer) {
+        for (int i = 0; i < tensor.size(); i++)
+            buffer.putFloat(tensor.getFloat(i));
     }
 
     @Override

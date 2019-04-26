@@ -22,15 +22,11 @@ class IndexedFloatTensor extends IndexedTensor {
         return values.length;
     }
 
-    /**
-     * Returns the value at the given index by direct lookup. Only use
-     * if you know the underlying data layout.
-     *
-     * @param valueIndex the direct index into the underlying data.
-     * @throws IndexOutOfBoundsException if index is out of bounds
-     */
     @Override
-    public double get(long valueIndex) { return values[(int)valueIndex]; }
+    public double get(long valueIndex) { return getFloat(valueIndex); }
+
+    @Override
+    public float getFloat(long valueIndex) { return values[(int)valueIndex]; }
 
     @Override
     public IndexedTensor withType(TensorType type) {

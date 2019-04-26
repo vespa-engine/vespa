@@ -110,13 +110,22 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     /**
-     * Returns the value at the given index by direct lookup. Only use
+     * Returns the value at the given index as a double by direct lookup. Only use
      * if you know the underlying data layout.
      *
      * @param valueIndex the direct index into the underlying data.
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     public abstract double get(long valueIndex);
+
+    /**
+     * Returns the value at the given index as a float by direct lookup. Only use
+     * if you know the underlying data layout.
+     *
+     * @param valueIndex the direct index into the underlying data.
+     * @throws IndexOutOfBoundsException if index is out of bounds
+     */
+    public abstract float getFloat(long valueIndex);
 
     static long toValueIndex(long[] indexes, DimensionSizes sizes) {
         if (indexes.length == 1) return indexes[0]; // for speed
