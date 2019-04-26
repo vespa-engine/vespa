@@ -539,6 +539,7 @@ public class YqlParser implements Parser {
 
         PhraseItem phrase = new PhraseItem();
         phrase.setIndexName(field);
+        phrase.setExplicit(true);
         for (OperatorNode<ExpressionOperator> word : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
             if (word.getOperator() == ExpressionOperator.CALL) {
                 List<String> names = word.getArgument(0);
