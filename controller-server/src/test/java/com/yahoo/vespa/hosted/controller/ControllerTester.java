@@ -340,7 +340,6 @@ public final class ControllerTester {
                                                zoneRegistryMock,
                                                configServer,
                                                metricsService,
-                                               nameService,
                                                routingGenerator,
                                                new ChefMock(),
                                                clock,

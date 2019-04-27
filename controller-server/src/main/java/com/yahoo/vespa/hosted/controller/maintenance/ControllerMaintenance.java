@@ -55,6 +55,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final CostReportMaintainer costReportMaintainer;
     private final RoutingPolicyMaintainer routingPolicyMaintainer;
     private final ResourceMeterMaintainer resourceMeterMaintainer;
+    private final NameServiceDispatcher nameServiceDispatcher;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -78,15 +79,16 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
-        dnsMaintainer = new DnsMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService);
+        dnsMaintainer = new DnsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofMinutes(2), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
-        routingPolicyMaintainer = new RoutingPolicyMaintainer(controller, Duration.ofMinutes(5), jobControl, nameService, curator);
+        routingPolicyMaintainer = new RoutingPolicyMaintainer(controller, Duration.ofMinutes(5), jobControl, curator);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepositoryClient, Clock.systemUTC(), metric, resourceSnapshotConsumer);
+        nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(5), jobControl, nameService);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -116,6 +118,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer.deconstruct();
         routingPolicyMaintainer.deconstruct();
         resourceMeterMaintainer.deconstruct();
+        nameServiceDispatcher.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

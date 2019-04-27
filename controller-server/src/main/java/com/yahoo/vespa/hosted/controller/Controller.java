@@ -8,6 +8,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -18,11 +19,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
@@ -30,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -81,6 +81,7 @@ public class Controller extends AbstractComponent {
     private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
+    private final NameServiceForwarder nameServiceForwarder;
 
     /**
      * Creates a controller 
@@ -90,19 +91,19 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
-                      NameService nameService, RoutingGenerator routingGenerator, Chef chef,
+                      RoutingGenerator routingGenerator, Chef chef,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
-             configServer, metricsService, nameService, routingGenerator, chef,
+             configServer, metricsService, routingGenerator, chef,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
-                      MetricsService metricsService, NameService nameService,
+                      MetricsService metricsService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
@@ -119,11 +120,11 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
+        this.nameServiceForwarder = new NameServiceForwarder(curator);
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
@@ -161,6 +162,10 @@ public class Controller extends AbstractComponent {
     public Clock clock() { return clock; }
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
+
+    public NameServiceForwarder nameServiceForwarder() {
+        return nameServiceForwarder;
+    }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {

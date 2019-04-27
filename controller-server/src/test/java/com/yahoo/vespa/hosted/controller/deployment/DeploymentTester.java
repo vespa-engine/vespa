@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -12,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
@@ -51,6 +52,7 @@ public class DeploymentTester {
     private final Upgrader upgrader;
     private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final ReadyJobsTrigger readyJobTrigger;
+    private final NameServiceDispatcher nameServiceDispatcher;
 
     public DeploymentTester() {
         this(new ControllerTester());
@@ -64,6 +66,10 @@ public class DeploymentTester {
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
         this.outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
+        this.nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofHours(12),
+                                                               new JobControl(tester.controller().curator()),
+                                                               controllerTester().nameService(),
+                                                               Integer.MAX_VALUE);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -126,6 +132,13 @@ public class DeploymentTester {
         upgradeSystemApplications(version);
         upgrader().maintain();
         readyJobTrigger().maintain();
+    }
+
+    /** Dispatch all pending name services requests */
+    public void updateDns() {
+        nameServiceDispatcher.run();
+        assertTrue("All name service requests dispatched",
+                   controller().curator().readNameServiceQueue().requests().isEmpty());
     }
 
     public void triggerUntilQuiescence() {
@@ -205,6 +218,7 @@ public class DeploymentTester {
         } else {
             assertFalse(applications().require(application.id()).change().hasTargets());
         }
+        updateDns();
     }
 
     public void completeUpgrade(Application application, Version version, String upgradePolicy) {

@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -35,13 +36,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -56,6 +54,7 @@ import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -114,7 +113,6 @@ public class ApplicationController {
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
     private final AccessControl accessControl;
-    private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
     private final Clock clock;
@@ -124,13 +122,12 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
-                          NameService nameService, ConfigServer configServer,
+                          ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
         this.accessControl = accessControl;
-        this.nameService = nameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
         this.clock = clock;
@@ -512,24 +509,7 @@ public class ApplicationController {
 
     /** Register a CNAME record in DNS */
     private void registerCname(String name, String targetName) {
-        try {
-            RecordData data = RecordData.fqdn(targetName);
-            List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(name));
-            records.forEach(record -> {
-                // Ensure that the existing record points to the correct target
-                if ( ! record.data().equals(data)) {
-                    log.info("Updating mapping for record '" + record + "': '" + name
-                             + "' -> '" + data.asString() + "'");
-                    nameService.updateRecord(record, data);
-                }
-            });
-            if (records.isEmpty()) {
-                Record record = nameService.createCname(RecordName.from(name), data);
-                log.info("Registered mapping as record '" + record + "'");
-            }
-        } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to register CNAME", e);
-        }
+        controller.nameServiceForwarder().createCname(RecordName.from(name), RecordData.fqdn(targetName), Priority.normal);
     }
 
     /** Returns the endpoints of the deployment, or an empty list if the request fails */

@@ -4,12 +4,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -43,8 +43,7 @@ public class DnsMaintainerTest {
     public void before() {
         tester = new DeploymentTester();
         maintainer = new DnsMaintainer(tester.controller(), Duration.ofHours(12),
-                                       new JobControl(new MockCuratorDb()),
-                                       tester.controllerTester().nameService());
+                                       new JobControl(new MockCuratorDb()));
     }
 
     @Test
@@ -105,6 +104,7 @@ public class DnsMaintainerTest {
         for (int i = 0; i < ControllerTester.availableRotations; i++) {
             maintainer.maintain();
         }
+        tester.updateDns();
         assertFalse("DNS record removed", findCname.apply("app1--tenant1.global.vespa.yahooapis.com").isPresent());
         assertFalse("DNS record removed", findCname.apply("app1--tenant1.global.vespa.oath.cloud").isPresent());
         assertFalse("DNS record removed", findCname.apply("app1.tenant1.global.vespa.yahooapis.com").isPresent());
@@ -124,6 +124,7 @@ public class DnsMaintainerTest {
         // One record is removed per run
         for (int i = 1; i <= staleTotal*2; i++) {
             maintainer.run();
+            tester.updateDns();
             assertEquals(Math.max(staleTotal - i, 0), records().size());
         }
     }

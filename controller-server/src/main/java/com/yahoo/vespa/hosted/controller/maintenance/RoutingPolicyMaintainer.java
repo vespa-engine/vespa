@@ -4,20 +4,21 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.RoutingId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
@@ -28,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -43,16 +43,15 @@ public class RoutingPolicyMaintainer extends Maintainer {
 
     private static final Logger log = Logger.getLogger(RoutingPolicyMaintainer.class.getName());
 
-    private final NameService nameService;
+    private final NameServiceForwarder nameServiceForwarder;
     private final CuratorDb db;
 
     public RoutingPolicyMaintainer(Controller controller,
                                    Duration interval,
                                    JobControl jobControl,
-                                   NameService nameService,
                                    CuratorDb db) {
         super(controller, interval, jobControl);
-        this.nameService = nameService;
+        this.nameServiceForwarder = controller.nameServiceForwarder();
         this.db = db;
     }
 
@@ -101,7 +100,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
                                                                                policy.zone()))
                                                 .collect(Collectors.toSet());
                 try {
-                    nameService.createAlias(RecordName.from(endpoint.dnsName()), targets);
+                    nameServiceForwarder.createAlias(RecordName.from(endpoint.dnsName()), targets, Priority.normal);
                 } catch (Exception e) {
                     log.log(LogLevel.WARNING, "Failed to create or update DNS record for global rotation " +
                                               endpoint.dnsName() + ". Retrying in " + maintenanceInterval(), e);
@@ -142,18 +141,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
                                                         loadBalancer.rotations());
         RecordName name = RecordName.from(routingPolicy.endpointIn(controller().system()).dnsName());
         RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
-        List<Record> existingRecords = nameService.findRecords(Record.Type.CNAME, name);
-        if (existingRecords.size() > 1) {
-            throw new IllegalStateException("Found more than 1 CNAME record for " + name.asString() + ": " + existingRecords);
-        }
-        Optional<Record> record = existingRecords.stream().findFirst();
-        if (record.isPresent()) {
-            if (!record.get().data().equals(data)) {
-                nameService.updateRecord(record.get(), data);
-            }
-        } else {
-            nameService.createCname(name, data);
-        }
+        nameServiceForwarder.createCname(name, data, Priority.normal);
         return routingPolicy;
     }
 
@@ -170,13 +158,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
             removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()));
             for (RoutingPolicy policy : removalCandidates) {
                 String dnsName = policy.endpointIn(controller().system()).dnsName();
-                try {
-                    List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(dnsName));
-                    nameService.removeRecords(records);
-                } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to remove record '" + dnsName +
-                                              "'. Retrying in " + maintenanceInterval());
-                }
+                nameServiceForwarder.removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
             }
         }
     }
@@ -189,13 +171,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
             removalCandidates.removeAll(activeRoutingIds);
             for (RoutingId id : removalCandidates) {
                 Endpoint endpoint = RoutingPolicy.endpointOf(id.application(), id.rotation(), controller().system());
-                try {
-                    List<Record> records = nameService.findRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()));
-                    nameService.removeRecords(records);
-                } catch (Exception e) {
-                    log.log(LogLevel.WARNING, "Failed to remove all ALIAS records with name '" + endpoint.dnsName() +
-                                              "'. Retrying in " + maintenanceInterval());
-                }
+                nameServiceForwarder.removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()), Priority.normal);
             }
         }
     }
