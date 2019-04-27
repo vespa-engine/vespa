@@ -11,11 +11,13 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -46,19 +48,21 @@ public class TenantApplications {
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
+    private final Lock lock;
 
-    private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
+    private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant, Lock lock) {
         this.curator = curator;
         this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
+        this.lock = lock;
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this::childEvent);
     }
 
-    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
-        return new TenantApplications(curator, reloadHandler, tenant);
+    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant, Lock lock) {
+        return new TenantApplications(curator, reloadHandler, tenant, lock);
     }
 
     /**
@@ -155,12 +159,15 @@ public class TenantApplications {
         directoryCache.close();
     }
 
-    /** Returns the lock for changing the session status of the given application. */
-    public Lock lock(ApplicationId id) {
-        curator.create(lockPath(id));
-        Lock lock = locks.computeIfAbsent(id, __ -> new Lock(lockPath(id).getAbsolute(), curator));
+    /** Returns the lock for changing the session status of the application's tenant. */
+    public Lock lock() {
         lock.acquire(Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
         return lock;
+    }
+
+    /** Returns the lock for changing the session status of the given application. */
+    public Lock lock(ApplicationId id) {
+        return lock();
     }
 
     private void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {

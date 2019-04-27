@@ -6,6 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,8 +38,9 @@ public class TenantTest {
     private Tenant createTenant(String name) {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         TenantName tenantName = TenantName.from(name);
+        Curator curator = new MockCurator();
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withApplicationRepo(TenantApplications.create(new MockCurator(), new MockReloadHandler(), tenantName));
+                .withApplicationRepo(TenantApplications.create(curator, new MockReloadHandler(), tenantName, TenantBuilder.createLock(curator, tenantName)));
         tenantRepository.addTenant(tenantBuilder);
         return tenantRepository.getTenant(tenantName);
     }

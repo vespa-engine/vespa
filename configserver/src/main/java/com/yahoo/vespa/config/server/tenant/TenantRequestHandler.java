@@ -59,6 +59,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
                                 List<ReloadListener> reloadListeners,
                                 ConfigResponseFactory responseFactory,
                                 HostRegistries hostRegistries,
+                                Lock lock,
                                 Curator curator) { // TODO jvenstad: Merge this class with TenantApplications, and straighten this out.
         this.metrics = metrics;
         this.tenant = tenant;
@@ -66,7 +67,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
         this.responseFactory = responseFactory;
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
         this.hostRegistry = hostRegistries.createApplicationHostRegistry(tenant);
-        this.applications = TenantApplications.create(curator, this, tenant);
+        this.applications = TenantApplications.create(curator, this, tenant, lock);
     }
 
     /**

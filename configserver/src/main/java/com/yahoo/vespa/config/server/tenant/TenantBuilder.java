@@ -13,8 +13,12 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 
 import java.util.Collections;
+
+import static com.yahoo.vespa.config.server.tenant.Tenant.SESSION_LOCK_PATH;
 
 /**
  * Builder for helping out with tenant creation. Each of a tenants dependencies may be overridden for testing.
@@ -131,6 +135,7 @@ public class TenantBuilder {
                                                                  Collections.singletonList(componentRegistry.getReloadListener()),
                                                                  ConfigResponseFactory.create(componentRegistry.getConfigserverConfig()),
                                                                  componentRegistry.getHostRegistries(),
+                                                                 createLock(componentRegistry.getCurator(), tenant),
                                                                  componentRegistry.getCurator());
             if (hostValidator == null) {
                 this.hostValidator = impl;
@@ -163,6 +168,12 @@ public class TenantBuilder {
         if (tenantFileSystemDirs == null) {
             tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant);
         }
+    }
+
+    public static Lock createLock(Curator curator, TenantName tenant) {
+        Path lockPath = TenantRepository.getTenantPath(tenant).append(SESSION_LOCK_PATH);
+        curator.create(lockPath);
+        return new Lock(lockPath.getAbsolute(), curator);
     }
 
     public TenantName getTenantName() { return tenant; }
