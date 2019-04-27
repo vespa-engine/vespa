@@ -237,7 +237,7 @@ public class JobController {
             if ( ! application.get().deploymentJobs().deployedInternally()) {
                 // TODO jvenstad: Remove when there are no more SDv3 pipelines.
                 // Copy all current packages to the new application store
-                application.get().deployments().values().stream()
+                application.get().productionDeployments().values().stream()
                            .map(Deployment::applicationVersion)
                            .distinct()
                            .forEach(appVersion -> {
