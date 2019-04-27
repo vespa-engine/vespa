@@ -36,7 +36,6 @@ import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaxmlparser.DocumentFeedOperation;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -231,14 +230,10 @@ public class RestApi extends LoggingRequestHandler {
             }
         } catch (RestApiException e) {
             return e.getResponse();
-        } catch (IllegalArgumentException userException) {
-            return Response.createErrorResponse(400, Exceptions.toMessageString(userException),
-                                                restUri,
-                                                RestUri.apiErrorCodes.PARSER_ERROR);
-        } catch (RuntimeException systemException) {
-            return Response.createErrorResponse(500, Exceptions.toMessageString(systemException),
-                                                restUri,
-                                                RestUri.apiErrorCodes.PARSER_ERROR);
+        } catch (Exception e2) {
+            // We always blame the user. This might be a bit nasty, but the parser throws various kind of exception
+            // types, but with nice descriptions.
+            return Response.createErrorResponse(400, e2.getMessage(), restUri, RestUri.apiErrorCodes.PARSER_ERROR);
         }
         return new Response(200, resultJson, Optional.of(restUri));
     }
@@ -406,8 +401,8 @@ public class RestApi extends LoggingRequestHandler {
         } catch (BadRequestParameterException e) {
             return createInvalidParameterResponse(e.getParameter(), e.getMessage());
         }
-        OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, options);
-        ObjectNode resultNode = mapper.createObjectNode();
+        final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, options);
+        final ObjectNode resultNode = mapper.createObjectNode();
         visit.token.ifPresent(t -> resultNode.put(CONTINUATION, t));
         resultNode.putArray(DOCUMENTS).addPOJO(visit.documentsAsJsonList);
         resultNode.put(PATH_NAME, restUri.getRawPath());
