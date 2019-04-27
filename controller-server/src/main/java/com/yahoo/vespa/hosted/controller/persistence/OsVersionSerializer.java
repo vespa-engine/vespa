@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Serializer for an OS version.
+ * Serializer for an {@link OsVersion}.
  *
  * @author mpolden
  */

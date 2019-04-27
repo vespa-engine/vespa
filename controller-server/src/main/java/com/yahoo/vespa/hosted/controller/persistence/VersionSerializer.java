@@ -7,7 +7,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 
 /**
- * Serializer for version numbers.
+ * Serializer for {@link Version}.
  *
  * @author mpolden
  */
