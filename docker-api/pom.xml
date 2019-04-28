@@ -100,8 +100,8 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.lz4</groupId>
-            <artifactId>lz4-java</artifactId>
+            <groupId>net.jpountz.lz4</groupId>
+            <artifactId>lz4</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
