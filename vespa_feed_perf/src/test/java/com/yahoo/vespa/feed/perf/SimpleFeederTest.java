@@ -131,18 +131,14 @@ public class SimpleFeederTest {
     }
 
     @Test
-    public void requireThatDualPutXML2VespaFeederWorks() throws Throwable {
+    public void requireThatJson2VespaFeederWorks() throws Throwable {
         ByteArrayOutputStream dump = new ByteArrayOutputStream();
         assertFeed(new FeederParams().setDumpStream(dump).setDumpFormat(FeederParams.DumpFormat.VESPA),
-                "<vespafeed>" +
-                        "    <document documenttype='simple' documentid='id:simple:simple::0'>" +
-                        "        <my_str>foo</my_str>" +
-                        "    </document>" +
-                        "    <document documenttype='simple' documentid='id:simple:simple::1'>" +
-                        "        <my_str>bar</my_str>" +
-                        "    </document>" +
-                        "    <remove documenttype='simple' documentid='id:simple:simple::2'/>" +
-                        "</vespafeed>",
+                "[" +
+                        "  { \"put\": \"id:simple:simple::0\", \"fields\": { \"my_str\":\"foo\"}}," +
+                        "  { \"update\": \"id:simple:simple::1\", \"fields\": { \"my_str\": { \"assign\":\"bar\"}}}," +
+                        "  { \"remove\": \"id:simple:simple::2\", \"condition\":\"true\"}" +
+                        "]",
                 new MessageHandler() {
 
                     @Override
@@ -155,7 +151,7 @@ public class SimpleFeederTest {
                 "",
                 "(.+\n)+" +
                         "\\s*\\d+,\\s*3,.+\n");
-        assertEquals(178, dump.size());
+        assertEquals(187, dump.size());
         assertFeed(new ByteArrayInputStream(dump.toByteArray()),
                 new MessageHandler() {
                     @Override
@@ -261,7 +257,7 @@ public class SimpleFeederTest {
 
     @Test
     public void requireThatSerialTransferModeConfiguresStaticThrottling() throws Exception {
-        TestDriver driver = new TestDriver(new FeederParams().setSerialTransfer(true), "", null);
+        TestDriver driver = new TestDriver(new FeederParams().setSerialTransfer(), "", null);
         assertEquals(StaticThrottlePolicy.class, getThrottlePolicy(driver).getClass());
         assertTrue(driver.close());
     }
