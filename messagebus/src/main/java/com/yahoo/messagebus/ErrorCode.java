@@ -122,4 +122,14 @@ public final class ErrorCode {
         default                     : return "UNKNOWN(" + error + ")";
         }
     }
+    public static boolean isFatal(int code) {
+        return code >= FATAL_ERROR;
+    }
+    public static boolean isTransient(int code) {
+        return code >= TRANSIENT_ERROR;
+    }
+    public static boolean isMBusError(int code) {
+        return ((code < APP_TRANSIENT_ERROR) && isTransient(code))
+               || ((code < APP_FATAL_ERROR) && isFatal(code));
+    }
 }
