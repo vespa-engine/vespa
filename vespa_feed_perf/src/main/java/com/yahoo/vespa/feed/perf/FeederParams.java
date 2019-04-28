@@ -27,8 +27,9 @@ class FeederParams {
     private String configId = "client";
     private OutputStream dumpStream = null;
     private DumpFormat dumpFormat = DumpFormat.JSON;
-    private boolean serialTransferEnabled = false;
+    private boolean benchmarkMode = false;
     private int numDispatchThreads = 1;
+    private int maxPending = 0;
 
     InputStream getStdIn() {
         return stdIn;
@@ -81,38 +82,55 @@ class FeederParams {
         return this;
     }
 
-    boolean isSerialTransferEnabled() {
-        return serialTransferEnabled;
+    FeederParams setMaxPending(int maxPending) {
+        this.maxPending = maxPending;
+        return this;
     }
 
-    FeederParams setSerialTransfer(boolean serial) {
-        this.serialTransferEnabled = serial;
+    boolean isSerialTransferEnabled() {
+        return maxPending == 1;
+    }
+
+    FeederParams setSerialTransfer() {
+        maxPending = 1;
+        numDispatchThreads = 1;
         return this;
     }
 
     int getNumDispatchThreads() { return numDispatchThreads; }
+    int getMaxPending() { return maxPending; }
+    boolean isBenchmarkMode() { return benchmarkMode; }
 
     FeederParams parseArgs(String... args) throws ParseException, FileNotFoundException {
         Options opts = new Options();
-        opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation");
+        opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation and a single thread");
         opts.addOption("n", "numthreads", true, "Number of clients for sending messages. Anything, but 1 will bypass sequencing by document id.");
+        opts.addOption("m", "maxpending", true, "Max number of inflights messages. Default is auto.");
         opts.addOption("r", "route", true, "Route for sending messages. default is 'default'....");
+        opts.addOption("b", "mode", true, "Mode for benchmarking.");
         opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .vespa) json will be produced if no extension.");
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
-        serialTransferEnabled = cmd.hasOption('s');
+
         if (cmd.hasOption('n')) {
             numDispatchThreads = Integer.valueOf(cmd.getOptionValue('n').trim());
+        }
+        if (cmd.hasOption('m')) {
+            maxPending = Integer.valueOf(cmd.getOptionValue('m').trim());
         }
         if (cmd.hasOption('r')) {
             route = Route.parse(cmd.getOptionValue('r').trim());
         }
+        benchmarkMode =  cmd.hasOption('b');
         if (cmd.hasOption('o')) {
             String fileName = cmd.getOptionValue('o').trim();
             dumpStream = new FileOutputStream(new File(fileName));
             if (fileName.endsWith(".vespa")) {
                 dumpFormat = DumpFormat.VESPA;
             }
+        }
+        if (cmd.hasOption('s')) {
+            setSerialTransfer();
         }
 
         return this;

@@ -47,9 +47,8 @@ public class FeederParamsTest {
         params.setConfigId("my_config_id");
         assertEquals("my_config_id", params.getConfigId());
 
-        params.setSerialTransfer(false);
         assertFalse(params.isSerialTransferEnabled());
-        params.setSerialTransfer(true);
+        params.setSerialTransfer();
         assertTrue(params.isSerialTransferEnabled());
     }
 

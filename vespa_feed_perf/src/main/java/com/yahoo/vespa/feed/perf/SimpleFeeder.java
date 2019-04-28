@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.json.JsonFeedReader;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.serialization.DocumentDeserializer;
@@ -30,6 +31,7 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.vespaxmlparser.ConditionalFeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.RemoveFeedOperation;
@@ -71,6 +73,7 @@ public class SimpleFeeder implements ReplyHandler {
     private long sumLatency = 0;
     private final int numThreads;
     private final Destination destination;
+    private final boolean benchmarkMode;
 
     public static void main(String[] args) throws Throwable {
         new SimpleFeeder(new FeederParams().parseArgs(args)).run().close();
@@ -151,7 +154,6 @@ public class SimpleFeeder implements ReplyHandler {
             outputStream.write(']');
             outputStream.close();
         }
-
     }
 
     static private final int NONE = 0;
@@ -176,6 +178,8 @@ public class SimpleFeeder implements ReplyHandler {
             }
         }
         public void send(FeedOperation op) {
+            TestAndSetCondition cond = op.getCondition();
+            buffer.putUtf8String(cond.getSelection());
             DocumentSerializer writer = DocumentSerializerFactory.createHead(buffer);
             int type = NONE;
             if (op.getType() == FeedOperation.Type.DOCUMENT) {
@@ -189,9 +193,8 @@ public class SimpleFeeder implements ReplyHandler {
                 type = REMOVE;
             }
             int sz = buffer.position();
-            long hash = hash(buffer.array(), 0, sz);
+            long hash = hash(buffer.array(), sz);
             try {
-
                 header.putInt(sz);
                 header.putInt(type);
                 header.putLong(hash);
@@ -207,8 +210,8 @@ public class SimpleFeeder implements ReplyHandler {
         public void close() throws Exception {
             outputStream.close();
         }
-        static long hash(byte [] buf, int offset, int length) {
-            return XXHashFactory.fastestJavaInstance().hash64().hash(buf, offset, length, 0);
+        static long hash(byte [] buf, int length) {
+            return XXHashFactory.fastestJavaInstance().hash64().hash(buf, 0, length, 0);
         }
     }
 
@@ -230,10 +233,10 @@ public class SimpleFeeder implements ReplyHandler {
             }
         }
 
-        class LazyDocumentOperation extends FeedOperation {
+        class LazyDocumentOperation extends ConditionalFeedOperation {
             private final DocumentDeserializer deserializer;
-            LazyDocumentOperation(DocumentDeserializer deserializer) {
-                super(Type.DOCUMENT);
+            LazyDocumentOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
+                super(Type.DOCUMENT, condition);
                 this.deserializer = deserializer;
             }
 
@@ -242,10 +245,10 @@ public class SimpleFeeder implements ReplyHandler {
                 return new Document(deserializer);
             }
         }
-        class LazyUpdateOperation extends FeedOperation {
+        class LazyUpdateOperation extends ConditionalFeedOperation {
             private final DocumentDeserializer deserializer;
-            LazyUpdateOperation(DocumentDeserializer deserializer) {
-                super(Type.UPDATE);
+            LazyUpdateOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
+                super(Type.UPDATE, condition);
                 this.deserializer = deserializer;
             }
 
@@ -269,17 +272,22 @@ public class SimpleFeeder implements ReplyHandler {
             if (read != blob.length) {
                 throw new IllegalArgumentException("Underflow, failed reading " + blob.length + "bytes. Got " + read);
             }
-            long computedHash = VespaV1Destination.hash(blob, 0, blob.length);
+            long computedHash = VespaV1Destination.hash(blob, blob.length);
             if (computedHash != hash) {
                 throw new IllegalArgumentException("Hash mismatch, expected " + hash + ", got " + computedHash);
             }
-            DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, GrowableByteBuffer.wrap(blob));
+            GrowableByteBuffer buf = GrowableByteBuffer.wrap(blob);
+            String condition = buf.getUtf8String();
+            DocumentDeserializer deser = DocumentDeserializerFactory.createHead(mgr, buf);
+            TestAndSetCondition testAndSetCondition = condition.isEmpty()
+                    ? TestAndSetCondition.NOT_PRESENT_CONDITION
+                    : new TestAndSetCondition(condition);
             if (type == DOCUMENT) {
-                return new LazyDocumentOperation(deser);
+                return new LazyDocumentOperation(deser, testAndSetCondition);
             } else if (type == UPDATE) {
-                return new LazyUpdateOperation(deser);
+                return new LazyUpdateOperation(deser, testAndSetCondition);
             } else if (type == REMOVE) {
-                return new RemoveFeedOperation(new DocumentId(deser));
+                return new RemoveFeedOperation(new DocumentId(deser), testAndSetCondition);
             } else {
                 throw new IllegalArgumentException("Unknown operation " + type);
             }
@@ -297,8 +305,9 @@ public class SimpleFeeder implements ReplyHandler {
         out = params.getStdOut();
         numThreads = params.getNumDispatchThreads();
         mbus = newMessageBus(docTypeMgr, params.getConfigId());
-        session = newSession(mbus, this, params.isSerialTransferEnabled());
+        session = newSession(mbus, this, params.getMaxPending());
         docTypeMgr.configure(params.getConfigId());
+        benchmarkMode = params.isBenchmarkMode();
         destination = (params.getDumpStream() != null)
                 ? createDumper(params)
                 : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
@@ -404,6 +413,7 @@ public class SimpleFeeder implements ReplyHandler {
         minLatency = Math.min(minLatency, latency);
         maxLatency = Math.max(maxLatency, latency);
         sumLatency += latency;
+        if (benchmarkMode) { return; }
         if (now > nextHeader) {
             printHeader();
             nextHeader += HEADER_INTERVAL;
@@ -415,12 +425,12 @@ public class SimpleFeeder implements ReplyHandler {
     }
 
     private void printHeader() {
-        out.println("total time, num messages, min latency, avg latency, max latency");
+        out.println("# Time used, num ok, num error, min latency, max latency, average latency");
     }
 
     private void printReport() {
         out.format("%10d, %12d, %11d, %11d, %11d\n", System.currentTimeMillis() - startTime,
-                   numReplies.get(), minLatency, sumLatency / numReplies.get(), maxLatency);
+                   numReplies.get(), minLatency, maxLatency, sumLatency / numReplies.get());
     }
 
     private static String formatErrors(Reply reply) {
@@ -438,11 +448,11 @@ public class SimpleFeeder implements ReplyHandler {
                                  configId);
     }
 
-    private static SourceSession newSession(RPCMessageBus mbus, ReplyHandler replyHandler, boolean serial) {
+    private static SourceSession newSession(RPCMessageBus mbus, ReplyHandler replyHandler, int maxPending) {
         SourceSessionParams params = new SourceSessionParams();
         params.setReplyHandler(replyHandler);
-        if (serial) {
-            params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(1));
+        if (maxPending > 0) {
+            params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(maxPending));
         }
         return mbus.getMessageBus().createSourceSession(params);
     }
