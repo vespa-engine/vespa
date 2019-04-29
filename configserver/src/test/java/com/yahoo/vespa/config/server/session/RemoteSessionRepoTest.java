@@ -100,7 +100,7 @@ public class RemoteSessionRepoTest {
     public void testBadApplicationRepoOnActivate() {
         long sessionId = 3L;
         TenantName mytenant = TenantName.from("mytenant");
-        TenantApplications applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), mytenant, TenantBuilder.createLock(curator, mytenant));
+        TenantApplications applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), mytenant);
         curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
         Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder().curator(curator).build(), mytenant)
                 .withApplicationRepo(applicationRepo)

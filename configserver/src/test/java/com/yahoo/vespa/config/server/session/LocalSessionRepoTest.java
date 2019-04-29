@@ -13,8 +13,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Rule;
@@ -56,9 +54,8 @@ public class LocalSessionRepoTest {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "3"));
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
-        Curator curator = new MockCurator();
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
-                                                           TenantApplications.create(curator, new MockReloadHandler(), tenantName, TenantBuilder.createLock(curator, tenantName)),
+                                                           TenantApplications.create(new MockCurator(), new MockReloadHandler(), tenantName),
                                                            tenantFileSystemDirs, new HostRegistry<>(),
                                                            tenantName);
         repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5, globalComponentRegistry.getCurator());

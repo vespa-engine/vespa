@@ -105,7 +105,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenantName, TenantBuilder.createLock(curator, tenantName));
+        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenantName);
         localRepo = new LocalSessionRepo(clock, curator);
         pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
         hostProvisioner = new MockProvisioner();

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -126,7 +125,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo(MockReloadHandler reloadHandler) {
-        return TenantApplications.create(curator, reloadHandler, tenantName, TenantBuilder.createLock(curator, tenantName));
+        return TenantApplications.create(curator, reloadHandler, tenantName);
     }
 
     private static ApplicationId createApplicationId(String name) {

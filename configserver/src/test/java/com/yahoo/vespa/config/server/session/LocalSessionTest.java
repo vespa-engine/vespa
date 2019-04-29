@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -197,7 +196,7 @@ public class LocalSessionTest {
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
-        TenantApplications applications = TenantApplications.create(curator, new MockReloadHandler(), tenant, TenantBuilder.createLock(curator, tenant));
+        TenantApplications applications = TenantApplications.create(curator, new MockReloadHandler(), tenant);
         applications.createApplication(zkc.readApplicationId());
         return new LocalSession(tenant, sessionId, preparer,
                 new SessionContext(

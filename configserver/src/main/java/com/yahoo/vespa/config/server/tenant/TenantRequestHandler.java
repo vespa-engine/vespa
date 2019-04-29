@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.Set;
 
 import com.yahoo.component.Version;
@@ -32,7 +31,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 
 /**
  * A per tenant request handler, for handling reload (activate application) and getConfig requests for
@@ -59,7 +57,6 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
                                 List<ReloadListener> reloadListeners,
                                 ConfigResponseFactory responseFactory,
                                 HostRegistries hostRegistries,
-                                Lock lock,
                                 Curator curator) { // TODO jvenstad: Merge this class with TenantApplications, and straighten this out.
         this.metrics = metrics;
         this.tenant = tenant;
@@ -67,7 +64,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
         this.responseFactory = responseFactory;
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
         this.hostRegistry = hostRegistries.createApplicationHostRegistry(tenant);
-        this.applications = TenantApplications.create(curator, this, tenant, lock);
+        this.applications = TenantApplications.create(curator, this, tenant);
     }
 
     /**
@@ -102,31 +99,18 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
      */
     @Override
     public void reloadConfig(ApplicationSet applicationSet) {
-        ApplicationId id = applicationSet.getId();
-        try (Lock lock = applications.lock(id)) {
-            if ( ! applications.exists(id))
-                return; // Application was deleted before activation.
-            if (applicationSet.getApplicationGeneration() != applications.requireActiveSessionOf(id))
-                return; // Application activated a new session before we got here.
-
-            setLiveApp(applicationSet);
-            notifyReloadListeners(applicationSet);
-        }
+        setLiveApp(applicationSet);
+        notifyReloadListeners(applicationSet);
     }
 
     @Override
     public void removeApplication(ApplicationId applicationId) {
-        try (Lock lock = applications.lock(applicationId)) {
-            if (applications.exists(applicationId))
-                return; // Application was deployed again.
-
-            if (applicationMapper.hasApplication(applicationId, clock.instant())) {
-                applicationMapper.remove(applicationId);
-                hostRegistry.removeHostsForKey(applicationId);
-                reloadListenersOnRemove(applicationId);
-                tenantMetricUpdater.setApplications(applicationMapper.numApplications());
-                metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
-            }
+        if (applicationMapper.hasApplication(applicationId, clock.instant())) {
+            applicationMapper.remove(applicationId);
+            hostRegistry.removeHostsForKey(applicationId);
+            reloadListenersOnRemove(applicationId);
+            tenantMetricUpdater.setApplications(applicationMapper.numApplications());
+            metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
         }
     }
 
