@@ -80,16 +80,14 @@ public class RestApi extends LoggingRequestHandler {
     public RestApi(LoggingRequestHandler.Context parentCtx, DocumentmanagerConfig documentManagerConfig,
                    LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig,
                    AllClustersBucketSpacesConfig bucketSpacesConfig,
-                   ClusterListConfig clusterListConfig, MetricReceiver metricReceiver)
-    {
+                   ClusterListConfig clusterListConfig, MetricReceiver metricReceiver) {
         super(parentCtx);
         MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
         params.setDocumentmanagerConfig(documentManagerConfig);
-        this.operationHandler = new OperationHandlerImpl(
-                new MessageBusDocumentAccess(params),
-                fixedClusterEnumeratorFromConfig(clusterListConfig),
-                fixedBucketSpaceResolverFromConfig(bucketSpacesConfig),
-                metricReceiver);
+        this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params),
+                                                        fixedClusterEnumeratorFromConfig(clusterListConfig),
+                                                        fixedBucketSpaceResolverFromConfig(bucketSpacesConfig),
+                                                        metricReceiver);
         this.singleDocumentParser = new SingleDocumentParser(new DocumentTypeManager(documentManagerConfig));
         // 40% of the threads can be blocked before we deny requests.
         if (threadpoolConfig != null) {
@@ -101,11 +99,10 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     // For testing and development
-    public RestApi(
-            Executor executor,
-            AccessLog accessLog,
-            OperationHandler operationHandler,
-            int threadsAvailable) {
+    public RestApi(Executor executor,
+                   AccessLog accessLog,
+                   OperationHandler operationHandler,
+                   int threadsAvailable) {
         super(executor, accessLog, null);
         this.operationHandler = operationHandler;
         this.threadsAvailableForApi = new AtomicInteger(threadsAvailable);
@@ -122,12 +119,11 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     private static OperationHandlerImpl.ClusterEnumerator fixedClusterEnumeratorFromConfig(ClusterListConfig config) {
-        final List<ClusterDef> clusters = Collections.unmodifiableList(new ClusterList(config).getStorageClusters());
+        List<ClusterDef> clusters = Collections.unmodifiableList(new ClusterList(config).getStorageClusters());
         return () -> clusters;
     }
 
-    private static OperationHandlerImpl.BucketSpaceResolver fixedBucketSpaceResolverFromConfig(
-            AllClustersBucketSpacesConfig bucketSpacesConfig) {
+    private static OperationHandlerImpl.BucketSpaceResolver fixedBucketSpaceResolverFromConfig(AllClustersBucketSpacesConfig bucketSpacesConfig) {
         return (clusterId, docType) ->
             Optional.ofNullable(bucketSpacesConfig.cluster(clusterId))
                     .map(cluster -> cluster.documentType(docType))
@@ -135,7 +131,7 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     private static Optional<String> requestProperty(String parameter, HttpRequest request) {
-        final String property = request.getProperty(parameter);
+        String property = request.getProperty(parameter);
         if (property != null && ! property.isEmpty()) {
             return Optional.of(property);
         }
@@ -152,8 +148,15 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     private static Optional<Boolean> parseBoolean(String parameter, HttpRequest request) {
-        Optional<String> property = requestProperty(parameter, request);
-        return property.map(RestApi::parseBooleanStrict);
+        try {
+            Optional<String> property = requestProperty(parameter, request);
+            return property.map(RestApi::parseBooleanStrict);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid value for '" + parameter + "' parameter: " +
+                                               "Must be empty, true, or false but was '" +
+                                               request.getProperty(parameter) + "'");
+        }
     }
 
     private static int parsePositiveInt(String str) throws NumberFormatException {
@@ -168,9 +171,9 @@ public class RestApi extends LoggingRequestHandler {
     public HttpResponse handle(HttpRequest request) {
         try {
             if (threadsAvailableForApi.decrementAndGet() < 1) {
-                return Response.createErrorResponse(
-                        429 /* Too Many Requests */,
-                        "Too many parallel requests, consider using http-vespa-java-client. Please try again later.", RestUri.apiErrorCodes.TOO_MANY_PARALLEL_REQUESTS);
+                return Response.createErrorResponse(429 /* Too Many Requests */,
+                                                    "Too many parallel requests, consider using http-vespa-java-client. Please try again later.",
+                                                    RestUri.apiErrorCodes.TOO_MANY_PARALLEL_REQUESTS);
             }
             return handleInternal(request);
         } finally {
@@ -178,11 +181,12 @@ public class RestApi extends LoggingRequestHandler {
         }
     }
 
-    private static void validateUriStructureForRequestMethod(RestUri uri, com.yahoo.jdisc.http.HttpRequest.Method method) throws RestApiException {
+    private static void validateUriStructureForRequestMethod(RestUri uri, com.yahoo.jdisc.http.HttpRequest.Method method)
+            throws RestApiException {
         if ((method != com.yahoo.jdisc.http.HttpRequest.Method.GET) && uri.isRootOnly()) {
             throw new RestApiException(Response.createErrorResponse(BAD_REQUEST,
-                    "Root /document/v1/ requests only supported for HTTP GET",
-                    RestUri.apiErrorCodes.ERROR_ID_BASIC_USAGE));
+                                       "Root /document/v1/ requests only supported for HTTP GET",
+                                       RestUri.apiErrorCodes.ERROR_ID_BASIC_USAGE));
         }
     }
 
@@ -192,28 +196,23 @@ public class RestApi extends LoggingRequestHandler {
 
     // protected for testing
     protected HttpResponse handleInternal(HttpRequest request) {
-        final RestUri restUri;
+        RestUri restUri = null;
         try {
             restUri = new RestUri(request.getUri());
             validateUriStructureForRequestMethod(restUri, request.getMethod());
-        } catch (RestApiException e) {
-            return e.getResponse();
-        } catch (Exception e2) {
-            return Response.createErrorResponse(500, "Exception while parsing URI: " + e2.getMessage(), RestUri.apiErrorCodes.URL_PARSING);
-        }
 
-        final Optional<Boolean> create;
-        try {
-            create = parseBoolean(CREATE_PARAMETER_NAME, request);
-        } catch (IllegalArgumentException e) {
-            return Response.createErrorResponse(400, "Non valid value for 'create' parameter, must be empty, true, or " +
-                    "false: " + request.getProperty(CREATE_PARAMETER_NAME), RestUri.apiErrorCodes.INVALID_CREATE_VALUE);
-        }
-        String condition = request.getProperty(CONDITION_PARAMETER_NAME);
-        Optional<String> route = Optional.ofNullable(request.getProperty(ROUTE_PARAMETER_NAME));
+            Optional<Boolean> create;
+            try {
+                create = parseBoolean(CREATE_PARAMETER_NAME, request);
+            }
+            catch (IllegalArgumentException e) {
+                return Response.createErrorResponse(400, e.getMessage(), RestUri.apiErrorCodes.INVALID_CREATE_VALUE);
+            }
 
-        Optional<ObjectNode> resultJson = Optional.empty();
-        try {
+            String condition = request.getProperty(CONDITION_PARAMETER_NAME);
+            Optional<String> route = Optional.ofNullable(request.getProperty(ROUTE_PARAMETER_NAME));
+
+            Optional<ObjectNode> resultJson = Optional.empty();
             switch (request.getMethod()) {
                 case GET:    // Vespa Visit/Get
                     return isVisitRequestUri(restUri) ? handleVisit(restUri, request) : handleGet(restUri, request);
@@ -229,18 +228,21 @@ public class RestApi extends LoggingRequestHandler {
                 default:
                     return new Response(405, Optional.empty(), Optional.of(restUri));
             }
-        } catch (RestApiException e) {
+            return new Response(200, resultJson, Optional.of(restUri));
+        }
+        catch (RestApiException e) {
             return e.getResponse();
-        } catch (IllegalArgumentException userException) {
+        }
+        catch (IllegalArgumentException userException) {
             return Response.createErrorResponse(400, Exceptions.toMessageString(userException),
                                                 restUri,
                                                 RestUri.apiErrorCodes.PARSER_ERROR);
-        } catch (RuntimeException systemException) {
+        }
+        catch (RuntimeException systemException) {
             return Response.createErrorResponse(500, Exceptions.toMessageString(systemException),
                                                 restUri,
-                                                RestUri.apiErrorCodes.PARSER_ERROR);
+                                                RestUri.apiErrorCodes.UNSPECIFIED);
         }
-        return new Response(200, resultJson, Optional.of(restUri));
     }
 
     private FeedOperation createPutOperation(HttpRequest request, String id, String condition) {
