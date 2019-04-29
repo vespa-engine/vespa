@@ -124,14 +124,10 @@ public class Arguments {
                 files.add(getParam(args, arg));
             } else if ("--maxpending".equals(arg)) {
                 feederConfigBuilder.maxpendingdocs(Integer.parseInt(getParam(args, arg)));
-            } else if ("--maxpendingsize".equals(arg)) {
-                feederConfigBuilder.maxpendingbytes(Integer.parseInt(getParam(args, arg)));
             } else if ("--mode".equals(arg)) {
                 mode = getParam(args, arg);
             } else if ("--noretry".equals(arg)) {
                 feederConfigBuilder.retryenabled(false);
-            } else if ("--retrydelay".equals(arg)) {
-                feederConfigBuilder.retrydelay(Integer.parseInt(getParam(args, arg)));
             } else if ("--route".equals(arg)) {
                 feederConfigBuilder.route(getParam(args, arg));
             } else if ("--timeout".equals(arg)) {
