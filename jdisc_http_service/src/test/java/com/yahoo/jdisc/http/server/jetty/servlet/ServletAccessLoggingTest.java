@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
  * @author bakksjo
  */
 public class ServletAccessLoggingTest extends ServletTestBase {
-    private static final int MAX_LOG_WAIT_TIME_MILLIS = (int) TimeUnit.SECONDS.toMillis(60);
+    private static final long MAX_LOG_WAIT_TIME_MILLIS = TimeUnit.SECONDS.toMillis(60);
 
     @Test
     public void accessLogIsInvokedForNonJDiscServlet() throws Exception {
