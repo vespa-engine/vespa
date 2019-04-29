@@ -8,6 +8,9 @@ abortondocumenterror bool default=true
 ## Whether or not to abort if there are errors sending messages to Vespa
 abortonsenderror bool default=true
 
+## Prefix each document id with this string.
+idprefix string default=""
+
 ## Max number of pending operations.
 maxpendingdocs int default=0
 
@@ -16,6 +19,9 @@ maxfeedrate double default=0.0
 
 ## Whether or not retrying is enabled.
 retryenabled bool default=true
+
+## Delay between retries.
+retrydelay double default=1
 
 ## Timeout for messagebus operations.
 timeout double default=180

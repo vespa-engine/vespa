@@ -5,12 +5,12 @@ import com.yahoo.messagebus.routing.Route;
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 
 import static org.junit.Assert.assertEquals;
@@ -24,17 +24,13 @@ import static org.junit.Assert.assertTrue;
  * @author Simon Thoresen Hult
  */
 public class FeederParamsTest {
-    static final String TESTFILE_JSON = "test.json";
-    static final String TESTFILE_VESPA = "test.vespa";
-    static final String TESTFILE_UNKNOWN = "test.xyz";
+    private static final String TESTFILE_JSON = "test.json";
+    private static final String TESTFILE_VESPA = "test.vespa";
+    private static final String TESTFILE_UNKNOWN = "test.xyz";
 
     @Test
     public void requireThatAccessorsWork() {
         FeederParams params = new FeederParams();
-
-        InputStream stdIn = new ByteArrayInputStream(new byte[1]);
-        params.setStdIn(stdIn);
-        assertSame(stdIn, params.getStdIn());
 
         PrintStream stdErr = new PrintStream(new ByteArrayOutputStream());
         params.setStdErr(stdErr);
@@ -55,7 +51,7 @@ public class FeederParamsTest {
     @Test
     public void requireThatParamsHaveReasonableDefaults() {
         FeederParams params = new FeederParams();
-        assertSame(System.in, params.getStdIn());
+        assertSame(System.in, params.getInputStreams().get(0));
         assertSame(System.err, params.getStdErr());
         assertSame(System.out, params.getStdOut());
         assertEquals(Route.parse("default"), params.getRoute());
@@ -66,16 +62,14 @@ public class FeederParamsTest {
     @Test
     public void requireThatSerialTransferOptionIsParsed() throws ParseException, FileNotFoundException {
         assertTrue(new FeederParams().parseArgs("-s").isSerialTransferEnabled());
-        assertTrue(new FeederParams().parseArgs("foo", "-s").isSerialTransferEnabled());
-        assertTrue(new FeederParams().parseArgs("-s", "foo").isSerialTransferEnabled());
         assertTrue(new FeederParams().parseArgs("--serial").isSerialTransferEnabled());
-        assertTrue(new FeederParams().parseArgs("foo", "--serial").isSerialTransferEnabled());
-        assertTrue(new FeederParams().parseArgs("--serial", "foo").isSerialTransferEnabled());
+        assertEquals(1, new FeederParams().parseArgs("-s").getMaxPending());
+        assertEquals(1, new FeederParams().parseArgs("-s").getNumDispatchThreads());
     }
 
     @Test
     public void requireThatArgumentsAreParsedAsRoute() throws ParseException, FileNotFoundException {
-        assertEquals(Route.parse("foo bar"), new FeederParams().parseArgs("-r foo bar").getRoute());
+        assertEquals(Route.parse("foo bar"), new FeederParams().parseArgs("-r", "foo bar").getRoute());
         assertEquals(Route.parse("foo bar"), new FeederParams().parseArgs("--route","foo bar").getRoute());
     }
 
@@ -113,6 +107,22 @@ public class FeederParamsTest {
         assertTrue(new File(TESTFILE_JSON).delete());
         assertTrue(new File(TESTFILE_VESPA).delete());
         assertTrue(new File(TESTFILE_UNKNOWN).delete());
+    }
+
+    @Test
+    public void requireThatInputFilesAreAggregated() throws ParseException, IOException {
+        File json = new File(TESTFILE_JSON);
+        File vespa = new File(TESTFILE_VESPA);
+        new FileOutputStream(json).close();
+        new FileOutputStream(vespa).close();
+        FeederParams p = new FeederParams();
+        p.parseArgs("-n", "3", TESTFILE_JSON, TESTFILE_VESPA);
+        assertEquals(3, p.getNumDispatchThreads());
+        assertEquals(2, p.getInputStreams().size());
+        assertTrue(p.getInputStreams().get(0) instanceof FileInputStream);
+        assertTrue(p.getInputStreams().get(1) instanceof FileInputStream);
+        json.delete();
+        vespa.delete();
     }
 
 }

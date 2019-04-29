@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Serialisation of LogRecord objects. Not all fields are stored!
+ * Serialisation of {@link LogEntry} objects. Not all fields are stored!
  *
  * @author jonmv
  */

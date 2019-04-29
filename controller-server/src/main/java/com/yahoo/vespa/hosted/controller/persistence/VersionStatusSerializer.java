@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Serializes VersionStatus to and from slime
+ * Serializer for {@link VersionStatus}.
  *
  * @author mpolden
  */

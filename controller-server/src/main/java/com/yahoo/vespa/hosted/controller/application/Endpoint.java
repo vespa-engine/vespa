@@ -26,6 +26,7 @@ public class Endpoint {
     private final Scope scope;
     private final boolean legacy;
     private final boolean directRouting;
+    private final boolean tls;
 
     private Endpoint(String name, ApplicationId application, ZoneId zone, SystemName system, Port port, boolean legacy,
                      boolean directRouting) {
@@ -37,6 +38,7 @@ public class Endpoint {
         this.scope = zone == null ? Scope.global : Scope.zone;
         this.legacy = legacy;
         this.directRouting = directRouting;
+        this.tls = port.tls;
     }
 
     /** Returns the URL used to access this */
@@ -65,6 +67,11 @@ public class Endpoint {
      */
     public boolean directRouting() {
         return directRouting;
+    }
+
+    /** Returns whether this endpoint supports TLS connections */
+    public boolean tls() {
+        return tls;
     }
 
     @Override

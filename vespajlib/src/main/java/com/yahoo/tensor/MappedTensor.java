@@ -115,9 +115,19 @@ public class MappedTensor implements Tensor {
         public TensorType type() { return type; }
 
         @Override
+        public Builder cell(TensorAddress address, float value) {
+            return cell(address, (double)value);
+        }
+
+        @Override
         public Builder cell(TensorAddress address, double value) {
             cells.put(address, value);
             return this;
+        }
+
+        @Override
+        public Builder cell(float value, long... labels) {
+            return cell((double)value, labels);
         }
 
         @Override

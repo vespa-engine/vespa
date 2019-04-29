@@ -193,6 +193,11 @@ public class MixedTensor implements Tensor {
         }
 
         @Override
+        public Tensor.Builder cell(float value, long... labels) {
+            return cell((double)value, labels);
+        }
+
+        @Override
         public Tensor.Builder cell(double value, long... labels) {
             throw new UnsupportedOperationException("Not implemented.");
         }
@@ -233,6 +238,11 @@ public class MixedTensor implements Tensor {
                 denseSubspaceMap.put(sparsePartial, new double[(int)denseSubspaceSize()]);
             }
             return denseSubspaceMap.get(sparsePartial);
+        }
+
+        @Override
+        public Tensor.Builder cell(TensorAddress address, float value) {
+            return cell(address, (double)value);
         }
 
         @Override
@@ -290,6 +300,11 @@ public class MixedTensor implements Tensor {
             super(type);
             cells = new HashMap<>();
             dimensionBounds = new long[type.dimensions().size()];
+        }
+
+        @Override
+        public Tensor.Builder cell(TensorAddress address, float value) {
+            return cell(address, (double)value);
         }
 
         @Override
