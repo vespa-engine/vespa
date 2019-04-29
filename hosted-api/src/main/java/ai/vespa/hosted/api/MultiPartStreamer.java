@@ -65,16 +65,15 @@ public class MultiPartStreamer {
     }
 
     /**
-     * Returns a builder whose data is an aggregate stream of the current parts of this.
+     * Streams the aggregate of the current parts of this to the given request builder, and returns it.
      * Modifications to this streamer after a request builder has been obtained is not reflected in that builder.
      * This method can be used multiple times, to create new requests.
      * The request builder's method and content should not be set after it has been obtained.
      */
-    public HttpRequest.Builder requestBuilder(Method method) {
+    public HttpRequest.Builder streamTo(HttpRequest.Builder request, Method method) {
         InputStream aggregate = data(); // Get the streams now, not when the aggregate is used.
-        return HttpRequest.newBuilder()
-                          .setHeader("Content-Type", "multipart/form-data; boundary=" + boundary)
-                          .method(method.name(), HttpRequest.BodyPublishers.ofInputStream(() -> aggregate));
+        return request.setHeader("Content-Type", contentType())
+                      .method(method.name(), HttpRequest.BodyPublishers.ofInputStream(() -> aggregate));
     }
 
     /** Returns an input stream which is an aggregate of all current parts in this, plus an end marker. */
@@ -91,6 +90,11 @@ public class MultiPartStreamer {
             throw new IllegalStateException("Failed skipping extraneous bytes.", e);
         }
         return new BufferedInputStream(aggregate);
+    }
+
+    /** Returns the value of the {@code "Content-Type"} header to use with this. */
+    public String contentType() {
+        return "multipart/form-data; boundary=" + boundary + "; charset: utf-8";
     }
 
     /** Returns the separator to put between one part and the next, when this is a string. */

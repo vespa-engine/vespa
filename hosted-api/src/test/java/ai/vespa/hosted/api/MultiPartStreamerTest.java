@@ -6,6 +6,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -60,8 +61,8 @@ public class MultiPartStreamerTest {
         assertEquals(expected,
                      new String(streamer.data().readAllBytes()));
 
-        assertEquals(List.of("multipart/form-data; boundary=My boundary"),
-                     streamer.requestBuilder(Method.POST)
+        assertEquals(List.of("multipart/form-data; boundary=My boundary; charset: utf-8"),
+                     streamer.streamTo(HttpRequest.newBuilder(), Method.POST)
                              .uri(URI.create("https://uri/path"))
                              .build().headers().allValues("Content-Type"));
     }
