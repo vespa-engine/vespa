@@ -39,8 +39,8 @@ public class MultiPartStreamer {
     }
 
     /** Adds the given data as a named part in this, using the {@code "text/plain"} content type. */
-    public MultiPartStreamer addText(String name, String json) {
-        return addData(name, "text/plain", json);
+    public MultiPartStreamer addText(String name, String text) {
+        return addData(name, "text/plain", text);
     }
 
     /** Adds the given data as a named part in this, using the {@code "application/json"} content type. */
@@ -57,9 +57,9 @@ public class MultiPartStreamer {
     }
 
     /** Adds the given data as a named part in this, using the {@code "application/octet-stream" content type}. */
-    public MultiPartStreamer addBytes(String name, byte[] data) {
+    public MultiPartStreamer addBytes(String name, byte[] bytes) {
         streams.add(() -> separator(name, "application/octet-stream"));
-        streams.add(() -> new ByteArrayInputStream(data));
+        streams.add(() -> new ByteArrayInputStream(bytes));
 
         return this;
     }
