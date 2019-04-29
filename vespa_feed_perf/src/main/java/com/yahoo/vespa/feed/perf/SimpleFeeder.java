@@ -44,6 +44,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -56,24 +58,59 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SimpleFeeder implements ReplyHandler {
 
-    private final static long REPORT_INTERVAL = TimeUnit.SECONDS.toMillis(10);
-    private final static long HEADER_INTERVAL = REPORT_INTERVAL * 24;
+
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private final InputStream in;
+    private final List<InputStream> inputStreams;
     private final PrintStream out;
     private final RPCMessageBus mbus;
     private final SourceSession session;
+    private final int numThreads;
+    private final Destination destination;
+    private final boolean benchmarkMode;
+    private final static long REPORT_INTERVAL = TimeUnit.SECONDS.toMillis(10);
     private final long startTime = System.currentTimeMillis();
     private final AtomicReference<Throwable> failure = new AtomicReference<>(null);
     private final AtomicLong numReplies = new AtomicLong(0);
     private long maxLatency = Long.MIN_VALUE;
     private long minLatency = Long.MAX_VALUE;
-    private long nextHeader = startTime + HEADER_INTERVAL;
     private long nextReport = startTime + REPORT_INTERVAL;
     private long sumLatency = 0;
-    private final int numThreads;
-    private final Destination destination;
-    private final boolean benchmarkMode;
+
+    static class Metrics {
+
+        private final Destination destination;
+        private final FeedReader reader;
+        private final Executor executor;
+        AtomicReference<Throwable> failure;
+
+        Metrics(Destination destination, FeedReader reader, Executor executor, AtomicReference<Throwable> failure) {
+            this.destination = destination;
+            this.reader = reader;
+            this.executor = executor;
+            this.failure = failure;
+        }
+
+        long feed() throws Throwable {
+            long numMessages = 0;
+            while (failure.get() == null) {
+                FeedOperation op = reader.read();
+                if (op.getType() == FeedOperation.Type.INVALID) {
+                    break;
+                }
+                if (executor != null) {
+                    executor.execute(() -> sendOperation(op));
+                } else {
+                    sendOperation(op);
+                }
+                ++numMessages;
+            }
+            return numMessages;
+        }
+        private void sendOperation(FeedOperation op) {
+            destination.send(op);
+        }
+    }
+
 
     public static void main(String[] args) throws Throwable {
         new SimpleFeeder(new FeederParams().parseArgs(args)).run().close();
@@ -301,7 +338,7 @@ public class SimpleFeeder implements ReplyHandler {
         return new JsonDestination(params.getDumpStream(), failure, numReplies);
     }
     SimpleFeeder(FeederParams params) {
-        in = params.getStdIn();
+        inputStreams = params.getInputStreams();
         out = params.getStdOut();
         numThreads = params.getNumDispatchThreads();
         mbus = newMessageBus(docTypeMgr, params.getConfigId());
@@ -313,12 +350,8 @@ public class SimpleFeeder implements ReplyHandler {
                 : new MbusDestination(session, params.getRoute(), failure, params.getStdErr());
     }
 
-    private void sendOperation(FeedOperation op) {
-        destination.send(op);
-    }
-
     SourceSession getSourceSession() { return session; }
-    private FeedReader createFeedReader() throws Exception {
+    private FeedReader createFeedReader(InputStream in) throws Exception {
         in.mark(8);
         byte [] b = new byte[2];
         int numRead = readExact(in, b);
@@ -335,6 +368,8 @@ public class SimpleFeeder implements ReplyHandler {
         }
     }
 
+
+
     SimpleFeeder run() throws Throwable {
         ExecutorService executor = (numThreads > 1)
                 ? new ThreadPoolExecutor(numThreads, numThreads, 0L, TimeUnit.SECONDS,
@@ -342,29 +377,19 @@ public class SimpleFeeder implements ReplyHandler {
                                          ThreadFactoryFactory.getDaemonThreadFactory("perf-feeder"),
                                          new ThreadPoolExecutor.CallerRunsPolicy())
                 : null;
-        FeedReader reader = createFeedReader();
-
-        printHeader();
-        long numMessages = 0;
-        while (failure.get() == null) {
-            FeedOperation op = reader.read();
-            if (op.getType() == FeedOperation.Type.INVALID) {
-                break;
-            }
-            if (executor != null) {
-                executor.execute(() -> sendOperation(op));
-            } else {
-                sendOperation(op);
-            }
-            ++numMessages;
+        printHeader(out);
+        long numMessagesSent = 0;
+        for (InputStream in : inputStreams) {
+            Metrics m = new Metrics(destination, createFeedReader(in), executor, failure);
+            numMessagesSent += m.feed();
         }
-        while (failure.get() == null && numReplies.get() < numMessages) {
+        while (failure.get() == null && numReplies.get() < numMessagesSent) {
             Thread.sleep(100);
         }
         if (failure.get() != null) {
             throw failure.get();
         }
-        printReport();
+        printReport(out);
         return this;
     }
 
@@ -414,23 +439,18 @@ public class SimpleFeeder implements ReplyHandler {
         maxLatency = Math.max(maxLatency, latency);
         sumLatency += latency;
         if (benchmarkMode) { return; }
-        if (now > nextHeader) {
-            printHeader();
-            nextHeader += HEADER_INTERVAL;
-        }
         if (now > nextReport) {
-            printReport();
+            printReport(out);
             nextReport += REPORT_INTERVAL;
         }
     }
-
-    private void printHeader() {
+    private static void printHeader(PrintStream out) {
         out.println("# Time used, num ok, num error, min latency, max latency, average latency");
     }
 
-    private void printReport() {
+    private synchronized void printReport(PrintStream out) {
         out.format("%10d, %12d, %11d, %11d, %11d\n", System.currentTimeMillis() - startTime,
-                   numReplies.get(), minLatency, maxLatency, sumLatency / numReplies.get());
+                numReplies.get(), minLatency, maxLatency, sumLatency / Long.max(1, numReplies.get()));
     }
 
     private static String formatErrors(Reply reply) {
