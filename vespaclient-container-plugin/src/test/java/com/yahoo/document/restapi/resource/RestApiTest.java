@@ -197,7 +197,7 @@ public class RestApiTest {
         HttpPut httpPut = new HttpPut(request.getUri());
         StringEntity entity = new StringEntity(update_test_doc, ContentType.create("application/json"));
         httpPut.setEntity(entity);
-        assertHttp400ResponseContains(doRest(httpPut), "Non valid value for 'create' parameter, must be empty, true, or false: batman");
+        assertHttp400ResponseContains(doRest(httpPut), "Invalid value for 'create' parameter: Must be empty, true, or false but was 'batman'");
     }
 
     // Get logs through some hackish fetch method. Logs is something the mocked backend write.

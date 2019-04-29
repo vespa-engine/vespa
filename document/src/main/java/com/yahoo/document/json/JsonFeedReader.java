@@ -52,7 +52,7 @@ public class JsonFeedReader implements FeedReader {
         } else if (documentOperation instanceof DocumentPut) {
             return new DocumentFeedOperation(((DocumentPut) documentOperation).getDocument(), documentOperation.getCondition());
         } else {
-            throw new IllegalStateException("Got unknown class from JSON reader: " + documentOperation.getClass().getName());
+            throw new IllegalArgumentException("Got unknown class from JSON reader: " + documentOperation.getClass().getName());
         }
     }
 

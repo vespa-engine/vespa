@@ -60,7 +60,7 @@ public class AddRemoveCreator {
                 List<FieldValue> arrayContents = new ArrayList<>();
                 ArrayReader.fillArrayUpdate(buffer, initNesting, valueType, arrayContents);
                 if (buffer.currentToken() != JsonToken.END_ARRAY) {
-                    throw new IllegalStateException("Expected END_ARRAY. Got '" + buffer.currentToken() + "'.");
+                    throw new IllegalArgumentException("Expected END_ARRAY. Got '" + buffer.currentToken() + "'.");
                 }
                 if (isRemove) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, arrayContents);
