@@ -255,7 +255,7 @@ public abstract class IndexedTensor implements Tensor {
 
             if (type.valueType() == TensorType.Value.FLOAT)
                 return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
-            else if (type.valueType() == TensorType.Value.FLOAT)
+            else if (type.valueType() == TensorType.Value.DOUBLE)
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
             else
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes); // Default
