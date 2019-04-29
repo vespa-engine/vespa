@@ -70,10 +70,7 @@ public class RemoteSession extends Session {
     }
 
     public synchronized ApplicationSet ensureApplicationLoaded() {
-        if (applicationSet == null) {
-            applicationSet = loadApplication();
-        }
-        return applicationSet;
+        return applicationSet == null ? applicationSet = loadApplication() : applicationSet;
     }
 
     public Session.Status getStatus() {
