@@ -5,9 +5,10 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>vespa</artifactId>
+        <artifactId>parent</artifactId>
         <groupId>com.yahoo.vespa</groupId>
         <version>7-SNAPSHOT</version>
+	<relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>hosted-api</artifactId>
     <description>Miscellaneous for tenant client -- hosted Vespa controller communication</description>
@@ -34,3 +35,4 @@
         </dependency>
     </dependencies>
 </project>
+
