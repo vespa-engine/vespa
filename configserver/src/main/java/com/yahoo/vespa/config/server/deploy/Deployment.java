@@ -119,9 +119,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             prepare();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-
-        try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
-            validateSessionStatus(session);
+        long sessionId = session.getSessionId();
+        validateSessionStatus(session);
+        try (Lock lock = tenant.getSessionLock(timeout)) {
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
@@ -129,15 +129,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getAllocatedHosts().getHosts());
             }
             transaction.commit();
+            session.waitUntilActivated(timeoutBudget);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new InternalServerException("Error activating application", e);
         }
-
-        session.waitUntilActivated(timeoutBudget);
-
-        log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
+        log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
                                " activated successfully using " +
                                ( hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner" ) +
                                ". Config generation " + session.getMetaData().getGeneration());
@@ -155,7 +153,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }
-
+    
     private long validateSessionStatus(LocalSession localSession) {
         long sessionId = localSession.getSessionId();
         if (Session.Status.NEW.equals(localSession.getStatus())) {

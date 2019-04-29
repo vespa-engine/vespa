@@ -72,7 +72,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Before
     public void setupRepo() {
         Curator curator = new MockCurator();
-        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenant, TenantBuilder.createLock(curator, tenant));
+        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenant);
         localSessionRepo = new LocalSessionRepo(Clock.systemUTC(), curator);
         tenantRepository = new TenantRepository(componentRegistry, false);
         sessionFactory = new MockSessionFactory();

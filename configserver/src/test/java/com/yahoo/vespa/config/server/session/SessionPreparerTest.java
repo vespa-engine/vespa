@@ -28,7 +28,6 @@ import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.Rotations;
-import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -218,7 +217,7 @@ public class SessionPreparerTest {
         return new SessionContext(app,
                                   new SessionZooKeeperClient(curator, sessionsPath),
                                   app.getAppDir(),
-                                  TenantApplications.create(curator, new MockReloadHandler(), TenantName.from("tenant"), TenantBuilder.createLock(curator, TenantName.from("tenant"))),
+                                  TenantApplications.create(curator, new MockReloadHandler(), TenantName.from("tenant")),
                                   new HostRegistry<>(),
                                   new SuperModelGenerationCounter(curator),
                                   flagSource);

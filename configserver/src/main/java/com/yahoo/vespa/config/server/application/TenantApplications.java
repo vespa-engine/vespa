@@ -11,13 +11,11 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -48,21 +46,20 @@ public class TenantApplications {
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
-    private final Lock lock;
 
-    private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant, Lock lock) {
+    private TenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
         this.curator = curator;
-        this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
+        this.applicationsPath = applicationsPath;
+        curator.create(applicationsPath);
         this.reloadHandler = reloadHandler;
         this.tenant = tenant;
-        this.lock = lock;
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this::childEvent);
     }
 
-    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant, Lock lock) {
-        return new TenantApplications(curator, reloadHandler, tenant, lock);
+    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
+        return new TenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler, tenant);
     }
 
     /**
@@ -89,15 +86,11 @@ public class TenantApplications {
             try {
                 curator.delete(applicationsPath.append(appNode));
             }
-            catch (RuntimeException e) {
+            catch (Exception e) {
                 log.log(LogLevel.WARNING, TenantRepository.logPre(tenant) + "Failed to clean up stray node '" + appNode + "'!", e);
             }
             return false;
         }
-    }
-
-    public boolean exists(ApplicationId id) {
-        return curator.exists(applicationPath(id));
     }
 
     /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
@@ -121,9 +114,7 @@ public class TenantApplications {
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        try (Lock lock = lock(id)) {
-            curator.create(applicationPath(id));
-        }
+        curator.create(applicationPath(id));
     }
 
     /**
@@ -142,7 +133,7 @@ public class TenantApplications {
      * Returns a transaction which deletes this application.
      */
     public CuratorTransaction createDeleteTransaction(ApplicationId applicationId) {
-        return CuratorTransaction.from(CuratorOperations.deleteAll(applicationPath(applicationId).getAbsolute(), curator), curator);
+        return CuratorTransaction.from(CuratorOperations.delete(applicationPath(applicationId).getAbsolute()), curator);
     }
 
     /**
@@ -157,17 +148,6 @@ public class TenantApplications {
      */
     public void close() {
         directoryCache.close();
-    }
-
-    /** Returns the lock for changing the session status of the application's tenant. */
-    public Lock lock() {
-        lock.acquire(Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
-        return lock;
-    }
-
-    /** Returns the lock for changing the session status of the given application. */
-    public Lock lock(ApplicationId id) {
-        return lock();
     }
 
     private void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {
