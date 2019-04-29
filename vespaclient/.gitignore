@@ -2,7 +2,6 @@
 *.ipr
 *.iws
 target
-/testng.out.log
 /tmp
 /pom.xml.build
 Makefile

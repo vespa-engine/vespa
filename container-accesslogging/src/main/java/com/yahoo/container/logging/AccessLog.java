@@ -5,9 +5,6 @@ package com.yahoo.container.logging;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 
-import java.net.InetSocketAddress;
-import java.net.URI;
-
 /**
  * Logs to all the configured access logs.
  *
