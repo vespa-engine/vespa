@@ -8,11 +8,14 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Simon Thoresen Hult
@@ -20,7 +23,6 @@ import java.io.PrintStream;
 class FeederParams {
 
     enum DumpFormat {JSON, VESPA};
-    private InputStream stdIn = System.in;
     private PrintStream stdErr = System.err;
     private PrintStream stdOut = System.out;
     private Route route = Route.parse("default");
@@ -30,14 +32,10 @@ class FeederParams {
     private boolean benchmarkMode = false;
     private int numDispatchThreads = 1;
     private int maxPending = 0;
+    private List<InputStream> inputStreams = new ArrayList<>();
 
-    InputStream getStdIn() {
-        return stdIn;
-    }
-
-    FeederParams setStdIn(InputStream stdIn) {
-        this.stdIn = stdIn;
-        return this;
+    FeederParams() {
+        inputStreams.add(System.in);
     }
 
     PrintStream getStdErr() {
@@ -82,11 +80,6 @@ class FeederParams {
         return this;
     }
 
-    FeederParams setMaxPending(int maxPending) {
-        this.maxPending = maxPending;
-        return this;
-    }
-
     boolean isSerialTransferEnabled() {
         return maxPending == 1;
     }
@@ -94,6 +87,11 @@ class FeederParams {
     FeederParams setSerialTransfer() {
         maxPending = 1;
         numDispatchThreads = 1;
+        return this;
+    }
+    List<InputStream> getInputStreams() { return inputStreams; }
+    FeederParams setInputStreams(List<InputStream> inputStreams) {
+        this.inputStreams = inputStreams;
         return this;
     }
 
@@ -131,6 +129,13 @@ class FeederParams {
         }
         if (cmd.hasOption('s')) {
             setSerialTransfer();
+        }
+
+        if ( !cmd.getArgList().isEmpty()) {
+            inputStreams.clear();
+            for (String fileName : cmd.getArgList()) {
+                inputStreams.add(new FileInputStream(new File(fileName)));
+            }
         }
 
         return this;

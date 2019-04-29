@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
@@ -313,7 +314,7 @@ public class SimpleFeederTest {
             server = new SimpleServer(CONFIG_DIR, validator);
             feeder = new SimpleFeeder(params.setConfigId("dir:" + CONFIG_DIR)
                                             .setStdErr(new PrintStream(err))
-                                            .setStdIn(in)
+                                            .setInputStreams(Arrays.asList(in))
                                             .setStdOut(new PrintStream(out)));
         }
 
