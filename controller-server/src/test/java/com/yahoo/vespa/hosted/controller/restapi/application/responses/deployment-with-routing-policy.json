@@ -1,0 +1,44 @@
+{
+  "tenant": "tenant1",
+  "application": "application1",
+  "instance": "default",
+  "environment": "prod",
+  "region": "us-west-1",
+  "endpoints": [
+    {
+      "cluster": "default",
+      "tls": true,
+      "url": "https://application1.tenant1.us-west-1.vespa.oath.cloud/"
+    }
+  ],
+  "serviceUrls": [
+    "http://old-endpoint.vespa.yahooapis.com:4080",
+    "http://qrs-endpoint.vespa.yahooapis.com:4080",
+    "http://feeding-endpoint.vespa.yahooapis.com:4080",
+    "http://global-endpoint.vespa.yahooapis.com:4080",
+    "http://alias-endpoint.vespa.yahooapis.com:4080"
+  ],
+  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
+  "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1",
+  "version": "(ignore)",
+  "revision": "1.0.42-commit1",
+  "deployTimeEpochMs": "(ignore)",
+  "screwdriverId": "1",
+  "gitRepository": "repository1",
+  "gitBranch": "master",
+  "gitCommit": "commit1",
+  "activity": {},
+  "cost": {
+    "tco": 0,
+    "waste": 0,
+    "utilization": 0.0,
+    "cluster": {}
+  },
+  "metrics": {
+    "queriesPerSecond": 0.0,
+    "writesPerSecond": 0.0,
+    "documentCount": 0.0,
+    "queryLatencyMillis": 0.0,
+    "writeLatencyMillis": 0.0
+  }
+}

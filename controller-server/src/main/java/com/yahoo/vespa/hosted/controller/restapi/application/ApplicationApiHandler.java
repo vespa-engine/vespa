@@ -508,7 +508,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies(application.id());
         for (RoutingPolicy policy : routingPolicies) {
-            policy.endpointsIn(controller.system()).asList().stream()
+            policy.rotationEndpointsIn(controller.system()).asList().stream()
                   .map(Endpoint::url)
                   .map(URI::toString)
                   .forEach(globalRotationsArray::addString);
@@ -584,12 +584,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
-
         response.setString("tenant", deploymentId.applicationId().tenant().value());
         response.setString("application", deploymentId.applicationId().application().value());
         response.setString("instance", deploymentId.applicationId().instance().value()); // pointless
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
+
+        // Add endpoint(s) defined by routing policies
+        var endpointArray = response.setArray("endpoints");
+        for (var policy : controller.applications().routingPolicies(deploymentId.applicationId())) {
+            Cursor endpointObject = endpointArray.addObject();
+            Endpoint endpoint = policy.endpointIn(controller.system());
+            endpointObject.setString("cluster", policy.cluster().value());
+            endpointObject.setBool("tls", endpoint.tls());
+            endpointObject.setString("url", endpoint.url().toString());
+        }
 
         // serviceUrls contains zone/cluster-specific endpoints for this deployment. The name of these endpoints may
         // contain  the cluster name (if non-default) and since the controller has no knowledge of clusters, we have to
