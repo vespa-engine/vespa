@@ -68,14 +68,10 @@ public class Arguments {
                 "  -h [ --help ]                 Shows this help page.\n" +
                 "  --maxpending arg              The maximum number of operations that are allowed\n" +
                 "                                to be pending at any given time. NOTE: This disables dynamic throttling. Use with care.\n" +
-                "  --maxpendingsize arg          The maximum size (in bytes) of operations that \n" +
-                "                                are allowed to be pending at any given time. \n" +
                 "  --maxfeedrate arg             Limits the feed rate to the given number (operations/second). You may still want to increase\n" +
                 "                                the max pending size if your feed rate doesn't reach the desired number.\n" +
                 "  --mode arg (=standard)        The mode to run vespa-feeder in (standard | benchmark).\n" +
                 "  --noretry                     Turns off retries of recoverable failures.\n" +
-                "  --retrydelay arg (=1)         The time (in seconds) to wait between retries of \n" +
-                "                                a failed operation.\n" +
                 "  --route arg (=default)        The route to send the data to.\n" +
                 "  --timeout arg (=180)          The time (in seconds) allowed for sending \n" +
                 "                                operations.\n" +

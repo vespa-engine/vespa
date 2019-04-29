@@ -38,7 +38,7 @@ public class VespaFeederTestCase {
     @Test
     public void testParseArgs() throws Exception {
         String argsS="--abortondataerror false --abortonsenderror false --file foo.xml --maxpending 10" +
-                " --maxpendingsize 11 --maxfeedrate 29 --mode benchmark --noretry --retrydelay 12 --route e6 --timeout 13 --trace 4" +
+                " --maxfeedrate 29 --mode benchmark --noretry --route e6 --timeout 13 --trace 4" +
                 " --validate -v bar.xml --priority LOW_1";
 
         Arguments arguments = new Arguments(argsS.split(" "), DummySessionFactory.createWithAutoReply());
