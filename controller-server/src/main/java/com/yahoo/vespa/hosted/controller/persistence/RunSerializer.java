@@ -50,7 +50,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.Comparator.comparing;
 
 /**
- * Serialises and deserialises RunStatus objects for persistent storage.
+ * Serialises and deserialises {@link Run} objects for persistent storage.
  *
  * @author jonmv
  */

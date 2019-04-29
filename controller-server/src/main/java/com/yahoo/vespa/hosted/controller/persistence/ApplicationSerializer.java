@@ -47,7 +47,7 @@ import java.util.OptionalLong;
 import java.util.TreeMap;
 
 /**
- * Serializes applications to/from slime.
+ * Serializes {@link Application} to/from slime.
  * This class is multithread safe.
  *
  * @author bratseth

@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Slime serializer for the audit log.
+ * Slime serializer for {@link AuditLog}.
  *
  * @author mpolden
  */
