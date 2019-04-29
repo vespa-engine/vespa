@@ -1,6 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(storage_bucketdb OBJECT
     SOURCES
+    btree_bucket_database.cpp
     bucketcopy.cpp
     bucketdatabase.cpp
     bucketinfo.cpp

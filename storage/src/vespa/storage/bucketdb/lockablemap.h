@@ -305,7 +305,7 @@ private:
      * Find the given list of keys in the map and add them to the map of
      * results, locking them in the process.
      */
-    void addAndLockResults(const std::vector<BucketId::Type> keys,
+    void addAndLockResults(const std::vector<BucketId::Type>& keys,
                            const char* clientId,
                            std::map<BucketId, WrappedEntry>& results,
                            std::unique_lock<std::mutex> &guard);

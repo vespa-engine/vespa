@@ -15,11 +15,10 @@
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <sstream>
 #include <iomanip>
-
-#include <gtest/gtest.h>
 
 using namespace storage::api;
 using namespace storage::lib;

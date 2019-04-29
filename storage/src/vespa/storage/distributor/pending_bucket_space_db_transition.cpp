@@ -49,9 +49,7 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
     }
 }
 
-PendingBucketSpaceDbTransition::~PendingBucketSpaceDbTransition()
-{
-}
+PendingBucketSpaceDbTransition::~PendingBucketSpaceDbTransition() = default;
 
 PendingBucketSpaceDbTransition::Range
 PendingBucketSpaceDbTransition::skipAllForSameBucket()

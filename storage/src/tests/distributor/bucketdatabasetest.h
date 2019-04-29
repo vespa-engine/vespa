@@ -3,40 +3,13 @@
 
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/storageutil/utils.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vespalib/util/document_runnable.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <functional>
 
-#define SETUP_DATABASE_TESTS() \
-    CPPUNIT_TEST(testUpdateGetAndRemove); \
-    CPPUNIT_TEST(testClear); \
-    CPPUNIT_TEST(testIterating); \
-    CPPUNIT_TEST(testFindParents); \
-    CPPUNIT_TEST(testFindAll); \
-    CPPUNIT_TEST(testCreateAppropriateBucket); \
-    CPPUNIT_TEST(testGetNext); \
-    CPPUNIT_TEST(testGetNextReturnsUpperBoundBucket); \
-    CPPUNIT_TEST(testUpperBoundReturnsNextInOrderGreaterBucket); \
-    CPPUNIT_TEST(testChildCount);
+namespace storage::distributor {
 
-namespace storage {
-namespace distributor {
-
-struct BucketDatabaseTest : public CppUnit::TestFixture {
-    void setUp() override ;
-
-    void testUpdateGetAndRemove();
-    void testClear();
-    void testIterating();
-    void testFindParents();
-    void testFindAll();
-    void testCreateAppropriateBucket();
-    void testGetNext();
-    void testGetNextReturnsUpperBoundBucket();
-    void testUpperBoundReturnsNextInOrderGreaterBucket();
-    void testChildCount();
-
-    void testBenchmark();
+struct BucketDatabaseTest : public ::testing::TestWithParam<std::shared_ptr<BucketDatabase>> {
+    void SetUp() override ;
 
     std::string doFindParents(const std::vector<document::BucketId>& ids,
                               const document::BucketId& searchId);
@@ -46,9 +19,8 @@ struct BucketDatabaseTest : public CppUnit::TestFixture {
                                 uint32_t minBits,
                                 const document::BucketId& wantedId);
 
-    virtual BucketDatabase& db() = 0;
+    BucketDatabase& db() noexcept { return *GetParam(); }
 
-private:
     using UBoundFunc = std::function<
             document::BucketId(const BucketDatabase&,
                                const document::BucketId&)>;
@@ -57,6 +29,3 @@ private:
 };
 
 }
-
-}
-

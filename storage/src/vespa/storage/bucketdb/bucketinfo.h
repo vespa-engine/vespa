@@ -22,7 +22,13 @@ private:
 
 public:
     BucketInfo();
+    BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes);
     ~BucketInfo();
+
+    BucketInfo(const BucketInfo&);
+    BucketInfo& operator=(const BucketInfo&);
+    BucketInfo(BucketInfo&&) noexcept;
+    BucketInfo& operator=(BucketInfo&&) noexcept;
 
     /**
      * @return Returns the last time when this bucket was "garbage collected".
@@ -134,6 +140,10 @@ public:
     */
     const BucketCopy& getNodeRef(uint16_t idx) const {
         return _nodes[idx];
+    }
+
+    const std::vector<BucketCopy>& getRawNodes() const noexcept {
+        return _nodes;
     }
 
     void clearTrusted(uint16_t nodeIdx) {

@@ -6,10 +6,21 @@
 namespace storage {
 
 BucketInfo::BucketInfo()
-    : _lastGarbageCollection(0)
-{ }
+    : _lastGarbageCollection(0),
+      _nodes()
+{}
 
-BucketInfo::~BucketInfo() { }
+BucketInfo::BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes)
+    : _lastGarbageCollection(lastGarbageCollection),
+      _nodes(std::move(nodes))
+{}
+
+BucketInfo::~BucketInfo() = default;
+
+BucketInfo::BucketInfo(const BucketInfo&) = default;
+BucketInfo& BucketInfo::operator=(const BucketInfo&) = default;
+BucketInfo::BucketInfo(BucketInfo&&) noexcept = default;
+BucketInfo& BucketInfo::operator=(BucketInfo&&) noexcept = default;
 
 std::string
 BucketInfo::toString() const {
