@@ -386,10 +386,10 @@ public class SimpleFeeder implements ReplyHandler {
         while (failure.get() == null && numReplies.get() < numMessagesSent) {
             Thread.sleep(100);
         }
-        printReport(out);
         if (failure.get() != null) {
             throw failure.get();
         }
+        printReport(out);
         return this;
     }
 
@@ -448,9 +448,9 @@ public class SimpleFeeder implements ReplyHandler {
         out.println("# Time used, num ok, num error, min latency, max latency, average latency");
     }
 
-    private void printReport(PrintStream out) {
+    private synchronized void printReport(PrintStream out) {
         out.format("%10d, %12d, %11d, %11d, %11d\n", System.currentTimeMillis() - startTime,
-                numReplies.get(), minLatency, maxLatency, sumLatency / numReplies.get());
+                numReplies.get(), minLatency, maxLatency, sumLatency / Long.max(1, numReplies.get()));
     }
 
     private static String formatErrors(Reply reply) {
