@@ -5,11 +5,11 @@ import com.google.common.collect.Lists;
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilterChain.RequestViewImpl;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
 
 /**
  * @author gjoranv

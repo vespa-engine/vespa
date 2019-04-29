@@ -8,8 +8,8 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
+import org.junit.Test;
 import org.mockito.verification.VerificationMode;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

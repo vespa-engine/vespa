@@ -7,7 +7,7 @@ import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

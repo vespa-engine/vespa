@@ -6,16 +6,16 @@ import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.statistic.RateStatistic;
 import org.eclipse.jetty.util.thread.Scheduler;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static org.testng.Assert.assertNotNull;
 
 /**
  * @author bjorncs

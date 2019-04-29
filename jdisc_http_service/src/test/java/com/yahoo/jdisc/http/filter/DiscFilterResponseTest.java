@@ -1,22 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
-import static org.testng.AssertJUnit.assertTrue;
-
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.util.Collections;
-
-import java.util.List;
-
 import com.yahoo.jdisc.Request;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.test.TestDriver;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 public class DiscFilterResponseTest {
 

@@ -7,16 +7,16 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.filter.chain.EmptyResponseFilter;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.net.URI;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 import static com.yahoo.jdisc.http.HttpRequest.Version;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
 
 /**
  * @author Simon Thoresen Hult

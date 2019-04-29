@@ -15,7 +15,7 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpTrace;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.net.URI;
 

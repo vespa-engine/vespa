@@ -653,11 +653,6 @@
                 <version>4.0.6.RELEASE</version>
             </dependency>
             <dependency>
-                <groupId>org.testng</groupId>
-                <artifactId>testng</artifactId>
-                <version>6.10</version>
-            </dependency>
-            <dependency>
                 <groupId>org.twdata.maven</groupId>
                 <artifactId>mojo-executor</artifactId>
                 <version>2.3.0</version>

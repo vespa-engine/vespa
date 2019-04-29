@@ -25,7 +25,7 @@ import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.net.BindException;
 import java.net.URI;
