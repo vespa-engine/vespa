@@ -7,6 +7,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,7 +23,8 @@ import java.util.List;
  */
 class FeederParams {
 
-    enum DumpFormat {JSON, VESPA};
+    private static final int BUFFER_SIZE = 0x100000;
+    enum DumpFormat {JSON, VESPA}
     private PrintStream stdErr = System.err;
     private PrintStream stdOut = System.out;
     private Route route = Route.parse("default");
@@ -134,7 +136,7 @@ class FeederParams {
         if ( !cmd.getArgList().isEmpty()) {
             inputStreams.clear();
             for (String fileName : cmd.getArgList()) {
-                inputStreams.add(new FileInputStream(new File(fileName)));
+                inputStreams.add(new BufferedInputStream(new FileInputStream(new File(fileName)), BUFFER_SIZE));
             }
         }
 

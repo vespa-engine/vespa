@@ -5,6 +5,7 @@ import com.yahoo.messagebus.routing.Route;
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -119,8 +120,8 @@ public class FeederParamsTest {
         p.parseArgs("-n", "3", TESTFILE_JSON, TESTFILE_VESPA);
         assertEquals(3, p.getNumDispatchThreads());
         assertEquals(2, p.getInputStreams().size());
-        assertTrue(p.getInputStreams().get(0) instanceof FileInputStream);
-        assertTrue(p.getInputStreams().get(1) instanceof FileInputStream);
+        assertTrue(p.getInputStreams().get(0) instanceof BufferedInputStream);
+        assertTrue(p.getInputStreams().get(1) instanceof BufferedInputStream);
         json.delete();
         vespa.delete();
     }
