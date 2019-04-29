@@ -11,6 +11,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -34,7 +35,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -1344,8 +1344,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void applicationWithPerClusterGlobalRotation() {
+    public void applicationWithRoutingPolicy() {
         Application app = controllerTester.createApplication();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        controllerTester.deployCompletely(app, applicationPackage, 1, false);
         RoutingPolicy policy = new RoutingPolicy(app.id(),
                                                  ClusterSpec.Id.from("default"),
                                                  ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
@@ -1356,7 +1361,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
                                       .userIdentity(USER_ID),
-                              new File("application-cluster-global-rotation.json"));
+                              new File("application-with-routing-policy.json"));
+
+        // GET deployment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default", GET)
+                                      .userIdentity(USER_ID),
+                              new File("deployment-with-routing-policy.json"));
     }
 
     private void notifyCompletion(DeploymentJobs.JobReport report, ContainerControllerTester tester) {
