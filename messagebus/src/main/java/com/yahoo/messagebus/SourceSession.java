@@ -29,14 +29,14 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
     private final Queue<BlockedMessage> blockedQ = new LinkedList<>();
 
     /**
-     * <p>The default constructor requires values for all final member variables
+     * The default constructor requires values for all final member variables
      * of this. It expects all arguments but the {@link SourceSessionParams} to
      * be proper, so no checks are performed. The constructor is declared
      * package private since only {@link MessageBus} is supposed to instantiate
-     * it.</p>
+     * it.
      *
-     * @param mbus   The message bus that created this instance.
-     * @param params A parameter object that holds configuration parameters.
+     * @param mbus   the message bus that created this instance
+     * @param params a parameter object that holds configuration parameters
      */
     SourceSession(MessageBus mbus, SourceSessionParams params) {
         this.mbus = mbus;
@@ -221,15 +221,15 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
     }
 
     /**
-     * <p>This is a blocking proxy to the {@link #send(Message)} method. This
+     * This is a blocking proxy to the {@link #send(Message)} method. This
      * method blocks until the message is accepted by the send queue. Note that
      * the message timeout does not activate by calling this method. This method
      * will also return if this session is closed or the calling thread is
-     * interrupted.</p>
+     * interrupted.
      *
-     * @param msg The message to send.
-     * @return The result of initiating send.
-     * @throws InterruptedException Thrown if the calling thread is interrupted.
+     * @param msg the message to send
+     * @return the result of initiating send
+     * @throws InterruptedException thrown if the calling thread is interrupted
      */
     public Result sendBlocking(Message msg) throws InterruptedException {
         Result res = send(msg);
@@ -287,44 +287,43 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
     }
 
     /**
-     * <p>This is a convenience function to assign a given route to the given
+     * This is a convenience function to assign a given route to the given
      * message, and then pass it to the other {@link #send(Message)} method of
-     * this session.</p>
+     * this session.
      *
-     * @param msg   The message to send.
-     * @param route The route to assign to the message.
-     * @return The immediate result of the attempt to send this message.
+     * @param msg   the message to send
+     * @param route the route to assign to the message
+     * @return the immediate result of the attempt to send this message
      */
     public Result send(Message msg, Route route) {
         return send(msg.setRoute(route));
     }
 
     /**
-     * <p>This is a convenience method to call {@link
+     * This is a convenience method to call {@link
      * #send(Message,String,boolean)} with a <code>false</code> value for the
-     * 'parseIfNotFound' parameter.</p>
+     * 'parseIfNotFound' parameter.
      *
-     * @param msg       The message to send.
-     * @param routeName The route to assign to the message.
-     * @return The immediate result of the attempt to send this message.
+     * @param msg       the message to send
+     * @param routeName the route to assign to the message
+     * @return the immediate result of the attempt to send this message
      */
     public Result send(Message msg, String routeName) {
         return send(msg, routeName, false);
     }
 
     /**
-     * <p>This is a convenience function to assign a named route to the given
+     * This is a convenience function to assign a named route to the given
      * message, and then pass it to the other {@link #send(Message)} method of
      * this session. If the route could not be found this methods returns with
      * an appropriate error, unless the 'parseIfNotFound' argument is true. In
      * that case, the route name is passed through to the Route factory method
-     * {@link Route#parse}.</p>
+     * {@link Route#parse}.
      *
-     * @param msg             The message to send.
-     * @param routeName       The route to assign to the message.
-     * @param parseIfNotFound Whether or not to parse routeName as a route if
-     *                        it could not be found.
-     * @return The immediate result of the attempt to send this message.
+     * @param msg             the message to send
+     * @param routeName       the route to assign to the message
+     * @param parseIfNotFound whether or not to parse routeName as a route if it could not be found
+     * @return the immediate result of the attempt to send this message
      */
     public Result send(Message msg, String routeName, boolean parseIfNotFound) {
         boolean found = false;
@@ -334,48 +333,39 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
             if (route != null) {
                 msg.setRoute(new Route(route));
                 found = true;
-            } else if (!parseIfNotFound) {
+            } else if ( ! parseIfNotFound) {
                 return new Result(ErrorCode.ILLEGAL_ROUTE,
                                   "Route '" + routeName + "' not found for protocol '" + msg.getProtocol() + "'.");
             }
-        } else if (!parseIfNotFound) {
+        } else if ( ! parseIfNotFound) {
             return new Result(ErrorCode.ILLEGAL_ROUTE,
                               "Protocol '" + msg.getProtocol() + "' has no routing table.");
         }
-        if (!found) {
+        if ( ! found) {
             msg.setRoute(Route.parse(routeName));
         }
         return send(msg);
     }
 
-    /**
-     * <p>Returns the reply handler of this session.</p>
-     *
-     * @return The reply handler.
-     */
+    /** Returns the reply handler of this session */
     public ReplyHandler getReplyHandler() {
         return replyHandler;
     }
 
-    /**
-     * <p>Returns the number of messages sent that have not been replied to
-     * yet.</p>
-     *
-     * @return The pending count.
-     */
+    /** Returns the number of messages sent that have not been replied to yet */
     public int getPendingCount() {
         return pendingCount;
     }
 
     /**
-     * <p>Sets the number of seconds a message can be attempted sent until it
-     * times out.</p>
+     * Sets the number of seconds a message can be attempted sent until it times out.
      *
-     * @param timeout The numer of seconds allowed.
-     * @return This, to allow chaining.
+     * @param timeout the number of seconds allowed.
+     * @return this, to allow chaining.
      */
     public SourceSession setTimeout(double timeout) {
         this.timeout = timeout;
         return this;
     }
+
 }
