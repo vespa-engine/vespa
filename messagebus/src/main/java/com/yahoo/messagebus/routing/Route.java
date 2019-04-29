@@ -47,11 +47,11 @@ public class Route {
     }
 
     /**
-     * <p>Parses the given string as a list of space-separated hops. The {@link
-     * #toString()} method is compatible with this parser.</p>
+     * Parses the given string as a list of space-separated hops. The {@link #toString()}
+     * method is compatible with this parser.
      *
-     * @param str The string to parse.
-     * @return A route that corresponds to the string.
+     * @param str the string to parse
+     * @return a route that corresponds to the string
      */
     public static Route parse(String str) {
         if (str == null || str.length() == 0) {

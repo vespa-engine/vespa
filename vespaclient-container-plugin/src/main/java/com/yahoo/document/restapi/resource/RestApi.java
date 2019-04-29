@@ -210,7 +210,7 @@ public class RestApi extends LoggingRequestHandler {
             }
 
             String condition = request.getProperty(CONDITION_PARAMETER_NAME);
-            Optional<String> route = Optional.ofNullable(request.getProperty(ROUTE_PARAMETER_NAME));
+            Optional<String> route = Optional.ofNullable(nonEmpty(request.getProperty(ROUTE_PARAMETER_NAME), ROUTE_PARAMETER_NAME));
 
             Optional<ObjectNode> resultJson = Optional.empty();
             switch (request.getMethod()) {
@@ -349,6 +349,13 @@ public class RestApi extends LoggingRequestHandler {
             }
         }
         return builder.toString();
+    }
+
+
+    private String nonEmpty(String value, String name) {
+        if (value != null && value.isEmpty())
+            throw new IllegalArgumentException("'" + name + "' cannot be empty");
+        return value;
     }
 
     private static long parseAndValidateVisitNumericId(String value) {
