@@ -56,6 +56,14 @@ public class MultiPartStreamer {
         return this;
     }
 
+    /** Adds the given data as a named part in this, using the {@code "application/octet-stream" content type}. */
+    public MultiPartStreamer addBytes(String name, byte[] data) {
+        streams.add(() -> separator(name, "application/octet-stream"));
+        streams.add(() -> new ByteArrayInputStream(data));
+
+        return this;
+    }
+
     /** Adds the contents of the file at the given path as a named part in this. */
     public MultiPartStreamer addFile(String name, Path path) {
         streams.add(() -> separator(name, path));
