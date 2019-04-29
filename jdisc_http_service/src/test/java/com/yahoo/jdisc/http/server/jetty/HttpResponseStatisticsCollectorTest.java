@@ -17,8 +17,8 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.Callback;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -98,7 +98,7 @@ public class HttpResponseStatisticsCollectorTest {
         assertStatisticsEntryPresent(stats, "http", "GET", Metrics.RESPONSES_2XX, 1L);
     }
 
-    @BeforeTest
+    @Before
     public void initializeCollector() throws Exception {
         Server server = new Server();
         connector = new AbstractConnector(server, null, null, null, 0) {

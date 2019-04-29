@@ -19,14 +19,14 @@ import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
-import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
-import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.jdisc.http.filter.ResponseHeaderFilter;
+import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
+import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
 import com.yahoo.jdisc.http.server.FilterBindings;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

@@ -1,6 +1,5 @@
 configserver.iml
 target
 tmp
-/testng.out.log
 /pom.xml.build
 Makefile

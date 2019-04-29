@@ -5,10 +5,10 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.HttpConnection;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -16,9 +16,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.jdisc.http.HttpRequest.Version;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Test the parts of the DiscFilterRequest API that are implemented
@@ -46,8 +46,8 @@ public class ServletFilterRequestTest {
     private DiscFilterRequest filterRequest;
     private ServletRequest parentRequest;
 
-    @BeforeMethod
-    private void init() throws Exception {
+    @Before
+    public void init() throws Exception {
         uri = new URI("http", null, host, port, path, paramName + "=" + paramValue, null);
 
         filterRequest = new ServletFilterRequest(newServletRequest());
