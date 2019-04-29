@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketdbupdater.h"
+#include "bucket_db_prune_elision.h"
 #include "distributor.h"
 #include "distributor_bucket_space.h"
 #include "simpleclusterinformation.h"
@@ -119,23 +120,37 @@ BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
 
 void
 BucketDBUpdater::removeSuperfluousBuckets(
-        const lib::ClusterStateBundle& newState)
+        const lib::ClusterStateBundle& newState,
+        bool is_distribution_config_change)
 {
     const bool move_to_read_only_db = shouldDeferStateEnabling();
-    for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
-        const auto &newDistribution(elem.second->getDistribution());
-        const auto &oldClusterState(elem.second->getClusterState());
-        auto &bucketDb(elem.second->getBucketDatabase());
+    const char* up_states = _distributorComponent.getDistributor().getStorageNodeUpStates();
+    for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
+        const auto& newDistribution(elem.second->getDistribution());
+        const auto& oldClusterState(elem.second->getClusterState());
+        const auto& new_cluster_state = newState.getDerivedClusterState(elem.first);
+
+        // Running a full DB sweep is expensive, so if the cluster state transition does
+        // not actually indicate that buckets should possibly be removed, we elide it entirely.
+        if (!is_distribution_config_change
+            && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
+        {
+            LOG(debug, "Eliding DB pruning for state transition '%s' -> '%s'",
+                oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
+            continue;
+        }
+
+        auto& bucketDb(elem.second->getBucketDatabase());
         auto& readOnlyDb(_distributorComponent.getReadOnlyBucketSpaceRepo().get(elem.first).getBucketDatabase());
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
         NodeRemover proc(
                 oldClusterState,
-                *newState.getDerivedClusterState(elem.first),
+                *new_cluster_state,
                 _distributorComponent.getIndex(),
                 newDistribution,
-                _distributorComponent.getDistributor().getStorageNodeUpStates());
+                up_states);
         bucketDb.forEach(proc);
 
         for (const auto & bucket : proc.getBucketsToRemove()) {
@@ -184,7 +199,7 @@ BucketDBUpdater::storageDistributionChanged()
 {
     ensureTransitionTimerStarted();
 
-    removeSuperfluousBuckets(_distributorComponent.getClusterStateBundle());
+    removeSuperfluousBuckets(_distributorComponent.getClusterStateBundle(), true);
 
     ClusterInformation::CSP clusterInfo(new SimpleClusterInformation(
             _distributorComponent.getIndex(),
@@ -237,7 +252,7 @@ BucketDBUpdater::onSetSystemState(
     // Separate timer since _transitionTimer might span multiple pending states.
     framework::MilliSecTimer process_timer(_distributorComponent.getClock());
     
-    removeSuperfluousBuckets(cmd->getClusterStateBundle());
+    removeSuperfluousBuckets(cmd->getClusterStateBundle(), false);
     replyToPreviousPendingClusterStateIfAny();
 
     ClusterInformation::CSP clusterInfo(
