@@ -385,8 +385,8 @@ public class SearchCluster implements NodeManager<Node> {
         if(changed) {
             int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
-                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)", index, group.getActiveDocuments(), group.workingNodes(), groupSize(),
-                        requiredNodes));
+                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)", index,
+                        group.getActiveDocuments(), averageDocuments, group.workingNodes(), groupSize()));
             } else {
                 log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d)", index, group.workingNodes(), groupSize(),
                         requiredNodes));
