@@ -126,10 +126,11 @@ public final class ErrorCode {
         return code >= FATAL_ERROR;
     }
     public static boolean isTransient(int code) {
-        return code >= TRANSIENT_ERROR;
+        return (code >= TRANSIENT_ERROR) && (code < FATAL_ERROR);
     }
     public static boolean isMBusError(int code) {
         return ((code < APP_TRANSIENT_ERROR) && isTransient(code))
-               || ((code < APP_FATAL_ERROR) && isFatal(code));
+               || ((code < APP_FATAL_ERROR) && isFatal(code))
+               || ((code < TRANSIENT_ERROR) && (code >= NONE));
     }
 }

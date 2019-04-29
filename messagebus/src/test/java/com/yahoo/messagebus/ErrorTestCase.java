@@ -89,4 +89,40 @@ public class ErrorTestCase {
         src.destroy();
         slobrok.stop();
     }
+    @Test
+    public void testErrorCodeCategorization() {
+        assertTrue(ErrorCode.isFatal(ErrorCode.FATAL_ERROR));
+        assertFalse(ErrorCode.isTransient(ErrorCode.FATAL_ERROR));
+        assertTrue(ErrorCode.isMBusError(ErrorCode.FATAL_ERROR));
+
+        assertTrue(ErrorCode.isFatal(ErrorCode.APP_FATAL_ERROR));
+        assertFalse(ErrorCode.isTransient(ErrorCode.APP_FATAL_ERROR));
+        assertFalse(ErrorCode.isMBusError(ErrorCode.APP_FATAL_ERROR));
+
+
+        assertFalse(ErrorCode.isFatal(ErrorCode.TRANSIENT_ERROR));
+        assertTrue(ErrorCode.isTransient(ErrorCode.TRANSIENT_ERROR));
+        assertTrue(ErrorCode.isMBusError(ErrorCode.TRANSIENT_ERROR));
+
+        assertFalse(ErrorCode.isFatal(ErrorCode.APP_TRANSIENT_ERROR));
+        assertTrue(ErrorCode.isTransient(ErrorCode.APP_TRANSIENT_ERROR));
+        assertFalse(ErrorCode.isMBusError(ErrorCode.APP_TRANSIENT_ERROR));
+
+        assertFalse(ErrorCode.isFatal(ErrorCode.APP_TRANSIENT_ERROR - 1));
+        assertTrue(ErrorCode.isTransient(ErrorCode.APP_TRANSIENT_ERROR - 1));
+        assertTrue(ErrorCode.isMBusError(ErrorCode.APP_TRANSIENT_ERROR - 1));
+
+        assertFalse(ErrorCode.isFatal(ErrorCode.FATAL_ERROR - 1));
+        assertTrue(ErrorCode.isTransient(ErrorCode.FATAL_ERROR - 1));
+        assertFalse(ErrorCode.isMBusError(ErrorCode.FATAL_ERROR - 1));
+
+        assertFalse(ErrorCode.isFatal(ErrorCode.TRANSIENT_ERROR - 1));
+        assertFalse(ErrorCode.isTransient(ErrorCode.TRANSIENT_ERROR - 1));
+        assertTrue(ErrorCode.isMBusError(ErrorCode.TRANSIENT_ERROR - 1));
+
+        assertFalse(ErrorCode.isFatal(ErrorCode.NONE));
+        assertFalse(ErrorCode.isTransient(ErrorCode.NONE));
+        assertTrue(ErrorCode.isMBusError(ErrorCode.NONE));
+
+    }
 }
