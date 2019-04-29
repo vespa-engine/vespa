@@ -1,20 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
-import com.yahoo.container.Container;
-import com.yahoo.docproc.DocprocService;
-import com.yahoo.docproc.jdisc.DocumentProcessingHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
@@ -29,6 +24,8 @@ import java.util.logging.Logger;
 public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscriber<FeederConfig> {
 
     private static final Logger log = Logger.getLogger(MessagePropertyProcessor.class.getName());
+    private static final boolean defaultCreateIfNonExistent = false;
+
     private FeederOptions feederOptions = null;
     private Route defaultRoute = null;
     private long defaultTimeoutMillis = 0;
@@ -36,8 +33,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
     private String defaultDocprocChain = null;
     private boolean defaultAbortOnDocumentError = true;
     private boolean defaultAbortOnSendError = true;
-    private boolean defaultCreateIfNonExistent = false;
-    private LoadTypeSet loadTypes = null;
+    private final LoadTypeSet loadTypes;
     private boolean configChanged = false;
 
 
@@ -48,50 +44,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
 
     public void setRoute(String routeOverride) {
         defaultRoute = Route.parse(routeOverride);
-    }
-
-    private synchronized String getDocprocChainParameter(HttpRequest request) {
-        String docprocChainParam = request.getProperty("docprocchain");
-        return (docprocChainParam == null ? defaultDocprocChain : docprocChainParam);
-    }
-
-    public synchronized DocprocService getDocprocChain(HttpRequest request) {
-        ComponentRegistry<DocprocService> services = getDocprocServiceRegistry(request);
-
-        String docprocChain = getDocprocChainParameter(request);
-        if (docprocChain == null) {
-            return null;
-        }
-
-        return services.getComponent(docprocChain);
-    }
-
-    public synchronized ComponentRegistry<DocprocService> getDocprocServiceRegistry(HttpRequest request) {
-        String docprocChain = getDocprocChainParameter(request);
-        if (docprocChain == null) {
-            return null;
-        }
-
-        Container container = Container.get();
-        if (container == null) {
-            throw new IllegalStateException("Could not get Container instance.");
-        }
-
-        ComponentRegistry<RequestHandler> requestHandlerRegistry = container.getRequestHandlerRegistry();
-        if (requestHandlerRegistry == null) {
-            throw new IllegalStateException("Could not get requesthandlerregistry.");
-        }
-
-        DocumentProcessingHandler handler = (DocumentProcessingHandler) requestHandlerRegistry
-                .getComponent(DocumentProcessingHandler.class.getName());
-        if (handler == null) {
-            return null;
-        }
-        ComponentRegistry<DocprocService> services = handler.getDocprocServiceRegistry();
-        if (services == null) {
-            throw new IllegalStateException("Could not get DocprocServiceRegistry.");
-        }
-        return services;
     }
 
     public PropertySetter buildPropertySetter(HttpRequest request) {
@@ -163,15 +115,15 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
 
     public long getDefaultTimeoutMillis() { return defaultTimeoutMillis; }
     
-    public synchronized boolean configChanged() {
+    synchronized boolean configChanged() {
         return configChanged;
     }
 
-    public synchronized void setConfigChanged(boolean configChanged) {
+    synchronized void setConfigChanged(boolean configChanged) {
         this.configChanged = configChanged;
     }
 
-    public synchronized FeederOptions getFeederOptions() {
+    synchronized FeederOptions getFeederOptions() {
         return feederOptions;
     }
 
@@ -180,7 +132,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         configure(config);
     }
 
-    public LoadTypeSet getLoadTypes() {
+    LoadTypeSet getLoadTypes() {
         return loadTypes;
     }
 
@@ -199,12 +151,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         retryEnabled = feederOptions.getRetryEnabled();
         defaultAbortOnDocumentError = feederOptions.abortOnDocumentError();
         defaultAbortOnSendError = feederOptions.abortOnSendError();
-
-        if (!"".equals(feederOptions.getDocprocChain())) {
-            defaultDocprocChain = feederOptions.getDocprocChain();
-        } else {
-            defaultDocprocChain = null;
-        }
 
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Received new config (" +
@@ -232,9 +178,9 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private LoadType loadType;
         private int traceLevel;
 
-        public PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority, LoadType loadType,
-                              boolean retryEnabled, boolean abortOnDocumentError, boolean abortOnFeedError,
-                              boolean createIfNonExistent, int traceLevel) {
+        PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority, LoadType loadType,
+                       boolean retryEnabled, boolean abortOnDocumentError, boolean abortOnFeedError,
+                       boolean createIfNonExistent, int traceLevel) {
             this.route = route;
             this.timeout = timeout;
             this.totalTimeout = totalTimeout;

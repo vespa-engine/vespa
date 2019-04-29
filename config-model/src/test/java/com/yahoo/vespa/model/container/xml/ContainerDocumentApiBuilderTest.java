@@ -42,7 +42,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 "  <document-api>",
                 "    <abortondocumenterror>false</abortondocumenterror>",
                 "    <maxpendingdocs>4321</maxpendingdocs>",
-                "    <retrydelay>12.34</retrydelay>",
                 "    <route>non-default</route>",
                 "  </document-api>",
                 nodesXml,
@@ -54,7 +53,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         FeederConfig config = new FeederConfig(builder);
         assertThat(config.abortondocumenterror(), is(false));
         assertThat(config.maxpendingdocs(), is(4321));
-        assertThat(config.retrydelay(), is(12.34));
         assertThat(config.route(), is("non-default"));
     }
 

@@ -26,13 +26,10 @@ public class DocumentApiOptionsBuilder {
                 getAbortOnDocumentError(spec),
                 getRoute(spec),
                 getMaxPendingDocs(spec),
-                getMaxPendingBytes(spec),
                 getRetryEnabled(spec),
-                getRetryDelay(spec),
                 getTimeout(spec),
                 getTracelevel(spec),
-                getMbusPort(spec),
-                getDocprocChain(spec));
+                getMbusPort(spec));
     }
 
     private static List<String> getBindings(Element spec) {
@@ -70,10 +67,6 @@ public class DocumentApiOptionsBuilder {
         return value.isEmpty() ? null : value;
     }
 
-    private static String getDocprocChain(Element spec) {
-        return getCleanValue(spec, "docprocchain");
-    }
-
     private static Integer getMbusPort(Element spec) {
         String value = getCleanValue(spec, "mbusport");
         return value == null ? null : Integer.parseInt(value);
@@ -89,19 +82,9 @@ public class DocumentApiOptionsBuilder {
         return value == null ? null : Double.parseDouble(value);
     }
 
-    private static Double getRetryDelay(Element spec) {
-        String value = getCleanValue(spec, "retrydelay");
-        return value == null ? null : Double.parseDouble(value);
-    }
-
     private static Boolean getRetryEnabled(Element spec) {
         String value = getCleanValue(spec, "retryenabled");
         return value == null ? null : Boolean.parseBoolean(value);
-    }
-
-    private static Integer getMaxPendingBytes(Element spec) {
-        String value = getCleanValue(spec, "maxpendingbytes");
-        return value == null ? null : Integer.parseInt(value);
     }
 
     private static Integer getMaxPendingDocs(Element spec) {

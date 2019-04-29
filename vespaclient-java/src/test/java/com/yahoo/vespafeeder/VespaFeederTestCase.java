@@ -47,12 +47,10 @@ public class VespaFeederTestCase {
         assertEquals(false, config.abortondocumenterror());
         assertEquals(13.0, config.timeout(), 0.00001);
         assertEquals(false, config.retryenabled());
-        assertEquals(12.0, config.retrydelay(), 0.0001);
         assertEquals("e6", config.route());
         assertEquals(4, config.tracelevel());
         assertEquals(false, config.abortonsenderror());
         assertEquals(10, config.maxpendingdocs());
-        assertEquals(11, config.maxpendingbytes());
         assertEquals(29.0, config.maxfeedrate(), 0.0001);
         assertTrue(arguments.isVerbose());
         assertFalse(config.createifnonexistent());
