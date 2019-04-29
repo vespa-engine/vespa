@@ -6,7 +6,7 @@ namespace=vespa.config.search.summary
 ## dynamic summary - the actual size will depend on the available text
 ## and the query. You may find that you need to set this length
 ## substantially longer than your actual desired average length -
-## setting this abut twice as long is often appropriate.
+## setting this about twice as long is often appropriate.
 length                      int default=256
 
 ## The number of (possibly partial) set of keywords
