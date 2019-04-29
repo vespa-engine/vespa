@@ -143,6 +143,7 @@ public class TensorType {
     }
 
     private boolean isConvertibleOrAssignableTo(TensorType generalization, boolean convertible, boolean considerName) {
+        if ( this.valueType() != generalization.valueType()) return false; // TODO: This can be relaxed
         if (generalization.dimensions().size() != this.dimensions().size()) return false;
         for (int i = 0; i < generalization.dimensions().size(); i++) {
             Dimension thisDimension = this.dimensions().get(i);
