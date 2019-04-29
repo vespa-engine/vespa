@@ -7,7 +7,8 @@ import com.yahoo.document.Field;
 /**
  * @author bjorncs
  */
-public class JsonReaderException extends RuntimeException {
+public class JsonReaderException extends IllegalArgumentException {
+
     public final DocumentId docId;
     public final Field field;
     public final Throwable cause;
@@ -32,7 +33,7 @@ public class JsonReaderException extends RuntimeException {
 
     private static String createErrorMessage(DocumentId docId, Field field, Throwable cause) {
         return String.format("Error in document '%s' - could not parse field '%s' of type '%s': %s",
-                docId, field.getName(), field.getDataType().getName(), cause.getMessage());
+                             docId, field.getName(), field.getDataType().getName(), cause.getMessage());
     }
 
     public DocumentId getDocId() {
@@ -42,4 +43,5 @@ public class JsonReaderException extends RuntimeException {
     public Field getField() {
         return field;
     }
+
 }
