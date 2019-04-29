@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespaclient.config.FeederConfig;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -33,29 +32,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
             handlerMap.put(handler.getComponentId().toString(), handler);
         }
         return handlerMap;
-    }
-
-    @Test
-    public void document_api_config_is_added_to_container_cluster() {
-        Element elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
-                "  <document-api>",
-                "    <abortondocumenterror>false</abortondocumenterror>",
-                "    <maxpendingdocs>4321</maxpendingdocs>",
-                "    <retrydelay>12.34</retrydelay>",
-                "    <route>non-default</route>",
-                "  </document-api>",
-                nodesXml,
-                "</jdisc>");
-        createModel(root, elem);
-        ContainerCluster cluster = (ContainerCluster)root.getProducer("cluster1");
-        FeederConfig.Builder builder = new FeederConfig.Builder();
-        cluster.getDocumentApi().getConfig(builder);
-        FeederConfig config = new FeederConfig(builder);
-        assertThat(config.abortondocumenterror(), is(false));
-        assertThat(config.maxpendingdocs(), is(4321));
-        assertThat(config.retrydelay(), is(12.34));
-        assertThat(config.route(), is("non-default"));
     }
 
     @Test

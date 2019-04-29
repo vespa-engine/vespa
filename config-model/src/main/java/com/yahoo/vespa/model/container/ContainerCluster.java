@@ -58,7 +58,6 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
@@ -93,7 +92,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
         BundlesConfig.Producer,
-        FeederConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         SchemamappingConfig.Producer,
@@ -554,11 +552,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
         if (containerSearch != null) containerSearch.getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(FeederConfig.Builder builder) {
-        if (containerDocumentApi != null) containerDocumentApi.getConfig(builder);
     }
 
     @Override

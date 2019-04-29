@@ -38,7 +38,7 @@ public class VespaFeederTestCase {
     @Test
     public void testParseArgs() throws Exception {
         String argsS="--abortondataerror false --abortonsenderror false --file foo.xml --maxpending 10" +
-                " --maxpendingsize 11 --maxfeedrate 29 --mode benchmark --noretry --retrydelay 12 --route e6 --timeout 13 --trace 4" +
+                " --maxfeedrate 29 --mode benchmark --noretry --route e6 --timeout 13 --trace 4" +
                 " --validate -v bar.xml --priority LOW_1";
 
         Arguments arguments = new Arguments(argsS.split(" "), DummySessionFactory.createWithAutoReply());
@@ -47,12 +47,10 @@ public class VespaFeederTestCase {
         assertEquals(false, config.abortondocumenterror());
         assertEquals(13.0, config.timeout(), 0.00001);
         assertEquals(false, config.retryenabled());
-        assertEquals(12.0, config.retrydelay(), 0.0001);
         assertEquals("e6", config.route());
         assertEquals(4, config.tracelevel());
         assertEquals(false, config.abortonsenderror());
         assertEquals(10, config.maxpendingdocs());
-        assertEquals(11, config.maxpendingbytes());
         assertEquals(29.0, config.maxfeedrate(), 0.0001);
         assertTrue(arguments.isVerbose());
         assertFalse(config.createifnonexistent());

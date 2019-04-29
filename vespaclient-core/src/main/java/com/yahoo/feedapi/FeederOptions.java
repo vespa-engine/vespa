@@ -22,14 +22,12 @@ public class FeederOptions {
     private boolean abortOnSendError = true;
     private boolean retryEnabled = true;
     private double timeout = 60;
-    private int maxPendingBytes = 0;
     private int maxPendingDocs = 0;
     private double maxFeedRate = 0.0;
     private String route = "default";
     private int traceLevel;
     private int mbusPort;
     private DocumentProtocol.Priority priority = DocumentProtocol.Priority.NORMAL_3;
-    private String docprocChain = "";
 
     /** Constructs an options object with all default values. */
     FeederOptions() {
@@ -40,14 +38,12 @@ public class FeederOptions {
     FeederOptions(FeederConfig config) {
         setAbortOnDocumentError(config.abortondocumenterror());
         setAbortOnSendError(config.abortonsenderror());
-        setMaxPendingBytes(config.maxpendingbytes());
         setMaxPendingDocs(config.maxpendingdocs());
         setRetryEnabled(config.retryenabled());
         setRoute(config.route());
         setTimeout(config.timeout());
         setTraceLevel(config.tracelevel());
         setMessageBusPort(config.mbusport());
-        setDocprocChain(config.docprocchain());
         setMaxFeedRate(config.maxfeedrate());
     }
 
@@ -69,10 +65,6 @@ public class FeederOptions {
 
     public void setTimeout(double timeout) {
         this.timeout = timeout;
-    }
-
-    private void setMaxPendingBytes(int maxPendingBytes) {
-        this.maxPendingBytes = maxPendingBytes;
     }
 
     private void setMaxPendingDocs(int maxPendingDocs) {
@@ -123,14 +115,6 @@ public class FeederOptions {
         this.priority = priority;
     }
 
-    String getDocprocChain() {
-        return docprocChain;
-    }
-
-    private void setDocprocChain(String chain) {
-        docprocChain = chain;
-    }
-
     /**
      * Creates a source session params object with parameters set as these options
      * dictate.
@@ -141,16 +125,13 @@ public class FeederOptions {
         StaticThrottlePolicy policy;
         if (maxFeedRate > 0.0) {
             policy = new RateThrottlingPolicy(maxFeedRate);
-        } else if ((maxPendingDocs == 0) && (maxPendingBytes == 0)) {
+        } else if (maxPendingDocs == 0) {
             policy = new DynamicThrottlePolicy();
         } else {
             policy = new StaticThrottlePolicy();
         }
         if (maxPendingDocs > 0) {
             policy.setMaxPendingCount(maxPendingDocs);
-        }
-        if (maxPendingBytes > 0) {
-            policy.setMaxPendingSize(maxPendingBytes);
         }
 
         params.setThrottlePolicy(policy);
@@ -179,13 +160,11 @@ public class FeederOptions {
                ", abortOnSendError=" + abortOnSendError +
                ", retryEnabled=" + retryEnabled +
                ", timeout=" + timeout +
-               ", maxPendingBytes=" + maxPendingBytes +
                ", maxPendingDocs=" + maxPendingDocs +
                ", route='" + route + '\'' +
                ", traceLevel=" + traceLevel +
                ", mbusPort=" + mbusPort +
                ", priority=" + priority.name() +
-               ", docprocChain='" + docprocChain + '\'' +
                '}';
     }
 
@@ -198,14 +177,12 @@ public class FeederOptions {
 
         if (abortOnDocumentError != that.abortOnDocumentError) return false;
         if (abortOnSendError != that.abortOnSendError) return false;
-        if (maxPendingBytes != that.maxPendingBytes) return false;
         if (maxPendingDocs != that.maxPendingDocs) return false;
         if (maxFeedRate != that.maxFeedRate) return false;
         if (mbusPort != that.mbusPort) return false;
         if (retryEnabled != that.retryEnabled) return false;
         if (Double.compare(that.timeout, timeout) != 0) return false;
         if (traceLevel != that.traceLevel) return false;
-        if (docprocChain != null ? !docprocChain.equals(that.docprocChain) : that.docprocChain != null) return false;
         if (priority != that.priority) return false;
         if (route != null ? !route.equals(that.route) : that.route != null) return false;
 
@@ -221,14 +198,12 @@ public class FeederOptions {
         result = 31 * result + (retryEnabled ? 1 : 0);
         temp = timeout != +0.0d ? Double.doubleToLongBits(timeout) : 0L;
         result = 31 * result + (int) (temp ^ (temp >>> 32));
-        result = 31 * result + maxPendingBytes;
         result = 31 * result + maxPendingDocs;
         result = 31 * result + ((int)(maxFeedRate * 1000));
         result = 31 * result + (route != null ? route.hashCode() : 0);
         result = 31 * result + traceLevel;
         result = 31 * result + mbusPort;
         result = 31 * result + (priority != null ? priority.hashCode() : 0);
-        result = 31 * result + (docprocChain != null ? docprocChain.hashCode() : 0);
         return result;
     }
 }
