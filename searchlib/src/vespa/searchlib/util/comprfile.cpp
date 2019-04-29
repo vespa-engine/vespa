@@ -408,6 +408,25 @@ ComprFileReadContext::referenceWriteContext(const ComprFileWriteContext &rhs)
     }
 }
 
+void
+ComprFileReadContext::reference_compressed_buffer(void *buffer, size_t usedUnits)
+{
+    ComprFileDecodeContext *d = getDecodeContext();
+
+    _comprBuf = buffer;
+    _comprBufSize = usedUnits;
+    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * _unitSize);
+    setFileSize(static_cast<uint64_t>(usedUnits) * _unitSize);
+    if (d != NULL) {
+        d->afterRead(_comprBuf,
+                     usedUnits,
+                     static_cast<uint64_t>(usedUnits) * _unitSize,
+                     false);
+        d->setupBits(0);
+        setBitOffset(-1);
+        assert(d->getBitPosV() == 0);
+    }
+}
 
 ComprFileWriteContext::
 ComprFileWriteContext(ComprFileEncodeContext &encodeContext)

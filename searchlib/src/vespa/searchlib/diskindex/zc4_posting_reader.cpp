@@ -72,22 +72,28 @@ Zc4PostingReader<bigEndian>::read_common_word_doc_id_and_features(DocIdAndFeatur
     if (docId > _l1SkipDocId) {
         _l1SkipDocIdPos += _l1Skip.decode() + 1;
         assert(docIdPos == _l1SkipDocIdPos);
-        _l1SkipFeaturesPos += _l1Skip.decode() + 1;
         uint64_t featuresPos = _decodeContext->getReadOffset();
-        assert(featuresPos == _l1SkipFeaturesPos);
+        if (_posting_params._encode_features) {
+            _l1SkipFeaturesPos += _l1Skip.decode() + 1;
+            assert(featuresPos == _l1SkipFeaturesPos);
+        }
         (void) featuresPos;
         if (docId > _l2SkipDocId) {
             _l2SkipDocIdPos += _l2Skip.decode() + 1;
             assert(docIdPos == _l2SkipDocIdPos);
-            _l2SkipFeaturesPos += _l2Skip.decode() + 1;
-            assert(featuresPos == _l2SkipFeaturesPos);
+            if (_posting_params._encode_features) {
+                _l2SkipFeaturesPos += _l2Skip.decode() + 1;
+                assert(featuresPos == _l2SkipFeaturesPos);
+            }
             _l2SkipL1SkipPos += _l2Skip.decode() + 1;
             assert(_l1Skip.pos() == _l2SkipL1SkipPos);
             if (docId > _l3SkipDocId) {
                 _l3SkipDocIdPos += _l3Skip.decode() + 1;
                 assert(docIdPos == _l3SkipDocIdPos);
-                _l3SkipFeaturesPos += _l3Skip.decode() + 1;
-                assert(featuresPos == _l3SkipFeaturesPos);
+                if (_posting_params._encode_features) {
+                    _l3SkipFeaturesPos += _l3Skip.decode() + 1;
+                    assert(featuresPos == _l3SkipFeaturesPos);
+                }
                 _l3SkipL1SkipPos += _l3Skip.decode() + 1;
                 assert(_l1Skip.pos() == _l3SkipL1SkipPos);
                 _l3SkipL2SkipPos += _l3Skip.decode() + 1;
@@ -96,8 +102,10 @@ Zc4PostingReader<bigEndian>::read_common_word_doc_id_and_features(DocIdAndFeatur
                     _l4SkipDocIdPos += _l4Skip.decode() + 1;
                     assert(docIdPos == _l4SkipDocIdPos);
                     (void) docIdPos;
-                    _l4SkipFeaturesPos += _l4Skip.decode() + 1;
-                    assert(featuresPos == _l4SkipFeaturesPos);
+                    if (_posting_params._encode_features) {
+                        _l4SkipFeaturesPos += _l4Skip.decode() + 1;
+                        assert(featuresPos == _l4SkipFeaturesPos);
+                    }
                     _l4SkipL1SkipPos += _l4Skip.decode() + 1;
                     assert(_l1Skip.pos() == _l4SkipL1SkipPos);
                     _l4SkipL2SkipPos += _l4Skip.decode() + 1;
@@ -141,7 +149,9 @@ Zc4PostingReader<bigEndian>::read_common_word_doc_id_and_features(DocIdAndFeatur
             _chunkNo = 0;
         }
     }
-    _decodeContext->readFeatures(features);
+    if (_posting_params._encode_features) {
+        _decodeContext->readFeatures(features);
+    }
     --_residue;
 }
 
@@ -175,7 +185,9 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
     if (__builtin_expect(oCompr >= d._valE, false)) {
         _readContext.readComprBuffer();
     }
-    _decodeContext->readFeatures(features);
+    if (_posting_params._encode_features) {
+        _decodeContext->readFeatures(features);
+    }
     --_residue;
 }
 
@@ -262,8 +274,10 @@ Zc4PostingReader<bigEndian>::read_word_start_with_skip()
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L4SKIPSIZE, EC);
         l4SkipSize = val64;
     }
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FEATURESSIZE, EC);
-    _featuresSize = val64;
+    if (_posting_params._encode_features) {
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FEATURESSIZE, EC);
+        _featuresSize = val64;
+    }
     if (__builtin_expect(oCompr >= valE, false)) {
         UC64_DECODECONTEXT_STORE(o, d._);
         _readContext.readComprBuffer();

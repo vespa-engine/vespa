@@ -3,9 +3,10 @@
 #include "fakezcfilterocc.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
-#include <vespa/searchlib/diskindex/zc4_posting_writer.h>
 #include <vespa/searchlib/diskindex/zc4_posting_header.h>
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
+#include <vespa/searchlib/diskindex/zc4_posting_reader.h>
+#include <vespa/searchlib/diskindex/zc4_posting_writer.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -125,10 +126,12 @@ void
 FakeZcFilterOcc::setup(const FakeWord &fw, bool doFeatures,
                        bool dynamicK)
 {
-    if (_bigEndian)
+    if (_bigEndian) {
         setupT<true>(fw, doFeatures, dynamicK);
-    else
+    } else {
         setupT<false>(fw, doFeatures, dynamicK);
+    }
+    validate_read(fw, doFeatures, dynamicK);
 }
 
 
@@ -218,6 +221,66 @@ FakeZcFilterOcc::read_header(bool doFeatures, bool dynamicK, uint32_t min_skip_d
     assert(_lastDocId == header._last_doc_id);
 }
 
+
+void
+FakeZcFilterOcc::validate_read(const FakeWord &fw, bool encode_features, bool dynamic_k) const
+{
+    if (_bigEndian) {
+        validate_read<true>(fw, encode_features, dynamic_k);
+    } else {
+        validate_read<false>(fw, encode_features, dynamic_k);
+    }
+}
+
+template <bool bigEndian>
+void
+FakeZcFilterOcc::validate_read(const FakeWord &fw, bool encode_features, bool dynamic_k) const
+{
+    bitcompression::EGPosOccDecodeContextCooked<bigEndian> decode_context_dynamic_k(&_fieldsParams);
+    bitcompression::EG2PosOccDecodeContextCooked<bigEndian> decode_context_static_k(&_fieldsParams);
+    bitcompression::FeatureDecodeContext<bigEndian> &decode_context_dynamic_k_upcast = decode_context_dynamic_k;
+    bitcompression::FeatureDecodeContext<bigEndian> &decode_context_static_k_upcast = decode_context_static_k;
+    bitcompression::FeatureDecodeContext<bigEndian> &decode_context = dynamic_k ? decode_context_dynamic_k_upcast : decode_context_static_k_upcast;
+    Zc4PostingReader<bigEndian> reader(dynamic_k);
+    reader.set_decode_features(&decode_context);
+    auto &params = reader.get_posting_params();
+    params._min_skip_docs = 1;
+    params._min_chunk_docs = 1000000000;
+    params._doc_id_limit = _docIdLimit;
+    params._encode_features = encode_features;
+    reader.get_read_context().reference_compressed_buffer(_compressed.first, _compressed.second);
+    assert(decode_context.getReadOffset() == 0u);
+    PostingListCounts counts;
+    counts._bitLength = _compressedBits;
+    counts._numDocs = _hitDocs;
+    reader.set_counts(counts);
+    auto d(fw._postings.begin());
+    auto de(fw._postings.end());
+    auto p(fw._wordPosFeatures.begin());
+    auto pe(fw._wordPosFeatures.end());
+    DocIdAndPosOccFeatures check_features;
+    DocIdAndFeatures features;
+    uint32_t hits = 0;
+    while (d != de) {
+        if (encode_features) {
+            fw.setupFeatures(*d, &*p, check_features);
+            p += d->_positions;
+        } else {
+            check_features.clear(d->_docId);
+        }
+        reader.read_doc_id_and_features(features);
+        assert(features._docId == d->_docId);
+        assert(features._elements.size() == check_features._elements.size());
+        assert(features._wordPositions.size() == check_features._wordPositions.size());
+        ++d;
+        ++hits;
+    }
+    if (encode_features) {
+        assert(p == pe);
+    }
+    reader.read_doc_id_and_features(features);
+    assert(static_cast<int32_t>(features._docId) == -1);
+}
 
 FakeZcFilterOcc::~FakeZcFilterOcc()
 {
