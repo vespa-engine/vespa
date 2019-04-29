@@ -52,6 +52,8 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
             builder.maxpendingbytes(options.maxpendingbytes);
         if (options.retryenabled != null)
             builder.retryenabled(options.retryenabled);
+        if (options.retrydelay != null)
+            builder.retrydelay(options.retrydelay);
         if (options.timeout != null)
             builder.timeout(options.timeout);
         if (options.tracelevel != null)
