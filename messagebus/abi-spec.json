@@ -174,7 +174,10 @@
     ],
     "methods": [
       "public void <init>()",
-      "public static java.lang.String getName(int)"
+      "public static java.lang.String getName(int)",
+      "public static boolean isFatal(int)",
+      "public static boolean isTransient(int)",
+      "public static boolean isMBusError(int)"
     ],
     "fields": [
       "public static final int NONE",

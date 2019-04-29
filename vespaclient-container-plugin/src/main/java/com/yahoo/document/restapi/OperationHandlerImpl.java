@@ -21,12 +21,12 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
+import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaxmlparser.FeedOperation;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import com.yahoo.yolean.concurrent.ResourceFactory;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -108,16 +108,28 @@ public class OperationHandlerImpl implements OperationHandler {
         documentAccess.shutdown();
     }
 
+    private static final int HTTP_STATUS_SERVER_ERROR = 500;
     private static final int HTTP_STATUS_BAD_REQUEST = 400;
     private static final int HTTP_STATUS_INSUFFICIENT_STORAGE = 507;
     private static final int HTTP_PRE_CONDIDTION_FAILED = 412;
 
+    private static boolean isFatalMBusErrorCode(Set<Integer> errorCodes) {
+        for (Integer e : errorCodes) {
+            if (ErrorCode.isFatal(e) && ErrorCode.isMBusError(e)) {
+                return true;
+            }
+        }
+        return false;
+    }
     public static int getHTTPStatusCode(Set<Integer> errorCodes) {
         if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE)) {
             return HTTP_STATUS_INSUFFICIENT_STORAGE;
         }
         if (errorCodes.contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED)) {
             return HTTP_PRE_CONDIDTION_FAILED;
+        }
+        if (isFatalMBusErrorCode(errorCodes)) {
+            return HTTP_STATUS_SERVER_ERROR;
         }
         return HTTP_STATUS_BAD_REQUEST;
     }

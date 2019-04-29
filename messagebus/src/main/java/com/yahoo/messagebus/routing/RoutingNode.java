@@ -244,7 +244,7 @@ public class RoutingNode implements ReplyHandler {
             policy.merge(routingContext);
         } catch (RuntimeException e) {
             setError(ErrorCode.POLICY_ERROR,
-                     "Policy '" + dir.getName() + "' threw an exception; " + exceptionMessageWithTrace(e));
+                     "Policy '" + dir.getName() + "' threw an exception during merge; " + exceptionMessageWithTrace(e));
         }
         if (reply == null) {
             setError(ErrorCode.APP_FATAL_ERROR,
@@ -539,7 +539,7 @@ public class RoutingNode implements ReplyHandler {
             policy.select(routingContext);
         } catch (RuntimeException e) {
             setError(ErrorCode.POLICY_ERROR,
-                     "Policy '" + dir.getName() + "' threw an exception; " + exceptionMessageWithTrace(e));
+                     "Policy '" + dir.getName() + "' threw an exception during select; " + exceptionMessageWithTrace(e));
             return false;
         }
         if (children.isEmpty()) {
