@@ -50,8 +50,7 @@ public class AthenzRoleFilterTest {
     @Before
     public void setup() {
         tester = new ControllerTester();
-        filter = new AthenzRoleFilter(new CorsFilterConfig.Builder().build(),
-                                      new AthenzClientFactoryMock(tester.athenzDb()),
+        filter = new AthenzRoleFilter(new AthenzClientFactoryMock(tester.athenzDb()),
                                       tester.controller());
 
         tester.athenzDb().hostedOperators.add(HOSTED_OPERATOR.getIdentity());
