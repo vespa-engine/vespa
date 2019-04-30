@@ -53,6 +53,12 @@ public class RoutingPolicyMaintainer extends Maintainer {
         super(controller, interval, jobControl);
         this.nameServiceForwarder = controller.nameServiceForwarder();
         this.db = db;
+        // Update serialized format
+        try (Lock lock = db.lockRoutingPolicies()) {
+            for (var policy : db.readRoutingPolicies().entrySet()) {
+                db.writeRoutingPolicies(policy.getKey(), policy.getValue());
+            }
+        }
     }
 
     @Override
@@ -148,7 +154,9 @@ public class RoutingPolicyMaintainer extends Maintainer {
     /** Remove all DNS records that point to non-existing load balancers */
     private void removeObsoleteCnames(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
         try (Lock lock = db.lockRoutingPolicies()) {
-            List<RoutingPolicy> removalCandidates = new ArrayList<>(db.readRoutingPolicies());
+            Set<RoutingPolicy> removalCandidates = db.readRoutingPolicies().values().stream()
+                                                     .flatMap(Collection::stream)
+                                                     .collect(Collectors.toSet());
             Set<HostName> activeLoadBalancers = loadBalancers.values().stream()
                                                              .flatMap(Collection::stream)
                                                              .map(LoadBalancer::hostname)
@@ -190,11 +198,12 @@ public class RoutingPolicyMaintainer extends Maintainer {
     }
 
     /** Compute a routing table from given policies. */
-    private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Set<RoutingPolicy> routingPolicies) {
-        Map<RoutingId, List<RoutingPolicy>> routingTable = new LinkedHashMap<>();
-        for (RoutingPolicy policy : routingPolicies) {
-            for (RotationName rotation : policy.rotations()) {
-                RoutingId id = new RoutingId(policy.owner(), rotation);
+    private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Map<ApplicationId, Set<RoutingPolicy>> routingPolicies) {
+        var flattenedPolicies = routingPolicies.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
+        for (var policy : flattenedPolicies) {
+            for (var rotation : policy.rotations()) {
+                var id = new RoutingId(policy.owner(), rotation);
                 routingTable.compute(id, (k, policies) -> {
                     if (policies == null) {
                         policies = new ArrayList<>();
