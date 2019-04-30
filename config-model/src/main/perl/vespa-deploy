@@ -254,7 +254,7 @@ sub usage {
   } elsif ($command eq "fetch") {
       usage_fetch();
   } else {
-    print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [-V] [<command>] [args]\n";
+    print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-c] [-p] [-z] [-V] [<command>] [args]\n";
     print "Supported commands: 'upload', 'prepare', 'activate', 'fetch' and 'help'\n";
     print "Supported options: '-h' (help), '-v' (verbose), '-f' (force/ignore validation errors), '-t' (timeout in seconds), '-p' (config server http port)\n";
     print "    '-h' (help)\n";
@@ -264,7 +264,7 @@ sub usage {
     print "    '-t <timeout>' (timeout in seconds)\n";
     print "    '-c <server>' (config server hostname)\n";
     print "    '-p <port>' (config server http port)\n";
-    print "    '-p <cert>' (cert/key name)\n\n";
+    print "    '-z <cert>' (cert/key name)\n\n";
 
 
     print "Try 'vespa-deploy help <command>' to get more help\n";
