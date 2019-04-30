@@ -41,27 +41,27 @@ Test::assertFeatures(const DocIdAndFeatures &exp,
                      const DocIdAndFeatures &act)
 {
     // docid is not encoded as part of features
-    if (!EXPECT_EQUAL(exp._elements.size(),
-                      act._elements.size()))
+    if (!EXPECT_EQUAL(exp.elements().size(),
+                      act.elements().size()))
         return false;
-    for (size_t i = 0; i < exp._elements.size(); ++i) {
-        if (!EXPECT_EQUAL(exp._elements[i]._elementId,
-                          act._elements[i]._elementId))
+    for (size_t i = 0; i < exp.elements().size(); ++i) {
+        if (!EXPECT_EQUAL(exp.elements()[i].getElementId(),
+                          act.elements()[i].getElementId()))
             return false;
-        if (!EXPECT_EQUAL(exp._elements[i]._numOccs,
-                          act._elements[i]._numOccs))
+        if (!EXPECT_EQUAL(exp.elements()[i].getNumOccs(),
+                          act.elements()[i].getNumOccs()))
             return false;
-        if (!EXPECT_EQUAL(exp._elements[i]._weight, act._elements[i]._weight))
+        if (!EXPECT_EQUAL(exp.elements()[i].getWeight(), act.elements()[i].getWeight()))
             return false;
-        if (!EXPECT_EQUAL(exp._elements[i]._elementLen,
-                          act._elements[i]._elementLen))
+        if (!EXPECT_EQUAL(exp.elements()[i].getElementLen(),
+                          act.elements()[i].getElementLen()))
             return false;
     }
-    if (!EXPECT_EQUAL(exp._wordPositions.size(), act._wordPositions.size()))
+    if (!EXPECT_EQUAL(exp.word_positions().size(), act.word_positions().size()))
         return false;
-    for (size_t i = 0; i < exp._wordPositions.size(); ++i) {
-        if (!EXPECT_EQUAL(exp._wordPositions[i]._wordPos,
-                          act._wordPositions[i]._wordPos)) return false;
+    for (size_t i = 0; i < exp.word_positions().size(); ++i) {
+        if (!EXPECT_EQUAL(exp.word_positions()[i].getWordPos(),
+                          act.word_positions()[i].getWordPos())) return false;
     }
     return true;
 }
@@ -73,13 +73,13 @@ getFeatures(uint32_t numOccs,
             uint32_t elemLen)
 {
     DocIdAndFeatures f;
-    f._docId = 0;
-    f._elements.push_back(WordDocElementFeatures(0));
-    f._elements.back().setNumOccs(numOccs);
-    f._elements.back().setWeight(weight);
-    f._elements.back().setElementLen(elemLen);
+    f.set_doc_id(0);
+    f.elements().push_back(WordDocElementFeatures(0));
+    f.elements().back().setNumOccs(numOccs);
+    f.elements().back().setWeight(weight);
+    f.elements().back().setElementLen(elemLen);
     for (uint32_t i = 0; i < numOccs; ++i) {
-        f._wordPositions.push_back(WordDocElementWordPosFeatures(i));
+        f.word_positions().push_back(WordDocElementWordPosFeatures(i));
     }
     return f;
 }

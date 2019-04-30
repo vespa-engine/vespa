@@ -66,7 +66,7 @@ Zc4PostingReader<bigEndian>::read_common_word_doc_id_and_features(DocIdAndFeatur
     assert(_zcDocIds._valI < _zcDocIds._valE);
     uint32_t docIdPos = _zcDocIds.pos();
     uint32_t docId = _prevDocId + 1 + _zcDocIds.decode();
-    features._docId = docId;
+    features.set_doc_id(docId);
     _prevDocId = docId;
     assert(docId <= _lastDocId);
     if (docId > _l1SkipDocId) {
@@ -179,7 +179,7 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
 
     UC64_DECODEEXPGOLOMB_SMALL_NS(o, _docIdK, EC);
     uint32_t docId = _prevDocId + 1 + val64;
-    features._docId = docId;
+    features.set_doc_id(docId);
     _prevDocId = docId;
     UC64_DECODECONTEXT_STORE(o, d._);
     if (__builtin_expect(oCompr >= d._valE, false)) {

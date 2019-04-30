@@ -62,10 +62,10 @@ FieldWriterWrapper &
 FieldWriterWrapper::add(uint32_t docId)
 {
     DocIdAndFeatures daf;
-    daf._docId = docId;
-    daf._elements.push_back(WordDocElementFeatures(0));
-    daf._elements.back().setNumOccs(1);
-    daf._wordPositions.push_back(WordDocElementWordPosFeatures(0));
+    daf.set_doc_id(docId);
+    daf.elements().emplace_back(0);
+    daf.elements().back().setNumOccs(1);
+    daf.word_positions().emplace_back(0);
     //LOG(info, "add(%" PRIu64 ", %u)", wordNum, docId);
     _writer.add(daf);
     return *this;

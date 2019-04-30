@@ -43,9 +43,9 @@ struct Builder
     addDoc(uint32_t docId)
     {
         _features.clear(docId);
-        _features._elements.emplace_back(0, 1, 1);
-        _features._elements.back().setNumOccs(1);
-        _features._wordPositions.emplace_back(0);
+        _features.elements().emplace_back(0, 1, 1);
+        _features.elements().back().setNumOccs(1);
+        _features.word_positions().emplace_back(0);
         _ib.add_document(_features);
     }
 

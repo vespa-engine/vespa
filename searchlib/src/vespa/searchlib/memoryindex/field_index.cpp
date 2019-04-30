@@ -171,7 +171,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                 EntryRef featureRef(pitr.getData());
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
-                features._docId = docId;
+                features.set_doc_id(docId);
                 indexBuilder.add_document(features);
             }
         } else {
@@ -183,7 +183,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                 EntryRef featureRef(kd->getData());
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
-                features._docId = docId;
+                features.set_doc_id(docId);
                 indexBuilder.add_document(features);
             }
         }

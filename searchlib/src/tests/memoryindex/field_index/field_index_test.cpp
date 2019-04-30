@@ -99,10 +99,10 @@ public:
         if (!_firstDoc) {
             _ss << ",";
         }
-        _ss << "d=" << features._docId << "[";
+        _ss << "d=" << features.doc_id() << "[";
         bool first_elem = true;
         size_t word_pos_offset = 0;
-        for (const auto& elem : features._elements) {
+        for (const auto& elem : features.elements()) {
             if (!first_elem) {
                 _ss << ",";
             }
@@ -112,7 +112,7 @@ public:
                 if (!first_pos) {
                     _ss << ",";
                 }
-                _ss << features._wordPositions[i + word_pos_offset].getWordPos();
+                _ss << features.word_positions()[i + word_pos_offset].getWordPos();
                 first_pos = false;
             }
             word_pos_offset += elem.getNumOccs();
@@ -601,12 +601,10 @@ addElement(DocIdAndFeatures &f,
            uint32_t numOccs,
            int32_t weight = 1)
 {
-    f._elements.push_back(WordDocElementFeatures(f._elements.size()));
-    f._elements.back().setElementLen(elemLen);
-    f._elements.back().setWeight(weight);
-    f._elements.back().setNumOccs(numOccs);
+    f.elements().emplace_back(f.elements().size(), weight, elemLen);
+    f.elements().back().setNumOccs(numOccs);
     for (uint32_t i = 0; i < numOccs; ++i) {
-        f._wordPositions.push_back(WordDocElementWordPosFeatures(i));
+        f.word_positions().emplace_back(i);
     }
 }
 
@@ -679,11 +677,11 @@ TEST_F(FieldIndexCollectionTest, require_that_basic_dumping_to_index_builder_is_
     b.startField(4);
     b.startWord("a");
     DocIdAndFeatures features;
-    features._docId = 2;
-    features._elements.emplace_back(0, 10, 20);
-    features._elements.back().setNumOccs(2);
-    features._wordPositions.emplace_back(1);
-    features._wordPositions.emplace_back(3);
+    features.set_doc_id(2);
+    features.elements().emplace_back(0, 10, 20);
+    features.elements().back().setNumOccs(2);
+    features.word_positions().emplace_back(1);
+    features.word_positions().emplace_back(3);
     b.add_document(features);
     b.endWord();
     b.endField();

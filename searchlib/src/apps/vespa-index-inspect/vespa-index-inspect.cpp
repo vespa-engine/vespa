@@ -94,15 +94,13 @@ unpackFeatures(std::vector<PosEntry> &entries,
                uint64_t wordNum,
                const DocIdAndFeatures &features)
 {
-    std::vector<search::index::WordDocElementFeatures>::const_iterator
-        element = features._elements.begin();
-    std::vector<search::index::WordDocElementWordPosFeatures>::
-        const_iterator position = features._wordPositions.begin();
-    uint32_t numElements = features._elements.size();
+    auto element = features.elements().begin();
+    auto position = features.word_positions().begin();
+    uint32_t numElements = features.elements().size();
     while (numElements--) {
         uint32_t numOccs = element->getNumOccs();
         while (numOccs--) {
-            entries.push_back(PosEntry(features._docId,
+            entries.push_back(PosEntry(features.doc_id(),
                                        fieldId,
                                        element->getElementId(),
                                        position->getWordPos(),
@@ -447,7 +445,7 @@ ShowPostingListSubApp::readPostings(const SchemaUtil::IndexIterator &index,
     if (r.isValid())
         r.read();
     while (r.isValid()) {
-        uint32_t docId = r._docIdAndFeatures._docId;
+        uint32_t docId = r._docIdAndFeatures.doc_id();
         if (docId >= _minDocId && docId < _docIdLimit) {
             unpackFeatures(entries, index.getIndex(),
                            r._wordNum, r._docIdAndFeatures);
