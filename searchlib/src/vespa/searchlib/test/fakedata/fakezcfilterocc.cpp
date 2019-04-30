@@ -254,29 +254,26 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw, bool encode_features, bool dy
     counts._bitLength = _compressedBits;
     counts._numDocs = _hitDocs;
     reader.set_counts(counts);
-    auto d(fw._postings.begin());
-    auto de(fw._postings.end());
-    auto p(fw._wordPosFeatures.begin());
-    auto pe(fw._wordPosFeatures.end());
+    auto word_pos_iterator(fw._wordPosFeatures.begin());
+    auto word_pos_iterator_end(fw._wordPosFeatures.end());
     DocIdAndPosOccFeatures check_features;
     DocIdAndFeatures features;
     uint32_t hits = 0;
-    while (d != de) {
+    for (const auto &doc : fw._postings) {
         if (encode_features) {
-            fw.setupFeatures(*d, &*p, check_features);
-            p += d->_positions;
+            fw.setupFeatures(doc, &*word_pos_iterator, check_features);
+            word_pos_iterator += doc._positions;
         } else {
-            check_features.clear(d->_docId);
+            check_features.clear(doc._docId);
         }
         reader.read_doc_id_and_features(features);
-        assert(features._docId == d->_docId);
+        assert(features._docId == doc._docId);
         assert(features._elements.size() == check_features._elements.size());
         assert(features._wordPositions.size() == check_features._wordPositions.size());
-        ++d;
         ++hits;
     }
     if (encode_features) {
-        assert(p == pe);
+        assert(word_pos_iterator == word_pos_iterator_end);
     }
     reader.read_doc_id_and_features(features);
     assert(static_cast<int32_t>(features._docId) == -1);
