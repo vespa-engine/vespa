@@ -14,6 +14,12 @@ idprefix string default=""
 ## Max number of pending operations.
 maxpendingdocs int default=0
 
+## Max number of bytes in pending operations.
+maxpendingbytes int default=0
+
+## Max number of busy threads
+maxbusythreads int default=150
+
 ## Max number of operations to perform per second (0 == no max)
 maxfeedrate double default=0.0
 
@@ -34,6 +40,9 @@ tracelevel int default=0
 
 ## Messagebus port to start source session on
 mbusport int default=-1
+
+## Default docproc chain to run
+docprocchain string default=""
 
 ## Whether or not to set create-if-non-existent flag on all document updates handled by a feeder.
 createifnonexistent bool default=false
