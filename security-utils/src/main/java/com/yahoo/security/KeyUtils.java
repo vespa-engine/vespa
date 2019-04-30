@@ -3,9 +3,11 @@ package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
@@ -21,13 +23,15 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -157,11 +161,42 @@ public class KeyUtils {
     }
 
     private static byte[] getPkcs1Bytes(PrivateKey privateKey) throws IOException{
-
         byte[] privBytes = privateKey.getEncoded();
         PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(privBytes);
         ASN1Encodable encodable = pkInfo.parsePrivateKey();
         ASN1Primitive primitive = encodable.toASN1Primitive();
         return primitive.getEncoded();
+    }
+
+    /** Returns a signature instance which computes a SHA-256 hash of its content, before signing with the given private key. */
+    public static Signature createSigner(PrivateKey key) {
+        try {
+            Signature signer = Signature.getInstance(SignatureAlgorithm.SHA256_WITH_ECDSA.getAlgorithmName(),
+                                                     BouncyCastleProviderHolder.getInstance());
+            signer.initSign(key);
+            return signer;
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        catch (InvalidKeyException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /** Returns a signature instance which computes a SHA-256 hash of its content, before verifying with the given public key. */
+    public static Signature createVerifier(PublicKey key) {
+        try {
+            Signature signer = Signature.getInstance(SignatureAlgorithm.SHA256_WITH_ECDSA.getAlgorithmName(),
+                                                     BouncyCastleProviderHolder.getInstance());
+            signer.initVerify(key);
+            return signer;
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        catch (InvalidKeyException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }

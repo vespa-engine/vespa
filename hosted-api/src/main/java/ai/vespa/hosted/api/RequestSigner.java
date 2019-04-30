@@ -8,6 +8,7 @@ import java.net.http.HttpRequest;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.function.Supplier;
@@ -21,7 +22,7 @@ import static ai.vespa.hosted.api.Signatures.sha256Digest;
  */
 public class RequestSigner {
 
-    private final PrivateKey privateKey;
+    private final Signature signer;
     private final String keyId;
     private final Clock clock;
 
@@ -32,7 +33,7 @@ public class RequestSigner {
 
     /** Creates a new request signer with a custom clock. */
     RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
-        this.privateKey = KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey);
+        this.signer = KeyUtils.createSigner(KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey));
         this.keyId = keyId;
         this.clock = clock;
     }
@@ -48,18 +49,24 @@ public class RequestSigner {
      * added to the request as another header.
      */
     public HttpRequest signed(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
-        String timestamp = clock.instant().toString();
-        String contentHash = Base64.getEncoder().encodeToString(sha256Digest(data::get));
-        byte[] canonicalMessage = Signatures.canonicalMessageOf(method.name(), request.copy().build().uri(), timestamp, contentHash);
-        String signature = Base64.getEncoder().encodeToString(Signatures.signed(canonicalMessage, privateKey));
+        try {
+            String timestamp = clock.instant().toString();
+            String contentHash = Base64.getEncoder().encodeToString(sha256Digest(data::get));
+            byte[] canonicalMessage = Signatures.canonicalMessageOf(method.name(), request.copy().build().uri(), timestamp, contentHash);
+            signer.update(canonicalMessage);
+            String signature = Base64.getEncoder().encodeToString(signer.sign());
 
-        request.setHeader("X-Timestamp", timestamp);
-        request.setHeader("X-Content-Hash", contentHash);
-        request.setHeader("X-Key-Id", keyId);
-        request.setHeader("X-Authorization", signature);
+            request.setHeader("X-Timestamp", timestamp);
+            request.setHeader("X-Content-Hash", contentHash);
+            request.setHeader("X-Key-Id", keyId);
+            request.setHeader("X-Authorization", signature);
 
-        request.method(method.name(), HttpRequest.BodyPublishers.ofInputStream(data));
-        return request.build();
+            request.method(method.name(), HttpRequest.BodyPublishers.ofInputStream(data));
+            return request.build();
+        }
+        catch (SignatureException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /**

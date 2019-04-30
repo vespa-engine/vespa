@@ -1,7 +1,5 @@
 package ai.vespa.hosted.api;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -9,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.security.Security;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -57,11 +54,6 @@ public class SignaturesTest {
                                            "\n" +
                                            "Yours truly,\n" +
                                            "∠( ᐛ 」∠)＿").getBytes(UTF_8);
-
-    @BeforeClass
-    public static void register() {
-        Security.addProvider(new BouncyCastleProvider());
-    }
 
     @Test
     public void testHashing() throws Exception {

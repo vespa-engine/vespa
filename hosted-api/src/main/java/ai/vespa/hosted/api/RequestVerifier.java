@@ -5,6 +5,8 @@ import com.yahoo.security.KeyUtils;
 import java.net.URI;
 import java.security.Key;
 import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -18,7 +20,7 @@ import java.util.Base64;
  */
 public class RequestVerifier {
 
-    private final PublicKey publicKey;
+    private final Signature verifier;
     private final Clock clock;
 
     public RequestVerifier(String pemPublicKey) {
@@ -26,7 +28,7 @@ public class RequestVerifier {
     }
 
     RequestVerifier(String pemPublicKey, Clock clock) {
-        this.publicKey = KeyUtils.fromPemEncodedPublicKey(pemPublicKey);
+        this.verifier = KeyUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey));
         this.clock = clock;
     }
 
@@ -38,9 +40,10 @@ public class RequestVerifier {
                 return false; // Timestamp mismatch between sender and receiver of more than 5 minutes is not acceptable.
 
             byte[] canonicalMessage = Signatures.canonicalMessageOf(method.name(), requestUri, timestamp, contentHash);
-            return Signatures.verify(canonicalMessage, Base64.getDecoder().decode(signature), publicKey);
+            verifier.update(canonicalMessage);
+            return verifier.verify(Base64.getDecoder().decode(signature));
         }
-        catch (RuntimeException e) {
+        catch (RuntimeException | SignatureException e) {
             return false;
         }
     }

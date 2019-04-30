@@ -79,7 +79,7 @@ public class KeyUtilsTest {
 
     @Test
     public void can_deserialize_rsa_publickey_in_pem_format() {
-        KeyUtils.fromPemEncodedPublicKey(rsaPemPublicKey);
+         KeyUtils.fromPemEncodedPublicKey(rsaPemPublicKey);
     }
 
     @Test
