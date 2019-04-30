@@ -163,7 +163,8 @@ private:
 
     void updateState(const lib::ClusterState& oldState, const lib::ClusterState& newState);
 
-    void removeSuperfluousBuckets(const lib::ClusterStateBundle& newState);
+    void removeSuperfluousBuckets(const lib::ClusterStateBundle& newState,
+                                  bool is_distribution_config_change);
 
     void replyToPreviousPendingClusterStateIfAny();
     void replyToActivationWithActualVersion(

@@ -51,6 +51,7 @@ vespa_add_library(storage_gtestdistributor TEST
     bucketdbupdatertest.cpp
     # Fixture etc. dupes with non-gtest runner :
     distributortestutil.cpp
+    bucket_db_prune_elision_test.cpp
     messagesenderstub.cpp
     DEPENDS
     storage_distributor

@@ -1864,6 +1864,7 @@ TEST_F(BucketDBUpdaterTest, testClusterStateAlwaysSendsFullFetchWhenDistribution
     _sender.clear();
     std::string distConfig(getDistConfig6Nodes2Groups());
     setDistribution(distConfig);
+
     sortSentMessagesByIndex(_sender);
     ASSERT_EQ(messageCount(6), _sender.commands.size());
     // Suddenly, a wild cluster state change appears! Even though this state
@@ -1919,6 +1920,48 @@ TEST_F(BucketDBUpdaterTest, testChangedDistributionConfigTriggersRecoveryMode) {
     // Pending cluster state (i.e. distribution) has been enabled, which should
     // cause recovery mode to be entered.
     EXPECT_TRUE(_distributor->isInRecoveryMode());
+}
+
+namespace {
+
+template <typename Func>
+struct FunctorProcessor : BucketDatabase::EntryProcessor {
+    Func _f;
+
+    template <typename F>
+    explicit FunctorProcessor(F&& f) : _f(std::forward<F>(f)) {}
+
+    bool process(const BucketDatabase::Entry& e) override {
+        _f(e);
+        return true;
+    }
+};
+
+template <typename Func>
+std::unique_ptr<BucketDatabase::EntryProcessor> func_processor(Func&& f) {
+    return std::make_unique<FunctorProcessor<Func>>(std::forward<Func>(f));
+}
+
+}
+
+TEST_F(BucketDBUpdaterTest, changed_distribution_config_does_not_elide_bucket_db_pruning) {
+    setDistribution(getDistConfig3Nodes1Group());
+
+    constexpr uint32_t n_buckets = 100;
+    ASSERT_NO_FATAL_FAILURE(
+            setAndEnableClusterState(lib::ClusterState("distributor:6 storage:6"), messageCount(6), n_buckets));
+    _sender.clear();
+
+    // Config implies a different node set than the current cluster state, so it's crucial that
+    // DB pruning is _not_ elided. Yes, this is inherently racing with cluster state changes and
+    // should be changed to be atomic and controlled by the cluster controller instead of config.
+    // But this is where we currently are.
+    setDistribution(getDistConfig6Nodes2Groups());
+
+    getBucketDatabase().forEach(*func_processor([&](const auto& e) {
+        EXPECT_TRUE(getBucketDBUpdater()
+                .checkOwnershipInPendingState(makeDocumentBucket(e.getBucketId())).isOwned());
+    }));
 }
 
 TEST_F(BucketDBUpdaterTest, testNewlyAddedBucketsHaveCurrentTimeAsGcTimestamp) {
