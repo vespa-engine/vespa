@@ -1,5 +1,7 @@
 package ai.vespa.hosted.api;
 
+import com.yahoo.security.KeyUtils;
+
 import java.net.URI;
 import java.security.Key;
 import java.time.Clock;
@@ -23,7 +25,7 @@ public class RequestVerifier {
     }
 
     RequestVerifier(String pemPublicKey, Clock clock) {
-        this.publicKey = Signatures.parsePublicPemX509RsaKey(pemPublicKey);
+        this.publicKey = KeyUtils.fromPemEncodedPublicKey(pemPublicKey);
         this.clock = clock;
     }
 

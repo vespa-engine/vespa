@@ -1,12 +1,10 @@
 package ai.vespa.hosted.api;
 
+import com.yahoo.security.KeyUtils;
+
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.http.HttpRequest;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.Key;
 import java.time.Clock;
 import java.util.Base64;
@@ -33,7 +31,7 @@ public class RequestSigner {
 
     /** Creates a new request signer with a custom clock. */
     RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
-        this.privateKey = Signatures.parsePrivatePemPkcs8RsaKey(pemPrivateKey);
+        this.privateKey = KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey);
         this.keyId = keyId;
         this.clock = clock;
     }

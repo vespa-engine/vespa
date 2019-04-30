@@ -1,5 +1,6 @@
 package ai.vespa.hosted.api;
 
+import com.yahoo.security.KeyUtils;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -14,8 +15,6 @@ import java.time.ZoneOffset;
 
 import static ai.vespa.hosted.api.Signatures.decrypted;
 import static ai.vespa.hosted.api.Signatures.encrypted;
-import static ai.vespa.hosted.api.Signatures.parsePrivatePemPkcs8RsaKey;
-import static ai.vespa.hosted.api.Signatures.parsePublicPemX509RsaKey;
 import static ai.vespa.hosted.api.Signatures.sha256Digest;
 import static ai.vespa.hosted.api.Signatures.sha256Digester;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -127,8 +126,8 @@ public class SignaturesTest {
 
     @Test
     public void testEncryption() {
-        Key privateKey = parsePrivatePemPkcs8RsaKey(pemPrivateKey);
-        Key publicKey = parsePublicPemX509RsaKey(pemPublicKey);
+        Key privateKey = KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey);
+        Key publicKey = KeyUtils.fromPemEncodedPublicKey(pemPublicKey);
 
         assertArrayEquals(message, decrypted(encrypted(message, privateKey), publicKey));
         assertArrayEquals(message, decrypted(encrypted(message, publicKey), privateKey));

@@ -1,5 +1,7 @@
 package ai.vespa.hosted.api;
 
+import com.yahoo.security.KeyUtils;
+
 import javax.crypto.Cipher;
 import java.io.InputStream;
 import java.net.URI;
@@ -20,34 +22,6 @@ import java.util.concurrent.Callable;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Signatures {
-
-    /** Reads the PEM formatted X509 encoded RSA public key from the given key data. */
-    public static PublicKey parsePublicPemX509RsaKey(String publicKey) {
-        try {
-            byte[] encodedKey = readKey(publicKey, "-----BEGIN PUBLIC KEY-----\n", "-----END PUBLIC KEY-----");
-            return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(encodedKey));
-        }
-        catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-        catch (InvalidKeySpecException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    /** Reads the PEM formatted PKCS8 encoded RSA private key from the given key data. */
-    public static PrivateKey parsePrivatePemPkcs8RsaKey(String privateKey) {
-        try {
-            byte[] encodedKey = readKey(privateKey, "-----BEGIN PRIVATE KEY-----\n", "-----END PRIVATE KEY-----");
-            return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(encodedKey));
-        }
-        catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-        catch (InvalidKeySpecException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
 
     /** Returns the data encrypted with the given key. */
     public static byte[] encrypted(byte[] data, Key key) {
