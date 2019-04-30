@@ -5,8 +5,6 @@ import com.yahoo.security.KeyUtils;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.http.HttpRequest;
-import java.security.Key;
-import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Clock;
@@ -26,13 +24,13 @@ public class RequestSigner {
     private final String keyId;
     private final Clock clock;
 
-    /** Creates a new request signer from the PEM encoded RSA key at the specified path, owned by the given application. */
+    /** Creates a new request signer from the given PEM encoded ECDSA key, with a public key with the given ID. */
     public RequestSigner(String pemPrivateKey, String keyId) {
         this(pemPrivateKey, keyId, Clock.systemUTC());
     }
 
     /** Creates a new request signer with a custom clock. */
-    RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
+    public RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
         this.signer = KeyUtils.createSigner(KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey));
         this.keyId = keyId;
         this.clock = clock;
