@@ -59,6 +59,12 @@ public class FSADataTestCase {
     }
 
     @Test
+    public void testClose() throws IOException {
+        FSA fsa = new FSA(new FileInputStream("src/test/fsa/test-data.fsa"));
+        fsa.close();
+    }
+
+    @Test
     public void testBasic() {
         FSA.State state = fsa.getState();
         state.delta("aa");

@@ -5,6 +5,8 @@ import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -13,6 +15,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -20,7 +23,7 @@ import java.util.NoSuchElementException;
  *
  * @author Peter Boros
  */
-public class FSA {
+public class FSA implements Closeable {
 
     /**
      * Thread local state object used to traverse a Finite-State Automaton.
@@ -42,8 +45,12 @@ public class FSA {
         }
 
         public void delta(byte symbol) {
-            hash += fsa.hashDelta(state,symbol);
-            state = fsa.delta(state,symbol);
+            delta(fsa.map(), symbol);
+        }
+
+        private void delta(Maps m, byte symbol) {
+            hash += m.hashDelta(state,symbol);
+            state = m.delta(state,symbol);
         }
 
         /** Returns whether the given symbol would take us to a valid state, without changing the state */
@@ -66,16 +73,18 @@ public class FSA {
             CharBuffer chrbuf = CharBuffer.allocate(1);
             chrbuf.put(0,chr);
             ByteBuffer buf = fsa.encode(chrbuf);
+            Maps m = fsa.map();
             while(state >0 && buf.position()<buf.limit()){
-                delta(buf.get());
+                delta(m, buf.get());
             }
         }
 
         /** Jumps ahead by string */
         public void delta(String string){
             ByteBuffer buf = fsa.encode(string);
+            Maps m = fsa.map();
             while(state >0 && buf.position()<buf.limit()){
-                delta(buf.get());
+                delta(m, buf.get());
             }
         }
 
@@ -316,13 +325,134 @@ public class FSA {
         return new Iterator(state);
     }
 
+    private static class Maps implements Closeable {
+        Maps(FileInputStream file) throws IOException {
+            _header = file.getChannel().map(MapMode.READ_ONLY,0,256);
+            _header.order(ByteOrder.LITTLE_ENDIAN);
+            if (h_magic()!=2038637673) {
+                throw new IOException("Stream does not contain an FSA: Wrong file magic number " + h_magic());
+            }
+            _symbol_tab = file.getChannel().map(MapMode.READ_ONLY, 256, h_size());
+            _symbol_tab.order(ByteOrder.LITTLE_ENDIAN);
+            _state_tab = file.getChannel().map(MapMode.READ_ONLY, 256+h_size(), 4*h_size());
+            _state_tab.order(ByteOrder.LITTLE_ENDIAN);
+            _data = file.getChannel().map(MapMode.READ_ONLY, 256+5*h_size(), h_data_size());
+            _data.order(ByteOrder.LITTLE_ENDIAN);
+            if (h_has_phash()>0){
+                _phash = file.getChannel().map(MapMode.READ_ONLY, 256+5*h_size()+h_data_size(), 4*h_size());
+                _phash.order(ByteOrder.LITTLE_ENDIAN);
+            } else {
+                _phash = null;
+            }
+            _ok = true;
+        }
+        private int h_magic(){
+            return _header.getInt(0);
+        }
+        private int h_version(){
+            return _header.getInt(4);
+        }
+        private int h_checksum(){
+            return _header.getInt(8);
+        }
+        private int h_size(){
+            return _header.getInt(12);
+        }
+        private int h_start(){
+            return _header.getInt(16);
+        }
+        private int h_data_size(){
+            return _header.getInt(20);
+        }
+        private int h_data_type(){
+            return _header.getInt(24);
+        }
+        private int h_fixed_data_size(){
+            return _header.getInt(28);
+        }
+        private int h_has_phash(){
+            return _header.getInt(32);
+        }
+        private int h_serial(){
+            return _header.getInt(36);
+        }
+        private int hashDelta(int state, byte symbol){
+            int s=symbol;
+            if(s<0){
+                s+=256;
+            }
+            if(_ok && h_has_phash()==1 && s>0 && s<255){
+                if(getSymbol(state+s)==s){
+                    return _phash.getInt(4*(state+s));
+                }
+            }
+            return 0;
+        }
+        private int delta(int state, byte symbol){
+            int s=symbol;
+            if(s<0){
+                s+=256;
+            }
+            if(_ok && s>0 && s<255){
+                if(getSymbol(state+s)==s){
+                    return _state_tab.getInt(4*(state+s));
+                }
+            }
+            return 0;
+        }
+
+        private int getSymbol(int index){
+            int symbol = _symbol_tab.get(index);
+            if(symbol<0){
+                symbol += 256;
+            }
+            return symbol;
+        }
+        private boolean isFinal(int state){
+            return _ok && (getSymbol(state+255)==255);
+        }
+        private static void clean(MappedByteBuffer mmap) {
+            if ((mmap == null) || !mmap.isDirect()) return;
+
+            try {
+                Class unsafeClass;
+                try {
+                    unsafeClass = Class.forName("sun.misc.Unsafe");
+                } catch (Exception ex) {
+                    // jdk.internal.misc.Unsafe doesn't yet have an invokeCleaner() method,
+                    // but that method should be added if sun.misc.Unsafe is removed.
+                    unsafeClass = Class.forName("jdk.internal.misc.Unsafe");
+                }
+                Method clean = unsafeClass.getMethod("invokeCleaner", ByteBuffer.class);
+                clean.setAccessible(true);
+                Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                theUnsafeField.setAccessible(true);
+                Object theUnsafe = theUnsafeField.get(null);
+                clean.invoke(theUnsafe, mmap);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Falied unmapping ", e);
+            }
+        }
+        @Override
+        public void close() {
+            clean(_header);
+            clean(_data);
+            clean(_phash);
+            clean(_state_tab);
+            clean(_symbol_tab);
+        }
+
+        private final MappedByteBuffer _header;
+        private final MappedByteBuffer _symbol_tab;
+        private final MappedByteBuffer _state_tab;
+        private final MappedByteBuffer _data;
+        private final MappedByteBuffer _phash;
+        private final boolean _ok;
+    }
     private final boolean _ok;
-    private final MappedByteBuffer _header;
-    private final MappedByteBuffer _symbol_tab;
-    private final MappedByteBuffer _state_tab;
-    private final MappedByteBuffer _data;
-    private final MappedByteBuffer _phash;
     private final Charset _charset;
+    private final AtomicReference<Maps> maps = new AtomicReference<>();
+
 
     /**
      * Loads an FSA from a resource file name, which is resolved from the class path of the
@@ -385,23 +515,7 @@ public class FSA {
     private FSA(FileInputStream file, String charsetname, boolean closeInput) {
         try {
             _charset = Charset.forName(charsetname);
-            _header = file.getChannel().map(MapMode.READ_ONLY,0,256);
-            _header.order(ByteOrder.LITTLE_ENDIAN);
-            if (h_magic()!=2038637673) {
-                throw new IOException("Stream does not contain an FSA: Wrong file magic number " + h_magic());
-            }
-            _symbol_tab = file.getChannel().map(MapMode.READ_ONLY, 256, h_size());
-            _symbol_tab.order(ByteOrder.LITTLE_ENDIAN);
-            _state_tab = file.getChannel().map(MapMode.READ_ONLY, 256+h_size(), 4*h_size());
-            _state_tab.order(ByteOrder.LITTLE_ENDIAN);
-            _data = file.getChannel().map(MapMode.READ_ONLY, 256+5*h_size(), h_data_size());
-            _data.order(ByteOrder.LITTLE_ENDIAN);
-            if (h_has_phash()>0){
-                _phash = file.getChannel().map(MapMode.READ_ONLY, 256+5*h_size()+h_data_size(), 4*h_size());
-                _phash.order(ByteOrder.LITTLE_ENDIAN);
-            } else {
-                _phash = null;
-            }
+            maps.set(new Maps(file));
             _ok=true;
         }
         catch (IOException e) {
@@ -417,43 +531,14 @@ public class FSA {
         }
     }
 
-    private int h_magic(){
-        return _header.getInt(0);
+    @Override
+    public void close() throws IOException {
+        Maps m = map();
+        maps.set(null);
+        m.close();
     }
-    private int h_version(){
-        return _header.getInt(4);
-    }
-    private int h_checksum(){
-        return _header.getInt(8);
-    }
-    private int h_size(){
-        return _header.getInt(12);
-    }
-    private int h_start(){
-        return _header.getInt(16);
-    }
-    private int h_data_size(){
-        return _header.getInt(20);
-    }
-    private int h_data_type(){
-        return _header.getInt(24);
-    }
-    private int h_fixed_data_size(){
-        return _header.getInt(28);
-    }
-    private int h_has_phash(){
-        return _header.getInt(32);
-    }
-    private int h_serial(){
-        return _header.getInt(36);
-    }
-    private int getSymbol(int index){
-        int symbol = _symbol_tab.get(index);
-        if(symbol<0){
-            symbol += 256;
-        }
-        return symbol;
-    }
+
+    private Maps map() { return maps.get(); }
 
     private ByteBuffer encode(String str){
         return _charset.encode(str);
@@ -472,64 +557,41 @@ public class FSA {
     }
 
     public boolean hasPerfectHash(){
-        return _ok && h_has_phash()==1;
+        return _ok && map().h_has_phash()==1;
     }
 
     public int version(){
         if(_ok){
-            return h_version();
+            return map().h_version();
         }
         return 0;
     }
 
     public int serial(){
         if(_ok){
-            return h_serial();
+            return map().h_serial();
         }
         return 0;
     }
 
     protected int start(){
         if(_ok){
-            return h_start();
+            return map().h_start();
         }
 
         return 0;
     }
 
     protected int delta(int state, byte symbol){
-        int s=symbol;
-        if(s<0){
-            s+=256;
-        }
-        if(_ok && s>0 && s<255){
-            if(getSymbol(state+s)==s){
-                return _state_tab.getInt(4*(state+s));
-            }
-        }
-        return 0;
+        return map().delta(state, symbol);
     }
 
     protected int hashDelta(int state, byte symbol){
-        int s=symbol;
-        if(s<0){
-            s+=256;
-        }
-        if(_ok && h_has_phash()==1 && s>0 && s<255){
-            if(getSymbol(state+s)==s){
-                return _phash.getInt(4*(state+s));
-            }
-        }
-        return 0;
+        return map().hashDelta(state, symbol);
     }
 
     protected boolean isFinal(int state){
-        if(_ok){
-            if(getSymbol(state+255)==255){
-                return true;
-            }
-        }
-        return false;
+        return (_ok && map().isFinal(state));
     }
 
     /**
@@ -538,21 +600,22 @@ public class FSA {
      * @return A new buffer containing the data for the given state.
      **/
     protected ByteBuffer data(int state) {
-        if(_ok && isFinal(state)){
-            int offset = _state_tab.getInt(4*(state+255));
+        Maps m = maps.get();
+        if(_ok && m.isFinal(state)){
+            int offset = m._state_tab.getInt(4*(state+255));
             int length;
-            if(h_data_type()==1){
-                length = h_fixed_data_size();
+            if(m.h_data_type()==1){
+                length = m.h_fixed_data_size();
             }
             else{
-                length = _data.getInt(offset);
+                length = m._data.getInt(offset);
                 offset += 4;
             }
             ByteBuffer meta = ByteBuffer.allocate(length);
             meta.order(ByteOrder.LITTLE_ENDIAN);
             byte[] dst = meta.array();
             for (int i = 0; i < length; ++i) {
-                dst[i] = _data.get(i + offset);
+                dst[i] = m._data.get(i + offset);
             }
             return meta;
         }
