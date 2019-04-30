@@ -495,11 +495,10 @@ public class CuratorDb {
         curator.set(routingPolicyPath(application), asJson(routingPolicySerializer.toSlime(policies)));
     }
 
-    public Set<RoutingPolicy> readRoutingPolicies() {
+    public Map<ApplicationId, Set<RoutingPolicy>> readRoutingPolicies() {
         return curator.getChildren(routingPoliciesRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
-                      .flatMap(application -> readRoutingPolicies(application).stream())
-                      .collect(Collectors.toUnmodifiableSet());
+                      .collect(Collectors.toUnmodifiableMap(Function.identity(), this::readRoutingPolicies));
     }
 
     public Set<RoutingPolicy> readRoutingPolicies(ApplicationId application) {
