@@ -7,46 +7,14 @@
 
 namespace search::index {
 
-/*
+/**
  * The following feature classes are not self contained.  To reduce
  * memory allocator pressure, the DocIdAndFeatures class contains a
  * flattened representation of the features at different levels.
  */
 
-/*
- * (word, doc) features.
- *
- * Present as member in DocIdAndFeatures.
- */
-class WordDocFeatures {
-public:
-    // TODO: add support for user features
-
-    WordDocFeatures() { }
-    void clear() { }
-};
-
-/*
- * (word, doc, field) features.
- *
- * Present as vector element in DocIdAndFeatures.
- */
-class WordDocFieldFeatures {
-public:
-    uint32_t _numElements;  // Number of array indexes
-    // TODO: add support for user features
-
-    WordDocFieldFeatures()
-        : _numElements(0u)
-    {}
-
-    uint32_t getNumElements() const { return _numElements; }
-    void setNumElements(uint32_t numElements) { _numElements = numElements; }
-    void incNumElements() { ++_numElements; }
-};
-
-/*
- * (word, doc, field, element) features.
+/**
+ * (word, doc, element) features.
  *
  * Present as vector element in DocIdAndFeatures.
  */
@@ -93,15 +61,14 @@ public:
     void incNumOccs() { ++_numOccs; }
 };
 
-/*
- * (word, doc, field, element, wordpos) features.
+/**
+ * (word, doc, element, wordpos) features.
  *
  * Present as vector element in DocIdAndFeatures.
  */
 class WordDocElementWordPosFeatures {
 public:
     uint32_t _wordPos;
-    // TODO: add support for user features
 
     WordDocElementWordPosFeatures()
         : _wordPos(0u)
@@ -116,24 +83,16 @@ public:
 };
 
 /**
- * Class for minimal common representation of features available for a
- * (word, doc) pair, used by index fusion to shuffle information from
+ * Class for minimal common representation of features available for a (word, doc) pair.
+ *
+ * Used in memory index and disk index posting lists and by index fusion to shuffle information from
  * input files to the output file without having to know all the details.
  */
 class DocIdAndFeatures {
 public:
     uint32_t _docId;            // Current Docid
-    // generic feature data, flattened to avoid excessive allocator usage
-    WordDocFeatures _wordDocFeatures;
     std::vector<WordDocElementFeatures> _elements;
     std::vector<WordDocElementWordPosFeatures> _wordPositions;
-#ifdef notyet
-    // user blobs (packed)
-    UserFeatures _userFeatures;
-    // TODO: Determine how to handle big endian versus little endian user
-    // features, and whether set of user features is contiguous in file or
-    // interleaved with predefined features (word position, word weight)
-#endif
     // raw data (file format specific, packed)
     std::vector<uint64_t> _blob; // Feature data for (word, docid) pair
     uint32_t _bitOffset;         // Offset of feature start ([0..63])
@@ -148,7 +107,6 @@ public:
     ~DocIdAndFeatures();
 
     void clearFeatures() {
-        _wordDocFeatures.clear();
         _elements.clear();
         _wordPositions.clear();
         _bitOffset = 0u;
@@ -157,7 +115,6 @@ public:
     }
 
     void clearFeatures(uint32_t bitOffset) {
-        _wordDocFeatures.clear();
         _elements.clear();
         _wordPositions.clear();
         _bitOffset = bitOffset;

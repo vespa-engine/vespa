@@ -8,7 +8,6 @@ namespace search::index {
 
 DocIdAndFeatures::DocIdAndFeatures()
     : _docId(0),
-      _wordDocFeatures(),
       _elements(),
       _wordPositions(),
       _blob(),
