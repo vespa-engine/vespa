@@ -32,11 +32,13 @@ public class KeyUtilsTest {
                                                  "/QHLU4RydI0i0+Z2/tjGsGsCAwEAAQ==\n" +
                                                  "-----END PUBLIC KEY-----\n";
 
+    /** Generated from the private key above with {@code openssl ec -pubout -in private_key.pem -out public_key.pem} */
     private static final String ecPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
                                                 "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
                                                 "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
                                                 "-----END PUBLIC KEY-----\n";
 
+    /** Generated with {@code openssl ecparam -name prime256v1 -genkey -noout -out private_key.pem} */
     private static final String ecPemPrivateKey = "-----BEGIN EC PRIVATE KEY-----\n" +
                                                   "MHcCAQEEIJUmbIX8YFLHtpRgkwqDDE3igU9RG6JD9cYHWAZii9j7oAoGCCqGSM49\n" +
                                                   "AwEHoUQDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9z/4jKSTHwbYR8wdsOSrJGVEU\n" +
