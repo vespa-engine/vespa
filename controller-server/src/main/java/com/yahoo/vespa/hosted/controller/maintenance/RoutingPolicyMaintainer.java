@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Maintains DNS records as defined by routing policies for all exclusive load balancers in this system.
+ * Maintains routing policies and their DNS records for all exclusive load balancers in this system.
  *
  * @author mortent
  * @author mpolden
@@ -64,10 +64,10 @@ public class RoutingPolicyMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         Map<DeploymentId, List<LoadBalancer>> loadBalancers = findLoadBalancers();
-        removeObsoleteAliases(loadBalancers);
-        registerCnames(loadBalancers);
-        removeObsoleteCnames(loadBalancers);
-        registerAliases();
+        removeObsoleteEndpointsFromDns(loadBalancers);
+        storePolicies(loadBalancers);
+        removeObsoletePolicies(loadBalancers);
+        registerEndpointsInDns();
     }
 
     /** Find all exclusive load balancers in this system, grouped by deployment */
@@ -89,8 +89,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         return Collections.unmodifiableMap(result);
     }
 
-    /** Create aliases (global rotations) for all current routing policies */
-    private void registerAliases() {
+    /** Create global endpoints for all current routing policies */
+    private void registerEndpointsInDns() {
         try (Lock lock = db.lockRoutingPolicies()) {
             Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(db.readRoutingPolicies());
 
@@ -115,8 +115,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         }
     }
 
-    /** Create CNAME records for each individual load balancers */
-    private void registerCnames(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
+    /** Store routing policies for all load balancers */
+    private void storePolicies(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
         for (Map.Entry<DeploymentId, List<LoadBalancer>> entry : loadBalancers.entrySet()) {
             ApplicationId application = entry.getKey().applicationId();
             ZoneId zone = entry.getKey().zoneId();
@@ -124,7 +124,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
                 Set<RoutingPolicy> policies = new LinkedHashSet<>(db.readRoutingPolicies(application));
                 for (LoadBalancer loadBalancer : entry.getValue()) {
                     try {
-                        RoutingPolicy policy = registerCname(application, zone, loadBalancer);
+                        RoutingPolicy policy = storePolicy(application, zone, loadBalancer);
                         if (!policies.add(policy)) {
                             policies.remove(policy);
                             policies.add(policy);
@@ -140,8 +140,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         }
     }
 
-    /** Register DNS alias for given load balancer */
-    private RoutingPolicy registerCname(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
+    /** Store policy for given load balancer and request a CNAME for it */
+    private RoutingPolicy storePolicy(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
         RoutingPolicy routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone,
                                                         loadBalancer.hostname(), loadBalancer.dnsZone(),
                                                         loadBalancer.rotations());
@@ -151,8 +151,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         return routingPolicy;
     }
 
-    /** Remove all DNS records that point to non-existing load balancers */
-    private void removeObsoleteCnames(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
+    /** Remove obsolete policies and their CNAME records */
+    private void removeObsoletePolicies(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
         try (Lock lock = db.lockRoutingPolicies()) {
             Set<RoutingPolicy> removalCandidates = db.readRoutingPolicies().values().stream()
                                                      .flatMap(Collection::stream)
@@ -171,8 +171,8 @@ public class RoutingPolicyMaintainer extends Maintainer {
         }
     }
 
-    /** Remove global rotations that are not referenced by given load balancers */
-    private void removeObsoleteAliases(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
+    /** Remove DNS for global endpoints not referenced by given load balancers */
+    private void removeObsoleteEndpointsFromDns(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
         try (Lock lock = db.lockRoutingPolicies()) {
             Set<RoutingId> removalCandidates = routingTableFrom(db.readRoutingPolicies()).keySet();
             Set<RoutingId> activeRoutingIds = routingIdsFrom(loadBalancers);
@@ -197,7 +197,7 @@ public class RoutingPolicyMaintainer extends Maintainer {
         return Collections.unmodifiableSet(routingIds);
     }
 
-    /** Compute a routing table from given policies. */
+    /** Compute a routing table from given policies */
     private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Map<ApplicationId, Set<RoutingPolicy>> routingPolicies) {
         var flattenedPolicies = routingPolicies.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
