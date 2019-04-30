@@ -133,10 +133,8 @@ vespalib::string noFeatures = "NoFeatures";
 
 }
 
-template <bool bigEndian>
 void
-FeatureDecodeContext<bigEndian>::
-readBytes(uint8_t *buf, size_t len)
+DecodeContext64Base::readBytes(uint8_t *buf, size_t len)
 {
     while (len > 0) {
         // Ensure that buffer to read from isn't empty
@@ -167,9 +165,8 @@ readBytes(uint8_t *buf, size_t len)
 }
 
 
-template <bool bigEndian>
 uint32_t
-FeatureDecodeContext<bigEndian>::
+DecodeContext64Base::
 readHeader(vespalib::GenericHeader &header, int64_t fileSize)
 {
     size_t hhSize = vespalib::GenericHeader::getMinSize();

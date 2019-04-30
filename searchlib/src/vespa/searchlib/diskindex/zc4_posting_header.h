@@ -27,7 +27,6 @@ struct Zc4PostingHeader {
 
     Zc4PostingHeader();
 
-    template <bool bigEndian>
     void
     read(bitcompression::DecodeContext64Base &decode_context, const Zc4PostingParams &params);
 };
