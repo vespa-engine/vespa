@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
@@ -25,6 +24,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -154,19 +154,24 @@ public class RoutingPolicyMaintainer extends Maintainer {
     /** Remove obsolete policies and their CNAME records */
     private void removeObsoletePolicies(Map<DeploymentId, List<LoadBalancer>> loadBalancers) {
         try (Lock lock = db.lockRoutingPolicies()) {
-            Set<RoutingPolicy> removalCandidates = db.readRoutingPolicies().values().stream()
-                                                     .flatMap(Collection::stream)
-                                                     .collect(Collectors.toSet());
-            Set<HostName> activeLoadBalancers = loadBalancers.values().stream()
-                                                             .flatMap(Collection::stream)
-                                                             .map(LoadBalancer::hostname)
-                                                             .collect(Collectors.toSet());
-
-            // Remove any active load balancers
+            var allPolicies = new HashMap<>(db.readRoutingPolicies());
+            var removalCandidates = allPolicies.values().stream()
+                                               .flatMap(Collection::stream)
+                                               .collect(Collectors.toSet());
+            var activeLoadBalancers = loadBalancers.values().stream()
+                                                   .flatMap(Collection::stream)
+                                                   .map(LoadBalancer::hostname)
+                                                   .collect(Collectors.toSet());
+            // Keep active load balancers by removing them from candidates
             removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()));
-            for (RoutingPolicy policy : removalCandidates) {
-                String dnsName = policy.endpointIn(controller().system()).dnsName();
+            for (var policy : removalCandidates) {
+                var dnsName = policy.endpointIn(controller().system()).dnsName();
                 nameServiceForwarder.removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
+                // Remove stale policy from curator
+                var updatedPolicies = new LinkedHashSet<>(allPolicies.getOrDefault(policy.owner(), Set.of()));
+                updatedPolicies.remove(policy);
+                allPolicies.put(policy.owner(), updatedPolicies);
+                db.writeRoutingPolicies(policy.owner(), updatedPolicies);
             }
         }
     }
