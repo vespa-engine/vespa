@@ -223,7 +223,7 @@
             <arg>-Xlint:-deprecation</arg>
             <arg>-Xlint:-dep-ann</arg>
             <arg>-Xlint:-cast</arg>
-            <!--arg>-Werror</arg-->
+            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>
