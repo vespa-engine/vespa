@@ -12,8 +12,6 @@
 LOG_SETUP(".posocccompression");
 
 using search::index::DocIdAndFeatures;
-using search::index::WordDocElementFeatures;
-using search::index::WordDocElementWordPosFeatures;
 using search::index::PostingListParams;
 using search::index::SchemaUtil;
 using search::index::Schema;
@@ -344,7 +342,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     const uint64_t *valE = _valE;
 
     features.clearFeatures((oPreRead == 0) ? 0 : 64 - oPreRead);
-    features.setRaw(true);
+    features.set_has_raw_data(true);
     const uint64_t *rawFeatures =
         (oPreRead == 0) ? (oCompr - 1) : (oCompr - 2);
     uint64_t rawFeaturesStartBitPos =
@@ -373,7 +371,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
             }
             if (__builtin_expect(oCompr >= valE, false)) {
                 while (rawFeatures < oCompr) {
-                    features._blob.push_back(*rawFeatures);
+                    features.blob().push_back(*rawFeatures);
                     ++rawFeatures;
                 }
                 UC64_DECODECONTEXT_STORE(o, _);
@@ -394,7 +392,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
         do {
             if (__builtin_expect(oCompr >= valE, false)) {
                 while (rawFeatures < oCompr) {
-                    features._blob.push_back(*rawFeatures);
+                    features.blob().push_back(*rawFeatures);
                     ++rawFeatures;
                 }
                 UC64_DECODECONTEXT_STORE(o, _);
@@ -410,7 +408,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
         for (uint32_t pos = 1; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
                 while (rawFeatures < oCompr) {
-                    features._blob.push_back(*rawFeatures);
+                    features.blob().push_back(*rawFeatures);
                     ++rawFeatures;
                 }
                 UC64_DECODECONTEXT_STORE(o, _);
@@ -429,9 +427,9 @@ readFeatures(search::index::DocIdAndFeatures &features)
         _fileReadBias +
         (reinterpret_cast<unsigned long>(oCompr) << 3) -
         oPreRead;
-    features._bitLength = rawFeaturesEndBitPos - rawFeaturesStartBitPos;
+    features.set_bit_length(rawFeaturesEndBitPos - rawFeaturesStartBitPos);
     while (rawFeatures < oCompr) {
-        features._blob.push_back(*rawFeatures);
+        features.blob().push_back(*rawFeatures);
         ++rawFeatures;
     }
     if (__builtin_expect(oCompr >= valE, false)) {
@@ -451,7 +449,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     const uint64_t *valE = _valE;
 
     features.clearFeatures();
-    features.setRaw(false);
+    features.set_has_raw_data(false);
 
     const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
     uint32_t numElements = 1;
@@ -470,14 +468,13 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                           EC);
             elementId += static_cast<uint32_t>(val64);
         }
-        features._elements.
-            push_back(WordDocElementFeatures(elementId));
+        features.elements().emplace_back(elementId);
         if (fieldParams._hasElementWeights) {
             UC64_DECODEEXPGOLOMB_SMALL_NS(o,
                                           K_VALUE_POSOCC_ELEMENTWEIGHT,
                                           EC);
             int32_t elementWeight = this->convertToSigned(val64);
-            features._elements.back().setWeight(elementWeight);
+            features.elements().back().setWeight(elementWeight);
         }
         if (__builtin_expect(oCompr >= valE, false)) {
             UC64_DECODECONTEXT_STORE(o, _);
@@ -489,7 +486,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                       K_VALUE_POSOCC_ELEMENTLEN,
                                       EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
-        features._elements.back().setElementLen(elementLen);
+        features.elements().back().setElementLen(elementLen);
         UC64_DECODEEXPGOLOMB_SMALL_NS(o,
                                       K_VALUE_POSOCC_NUMPOSITIONS,
                                       EC);
@@ -507,9 +504,8 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                           K_VALUE_POSOCC_FIRST_WORDPOS,
                                           EC);
             wordPos = static_cast<uint32_t>(val64);
-            features._elements.back().incNumOccs();
-            features._wordPositions.push_back(
-                    WordDocElementWordPosFeatures(wordPos));
+            features.elements().back().incNumOccs();
+            features.word_positions().emplace_back(wordPos);
         } while (0);
         for (uint32_t pos = 1; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
@@ -522,9 +518,8 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                           K_VALUE_POSOCC_DELTA_WORDPOS,
                                           EC);
             wordPos += 1 + static_cast<uint32_t>(val64);
-            features._elements.back().incNumOccs();
-            features._wordPositions.push_back(
-                    WordDocElementWordPosFeatures(wordPos));
+            features.elements().back().incNumOccs();
+            features.word_positions().emplace_back(wordPos);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
@@ -732,23 +727,19 @@ void
 EG2PosOccEncodeContext<bigEndian>::
 writeFeatures(const search::index::DocIdAndFeatures &features)
 {
-    if (features.getRaw()) {
-        writeBits(&features._blob[0],
-                  features._bitOffset, features._bitLength);
+    if (features.has_raw_data()) {
+        writeBits(features.blob().data(),
+                  features.bit_offset(), features.bit_length());
         return;
     }
-    typedef WordDocElementFeatures Elements;
-    typedef WordDocElementWordPosFeatures Positions;
 
-    std::vector<Elements>::const_iterator element = features._elements.begin();
-
-    std::vector<Positions>::const_iterator position =
-        features._wordPositions.begin();
+    auto element = features.elements().begin();
+    auto position = features.word_positions().begin();
 
     const PosOccFieldParams &fieldParams =
         _fieldsParams->getFieldParams()[0];
 
-    uint32_t numElements = features._elements.size();
+    uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
         assert(numElements > 0u);
         encodeExpGolomb(numElements - 1,
@@ -855,7 +846,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     const uint64_t *valE = _valE;
 
     features.clearFeatures((oPreRead == 0) ? 0 : 64 - oPreRead);
-    features.setRaw(true);
+    features.set_has_raw_data(true);
     const uint64_t *rawFeatures =
         (oPreRead == 0) ? (oCompr - 1) : (oCompr - 2);
     uint64_t rawFeaturesStartBitPos =
@@ -885,7 +876,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
             }
             if (__builtin_expect(oCompr >= valE, false)) {
                 while (rawFeatures < oCompr) {
-                    features._blob.push_back(*rawFeatures);
+                    features.blob().push_back(*rawFeatures);
                     ++rawFeatures;
                 }
                 UC64_DECODECONTEXT_STORE(o, _);
@@ -910,7 +901,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
         for (uint32_t pos = 0; pos < numPositions; ++pos) {
             if (__builtin_expect(oCompr >= valE, false)) {
                 while (rawFeatures < oCompr) {
-                    features._blob.push_back(*rawFeatures);
+                    features.blob().push_back(*rawFeatures);
                     ++rawFeatures;
                 }
                 UC64_DECODECONTEXT_STORE(o, _);
@@ -929,9 +920,9 @@ readFeatures(search::index::DocIdAndFeatures &features)
         _fileReadBias +
         (reinterpret_cast<unsigned long>(oCompr) << 3) -
         oPreRead;
-    features._bitLength = rawFeaturesEndBitPos - rawFeaturesStartBitPos;
+    features.set_bit_length(rawFeaturesEndBitPos - rawFeaturesStartBitPos);
     while (rawFeatures < oCompr) {
-        features._blob.push_back(*rawFeatures);
+        features.blob().push_back(*rawFeatures);
         ++rawFeatures;
     }
     if (__builtin_expect(oCompr >= valE, false)) {
@@ -951,7 +942,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     const uint64_t *valE = _valE;
 
     features.clearFeatures();
-    features.setRaw(false);
+    features.set_has_raw_data(false);
 
     const PosOccFieldParams &fieldParams =
         _fieldsParams->getFieldParams()[0];
@@ -972,14 +963,13 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                           EC);
             elementId += static_cast<uint32_t>(val64);
         }
-        features._elements.
-            push_back(WordDocElementFeatures(elementId));
+        features.elements().emplace_back(elementId);
         if (fieldParams._hasElementWeights) {
             UC64_DECODEEXPGOLOMB_SMALL_NS(o,
                                           K_VALUE_POSOCC_ELEMENTWEIGHT,
                                           EC);
             int32_t elementWeight = this->convertToSigned(val64);
-            features._elements.back().setWeight(elementWeight);
+            features.elements().back().setWeight(elementWeight);
         }
         if (__builtin_expect(oCompr >= valE, false)) {
             UC64_DECODECONTEXT_STORE(o, _);
@@ -991,13 +981,13 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                       elementLenK,
                                       EC);
         uint32_t elementLen = static_cast<uint32_t>(val64) + 1;
-        features._elements.back().setElementLen(elementLen);
+        features.elements().back().setElementLen(elementLen);
         UC64_DECODEEXPGOLOMB_SMALL_NS(o,
                                       K_VALUE_POSOCC_NUMPOSITIONS,
                                       EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-        features._bitLength = numPositions * 64;
+        features.set_bit_length(numPositions * 64);
 
         uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::
                             calcWordPosK(numPositions, elementLen);
@@ -1014,9 +1004,8 @@ readFeatures(search::index::DocIdAndFeatures &features)
                                           wordPosK,
                                           EC);
             wordPos += 1 + static_cast<uint32_t>(val64);
-            features._elements.back().incNumOccs();
-            features._wordPositions.push_back(
-                    WordDocElementWordPosFeatures(wordPos));
+            features.elements().back().incNumOccs();
+            features.word_positions().emplace_back(wordPos);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
@@ -1227,23 +1216,19 @@ void
 EGPosOccEncodeContext<bigEndian>::
 writeFeatures(const search::index::DocIdAndFeatures &features)
 {
-    if (features.getRaw()) {
-        writeBits(&features._blob[0],
-                  features._bitOffset, features._bitLength);
+    if (features.has_raw_data()) {
+        writeBits(features.blob().data(),
+                  features.bit_offset(), features.bit_length());
         return;
     }
-    typedef WordDocElementFeatures Elements;
-    typedef WordDocElementWordPosFeatures Positions;
 
-    std::vector<Elements>::const_iterator element = features._elements.begin();
-
-    std::vector<Positions>::const_iterator position =
-        features._wordPositions.begin();
+    auto element = features.elements().begin();
+    auto position = features.word_positions().begin();
     const PosOccFieldParams &fieldParams =
         _fieldsParams->getFieldParams()[0];
     uint32_t elementLenK = calcElementLenK(fieldParams._avgElemLen);
 
-    uint32_t numElements = features._elements.size();
+    uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
         assert(numElements > 0u);
         encodeExpGolomb(numElements - 1,

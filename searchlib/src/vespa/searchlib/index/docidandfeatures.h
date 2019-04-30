@@ -19,13 +19,13 @@ namespace search::index {
  * Present as vector element in DocIdAndFeatures.
  */
 class WordDocElementFeatures {
-public:
+private:
     uint32_t _elementId;    // Array index
     uint32_t _numOccs;
     int32_t _weight;
     uint32_t _elementLen;
-    // TODO: add support for user features
 
+public:
     WordDocElementFeatures()
         : _elementId(0u),
           _numOccs(0u),
@@ -67,9 +67,10 @@ public:
  * Present as vector element in DocIdAndFeatures.
  */
 class WordDocElementWordPosFeatures {
-public:
+private:
     uint32_t _wordPos;
 
+public:
     WordDocElementWordPosFeatures()
         : _wordPos(0u)
     {}
@@ -90,15 +91,20 @@ public:
  */
 class DocIdAndFeatures {
 public:
-    uint32_t _docId;            // Current Docid
-    std::vector<WordDocElementFeatures> _elements;
-    std::vector<WordDocElementWordPosFeatures> _wordPositions;
-    // raw data (file format specific, packed)
-    std::vector<uint64_t> _blob; // Feature data for (word, docid) pair
-    uint32_t _bitOffset;         // Offset of feature start ([0..63])
-    uint32_t _bitLength;         // Length of features
-    bool _raw;                   //
+    using RawData = std::vector<uint64_t>;
 
+protected:
+    uint32_t _doc_id; // Current document id
+    std::vector<WordDocElementFeatures> _elements;
+    std::vector<WordDocElementWordPosFeatures> _word_positions;
+
+    // Raw data (file format specific, packed)
+    RawData _blob; // Feature data for (word, docid) pair
+    uint32_t _bit_offset; // Offset of feature start ([0..63])
+    uint32_t _bit_length; // Length of features
+    bool _has_raw_data;
+
+public:
     DocIdAndFeatures();
     DocIdAndFeatures(const DocIdAndFeatures &);
     DocIdAndFeatures & operator = (const DocIdAndFeatures &);
@@ -108,33 +114,47 @@ public:
 
     void clearFeatures() {
         _elements.clear();
-        _wordPositions.clear();
-        _bitOffset = 0u;
-        _bitLength = 0u;
+        _word_positions.clear();
+        _bit_offset = 0u;
+        _bit_length = 0u;
         _blob.clear();
     }
 
     void clearFeatures(uint32_t bitOffset) {
         _elements.clear();
-        _wordPositions.clear();
-        _bitOffset = bitOffset;
-        _bitLength = 0u;
+        _word_positions.clear();
+        _bit_offset = bitOffset;
+        _bit_length = 0u;
         _blob.clear();
     }
 
     void clear(uint32_t docId) {
-        _docId = docId;
+        _doc_id = docId;
         clearFeatures();
     }
 
 
     void clear(uint32_t docId, uint32_t bitOffset) {
-        _docId = docId;
+        _doc_id = docId;
         clearFeatures(bitOffset);
     }
 
-    void setRaw(bool raw) { _raw = raw; }
-    bool getRaw() const { return _raw; }
+    uint32_t doc_id() const { return _doc_id; }
+    void set_doc_id(uint32_t val) { _doc_id = val; }
+
+    const std::vector<WordDocElementFeatures>& elements() const { return _elements; }
+    std::vector<WordDocElementFeatures>& elements() { return _elements; }
+
+    const std::vector<WordDocElementWordPosFeatures>& word_positions() const { return _word_positions; }
+    std::vector<WordDocElementWordPosFeatures>& word_positions() { return _word_positions; }
+
+    const RawData& blob() const { return _blob; }
+    RawData& blob() { return _blob; }
+    uint32_t bit_offset() const { return _bit_offset; }
+    uint32_t bit_length() const { return _bit_length; }
+    void set_bit_length(uint32_t val) { _bit_length = val; }
+    bool has_raw_data() const { return _has_raw_data; }
+    void set_has_raw_data(bool val) { _has_raw_data = val; }
 };
 
 }

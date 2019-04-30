@@ -53,9 +53,9 @@ public:
         _ss << "a=" << docId;
         if (_verbose) {
             _ss << "(";
-            auto wpi = features._wordPositions.begin();
+            auto wpi = features.word_positions().begin();
             bool firstElement = true;
-            for (auto &el : features._elements) {
+            for (auto &el : features.elements()) {
                 if (!firstElement) {
                     _ss << ",";
                 }

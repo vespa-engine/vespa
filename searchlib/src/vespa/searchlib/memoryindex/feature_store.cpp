@@ -21,7 +21,7 @@ FeatureStore::writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &featur
         oldOffset = 0;
         assert(_f.getWriteOffset() == oldOffset);
     }
-    assert(!features.getRaw());
+    assert(!features.has_raw_data());
     _f.writeFeatures(features);
     return oldOffset;
 }

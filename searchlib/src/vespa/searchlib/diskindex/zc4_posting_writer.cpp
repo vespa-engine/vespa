@@ -153,11 +153,11 @@ Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures &fe
         uint64_t writeOffset = _encode_features->getWriteOffset();
         uint64_t featureSize = writeOffset - _featureOffset;
         assert(static_cast<uint32_t>(featureSize) == featureSize);
-        _docIds.push_back(std::make_pair(features._docId,
+        _docIds.push_back(std::make_pair(features.doc_id(),
                                          static_cast<uint32_t>(featureSize)));
         _featureOffset = writeOffset;
     } else {
-        _docIds.push_back(std::make_pair(features._docId, uint32_t(0)));
+        _docIds.push_back(std::make_pair(features.doc_id(), uint32_t(0)));
     }
 }
 

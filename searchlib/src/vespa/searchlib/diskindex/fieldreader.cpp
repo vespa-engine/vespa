@@ -63,7 +63,7 @@ void
 FieldReader::readDocIdAndFeatures()
 {
     _oldposoccfile->readDocIdAndFeatures(_docIdAndFeatures);
-    _docIdAndFeatures._docId = _docIdMapper.mapDocId(_docIdAndFeatures._docId);
+    _docIdAndFeatures.set_doc_id(_docIdMapper.mapDocId(_docIdAndFeatures.doc_id()));
 }
 
 
@@ -75,13 +75,13 @@ FieldReader::read()
             readCounts();
             if (_wordNum == noWordNumHigh()) {
                 assert(_residue == 0);
-                _docIdAndFeatures._docId = NO_DOC;
+                _docIdAndFeatures.set_doc_id(NO_DOC);
                 return;
             }
         }
         --_residue;
         readDocIdAndFeatures();
-        if (_docIdAndFeatures._docId != NO_DOC) {
+        if (_docIdAndFeatures.doc_id() != NO_DOC) {
             return;
         }
     }
@@ -267,26 +267,26 @@ FieldReaderStripInfo::read()
         if (_wordNum == noWordNumHigh()) {
             return;
         }
-        assert(!features.getRaw());
-        uint32_t numElements = features._elements.size();
+        assert(!features.has_raw_data());
+        uint32_t numElements = features.elements().size();
         assert(numElements > 0);
         std::vector<Element>::iterator element =
-            features._elements.begin();
+            features.elements().begin();
         if (_hasElements) {
             if (!_hasElementWeights) {
                 for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
                     element->setWeight(1);
                 }
-                assert(element == features._elements.end());
+                assert(element == features.elements().end());
             }
         } else {
             if (element->getElementId() != 0) {
                 continue;   // Drop this entry, try to read new entry
             }
             element->setWeight(1);
-            features._wordPositions.resize(element->getNumOccs());
+            features.word_positions().resize(element->getNumOccs());
             if (numElements > 1) {
-                features._elements.resize(1);
+                features.elements().resize(1);
             }
         }
         break;

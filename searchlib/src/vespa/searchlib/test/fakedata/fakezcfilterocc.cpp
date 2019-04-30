@@ -267,16 +267,16 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw, bool encode_features, bool dy
             check_features.clear(doc._docId);
         }
         reader.read_doc_id_and_features(features);
-        assert(features._docId == doc._docId);
-        assert(features._elements.size() == check_features._elements.size());
-        assert(features._wordPositions.size() == check_features._wordPositions.size());
+        assert(features.doc_id() == doc._docId);
+        assert(features.elements().size() == check_features.elements().size());
+        assert(features.word_positions().size() == check_features.word_positions().size());
         ++hits;
     }
     if (encode_features) {
         assert(word_pos_iterator == word_pos_iterator_end);
     }
     reader.read_doc_id_and_features(features);
-    assert(static_cast<int32_t>(features._docId) == -1);
+    assert(static_cast<int32_t>(features.doc_id()) == -1);
 }
 
 FakeZcFilterOcc::~FakeZcFilterOcc()

@@ -48,9 +48,9 @@ public:
             assert(elementLen == _elements.back().getElementLen());
         }
         assert(_elements.back().getNumOccs() == 0 ||
-               wordPos > _wordPositions.back().getWordPos());
+               wordPos > _word_positions.back().getWordPos());
         _elements.back().incNumOccs();
-        _wordPositions.emplace_back(wordPos);
+        _word_positions.emplace_back(wordPos);
     }
 };
 
