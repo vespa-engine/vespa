@@ -137,6 +137,7 @@ public:
      * long as rhs is live and unchanged.
      */
     void referenceWriteContext(const ComprFileWriteContext &rhs);
+    void reference_compressed_buffer(void *buffer, size_t usedUnits);
 };
 
 
