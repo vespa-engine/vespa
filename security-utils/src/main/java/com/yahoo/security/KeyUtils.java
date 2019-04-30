@@ -4,6 +4,7 @@ package com.yahoo.security;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
@@ -26,8 +27,10 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,6 +109,30 @@ public class KeyUtils {
             throw new UncheckedIOException(e);
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static PublicKey fromPemEncodedPublicKey(String pem) {
+        try (PEMParser parser = new PEMParser(new StringReader(pem))) {
+            List<Object> unknownObjects = new ArrayList<>();
+            Object pemObject;
+            while ((pemObject = parser.readObject()) != null) {
+                SubjectPublicKeyInfo keyInfo;
+                if (pemObject instanceof SubjectPublicKeyInfo) {
+                    keyInfo = (SubjectPublicKeyInfo) pemObject;
+                } else if (pemObject instanceof PEMKeyPair) {
+                    PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
+                    keyInfo = pemKeypair.getPublicKeyInfo();
+                } else {
+                    unknownObjects.add(pemObject);
+                    continue;
+                }
+                JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
+                return pemConverter.getPublicKey(keyInfo);
+            }
+            throw new IllegalArgumentException("Expected a public key, but found " + unknownObjects.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
