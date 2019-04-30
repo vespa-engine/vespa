@@ -43,6 +43,7 @@ public class MetricsReporter extends Maintainer {
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
+    public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
     private final Metric metric;
     private final Chef chefClient;
@@ -68,6 +69,7 @@ public class MetricsReporter extends Maintainer {
         reportChefMetrics();
         reportDeploymentMetrics();
         reportRemainingRotations();
+        reportQueuedNameServiceRequests();
     }
 
     private void reportRemainingRotations() {
@@ -145,6 +147,11 @@ public class MetricsReporter extends Maintainer {
                        .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
                                                           metric.createContext(dimensions(application.id()))));
+    }
+
+    private void reportQueuedNameServiceRequests() {
+        metric.set(NAME_SERVICE_REQUESTS_QUEUED, controller().curator().readNameServiceQueue().requests().size(),
+                   metric.createContext(Map.of()));
     }
     
     private static double deploymentFailRatio(ApplicationList applicationList) {

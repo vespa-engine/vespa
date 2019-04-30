@@ -53,13 +53,19 @@ public class DeploymentTester {
     private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final ReadyJobsTrigger readyJobTrigger;
     private final NameServiceDispatcher nameServiceDispatcher;
+    private final boolean updateDnsAutomatically;
 
     public DeploymentTester() {
         this(new ControllerTester());
     }
 
     public DeploymentTester(ControllerTester tester) {
+        this(tester, true);
+    }
+
+    public DeploymentTester(ControllerTester tester, boolean updateDnsAutomatically) {
         this.tester = tester;
+        this.updateDnsAutomatically = updateDnsAutomatically;
         tester.curator().writeUpgradesPerMinute(100);
 
         JobControl jobControl = new JobControl(tester.curator());
@@ -218,7 +224,9 @@ public class DeploymentTester {
         } else {
             assertFalse(applications().require(application.id()).change().hasTargets());
         }
-        updateDns();
+        if (updateDnsAutomatically) {
+            updateDns();
+        }
     }
 
     public void completeUpgrade(Application application, Version version, String upgradePolicy) {
