@@ -347,7 +347,7 @@ public class FSA {
         return new FSA(fsaUrl.getFile());
     }
 
-    static FileInputStream createInputStream(String filename) {
+    private static FileInputStream createInputStream(String filename) {
         try {
             return new FileInputStream(filename);
         } catch (FileNotFoundException e) {
@@ -358,7 +358,7 @@ public class FSA {
     /**
      * Loads an FSA from a file using utf-8 encoding
      *
-     * @throws FileNotFoundException if the file is not found
+     * @throws IllegalArgumentException if the file is not found
      */
     public FSA(String filename) {
         this(filename,"utf-8");
@@ -367,7 +367,7 @@ public class FSA {
     /**
      * Loads an FSA from a file using the specified character encoding.
      *
-     * @throws FileNotFoundException if the file is not found
+     * @throws IllegalArgumentException if the file is not found
      */
     public FSA(String filename, String charsetname) {
         this(createInputStream(filename), charsetname, true);
