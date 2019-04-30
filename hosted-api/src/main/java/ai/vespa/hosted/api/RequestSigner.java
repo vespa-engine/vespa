@@ -6,11 +6,12 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.http.HttpRequest;
 import java.security.Key;
+import java.security.PrivateKey;
+import java.security.Signature;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.function.Supplier;
 
-import static ai.vespa.hosted.api.Signatures.encrypted;
 import static ai.vespa.hosted.api.Signatures.sha256Digest;
 
 /**
@@ -20,7 +21,7 @@ import static ai.vespa.hosted.api.Signatures.sha256Digest;
  */
 public class RequestSigner {
 
-    private final Key privateKey;
+    private final PrivateKey privateKey;
     private final String keyId;
     private final Clock clock;
 
@@ -50,7 +51,7 @@ public class RequestSigner {
         String timestamp = clock.instant().toString();
         String contentHash = Base64.getEncoder().encodeToString(sha256Digest(data::get));
         byte[] canonicalMessage = Signatures.canonicalMessageOf(method.name(), request.copy().build().uri(), timestamp, contentHash);
-        String signature = Base64.getEncoder().encodeToString(encrypted(canonicalMessage, privateKey));
+        String signature = Base64.getEncoder().encodeToString(Signatures.signed(canonicalMessage, privateKey));
 
         request.setHeader("X-Timestamp", timestamp);
         request.setHeader("X-Content-Hash", contentHash);
