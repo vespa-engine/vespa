@@ -1136,6 +1136,7 @@ public:
     // File position for end of buffer minus byte address of end of buffer
     // minus sizeof uint64_t.  Then shifted left by 3 to represent bits.
     uint64_t _fileReadBias;
+    search::ComprFileReadContext *_readContext;
 
     DecodeContext64Base()
         : search::ComprFileDecodeContext(),
@@ -1145,7 +1146,8 @@ public:
           _val(0),
           _cacheInt(0),
           _preRead(0),
-          _fileReadBias(0)
+          _fileReadBias(0),
+          _readContext(nullptr)
     {
     }
 
@@ -1163,7 +1165,8 @@ public:
           _val(val),
           _cacheInt(cacheInt),
           _preRead(preRead),
-          _fileReadBias(0)
+          _fileReadBias(0),
+          _readContext(nullptr)
     {
     }
 
@@ -1183,6 +1186,7 @@ public:
         _cacheInt = rhs._cacheInt;
         _preRead = rhs._preRead;
         _fileReadBias = rhs._fileReadBias;
+        _readContext = rhs._readContext;
         return *this;
     }
 
@@ -1278,6 +1282,24 @@ public:
             return (val >> 1);
         }
     }
+
+    void setReadContext(search::ComprFileReadContext *readContext) {
+        _readContext = readContext;
+    }
+    search::ComprFileReadContext *getReadContext() const {
+        return _readContext;
+    }
+    void readComprBuffer() {
+        _readContext->readComprBuffer();
+    }
+    void readComprBufferIfNeeded() {
+        if (__builtin_expect(_valI >= _valE, false)) {
+            readComprBuffer();
+        }
+    }
+    virtual uint64_t readBits(uint32_t length) = 0;
+    void readBytes(uint8_t *buf, size_t len);
+    uint32_t readHeader(vespalib::GenericHeader &header, int64_t fileSize);
 };
 
 
@@ -1436,7 +1458,7 @@ public:
     }
 
     uint64_t
-    readBits(uint32_t length)
+    readBits(uint32_t length) override
     {
         uint64_t res;
         if (length < 64) {
@@ -1489,7 +1511,6 @@ template <bool bigEndian>
 class FeatureDecodeContext : public DecodeContext64<bigEndian>
 {
 public:
-    search::ComprFileReadContext *_readContext;
     typedef DecodeContext64<bigEndian> ParentClass;
     typedef index::DocIdAndFeatures DocIdAndFeatures;
     typedef index::PostingListParams PostingListParams;
@@ -1504,67 +1525,28 @@ public:
     using ParentClass::getBitOffset;
     using ParentClass::readBits;
     using ParentClass::ReadBits;
+    using ParentClass::readComprBuffer;
+    using ParentClass::readComprBufferIfNeeded;
+    using ParentClass::readHeader;
+    using ParentClass::readBytes;
 
     FeatureDecodeContext()
-        : ParentClass(),
-          _readContext(nullptr)
+        : ParentClass()
     {
     }
 
     FeatureDecodeContext(const uint64_t *compr,
                          int bitOffset)
-        : ParentClass(compr, bitOffset),
-          _readContext(nullptr)
+        : ParentClass(compr, bitOffset)
     {
     }
 
     FeatureDecodeContext(const uint64_t *compr,
                          int bitOffset,
                          uint64_t bitLength)
-        : ParentClass(compr, bitOffset, bitLength),
-          _readContext(nullptr)
+        : ParentClass(compr, bitOffset, bitLength)
     {
     }
-
-    FeatureDecodeContext &
-    operator=(const FeatureDecodeContext &rhs)
-    {
-        ParentClass::operator=(rhs);
-        _readContext = rhs._readContext;
-        return *this;
-    }
-
-    void
-    setReadContext(search::ComprFileReadContext *readContext)
-    {
-        _readContext = readContext;
-    }
-
-    search::ComprFileReadContext *
-    getReadContext() const
-    {
-        return _readContext;
-    }
-
-    void
-    readComprBuffer()
-    {
-        _readContext->readComprBuffer();
-    }
-
-    void
-    readComprBufferIfNeeded()
-    {
-        if (__builtin_expect(_valI >= _valE, false)) {
-            readComprBuffer();
-        }
-    }
-
-    void
-    readBytes(uint8_t *buf, size_t len);
-
-    virtual uint32_t
-    readHeader(vespalib::GenericHeader &header, int64_t fileSize);
 
     virtual void
     readHeader(const vespalib::GenericHeader &header,
