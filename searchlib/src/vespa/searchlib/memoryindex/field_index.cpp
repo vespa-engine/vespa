@@ -169,23 +169,10 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             for (; pitr.valid(); ++pitr) {
                 uint32_t docId = pitr.getKey();
                 EntryRef featureRef(pitr.getData());
-                indexBuilder.startDocument(docId);
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
-                size_t poff = 0;
-                uint32_t wpIdx = 0u;
-                size_t numElements = features._elements.size();
-                for (size_t i = 0; i < numElements; ++i) {
-                    const WordDocElementFeatures & fef = features._elements[i];
-                    indexBuilder.startElement(fef.getElementId(), fef.getWeight(), fef.getElementLen());
-                    for (size_t j = 0; j < fef.getNumOccs(); ++j, ++wpIdx) {
-                        assert(wpIdx == poff + j);
-                        indexBuilder.addOcc(features._wordPositions[poff + j]);
-                    }
-                    poff += fef.getNumOccs();
-                    indexBuilder.endElement();
-                }
-                indexBuilder.endDocument();
+                features._docId = docId;
+                indexBuilder.add_document(features);
             }
         } else {
             const PostingListKeyDataType *kd =
@@ -194,23 +181,10 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             for (; kd != kde; ++kd) {
                 uint32_t docId = kd->_key;
                 EntryRef featureRef(kd->getData());
-                indexBuilder.startDocument(docId);
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
-                size_t poff = 0;
-                uint32_t wpIdx = 0u;
-                size_t numElements = features._elements.size();
-                for (size_t i = 0; i < numElements; ++i) {
-                    const WordDocElementFeatures & fef = features._elements[i];
-                    indexBuilder.startElement(fef.getElementId(), fef.getWeight(), fef.getElementLen());
-                    for (size_t j = 0; j < fef.getNumOccs(); ++j, ++wpIdx) {
-                        assert(wpIdx == poff + j);
-                        indexBuilder.addOcc(features._wordPositions[poff + j]);
-                    }
-                    poff += fef.getNumOccs();
-                    indexBuilder.endElement();
-                }
-                indexBuilder.endDocument();
+                features._docId = docId;
+                indexBuilder.add_document(features);
             }
         }
         indexBuilder.endWord();

@@ -7,6 +7,7 @@
 
 namespace search::diskindex {
 
+using index::DocIdAndFeatures;
 using index::DummyFileHeaderContext;
 using index::Schema;
 using index::WordDocElementWordPosFeatures;
@@ -17,13 +18,17 @@ struct Builder
     search::diskindex::IndexBuilder _ib;
     TuneFileIndexing    _tuneFileIndexing;
     DummyFileHeaderContext   _fileHeaderContext;
+    DocIdAndFeatures _features;
 
     Builder(const std::string &dir,
             const Schema &s,
             uint32_t docIdLimit,
             uint64_t numWordIds,
             bool directio)
-        : _ib(s)
+        : _ib(s),
+          _tuneFileIndexing(),
+          _fileHeaderContext(),
+          _features()
     {
         if (directio) {
             _tuneFileIndexing._read.setWantDirectIO();
@@ -37,11 +42,11 @@ struct Builder
     void
     addDoc(uint32_t docId)
     {
-        _ib.startDocument(docId);
-        _ib.startElement(0, 1, 1);
-        _ib.addOcc(WordDocElementWordPosFeatures(0));
-        _ib.endElement();
-        _ib.endDocument();
+        _features.clear(docId);
+        _features._elements.emplace_back(0, 1, 1);
+        _features._elements.back().setNumOccs(1);
+        _features._wordPositions.emplace_back(0);
+        _ib.add_document(_features);
     }
 
     void
