@@ -87,7 +87,7 @@ readConfFile();
 use strict;
 use warnings;
 use feature qw(switch say);
-use vars qw/ $opt_c $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R $opt_F $opt_V /;
+use vars qw/ $opt_c $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_z $opt_H $opt_R $opt_F $opt_V /;
 use Env qw($HOME);
 use JSON;
 use Getopt::Std;
@@ -98,16 +98,12 @@ my $cloudconfig_dir = "$HOME/.cloudconfig";
 my $session_id_file;
 my $configsource_url_used_file = "$cloudconfig_dir/deploy-configsource-url-used";
 
-my $curl_command = 'curl -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 1200';
 
-my $CURL_PUT = $curl_command . ' --write-out \%{http_code} --request PUT';
-my $CURL_GET = $curl_command . ' --request GET';
-my $GZIP = "gzip";
-my $CURL_POST_WITH_HEADERS = $curl_command . ' -i --request POST --header "Content-Type: application/x-gzip" --data-binary @- -D /tmp/http-headers';
-my $CURL_POST = $curl_command . ' --write-out \%{http_code} --request POST --header "Content-Type: application/x-gzip" --data-binary @-';
-my $CURL_POST_ZIP = $curl_command . ' --write-out \%{http_code} --request POST --header "Content-Type: application/zip" --data-binary @-';
 
 my $pathPrefix;
+my $siaPath;
+my $siaCertsPath;
+my $siaKeysPath;
 my $tenant = "default";
 my $application = "default";
 my $environment = "prod";
@@ -116,8 +112,8 @@ my $instance = "default";
 my $version = "v2";
 my $configserver = "";
 my $port = "19071";
-
-getopts('c:fhnt:ve:E:r:a:i:p:HR:F:V:');
+my $cert = "";
+getopts('c:fhnt:ve:E:r:a:i:p:z:HR:F:V:');
 
 if ($opt_h) {
   usage();
@@ -152,7 +148,17 @@ if ($opt_p) {
   $port = $opt_p;
 }
 
+if ($opt_z) {
+  $cert = $opt_z;
+}
+
 $pathPrefix = "/application/v2/tenant/$tenant/session";
+
+$siaPath = "/var/lib/sia/";
+
+$siaCertsPath = $siaPath . "certs/";
+
+$siaKeysPath = $siaPath . "keys/";
 
 create_cloudconfig_dir();
 
@@ -161,6 +167,17 @@ $session_id_file = "$cloudconfig_dir/$tenant/deploy-session-id";
 my $command = shift;
 $command ||= "help";
 
+my $curl_command = 'curl -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 1200';
+if ($cert) {
+    $curl_command = $curl_command . " -k --cert " . $siaCertsPath .  $cert . ".cert.pem --key " . $siaKeysPath . $cert . ".key.pem ";
+}
+
+my $CURL_PUT = $curl_command . ' --write-out \%{http_code} --request PUT';
+my $CURL_GET = $curl_command . ' --request GET';
+my $GZIP = "gzip";
+my $CURL_POST_WITH_HEADERS = $curl_command . ' -i --request POST --header "Content-Type: application/x-gzip" --data-binary @- -D /tmp/http-headers';
+my $CURL_POST = $curl_command . ' --write-out \%{http_code} --request POST --header "Content-Type: application/x-gzip" --data-binary @-';
+my $CURL_POST_ZIP = $curl_command . ' --write-out \%{http_code} --request POST --header "Content-Type: application/zip" --data-binary @-';
 
 if ($command eq "upload") {
   my $application_package = shift;
@@ -246,8 +263,10 @@ sub usage {
     print "    '-f' (force/ignore validation errors)\n";
     print "    '-t <timeout>' (timeout in seconds)\n";
     print "    '-c <server>' (config server hostname)\n";
-    print "    '-p <port>' (config server http port)\n\n";
-    
+    print "    '-p <port>' (config server http port)\n";
+    print "    '-p <cert>' (cert/key name)\n\n";
+
+
     print "Try 'vespa-deploy help <command>' to get more help\n";
   }
 }
@@ -328,7 +347,11 @@ sub get_configsource_url {
 
   my @configsources;
   if ($configserver and $configserver ne "") {
-      @configsources = ('http://' . $configserver . ':' . $port . '/');
+      if ($cert and $cert ne "") {
+          @configsources = ('https://' . $configserver . ':' . $port . '/');
+      } else {
+          @configsources = ('http://' . $configserver . ':' . $port . '/');
+      }
   } else {
       @configsources = split(' ', `$VESPA_HOME/bin/vespa-print-default configservers_http`);
   }
