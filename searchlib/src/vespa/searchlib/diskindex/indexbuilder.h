@@ -36,7 +36,7 @@ private:
     uint32_t                 _docIdLimit;
     uint64_t                 _numWordIds;
 
-    const Schema &_schema;  // Ptr to allow being std::vector member
+    const Schema &_schema;
 
     static uint32_t noDocId() {
         return std::numeric_limits<uint32_t>::max();
@@ -49,7 +49,7 @@ private:
 public:
     typedef index::WordDocElementWordPosFeatures WordDocElementWordPosFeatures;
 
-    // schema argument must live until indexbuilder has been deleted.
+    // Schema argument must live until IndexBuilder has been deleted.
     IndexBuilder(const Schema &schema); 
     ~IndexBuilder() override;
 
@@ -57,11 +57,7 @@ public:
     void endField() override;
     void startWord(vespalib::stringref word) override;
     void endWord() override;
-    void startDocument(uint32_t docId) override;
-    void endDocument() override;
-    void startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) override;
-    void endElement() override;
-    void addOcc(const WordDocElementWordPosFeatures &features) override;
+    void add_document(const index::DocIdAndFeatures &features) override;
 
     void setPrefix(vespalib::stringref prefix);
 

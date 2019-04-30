@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
@@ -45,13 +46,9 @@ private:
     std::stringstream _ss;
     bool              _insideWord;
     bool              _insideField;
-    bool              _insideDoc;
-    bool              _insideElem;
     bool              _firstWord;
     bool              _firstField;
     bool              _firstDoc;
-    bool              _firstElem;
-    bool              _firstPos;
 
 public:
     MyBuilder(const Schema &schema)
@@ -59,13 +56,9 @@ public:
           _ss(),
           _insideWord(false),
           _insideField(false),
-          _insideDoc(false),
-          _insideElem(false),
           _firstWord(true),
           _firstField(true),
-          _firstDoc(true),
-          _firstElem(true),
-          _firstPos(true)
+          _firstDoc(true)
     {}
 
     virtual void startWord(vespalib::stringref word) override {
@@ -80,7 +73,6 @@ public:
 
     virtual void endWord() override {
         assert(_insideWord);
-        assert(!_insideDoc);
         _ss << "]";
         _firstWord = false;
         _insideWord = false;
@@ -102,48 +94,33 @@ public:
         _insideField = false;
     }
 
-    virtual void startDocument(uint32_t docId) override {
+    virtual void add_document(const DocIdAndFeatures &features) override {
         assert(_insideWord);
-        assert(!_insideDoc);
-        if (!_firstDoc) _ss << ",";
-        _ss << "d=" << docId << "[";
-        _firstElem = true;
-        _insideDoc = true;
-    }
-
-    virtual void endDocument() override {
-        assert(_insideDoc);
-        assert(!_insideElem);
+        if (!_firstDoc) {
+            _ss << ",";
+        }
+        _ss << "d=" << features._docId << "[";
+        bool first_elem = true;
+        size_t word_pos_offset = 0;
+        for (const auto& elem : features._elements) {
+            if (!first_elem) {
+                _ss << ",";
+            }
+            _ss << "e=" << elem.getElementId() << ",w=" << elem.getWeight() << ",l=" << elem.getElementLen() << "[";
+            bool first_pos = true;
+            for (size_t i = 0; i < elem.getNumOccs(); ++i) {
+                if (!first_pos) {
+                    _ss << ",";
+                }
+                _ss << features._wordPositions[i + word_pos_offset].getWordPos();
+                first_pos = false;
+            }
+            word_pos_offset += elem.getNumOccs();
+            _ss << "]";
+            first_elem = false;
+        }
         _ss << "]";
         _firstDoc = false;
-        _insideDoc = false;
-    }
-
-    virtual void startElement(uint32_t elementId,
-                              int32_t weight,
-                              uint32_t elementLen) override {
-        assert(_insideDoc);
-        assert(!_insideElem);
-        if (!_firstElem)
-            _ss << ",";
-        _ss << "e=" << elementId <<
-            ",w=" << weight << ",l=" << elementLen << "[";
-        _firstPos = true;
-        _insideElem = true;
-    }
-
-    virtual void endElement() override {
-        assert(_insideElem);
-        _ss << "]";
-        _firstElem = false;
-        _insideElem = false;
-    }
-
-    virtual void addOcc(const WordDocElementWordPosFeatures &features) override {
-        assert(_insideElem);
-        if (!_firstPos) _ss << ",";
-        _ss << features.getWordPos();
-        _firstPos = false;
     }
 
     std::string toStr() const {
@@ -701,14 +678,13 @@ TEST_F(FieldIndexCollectionTest, require_that_basic_dumping_to_index_builder_is_
     WordDocElementWordPosFeatures wpf;
     b.startField(4);
     b.startWord("a");
-    b.startDocument(2);
-    b.startElement(0, 10, 20);
-    wpf.setWordPos(1);
-    b.addOcc(wpf);
-    wpf.setWordPos(3);
-    b.addOcc(wpf);
-    b.endElement();
-    b.endDocument();
+    DocIdAndFeatures features;
+    features._docId = 2;
+    features._elements.emplace_back(0, 10, 20);
+    features._elements.back().setNumOccs(2);
+    features._wordPositions.emplace_back(1);
+    features._wordPositions.emplace_back(3);
+    b.add_document(features);
     b.endWord();
     b.endField();
     EXPECT_EQ("f=4[w=a[d=2[e=0,w=10,l=20[1,3]]]]", b.toStr());
