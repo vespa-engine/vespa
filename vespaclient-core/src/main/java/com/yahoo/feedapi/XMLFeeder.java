@@ -21,6 +21,6 @@ public class XMLFeeder extends Feeder {
 
     @Override
     protected FeedReader createReader() throws Exception {
-        return new VespaXMLFeedReader(stream, docMan);
+        return new VespaXMLFeedReader(stream, docMan, false);
     }
 }
