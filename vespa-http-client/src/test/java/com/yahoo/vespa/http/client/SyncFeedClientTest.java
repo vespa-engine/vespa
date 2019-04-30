@@ -79,14 +79,14 @@ public class SyncFeedClientTest {
                 "    \"fields\": {" +
                 "        \"title\": \"Title 4\"" +
                 "    }" +
-                "}", "opId_4"));
+                "}", "opId_4", null));
         operations.add(new SyncOperation("id::test::4", // Another operation for the same document
             "{" +
                 "    \"put\": \"id::test::4\"," +
                 "    \"fields\": {" +
                 "        \"title\": \"Title 44\"" +
                 "    }" +
-                "}", "opId_44"));
+                "}", "opId_44", null));
 
         SyncResult result = feedClient.stream(operations);
 

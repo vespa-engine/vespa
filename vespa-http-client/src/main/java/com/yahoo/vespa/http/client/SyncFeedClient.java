@@ -62,19 +62,18 @@ public class SyncFeedClient implements AutoCloseable {
         private final String operationId;
 
         public SyncOperation(String documentId, CharSequence documentData) {
-            this(documentId, documentData, null, null);
+            this(documentId, documentData, null);
         }
 
-        public SyncOperation(String documentId, CharSequence documentData, String operationId) {
-            this(documentId, documentData, operationId, null);
+        public SyncOperation(String documentId, CharSequence documentData, Object context) {
+            this(documentId, documentData, new BigInteger(64, ThreadLocalRandom.current()).toString(32), context);
         }
 
-        private SyncOperation(String documentId, CharSequence documentData, String operationId, Object context) {
+        public SyncOperation(String documentId, CharSequence documentData, String operationId, Object context) {
             this.documentId = Objects.requireNonNull(documentId, "documentId");
             this.documentData = Objects.requireNonNull(documentData, "documentData");
             this.context = context;
-            this.operationId = Objects.isNull(operationId) ?
-                new BigInteger(64, ThreadLocalRandom.current()).toString(32) : operationId;
+            this.operationId = Objects.requireNonNull(operationId);
         }
 
     }
