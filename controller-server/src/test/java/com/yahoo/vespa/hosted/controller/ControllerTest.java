@@ -63,10 +63,11 @@ import static org.junit.Assert.fail;
  */
 public class ControllerTest {
 
+    private final DeploymentTester tester = new DeploymentTester();
+
     @Test
     public void testDeployment() {
         // Setup system
-        DeploymentTester tester = new DeploymentTester();
         ApplicationController applications = tester.controller().applications();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -205,7 +206,6 @@ public class ControllerTest {
 
     @Test
     public void testDeploymentApplicationVersion() {
-        DeploymentTester tester = new DeploymentTester();
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -227,7 +227,7 @@ public class ControllerTest {
     @Test
     public void testGlobalRotations() {
         // Setup
-        ControllerTester tester = new ControllerTester();
+        ControllerTester tester = this.tester.controllerTester();
         ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
         ApplicationId app = ApplicationId.from("tenant", "app1", "default");
         DeploymentId deployment = new DeploymentId(app, zone);
@@ -274,7 +274,6 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistration() {
-        DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -295,6 +294,7 @@ public class ControllerTest {
                                 "app1--tenant1.global.vespa.yahooapis.com"),
                          tester.configServer().rotationCnames().get(new DeploymentId(application.id(), deployment.zone())));
         }
+        tester.updateDns();
         assertEquals(3, tester.controllerTester().nameService().records().size());
 
         Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
@@ -315,7 +315,6 @@ public class ControllerTest {
 
     @Test
     public void testRedirectLegacyDnsNames() { // TODO: Remove together with Flags.REDIRECT_LEGACY_DNS_NAMES
-        DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -347,8 +346,6 @@ public class ControllerTest {
 
     @Test
     public void testUpdatesExistingDnsAlias() {
-        DeploymentTester tester = new DeploymentTester();
-
         // Application 1 is deployed and deleted
         {
             Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
@@ -461,7 +458,6 @@ public class ControllerTest {
 
     @Test
     public void testIntegrationTestDeployment() {
-        DeploymentTester tester = new DeploymentTester();
         Version six = Version.fromString("6.1");
         tester.upgradeSystem(six);
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
@@ -496,7 +492,6 @@ public class ControllerTest {
 
     @Test
     public void testDevDeployment() {
-        DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.dev)
                 .majorVersion(6)
@@ -518,7 +513,6 @@ public class ControllerTest {
 
     @Test
     public void testSuspension() {
-        DeploymentTester tester = new DeploymentTester();
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                                                         .environment(Environment.prod)
@@ -543,7 +537,6 @@ public class ControllerTest {
     // second time will not fail
     @Test
     public void testDeletingApplicationThatHasAlreadyBeenDeleted() {
-        DeploymentTester tester = new DeploymentTester();
         Application app = tester.createApplication("app2", "tenant1", 1, 12L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -559,7 +552,6 @@ public class ControllerTest {
 
     @Test
     public void testDeployApplicationPackageWithApplicationDir() {
-        DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -570,7 +562,6 @@ public class ControllerTest {
 
     @Test
     public void testDeployApplicationWithWarnings() {
-        DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)

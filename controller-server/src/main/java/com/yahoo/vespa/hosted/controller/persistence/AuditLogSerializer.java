@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -51,7 +50,7 @@ public class AuditLogSerializer {
                     entryObject.field(principalField).asString(),
                     methodFrom(entryObject.field(methodField)),
                     entryObject.field(resourceField).asString(),
-                    optionalField(entryObject.field(dataField), Function.identity())
+                    Serializers.optionalField(entryObject.field(dataField), Function.identity())
             ));
         });
         return new AuditLog(entries);
@@ -73,10 +72,6 @@ public class AuditLogSerializer {
             case "DELETE": return AuditLog.Entry.Method.DELETE;
             default: throw new IllegalArgumentException("Unknown serialized value '" + field.asString() + "'");
         }
-    }
-
-    private static <T> Optional<T> optionalField(Inspector field, Function<String, T> fieldMapper) {
-        return Optional.of(field).filter(Inspector::valid).map(Inspector::asString).map(fieldMapper);
     }
 
 }

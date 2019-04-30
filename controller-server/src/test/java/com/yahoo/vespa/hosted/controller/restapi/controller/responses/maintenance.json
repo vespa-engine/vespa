@@ -37,6 +37,9 @@
       "name": "MetricsReporter"
     },
     {
+      "name": "NameServiceDispatcher"
+    },
+    {
       "name": "OsVersionStatusUpdater"
     },
     {

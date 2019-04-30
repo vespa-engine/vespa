@@ -8,6 +8,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -16,11 +17,11 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -86,6 +87,7 @@ public class CuratorDb {
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
+    private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -190,6 +192,10 @@ public class CuratorDb {
 
     public Lock lockAuditLog() {
         return lock(lockRoot.append("auditLog"), defaultLockTimeout);
+    }
+
+    public Lock lockNameServiceQueue() {
+        return lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -434,6 +440,18 @@ public class CuratorDb {
         curator.set(auditLogPath(), asJson(auditLogSerializer.toSlime(log)));
     }
 
+
+    // -------------- Name service log ----------------------------------------
+
+    public NameServiceQueue readNameServiceQueue() {
+        return readSlime(nameServiceQueuePath()).map(nameServiceQueueSerializer::fromSlime)
+                                                .orElse(NameServiceQueue.EMPTY);
+    }
+
+    public void writeNameServiceQueue(NameServiceQueue queue) {
+        curator.set(nameServiceQueuePath(), asJson(nameServiceQueueSerializer.toSlime(queue)));
+    }
+
     // -------------- Provisioning (called by internal code) ------------------
 
     @SuppressWarnings("unused")
@@ -554,6 +572,10 @@ public class CuratorDb {
 
     private static Path routingPolicyPath(ApplicationId application) {
         return routingPoliciesRoot.append(application.serializedForm());
+    }
+
+    private static Path nameServiceQueuePath() {
+        return root.append("nameServiceQueue");
     }
 
     private static Path auditLogPath() {
