@@ -1141,7 +1141,7 @@ public:
     DecodeContext64Base()
         : search::ComprFileDecodeContext(),
           _valI(nullptr),
-          _valE(nullptr),
+          _valE(static_cast<const uint64_t *>(nullptr) - 1),
           _realValE(nullptr),
           _val(0),
           _cacheInt(0),
@@ -1298,6 +1298,8 @@ public:
         }
     }
     virtual uint64_t readBits(uint32_t length) = 0;
+    virtual void align(uint32_t alignment) = 0;
+    virtual uint64_t decode_exp_golomb(int k) = 0;
     void readBytes(uint8_t *buf, size_t len);
     uint32_t readHeader(vespalib::GenericHeader &header, int64_t fileSize);
 };
@@ -1321,7 +1323,7 @@ public:
     DecodeContext64(const uint64_t *compr,
                     int bitOffset)
         : DecodeContext64Base(compr + 1,
-                              nullptr,
+                              static_cast<const uint64_t *>(nullptr) - 1,
                               nullptr,
                               0,
                               EC::bswap(*compr),
@@ -1407,10 +1409,12 @@ public:
     };
 
     void skipBits(int bits) override {
+        readComprBufferIfNeeded();
         while (bits >= 64) {
             _val = 0;
             ReadBits(64, _val, _cacheInt, _preRead, _valI);
             bits -= 64;
+            readComprBufferIfNeeded();
         }
         if (bits > 0) {
             if (bigEndian) {
@@ -1419,6 +1423,7 @@ public:
                 _val >>= bits;
             }
             ReadBits(bits, _val, _cacheInt, _preRead, _valI);
+            readComprBufferIfNeeded();
         }
     }
 
@@ -1474,20 +1479,32 @@ public:
             _val = 0;
         }
         UC64_READBITS(_val, _valI, _preRead, _cacheInt, EC);
+        readComprBufferIfNeeded();
         return res;
     }
 
+    uint64_t decode_exp_golomb(int k) override {
+        uint32_t length;
+        uint64_t val64;
+        UC64_DECODEEXPGOLOMB(_val, _valI, _preRead, _cacheInt, k, EC);
+        readComprBufferIfNeeded();
+        return val64;
+    }
+
     void
-    align(uint32_t alignment)
+    align(uint32_t alignment) override
     {
+        readComprBufferIfNeeded();
         uint64_t pad = (- getReadOffset()) & (alignment - 1);
         while (pad > 64) {
             (void) readBits(64);
             pad -= 64;
+            readComprBufferIfNeeded();
         }
         if (pad > 0) {
             (void) readBits(pad);
         }
+        readComprBufferIfNeeded();
     }
 
     /*
@@ -1576,41 +1593,6 @@ public:
      */
     virtual void
     getParams(PostingListParams &params) const;
-
-    void skipBits(int bits) override {
-        readComprBufferIfNeeded();
-        while (bits >= 64) {
-            _val = 0;
-            ReadBits(64, _val, _cacheInt, _preRead, _valI);
-            bits -= 64;
-            readComprBufferIfNeeded();
-        }
-        if (bits > 0) {
-            if (bigEndian) {
-                _val <<= bits;
-            } else {
-                _val >>= bits;
-            }
-            ReadBits(bits, _val, _cacheInt, _preRead, _valI);
-            readComprBufferIfNeeded();
-        }
-    }
-
-    void
-    align(uint32_t alignment)
-    {
-        readComprBufferIfNeeded();
-        uint64_t pad = (- getReadOffset()) & (alignment - 1);
-        while (pad > 64) {
-            (void) readBits(64);
-            pad -= 64;
-            readComprBufferIfNeeded();
-        }
-        if (pad > 0) {
-            (void) readBits(pad);
-        }
-        readComprBufferIfNeeded();
-    }
 };
 
 typedef FeatureDecodeContext<true> FeatureDecodeContextBE;
