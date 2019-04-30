@@ -5,8 +5,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
-import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
+import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -38,7 +37,7 @@ import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SC
  *
  * @author jonmv
  */
-public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need for this super anyway.
+public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
 
     private static final Logger logger = Logger.getLogger(AthenzRoleFilter.class.getName());
 
@@ -46,14 +45,13 @@ public class AthenzRoleFilter extends CorsRequestFilterBase { // TODO: No need f
     private final TenantController tenants;
 
     @Inject
-    public AthenzRoleFilter(CorsFilterConfig config, AthenzClientFactory athenzClientFactory, Controller controller) {
-        super(Set.copyOf(config.allowedUrls()));
+    public AthenzRoleFilter(AthenzClientFactory athenzClientFactory, Controller controller) {
         this.athenz = new AthenzFacade(athenzClientFactory);
         this.tenants = controller.tenants();
     }
 
     @Override
-    protected Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
+    protected Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
             AthenzPrincipal athenzPrincipal = (AthenzPrincipal) request.getUserPrincipal();
             request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(athenzPrincipal,
