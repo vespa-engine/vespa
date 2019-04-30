@@ -341,7 +341,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     uint64_t val64;
     const uint64_t *valE = _valE;
 
-    features.clearFeatures((oPreRead == 0) ? 0 : 64 - oPreRead);
+    features.clear_features((oPreRead == 0) ? 0 : 64 - oPreRead);
     features.set_has_raw_data(true);
     const uint64_t *rawFeatures =
         (oPreRead == 0) ? (oCompr - 1) : (oCompr - 2);
@@ -448,7 +448,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     uint64_t val64;
     const uint64_t *valE = _valE;
 
-    features.clearFeatures();
+    features.clear_features();
     features.set_has_raw_data(false);
 
     const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
@@ -845,7 +845,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     uint64_t val64;
     const uint64_t *valE = _valE;
 
-    features.clearFeatures((oPreRead == 0) ? 0 : 64 - oPreRead);
+    features.clear_features((oPreRead == 0) ? 0 : 64 - oPreRead);
     features.set_has_raw_data(true);
     const uint64_t *rawFeatures =
         (oPreRead == 0) ? (oCompr - 1) : (oCompr - 2);
@@ -941,7 +941,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
     uint64_t val64;
     const uint64_t *valE = _valE;
 
-    features.clearFeatures();
+    features.clear_features();
     features.set_has_raw_data(false);
 
     const PosOccFieldParams &fieldParams =

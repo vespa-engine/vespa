@@ -112,7 +112,7 @@ public:
     DocIdAndFeatures & operator = (DocIdAndFeatures &&) = default;
     ~DocIdAndFeatures();
 
-    void clearFeatures() {
+    void clear_features() {
         _elements.clear();
         _word_positions.clear();
         _bit_offset = 0u;
@@ -120,23 +120,23 @@ public:
         _blob.clear();
     }
 
-    void clearFeatures(uint32_t bitOffset) {
+    void clear_features(uint32_t bit_offset) {
         _elements.clear();
         _word_positions.clear();
-        _bit_offset = bitOffset;
+        _bit_offset = bit_offset;
         _bit_length = 0u;
         _blob.clear();
     }
 
-    void clear(uint32_t docId) {
-        _doc_id = docId;
-        clearFeatures();
+    void clear(uint32_t doc_id) {
+        _doc_id = doc_id;
+        clear_features();
     }
 
 
-    void clear(uint32_t docId, uint32_t bitOffset) {
-        _doc_id = docId;
-        clearFeatures(bitOffset);
+    void clear(uint32_t doc_id, uint32_t bit_offset) {
+        _doc_id = doc_id;
+        clear_features(bit_offset);
     }
 
     uint32_t doc_id() const { return _doc_id; }
