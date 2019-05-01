@@ -132,7 +132,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     ret = cachedConfig;
                 }
             }
-            if (!cachedConfig.isError()) {
+            if (!cachedConfig.isError() && cachedConfig.getGeneration() > 0) {
                 needToGetConfig = false;
             }
         }
