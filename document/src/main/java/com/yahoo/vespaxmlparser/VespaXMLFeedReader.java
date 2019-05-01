@@ -28,11 +28,13 @@ import java.util.Optional;
  */
 public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
 
+    private final boolean requireVespaFeedTag;
     /**
      * Creates a reader that reads from the given file.
      */
     public VespaXMLFeedReader(String fileName, DocumentTypeManager docTypeManager) throws Exception {
         super(fileName, docTypeManager);
+        requireVespaFeedTag = true;
         readInitial();
     }
 
@@ -40,17 +42,18 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
      * Creates a reader that reads from the given stream.
      */
     public VespaXMLFeedReader(InputStream stream, DocumentTypeManager docTypeManager) throws Exception {
-        super(stream, docTypeManager);
-        readInitial();
+        this(stream, docTypeManager, true);
     }
 
     /**
-     * Creates a reader that uses the given reader to read - this can be used if the vespa feed
-     * is part of a larger XML document.
+     * Creates a reader that reads from the given stream.
      */
-    public VespaXMLFeedReader(XMLStreamReader reader, DocumentTypeManager manager) throws Exception {
-        super(reader, manager);
-        readInitial();
+    public VespaXMLFeedReader(InputStream stream, DocumentTypeManager docTypeManager, boolean requireVespaFeedTag) throws Exception {
+        super(stream, docTypeManager);
+        this.requireVespaFeedTag = requireVespaFeedTag;
+        if (requireVespaFeedTag) {
+            readInitial();
+        }
     }
 
     /**
@@ -131,6 +134,8 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
                             throw newDeserializeException("Missing \"documentid\" attribute for remove operation");
                         }
                         return new RemoveFeedOperation(documentId, TestAndSetCondition.fromConditionString(condition));
+                    } else if ("vespafeed".equals(startTag)) {
+                        //Ignore it
                     } else {
                         throw newDeserializeException("Element \"" + startTag + "\" not allowed in this context");
                     }

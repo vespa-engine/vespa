@@ -364,7 +364,7 @@ public class SimpleFeeder implements ReplyHandler {
         } else if ((b[0] == 'V') && (b[1] == '1')) {
             return new VespaV1FeedReader(in, docTypeMgr);
         } else {
-             return new VespaXMLFeedReader(in, docTypeMgr);
+             return new VespaXMLFeedReader(in, docTypeMgr, false);
         }
     }
 
