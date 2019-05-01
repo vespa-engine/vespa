@@ -29,7 +29,7 @@ public class FeedReaderFactory {
         switch (dataFormat) {
             case XML_UTF8:
                 try {
-                    return new VespaXMLFeedReader(inputStream, docTypeManager, true);
+                    return new VespaXMLFeedReader(inputStream, docTypeManager);
                 } catch (Exception e) {
                     throw new RuntimeException("Could not create VespaXMLFeedReader", e);
                 }
