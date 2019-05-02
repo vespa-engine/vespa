@@ -422,6 +422,25 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.Flavor$Type": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.provision.Flavor$Type[] values()",
+      "public static com.yahoo.config.provision.Flavor$Type valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.provision.Flavor$Type undefined",
+      "public static final enum com.yahoo.config.provision.Flavor$Type BARE_METAL",
+      "public static final enum com.yahoo.config.provision.Flavor$Type VIRTUAL_MACHINE",
+      "public static final enum com.yahoo.config.provision.Flavor$Type DOCKER_CONTAINER"
+    ]
+  },
   "com.yahoo.config.provision.Flavor": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -442,7 +461,12 @@
       "public abstract com.yahoo.config.provision.Flavor$Disk disk()",
       "public abstract com.yahoo.config.provision.Flavor$Bandwidth bandwidth()",
       "public abstract com.yahoo.config.provision.Flavor$Environment environment()",
-      "public abstract java.util.List replaces()"
+      "public abstract java.util.List replaces()",
+      "public double getMinMainMemoryAvailableGb()",
+      "public double getMinDiskAvailableGb()",
+      "public double getMinCpuCores()",
+      "public boolean hasFastDisk()",
+      "public com.yahoo.config.provision.Flavor$Type getType()"
     ],
     "fields": []
   },

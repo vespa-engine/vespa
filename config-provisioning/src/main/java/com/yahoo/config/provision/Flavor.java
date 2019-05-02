@@ -107,4 +107,18 @@ public interface Flavor {
         VIRTUAL_MACHINE,
         DOCKER_CONTAINER
     }
+
+
+    // TODO: Remove these after 7.46
+    default double getMinMainMemoryAvailableGb() { return memory().sizeInGb(); }
+    default double getMinDiskAvailableGb() { return disk().sizeInBase10Gb(); }
+    default double getMinCpuCores() { return cpu().cores(); }
+    default boolean hasFastDisk() { return disk().isFast(); }
+    default Type getType() { return Type.valueOf(environment().toString()); }
+    enum Type {
+        undefined, // Default value in config (flavors.def)
+        BARE_METAL,
+        VIRTUAL_MACHINE,
+        DOCKER_CONTAINER
+    }
 }
