@@ -18,7 +18,7 @@ import java.net.http.HttpRequest;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class SignatureFilterTest {
@@ -61,34 +61,41 @@ public class SignatureFilterTest {
 
     @Test
     public void testFilter() {
-        // Unsigned request is rejected.
+        // Unsigned request gets no role.
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("https://host:123/path/./..//..%2F?query=empty&%3F=%26"));
         byte[] emptyBody = new byte[0];
         DiscFilterRequest unsigned = requestOf(request.method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody);
-        assertFalse(filter.filter(unsigned).isEmpty());
+        filter.filter(unsigned);
+        assertNull(unsigned.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
-        // Signed request is rejected when no key is stored for the application.
+        // Signed request gets no role when no key is stored for the application.
         DiscFilterRequest signed = requestOf(signer.signed(request, Method.GET), emptyBody);
-        assertFalse(filter.filter(signed).isEmpty());
+        filter.filter(signed);
+        assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
-        // Signed request is rejected when a non-matching key is stored for the application.
+        // Signed request gets no role when a non-matching key is stored for the application.
         applications.lockOrThrow(id, application -> applications.store(application.withPemDeployKey(otherPublicKey)));
-        assertFalse(filter.filter(signed).isEmpty());
+        filter.filter(signed);
+        assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
-        // Signed request is accepted when a matching key is stored for the application.
+        // Signed request gets a build service role when a matching key is stored for the application.
         applications.lockOrThrow(id, application -> applications.store(application.withPemDeployKey(publicKey)));
         assertTrue(filter.filter(signed).isEmpty());
         SecurityContext securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
         assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());
         assertEquals(Set.of(Role.buildService(id.tenant(), id.application())), securityContext.roles());
 
-        // Signed POST request is also accepted.
+        // Signed POST request also gets a build service role.
         byte[] hiBytes = new byte[]{0x48, 0x69};
         signed = requestOf(signer.signed(request, Method.POST), hiBytes);
-        assertTrue(filter.filter(signed).isEmpty());
+        filter.filter(signed);
+        securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
+        assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());
+        assertEquals(Set.of(Role.buildService(id.tenant(), id.application())), securityContext.roles());
 
-        // Unsigned requests are still rejected.
-        assertFalse(filter.filter(unsigned).isEmpty());
+        // Unsigned requests still get no roles.
+        filter.filter(unsigned);
+        assertNull(unsigned.getAttribute(SecurityContext.ATTRIBUTE_NAME));
     }
 
     private static DiscFilterRequest requestOf(HttpRequest request, byte[] body) {
