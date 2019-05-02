@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -64,7 +65,8 @@ public class GroupPreparer {
                 // Create a prioritized set of nodes
                 NodeList nodeList = nodeRepository.list();
                 NodePrioritizer prioritizer = new NodePrioritizer(
-                        nodeList, application, cluster, requestedNodes, spareCount, nodeRepository.nameResolver());
+                        nodeList, application, cluster, requestedNodes, spareCount, nodeRepository.nameResolver(),
+                        nodeRepository.getAvailableFlavors());
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
@@ -73,14 +75,14 @@ public class GroupPreparer {
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
-                        highestIndex, nodeRepository.zone(), nodeRepository.clock());
+                                                               highestIndex,  nodeRepository.getAvailableFlavors(),
+                                                               nodeRepository.zone(), nodeRepository.clock());
                 allocation.offer(prioritizer.prioritize());
 
                 if (dynamicProvisioningEnabled) {
                     List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
-                            .map(deficit -> hostProvisioner.get().provisionHosts(
-                                    nodeRepository.database().getProvisionIndexes(deficit.getCount()),
-                                    deficit.getFlavor()))
+                            .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
+                                                                                 deficit.getFlavor()))
                             .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that

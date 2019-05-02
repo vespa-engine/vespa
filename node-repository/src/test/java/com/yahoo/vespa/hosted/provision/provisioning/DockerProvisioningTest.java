@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
@@ -36,7 +37,7 @@ import static org.junit.Assert.fail;
  */
 public class DockerProvisioningTest {
 
-    private static final String dockerFlavor = "dockerSmall";
+    private static final FlavorSpec dockerFlavor = new FlavorSpec(1, 1, 1);
 
     @Test
     public void docker_application_deployment() {
@@ -55,7 +56,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, nodes.size());
-        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
+        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().asSpec());
 
         // Upgrade Vespa version on nodes
         Version upgradedWantedVespaVersion = Version.fromString("6.40");
@@ -65,7 +66,7 @@ public class DockerProvisioningTest {
         tester.activate(application1, new HashSet<>(upgradedHosts));
         NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, upgradedNodes.size());
-        assertEquals(dockerFlavor, upgradedNodes.asList().get(0).flavor().canonicalName());
+        assertEquals(dockerFlavor, upgradedNodes.asList().get(0).flavor().asSpec());
         assertEquals(hosts, upgradedHosts);
     }
 
@@ -74,7 +75,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
-        List<Node> parents = tester.makeReadyVirtualDockerHosts(10, "large");
+        List<Node> parents = tester.makeReadyVirtualDockerHosts(10, new FlavorSpec(2, 2, 2));
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
 
@@ -204,7 +205,7 @@ public class DockerProvisioningTest {
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes of flavor 'dockerSmall' for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes with cpu cores: 1.0, memory: 1.0 Gb, disk 1.0 Gb for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
                          e.getMessage());
         }
 
@@ -225,7 +226,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
+        assertEquals(dockerFlavor.legacyFlavorName(), nodes.asList().get(0).flavor().canonicalName());
     }
 
     private Set<String> hostsOf(NodeList nodes) {
@@ -235,7 +236,7 @@ public class DockerProvisioningTest {
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, ProvisioningTester tester) {
         Set<HostSpec> hosts = new HashSet<>(tester.prepare(application,
                                             ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.39"), exclusive, Collections.emptySet()),
-                                            Capacity.fromNodeCount(nodeCount, Optional.of(dockerFlavor), false, true),
+                                            Capacity.fromCount(nodeCount, Optional.of(dockerFlavor), false, true),
                                             1));
         tester.activate(application, hosts);
     }

@@ -15,6 +15,7 @@ import java.util.Set;
  * @author freva
  */
 public class ProvisionedHost {
+
     private final String id;
     private final String hostHostname;
     private final Flavor hostFlavor;
@@ -86,4 +87,5 @@ public class ProvisionedHost {
                 ", nodeFlavor=" + nodeFlavor +
                 '}';
     }
+
 }

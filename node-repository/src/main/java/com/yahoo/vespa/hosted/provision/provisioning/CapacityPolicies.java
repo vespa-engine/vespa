@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
@@ -41,19 +42,23 @@ public class CapacityPolicies {
         }
     }
 
-    public Flavor decideFlavor(Capacity requestedCapacity, ClusterSpec cluster) {
-        // for now, always use the requested flavor if a docker flavor is requested
-        Optional<String> requestedFlavor = requestedCapacity.flavor();
-        if (requestedFlavor.isPresent() &&
-            flavors.getFlavorOrThrow(requestedFlavor.get()).getType() == Flavor.Type.DOCKER_CONTAINER)
-            return flavors.getFlavorOrThrow(requestedFlavor.get());
+    public FlavorSpec decideFlavor(Capacity requestedCapacity, ClusterSpec cluster) {
+        Optional<FlavorSpec> requestedFlavor = requestedCapacity.flavorSpec();
+        if (requestedFlavor.isPresent() && ! requestedFlavor.get().allocateByLegacyName())
+            return requestedFlavor.get();
 
-        String defaultFlavorName = zone.defaultFlavor(cluster.type());
+        FlavorSpec defaultFlavor = FlavorSpec.fromLegacyFlavorName(zone.defaultFlavor(cluster.type()));
+        if ( requestedFlavor.isEmpty())
+            return defaultFlavor;
+
+        // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
-        switch(zone.environment()) {
-            case dev : case test : case staging : return flavors.getFlavorOrThrow(defaultFlavorName);
-            default : return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
+            return flavors.exists(requestedFlavor.get().legacyFlavorName()) ? requestedFlavor.get() : defaultFlavor;
+        else {
+            switch (zone.environment()) {
+                case dev: case test: case staging: return defaultFlavor;
+                default: return flavors.getFlavorOrThrow(requestedFlavor.get().legacyFlavorName()).asSpec();
+            }
         }
     }
 

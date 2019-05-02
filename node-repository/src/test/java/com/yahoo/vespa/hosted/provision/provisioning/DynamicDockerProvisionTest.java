@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.Flags;
@@ -44,10 +45,10 @@ public class DynamicDockerProvisionTest {
         assertEquals(0, tester.nodeRepository().list().size());
 
         ApplicationId application1 = tester.makeApplicationId();
-        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("dockerSmall");
+        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
-        List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor.canonicalName());
+        List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor);
         verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor);
 
         // Total of 8 nodes should now be in node-repo, 4 hosts in state provisioned, and 4 reserved nodes
@@ -64,21 +65,21 @@ public class DynamicDockerProvisionTest {
         deployZoneApp(tester);
 
         ApplicationId application = tester.makeApplicationId();
-        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("dockerSmall");
+        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
-        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor.canonicalName());
+        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
         verify(hostProvisioner).provisionHosts(List.of(100, 101), flavor);
     }
 
     @Test
     public void allocates_to_hosts_already_hosting_nodes_by_this_tenant() {
         ApplicationId application = tester.makeApplicationId();
-        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("dockerSmall");
+        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
 
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("large"));
-        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor.canonicalName());
+        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
         verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor);
 
         // Ready the provisioned hosts, add an IP addreses to pool and activate them
@@ -92,7 +93,7 @@ public class DynamicDockerProvisionTest {
         deployZoneApp(tester);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
-        tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor.canonicalName());
+        tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor);
         // Verify there was only 1 call to provision hosts (during the first prepare)
         verify(hostProvisioner).provisionHosts(any(), any());
 
@@ -124,9 +125,9 @@ public class DynamicDockerProvisionTest {
     private static void mockHostProvisioner(HostProvisioner hostProvisioner, Flavor hostFlavor) {
         doAnswer(invocation -> {
             List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
-            Flavor nodeFlavor = (Flavor) invocation.getArguments()[1];
+            FlavorSpec nodeFlavor = (FlavorSpec) invocation.getArguments()[1];
             return provisionIndexes.stream()
-                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeFlavor))
+                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", new Flavor(nodeFlavor)))
                     .collect(Collectors.toList());
         }).when(hostProvisioner).provisionHosts(any(), any());
     }

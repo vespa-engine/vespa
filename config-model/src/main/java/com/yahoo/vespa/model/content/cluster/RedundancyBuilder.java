@@ -14,9 +14,9 @@ public class RedundancyBuilder {
         Integer finalRedundancy = 3;
         Integer readyCopies = 2;
 
-        ModelElement redundancyElement = clusterXml.getChild("redundancy");
+        ModelElement redundancyElement = clusterXml.child("redundancy");
         if (redundancyElement != null) {
-            initialRedundancy = redundancyElement.getIntegerAttribute("reply-after");
+            initialRedundancy = redundancyElement.integerAttribute("reply-after");
             finalRedundancy = (int)redundancyElement.asLong();
 
             if (initialRedundancy == null) {

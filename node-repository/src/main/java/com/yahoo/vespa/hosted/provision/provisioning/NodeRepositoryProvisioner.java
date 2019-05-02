@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -86,7 +87,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         log.log(zone.system() == SystemName.cd ? Level.INFO : LogLevel.DEBUG,
                 () -> "Received deploy prepare request for " + requestedCapacity + " in " +
-                        wantedGroups + " groups for application " + application + ", cluster " + cluster);
+                      wantedGroups + " groups for application " + application + ", cluster " + cluster);
 
         int effectiveGroups;
         NodeSpec requestedNodes;
@@ -96,7 +97,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
+            FlavorSpec flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
             log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes

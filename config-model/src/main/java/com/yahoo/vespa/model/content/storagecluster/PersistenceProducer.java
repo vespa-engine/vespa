@@ -12,7 +12,7 @@ public class PersistenceProducer implements PersistenceConfig.Producer {
 
     public static class Builder {
         public PersistenceProducer build(ModelElement element) {
-            ModelElement persistence = element.getChild("engine");
+            ModelElement persistence = element.child("engine");
             if (persistence == null) {
                 return new PersistenceProducer();
             }

@@ -7,6 +7,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -44,14 +45,14 @@ public class NodesSpecification {
     private final boolean exclusive;
 
     /** The flavor the nodes should have, or empty to use the default */
-    private final Optional<String> flavor;
+    private final Optional<FlavorSpec> flavor;
 
     /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
     private NodesSpecification(boolean dedicated, int count, int groups, Version version,
                                boolean required, boolean canFail, boolean exclusive,
-                               Optional<String> flavor, Optional<String> dockerImage) {
+                               Optional<FlavorSpec> flavor, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
@@ -66,18 +67,16 @@ public class NodesSpecification {
     private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
         this(dedicated,
              nodesElement.requiredIntegerAttribute("count"),
-             nodesElement.getIntegerAttribute("groups", 1),
+             nodesElement.integerAttribute("groups", 1),
              version,
-             nodesElement.getBooleanAttribute("required", false),
+             nodesElement.booleanAttribute("required", false),
              canFail,
-             nodesElement.getBooleanAttribute("exclusive", false),
-             Optional.ofNullable(nodesElement.getStringAttribute("flavor")),
-             Optional.ofNullable(nodesElement.getStringAttribute("docker-image")));
+             nodesElement.booleanAttribute("exclusive", false),
+             getFlavor(nodesElement),
+             Optional.ofNullable(nodesElement.stringAttribute("docker-image")));
     }
 
-    /**
-     * Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element
-     */
+    /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
     public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
         return new NodesSpecification(true,
                                       ! context.getDeployState().getProperties().isBootstrap(),
@@ -92,7 +91,7 @@ public class NodesSpecification {
      */
     public static Optional<NodesSpecification> fromParent(ModelElement parentElement, ConfigModelContext context) {
         if (parentElement == null) return Optional.empty();
-        ModelElement nodesElement = parentElement.getChild("nodes");
+        ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
         return Optional.of(from(nodesElement, context));
     }
@@ -105,9 +104,9 @@ public class NodesSpecification {
     public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement,
                                                                            ConfigModelContext context) {
         if (parentElement == null) return Optional.empty();
-        ModelElement nodesElement = parentElement.getChild("nodes");
+        ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false),
+        return Optional.of(new NodesSpecification(nodesElement.booleanAttribute("dedicated", false),
                                                   ! context.getDeployState().getProperties().isBootstrap(),
                                                   context.getDeployState().getWantedNodeVespaVersion(),
                                                   nodesElement));
@@ -171,7 +170,22 @@ public class NodesSpecification {
                                                           DeployLogger logger,
                                                           Set<RotationName> rotations) {
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive, rotations);
-        return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required, canFail), groups, logger);
+        return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, flavor, required, canFail), groups, logger);
+    }
+
+    private static Optional<FlavorSpec> getFlavor(ModelElement nodesElement) {
+        ModelElement flavor = nodesElement.child("flavor");
+        if (flavor != null) {
+            return Optional.of(new FlavorSpec(flavor.requiredDoubleAttribute("cpus"),
+                                              flavor.requiredDoubleAttribute("memory"),
+                                              flavor.requiredDoubleAttribute("disk")));
+        }
+        else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
+            return Optional.of(FlavorSpec.fromLegacyFlavorName(nodesElement.stringAttribute("flavor")));
+        }
+        else { // Get the default
+            return Optional.empty();
+        }
     }
 
     @Override

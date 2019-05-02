@@ -36,11 +36,11 @@ public class GlobalDistributionBuilder {
     }
 
     private static boolean isGloballyDistributed(ModelElement e) {
-        return e.getBooleanAttribute("global", false);
+        return e.booleanAttribute("global", false);
     }
 
     private static String getDocumentName(ModelElement e) {
-        return e.getStringAttribute("type");
+        return e.stringAttribute("type");
     }
 
     private NewDocumentType getDocumentType(String name) {

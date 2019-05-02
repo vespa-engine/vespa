@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,6 +32,7 @@ public class Flavor {
 
     /**
      * Creates a Flavor, but does not set the replacesFlavors.
+     *
      * @param flavorConfig config to be used for Flavor.
      */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
@@ -47,6 +49,25 @@ public class Flavor {
         this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
         this.idealHeadroom = flavorConfig.idealHeadroom();
+    }
+
+    /** Create a Flavor from a Flavor spec and all other fields set to Docker defaults */
+    public Flavor(FlavorSpec spec) {
+        if (spec.allocateByLegacyName())
+            throw new IllegalArgumentException("Can not create flavor '" + spec.legacyFlavorName() + "' from a spec: " +
+                                               "Non-docker flavors must be of a configured flavor");
+        this.name = spec.legacyFlavorName();
+        this.cost = 0;
+        this.isStock = true;
+        this.type = Type.DOCKER_CONTAINER;
+        this.minCpuCores = spec.cpuCores();
+        this.minMainMemoryAvailableGb = spec.memoryGb();
+        this.minDiskAvailableGb = spec.diskGb();
+        this.fastDisk = true;
+        this.bandwidth = 1;
+        this.description = "";
+        this.retired = false;
+        this.replacesFlavors = Collections.emptyList();
     }
 
     /** Returns the unique identity of this flavor */
@@ -145,6 +166,13 @@ public class Flavor {
                this.minDiskAvailableGb >= other.minDiskAvailableGb &&
                this.minMainMemoryAvailableGb >= other.minMainMemoryAvailableGb &&
                this.fastDisk || ! other.fastDisk;
+    }
+
+    public FlavorSpec asSpec() {
+        if (isDocker())
+            return new FlavorSpec(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
+        else
+            return FlavorSpec.fromLegacyFlavorName(name);
     }
 
     @Override

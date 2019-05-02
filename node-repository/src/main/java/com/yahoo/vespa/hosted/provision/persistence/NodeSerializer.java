@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeFlavors;

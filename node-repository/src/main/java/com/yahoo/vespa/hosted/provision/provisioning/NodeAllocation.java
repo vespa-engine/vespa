@@ -5,6 +5,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -67,17 +69,18 @@ class NodeAllocation {
     /** The next membership index to assign to a new node */
     private final MutableInteger highestIndex;
 
+    private final NodeFlavors flavors;
     private final Zone zone;
-
     private final Clock clock;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                   MutableInteger highestIndex, Zone zone, Clock clock) {
+                   MutableInteger highestIndex, NodeFlavors flavors, Zone zone, Clock clock) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
         this.requestedNodes = requestedNodes;
         this.highestIndex = highestIndex;
+        this.flavors = flavors;
         this.zone = zone;
         this.clock = clock;
     }
@@ -217,7 +220,7 @@ class NodeAllocation {
     }
 
     private boolean hasCompatibleFlavor(Node node) {
-        return requestedNodes.isCompatible(node.flavor());
+        return requestedNodes.isCompatible(node.flavor().asSpec(), flavors);
     }
 
     private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire) {
@@ -285,7 +288,7 @@ class NodeAllocation {
                 .filter(NodeSpec.CountNodeSpec.class::isInstance)
                 .map(NodeSpec.CountNodeSpec.class::cast)
                 .map(spec -> new FlavorCount(spec.getFlavor(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
-                .filter(flavorCount -> flavorCount.getFlavor().getType() == Flavor.Type.DOCKER_CONTAINER)
+                .filter(flavorCount -> ! flavorCount.getFlavor().allocateByLegacyName())
                 .filter(flavorCount -> flavorCount.getCount() > 0);
     }
 
@@ -364,15 +367,16 @@ class NodeAllocation {
     }
 
     static class FlavorCount {
-        private final Flavor flavor;
+
+        private final FlavorSpec flavor;
         private final int count;
 
-        private FlavorCount(Flavor flavor, int count) {
+        private FlavorCount(FlavorSpec flavor, int count) {
             this.flavor = flavor;
             this.count = count;
         }
 
-        Flavor getFlavor() {
+        FlavorSpec getFlavor() {
             return flavor;
         }
 

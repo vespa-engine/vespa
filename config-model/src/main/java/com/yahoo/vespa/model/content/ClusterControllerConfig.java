@@ -31,11 +31,11 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement tuning = null;
 
-            ModelElement clusterTuning = clusterElement.getChild("tuning");
+            ModelElement clusterTuning = clusterElement.child("tuning");
             Integer bucketSplittingMinimumBits = null;
             Double minNodeRatioPerGroup = null;
             if (clusterTuning != null) {
-                tuning = clusterTuning.getChild("cluster-controller");
+                tuning = clusterTuning.child("cluster-controller");
                 minNodeRatioPerGroup = clusterTuning.childAsDouble("min-node-ratio-per-group");
                 bucketSplittingMinimumBits = clusterTuning.childAsInteger("bucket-splitting.minimum-bits");
             }

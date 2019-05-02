@@ -17,11 +17,11 @@ public final class Capacity {
 
     private final boolean canFail;
 
-    private final Optional<String> flavor;
+    private final Optional<FlavorSpec> flavor;
 
     private final NodeType type;
 
-    private Capacity(int nodeCount, Optional<String> flavor, boolean required, boolean canFail, NodeType type) {
+    private Capacity(int nodeCount, Optional<FlavorSpec> flavor, boolean required, boolean canFail, NodeType type) {
         this.nodeCount = nodeCount;
         this.required = required;
         this.canFail = canFail;
@@ -36,7 +36,10 @@ public final class Capacity {
      * The node flavor requested, or empty if no particular flavor is specified.
      * This may be satisfied by the requested flavor or a suitable replacement
      */
-    public Optional<String> flavor() { return flavor; }
+    public Optional<String> flavor() { return flavor.map(FlavorSpec::legacyFlavorName); }
+
+    /** Returns the capacity specified for each node, or empty to leave this decision to provisioning */
+    public Optional<FlavorSpec> flavorSpec() { return flavor; }
 
     /** Returns whether the requested number of nodes must be met exactly for a request for this to succeed */
     public boolean isRequired() { return required; }
@@ -65,8 +68,16 @@ public final class Capacity {
         return fromNodeCount(capacity, Optional.empty(), false, true);
     }
 
-    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
+    public static Capacity fromCount(int nodeCount, FlavorSpec flavor, boolean required, boolean canFail) {
+        return new Capacity(nodeCount, Optional.of(flavor), required, canFail, NodeType.tenant);
+    }
+
+    public static Capacity fromCount(int nodeCount, Optional<FlavorSpec> flavor, boolean required, boolean canFail) {
         return new Capacity(nodeCount, flavor, required, canFail, NodeType.tenant);
+    }
+
+    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
+        return new Capacity(nodeCount, flavor.map(FlavorSpec::fromLegacyFlavorName), required, canFail, NodeType.tenant);
     }
 
     /** Creates this from a node type */

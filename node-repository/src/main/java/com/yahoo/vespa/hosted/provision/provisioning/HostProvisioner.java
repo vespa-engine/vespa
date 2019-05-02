@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
@@ -19,11 +20,11 @@ public interface HostProvisioner {
      *
      * @param provisionIndexes List of unique provision indexes which will be used to generate the host hostnames
      *                         on the form of <code>[prefix][index].[domain]</code>
-     * @param nodeFlavor Vespa flavor of the node that will run on this host. The resulting provisioned host
-     *                   will be of a flavor that is at least as big or bigger than this.
+     * @param flavor the spec of the flavor (capacity) to provision. The resulting provisioned host
+     *               will be of a flavor that is at least as big or bigger than this.
      * @return list of {@link ProvisionedHost} describing the provisioned hosts and nodes on them.
      */
-    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, Flavor nodeFlavor);
+    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, FlavorSpec flavor);
 
     /**
      * Continue provisioning of given list of Nodes.
@@ -47,4 +48,5 @@ public interface HostProvisioner {
      * @param host host to deprovision.
      */
     void deprovision(Node host);
+
 }

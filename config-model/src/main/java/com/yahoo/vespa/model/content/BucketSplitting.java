@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 /**
  * Represents configuration for bucket splitting.
@@ -15,16 +14,16 @@ public class BucketSplitting implements StorDistributormanagerConfig.Producer {
 
     public static class Builder {
         public BucketSplitting build(ModelElement clusterElem) {
-            ModelElement tuning = clusterElem.getChild("tuning");
+            ModelElement tuning = clusterElem.child("tuning");
             if (tuning == null) {
                 return new BucketSplitting(null, null, null);
             }
 
-            ModelElement bucketSplitting = tuning.getChild("bucket-splitting");
+            ModelElement bucketSplitting = tuning.child("bucket-splitting");
             if (bucketSplitting != null) {
-                Integer maxDocuments = bucketSplitting.getIntegerAttribute("max-documents");
-                Integer splitSize = bucketSplitting.getIntegerAttribute("max-size");
-                Integer minSplitCount = bucketSplitting.getIntegerAttribute("minimum-bits");
+                Integer maxDocuments = bucketSplitting.integerAttribute("max-documents");
+                Integer splitSize = bucketSplitting.integerAttribute("max-size");
+                Integer minSplitCount = bucketSplitting.integerAttribute("minimum-bits");
 
                 return new BucketSplitting(maxDocuments, splitSize, minSplitCount);
             }

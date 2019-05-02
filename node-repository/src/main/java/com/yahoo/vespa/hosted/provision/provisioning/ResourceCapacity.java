@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 
 /**
@@ -29,6 +30,10 @@ public class ResourceCapacity {
     static ResourceCapacity of(Flavor flavor) {
         return new ResourceCapacity(
                 flavor.getMinMainMemoryAvailableGb(), flavor.getMinCpuCores(), flavor.getMinDiskAvailableGb());
+    }
+
+    static ResourceCapacity of(FlavorSpec flavor) {
+        return new ResourceCapacity(flavor.memoryGb(), flavor.cpuCores(), flavor.diskGb());
     }
 
     static ResourceCapacity of(Node node) {

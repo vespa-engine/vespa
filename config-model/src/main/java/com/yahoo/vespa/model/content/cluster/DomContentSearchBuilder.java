@@ -11,7 +11,7 @@ public class DomContentSearchBuilder {
 
     public static ContentSearch build(ModelElement contentXml) {
         ContentSearch.Builder builder = new ContentSearch.Builder();
-        ModelElement searchElement = contentXml.getChild("search");
+        ModelElement searchElement = contentXml.child("search");
         if (searchElement == null) {
             return builder.build();
         }

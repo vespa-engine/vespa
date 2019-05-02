@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -89,7 +90,7 @@ public class FailedExpirerTest {
 
         scenario.clock().advance(Duration.ofDays(2));
         scenario.expirer().run();
-        scenario.assertNodesIn(Node.State.failed, "node1");
+        scenario.assertNodesIn(Node.State.dirty, "node1");
         scenario.assertNodesIn(Node.State.parked, "node2", "node3");
     }
 
@@ -125,7 +126,7 @@ public class FailedExpirerTest {
         scenario.clock().advance(Duration.ofHours(2));
         scenario.expirer().run();
 
-        scenario.assertNodesIn(Node.State.failed, "node1");
+        scenario.assertNodesIn(Node.State.dirty, "node1");
         scenario.assertNodesIn(Node.State.parked, "node2", "node3");
     }
 
@@ -232,8 +233,8 @@ public class FailedExpirerTest {
     private static class FailureScenario {
 
         private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "docker");
-        public static final Flavor defaultFlavor = nodeFlavors.getFlavorOrThrow("default");
-        public static final Flavor dockerFlavor = nodeFlavors.getFlavorOrThrow("docker");
+        public static final FlavorSpec defaultFlavor = new FlavorSpec(2, 2, 2);
+        public static final FlavorSpec dockerFlavor = new FlavorSpec(1, 1, 1);
         
         private final MockCurator curator = new MockCurator();
         private final ManualClock clock = new ManualClock();
@@ -269,15 +270,15 @@ public class FailedExpirerTest {
                                  .orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
         }
 
-        public FailureScenario withNode(NodeType type, Flavor flavor, String hostname, String parentHostname) {
+        public FailureScenario withNode(NodeType type, FlavorSpec flavor, String hostname, String parentHostname) {
             nodeRepository.addNodes(Collections.singletonList(
                     nodeRepository.createNode(UUID.randomUUID().toString(), hostname,
-                                              Optional.ofNullable(parentHostname), flavor, type)
+                                              Optional.ofNullable(parentHostname), new Flavor(flavor), type)
             ));
             return this;
         }
 
-        public FailureScenario withNode(NodeType type, Flavor flavor, String hostname) {
+        public FailureScenario withNode(NodeType type, FlavorSpec flavor, String hostname) {
             return withNode(type, flavor, hostname, null);
         }
 
@@ -317,13 +318,13 @@ public class FailedExpirerTest {
             return allocate(clusterType, defaultFlavor, hostname);
         }
 
-        public FailureScenario allocate(ClusterSpec.Type clusterType, Flavor flavor, String... hostname) {
+        public FailureScenario allocate(ClusterSpec.Type clusterType, FlavorSpec flavor, String... hostname) {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
                                                           false,
                                                           Collections.emptySet());
-            Capacity capacity = Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false, true);
+            Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
 

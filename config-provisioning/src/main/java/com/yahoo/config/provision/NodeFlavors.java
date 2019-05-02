@@ -20,34 +20,49 @@ import java.util.stream.Collectors;
  */
 public class NodeFlavors {
 
-    /** Flavors <b>which are configured</b> in this zone */
-    private final ImmutableMap<String, Flavor> flavors;
+    /** Flavors which are configured in this zone */
+    private final ImmutableMap<String, Flavor> configuredFlavors;
 
     @Inject
     public NodeFlavors(FlavorsConfig config) {
         ImmutableMap.Builder<String, Flavor> b = new ImmutableMap.Builder<>();
         for (Flavor flavor : toFlavors(config))
             b.put(flavor.name(), flavor);
-        this.flavors = b.build();
+        this.configuredFlavors = b.build();
     }
 
     public List<Flavor> getFlavors() {
-        return new ArrayList<>(flavors.values());
+        return new ArrayList<>(configuredFlavors.values());
     }
 
-    /** Returns a flavor by name, or empty if there is no flavor with this name. */
+    /** Returns a flavor by name, or empty if there is no flavor with this name and it cannot be created on the fly. */
     public Optional<Flavor> getFlavor(String name) {
-        return Optional.ofNullable(flavors.get(name));
+        if (configuredFlavors.containsKey(name))
+            return Optional.of(configuredFlavors.get(name));
+
+        FlavorSpec flavorSpec = FlavorSpec.fromLegacyFlavorName(name);
+        if (flavorSpec.allocateByLegacyName())
+            return Optional.empty();
+        else
+            return Optional.of(new Flavor(flavorSpec));
     }
 
-    /** Returns the flavor with the given name or throws an IllegalArgumentException if it does not exist */
+    /**
+     * Returns the flavor with the given name or throws an IllegalArgumentException if it does not exist
+     * and cannot be created on the fly.
+     */
     public Flavor getFlavorOrThrow(String flavorName) {
         return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName +
-                "'. Flavors are " + canonicalFlavorNames()));
+                                                                                    "'. Flavors are " + canonicalFlavorNames()));
+    }
+
+    /** Returns true if this flavor is configured or can be created on the fly */
+    public boolean exists(String flavorName) {
+        return getFlavor(flavorName).isPresent();
     }
 
     private List<String> canonicalFlavorNames() {
-        return flavors.values().stream().map(Flavor::canonicalName).distinct().sorted().collect(Collectors.toList());
+        return configuredFlavors.values().stream().map(Flavor::canonicalName).distinct().sorted().collect(Collectors.toList());
     }
 
     private static Collection<Flavor> toFlavors(FlavorsConfig config) {

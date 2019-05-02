@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.FlavorSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 // to remove these tests
 public class VirtualNodeProvisioningTest {
 
-    private static final String flavor = "v-4-8-100";
+    private static final FlavorSpec flavor = new FlavorSpec(4, 8, 100);
     private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false, Collections.emptySet());
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false, Collections.emptySet());
 
@@ -63,13 +64,13 @@ public class VirtualNodeProvisioningTest {
         // Go down to 3 nodes in container cluster
         List<HostSpec> containerHosts2 = prepare(containerClusterSpec, containerNodeCount - 1, groups);
         activate(containerHosts2);
-        final List<Node> nodes2 = getNodes(applicationId);
+        List<Node> nodes2 = getNodes(applicationId);
         assertDistinctParentHosts(nodes2, ClusterSpec.Type.container, containerNodeCount - 1);
 
         // Go up to 4 nodes again in container cluster
         List<HostSpec> containerHosts3 = prepare(containerClusterSpec, containerNodeCount, groups);
         activate(containerHosts3);
-        final List<Node> nodes3 = getNodes(applicationId);
+        List<Node> nodes3 = getNodes(applicationId);
         assertDistinctParentHosts(nodes3, ClusterSpec.Type.container, containerNodeCount);
     }
 
@@ -81,11 +82,12 @@ public class VirtualNodeProvisioningTest {
 
         // Allowed to use same parent host for several nodes in same cluster in dev
         {
+            FlavorSpec flavor = new FlavorSpec(1, 1, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
-            tester.makeReadyVirtualDockerNodes(4, "default", "parentHost1");
+            tester.makeReadyVirtualDockerNodes(4, flavor, "parentHost1");
 
-            List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
-            List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
+            List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups, flavor);
+            List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups, flavor);
             activate(containerHosts, contentHosts);
 
             // downscaled to 1 node per cluster in dev, so 2 in total
@@ -251,9 +253,9 @@ public class VirtualNodeProvisioningTest {
     public void unknown_distribution_with_known_and_unknown_ready_nodes() {
         tester.makeReadyVirtualNodes(3, flavor);
 
-        final int contentNodeCount = 3;
-        final int groups = 1;
-        final List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
+        int contentNodeCount = 3;
+        int groups = 1;
+        List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);
         activate(contentHosts);
         assertEquals(3, getNodes(applicationId).size());
 
@@ -290,6 +292,10 @@ public class VirtualNodeProvisioningTest {
     }
 
     private List<HostSpec> prepare(ClusterSpec clusterSpec, int nodeCount, int groups) {
+        return tester.prepare(applicationId, clusterSpec, nodeCount, groups, flavor);
+    }
+
+    private List<HostSpec> prepare(ClusterSpec clusterSpec, int nodeCount, int groups, FlavorSpec flavor) {
         return tester.prepare(applicationId, clusterSpec, nodeCount, groups, flavor);
     }
 
