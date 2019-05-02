@@ -31,6 +31,7 @@ assertIndexField(const Schema::IndexField& exp,
 {
     assertField(exp, act);
     EXPECT_EQ(exp.getAvgElemLen(), act.getAvgElemLen());
+    EXPECT_EQ(exp.use_experimental_posting_list_format(), act.use_experimental_posting_list_format());
 }
 
 void
@@ -182,7 +183,7 @@ TEST(SchemaTest, test_load_and_save)
         EXPECT_EQ(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));
-        assertIndexField(SIF("c", SDT::STRING), s.getIndexField(2));
+        assertIndexField(SIF("c", SDT::STRING).set_experimental_posting_list_format(true), s.getIndexField(2));
 
         EXPECT_EQ(9u, s.getNumAttributeFields());
         assertField(SAF("a", SDT::STRING, SCT::SINGLE),
