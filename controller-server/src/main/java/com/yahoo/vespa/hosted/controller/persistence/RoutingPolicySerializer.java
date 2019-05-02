@@ -8,7 +8,6 @@ import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 
@@ -58,7 +57,7 @@ public class RoutingPolicySerializer {
             Set<RotationName> rotations = new LinkedHashSet<>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, rotation) -> rotations.add(RotationName.from(rotation.asString())));
             policies.add(new RoutingPolicy(owner,
-                                           clusterId(inspect.field(clusterField)),
+                                           ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                            ZoneId.from(inspect.field(zoneField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            Serializers.optionalField(inspect.field(dnsZoneField), Function.identity()),
@@ -66,11 +65,5 @@ public class RoutingPolicySerializer {
         });
         return Collections.unmodifiableSet(policies);
     }
-
-    // TODO: Remove and inline after Vespa 7.43
-    private static ClusterSpec.Id clusterId(Inspector field) {
-        return Serializers.optionalField(field, ClusterSpec.Id::from).orElseGet(() -> new ClusterSpec.Id("default"));
-    }
-
 
 }
