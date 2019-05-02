@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import ai.vespa.hosted.api.MultiPartStreamer;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -58,6 +59,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.yolean.Exceptions;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -1417,16 +1419,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         return builder.build();
     }
 
-    private HttpEntity createApplicationSubmissionData(ApplicationPackage applicationPackage) {
-        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-        builder.addTextBody(EnvironmentResource.SUBMIT_OPTIONS,
-                            "{\"repository\":\"repo\",\"branch\":\"master\",\"commit\":\"d00d\",\"authorEmail\":\"a@b\"}",
-                            ContentType.APPLICATION_JSON);
-        builder.addBinaryBody(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent());
-        builder.addBinaryBody(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
-        return builder.build();
+    private MultiPartStreamer createApplicationSubmissionData(ApplicationPackage applicationPackage) {
+        return new MultiPartStreamer().addJson(EnvironmentResource.SUBMIT_OPTIONS, "{\"repository\":\"repo\",\"branch\":\"master\",\"commit\":\"d00d\",\"authorEmail\":\"a@b\"}")
+                                      .addBytes(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent())
+                                      .addBytes(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
     }
-    
+
     private String deployOptions(boolean deployDirectly, Optional<ApplicationVersion> applicationVersion) {
             return "{\"vespaVersion\":null," +
                     "\"ignoreValidationErrors\":false," +
@@ -1629,6 +1627,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         private RequestBuilder data(byte[] data) { this.data = data; return this; }
         private RequestBuilder data(String data) { return data(data.getBytes(StandardCharsets.UTF_8)); }
+        private RequestBuilder data(MultiPartStreamer streamer) {
+            return Exceptions.uncheck(() -> data(streamer.data().readAllBytes()).contentType(streamer.contentType()));
+        }
         private RequestBuilder data(HttpEntity data) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try {

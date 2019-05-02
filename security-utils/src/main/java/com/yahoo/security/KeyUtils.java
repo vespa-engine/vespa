@@ -3,8 +3,11 @@ package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
@@ -20,14 +23,18 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,6 +116,30 @@ public class KeyUtils {
         }
     }
 
+    public static PublicKey fromPemEncodedPublicKey(String pem) {
+        try (PEMParser parser = new PEMParser(new StringReader(pem))) {
+            List<Object> unknownObjects = new ArrayList<>();
+            Object pemObject;
+            while ((pemObject = parser.readObject()) != null) {
+                SubjectPublicKeyInfo keyInfo;
+                if (pemObject instanceof SubjectPublicKeyInfo) {
+                    keyInfo = (SubjectPublicKeyInfo) pemObject;
+                } else if (pemObject instanceof PEMKeyPair) {
+                    PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
+                    keyInfo = pemKeypair.getPublicKeyInfo();
+                } else {
+                    unknownObjects.add(pemObject);
+                    continue;
+                }
+                JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
+                return pemConverter.getPublicKey(keyInfo);
+            }
+            throw new IllegalArgumentException("Expected a public key, but found " + unknownObjects.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static String toPem(PrivateKey privateKey) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
             String algorithm = privateKey.getAlgorithm();
@@ -130,11 +161,42 @@ public class KeyUtils {
     }
 
     private static byte[] getPkcs1Bytes(PrivateKey privateKey) throws IOException{
-
         byte[] privBytes = privateKey.getEncoded();
         PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(privBytes);
         ASN1Encodable encodable = pkInfo.parsePrivateKey();
         ASN1Primitive primitive = encodable.toASN1Primitive();
         return primitive.getEncoded();
+    }
+
+    /** Returns a signature instance which computes a SHA-256 hash of its content, before signing with the given private key. */
+    public static Signature createSigner(PrivateKey key) {
+        try {
+            Signature signer = Signature.getInstance(SignatureAlgorithm.SHA256_WITH_ECDSA.getAlgorithmName(),
+                                                     BouncyCastleProviderHolder.getInstance());
+            signer.initSign(key);
+            return signer;
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        catch (InvalidKeyException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /** Returns a signature instance which computes a SHA-256 hash of its content, before verifying with the given public key. */
+    public static Signature createVerifier(PublicKey key) {
+        try {
+            Signature signer = Signature.getInstance(SignatureAlgorithm.SHA256_WITH_ECDSA.getAlgorithmName(),
+                                                     BouncyCastleProviderHolder.getInstance());
+            signer.initVerify(key);
+            return signer;
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        catch (InvalidKeyException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }

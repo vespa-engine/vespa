@@ -131,6 +131,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>hosted-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- test -->
 
         <dependency>
