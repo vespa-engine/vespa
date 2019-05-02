@@ -20,6 +20,7 @@ vespa_add_library(searchlib_diskindex OBJECT
     wordnummapper.cpp
     zc4_posting_header.cpp
     zc4_posting_reader.cpp
+    zc4_posting_reader_base.cpp
     zc4_posting_writer.cpp
     zc4_posting_writer_base.cpp
     zcbuf.cpp
