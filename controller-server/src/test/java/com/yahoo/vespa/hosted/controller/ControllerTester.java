@@ -74,7 +74,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public final class ControllerTester {
 
-    private static final int availableRotations = 10;
+    public static final int availableRotations = 10;
 
     private final AthenzDbMock athenzDb;
     private final ManualClock clock;
