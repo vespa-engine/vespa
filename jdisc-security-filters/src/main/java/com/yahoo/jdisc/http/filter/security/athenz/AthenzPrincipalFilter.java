@@ -61,7 +61,7 @@ public class AthenzPrincipalFilter extends JsonSecurityRequestFilterBase {
             Optional<AthenzPrincipal> nTokenPrincipal = getPrincipalToken(request, principalTokenHeader)
                     .map(validator::validate);
 
-            if (!certificatePrincipal.isPresent() && !nTokenPrincipal.isPresent()) {
+            if (certificatePrincipal.isEmpty() && nTokenPrincipal.isEmpty()) {
                 String errorMessage = "Unable to authenticate Athenz identity. " +
                                       "Either client certificate or principal token is required.";
                 return createResponse(request, Response.Status.UNAUTHORIZED, errorMessage);
