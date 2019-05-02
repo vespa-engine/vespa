@@ -102,7 +102,7 @@ Fusion::openInputWordReaders(const SchemaUtil::IndexIterator &index,
         vespalib::string fieldDir(oldindexpath + "/" + index.getName());
         vespalib::string dictName(fieldDir + "/dictionary");
         const Schema &oldSchema = oi.getSchema();
-        if (!index.hasOldFields(oldSchema, false)) {
+        if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
         bool res = reader->open(dictName,
@@ -296,7 +296,7 @@ Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index,
     for (auto &i : _oldIndexes) {
         OldIndex &oi = *i;
         const Schema &oldSchema = oi.getSchema();
-        if (!index.hasOldFields(oldSchema, false)) {
+        if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
         auto reader = FieldReader::allocFieldReader(index, oldSchema);
@@ -413,7 +413,7 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
             wordNumMapping.noMappingFile();
             continue;
         }
-        if (index && !index->hasOldFields(oldSchema, false)) {
+        if (index && !index->hasOldFields(oldSchema)) {
             continue; // drop data
         }
 

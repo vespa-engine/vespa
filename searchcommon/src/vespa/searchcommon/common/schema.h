@@ -74,11 +74,8 @@ public:
      * A representation of an index field with extra information on
      * how the index should be generated.
      **/
-    class IndexField : public Field
-    {
-        bool _prefix;
-        bool _phrases;
-        bool _positions;
+    class IndexField : public Field {
+    private:
         uint32_t _avgElemLen;
 
     public:
@@ -89,20 +86,11 @@ public:
          **/
         IndexField(const std::vector<vespalib::string> &lines);
 
-        IndexField &setPrefix(bool value) { _prefix = value; return *this; }
-        IndexField &setPhrases(bool value) { _phrases = value; return *this; }
-        IndexField &setPositions(bool value)
-        { _positions = value; return *this; }
-        IndexField &setAvgElemLen(uint32_t avgElemLen)
-        { _avgElemLen = avgElemLen; return *this; }
+        IndexField &setAvgElemLen(uint32_t avgElemLen) { _avgElemLen = avgElemLen; return *this; }
 
-        void
-        write(vespalib::asciistream &os,
-              vespalib::stringref prefix) const override;
+        void write(vespalib::asciistream &os,
+                   vespalib::stringref prefix) const override;
 
-        bool hasPrefix() const { return _prefix; }
-        bool hasPhrases() const { return _phrases; }
-        bool hasPositions() const { return _positions; }
         uint32_t getAvgElemLen() const { return _avgElemLen; }
 
         bool operator==(const IndexField &rhs) const;

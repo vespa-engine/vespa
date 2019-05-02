@@ -15,47 +15,21 @@ SchemaUtil::IndexSettings
 SchemaUtil::getIndexSettings(const Schema &schema,
                              const uint32_t index)
 {
-    IndexSettings ret;
     Schema::DataType indexDataType(DataType::STRING);
     bool error = false;
-    bool somePrefixes = false;
-    bool someNotPrefixes = false;
-    bool somePhrases = false;
-    bool someNotPhrases = false;
-    bool somePositions = false;
-    bool someNotPositions = false;
 
     const Schema::IndexField &iField = schema.getIndexField(index);
-    if (iField.hasPhrases()) {
-        somePhrases = true;
-    } else {
-        someNotPhrases = true;
-    }
-    if (iField.hasPrefix()) {
-        somePrefixes = true;
-    } else {
-        someNotPrefixes = true;
-    }
-    if (iField.hasPositions()) {
-        somePositions = true;
-    } else {
-        someNotPositions = true;
-    }
     indexDataType = iField.getDataType();
     if (indexDataType != DataType::STRING) {
         error = true;
         LOG(error, "Field %s has bad data type", iField.getName().c_str());
     }
 
-    return IndexSettings(indexDataType, error,
-                         somePrefixes && !someNotPrefixes,
-                         somePhrases && !someNotPhrases,
-                         somePositions && !someNotPositions);
+    return IndexSettings(indexDataType, error);
 }
 
 bool
-SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
-                                        bool phrases) const
+SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema) const
 {
     assert(isValid());
     const Schema::IndexField &newField =
@@ -70,15 +44,11 @@ SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
     if (oldField.getDataType() != newField.getDataType()) {
         return false;   // wrong data type
     }
-    if (!phrases) {
-        return true;
-    }
-    return oldField.hasPhrases();
+    return true;
 }
 
 bool
-SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema,
-        bool phrases) const
+SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema) const
 {
     assert(isValid());
     const Schema::IndexField &newField =
@@ -88,18 +58,13 @@ SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema,
     if (oldFieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
     }
-    if (phrases) {
-        IndexIterator oldIterator(oldSchema, oldFieldId);
-        IndexSettings settings = oldIterator.getIndexSettings();
-        if (!settings.hasPhrases()) {
-            return false;
-        }
-    }
     const Schema::IndexField &oldField =
         oldSchema.getIndexField(oldFieldId);
     if (oldField.getDataType() != newField.getDataType() ||
         oldField.getCollectionType() != newField.getCollectionType())
+    {
         return false;
+    }
     return true;
 }
 
@@ -110,32 +75,6 @@ SchemaUtil::validateIndexField(const Schema::IndexField &field)
     if (!validateIndexFieldType(field.getDataType())) {
         LOG(error,
             "Field %s has bad data type",
-            field.getName().c_str());
-        ok = false;
-    }
-    if (field.getDataType() != DataType::STRING) {
-        if (field.hasPrefix()) {
-            LOG(error,
-                "Field %s is non-string but has prefix",
-                field.getName().c_str());
-            ok = false;
-        }
-        if (field.hasPhrases()) {
-            LOG(error,
-                "Field %s is non-string but has phrases",
-                field.getName().c_str());
-            ok = false;
-        }
-        if (field.hasPositions()) {
-            LOG(error,
-                "Field %s is non-string but has positions",
-                field.getName().c_str());
-            ok = false;
-        }
-    }
-    if (field.hasPhrases() && !field.hasPositions()) {
-        LOG(error,
-            "Field %s has phrases but not positions",
             field.getName().c_str());
         ok = false;
     }

@@ -131,9 +131,6 @@ Schema::Field::operator!=(const Field &rhs) const
 
 Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
     : Field(name, dt),
-      _prefix(false),
-      _phrases(false),
-      _positions(true),
       _avgElemLen(512)
 {
 }
@@ -141,18 +138,12 @@ Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
 Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
                                CollectionType ct)
     : Field(name, dt, ct),
-      _prefix(false),
-      _phrases(false),
-      _positions(true),
       _avgElemLen(512)
 {
 }
 
 Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
     : Field(lines),
-      _prefix(ConfigParser::parse<bool>("prefix", lines)),
-      _phrases(ConfigParser::parse<bool>("phrases", lines)),
-      _positions(ConfigParser::parse<bool>("positions", lines)),
       _avgElemLen(ConfigParser::parse<int32_t>("averageelementlen", lines))
 {
 }
@@ -161,9 +152,6 @@ void
 Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix) const
 {
     Field::write(os, prefix);
-    os << prefix << "prefix " << (_prefix ? "true" : "false") << "\n";
-    os << prefix << "phrases " << (_phrases ? "true" : "false") << "\n";
-    os << prefix << "positions " << (_positions ? "true" : "false") << "\n";
     os << prefix << "averageelementlen " << static_cast<int32_t>(_avgElemLen) << "\n";
 }
 
@@ -171,9 +159,6 @@ bool
 Schema::IndexField::operator==(const IndexField &rhs) const
 {
     return Field::operator==(rhs) &&
-                  _prefix == rhs._prefix &&
-                 _phrases == rhs._phrases &&
-               _positions == rhs._positions &&
               _avgElemLen == rhs._avgElemLen;
 }
 
@@ -181,9 +166,6 @@ bool
 Schema::IndexField::operator!=(const IndexField &rhs) const
 {
     return Field::operator!=(rhs) ||
-                  _prefix != rhs._prefix ||
-                 _phrases != rhs._phrases ||
-               _positions != rhs._positions ||
               _avgElemLen != rhs._avgElemLen;
 }
 
@@ -337,9 +319,6 @@ cloneIndexField(const Schema::IndexField &field,
     return Schema::IndexField(field.getName() + suffix,
                               field.getDataType(),
                               field.getCollectionType()).
-        setPrefix(field.hasPrefix()).
-        setPhrases(field.hasPhrases()).
-        setPositions(field.hasPositions()).
         setAvgElemLen(field.getAvgElemLen());
 }
 

@@ -199,10 +199,10 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
                               const Schema &oldSchema)
 {
     assert(index.isValid());
-    if (index.hasMatchingOldFields(oldSchema, false)) {
+    if (index.hasMatchingOldFields(oldSchema)) {
         return std::make_unique<FieldReader>();      // The common case
     }
-    if (!index.hasOldFields(oldSchema, false)) {
+    if (!index.hasOldFields(oldSchema)) {
         return std::make_unique<FieldReaderEmpty>(index); // drop data
     }
     // field exists in old schema with different collection type setting

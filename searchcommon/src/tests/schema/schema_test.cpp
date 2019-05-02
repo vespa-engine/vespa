@@ -26,9 +26,7 @@ void assertIndexField(const Schema::IndexField & exp,
                       const Schema::IndexField & act)
 {
     assertField(exp, act);
-    EXPECT_EQUAL(exp.hasPrefix(), act.hasPrefix());
-    EXPECT_EQUAL(exp.hasPhrases(), act.hasPhrases());
-    EXPECT_EQUAL(exp.hasPositions(), act.hasPositions());
+    EXPECT_EQUAL(exp.getAvgElemLen(), act.getAvgElemLen());
 }
 
 void assertSet(const Schema::FieldSet &exp,
@@ -94,9 +92,6 @@ TEST("testBasic") {
         EXPECT_EQUAL("foo", s.getIndexField(0).getName());
         EXPECT_EQUAL(DataType::STRING, s.getIndexField(0).getDataType());
         EXPECT_EQUAL(CollectionType::SINGLE, s.getIndexField(0).getCollectionType());
-        EXPECT_TRUE(!s.getIndexField(0).hasPrefix());
-        EXPECT_TRUE(!s.getIndexField(0).hasPhrases());
-        EXPECT_TRUE(s.getIndexField(0).hasPositions());
 
         EXPECT_EQUAL("bar", s.getIndexField(1).getName());
         EXPECT_EQUAL(DataType::INT32, s.getIndexField(1).getDataType());
@@ -178,9 +173,7 @@ TEST("testLoadAndSave") {
         EXPECT_EQUAL(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));
-        assertIndexField(SIF("c", SDT::STRING).setPrefix(true)
-                         .setPhrases(false).setPositions(false),
-                         s.getIndexField(2));
+        assertIndexField(SIF("c", SDT::STRING), s.getIndexField(2));
 
         EXPECT_EQUAL(9u, s.getNumAttributeFields());
         assertField(SAF("a", SDT::STRING, SCT::SINGLE),
