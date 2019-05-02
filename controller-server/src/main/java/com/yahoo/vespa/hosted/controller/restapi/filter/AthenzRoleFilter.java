@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 
 /**
- * Enriches the request principal with roles from Athenz.
+ * Enriches the request principal with roles from Athenz, if an AthenzPrincipal is set on the request.
  *
  * @author jonmv
  */
@@ -53,15 +54,17 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
     @Override
     protected Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
-            AthenzPrincipal athenzPrincipal = (AthenzPrincipal) request.getUserPrincipal();
-            request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(athenzPrincipal,
-                                                                                     roles(athenzPrincipal, request.getUri())));
-            return Optional.empty();
+            Principal principal = request.getUserPrincipal();
+            if (principal instanceof AthenzPrincipal) {
+                request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal,
+                                                                                         roles((AthenzPrincipal) principal,
+                                                                                               request.getUri())));
+            }
         }
         catch (Exception e) {
-            logger.log(LogLevel.DEBUG, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
-            return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, "Access denied"));
+            logger.log(LogLevel.INFO, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
         }
+        return Optional.empty();
     }
 
     Set<Role> roles(AthenzPrincipal principal, URI uri) {
