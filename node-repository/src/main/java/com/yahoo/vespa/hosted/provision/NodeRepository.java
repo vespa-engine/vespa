@@ -234,6 +234,7 @@ public class NodeRepository extends AbstractComponent {
                 // - config servers
                 // - all connections from the world on 4080 (insecure tb removed), and 4443
                 trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
+                trustedPorts.add(443);
                 trustedPorts.add(4080);
                 trustedPorts.add(4443);
                 break;
