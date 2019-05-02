@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -247,6 +248,40 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.zone, version, zone1);
     }
 
+    @Test
+    public void upgrade_halts_on_broken_version() {
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1).upgrade(zone2));
+
+        // Initial system version
+        Version version1 = Version.fromString("6.5");
+        tester.upgradeSystem(version1);
+        systemUpgrader.maintain();
+        assertCurrentVersion(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost,
+                                     SystemApplication.configServer, SystemApplication.zone),
+                             version1, zone1);
+        assertCurrentVersion(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost,
+                                     SystemApplication.configServer, SystemApplication.zone),
+                             version1, zone2);
+
+        // System starts upgrading to next version
+        Version version2 = Version.fromString("6.6");
+        tester.upgradeController(version2);
+        systemUpgrader.maintain();
+        completeUpgrade(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost), version2, zone1);
+        systemUpgrader.maintain();
+        completeUpgrade(SystemApplication.configServer, version2, zone1);
+        systemUpgrader.maintain();
+        completeUpgrade(SystemApplication.zone, version2, zone1);
+        convergeServices(SystemApplication.zone, zone1);
+
+        // Confidence is reduced to broken and next zone is not scheduled for upgrade
+        tester.upgrader().overrideConfidence(version2, VespaVersion.Confidence.broken);
+        tester.computeVersionStatus();
+        systemUpgrader.maintain();
+        assertWantedVersion(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost,
+                                    SystemApplication.configServer, SystemApplication.zone), version1, zone2);
+    }
+
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
     private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
         assertWantedVersion(application, version, zones);
@@ -306,7 +341,7 @@ public class SystemUpgraderTest {
 
     private void assertVersion(SystemApplication application, Version version, Function<Node, Version> versionField,
                                ZoneId... zones) {
-        for (ZoneId zone : zones) {
+        for (ZoneId zone : requireNonEmpty(zones)) {
             for (Node node : listNodes(zone, application)) {
                 assertEquals(application + " version", version, versionField.apply(node));
             }
@@ -327,6 +362,11 @@ public class SystemUpgraderTest {
         tester.controllerTester().zoneRegistry().setUpgradePolicy(upgradePolicy);
         return new SystemUpgrader(tester.controller(), Duration.ofDays(1),
                                   new JobControl(tester.controllerTester().curator()));
+    }
+
+    private static <T> T[] requireNonEmpty(T[] args) {
+        if (args.length == 0) throw new IllegalArgumentException("Need at least one argument");
+        return args;
     }
 
 }
