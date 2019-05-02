@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.provision;
+package com.yahoo.config.provision.internal;
 
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Rule;
 import org.junit.Test;
@@ -13,7 +14,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 
-public class NodeFlavorsTest {
+public class ConfigNodeFlavorsTest {
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -31,7 +32,7 @@ public class NodeFlavorsTest {
         FlavorsConfig config = new FlavorsConfig(builder);
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Replaces for strawberry pointing to a non existing flavor: non-existing-config");
-        new NodeFlavors(config);
+        new ConfigNodeFlavors(config);
     }
 
     @Test
@@ -52,7 +53,7 @@ public class NodeFlavorsTest {
         }
         builder.flavor(flavorBuilderList);
         FlavorsConfig config = new FlavorsConfig(builder);
-        NodeFlavors nodeFlavors = new NodeFlavors(config);
+        NodeFlavors nodeFlavors = new ConfigNodeFlavors(config);
         assertThat(nodeFlavors.getFlavor("banana").get().cost(), is(3));
     }
 
@@ -74,7 +75,7 @@ public class NodeFlavorsTest {
         FlavorsConfig config = new FlavorsConfig(builder);
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Flavor 'retired' is retired, but has no replacement");
-        new NodeFlavors(config);
+        new ConfigNodeFlavors(config);
     }
 
 }

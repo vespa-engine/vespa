@@ -114,7 +114,7 @@ public class NodeSerializer {
         toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey), IP::requireAddressPool);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
-        object.setString(flavorKey, node.flavor().name());
+        object.setString(flavorKey, node.flavor().flavorName());
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));

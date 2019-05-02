@@ -59,7 +59,7 @@ public class AllocatedHosts {
             cursor.setString(hostSpecMembership, membership.stringValue());
             cursor.setString(hostSpecVespaVersion, membership.cluster().vespaVersion().toFullString());
         });
-        host.flavor().ifPresent(flavor -> cursor.setString(hostSpecFlavor, flavor.name()));
+        host.flavor().ifPresent(flavor -> cursor.setString(hostSpecFlavor, flavor.flavorName()));
         host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersion, version.toFullString()));
         host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, cursor.setArray(hostSpecNetworkPorts)));
     }

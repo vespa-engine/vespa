@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -79,7 +80,7 @@ public class NodeRetirerTester {
         jobControl = new JobControl(nodeRepository.database());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
         deployer = new MockDeployer(provisioner, clock, apps);
-        flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::name)).collect(Collectors.toList());
+        flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::flavorName)).collect(Collectors.toList());
 
         try {
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
@@ -115,7 +116,7 @@ public class NodeRetirerTester {
         for (int i = 0; i < flavorIds.length; i++) {
             Flavor flavor = flavors.get(flavorIds[i]);
             ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("cluster-" + i), Version.fromString("6.99"), false, Collections.emptySet());
-            Capacity capacity = Capacity.fromNodeCount(numNodes[i], Optional.of(flavor.name()), false, true);
+            Capacity capacity = Capacity.fromNodeCount(numNodes[i], Optional.of(flavor.flavorName()), false, true);
             // If the number of node the app wants is divisible by 2, make it into 2 groups, otherwise as 1
             int numGroups = numNodes[i] % 2 == 0 ? 2 : 1;
             clusterContexts.add(new MockDeployer.ClusterContext(applicationId, cluster, capacity, numGroups));
@@ -206,8 +207,8 @@ public class NodeRetirerTester {
     static NodeFlavors makeFlavors(int numFlavors) {
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
         for (int i = 0; i < numFlavors; i++) {
-            flavorConfigBuilder.addFlavor("flavor-" + i, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.BARE_METAL);
+            flavorConfigBuilder.addFlavor("flavor-" + i, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Environment.BARE_METAL);
         }
-        return new NodeFlavors(flavorConfigBuilder.build());
+        return new ConfigNodeFlavors(flavorConfigBuilder.build());
     }
 }

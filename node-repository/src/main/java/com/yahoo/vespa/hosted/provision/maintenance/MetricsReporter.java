@@ -224,10 +224,10 @@ public class MetricsReporter extends Maintainer {
         metric.set("hostedVespa.docker.freeCapacityDisk", capacity.getFreeCapacityTotal().getDisk(), null);
 
         List<Flavor> dockerFlavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
-                .filter(f -> f.getType().equals(Flavor.Type.DOCKER_CONTAINER))
+                .filter(f -> f.environment().equals(Flavor.Environment.DOCKER_CONTAINER))
                 .collect(Collectors.toList());
         for (Flavor flavor : dockerFlavors) {
-            Metric.Context context = getContextAt("flavor", flavor.name());
+            Metric.Context context = getContextAt("flavor", flavor.flavorName());
             metric.set("hostedVespa.docker.freeCapacityFlavor", capacity.freeCapacityInFlavorEquivalence(flavor), context);
             metric.set("hostedVespa.docker.hostsAvailableFlavor", capacity.getNofHostsAvailableFor(flavor), context);
         }

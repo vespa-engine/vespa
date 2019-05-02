@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.internal.ConfigNodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 
@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
  * A mock repository prepopulated with flavors, to avoid having config.
  * Instantiated by DI from application package above.
  */
-public class MockNodeFlavors extends NodeFlavors {
+public class MockNodeFlavors extends ConfigNodeFlavors {
 
     public MockNodeFlavors() {
         super(createConfig());
@@ -18,15 +18,15 @@ public class MockNodeFlavors extends NodeFlavors {
 
     private static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("default", 2., 16., 400, Flavor.Type.BARE_METAL);
-        b.addFlavor("medium-disk", 6., 12., 56, Flavor.Type.BARE_METAL);
-        b.addFlavor("large", 4., 32., 1600, Flavor.Type.BARE_METAL);
-        b.addFlavor("docker", 0.2, 0.5, 100, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-2-8-100", 2, 8, 100, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("v-4-8-100", 4.0, 8.0, 100, Flavor.Type.VIRTUAL_MACHINE);
-        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 64, 128, 2000, Flavor.Type.BARE_METAL);
+        b.addFlavor("default", 2., 16., 400, Flavor.Environment.BARE_METAL);
+        b.addFlavor("medium-disk", 6., 12., 56, Flavor.Environment.BARE_METAL);
+        b.addFlavor("large", 4., 32., 1600, Flavor.Environment.BARE_METAL);
+        b.addFlavor("docker", 0.2, 0.5, 100, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("d-2-8-100", 2, 8, 100, Flavor.Environment.DOCKER_CONTAINER);
+        b.addFlavor("v-4-8-100", 4.0, 8.0, 100, Flavor.Environment.VIRTUAL_MACHINE);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 64, 128, 2000, Flavor.Environment.BARE_METAL);
         b.addReplaces("large", largeVariant);
-        FlavorsConfig.Flavor.Builder expensiveFlavor = b.addFlavor("expensive", 6, 12, 500, Flavor.Type.BARE_METAL);
+        FlavorsConfig.Flavor.Builder expensiveFlavor = b.addFlavor("expensive", 6, 12, 500, Flavor.Environment.BARE_METAL);
         b.addReplaces("default", expensiveFlavor);
         b.addCost(200, expensiveFlavor);
 

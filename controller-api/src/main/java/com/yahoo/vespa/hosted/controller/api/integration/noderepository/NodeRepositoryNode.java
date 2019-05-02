@@ -82,8 +82,6 @@ public class NodeRepositoryNode {
     private Integer cost;
     @JsonProperty("minCpuCores")
     private Double minCpuCores;
-    @JsonProperty("description")
-    private String description;
     @JsonProperty("history")
     private NodeHistory[] history;
     @JsonProperty("allowedToBeDown")
@@ -347,14 +345,6 @@ public class NodeRepositoryNode {
         this.minCpuCores = minCpuCores;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public NodeHistory[] getHistory() {
         return history;
     }
@@ -436,7 +426,6 @@ public class NodeRepositoryNode {
                ", minMainMemoryAvailableGb=" + minMainMemoryAvailableGb +
                ", cost=" + cost +
                ", minCpuCores=" + minCpuCores +
-               ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +
                ", reports=" + reports +

@@ -3,22 +3,22 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
-import com.yahoo.vespa.config.content.core.StorVisitorConfig;
-import com.yahoo.vespa.config.content.StorFilestorConfig;
-import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.vespa.config.content.PersistenceConfig;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.internal.ConfigFlavor;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.documentmodel.NewDocumentType;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import com.yahoo.vespa.config.content.PersistenceConfig;
+import com.yahoo.vespa.config.content.StorFilestorConfig;
+import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
+import com.yahoo.vespa.config.content.core.StorServerConfig;
+import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import org.junit.Test;
 
-
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -122,7 +122,10 @@ public class StorageClusterTest {
                 "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
                 "</cluster>",
-                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
+                new ConfigFlavor(new FlavorsConfig.Flavor.Builder()
+                        .name("test-flavor")
+                        .cpu(new FlavorsConfig.Flavor.Cpu.Builder().cores(9))
+                        .build())
         );
 
         {
@@ -154,7 +157,10 @@ public class StorageClusterTest {
                         "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                         "  </group>" +
                         "</cluster>",
-                new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
+                new ConfigFlavor(new FlavorsConfig.Flavor.Builder()
+                        .name("test-flavor")
+                        .cpu(new FlavorsConfig.Flavor.Cpu.Builder().cores(9))
+                        .build())
         );
 
         {

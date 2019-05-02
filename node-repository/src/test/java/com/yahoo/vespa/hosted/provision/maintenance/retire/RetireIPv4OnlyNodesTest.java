@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance.retire;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.internal.ConfigFlavor;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Test;
@@ -80,8 +81,8 @@ public class RetireIPv4OnlyNodesTest {
 
     private List<Flavor> initFlavors() {
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
-        flavorConfigBuilder.addFlavor("default", 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.BARE_METAL);
-        flavorConfigBuilder.addFlavor("vm", 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.VIRTUAL_MACHINE);
-        return flavorConfigBuilder.build().flavor().stream().map(Flavor::new).collect(Collectors.toList());
+        flavorConfigBuilder.addFlavor("default", 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Environment.BARE_METAL);
+        flavorConfigBuilder.addFlavor("vm", 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Environment.VIRTUAL_MACHINE);
+        return flavorConfigBuilder.build().flavor().stream().map(ConfigFlavor::new).collect(Collectors.toList());
     }
 }

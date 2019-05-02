@@ -123,7 +123,7 @@ public class FailedExpirer extends Maintainer {
 
     /** Returns whether the current node fail count should be used as an indicator of hardware issue */
     private boolean failCountIndicatesHardwareIssue(Node node) {
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) return false;
+        if (node.flavor().environment() == Flavor.Environment.DOCKER_CONTAINER) return false;
         return (zone.environment() == Environment.prod || zone.environment() == Environment.staging) &&
                node.status().failCount() >= maxAllowedFailures;
     }

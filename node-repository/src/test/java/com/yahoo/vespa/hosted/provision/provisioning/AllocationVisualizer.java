@@ -5,13 +5,8 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
+import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,13 +98,13 @@ public class AllocationVisualizer extends JPanel {
 
         if (isHost) {
             g.setColor(Color.GRAY);
-            for (int i = 0; i < node.flavor().getMinMainMemoryAvailableGb(); i++) {
+            for (int i = 0; i < node.flavor().memory().sizeInGb(); i++) {
                 g.fillRect(x, y - nodeHeight, nodeWidth, nodeHeight);
                 y = y - (nodeHeight + 2);
             }
         } else {
             g.setColor(Color.YELLOW);
-            int multi = (int) node.flavor().getMinMainMemoryAvailableGb();
+            int multi = (int) node.flavor().memory().sizeInGb();
             int height = multi * nodeHeight + ((multi - 1) * 2);
             g.fillRect(x, y - height, nodeWidth, height);
 

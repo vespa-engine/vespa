@@ -10,6 +10,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.internal.ConfigFlavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
@@ -23,10 +24,10 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -1744,8 +1745,9 @@ public class ModelProvisioningTest {
     }
 
     private static Flavor createFlavorFromDiskSetting(String name, boolean fastDisk) {
-        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
-                name(name).fastDisk(fastDisk)));
+        return new ConfigFlavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder()
+                .name(name)
+                .disk(new FlavorsConfig.Flavor.Disk.Builder().fast(fastDisk))));
     }
 
     private static ProtonConfig getProtonConfig(ContentSearchCluster cluster, int searchNodeIdx) {
@@ -1800,8 +1802,10 @@ public class ModelProvisioningTest {
     private static long GB = 1024 * 1024 * 1024;
 
     private static Flavor createFlavorFromMemoryAndDisk(String name, int memoryGb, int diskGb) {
-        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
-                name(name).minMainMemoryAvailableGb(memoryGb).minDiskAvailableGb(diskGb)));
+        return new ConfigFlavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder()
+                .name(name)
+                .memory(new FlavorsConfig.Flavor.Memory.Builder().sizeInGb(memoryGb))
+                .disk(new FlavorsConfig.Flavor.Disk.Builder().sizeInGb(diskGb))));
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
