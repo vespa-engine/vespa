@@ -8,8 +8,26 @@ namespace vespalib::eval {
 
 namespace {
 
+using CellType = ValueType::CellType;
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
+
+CellType unify(CellType a, CellType b) {
+    if (a == b) {
+        return a;
+    } else {
+        return CellType::DOUBLE;
+    }
+}
+
+CellType unify_cell_type(const ValueType &a, const ValueType &b) {
+    if (a.is_double()) {
+        return b.cell_type();
+    } else if (b.is_double()) {
+        return a.cell_type();
+    }
+    return unify(a.cell_type(), b.cell_type());
+}
 
 size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::string &name) {
     for (size_t idx = 0; idx < list.size(); ++idx) {
@@ -184,7 +202,7 @@ ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
     if (removed != dimensions_in.size()) {
         return error_type();
     }
-    return tensor_type(std::move(result));
+    return tensor_type(std::move(result), _cell_type);
 }
 
 ValueType
@@ -202,11 +220,11 @@ ValueType::rename(const std::vector<vespalib::string> &from,
     if (!renamer.matched_all()) {
         return error_type();
     }
-    return tensor_type(dim_list);
+    return tensor_type(dim_list, _cell_type);
 }
 
 ValueType
-ValueType::tensor_type(std::vector<Dimension> dimensions_in)
+ValueType::tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type)
 {
     if (dimensions_in.empty()) {
         return double_type();
@@ -215,7 +233,7 @@ ValueType::tensor_type(std::vector<Dimension> dimensions_in)
     if (!verify_dimensions(dimensions_in)) {
         return error_type();
     }
-    return ValueType(Type::TENSOR, std::move(dimensions_in));
+    return ValueType(Type::TENSOR, cell_type, std::move(dimensions_in));
 }
 
 ValueType
@@ -244,7 +262,7 @@ ValueType::join(const ValueType &lhs, const ValueType &rhs)
     if (result.mismatch) {
         return error_type();
     }
-    return tensor_type(std::move(result.dimensions));
+    return tensor_type(std::move(result.dimensions), unify(lhs._cell_type, rhs._cell_type));
 }
 
 ValueType
@@ -260,12 +278,11 @@ ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::st
     if (!find_dimension(result.dimensions, dimension)) {
         result.dimensions.emplace_back(dimension, 2);
     }
-    return tensor_type(std::move(result.dimensions));
+    return tensor_type(std::move(result.dimensions), unify_cell_type(lhs, rhs));
 }
 
 ValueType
-ValueType::either(const ValueType &one, const ValueType &other)
-{
+ValueType::either(const ValueType &one, const ValueType &other) {
     if (one != other) {
         return error_type();
     }

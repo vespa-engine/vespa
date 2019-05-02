@@ -76,7 +76,7 @@ TEST("require that leaf constants have appropriate type") {
 TEST("require that input parameters preserve their type") {
     TEST_DO(verify("error", "error"));
     TEST_DO(verify("double", "double"));
-    TEST_DO(verify("tensor", "double"));
+    TEST_DO(verify("tensor()", "double"));
     TEST_DO(verify("tensor(x{},y[10],z[5])", "tensor(x{},y[10],z[5])"));
 }
 
