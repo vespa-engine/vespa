@@ -215,6 +215,11 @@ NodesOfContainerCluster = element nodes {
     attribute preload { text }? &
     attribute allocated-memory { text }? &
     attribute cpu-socket-affinity { xsd:boolean }? &
+    element jvm {
+        attribute options { text }? &
+        attribute gc-options { text }? &
+        attribute allocated-memory { text }?
+    } ? &
     element environment-variables {
       anyElement +
     } ? &

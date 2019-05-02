@@ -68,6 +68,31 @@ import static org.junit.Assert.fail;
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
+    public void verify_jvm_tag_with_attributes() throws IOException, SAXException {
+        String servicesXml =
+                "<jdisc version='1.0'>" +
+                "  <search/>" +
+                "  <nodes>" +
+                "    <jvm options='-XX:SoftRefLRUPolicyMSPerMB=2500' gc-options='-XX:+UseParNewGC' allocated-memory='45%'/>" +
+                "    <node hostalias='mockhost'/>" +
+                "  </nodes>" +
+                "</jdisc>";
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        // Need to create VespaModel to make deploy properties have effect
+        final MyLogger logger = new MyLogger();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .deployLogger(logger)
+                .properties(new TestProperties().setHostedVespa(true))
+                .build());
+        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrStartBuilder, "jdisc/container.0");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
+        assertEquals("-XX:+UseParNewGC", qrStartConfig.jvm().gcopts());
+        assertEquals(45, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals("-XX:SoftRefLRUPolicyMSPerMB=2500", model.getContainerClusters().values().iterator().next().getContainers().get(0).getJvmOptions());
+    }
+    @Test
     public void detect_conflicting_jvmgcoptions_in_jvmargs() {
         assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
         assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
