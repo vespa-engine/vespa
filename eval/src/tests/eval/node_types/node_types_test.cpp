@@ -78,6 +78,7 @@ TEST("require that input parameters preserve their type") {
     TEST_DO(verify("double", "double"));
     TEST_DO(verify("tensor()", "double"));
     TEST_DO(verify("tensor(x{},y[10],z[5])", "tensor(x{},y[10],z[5])"));
+    TEST_DO(verify("tensor<float>(x{},y[10],z[5])", "tensor<float>(x{},y[10],z[5])"));
 }
 
 TEST("require that if resolves to the appropriate type") {
@@ -88,6 +89,8 @@ TEST("require that if resolves to the appropriate type") {
     TEST_DO(verify("if(tensor(x[10]),1,2)", "double"));
     TEST_DO(verify("if(double,tensor(a{}),tensor(a{}))", "tensor(a{})"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor(a[2]))", "tensor(a[2])"));
+    TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<float>(a[2]))", "tensor<float>(a[2])"));
+    TEST_DO(verify("if(double,tensor(a[2]),tensor<float>(a[2]))", "error"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor(a[3]))", "error"));
     TEST_DO(verify("if(double,tensor(a[2]),tensor(a{}))", "error"));
     TEST_DO(verify("if(double,tensor(a{}),tensor(b{}))", "error"));
@@ -105,6 +108,9 @@ TEST("require that reduce resolves correct type") {
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double"));
     TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,w)", "error"));
     TEST_DO(verify("reduce(tensor(x{}),sum,x)", "double"));
+    TEST_DO(verify("reduce(tensor<float>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
+    TEST_DO(verify("reduce(tensor<float>(x{}),sum,x)", "double"));
+    TEST_DO(verify("reduce(tensor<float>(x{}),sum)", "double"));
 }
 
 TEST("require that rename resolves correct type") {
@@ -119,6 +125,7 @@ TEST("require that rename resolves correct type") {
     TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(z,y,x))", "tensor(z{},y[1],x[5])"));
     TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,z),(z,x))", "tensor(z{},y[1],x[5])"));
     TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor(a{},b[1],c[5])"));
+    TEST_DO(verify("rename(tensor<float>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<float>(a{},b[1],c[5])"));
 }
 
 vespalib::string strfmt(const char *pattern, const char *a) {
@@ -133,6 +140,7 @@ void verify_op1(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "error"), "error"));
     TEST_DO(verify(strfmt(pattern, "double"), "double"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{},y[10],z[1])"), "tensor(x{},y[10],z[1])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
 }
 
 void verify_op2(const char *pattern) {
@@ -150,6 +158,9 @@ void verify_op2(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "tensor(x[3])", "tensor(x[5])"), "error"));
     TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
+    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "tensor<float>(x[5])"));
 }
 
 TEST("require that various operations resolve appropriate type") {
@@ -213,6 +224,8 @@ TEST("require that lambda tensor resolves correct type") {
     TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])", false));
     TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])", false));
     TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])", false));
+    TEST_DO(verify("tensor<double>(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])", false));
+    TEST_DO(verify("tensor<float>(x[5],y[10],z[15])(1.0)", "tensor<float>(x[5],y[10],z[15])", false));
 }
 
 TEST("require that tensor concat resolves correct type") {
@@ -222,6 +235,9 @@ TEST("require that tensor concat resolves correct type") {
     TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),y)", "error"));
     TEST_DO(verify("concat(tensor(x[2]),tensor(x{}),x)", "error"));
     TEST_DO(verify("concat(tensor(x[2]),tensor(y{}),x)", "tensor(x[3],y{})"));
+    TEST_DO(verify("concat(tensor<float>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])"));
+    TEST_DO(verify("concat(tensor<float>(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
+    TEST_DO(verify("concat(tensor<float>(x[2]),double,x)", "tensor<float>(x[3])"));
 }
 
 TEST("require that double only expressions can be detected") {
