@@ -216,7 +216,7 @@ class NodesResponse extends HttpResponse {
     private Optional<DockerImage> currentDockerImage(Node node) {
         return node.status().dockerImage()
                 .or(() -> Optional.of(node)
-                        .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                        .filter(n -> n.flavor().environment() != Flavor.Environment.DOCKER_CONTAINER)
                         .flatMap(n -> n.status().vespaVersion()
                                 .map(version -> nodeRepository.dockerImages().dockerImageFor(n.type()).withTag(version))));
     }

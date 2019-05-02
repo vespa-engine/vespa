@@ -111,7 +111,7 @@ public class NodePatcher {
             case "currentRestartGeneration" :
                 return patchCurrentRestartGeneration(asLong(value));
             case "currentDockerImage" :
-                if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                if (node.flavor().environment() != Flavor.Environment.DOCKER_CONTAINER)
                     throw new IllegalArgumentException("Docker image can only be set for docker containers");
                 return node.with(node.status().withDockerImage(DockerImage.fromString(asString(value))));
             case "vespaVersion" :
