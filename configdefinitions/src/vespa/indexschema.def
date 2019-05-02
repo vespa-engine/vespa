@@ -16,6 +16,8 @@ indexfield[].phrases bool default=false
 indexfield[].positions bool default=true
 ## Average element length
 indexfield[].averageelementlen int default=512
+## Whether we should use a new experimental posting list format for this field.
+indexfield[].experimentalpostinglistformat bool default=false
 
 ## The name of the field collection (aka logical view).
 fieldset[].name string
