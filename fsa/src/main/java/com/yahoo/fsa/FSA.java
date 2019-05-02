@@ -430,7 +430,7 @@ public class FSA implements Closeable {
                 Object theUnsafe = theUnsafeField.get(null);
                 clean.invoke(theUnsafe, mmap);
             } catch (Exception e) {
-                throw new IllegalArgumentException("Falied unmapping ", e);
+                throw new IllegalArgumentException("Failed unmapping ", e);
             }
         }
         @Override
