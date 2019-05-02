@@ -15,4 +15,12 @@ public class KeyId {
         this.name = name;
         this.version = version;
     }
+
+    public String name() {
+        return name;
+    }
+
+    public int version() {
+        return version;
+    }
 }
