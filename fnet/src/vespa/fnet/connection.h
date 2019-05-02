@@ -58,9 +58,9 @@ public:
     };
 
     enum {
-        FNET_READ_SIZE  = 16384,
+        FNET_READ_SIZE  = 32768,
         FNET_READ_REDO  = 10,
-        FNET_WRITE_SIZE = 16384,
+        FNET_WRITE_SIZE = 32768,
         FNET_WRITE_REDO = 10
     };
 
