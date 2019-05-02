@@ -22,10 +22,19 @@ public class MemoryNameService implements NameService {
         return Collections.unmodifiableSet(records);
     }
 
+    private void add(Record record) {
+        if (records.stream().anyMatch(r -> r.type().equals(record.type()) &&
+                                           r.name().equals(record.name()) &&
+                                           r.data().equals(record.data()))) {
+            throw new IllegalArgumentException("Record already exists: " + record);
+        }
+        records.add(record);
+    }
+
     @Override
     public Record createCname(RecordName name, RecordData canonicalName) {
         var record = new Record(Record.Type.CNAME, name, canonicalName);
-        records.add(record);
+        add(record);
         return record;
     }
 
@@ -37,7 +46,7 @@ public class MemoryNameService implements NameService {
                              .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         removeRecords(findRecords(Record.Type.ALIAS, name));
-        this.records.addAll(records);
+        records.forEach(this::add);
         return records;
     }
 
@@ -46,7 +55,7 @@ public class MemoryNameService implements NameService {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
                              .collect(Collectors.toList());
-        this.records.addAll(records);
+        records.forEach(this::add);
         return records;
     }
 
@@ -76,7 +85,7 @@ public class MemoryNameService implements NameService {
         }
         var existing = records.get(0);
         this.records.remove(existing);
-        this.records.add(new Record(existing.type(), existing.name(), newData));
+        add(new Record(existing.type(), existing.name(), newData));
     }
 
     @Override
