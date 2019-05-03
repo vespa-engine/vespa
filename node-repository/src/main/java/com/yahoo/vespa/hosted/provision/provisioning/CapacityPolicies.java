@@ -48,7 +48,7 @@ public class CapacityPolicies {
             return requestedFlavor.get();
 
         FlavorSpec defaultFlavor = FlavorSpec.fromLegacyFlavorName(zone.defaultFlavor(cluster.type()));
-        if ( requestedFlavor.isEmpty())
+        if (requestedFlavor.isEmpty())
             return defaultFlavor;
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
