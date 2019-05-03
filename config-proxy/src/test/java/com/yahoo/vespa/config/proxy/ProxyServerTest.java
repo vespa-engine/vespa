@@ -137,7 +137,7 @@ public class ProxyServerTest {
 
     /**
      * Verifies that error responses are not cached. When the config has been successfully retrieved,
-     * it must be put in the cache.
+     * it must be updated in cache.
      */
     @Test
     public void testNoCachingOfErrorRequests() {
@@ -175,21 +175,26 @@ public class ProxyServerTest {
      * Verifies that config with generation 0 (used for empty sentinel config) is not cached.
      * If it was cached, it would be served even when newer config is available
      * (as they ask for config, saying that it now has config with generation 0).
-     * When the config has been successfully retrieved it must be put in the cache.
+     * When the config has been successfully retrieved it must be updated in cache.
      */
     @Test
     public void testNoCachingOfEmptyConfig() {
         ConfigTester tester = new ConfigTester();
+        MemoryCache cache = proxy.getMemoryCache();
+
+        assertEquals(0, cache.size());
+        RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
+        assertNotNull(res);
+        assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
+        assertEquals(1, cache.size());
+
         // Simulate an empty response
         RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(),
                       Payload.from("{}"), fooConfig.getConfigMd5(),
                       0, false, 0, fooConfig.getDefContent(), Optional.empty());
         source.put(fooConfig.getKey(), emptyConfig);
 
-        MemoryCache cache = proxy.getMemoryCache();
-        assertEquals(0, cache.size());
-
-        RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
+        res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res.getPayload());
         assertThat(res.getPayload().toString(), is(emptyConfig.getPayload().toString()));
         assertEquals(0, cache.size());
