@@ -1,0 +1,7 @@
+attributefield[0]
+summaryfield[0]
+fieldset[0]
+indexfield[1]
+indexfield[0].name foo
+indexfield[0].datatype STRING
+indexfield[0].collectiontype SINGLE

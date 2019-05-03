@@ -146,8 +146,8 @@ Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
 
 Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
     : Field(lines),
-      _avgElemLen(ConfigParser::parse<int32_t>("averageelementlen", lines)),
-      _experimental_posting_list_format(ConfigParser::parse<bool>("experimentalpostinglistformat", lines))
+      _avgElemLen(ConfigParser::parse<int32_t>("averageelementlen", lines, 512)),
+      _experimental_posting_list_format(ConfigParser::parse<bool>("experimentalpostinglistformat", lines, false))
 {
 }
 

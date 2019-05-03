@@ -16,6 +16,7 @@ namespace search::index {
 using schema::DataType;
 using schema::CollectionType;
 using SIAF = Schema::ImportedAttributeField;
+using SIF = Schema::IndexField;
 
 void
 assertField(const Schema::Field& exp, const Schema::Field& act)
@@ -170,7 +171,6 @@ TEST(SchemaTest, test_basic)
 
 TEST(SchemaTest, test_load_and_save)
 {
-    using SIF = Schema::IndexField;
     using SAF = Schema::AttributeField;
     using SSF = Schema::SummaryField;
     using SDT = schema::DataType;
@@ -437,6 +437,20 @@ TEST(SchemaTest, require_that_schema_can_be_built_with_imported_attribute_fields
     const auto &regular = s.getAttributeFields();
     ASSERT_EQ(1u, regular.size());
     assertField(SIAF("regular", DataType::INT32, CollectionType::SINGLE), regular[0]);
+}
+
+TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_properties_are_not_set)
+{
+    Schema s;
+    s.loadFromFile("schema-without-index-field-properties.txt");
+
+    const auto& index_fields = s.getIndexFields();
+    ASSERT_EQ(1, index_fields.size());
+    assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE).
+                             setAvgElemLen(512).
+                             set_experimental_posting_list_format(false),
+                     index_fields[0]);
+    assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE), index_fields[0]);
 }
 
 }
