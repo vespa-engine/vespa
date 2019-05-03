@@ -74,12 +74,11 @@ public:
      * A representation of an index field with extra information on
      * how the index should be generated.
      **/
-    class IndexField : public Field
-    {
-        bool _prefix;
-        bool _phrases;
-        bool _positions;
+    class IndexField : public Field {
+    private:
         uint32_t _avgElemLen;
+        // TODO: Remove when experimental posting list format is made default
+        bool _experimental_posting_list_format;
 
     public:
         IndexField(vespalib::stringref name, DataType dt);
@@ -89,21 +88,17 @@ public:
          **/
         IndexField(const std::vector<vespalib::string> &lines);
 
-        IndexField &setPrefix(bool value) { _prefix = value; return *this; }
-        IndexField &setPhrases(bool value) { _phrases = value; return *this; }
-        IndexField &setPositions(bool value)
-        { _positions = value; return *this; }
-        IndexField &setAvgElemLen(uint32_t avgElemLen)
-        { _avgElemLen = avgElemLen; return *this; }
+        IndexField &setAvgElemLen(uint32_t avgElemLen) { _avgElemLen = avgElemLen; return *this; }
+        IndexField &set_experimental_posting_list_format(bool value) {
+            _experimental_posting_list_format = value;
+            return *this;
+        }
 
-        void
-        write(vespalib::asciistream &os,
-              vespalib::stringref prefix) const override;
+        void write(vespalib::asciistream &os,
+                   vespalib::stringref prefix) const override;
 
-        bool hasPrefix() const { return _prefix; }
-        bool hasPhrases() const { return _phrases; }
-        bool hasPositions() const { return _positions; }
         uint32_t getAvgElemLen() const { return _avgElemLen; }
+        bool use_experimental_posting_list_format() const { return _experimental_posting_list_format; }
 
         bool operator==(const IndexField &rhs) const;
         bool operator!=(const IndexField &rhs) const;
