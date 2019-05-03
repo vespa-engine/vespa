@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class SignaturesTest {
 
-    private static final String emPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+    private static final String ecPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
                                                  "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
                                                  "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
                                                  "-----END PUBLIC KEY-----\n";
@@ -77,7 +77,7 @@ public class SignaturesTest {
         HttpRequest request = signer.signed(builder, Method.GET);
 
         // GET request with correct signature and URI as-is.
-        RequestVerifier verifier = new RequestVerifier(emPemPublicKey, clock);
+        RequestVerifier verifier = new RequestVerifier(ecPemPublicKey, clock);
         assertTrue(verifier.verify(Method.valueOf(request.method()),
                                    request.uri(),
                                    request.headers().firstValue("X-Timestamp").get(),
@@ -138,7 +138,7 @@ public class SignaturesTest {
                                     request.headers().firstValue("X-Authorization").get()));
 
         // Too old request.
-        verifier = new RequestVerifier(emPemPublicKey, Clock.fixed(Instant.EPOCH.plusSeconds(301), ZoneOffset.UTC));
+        verifier = new RequestVerifier(ecPemPublicKey, Clock.fixed(Instant.EPOCH.plusSeconds(301), ZoneOffset.UTC));
         assertFalse(verifier.verify(Method.valueOf(request.method()),
                                     request.uri().normalize(),
                                     request.headers().firstValue("X-Timestamp").get(),
@@ -146,7 +146,7 @@ public class SignaturesTest {
                                     request.headers().firstValue("X-Authorization").get()));
 
         // Too new request.
-        verifier = new RequestVerifier(emPemPublicKey, Clock.fixed(Instant.EPOCH.minusSeconds(301), ZoneOffset.UTC));
+        verifier = new RequestVerifier(ecPemPublicKey, Clock.fixed(Instant.EPOCH.minusSeconds(301), ZoneOffset.UTC));
         assertFalse(verifier.verify(Method.valueOf(request.method()),
                                     request.uri().normalize(),
                                     request.headers().firstValue("X-Timestamp").get(),

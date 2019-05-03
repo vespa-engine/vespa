@@ -3,14 +3,11 @@ package ai.vespa.hosted.api;
 import com.yahoo.security.KeyUtils;
 
 import java.net.URI;
-import java.security.Key;
-import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Base64;
 
 /**
@@ -23,11 +20,12 @@ public class RequestVerifier {
     private final Signature verifier;
     private final Clock clock;
 
+    /** Creates a new request verifier from the given PEM encoded ECDSA public key. */
     public RequestVerifier(String pemPublicKey) {
         this(pemPublicKey, Clock.systemUTC());
     }
 
-    RequestVerifier(String pemPublicKey, Clock clock) {
+    public RequestVerifier(String pemPublicKey, Clock clock) {
         this.verifier = KeyUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey));
         this.clock = clock;
     }
