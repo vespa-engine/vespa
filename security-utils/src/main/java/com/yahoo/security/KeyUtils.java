@@ -160,6 +160,16 @@ public class KeyUtils {
         }
     }
 
+    public static String toPem(PublicKey publicKey) {
+        try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+            pemWriter.writeObject(publicKey);
+            pemWriter.flush();
+            return stringWriter.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     private static byte[] getPkcs1Bytes(PrivateKey privateKey) throws IOException{
         byte[] privBytes = privateKey.getEncoded();
         PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(privBytes);
