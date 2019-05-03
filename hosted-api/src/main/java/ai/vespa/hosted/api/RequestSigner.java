@@ -1,6 +1,7 @@
 package ai.vespa.hosted.api;
 
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -12,6 +13,7 @@ import java.util.Base64;
 import java.util.function.Supplier;
 
 import static ai.vespa.hosted.api.Signatures.sha256Digest;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 
 /**
  * Signs HTTP request headers using a private key, for verification by the indicated public key.
@@ -31,7 +33,7 @@ public class RequestSigner {
 
     /** Creates a new request signer with a custom clock. */
     public RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
-        this.signer = KeyUtils.createSigner(KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey));
+        this.signer = SignatureUtils.createSigner(KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey), SHA256_WITH_ECDSA);
         this.keyId = keyId;
         this.clock = clock;
     }
