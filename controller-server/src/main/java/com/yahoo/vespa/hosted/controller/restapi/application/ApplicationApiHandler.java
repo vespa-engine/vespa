@@ -915,7 +915,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ZoneId zone = ZoneId.from(environment, region);
 
         // Get deployOptions
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("deployOptions"))
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
