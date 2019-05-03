@@ -157,6 +157,11 @@ Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix
     Field::write(os, prefix);
     os << prefix << "averageelementlen " << static_cast<int32_t>(_avgElemLen) << "\n";
     os << prefix << "experimentalpostinglistformat " << (_experimental_posting_list_format ? "true" : "false") << "\n";
+
+    // TODO: Remove prefix, phrases and positions when breaking downgrade is no longer an issue.
+    os << prefix << "prefix false" << "\n";
+    os << prefix << "phrases false" << "\n";
+    os << prefix << "positions true" << "\n";
 }
 
 bool
