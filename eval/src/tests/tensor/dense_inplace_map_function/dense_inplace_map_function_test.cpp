@@ -26,6 +26,7 @@ EvalFixture::ParamRepo make_params() {
         .add("x5", spec({x(5)}, N()))
         .add_mutable("_d", spec(5.0))
         .add_mutable("_x5", spec({x(5)}, N()))
+        .add_mutable("_x5f", spec({x(5)}, N()), "tensor<float>(x[5])")
         .add_mutable("_x5y3", spec({x(5),y(3)}, N()))
         .add_mutable("_x_m", spec({x({"a", "b", "c"})}, N()));
 }
@@ -69,6 +70,10 @@ TEST("require that scalar values are not optimized") {
 
 TEST("require that mapped tensors are not optimized") {
     TEST_DO(verify_not_optimized("map(_x_m,f(x)(x+10))"));
+}
+
+TEST("require that optimization is disabled for tensors with non-double cells") {
+    TEST_DO(verify_not_optimized("map(_x5f,f(x)(x+10))"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

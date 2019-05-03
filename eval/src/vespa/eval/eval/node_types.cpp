@@ -4,8 +4,7 @@
 #include "node_traverser.h"
 #include "node_types.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 namespace nodes {
 namespace {
 
@@ -208,5 +207,4 @@ NodeTypes::get_type(const nodes::Node &node) const
     return pos->second;
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

@@ -99,4 +99,8 @@ TEST("require that dimension addition optimization requires unit constant tensor
     TEST_DO(verify_not_optimized("tensor(x[2])(1)*tensor(y[2])(1)"));
 }
 
+TEST("require that optimization is disabled for tensors with non-double cells") {
+    TEST_DO(verify_not_optimized("x5*tensor<float>(a[1],b[1],c[1])(1)"));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
