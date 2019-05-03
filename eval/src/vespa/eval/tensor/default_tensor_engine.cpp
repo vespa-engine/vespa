@@ -329,7 +329,8 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
 size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
     if (type.is_double()) {
         return 1;
-    } else if ((type.dimensions().size() == 1) &&
+    } else if ((type.cell_type() == ValueType::CellType::DOUBLE) &&
+               (type.dimensions().size() == 1) &&
                (type.dimensions()[0].is_indexed()) &&
                (type.dimensions()[0].name == dimension))
     {
