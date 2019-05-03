@@ -21,7 +21,7 @@ public class MetricsFetcherTest {
 
     @Test
     public void testStateFormatMetricsParse() {
-        String jsonData = TestUtil.getContents(new File("src/test/resources/metrics-state.json"));
+        String jsonData = TestUtil.getContents("metrics-state.json");
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         Metrics metrics = fetcher.createMetrics(jsonData, 0);
         assertThat("Wrong number of metrics", metrics.size(), is(10));

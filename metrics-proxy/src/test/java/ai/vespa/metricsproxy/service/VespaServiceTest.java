@@ -24,7 +24,7 @@ public class VespaServiceTest {
     private static final String response;
 
     static {
-        response = TestUtil.getContents(new File("src/test/resources/metrics-state.json"));
+        response = TestUtil.getContents("metrics-state.json");
         HttpMetricFetcher.CONNECTION_TIMEOUT = 60000; // 60 secs in unit tests
     }
 

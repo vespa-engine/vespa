@@ -20,16 +20,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.CUSTOM_CONSUMER_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.MONITORING_SYSTEM;
-import static ai.vespa.metricsproxy.rpc.IntegrationTester.root;
-import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_2_CONFIG_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
+import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_2_CONFIG_ID;
 import static ai.vespa.metricsproxy.service.VespaServices.ALL_SERVICES;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -44,7 +42,7 @@ import static org.junit.Assert.assertThat;
 public class RpcMetricsTest {
 
     private static final String METRICS_RESPONSE_CCL =
-            TestUtil.getContents(new File(root + "metrics-storage-simple.json")).trim();
+            TestUtil.getContents("metrics-storage-simple.json").trim();
 
     // see factory/doc/port-ranges.txt
     private static final int httpPort = 18633;

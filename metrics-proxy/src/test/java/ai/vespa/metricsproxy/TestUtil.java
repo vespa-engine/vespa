@@ -8,29 +8,20 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
 
 /**
- * Utilities for tests in this module.
- *
- * @author hmusum
+ * @author gjoranv
  */
 public class TestUtil {
 
-    public static String getContents(File aFile) {
-        //...checks on aFile are elided
-        StringBuilder contents = new StringBuilder();
-
-        try (BufferedReader input = new BufferedReader(new FileReader(aFile))) {
-            String line;
-            while ((line = input.readLine()) != null) {
-                contents.append(line);
-                contents.append(System.getProperty("line.separator"));
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
+    public static String getContents(String filename) {
+        InputStream in = TestUtil.class.getClassLoader().getResourceAsStream(filename);
+        if (in == null) {
+            throw new RuntimeException("File not found: " + filename);
         }
-
-        return contents.toString();
+        return new BufferedReader(new InputStreamReader(in)).lines().collect(Collectors.joining("\n"));
     }
-
 }

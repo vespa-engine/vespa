@@ -16,10 +16,8 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.List;
 
-import static ai.vespa.metricsproxy.rpc.IntegrationTester.root;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -32,11 +30,11 @@ import static org.junit.Assert.assertThat;
 public class RpcHealthMetricsTest {
 
     private static final String HEALTH_OK_RESPONSE =
-            TestUtil.getContents(new File(root + "health-check.response.json"));
+            TestUtil.getContents("health-check.response.json");
     private static final String HEALTH_FAILED_RESPONSE =
-            TestUtil.getContents(new File(root + "health-check-failed.response.json"));
+            TestUtil.getContents("health-check-failed.response.json");
     private static final String WANTED_RPC_RESPONSE =
-            TestUtil.getContents(new File(root + "rpc-json-output-check.json")).trim();
+            TestUtil.getContents("rpc-json-output-check.json").trim();
 
     // see factory/doc/port-ranges.txt
     private static final int httpPort = 18635;

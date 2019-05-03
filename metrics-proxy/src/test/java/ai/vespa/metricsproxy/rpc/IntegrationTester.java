@@ -39,8 +39,6 @@ import static ai.vespa.metricsproxy.service.HttpMetricFetcher.STATE_PATH;
  */
 public class IntegrationTester implements  AutoCloseable {
 
-    static final String root = "src/test/resources/";
-
     static final String MONITORING_SYSTEM = "test-system";
     static final ConsumerId CUSTOM_CONSUMER_ID = toConsumerId("custom-consumer");
     static final String SERVICE_1_CONFIG_ID = "container/qrserver.0";
