@@ -73,6 +73,7 @@ public:
         }
         return *this;
     }
+    void override_type(const vespalib::string &new_type) { _type = new_type; }
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     vespalib::string to_string() const;
