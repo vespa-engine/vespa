@@ -59,7 +59,8 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                 if (verified)
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME,
                                          new SecurityContext(() -> "buildService@" + id.tenant() + "." + id.application(),
-                                                             Set.of(Role.buildService(id.tenant(), id.application()))));
+                                                             Set.of(Role.buildService(id.tenant(), id.application()),
+                                                                    Role.applicationDeveloper(id.tenant(), id.application()))));
             }
             catch (Exception e) {
                 logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));

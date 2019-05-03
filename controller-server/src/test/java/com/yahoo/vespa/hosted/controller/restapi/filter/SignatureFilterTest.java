@@ -83,7 +83,9 @@ public class SignatureFilterTest {
         assertTrue(filter.filter(signed).isEmpty());
         SecurityContext securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
         assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());
-        assertEquals(Set.of(Role.buildService(id.tenant(), id.application())), securityContext.roles());
+        assertEquals(Set.of(Role.buildService(id.tenant(), id.application()),
+                            Role.applicationDeveloper(id.tenant(), id.application())),
+                     securityContext.roles());
 
         // Signed POST request also gets a build service role.
         byte[] hiBytes = new byte[]{0x48, 0x69};
@@ -91,7 +93,9 @@ public class SignatureFilterTest {
         filter.filter(signed);
         securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
         assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());
-        assertEquals(Set.of(Role.buildService(id.tenant(), id.application())), securityContext.roles());
+        assertEquals(Set.of(Role.buildService(id.tenant(), id.application()),
+                            Role.applicationDeveloper(id.tenant(), id.application())),
+                     securityContext.roles());
 
         // Unsigned requests still get no roles.
         filter.filter(unsigned);
