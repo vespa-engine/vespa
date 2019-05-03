@@ -205,10 +205,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
-        // POST (deploy) an application to a zone - manual user deployment
+        // POST (deploy) an application to a zone - manual user deployment (includes a content hash for verification)
         MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
+                                      .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(entity::data)))
                                       .userIdentity(USER_ID),
                               new File("deploy-result.json"));
 
