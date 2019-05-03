@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import ai.vespa.hosted.api.Signatures;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -88,10 +89,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.DigestInputStream;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -911,7 +915,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ZoneId zone = ZoneId.from(environment, region);
 
         // Get deployOptions
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("deployOptions"))
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
@@ -1399,7 +1403,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions);
         String authorEmail = submitOptions.field("authorEmail").asString();
@@ -1418,6 +1422,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+    }
+
+    private static Map<String, byte[]> parseDataParts(HttpRequest request) {
+        String contentHash = request.getHeader("x-Content-Hash");
+        if (contentHash == null)
+            return new MultipartParser().parse(request);
+
+        DigestInputStream digester = Signatures.sha256Digester(request.getData());
+        var dataParts = new MultipartParser().parse(request.getHeader("Content-Type"), digester, request.getUri());
+        if ( ! Arrays.equals(digester.getMessageDigest().digest(), Base64.getDecoder().decode(contentHash)))
+            throw new IllegalArgumentException("Value of X-Content-Hash header does not match computed content hash");
+
+        return dataParts;
     }
 
 }

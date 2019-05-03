@@ -1,3 +1,4 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import ai.vespa.hosted.api.Method;
@@ -59,7 +60,8 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                 if (verified)
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME,
                                          new SecurityContext(() -> "buildService@" + id.tenant() + "." + id.application(),
-                                                             Set.of(Role.buildService(id.tenant(), id.application()))));
+                                                             Set.of(Role.buildService(id.tenant(), id.application()),
+                                                                    Role.applicationDeveloper(id.tenant(), id.application()))));
             }
             catch (Exception e) {
                 logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));

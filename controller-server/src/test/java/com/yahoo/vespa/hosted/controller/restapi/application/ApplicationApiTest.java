@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
+import ai.vespa.hosted.api.Signatures;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -60,13 +61,9 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -74,6 +71,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -207,10 +205,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
-        // POST (deploy) an application to a zone - manual user deployment
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        // POST (deploy) an application to a zone - manual user deployment (includes a content hash for verification)
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
+                                      .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(entity::data)))
                                       .userIdentity(USER_ID),
                               new File("deploy-result.json"));
 
@@ -568,6 +567,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(packageWithService)),
                               "{\"message\":\"Application package version: 1.0.44-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
+        // Fourth attempt has a wrong content hash in a header, and fails.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .header("X-Content-Hash", "not/the/right/hash")
+                                      .data(createApplicationSubmissionData(packageWithService)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Value of X-Content-Hash header does not match computed content hash\"}", 400);
+
+        // Fifth attempt has the right content hash in a header, and succeeds.
+        MultiPartStreamer streamer = createApplicationSubmissionData(packageWithService);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(streamer::data)))
+                                      .data(streamer),
+                              "{\"message\":\"Application package version: 1.0.45-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+
         ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
@@ -672,7 +686,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         ApplicationId id = createTenantAndApplication();
         long projectId = 1;
-        HttpEntity deployData = createApplicationDeployData(Optional.empty(), false);
+        MultiPartStreamer deployData = createApplicationDeployData(Optional.empty(), false);
         startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
 
         // us-west-1
@@ -754,14 +768,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 
         // POST (deploy) an application to a prod zone - allowed when project ID is not specified
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
 
         // POST (deploy) a system application with an application package
-        HttpEntity noAppEntity = createApplicationDeployData(Optional.empty(), true);
+        MultiPartStreamer noAppEntity = createApplicationDeployData(Optional.empty(), true);
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
                                       .data(noAppEntity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
@@ -790,7 +804,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
         ApplicationId id = createTenantAndApplication();
         long projectId = 1;
-        HttpEntity deployData = createApplicationDeployData(Optional.empty(), false);
+        MultiPartStreamer deployData = createApplicationDeployData(Optional.empty(), false);
         startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
 
         // us-east-3
@@ -935,7 +949,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE, null));
         
         // POST (deploy) an application with an invalid application package
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -1061,7 +1075,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               200);
 
         // Deploy to an authorized zone by a user tenant is disallowed
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -1187,7 +1201,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST (deploy) an application to a dev zone
         String expectedResult="{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch services in Athenz domain domain1. Please reach out to the domain admin.\"}";
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
@@ -1220,7 +1234,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
 
         // POST (deploy) an application to a dev zone
-        HttpEntity entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(tenantAdmin),
@@ -1403,20 +1417,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
     }
 
-    private HttpEntity createApplicationDeployData(ApplicationPackage applicationPackage, boolean deployDirectly) {
+    private MultiPartStreamer createApplicationDeployData(ApplicationPackage applicationPackage, boolean deployDirectly) {
         return createApplicationDeployData(Optional.of(applicationPackage), deployDirectly);
     }
 
-    private HttpEntity createApplicationDeployData(Optional<ApplicationPackage> applicationPackage, boolean deployDirectly) {
+    private MultiPartStreamer createApplicationDeployData(Optional<ApplicationPackage> applicationPackage, boolean deployDirectly) {
         return createApplicationDeployData(applicationPackage, Optional.empty(), deployDirectly);
     }
 
-    private HttpEntity createApplicationDeployData(Optional<ApplicationPackage> applicationPackage,
+    private MultiPartStreamer createApplicationDeployData(Optional<ApplicationPackage> applicationPackage,
                                                    Optional<ApplicationVersion> applicationVersion, boolean deployDirectly) {
-        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-        builder.addTextBody("deployOptions", deployOptions(deployDirectly, applicationVersion), ContentType.APPLICATION_JSON);
-        applicationPackage.ifPresent(ap -> builder.addBinaryBody("applicationZip", ap.zippedContent()));
-        return builder.build();
+        MultiPartStreamer streamer = new MultiPartStreamer();
+        streamer.addJson("deployOptions", deployOptions(deployDirectly, applicationVersion));
+        applicationPackage.ifPresent(ap -> streamer.addBytes("applicationZip", ap.zippedContent()));
+        return streamer;
     }
 
     private MultiPartStreamer createApplicationSubmissionData(ApplicationPackage applicationPackage) {
@@ -1492,7 +1506,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application,
                                     long projectId, ApplicationPackage applicationPackage,
-                                    HttpEntity deployData, long buildNumber) {
+                                    MultiPartStreamer deployData, long buildNumber) {
         ContainerTester tester = controllerTester.containerTester();
 
         // Trigger application change
@@ -1618,6 +1632,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private AthenzIdentity identity;
         private OktaAccessToken oktaAccessToken;
         private String contentType = "application/json";
+        private Map<String, List<String>> headers = new HashMap<>();
         private String recursive;
 
         private RequestBuilder(String path, Request.Method method) {
@@ -1630,20 +1645,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private RequestBuilder data(MultiPartStreamer streamer) {
             return Exceptions.uncheck(() -> data(streamer.data().readAllBytes()).contentType(streamer.contentType()));
         }
-        private RequestBuilder data(HttpEntity data) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try {
-                data.writeTo(out);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            return data(out.toByteArray()).contentType(data.getContentType().getValue());
-        }
+
         private RequestBuilder userIdentity(UserId userId) { this.identity = HostedAthenzIdentities.from(userId); return this; }
         private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = HostedAthenzIdentities.from(screwdriverId); return this; }
         private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
         private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
+        private RequestBuilder header(String name, String value) {
+            this.headers.putIfAbsent(name, new ArrayList<>());
+            this.headers.get(name).add(value);
+            return this;
+        }
 
         @Override
         public Request get() {
@@ -1651,6 +1663,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                           // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
                                           (recursive == null ? "" : "?recursive=" + recursive),
                                           data, method);
+            request.getHeaders().addAll(headers);
             request.getHeaders().put("Content-Type", contentType);
             if (identity != null) {
                 addIdentityToRequest(request, identity);
