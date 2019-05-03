@@ -20,7 +20,7 @@ FRTConfigAgent::FRTConfigAgent(const IConfigHolder::SP & holder, const TimingVal
 {
 }
 
-FRTConfigAgent::~FRTConfigAgent() {}
+FRTConfigAgent::~FRTConfigAgent() = default;
 
 void
 FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP response)
