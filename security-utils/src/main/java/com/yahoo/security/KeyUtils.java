@@ -24,6 +24,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
@@ -65,12 +66,12 @@ public class KeyUtils {
         String algorithm = privateKey.getAlgorithm();
         try {
             if (algorithm.equals(RSA.getAlgorithmName())) {
-                KeyFactory keyFactory = KeyFactory.getInstance(RSA.getAlgorithmName(), BouncyCastleProviderHolder.getInstance());
+                KeyFactory keyFactory = createKeyFactory(RSA);
                 RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) privateKey;
                 RSAPublicKeySpec keySpec = new RSAPublicKeySpec(rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
                 return keyFactory.generatePublic(keySpec);
             } else if (algorithm.equals(EC.getAlgorithmName())) {
-                KeyFactory keyFactory = KeyFactory.getInstance(EC.getAlgorithmName(), BouncyCastleProviderHolder.getInstance());
+                KeyFactory keyFactory = createKeyFactory(EC);
                 BCECPrivateKey ecPrivateKey = (BCECPrivateKey) privateKey;
                 ECParameterSpec ecParameterSpec = ecPrivateKey.getParameters();
                 ECPoint ecPoint = new FixedPointCombMultiplier().multiply(ecParameterSpec.getG(), ecPrivateKey.getD());
@@ -92,7 +93,7 @@ public class KeyUtils {
                 if (pemObject instanceof PrivateKeyInfo) {
                     PrivateKeyInfo keyInfo = (PrivateKeyInfo) pemObject;
                     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyInfo.getEncoded());
-                    return KeyFactory.getInstance(RSA.getAlgorithmName()).generatePrivate(keySpec);
+                    return createKeyFactory(RSA).generatePrivate(keySpec);
                 } else if (pemObject instanceof PEMKeyPair) {
                     PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
                     PrivateKeyInfo keyInfo = pemKeypair.getPrivateKeyInfo();
@@ -160,6 +161,10 @@ public class KeyUtils {
         ASN1Encodable encodable = pkInfo.parsePrivateKey();
         ASN1Primitive primitive = encodable.toASN1Primitive();
         return primitive.getEncoded();
+    }
+
+    private static KeyFactory createKeyFactory(KeyAlgorithm algorithm) throws NoSuchAlgorithmException {
+        return KeyFactory.getInstance(algorithm.getAlgorithmName(), BouncyCastleProviderHolder.getInstance());
     }
 
 }
