@@ -3,8 +3,11 @@ package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
@@ -12,7 +15,6 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.util.io.pem.PemObject;
 
@@ -30,6 +32,7 @@ import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,8 +100,8 @@ public class KeyUtils {
                 } else if (pemObject instanceof PEMKeyPair) {
                     PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
                     PrivateKeyInfo keyInfo = pemKeypair.getPrivateKeyInfo();
-                    JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
-                    return pemConverter.getPrivateKey(keyInfo);
+                    return createKeyFactory(keyInfo.getPrivateKeyAlgorithm())
+                            .generatePrivate(new PKCS8EncodedKeySpec(keyInfo.getEncoded()));
                 } else {
                     unknownObjects.add(pemObject);
                 }
@@ -126,12 +129,14 @@ public class KeyUtils {
                     unknownObjects.add(pemObject);
                     continue;
                 }
-                JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
-                return pemConverter.getPublicKey(keyInfo);
+                return createKeyFactory(keyInfo.getAlgorithm())
+                        .generatePublic(new X509EncodedKeySpec(keyInfo.getEncoded()));
             }
             throw new IllegalArgumentException("Expected a public key, but found " + unknownObjects.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -161,6 +166,16 @@ public class KeyUtils {
         ASN1Encodable encodable = pkInfo.parsePrivateKey();
         ASN1Primitive primitive = encodable.toASN1Primitive();
         return primitive.getEncoded();
+    }
+
+    private static KeyFactory createKeyFactory(AlgorithmIdentifier algorithm) throws NoSuchAlgorithmException {
+        if (X9ObjectIdentifiers.id_ecPublicKey.equals(algorithm.getAlgorithm())) {
+            return createKeyFactory(KeyAlgorithm.EC);
+        } else if (PKCSObjectIdentifiers.rsaEncryption.equals(algorithm.getAlgorithm())) {
+            return createKeyFactory(KeyAlgorithm.RSA);
+        } else {
+            throw new IllegalArgumentException("Unknown key algorithm: " + algorithm);
+        }
     }
 
     private static KeyFactory createKeyFactory(KeyAlgorithm algorithm) throws NoSuchAlgorithmException {

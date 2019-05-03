@@ -81,13 +81,16 @@ public class KeyUtilsTest {
 
     @Test
     public void can_deserialize_rsa_publickey_in_pem_format() {
-         KeyUtils.fromPemEncodedPublicKey(rsaPemPublicKey);
+        PublicKey publicKey = KeyUtils.fromPemEncodedPublicKey(rsaPemPublicKey);
+        assertEquals(KeyAlgorithm.RSA.getAlgorithmName(), publicKey.getAlgorithm());
     }
 
     @Test
     public void can_deserialize_ec_keys_in_pem_format() {
-        KeyUtils.fromPemEncodedPublicKey(ecPemPublicKey);
-        KeyUtils.fromPemEncodedPrivateKey(ecPemPrivateKey);
+        PublicKey publicKey = KeyUtils.fromPemEncodedPublicKey(ecPemPublicKey);
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(ecPemPrivateKey);
+        assertEquals(KeyAlgorithm.EC.getAlgorithmName(), publicKey.getAlgorithm());
+        assertEquals(KeyAlgorithm.EC.getAlgorithmName(), privateKey.getAlgorithm());
     }
 
 }
