@@ -50,7 +50,7 @@ private:
     void badPostingType(const std::string &postingType);
     void testFake(const std::string &postingType,
                   const Schema &schema,
-                  const FakeWord &fw);
+                  const FakeWord &word);
 public:
     PostingListBM();
     ~PostingListBM();
@@ -108,49 +108,84 @@ PostingListBM::PostingListBM()
 
 PostingListBM::~PostingListBM() = default;
 
+void
+validate_posting_for_word(const FakePosting& posting, const FakeWord& word, bool verbose)
+{
+    TermFieldMatchData md;
+    TermFieldMatchDataArray tfmda;
+    tfmda.add(&md);
+
+    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
+    if (posting.hasWordPositions()) {
+        word.validate(iterator.get(), tfmda, verbose);
+    } else {
+        word.validate(iterator.get(), verbose);
+    }
+}
+
 int
-highLevelSinglePostingScan(SearchIterator &sb, uint32_t numDocs, uint64_t *cycles)
+highLevelSinglePostingScan(SearchIterator& iterator, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
 {
     uint32_t hits = 0;
     uint64_t before = fastos::ClockSystem::now();
-    sb.initFullRange();
-    uint32_t docId = sb.getDocId();
-    while (docId < numDocs) {
-        if (sb.seek(docId)) {
+    iterator.initFullRange();
+    uint32_t doc_id = iterator.getDocId();
+    while (doc_id < doc_id_limit) {
+        if (iterator.seek(doc_id)) {
             ++hits;
-            ++docId;
-        } else if (docId < sb.getDocId()) {
-            docId = sb.getDocId();
+            ++doc_id;
+        } else if (doc_id < iterator.getDocId()) {
+            doc_id = iterator.getDocId();
         } else {
-            ++docId;
+            ++doc_id;
         }
     }
     uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
+    elapsed_time_ns = after - before;
     return hits;
 }
 
 int
-highLevelSinglePostingScanUnpack(SearchIterator &sb, uint32_t numDocs, uint64_t *cycles)
+highLevelSinglePostingScan(const FakePosting& posting, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
+{
+    TermFieldMatchData md;
+    TermFieldMatchDataArray tfmda;
+    tfmda.add(&md);
+    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
+    return highLevelSinglePostingScan(*iterator, doc_id_limit, elapsed_time_ns);
+}
+
+int
+highLevelSinglePostingScanUnpack(SearchIterator& iterator, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
 {
     uint32_t hits = 0;
     uint64_t before = fastos::ClockSystem::now();
-    sb.initFullRange();
-    uint32_t docId = sb.getDocId();
-    while (docId < numDocs) {
-        if (sb.seek(docId)) {
+    iterator.initFullRange();
+    uint32_t doc_id = iterator.getDocId();
+    while (doc_id < doc_id_limit) {
+        if (iterator.seek(doc_id)) {
             ++hits;
-            sb.unpack(docId);
-            ++docId;
-        } else if (docId < sb.getDocId()) {
-            docId = sb.getDocId();
+            iterator.unpack(doc_id);
+            ++doc_id;
+        } else if (doc_id < iterator.getDocId()) {
+            doc_id = iterator.getDocId();
         } else {
-            ++docId;
+            ++doc_id;
         }
     }
     uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
+    elapsed_time_ns = after - before;
     return hits;
+}
+
+int
+highLevelSinglePostingScanUnpack(const FakePosting &posting, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
+{
+    TermFieldMatchData md;
+    TermFieldMatchDataArray tfmda;
+    tfmda.add(&md);
+    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
+    return highLevelSinglePostingScanUnpack(*iterator, doc_id_limit, elapsed_time_ns);
 }
 
 int
@@ -221,50 +256,32 @@ highLevelAndPairPostingScanUnpack(SearchIterator &sb1,
 void
 PostingListBM::testFake(const std::string &postingType,
                         const Schema &schema,
-                        const FakeWord &fw)
+                        const FakeWord &word)
 {
-    std::unique_ptr<FPFactory> ff(getFPFactory(postingType, schema));
-    std::vector<const FakeWord *> v;
-    v.push_back(&fw);
-    ff->setup(v);
-    FakePosting::SP f(ff->make(fw));
+    auto posting_factory = getFPFactory(postingType, schema);
+    std::vector<const FakeWord *> words;
+    words.push_back(&word);
+    posting_factory->setup(words);
+    auto posting = posting_factory->make(word);
 
     printf("%s.bitsize=%d+%d+%d+%d+%d\n",
-           f->getName().c_str(),
-           static_cast<int>(f->bitSize()),
-           static_cast<int>(f->l1SkipBitSize()),
-           static_cast<int>(f->l2SkipBitSize()),
-           static_cast<int>(f->l3SkipBitSize()),
-           static_cast<int>(f->l4SkipBitSize()));
-    TermFieldMatchData md;
-    TermFieldMatchDataArray tfmda;
-    tfmda.add(&md);
+           posting->getName().c_str(),
+           static_cast<int>(posting->bitSize()),
+           static_cast<int>(posting->l1SkipBitSize()),
+           static_cast<int>(posting->l2SkipBitSize()),
+           static_cast<int>(posting->l3SkipBitSize()),
+           static_cast<int>(posting->l4SkipBitSize()));
 
-    std::unique_ptr<SearchIterator> sb(f->createIterator(tfmda));
-    if (f->hasWordPositions()) {
-        fw.validate(sb.get(), tfmda, _verbose);
-    } else {
-        fw.validate(sb.get(), _verbose);
-    }
+    validate_posting_for_word(*posting, word, _verbose);
+
     uint64_t scanTime = 0;
     uint64_t scanUnpackTime = 0;
-    TermFieldMatchData md2;
-    TermFieldMatchDataArray tfmda2;
-    tfmda2.add(&md2);
+    int hits1 = highLevelSinglePostingScan(*posting, word.getDocIdLimit(), scanTime);
+    int hits2 = highLevelSinglePostingScanUnpack(*posting, word.getDocIdLimit(), scanUnpackTime);
 
-    std::unique_ptr<SearchIterator> sb2(f->createIterator(tfmda2));
-    int hits1 = highLevelSinglePostingScan(*sb2.get(), fw.getDocIdLimit(),
-                                           &scanTime);
-    TermFieldMatchData md3;
-    TermFieldMatchDataArray tfmda3;
-    tfmda3.add(&md3);
-
-    std::unique_ptr<SearchIterator> sb3(f->createIterator(tfmda3));
-    int hits2 = highLevelSinglePostingScanUnpack(*sb3.get(), fw.getDocIdLimit(),
-                                                 &scanUnpackTime);
     printf("testFake '%s' hits1=%d, hits2=%d, scanTime=%" PRIu64
            ", scanUnpackTime=%" PRIu64 "\n",
-           f->getName().c_str(),
+           posting->getName().c_str(),
            hits1, hits2, scanTime, scanUnpackTime);
 }
 
