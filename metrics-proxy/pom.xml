@@ -149,6 +149,7 @@
 
       <plugin>
         <!-- Only added to make IntelliJ use correct language level -->
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
     </plugins>
