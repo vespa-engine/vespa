@@ -11,39 +11,170 @@ using index::DocIdAndFeatures;
 using bitcompression::FeatureEncodeContext;
 using bitcompression::DecodeContext64Base;
 
+Zc4PostingReaderBase::NoSkip::NoSkip()
+    : _zc_buf(),
+      _doc_id(0),
+      _doc_id_pos(0),
+      _features_pos(0)
+{
+}
+
+Zc4PostingReaderBase::NoSkip::~NoSkip() = default;
+
+void
+Zc4PostingReaderBase::NoSkip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id)
+{
+    _doc_id_pos = 0;
+    _features_pos = 0;
+    _zc_buf.clearReserve(size);
+    if (size != 0) {
+        decode_context.readBytes(_zc_buf._valI, size);
+    }
+    _zc_buf._valE = _zc_buf._valI + size;
+    _doc_id = doc_id;
+}
+
+void
+Zc4PostingReaderBase::NoSkip::read()
+{
+    assert(_zc_buf._valI < _zc_buf._valE);
+    _doc_id += (_zc_buf.decode()+ 1);
+    _doc_id_pos = _zc_buf.pos();
+}
+
+void
+Zc4PostingReaderBase::NoSkip::check_end(uint32_t last_doc_id)
+{
+    assert(_doc_id == last_doc_id);
+    assert(_zc_buf._valI == _zc_buf._valE);
+}
+
+void
+Zc4PostingReaderBase::NoSkip::check_not_end(uint32_t last_doc_id)
+{
+    assert(_doc_id < last_doc_id);
+    assert(_zc_buf._valI < _zc_buf._valE);
+}
+
+Zc4PostingReaderBase::L1Skip::L1Skip()
+    : NoSkip(),
+      _l1_skip_pos(0)
+{
+}
+
+void
+Zc4PostingReaderBase::L1Skip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id)
+{
+    NoSkip::setup(decode_context, size, doc_id);
+    _l1_skip_pos = 0;
+    if (size != 0) {
+        next_skip_entry();
+    } else {
+        _doc_id = last_doc_id;
+    }
+}
+
+void
+Zc4PostingReaderBase::L1Skip::check(const NoSkip &no_skip, bool top_level, bool decode_features)
+{
+    assert(_doc_id == no_skip.get_doc_id());
+    _doc_id_pos += (_zc_buf.decode() + 1);
+    assert(_doc_id_pos == no_skip.get_doc_id_pos());
+    if (decode_features) {
+        _features_pos += (_zc_buf.decode() + 1);
+        assert(_features_pos == no_skip.get_features_pos());
+    }
+    if (top_level) {
+        _l1_skip_pos = _zc_buf.pos();
+    }
+}
+
+void
+Zc4PostingReaderBase::L1Skip::next_skip_entry()
+{
+    _doc_id += (_zc_buf.decode() + 1);
+}
+
+Zc4PostingReaderBase::L2Skip::L2Skip()
+    : L1Skip(),
+      _l2_skip_pos(0)
+{
+}
+
+void
+Zc4PostingReaderBase::L2Skip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id)
+{
+    L1Skip::setup(decode_context, size, doc_id, last_doc_id);
+    _l2_skip_pos = 0;
+}
+
+void
+Zc4PostingReaderBase::L2Skip::check(const L1Skip &l1_skip, bool top_level, bool decode_features)
+{
+    L1Skip::check(l1_skip, false, decode_features);
+    _l1_skip_pos += (_zc_buf.decode() + 1);
+    assert(_l1_skip_pos == l1_skip.get_l1_skip_pos());
+    if (top_level) {
+        _l2_skip_pos = _zc_buf.pos();
+    }
+}
+
+Zc4PostingReaderBase::L3Skip::L3Skip()
+    : L2Skip(),
+      _l3_skip_pos(0)
+{
+}
+
+void
+Zc4PostingReaderBase::L3Skip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id)
+{
+    L2Skip::setup(decode_context, size, doc_id, last_doc_id);
+    _l3_skip_pos = 0;
+}
+
+void
+Zc4PostingReaderBase::L3Skip::check(const L2Skip &l2_skip, bool top_level, bool decode_features)
+{
+    L2Skip::check(l2_skip, false, decode_features);
+    _l2_skip_pos += (_zc_buf.decode() + 1);
+    assert(_l2_skip_pos == l2_skip.get_l2_skip_pos());
+    if (top_level) {
+        _l3_skip_pos = _zc_buf.pos();
+    }
+}
+
+Zc4PostingReaderBase::L4Skip::L4Skip()
+    : L3Skip()
+{
+}
+
+void
+Zc4PostingReaderBase::L4Skip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id)
+{
+    L3Skip::setup(decode_context, size, doc_id, last_doc_id);
+}
+
+void
+Zc4PostingReaderBase::L4Skip::check(const L3Skip &l3_skip, bool decode_features)
+{
+    L3Skip::check(l3_skip, false, decode_features);
+    _l3_skip_pos += (_zc_buf.decode() + 1);
+    assert(_l3_skip_pos == l3_skip.get_l3_skip_pos());
+}
 
 Zc4PostingReaderBase::Zc4PostingReaderBase(bool dynamic_k)
     : _doc_id_k(K_VALUE_ZCPOSTING_DELTA_DOCID),
-      _prev_doc_id(0),
       _num_docs(0),
       _readContext(sizeof(uint64_t)),
       _has_more(false),
       _posting_params(64, 1 << 30, 10000000, dynamic_k, true),
       _last_doc_id(0),
-      _zcDocIds(),
-      _l1Skip(),
-      _l2Skip(),
-      _l3Skip(),
-      _l4Skip(),
+      _no_skip(),
+      _l1_skip(),
+      _l2_skip(),
+      _l3_skip(),
+      _l4_skip(),
       _chunkNo(0),
-      _l1SkipDocId(0),
-      _l1SkipDocIdPos(0),
-      _l1SkipFeaturesPos(0),
-      _l2SkipDocId(0),
-      _l2SkipDocIdPos(0),
-      _l2SkipL1SkipPos(0),
-      _l2SkipFeaturesPos(0),
-      _l3SkipDocId(0),
-      _l3SkipDocIdPos(0),
-      _l3SkipL1SkipPos(0),
-      _l3SkipL2SkipPos(0),
-      _l3SkipFeaturesPos(0),
-      _l4SkipDocId(0),
-      _l4SkipDocIdPos(0),
-      _l4SkipL1SkipPos(0),
-      _l4SkipL2SkipPos(0),
-      _l4SkipL3SkipPos(0),
-      _l4SkipFeaturesPos(0),
       _features_size(0),
       _counts(),
       _residue(0)
@@ -57,105 +188,39 @@ Zc4PostingReaderBase::~Zc4PostingReaderBase()
 void
 Zc4PostingReaderBase::read_common_word_doc_id(DecodeContext64Base &decode_context)
 {
-    if ((_zcDocIds._valI >= _zcDocIds._valE) && _has_more) {
-        read_word_start(decode_context);    // Read start of next chunk
-    }
     // Split docid & features.
-    assert(_zcDocIds._valI < _zcDocIds._valE);
-    uint32_t docIdPos = _zcDocIds.pos();
-    uint32_t docId = _prev_doc_id + 1 + _zcDocIds.decode();
-    _prev_doc_id = docId;
-    assert(docId <= _last_doc_id);
-    if (docId > _l1SkipDocId) {
-        _l1SkipDocIdPos += _l1Skip.decode() + 1;
-        assert(docIdPos == _l1SkipDocIdPos);
-        uint64_t featuresPos = decode_context.getReadOffset();
-        if (_posting_params._encode_features) {
-            _l1SkipFeaturesPos += _l1Skip.decode() + 1;
-            assert(featuresPos == _l1SkipFeaturesPos);
-        }
-        (void) featuresPos;
-        if (docId > _l2SkipDocId) {
-            _l2SkipDocIdPos += _l2Skip.decode() + 1;
-            assert(docIdPos == _l2SkipDocIdPos);
-            if (_posting_params._encode_features) {
-                _l2SkipFeaturesPos += _l2Skip.decode() + 1;
-                assert(featuresPos == _l2SkipFeaturesPos);
-            }
-            _l2SkipL1SkipPos += _l2Skip.decode() + 1;
-            assert(_l1Skip.pos() == _l2SkipL1SkipPos);
-            if (docId > _l3SkipDocId) {
-                _l3SkipDocIdPos += _l3Skip.decode() + 1;
-                assert(docIdPos == _l3SkipDocIdPos);
-                if (_posting_params._encode_features) {
-                    _l3SkipFeaturesPos += _l3Skip.decode() + 1;
-                    assert(featuresPos == _l3SkipFeaturesPos);
+    if (_no_skip.get_doc_id() >= _l1_skip.get_doc_id()) {
+        _no_skip.set_features_pos(decode_context.getReadOffset());
+        _l1_skip.check(_no_skip, true, _posting_params._encode_features);
+        if (_no_skip.get_doc_id() >= _l2_skip.get_doc_id()) {
+            _l2_skip.check(_l1_skip, true, _posting_params._encode_features);
+            if (_no_skip.get_doc_id() >= _l3_skip.get_doc_id()) {
+                _l3_skip.check(_l2_skip, true, _posting_params._encode_features);
+                if (_no_skip.get_doc_id() >= _l4_skip.get_doc_id()) {
+                    _l4_skip.check(_l3_skip, _posting_params._encode_features);
+                    _l4_skip.next_skip_entry();
                 }
-                _l3SkipL1SkipPos += _l3Skip.decode() + 1;
-                assert(_l1Skip.pos() == _l3SkipL1SkipPos);
-                _l3SkipL2SkipPos += _l3Skip.decode() + 1;
-                assert(_l2Skip.pos() == _l3SkipL2SkipPos);
-                if (docId > _l4SkipDocId) {
-                    _l4SkipDocIdPos += _l4Skip.decode() + 1;
-                    assert(docIdPos == _l4SkipDocIdPos);
-                    (void) docIdPos;
-                    if (_posting_params._encode_features) {
-                        _l4SkipFeaturesPos += _l4Skip.decode() + 1;
-                        assert(featuresPos == _l4SkipFeaturesPos);
-                    }
-                    _l4SkipL1SkipPos += _l4Skip.decode() + 1;
-                    assert(_l1Skip.pos() == _l4SkipL1SkipPos);
-                    _l4SkipL2SkipPos += _l4Skip.decode() + 1;
-                    assert(_l2Skip.pos() == _l4SkipL2SkipPos);
-                    _l4SkipL3SkipPos += _l4Skip.decode() + 1;
-                    assert(_l3Skip.pos() == _l4SkipL3SkipPos);
-                    _l4SkipDocId += _l4Skip.decode() + 1;
-                    assert(_l4SkipDocId <= _last_doc_id);
-                    assert(_l4SkipDocId >= docId);
-                }
-                _l3SkipDocId += _l3Skip.decode() + 1;
-                assert(_l3SkipDocId <= _last_doc_id);
-                assert(_l3SkipDocId <= _l4SkipDocId);
-                assert(_l3SkipDocId >= docId);
+                _l3_skip.next_skip_entry();
             }
-            _l2SkipDocId += _l2Skip.decode() + 1;
-            assert(_l2SkipDocId <= _last_doc_id);
-            assert(_l2SkipDocId <= _l4SkipDocId);
-            assert(_l2SkipDocId <= _l3SkipDocId);
-            assert(_l2SkipDocId >= docId);
+            _l2_skip.next_skip_entry();
         }
-        _l1SkipDocId += _l1Skip.decode() + 1;
-        assert(_l1SkipDocId <= _last_doc_id);
-        assert(_l1SkipDocId <= _l4SkipDocId);
-        assert(_l1SkipDocId <= _l3SkipDocId);
-        assert(_l1SkipDocId <= _l2SkipDocId);
-        assert(_l1SkipDocId >= docId);
+        _l1_skip.next_skip_entry();
     }
-    if (docId < _last_doc_id) {
-        // Assert more space available when not yet at last docid
-        assert(_zcDocIds._valI < _zcDocIds._valE);
+    _no_skip.read();
+    if (_residue == 1) {
+        _no_skip.check_end(_last_doc_id);
+        _l1_skip.check_end(_last_doc_id);
+        _l2_skip.check_end(_last_doc_id);
+        _l3_skip.check_end(_last_doc_id);
+        _l4_skip.check_end(_last_doc_id);
     } else {
-        // Assert that space has been used when at last docid
-        assert(_zcDocIds._valI == _zcDocIds._valE);
-        // Assert that we've read to end of skip info
-        assert(_l1SkipDocId == _last_doc_id);
-        assert(_l2SkipDocId == _last_doc_id);
-        assert(_l3SkipDocId == _last_doc_id);
-        assert(_l4SkipDocId == _last_doc_id);
-        if (!_has_more) {
-            _chunkNo = 0;
-        }
+        _no_skip.check_not_end(_last_doc_id);
     }
 }
 
 void
 Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base &decode_context, const Zc4PostingHeader &header)
 {
-    if (_has_more) {
-        ++_chunkNo;
-    } else {
-        _chunkNo = 0;
-    }
     assert(_num_docs >= _posting_params._min_skip_docs || _has_more);
     bool has_more = header._has_more;
     if (_has_more || has_more) {
@@ -169,72 +234,21 @@ Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base &decode_cont
         assert(_num_docs >= _posting_params._min_skip_docs);
         assert(_num_docs == _counts._numDocs);
     }
-    uint32_t docIdsSize = header._doc_ids_size;
-    uint32_t l1SkipSize = header._l1_skip_size;
-    uint32_t l2SkipSize = header._l2_skip_size;
-    uint32_t l3SkipSize = header._l3_skip_size;
-    uint32_t l4SkipSize = header._l4_skip_size;
+    uint32_t prev_doc_id = _no_skip.get_doc_id();
+    _no_skip.setup(decode_context, header._doc_ids_size, prev_doc_id);
+    _l1_skip.setup(decode_context, header._l1_skip_size, prev_doc_id, _last_doc_id);
+    _l2_skip.setup(decode_context, header._l2_skip_size, prev_doc_id, _last_doc_id);
+    _l3_skip.setup(decode_context, header._l3_skip_size, prev_doc_id, _last_doc_id);
+    _l4_skip.setup(decode_context, header._l4_skip_size, prev_doc_id, _last_doc_id);
     if (_has_more || has_more) {
         assert(_last_doc_id == _counts._segments[_chunkNo]._lastDoc);
     }
-    _zcDocIds.clearReserve(docIdsSize);
-    _l1Skip.clearReserve(l1SkipSize);
-    _l2Skip.clearReserve(l2SkipSize);
-    _l3Skip.clearReserve(l3SkipSize);
-    _l4Skip.clearReserve(l4SkipSize);
-    decode_context.readBytes(_zcDocIds._valI, docIdsSize);
-    _zcDocIds._valE = _zcDocIds._valI + docIdsSize;
-    if (l1SkipSize > 0) {
-        decode_context.readBytes(_l1Skip._valI, l1SkipSize);
-    }
-    _l1Skip._valE = _l1Skip._valI + l1SkipSize;
-    if (l2SkipSize > 0) {
-        decode_context.readBytes(_l2Skip._valI, l2SkipSize);
-    }
-    _l2Skip._valE = _l2Skip._valI + l2SkipSize;
-    if (l3SkipSize > 0) {
-        decode_context.readBytes(_l3Skip._valI, l3SkipSize);
-    }
-    _l3Skip._valE = _l3Skip._valI + l3SkipSize;
-    if (l4SkipSize > 0) {
-        decode_context.readBytes(_l4Skip._valI, l4SkipSize);
-    }
-    _l4Skip._valE = _l4Skip._valI + l4SkipSize;
-
-    if (l1SkipSize > 0) {
-        _l1SkipDocId = _l1Skip.decode() + 1 + _prev_doc_id;
-    } else {
-        _l1SkipDocId = _last_doc_id;
-    }
-    if (l2SkipSize > 0) {
-        _l2SkipDocId = _l2Skip.decode() + 1 + _prev_doc_id;
-    } else {
-        _l2SkipDocId = _last_doc_id;
-    }
-    if (l3SkipSize > 0) {
-        _l3SkipDocId = _l3Skip.decode() + 1 + _prev_doc_id;
-    } else {
-        _l3SkipDocId = _last_doc_id;
-    }
-    if (l4SkipSize > 0) {
-        _l4SkipDocId = _l4Skip.decode() + 1 + _prev_doc_id;
-    } else {
-        _l4SkipDocId = _last_doc_id;
-    }
-    _l1SkipDocIdPos = 0;
-    _l1SkipFeaturesPos = decode_context.getReadOffset();
-    _l2SkipDocIdPos = 0;
-    _l2SkipL1SkipPos = 0;
-    _l2SkipFeaturesPos = decode_context.getReadOffset();
-    _l3SkipDocIdPos = 0;
-    _l3SkipL1SkipPos = 0;
-    _l3SkipL2SkipPos = 0;
-    _l3SkipFeaturesPos = decode_context.getReadOffset();
-    _l4SkipDocIdPos = 0;
-    _l4SkipL1SkipPos = 0;
-    _l4SkipL2SkipPos = 0;
-    _l4SkipL3SkipPos = 0;
-    _l4SkipFeaturesPos = decode_context.getReadOffset();
+    uint64_t features_pos = decode_context.getReadOffset();
+    _no_skip.set_features_pos(features_pos);
+    _l1_skip.set_features_pos(features_pos);
+    _l2_skip.set_features_pos(features_pos);
+    _l3_skip.set_features_pos(features_pos);
+    _l4_skip.set_features_pos(features_pos);
     _has_more = has_more;
     // Decode context is now positioned at start of features
 }
@@ -247,7 +261,12 @@ Zc4PostingReaderBase::read_word_start(DecodeContext64Base &decode_context)
     header.read(decode_context, _posting_params);
     _num_docs = header._num_docs;
     _residue = _num_docs;
-    _prev_doc_id = _has_more ? _last_doc_id : 0u;
+    if (!_has_more) {
+        _no_skip.set_doc_id(0);
+        _chunkNo = 0;
+    } else {
+        ++_chunkNo;
+    }
     _doc_id_k = header._doc_id_k;
     _last_doc_id = header._last_doc_id;
     _features_size = header._features_size;

@@ -27,12 +27,18 @@ template <bool bigEndian>
 void
 Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features)
 {
-    if (_residue == 0 && !_has_more) {
-        // Don't read past end of posting list.
-        features.clear(static_cast<uint32_t>(-1));
-        return;
+    if (_residue == 0) {
+        if (_has_more) {
+            read_word_start();
+            assert(_residue != 0);
+        } else {
+            // Don't read past end of posting list.
+            features.clear(static_cast<uint32_t>(-1));
+            return;
+        }
     }
     if (_last_doc_id > 0) {
+        // Split docid & features.
         read_common_word_doc_id(*_decodeContext);
     } else {
         // Interleaves docid & features
@@ -43,14 +49,13 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
         UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
         
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, _doc_id_k, EC);
-        uint32_t docId = _prev_doc_id + 1 + val64;
-        _prev_doc_id = docId;
+        _no_skip.set_doc_id(_no_skip.get_doc_id() + 1 + val64);
         UC64_DECODECONTEXT_STORE(o, d._);
         if (__builtin_expect(oCompr >= d._valE, false)) {
             _readContext.readComprBuffer();
         }
     }
-    features.set_doc_id(_prev_doc_id);
+    features.set_doc_id(_no_skip.get_doc_id());
     if (_posting_params._encode_features) {
         _decodeContext->readFeatures(features);
     }
