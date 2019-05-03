@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
+import ai.vespa.hosted.api.Signatures;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -74,6 +75,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -567,6 +569,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService)),
                               "{\"message\":\"Application package version: 1.0.44-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+
+        // Fourth attempt has a wrong content hash in a header, and fails.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .header("X-Content-Hash", "not/the/right/hash")
+                                      .data(createApplicationSubmissionData(packageWithService)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Value of X-Content-Hash header does not match computed content hash\"}", 400);
+
+        // Fifth attempt has the right content hash in a header, and succeeds.
+        MultiPartStreamer streamer = createApplicationSubmissionData(packageWithService);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(streamer::data)))
+                                      .data(streamer),
+                              "{\"message\":\"Application package version: 1.0.45-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
@@ -1618,6 +1635,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private AthenzIdentity identity;
         private OktaAccessToken oktaAccessToken;
         private String contentType = "application/json";
+        private Map<String, List<String>> headers = new HashMap<>();
         private String recursive;
 
         private RequestBuilder(String path, Request.Method method) {
@@ -1644,6 +1662,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
         private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
+        private RequestBuilder header(String name, String value) {
+            this.headers.putIfAbsent(name, new ArrayList<>());
+            this.headers.get(name).add(value);
+            return this;
+        }
 
         @Override
         public Request get() {
@@ -1651,6 +1674,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                           // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
                                           (recursive == null ? "" : "?recursive=" + recursive),
                                           data, method);
+            request.getHeaders().addAll(headers);
             request.getHeaders().put("Content-Type", contentType);
             if (identity != null) {
                 addIdentityToRequest(request, identity);
