@@ -1,6 +1,7 @@
 package ai.vespa.hosted.api;
 
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureUtils;
 
 import java.net.URI;
 import java.security.Signature;
@@ -9,6 +10,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 
 /**
  * Verifies that signed HTTP requests match the indicated public key.
@@ -26,7 +29,7 @@ public class RequestVerifier {
     }
 
     public RequestVerifier(String pemPublicKey, Clock clock) {
-        this.verifier = KeyUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey));
+        this.verifier = SignatureUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey), SHA256_WITH_ECDSA);
         this.clock = clock;
     }
 
