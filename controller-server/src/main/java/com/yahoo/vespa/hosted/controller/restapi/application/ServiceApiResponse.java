@@ -79,6 +79,11 @@ class ServiceApiResponse extends HttpResponse {
         new JsonFormat(true).encode(stream, slime);
     }
 
+    @Override
+    public String getContentType() {
+        return "application/json";
+    }
+
     @SuppressWarnings("unchecked")
     private void mapToSlime(Map<?,?> data, Cursor object) {
         for (Map.Entry<String, Object> entry : ((Map<String, Object>)data).entrySet())
