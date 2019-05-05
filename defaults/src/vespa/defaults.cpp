@@ -24,6 +24,7 @@ int defaultPortConfigServerRpc = 0;
 int defaultPortConfigServerHttp = 0;
 int defaultPortConfigProxyRpc = 0;
 const char *defaultConfigServers = 0;
+std::string VESPA_HOME_ENV = "VESPA_HOME=";
 
 std::atomic<bool> initialized(false);
 
@@ -194,10 +195,8 @@ Defaults::bootstrap(const char *argv0)
                    path.resize(slash);
                }
             }
-            std::string setting = "VESPA_HOME";
-            setting.append("=");
-            setting.append(path);
-            putenv(&setting[0]);
+            VESPA_HOME_ENV.append(path);
+            putenv(&VESPA_HOME_ENV[0]);
         }
     }
     initialized = false;
