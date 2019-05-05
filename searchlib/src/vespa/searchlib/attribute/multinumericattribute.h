@@ -204,8 +204,20 @@ public:
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
-        uint32_t ret = handle.size();
-        for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
+        uint32_t ret = handle;
+        uint32_t m = std::min(ret, sz);
+        uint32_t i(0);
+        for(; i+4 <= m; i+=4) {
+            buffer[i] = static_cast<BufferType>(handle[i].value());
+            buffer[i+1] = static_cast<BufferType>(handle[i+1].value());
+            buffer[i+2] = static_cast<BufferType>(handle[i+2].value());
+            buffer[i+3] = static_cast<BufferType>(handle[i+3].value());
+        }
+        for(; i+2 <= m; i+=2) {
+            buffer[i] = static_cast<BufferType>(handle[i].value());
+            buffer[i+1] = static_cast<BufferType>(handle[i+1].value());
+        }
+        if (i < m) {
             buffer[i] = static_cast<BufferType>(handle[i].value());
         }
         return ret;
@@ -238,10 +250,21 @@ public:
     template <typename WeightedType, typename ValueType>
     uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
-        uint32_t ret = handle.size();
-        for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
-            buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()),
-                                     handle[i].weight());
+        uint32_t ret = handle;
+        uint32_t m = std::min(ret, sz);
+        uint32_t i(0);
+        for(; i+4 <= m; i+=4) {
+            buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()), handle[i].weight());
+            buffer[i+1] = WeightedType(static_cast<ValueType>(handle[i+1].value()), handle[i+1].weight());
+            buffer[i+2] = WeightedType(static_cast<ValueType>(handle[i+2].value()), handle[i+2].weight());
+            buffer[i+3] = WeightedType(static_cast<ValueType>(handle[i+3].value()), handle[i+3].weight());
+        }
+        for(; i+2 <= m; i+=2) {
+            buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()), handle[i].weight());
+            buffer[i+1] = WeightedType(static_cast<ValueType>(handle[i+1].value()), handle[i+1].weight());
+        }
+        if (i < m) {
+            buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()), handle[i].weight());
         }
         return ret;
     }
