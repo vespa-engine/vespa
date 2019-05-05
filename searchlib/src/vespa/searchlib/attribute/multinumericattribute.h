@@ -204,8 +204,8 @@ public:
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
-        uint32_t ret = handle;
-        uint32_t m = std::min(ret, sz);
+        const uint32_t ret = handle.size();
+        const uint32_t m = std::min(ret, sz);
         uint32_t i(0);
         for(; i+4 <= m; i+=4) {
             buffer[i] = static_cast<BufferType>(handle[i].value());
@@ -250,8 +250,8 @@ public:
     template <typename WeightedType, typename ValueType>
     uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
-        uint32_t ret = handle;
-        uint32_t m = std::min(ret, sz);
+        const uint32_t ret = handle.size();
+        const uint32_t m = std::min(ret, sz);
         uint32_t i(0);
         for(; i+4 <= m; i+=4) {
             buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()), handle[i].weight());
