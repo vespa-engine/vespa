@@ -66,14 +66,25 @@ public abstract class ControllerHttpClient {
                                                  .timeout(Duration.ofMinutes(30)),
                                       POST,
                                       new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
-                                                           .addFile("applicationZip", submission.applicationZip())
-                                                           .addFile("applicationTestZip", submission.applicationTestZip()))));
+                                                             .addFile("applicationZip", submission.applicationZip())
+                                                             .addFile("applicationTestZip", submission.applicationTestZip()))));
     }
 
-    protected abstract HttpRequest request(HttpRequest.Builder request, Method method);
-    protected abstract HttpRequest request(HttpRequest.Builder request, Method method, byte[] data);
-    protected abstract HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data);
-    protected abstract HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data);
+    protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
+        return request.method(method.name(), ofInputStream(data)).build();
+    }
+
+    private HttpRequest request(HttpRequest.Builder request, Method method) {
+        return request(request, method, InputStream::nullInputStream);
+    }
+
+    private HttpRequest request(HttpRequest.Builder request, Method method, byte[] data) {
+        return request(request, method, () -> new ByteArrayInputStream(data));
+    }
+
+    private HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data) {
+        return request(request.setHeader("Content-Type", data.contentType()), method, data::data);
+    }
 
     private URI apiPath() {
         return concatenated(endpoint, "application", "v4");
@@ -93,6 +104,19 @@ public abstract class ControllerHttpClient {
 
     private static URI concatenated(URI base, String... parts) {
         return base.resolve(String.join("/", parts) + "/");
+    }
+
+    private HttpResponse<byte[]> send(HttpRequest request) {
+        return unchecked(() -> client.send(request, ofByteArray()));
+    }
+
+    private static <T> T unchecked(Callable<T> callable) {
+        try {
+            return callable.call();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Returns a JSON representation of the submission meta data. */
@@ -130,19 +154,6 @@ public abstract class ControllerHttpClient {
         return new JsonDecoder().decode(new Slime(), data);
     }
 
-    private HttpResponse<byte[]> send(HttpRequest request) {
-        return unchecked(() -> client.send(request, ofByteArray()));
-    }
-
-    private static <T> T unchecked(Callable<T> callable) {
-        try {
-            return callable.call();
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     /** Client that signs requests with a private key whose public part is assigned to an application in the remote controller. */
     private static class SigningControllerHttpClient extends ControllerHttpClient {
@@ -155,22 +166,7 @@ public abstract class ControllerHttpClient {
         }
 
         @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method) {
-            return signer.signed(request, method);
-        }
-
-        @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method, byte[] data) {
-            return signer.signed(request, method, data);
-        }
-
-        @Override
         protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
-            return signer.signed(request, method, data);
-        }
-
-        @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data) {
             return signer.signed(request, method, data);
         }
 
@@ -181,28 +177,8 @@ public abstract class ControllerHttpClient {
     private static class AthenzControllerHttpClient extends ControllerHttpClient {
 
         private AthenzControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
-            super(endpoint, HttpClient.newBuilder()
-                                      .sslContext(new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile).build()));
-        }
-
-        @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method) {
-            return request(request, method, InputStream::nullInputStream);
-        }
-
-        @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method, byte[] data) {
-            return request(request, method, () -> new ByteArrayInputStream(data));
-        }
-
-        @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
-            return request.method(method.name(), ofInputStream(data)).build();
-        }
-
-        @Override
-        protected HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data) {
-            return request(request.header("Content-Type", data.contentType()), method, data::data);
+            super(endpoint,
+                  HttpClient.newBuilder().sslContext(new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile).build()));
         }
 
     }
