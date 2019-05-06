@@ -49,7 +49,7 @@ public class ControllerHttpClient {
 
     /** Sends submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
     public String submit(Submission submission) {
-        HttpRequest request = signer.signed(HttpRequest.newBuilder(instancePath(id).resolve("submit"))
+        HttpRequest request = signer.signed(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()).resolve("submit"))
                                                        .timeout(Duration.ofMinutes(30)),
                                             POST,
                                             new MultiPartStreamer().addJson("submitOptions", metaToSlime(submission))
