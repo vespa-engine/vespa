@@ -18,42 +18,80 @@ class Zc4PostingReaderBase
 {
 
 protected:
+    using DecodeContext = bitcompression::DecodeContext64Base;
+
+    class NoSkip {
+    protected:
+        ZcBuf _zc_buf;
+        uint32_t _doc_id;
+        uint32_t _doc_id_pos;
+        uint64_t _features_pos;
+    public:
+        NoSkip();
+        ~NoSkip();
+        void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id);
+        void set_features_pos(uint64_t features_pos) { _features_pos = features_pos; }
+        void read();
+        void check_end(uint32_t last_doc_id);
+        void check_not_end(uint32_t last_doc_id);
+        uint32_t get_doc_id()       const { return _doc_id; }
+        uint32_t get_doc_id_pos()   const { return _doc_id_pos; }
+        uint64_t get_features_pos() const { return _features_pos; }
+        void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
+    };
+    // Helper class for L1 skip info
+    class L1Skip : public NoSkip {
+    protected:
+        uint32_t _l1_skip_pos;
+    public:
+        L1Skip();
+        void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
+        void check(const NoSkip &no_skip, bool top_level, bool decode_features);
+        void next_skip_entry();
+        uint32_t get_l1_skip_pos() const { return _l1_skip_pos; }
+    };
+    class L2Skip : public L1Skip
+    {
+    protected:
+        uint32_t _l2_skip_pos;
+    public:
+        L2Skip();
+        void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
+        void check(const L1Skip &l1_skip, bool top_level, bool decode_features);
+        uint32_t get_l2_skip_pos() const { return _l2_skip_pos; }
+    };
+    class L3Skip : public L2Skip
+    {
+    protected:
+        uint32_t _l3_skip_pos;
+    public:
+        L3Skip();
+        void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
+        void check(const L2Skip &l2_skip, bool top_level, bool decode_features);
+        uint32_t get_l3_skip_pos() const { return _l3_skip_pos; }
+    };
+    class L4Skip : public L3Skip
+    {
+    public:
+        L4Skip();
+        void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id);
+        void check(const L3Skip &l3_skip, bool decode_features);
+    };
     uint32_t _doc_id_k;
-    uint32_t _prev_doc_id;   // Previous document id
     uint32_t _num_docs;      // Documents in chunk or word
     search::ComprFileReadContext _readContext;
     bool _has_more;
     Zc4PostingParams _posting_params;
     uint32_t _last_doc_id;   // last document in chunk or word
 
-    ZcBuf _zcDocIds;    // Document id deltas
-    ZcBuf _l1Skip;      // L1 skip info
-    ZcBuf _l2Skip;      // L2 skip info
-    ZcBuf _l3Skip;      // L3 skip info
-    ZcBuf _l4Skip;      // L4 skip info
+    NoSkip _no_skip;
+    L1Skip _l1_skip;
+    L2Skip _l2_skip;
+    L3Skip _l3_skip;
+    L4Skip _l4_skip;
 
     uint64_t _numWords;     // Number of words in file
     uint32_t _chunkNo;      // Chunk number
-
-    // Variables for validating skip information while reading
-    uint32_t _l1SkipDocId;
-    uint32_t _l1SkipDocIdPos;
-    uint64_t _l1SkipFeaturesPos;
-    uint32_t _l2SkipDocId;
-    uint32_t _l2SkipDocIdPos;
-    uint32_t _l2SkipL1SkipPos;
-    uint64_t _l2SkipFeaturesPos;
-    uint32_t _l3SkipDocId;
-    uint32_t _l3SkipDocIdPos;
-    uint32_t _l3SkipL1SkipPos;
-    uint32_t _l3SkipL2SkipPos;
-    uint64_t _l3SkipFeaturesPos;
-    uint32_t _l4SkipDocId;
-    uint32_t _l4SkipDocIdPos;
-    uint32_t _l4SkipL1SkipPos;
-    uint32_t _l4SkipL2SkipPos;
-    uint32_t _l4SkipL3SkipPos;
-    uint64_t _l4SkipFeaturesPos;
 
     // Variable for validating chunk information while reading
     uint64_t _features_size;
