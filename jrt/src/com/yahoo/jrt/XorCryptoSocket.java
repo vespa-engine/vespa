@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
+import java.util.Optional;
 import java.util.Queue;
 
 /**
@@ -118,5 +119,9 @@ public class XorCryptoSocket implements CryptoSocket {
         } else {
             return FlushResult.DONE;
         }
+    }
+
+    @Override public Optional<SecurityContext> securityContext() {
+        return Optional.empty();
     }
 }

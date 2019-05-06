@@ -9,8 +9,13 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.security.cert.X509Certificate;
+import java.util.List;
+
 import static com.yahoo.jrt.CryptoUtils.createTestTlsContext;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -23,13 +28,19 @@ public class EchoTest {
     Supervisor client;
     Target     target;
     Values     refValues;
+    SecurityContext securityContext;
 
     private interface MetricsAssertions {
         void assertMetrics(TransportMetrics.Snapshot snapshot) throws AssertionError;
     }
 
+    private interface SecurityContextAssertion {
+        void assertSecurityContext(SecurityContext securityContext) throws AssertionError;
+    }
+
     @Parameter(value = 0) public CryptoEngine crypto;
     @Parameter(value = 1) public MetricsAssertions metricsAssertions;
+    @Parameter(value = 2) public SecurityContextAssertion securityContextAssertion;
 
 
     @Parameters(name = "{0}") public static Object[] engines() {
@@ -39,25 +50,40 @@ public class EchoTest {
                         (MetricsAssertions) metrics -> {
                             assertEquals(1, metrics.serverUnencryptedConnectionsEstablished());
                             assertEquals(1, metrics.clientUnencryptedConnectionsEstablished());
-                        }},
-                {new XorCryptoEngine(), null},
+                        },
+                        null},
+                {
+                        new XorCryptoEngine(),
+                        null,
+                        null},
                 {
                         new TlsCryptoEngine(createTestTlsContext()),
                         (MetricsAssertions) metrics -> {
                             assertEquals(1, metrics.serverTlsConnectionsEstablished());
                             assertEquals(1, metrics.clientTlsConnectionsEstablished());
+                        },
+                        (SecurityContextAssertion) context -> {
+                            List<X509Certificate> chain = context.peerCertificateChain();
+                            assertEquals(1, chain.size());
+                            assertEquals(CryptoUtils.certificate, chain.get(0));
                         }},
                 {
                         new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestTlsContext()), false),
                         (MetricsAssertions) metrics -> {
                             assertEquals(1, metrics.serverUnencryptedConnectionsEstablished());
                             assertEquals(1, metrics.clientUnencryptedConnectionsEstablished());
-                        }},
+                        },
+                        null},
                 {
                         new MaybeTlsCryptoEngine(new TlsCryptoEngine(createTestTlsContext()), true),
                         (MetricsAssertions) metrics -> {
                              assertEquals(1, metrics.serverTlsConnectionsEstablished());
                              assertEquals(1, metrics.clientTlsConnectionsEstablished());
+                        },
+                        (SecurityContextAssertion) context -> {
+                            List<X509Certificate> chain = context.peerCertificateChain();
+                            assertEquals(1, chain.size());
+                            assertEquals(CryptoUtils.certificate, chain.get(0));
                         }}};
     }
 
@@ -120,6 +146,7 @@ public class EchoTest {
         for (int i = 0; i < p.size(); i++) {
             r.add(p.get(i));
         }
+        securityContext = req.target().getSecurityContext().orElse(null);
     }
 
     @org.junit.Test
@@ -136,6 +163,12 @@ public class EchoTest {
         assertTrue(Test.equals(req.parameters(), refValues));
         if (metricsAssertions != null) {
             metricsAssertions.assertMetrics(metrics.snapshot().changesSince(startSnapshot));
+        }
+        if (securityContextAssertion != null) {
+            assertNotNull(securityContext);
+            securityContextAssertion.assertSecurityContext(securityContext);
+        } else {
+            assertNull(securityContext);
         }
     }
 }
