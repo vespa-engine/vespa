@@ -976,14 +976,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
          * Deploy direct is when we want to redeploy the current application - retrieve version
          * info from the application package before deploying
          */
-        if(deployDirectly && !applicationPackage.isPresent() && !applicationVersion.isPresent() && !vespaVersion.isPresent()) {
+        if(deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
 
             // Redeploy the existing deployment with the same versions.
             Optional<Deployment> deployment = controller.applications().get(applicationId)
                     .map(Application::deployments)
                     .flatMap(deployments -> Optional.ofNullable(deployments.get(zone)));
 
-            if(!deployment.isPresent())
+            if(deployment.isEmpty())
                 throw new IllegalArgumentException("Can't redeploy application, no deployment currently exist");
 
             ApplicationVersion version = deployment.get().applicationVersion();
