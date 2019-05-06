@@ -144,10 +144,8 @@ SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
         const IndexschemaConfig::Indexfield & f = cfg.indexfield[i];
         schema.addIndexField(Schema::IndexField(f.name, convertIndexDataType(f.datatype),
                                                 convertIndexCollectionType(f.collectiontype)).
-                setPrefix(f.prefix).
-                setPhrases(f.phrases).
-                setPositions(f.positions).
-                setAvgElemLen(f.averageelementlen));
+                setAvgElemLen(f.averageelementlen).
+                set_experimental_posting_list_format(f.experimentalpostinglistformat));
     }
     for (size_t i = 0; i < cfg.fieldset.size(); ++i) {
         const IndexschemaConfig::Fieldset &fs = cfg.fieldset[i];

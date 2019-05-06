@@ -11,7 +11,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Logger;
 
-import static com.yahoo.jdisc.Response.Status.*;
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.Response.Status.CONFLICT;
+import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
+import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
+import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
 
 /**
  * @author Ulf Lilleengen
@@ -87,7 +92,7 @@ public class HttpErrorResponse extends HttpResponse {
     }
 
     public static HttpErrorResponse parentHostNotReady(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, errorCodes.PARENT_HOST_NOT_READY.name(), msg);
+        return new HttpErrorResponse(CONFLICT, errorCodes.PARENT_HOST_NOT_READY.name(), msg);
     }
 
     @Override

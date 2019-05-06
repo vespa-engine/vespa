@@ -1,15 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "andstress.h"
+#include <vespa/fastos/app.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/util/rand48.h>
-#include "andstress.h"
-#include <vespa/searchlib/test/fakedata/fakeword.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/test/fakedata/fake_match_loop.h>
 #include <vespa/searchlib/test/fakedata/fakeposting.h>
+#include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/fastos/app.h>
+#include <vespa/searchlib/util/rand48.h>
 
 #include <vespa/log/log.h>
 
@@ -29,8 +30,7 @@ void FastS_block_usr2() {}
 
 namespace postinglistbm {
 
-class PostingListBM : public FastOS_Application
-{
+class PostingListBM : public FastOS_Application {
 private:
     bool _verbose;
     uint32_t _numDocs;
@@ -42,24 +42,24 @@ private:
     FakeWordSet _wordSet;
     uint32_t _stride;
     bool _unpack;
+
 public:
     search::Rand48 _rnd;
 
 private:
-    void Usage();
+    void usage();
     void badPostingType(const std::string &postingType);
     void testFake(const std::string &postingType,
                   const Schema &schema,
-                  const FakeWord &fw);
+                  const FakeWord &word);
 public:
     PostingListBM();
     ~PostingListBM();
     int Main() override;
 };
 
-
 void
-PostingListBM::Usage()
+PostingListBM::usage()
 {
     printf("postinglistbm "
            "[-C <skipCommonPairsRate>] "
@@ -74,28 +74,23 @@ PostingListBM::Usage()
            "[-v]\n");
 }
 
-
 void
 PostingListBM::badPostingType(const std::string &postingType)
 {
     printf("Bad posting list type: %s\n", postingType.c_str());
     printf("Supported types: ");
 
-    std::vector<std::string> postingTypes = getPostingTypes();
-    std::vector<std::string>::const_iterator pti;
-    std::vector<std::string>::const_iterator ptie = postingTypes.end();
     bool first = true;
-
-    for (pti = postingTypes.begin(); pti != ptie; ++pti) {
-        if (first)
+    for (const auto& type : getPostingTypes()) {
+        if (first) {
             first = false;
-        else
+        } else {
             printf(", ");
-        printf("%s", pti->c_str());
+        }
+        printf("%s", type.c_str());
     }
     printf("\n");
 }
-
 
 PostingListBM::PostingListBM()
     : _verbose(false),
@@ -112,170 +107,54 @@ PostingListBM::PostingListBM()
 {
 }
 
-
-PostingListBM::~PostingListBM()
-{
-}
-
-
-static int
-highLevelSinglePostingScan(SearchIterator &sb, uint32_t numDocs, uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb.initFullRange();
-    uint32_t docId = sb.getDocId();
-    while (docId < numDocs) {
-        if (sb.seek(docId)) {
-            ++hits;
-            ++docId;
-        } else if (docId < sb.getDocId())
-            docId= sb.getDocId();
-        else
-            ++docId;
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
-
-static int
-highLevelSinglePostingScanUnpack(SearchIterator &sb,
-                                 uint32_t numDocs, uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb.initFullRange();
-    uint32_t docId = sb.getDocId();
-    while (docId < numDocs) {
-        if (sb.seek(docId)) {
-            ++hits;
-            sb.unpack(docId);
-            ++docId;
-        } else if (docId < sb.getDocId())
-            docId= sb.getDocId();
-        else
-            ++docId;
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
-
-static int
-highLevelAndPairPostingScan(SearchIterator &sb1,
-                            SearchIterator &sb2,
-                            uint32_t numDocs, uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb1.initFullRange();
-    sb2.initFullRange();
-    uint32_t docId = sb1.getDocId();
-    while (docId < numDocs) {
-        if (sb1.seek(docId)) {
-            if (sb2.seek(docId)) {
-                ++hits;
-                ++docId;
-            } else if (docId < sb2.getDocId())
-                docId = sb2.getDocId();
-            else
-                ++docId;
-        } else if (docId < sb1.getDocId())
-            docId= sb1.getDocId();
-        else
-            ++docId;
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
-
-static int
-highLevelAndPairPostingScanUnpack(SearchIterator &sb1,
-                                  SearchIterator &sb2,
-                                  uint32_t numDocs,
-                                  uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb1.initFullRange();
-    sb1.initFullRange();
-    uint32_t docId = sb1.getDocId();
-    while (docId < numDocs) {
-        if (sb1.seek(docId)) {
-            if (sb2.seek(docId)) {
-                ++hits;
-                sb1.unpack(docId);
-                sb2.unpack(docId);
-                ++docId;
-            } else if (docId < sb2.getDocId())
-                docId = sb2.getDocId();
-            else
-                ++docId;
-        } else if (docId < sb1.getDocId())
-            docId= sb1.getDocId();
-        else
-            ++docId;
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
+PostingListBM::~PostingListBM() = default;
 
 void
-PostingListBM::testFake(const std::string &postingType,
-                        const Schema &schema,
-                        const FakeWord &fw)
+validate_posting_for_word(const FakePosting& posting, const FakeWord& word, bool verbose)
 {
-    std::unique_ptr<FPFactory> ff(getFPFactory(postingType, schema));
-    std::vector<const FakeWord *> v;
-    v.push_back(&fw);
-    ff->setup(v);
-    FakePosting::SP f(ff->make(fw));
-
-    printf("%s.bitsize=%d+%d+%d+%d+%d\n",
-           f->getName().c_str(),
-           static_cast<int>(f->bitSize()),
-           static_cast<int>(f->l1SkipBitSize()),
-           static_cast<int>(f->l2SkipBitSize()),
-           static_cast<int>(f->l3SkipBitSize()),
-           static_cast<int>(f->l4SkipBitSize()));
     TermFieldMatchData md;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&md);
 
-    std::unique_ptr<SearchIterator> sb(f->createIterator(tfmda));
-    if (f->hasWordPositions())
-        fw.validate(sb.get(), tfmda, _verbose);
-    else
-        fw.validate(sb.get(), _verbose);
-    uint64_t scanTime = 0;
-    uint64_t scanUnpackTime = 0;
-    TermFieldMatchData md2;
-    TermFieldMatchDataArray tfmda2;
-    tfmda2.add(&md2);
-
-    std::unique_ptr<SearchIterator> sb2(f->createIterator(tfmda2));
-    int hits1 = highLevelSinglePostingScan(*sb2.get(), fw.getDocIdLimit(),
-                                       &scanTime);
-    TermFieldMatchData md3;
-    TermFieldMatchDataArray tfmda3;
-    tfmda3.add(&md3);
-
-    std::unique_ptr<SearchIterator> sb3(f->createIterator(tfmda3));
-    int hits2 = highLevelSinglePostingScanUnpack(*sb3.get(), fw.getDocIdLimit(),
-            &scanUnpackTime);
-    printf("testFake '%s' hits1=%d, hits2=%d, scanTime=%" PRIu64
-           ", scanUnpackTime=%" PRIu64 "\n",
-           f->getName().c_str(),
-           hits1, hits2, scanTime, scanUnpackTime);
+    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
+    if (posting.hasWordPositions()) {
+        word.validate(iterator.get(), tfmda, verbose);
+    } else {
+        word.validate(iterator.get(), verbose);
+    }
 }
 
+void
+PostingListBM::testFake(const std::string &postingType,
+                        const Schema &schema,
+                        const FakeWord &word)
+{
+    auto posting_factory = getFPFactory(postingType, schema);
+    std::vector<const FakeWord *> words;
+    words.push_back(&word);
+    posting_factory->setup(words);
+    auto posting = posting_factory->make(word);
+
+    printf("%s.bitsize=%d+%d+%d+%d+%d\n",
+           posting->getName().c_str(),
+           static_cast<int>(posting->bitSize()),
+           static_cast<int>(posting->l1SkipBitSize()),
+           static_cast<int>(posting->l2SkipBitSize()),
+           static_cast<int>(posting->l3SkipBitSize()),
+           static_cast<int>(posting->l4SkipBitSize()));
+
+    validate_posting_for_word(*posting, word, _verbose);
+
+    uint64_t scanTime = 0;
+    uint64_t scanUnpackTime = 0;
+    int hits1 = FakeMatchLoop::single_posting_scan(*posting, word.getDocIdLimit(), scanTime);
+    int hits2 = FakeMatchLoop::single_posting_scan_with_unpack(*posting, word.getDocIdLimit(), scanUnpackTime);
+
+    printf("testFake '%s' hits1=%d, hits2=%d, scanTime=%" PRIu64
+           ", scanUnpackTime=%" PRIu64 "\n",
+           posting->getName().c_str(),
+           hits1, hits2, scanTime, scanUnpackTime);
+}
 
 void
 testFakePair(const std::string &postingType,
@@ -291,31 +170,16 @@ testFakePair(const std::string &postingType,
     FakePosting::SP f1(ff->make(fw1));
     FakePosting::SP f2(ff->make(fw2));
 
-    TermFieldMatchData md1;
-    TermFieldMatchDataArray tfmda1;
-    tfmda1.add(&md1);
-    std::unique_ptr<SearchIterator> sb1(f1->createIterator(tfmda1));
-
-    TermFieldMatchData md2;
-    TermFieldMatchDataArray tfmda2;
-    tfmda1.add(&md2);
-    std::unique_ptr<SearchIterator> sb2(f2->createIterator(tfmda2));
-
-    int hits = 0;
     uint64_t scanUnpackTime = 0;
-    if (unpack)
-        hits = highLevelAndPairPostingScanUnpack(*sb1.get(), *sb2.get(),
-                fw1.getDocIdLimit(), &scanUnpackTime);
-    else
-        hits = highLevelAndPairPostingScan(*sb1.get(), *sb2.get(),
-                fw1.getDocIdLimit(), &scanUnpackTime);
+    int hits = unpack ?
+               FakeMatchLoop::and_pair_posting_scan_with_unpack(*f1, *f2, fw1.getDocIdLimit(), scanUnpackTime) :
+               FakeMatchLoop::and_pair_posting_scan(*f1, *f2, fw1.getDocIdLimit(), scanUnpackTime);
     printf("Fakepair %s AND %s => %d hits, %" PRIu64 " cycles\n",
            f1->getName().c_str(),
            f2->getName().c_str(),
            hits,
            scanUnpackTime);
 }
-
 
 int
 PostingListBM::Main()
@@ -374,7 +238,7 @@ PostingListBM::Main()
                         CollectionType::SINGLE);
                 schema.addIndexField(indexField);
                 std::unique_ptr<FPFactory> ff(getFPFactory(optArg, schema));
-                if (ff.get() == NULL) {
+                if (ff.get() == nullptr) {
                     badPostingType(optArg);
                     return 1;
                 }
@@ -397,13 +261,13 @@ PostingListBM::Main()
             _numWordsPerClass = 5;
             break;
         default:
-            Usage();
+            usage();
             return 1;
         }
     }
 
     if (_commonDocFreq > _numDocs) {
-        Usage();
+        usage();
         return 1;
     }
 
@@ -437,24 +301,23 @@ PostingListBM::Main()
                    "word5", word4, w4w5od, _rnd,
                    _wordSet.getFieldsParams(), _wordSet.getPackedIndex());
 
-    if (_postingTypes.empty())
+    if (_postingTypes.empty()) {
         _postingTypes = getPostingTypes();
-    std::vector<std::string>::const_iterator pti;
-    std::vector<std::string>::const_iterator ptie = _postingTypes.end() ;
-
-    for (pti = _postingTypes.begin(); pti != ptie; ++pti) {
-        testFake(*pti, _wordSet.getSchema(), word1);
-        testFake(*pti, _wordSet.getSchema(), word2);
-        testFake(*pti, _wordSet.getSchema(), word3);
     }
 
-    for (pti = _postingTypes.begin(); pti != ptie; ++pti) {
-        testFakePair(*pti, _wordSet.getSchema(), false, word1, word3);
-        testFakePair(*pti, _wordSet.getSchema(), false, word2, word3);
+    for (const auto& type : _postingTypes) {
+        testFake(type, _wordSet.getSchema(), word1);
+        testFake(type, _wordSet.getSchema(), word2);
+        testFake(type, _wordSet.getSchema(), word3);
     }
 
-    for (pti = _postingTypes.begin(); pti != ptie; ++pti) {
-        testFakePair(*pti, _wordSet.getSchema(), false, word4, word5);
+    for (const auto& type : _postingTypes) {
+        testFakePair(type, _wordSet.getSchema(), false, word1, word3);
+        testFakePair(type, _wordSet.getSchema(), false, word2, word3);
+    }
+
+    for (const auto& type : _postingTypes) {
+        testFakePair(type, _wordSet.getSchema(), false, word4, word5);
     }
 
     if (doandstress) {
@@ -472,16 +335,14 @@ PostingListBM::Main()
     return 0;
 }
 
-} // namespace postinglistbm
+}
 
 int
 main(int argc, char **argv)
 {
     postinglistbm::PostingListBM app;
 
-    setvbuf(stdout, NULL, _IOLBF, 32768);
+    setvbuf(stdout, nullptr, _IOLBF, 32768);
     app._rnd.srand48(32);
     return app.Entry(argc, argv);
-
-    return 0;
 }

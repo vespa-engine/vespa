@@ -7,15 +7,15 @@ LOG_SETUP(".index.docidandfeatures");
 namespace search::index {
 
 DocIdAndFeatures::DocIdAndFeatures()
-    : _docId(0),
-      _wordDocFeatures(),
+    : _doc_id(0),
       _elements(),
-      _wordPositions(),
+      _word_positions(),
       _blob(),
-      _bitOffset(0u),
-      _bitLength(0u),
-      _raw(false)
-{ }
+      _bit_offset(0u),
+      _bit_length(0u),
+      _has_raw_data(false)
+{
+}
 
 DocIdAndFeatures::DocIdAndFeatures(const DocIdAndFeatures &) = default;
 DocIdAndFeatures & DocIdAndFeatures::operator = (const DocIdAndFeatures &) = default;

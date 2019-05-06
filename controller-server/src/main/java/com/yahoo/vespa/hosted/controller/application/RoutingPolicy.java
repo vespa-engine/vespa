@@ -85,16 +85,12 @@ public class RoutingPolicy {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RoutingPolicy policy = (RoutingPolicy) o;
-        return owner.equals(policy.owner) &&
-               cluster.equals(policy.cluster) &&
-               zone.equals(policy.zone) &&
-               canonicalName.equals(policy.canonicalName) &&
-               dnsZone.equals(policy.dnsZone);
+        return canonicalName.equals(policy.canonicalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, cluster, zone, canonicalName, dnsZone);
+        return Objects.hash(canonicalName);
     }
 
     @Override

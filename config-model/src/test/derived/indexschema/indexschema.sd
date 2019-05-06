@@ -56,6 +56,10 @@ search indexschema {
         exact
       }
     }
+    field experimental type string {
+      indexing: index
+      index: experimental-posting-list-format
+    }
 
     # integer fields
     field ia type int {

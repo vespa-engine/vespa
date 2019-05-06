@@ -13,6 +13,7 @@ import com.yahoo.vespa.http.client.SyncFeedClient.SyncOperation;
 import com.yahoo.vespa.http.client.SyncFeedClient.SyncResult;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
@@ -72,16 +73,38 @@ public class SyncFeedClientTest {
                                          "        \"title\": \"Title 4\"" +
                                          "    }" +
                                          "}"));
+        operations.add(new SyncOperation("id::test::4",
+            "{" +
+                "    \"put\": \"id::test::4\"," +
+                "    \"fields\": {" +
+                "        \"title\": \"Title 4\"" +
+                "    }" +
+                "}", "opId_4", null));
+        operations.add(new SyncOperation("id::test::4", // Another operation for the same document
+            "{" +
+                "    \"put\": \"id::test::4\"," +
+                "    \"fields\": {" +
+                "        \"title\": \"Title 44\"" +
+                "    }" +
+                "}", "opId_44", null));
 
         SyncResult result = feedClient.stream(operations);
 
         assertTrue(result.isSuccess());
-        assertEquals(4, result.results().size());
+        assertEquals(6, result.results().size());
         assertNull(result.exception());
         assertEquals("id::test::1", result.results().get(0).getDocumentId());
         assertEquals("id::test::2", result.results().get(1).getDocumentId());
         assertEquals("id::test::3", result.results().get(2).getDocumentId());
         assertEquals("id::test::3", result.results().get(3).getDocumentId());
+        assertEquals("id::test::4", result.results().get(4).getDocumentId());
+        assertEquals("id::test::4", result.results().get(5).getDocumentId());
+        assertEquals("opId_4", result.results().get(4).getOperationId());
+        assertEquals("opId_44", result.results().get(5).getOperationId());
+        assertTrue(result.results().get(4).getDocumentDataAsCharSequence().toString().contains("\"Title 4\""));
+        assertTrue(result.results().get(5).getDocumentDataAsCharSequence().toString().contains("\"Title 44\""));
+
+        result.results().forEach(r -> assertNotNull(r.getOperationId()));
     }
 
 }

@@ -8,7 +8,17 @@
 
 namespace vespalib::eval::value_type {
 
+using CellType = ValueType::CellType;
+
 namespace {
+
+const char *to_name(CellType cell_type) {
+    switch (cell_type) {
+    case CellType::DOUBLE: return "double";
+    case CellType::FLOAT: return "float";
+    }
+    abort();
+}
 
 class ParseContext
 {
@@ -130,23 +140,21 @@ ValueType::Dimension parse_dimension(ParseContext &ctx) {
 std::vector<ValueType::Dimension> parse_dimension_list(ParseContext &ctx) {
     std::vector<ValueType::Dimension> list;
     ctx.skip_spaces();
-    if (ctx.get() == '(') {
-        ctx.eat('(');
-        ctx.skip_spaces();
-        while (!ctx.eos() && (ctx.get() != ')')) {
-            if (!list.empty()) {
-                ctx.eat(',');
-            }
-            list.push_back(parse_dimension(ctx));
-            ctx.skip_spaces();
+    ctx.eat('(');
+    ctx.skip_spaces();
+    while (!ctx.eos() && (ctx.get() != ')')) {
+        if (!list.empty()) {
+            ctx.eat(',');
         }
-        ctx.eat(')');
+        list.push_back(parse_dimension(ctx));
+        ctx.skip_spaces();
     }
+    ctx.eat(')');
     ctx.skip_spaces();
     return list;
 }
 
-vespalib::string parse_cell_type(ParseContext &ctx) {
+CellType parse_cell_type(ParseContext &ctx) {
     auto mark = ctx.mark();
     ctx.skip_spaces();
     ctx.eat('<');
@@ -155,9 +163,14 @@ vespalib::string parse_cell_type(ParseContext &ctx) {
     ctx.eat('>');
     if (ctx.failed()) {
         ctx.revert(mark);
-        cell_type = "double";
+        return CellType::DOUBLE;
     }
-    return cell_type;
+    if (cell_type == "float") {
+        return CellType::FLOAT;
+    } else if (cell_type != "double") {
+        ctx.fail();
+    }
+    return CellType::DOUBLE;
 }
 
 } // namespace vespalib::eval::value_type::<anonymous>
@@ -172,13 +185,10 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out)
     } else if (type_name == "double") {
         return ValueType::double_type();
     } else if (type_name == "tensor") {
-        vespalib::string cell_type = parse_cell_type(ctx);
-        if ((cell_type != "double") && (cell_type != "float")) {
-            ctx.fail();
-        }
+        ValueType::CellType cell_type = parse_cell_type(ctx);
         std::vector<ValueType::Dimension> list = parse_dimension_list(ctx);
         if (!ctx.failed()) {
-            return ValueType::tensor_type(std::move(list));
+            return ValueType::tensor_type(std::move(list), cell_type);
         }
     } else {
         ctx.fail();
@@ -212,22 +222,21 @@ to_spec(const ValueType &type)
         break;
     case ValueType::Type::TENSOR:
         os << "tensor";
-        if (!type.dimensions().empty()) {
-            os << "(";
-            for (const auto &d: type.dimensions()) {            
-                if (cnt++ > 0) {
-                    os << ",";
-                }
-                if (d.size == ValueType::Dimension::npos) {
-                    os << d.name << "{}";                    
-                } else if (d.size == 0) {
-                    os << d.name << "[]";
-                } else {
-                    os << d.name << "[" << d.size << "]";
-                }
-            }
-            os << ")";
+        if (type.cell_type() != CellType::DOUBLE) {
+            os << "<" << to_name(type.cell_type()) << ">";
         }
+        os << "(";
+        for (const auto &d: type.dimensions()) {
+            if (cnt++ > 0) {
+                os << ",";
+            }
+            if (d.size == ValueType::Dimension::npos) {
+                os << d.name << "{}";
+            } else {
+                os << d.name << "[" << d.size << "]";
+            }
+        }
+        os << ")";
         break;
     }
     return os.str();

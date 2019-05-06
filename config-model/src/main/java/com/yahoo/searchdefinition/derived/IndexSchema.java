@@ -113,7 +113,8 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
                 .datatype(IndexschemaConfig.Indexfield.Datatype.Enum.valueOf(f.getType()))
                 .prefix(f.hasPrefix())
                 .phrases(f.hasPhrases())
-                .positions(f.hasPositions());
+                .positions(f.hasPositions())
+                .experimentalpostinglistformat(f.useExperimentalPostingListFormat());
             if (!f.getCollectionType().equals("SINGLE")) {
                 ifB.collectiontype(IndexschemaConfig.Indexfield.Collectiontype.Enum.valueOf(f.getCollectionType()));
             }
@@ -174,6 +175,8 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         private boolean phrases = false; // TODO dead, but keep a while to ensure config compatibility?
         private boolean positions = true;// TODO dead, but keep a while to ensure config compatibility?
         private BooleanIndexDefinition boolIndex = null;
+        // TODO: Remove when experimental posting list format is made default
+        private boolean experimentalPostingListFormat = false;
 
         public IndexField(String name, Index.Type type, DataType sdFieldType) {
             this.name = name;
@@ -183,6 +186,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         public void setIndexSettings(com.yahoo.searchdefinition.Index index) {
             if (type.equals(Index.Type.TEXT)) {
                 prefix = index.isPrefix();
+                experimentalPostingListFormat = index.useExperimentalPostingListFormat();
             }
             sdType = index.getType();
             boolIndex = index.getBooleanIndexDefiniton();
@@ -205,6 +209,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         public boolean hasPrefix() { return prefix; }
         public boolean hasPhrases() { return phrases; }
         public boolean hasPositions() { return positions; }
+        public boolean useExperimentalPostingListFormat() { return experimentalPostingListFormat; }
 
         public BooleanIndexDefinition getBooleanIndexDefinition() {
             return boolIndex;

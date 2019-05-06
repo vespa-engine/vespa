@@ -51,23 +51,12 @@ DenseDotProductFunction::compile_self(Stash &) const
 bool
 DenseDotProductFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
-    if (!res.is_double() || !lhs.is_dense() || !rhs.is_dense() ||
-        (lhs.dimensions().size() != rhs.dimensions().size()) ||
-        (lhs.dimensions().empty()))
+    if (lhs.cell_type() != ValueType::CellType::DOUBLE ||
+        rhs.cell_type() != ValueType::CellType::DOUBLE)
     {
-        return false;
+        return false; // non-double cell types not supported
     }
-    for (size_t i = 0; i < lhs.dimensions().size(); ++i) {
-        const auto &ldim = lhs.dimensions()[i];
-        const auto &rdim = rhs.dimensions()[i];
-        bool first = (i == 0);
-        bool name_mismatch = (ldim.name != rdim.name);
-        bool size_mismatch = ((ldim.size != rdim.size) || !ldim.is_bound());
-        if (name_mismatch || (!first && size_mismatch)) {
-            return false;
-        }
-    }
-    return true;
+    return (res.is_double() && lhs.is_dense() && (rhs == lhs));
 }
 
 const TensorFunction &

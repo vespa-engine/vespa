@@ -206,7 +206,7 @@ FakeMemTreeOccMgr::add(uint32_t wordIdx, index::DocIdAndFeatures &features)
 
     _featureSizes[wordIdx] += RefType::align((r.second + 7) / 8) * 8;
 
-    _unflushed.push_back(PendingOp(wordIdx, features._docId, r.first));
+    _unflushed.push_back(PendingOp(wordIdx, features.doc_id(), r.first));
 
     if (_unflushed.size() >= 10000)
         flush();

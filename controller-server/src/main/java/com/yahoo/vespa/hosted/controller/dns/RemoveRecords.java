@@ -67,7 +67,7 @@ public class RemoveRecords implements NameServiceRequest {
 
     @Override
     public String toString() {
-        return "remove records of type " + type + " by " +
+        return "remove records of type " + type + ", by " +
                name.map(n -> "name " + n).orElse("") +
                data.map(d -> "data " + d).orElse("");
     }

@@ -7,6 +7,8 @@ import org.apache.commons.fileupload.ParameterParser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,18 +26,24 @@ public class MultipartParser {
      * @throws IllegalArgumentException if this request is not a well-formed request with Content-Type multipart/form-data
      */
     public Map<String, byte[]> parse(HttpRequest request) {
+        return parse(request.getHeader("Content-Type"), request.getData(), request.getUri());
+    }
+
+    /**
+     * Parses the given data stream for the given uri using the provided content-type header to determine boundaries.
+     *
+     * @throws IllegalArgumentException if this is not a well-formed request with Content-Type multipart/form-data
+     */
+    public Map<String, byte[]> parse(String contentTypeHeader, InputStream data, URI uri) {
         try {
             ParameterParser parameterParser = new ParameterParser();
-            Map<String, String> contentType = parameterParser.parse(request.getHeader("Content-Type"), ';');
+            Map<String, String> contentType = parameterParser.parse(contentTypeHeader, ';');
             if ( ! contentType.containsKey("multipart/form-data"))
-                throw new IllegalArgumentException("Expected a multipart message, but got Content-Type: " + 
-                                                   request.getHeader("Content-Type"));
+                throw new IllegalArgumentException("Expected a multipart message, but got Content-Type: " + contentTypeHeader);
             String boundary = contentType.get("boundary");
             if (boundary == null)
                 throw new IllegalArgumentException("Missing boundary property in Content-Type header");
-            MultipartStream multipartStream = new MultipartStream(request.getData(), boundary.getBytes(), 
-                                                                  1000 * 1000, 
-                                                                  null);
+            MultipartStream multipartStream = new MultipartStream(data, boundary.getBytes(), 1 << 20, null);
             boolean nextPart = multipartStream.skipPreamble();
             Map<String, byte[]> parts = new HashMap<>();
             while (nextPart) {
@@ -55,7 +63,7 @@ public class MultipartParser {
             throw new IllegalArgumentException("Malformed multipart/form-data request", e);
         } 
         catch(IOException e) {
-            throw new IllegalArgumentException("IO error reading multipart request " + request.getUri(), e);
+            throw new IllegalArgumentException("IO error reading multipart request " + uri, e);
         }
     }
     

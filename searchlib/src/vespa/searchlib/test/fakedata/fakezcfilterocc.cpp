@@ -211,7 +211,7 @@ FakeZcFilterOcc::read_header(bool doFeatures, bool dynamicK, uint32_t min_skip_d
     decode_context.setPosition({ _compressed.first, 0 });
     Zc4PostingParams params(min_skip_docs, min_chunk_docs, _docIdLimit, dynamicK, doFeatures);
     Zc4PostingHeader header;
-    header.read<bigEndian>(decode_context, params);
+    header.read(decode_context, params);
     _docIdsSize = header._doc_ids_size;
     _l1SkipSize = header._l1_skip_size;
     _l2SkipSize = header._l2_skip_size;
@@ -267,16 +267,16 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw, bool encode_features, bool dy
             check_features.clear(doc._docId);
         }
         reader.read_doc_id_and_features(features);
-        assert(features._docId == doc._docId);
-        assert(features._elements.size() == check_features._elements.size());
-        assert(features._wordPositions.size() == check_features._wordPositions.size());
+        assert(features.doc_id() == doc._docId);
+        assert(features.elements().size() == check_features.elements().size());
+        assert(features.word_positions().size() == check_features.word_positions().size());
         ++hits;
     }
     if (encode_features) {
         assert(word_pos_iterator == word_pos_iterator_end);
     }
     reader.read_doc_id_and_features(features);
-    assert(static_cast<int32_t>(features._docId) == -1);
+    assert(static_cast<int32_t>(features.doc_id()) == -1);
 }
 
 FakeZcFilterOcc::~FakeZcFilterOcc()
@@ -429,7 +429,7 @@ FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end)
     DecodeContext &d = _decodeContext;
     Zc4PostingParams params(1, 1000000000, _docIdLimit, true, false);
     Zc4PostingHeader header;
-    header.read<true>(d, params);
+    header.read(d, params);
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
     _valI = bcompr;
@@ -650,7 +650,7 @@ initRange(uint32_t begin, uint32_t end)
     DecodeContext &d = _decodeContext;
     Zc4PostingParams params(1, 1000000000, _docIdLimit, true, false);
     Zc4PostingHeader header;
-    header.read<true>(d, params);
+    header.read(d, params);
     _lastDocId = header._last_doc_id;
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();

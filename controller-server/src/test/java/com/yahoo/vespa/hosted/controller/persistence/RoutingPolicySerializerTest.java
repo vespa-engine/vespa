@@ -7,10 +7,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Test;
 
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,48 +25,32 @@ public class RoutingPolicySerializerTest {
 
     @Test
     public void test_serialization() {
-        ApplicationId owner = ApplicationId.defaultId();
-        Set<RotationName> rotations = Set.of(RotationName.from("r1"), RotationName.from("r2"));
-        Set<RoutingPolicy> loadBalancers = ImmutableSet.of(new RoutingPolicy(owner,
-                                                                             ClusterSpec.Id.from("my-cluster1"),
-                                                                             ZoneId.from("prod", "us-north-1"),
-                                                                             HostName.from("long-and-ugly-name"),
-                                                                             Optional.of("zone1"),
-                                                                             rotations),
-                                                           new RoutingPolicy(owner,
-                                                                             ClusterSpec.Id.from("my-cluster2"),
-                                                                             ZoneId.from("prod", "us-north-2"),
-                                                                             HostName.from("long-and-ugly-name-2"),
-                                                                             Optional.empty(),
-                                                                             rotations));
-        Set<RoutingPolicy> serialized = serializer.fromSlime(owner, serializer.toSlime(loadBalancers));
-        assertEquals(loadBalancers, serialized);
-    }
-
-    @Test
-    public void test_legacy_serialization() { // TODO: Remove after 7.43 has been released
-        String json = "{\n" +
-                      "  \"routingPolicies\": [\n" +
-                      "    {\n" +
-                      "      \"alias\": \"my-pretty-alias\",\n" +
-                      "      \"zone\": \"prod.us-north-1\",\n" +
-                      "      \"canonicalName\": \"long-and-ugly-name\",\n" +
-                      "      \"dnsZone\": \"zone1\",\n" +
-                      "      \"rotations\": [\n" +
-                      "        \"r1\",\n" +
-                      "        \"r2\"\n" +
-                      "      ]\n" +
-                      "    }\n" +
-                      "  ]\n" +
-                      "}";
-        ApplicationId owner = ApplicationId.defaultId();
-        Set<RoutingPolicy> expected = Set.of(new RoutingPolicy(owner,
-                                                               ClusterSpec.Id.from("default"),
-                                                               ZoneId.from("prod", "us-north-1"),
-                                                               HostName.from("long-and-ugly-name"),
-                                                               Optional.of("zone1"),
-                                                               Set.of(RotationName.from("r1"), RotationName.from("r2"))));
-        assertEquals(expected, serializer.fromSlime(owner, SlimeUtils.jsonToSlime(json)));
+        var owner = ApplicationId.defaultId();
+        var rotations = Set.of(RotationName.from("r1"), RotationName.from("r2"));
+        var policies = ImmutableSet.of(new RoutingPolicy(owner,
+                                                         ClusterSpec.Id.from("my-cluster1"),
+                                                         ZoneId.from("prod", "us-north-1"),
+                                                         HostName.from("long-and-ugly-name"),
+                                                         Optional.of("zone1"),
+                                                         rotations),
+                                       new RoutingPolicy(owner,
+                                                         ClusterSpec.Id.from("my-cluster2"),
+                                                         ZoneId.from("prod", "us-north-2"),
+                                                         HostName.from("long-and-ugly-name-2"),
+                                                         Optional.empty(),
+                                                         rotations));
+        var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
+        assertEquals(policies.size(), serialized.size());
+        for (Iterator<RoutingPolicy> it1 = policies.iterator(), it2 = serialized.iterator(); it1.hasNext();) {
+            var expected = it1.next();
+            var actual = it2.next();
+            assertEquals(expected.owner(), actual.owner());
+            assertEquals(expected.cluster(), actual.cluster());
+            assertEquals(expected.zone(), actual.zone());
+            assertEquals(expected.canonicalName(), actual.canonicalName());
+            assertEquals(expected.dnsZone(), actual.dnsZone());
+            assertEquals(expected.rotations(), actual.rotations());
+        }
     }
 
 }

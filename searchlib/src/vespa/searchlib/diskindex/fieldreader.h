@@ -85,7 +85,7 @@ public:
     bool operator<(const FieldReader &rhs) const {
         return _wordNum < rhs._wordNum ||
             (_wordNum == rhs._wordNum &&
-             _docIdAndFeatures._docId < rhs._docIdAndFeatures._docId);
+             _docIdAndFeatures.doc_id() < rhs._docIdAndFeatures.doc_id());
     }
 
     virtual void setup(const WordNumMapping &wordNumMapping, const DocIdMapping &docIdMapping);

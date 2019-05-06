@@ -196,6 +196,8 @@ public class RoutingPolicyMaintainerTest {
                 "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
+        assertTrue("Removes stale routing policies " + app2, tester.controller().applications().routingPolicies(app2.id()).isEmpty());
+        assertEquals("Keeps routing policies for " + app1, 4, tester.controller().applications().routingPolicies(app1.id()).size());
     }
 
     private void maintain() {

@@ -61,7 +61,9 @@
   },
   "com.yahoo.fsa.FSA": {
     "superClass": "java.lang.Object",
-    "interfaces": [],
+    "interfaces": [
+      "java.io.Closeable"
+    ],
     "attributes": [
       "public"
     ],
@@ -74,6 +76,7 @@
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.io.FileInputStream)",
       "public void <init>(java.io.FileInputStream, java.lang.String)",
+      "public void close()",
       "public boolean isOk()",
       "public boolean hasPerfectHash()",
       "public int version()",

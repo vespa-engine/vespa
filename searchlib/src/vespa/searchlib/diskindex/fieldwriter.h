@@ -58,11 +58,11 @@ public:
     void newWord(vespalib::stringref word);
 
     void add(const DocIdAndFeatures &features) {
-        assert(features._docId < _docIdLimit);
-        assert(features._docId > _prevDocId);
+        assert(features.doc_id() < _docIdLimit);
+        assert(features.doc_id() > _prevDocId);
         _posoccfile->writeDocIdAndFeatures(features);
-        _bvc.add(features._docId);
-        _prevDocId = features._docId;
+        _bvc.add(features.doc_id());
+        _prevDocId = features.doc_id();
     }
 
     uint64_t getSparseWordNum() const { return _wordNum; }

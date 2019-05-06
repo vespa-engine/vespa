@@ -182,9 +182,8 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch,
         if (settings.hasError()) {
             return false;
         }
-        bool hasPhraseOcc = settings.hasPhrases();
         SchemaUtil::IndexIterator oItr(oldSchema, itr);
-        if (!itr.hasMatchingOldFields(oldSchema, hasPhraseOcc) || !oItr.isValid()) {
+        if (!itr.hasMatchingOldFields(oldSchema) || !oItr.isValid()) {
             if (!openField(fieldDir, tuneFileSearch)) {
                 return false;
             }
