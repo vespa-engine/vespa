@@ -45,7 +45,7 @@ public final class Node {
     private final History history;
 
     /** The current allocation of this node, if any */
-    private Optional<Allocation> allocation;
+    private final Optional<Allocation> allocation;
 
     /** Temporary method until we can merge it with the other create method */
     public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {

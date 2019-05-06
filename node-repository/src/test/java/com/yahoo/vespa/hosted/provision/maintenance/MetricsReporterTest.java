@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 public class MetricsReporterTest {
 
     @Test
-    public void test_registered_metric() throws Exception {
+    public void test_registered_metric() {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
@@ -107,7 +107,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void docker_metrics() throws Exception {
+    public void docker_metrics() {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
