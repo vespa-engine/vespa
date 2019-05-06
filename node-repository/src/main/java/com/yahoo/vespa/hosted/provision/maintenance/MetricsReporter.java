@@ -216,12 +216,12 @@ public class MetricsReporter extends Maintainer {
     private void updateDockerMetrics(List<Node> nodes) {
         // Capacity flavors for docker
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        metric.set("hostedVespa.docker.totalCapacityCpu", capacity.getCapacityTotal().getCpu(), null);
-        metric.set("hostedVespa.docker.totalCapacityMem", capacity.getCapacityTotal().getMemory(), null);
-        metric.set("hostedVespa.docker.totalCapacityDisk", capacity.getCapacityTotal().getDisk(), null);
-        metric.set("hostedVespa.docker.freeCapacityCpu", capacity.getFreeCapacityTotal().getCpu(), null);
-        metric.set("hostedVespa.docker.freeCapacityMem", capacity.getFreeCapacityTotal().getMemory(), null);
-        metric.set("hostedVespa.docker.freeCapacityDisk", capacity.getFreeCapacityTotal().getDisk(), null);
+        metric.set("hostedVespa.docker.totalCapacityCpu", capacity.getCapacityTotal().vcpu(), null);
+        metric.set("hostedVespa.docker.totalCapacityMem", capacity.getCapacityTotal().memoryGb(), null);
+        metric.set("hostedVespa.docker.totalCapacityDisk", capacity.getCapacityTotal().diskGb(), null);
+        metric.set("hostedVespa.docker.freeCapacityCpu", capacity.getFreeCapacityTotal().vcpu(), null);
+        metric.set("hostedVespa.docker.freeCapacityMem", capacity.getFreeCapacityTotal().memoryGb(), null);
+        metric.set("hostedVespa.docker.freeCapacityDisk", capacity.getFreeCapacityTotal().diskGb(), null);
 
         List<Flavor> dockerFlavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
                 .filter(f -> f.getType().equals(Flavor.Type.DOCKER_CONTAINER))

@@ -272,7 +272,8 @@ class NodePrioritizer {
 
     private static int compareForRelocation(Node a, Node b) {
         // Choose smallest node
-        int capacity = ResourceCapacity.of(a).compare(ResourceCapacity.of(b));
+        int capacity = ResourceCapacityComparator.defaultOrder().compare(ResourceCapacity.of(a),
+                                                                         ResourceCapacity.of(b));
         if (capacity != 0) return capacity;
 
         // Choose unallocated over allocated (this case is when we have ready docker nodes)
