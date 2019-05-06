@@ -116,6 +116,12 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com"), "node11.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
+        // POST duplicate node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "]").getBytes(StandardCharsets.UTF_8),
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
+
         // DELETE a provisioned node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
@@ -425,6 +431,13 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com active. It has no allocation.\"}");
+
+        // Attempt to POST duplicate nodes
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1", "::1") + "," +
+                                    asNodeJson("host8.yahoo.com", "large-variant", "127.0.0.1", "::1") + "]").getBytes(StandardCharsets.UTF_8),
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
     }
 
     @Test
