@@ -27,11 +27,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -112,12 +110,10 @@ public class NodeFailer extends Maintainer {
 
         updateNodeDownState();
         List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
-        Set<Node> nodesWithFailureReason = new HashSet<>();
 
         // Fail active nodes
         for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason(activeNodes).entrySet()) {
             Node node = entry.getKey();
-            nodesWithFailureReason.add(node);
             if (!failAllowedFor(node.type())) {
                 continue;
             }
