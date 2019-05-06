@@ -4,63 +4,76 @@ package ai.vespa.hosted.api;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import static ai.vespa.hosted.api.Method.POST;
+import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
+import static java.net.http.HttpRequest.BodyPublishers.ofInputStream;
+import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Talks to a remote controller over HTTP.
- *
- * Uses request signing with a public/private key pair to authenticate with the controller.
+ * Talks to a remote controller over HTTP. Subclasses are responsible for adding authentication to the requests.
  *
  * @author jonmv
  */
-public class ControllerHttpClient {
+public abstract class ControllerHttpClient {
 
-    private final ApplicationId id;
-    private final RequestSigner signer;
-    private final URI endpoint;
     private final HttpClient client;
+    private final URI endpoint;
 
-    /** Creates a HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
-    public ControllerHttpClient(URI endpoint, String privateKey, ApplicationId id) {
-        this.id = id;
-        this.signer = new RequestSigner(privateKey, id.serializedForm());
+    /** Creates an HTTP client against the given endpoint, using the given HTTP client builder to create a client. */
+    protected ControllerHttpClient(URI endpoint, HttpClient.Builder client) {
         this.endpoint = endpoint.resolve("/");
-        this.client = HttpClient.newBuilder()
-                                .connectTimeout(Duration.ofSeconds(5))
-                                .build();
+        this.client = client.connectTimeout(Duration.ofSeconds(5))
+                            .version(HttpClient.Version.HTTP_1_1)
+                            .build();
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
+    public static ControllerHttpClient withSignatureKey(URI endpoint, Path privateKeyFile, ApplicationId id) {
+        return new SigningControllerHttpClient(endpoint, privateKeyFile, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate of an Athenz identity. */
+    public static ControllerHttpClient withAthenzIdentity(URI endpoint, Path privateKeyFile, Path certificateFile) {
+        return new AthenzControllerHttpClient(endpoint, privateKeyFile, certificateFile);
     }
 
     /** Sends submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
-    public String submit(Submission submission) {
-        HttpRequest request = signer.signed(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()).resolve("submit"))
-                                                       .timeout(Duration.ofMinutes(30)),
-                                            POST,
-                                            new MultiPartStreamer().addJson("submitOptions", metoToJson(submission))
-                                                                   .addFile("applicationZip", submission.applicationZip())
-                                                                   .addFile("applicationTestZip", submission.applicationTestZip()));
-        try {
-            return toMessage(client.send(request, HttpResponse.BodyHandlers.ofByteArray()));
-        }
-        catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    public String submit(Submission submission, TenantName tenant, ApplicationName application) {
+        return toMessage(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
+                                                 .timeout(Duration.ofMinutes(30)),
+                                      POST,
+                                      new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
+                                                           .addFile("applicationZip", submission.applicationZip())
+                                                           .addFile("applicationTestZip", submission.applicationTestZip()))));
     }
+
+    protected abstract HttpRequest request(HttpRequest.Builder request, Method method);
+    protected abstract HttpRequest request(HttpRequest.Builder request, Method method, byte[] data);
+    protected abstract HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data);
+    protected abstract HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data);
 
     private URI apiPath() {
         return concatenated(endpoint, "application", "v4");
@@ -115,6 +128,83 @@ public class ControllerHttpClient {
 
     private static Slime toSlime(byte[] data) {
         return new JsonDecoder().decode(new Slime(), data);
+    }
+
+    private HttpResponse<byte[]> send(HttpRequest request) {
+        return unchecked(() -> client.send(request, ofByteArray()));
+    }
+
+    private static <T> T unchecked(Callable<T> callable) {
+        try {
+            return callable.call();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /** Client that signs requests with a private key whose public part is assigned to an application in the remote controller. */
+    private static class SigningControllerHttpClient extends ControllerHttpClient {
+
+        private final RequestSigner signer;
+
+        private SigningControllerHttpClient(URI endpoint, Path privateKeyFile, ApplicationId id) {
+            super(endpoint, HttpClient.newBuilder());
+            this.signer = new RequestSigner(unchecked(() -> Files.readString(privateKeyFile)), id.serializedForm());
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method) {
+            return signer.signed(request, method);
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, byte[] data) {
+            return signer.signed(request, method, data);
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
+            return signer.signed(request, method, data);
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data) {
+            return signer.signed(request, method, data);
+        }
+
+    }
+
+
+    /** Client that uses a given Athenz identity to authenticate to the remote controller. */
+    private static class AthenzControllerHttpClient extends ControllerHttpClient {
+
+        private AthenzControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
+            super(endpoint, HttpClient.newBuilder()
+                                      .sslContext(new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile).build()));
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method) {
+            return request(request, method, InputStream::nullInputStream);
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, byte[] data) {
+            return request(request, method, () -> new ByteArrayInputStream(data));
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
+            return request.method(method.name(), ofInputStream(data)).build();
+        }
+
+        @Override
+        protected HttpRequest request(HttpRequest.Builder request, Method method, MultiPartStreamer data) {
+            return request(request.header("Content-Type", data.contentType()), method, data::data);
+        }
+
     }
 
 }

@@ -64,20 +64,16 @@ public class SubmitMojo extends AbstractMojo {
 
     @Override
     public void execute() {
-        try {
-            setup();
-            ControllerHttpClient controller = new ControllerHttpClient(URI.create(endpointUri),
-                                                                       Files.readString(Paths.get(privateKeyFile), UTF_8),
-                                                                       ApplicationId.from(tenant, application, instance));
+        setup();
+        ApplicationId id = ApplicationId.from(tenant, application, instance);
+        ControllerHttpClient controller = ControllerHttpClient.withSignatureKey(URI.create(endpointUri),
+                                                                                Paths.get(privateKeyFile),
+                                                                                id);
 
-            Submission submission = new Submission(repository, branch, commit, authorEmail,
-                                                   Paths.get(applicationZip), Paths.get(applicationTestZip));
+        Submission submission = new Submission(repository, branch, commit, authorEmail,
+                                               Paths.get(applicationZip), Paths.get(applicationTestZip));
 
-            System.out.println(controller.submit(submission));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        System.out.println(controller.submit(submission, id.tenant(), id.application()));
     }
 
     private void setup() {
@@ -92,11 +88,12 @@ public class SubmitMojo extends AbstractMojo {
         return project.getBasedir().toPath().resolve(Path.of(first, rest)).toString();
     }
 
-    /** Returns the first of the given strings which is non-null and non-blank. */
+    /** Returns the first of the given strings which is non-null and non-blank, or throws IllegalArgumentException. */
     private static String firstNonBlank(String... values) {
         for (String value : values)
             if (value != null && ! value.isBlank())
                 return value;
+
         throw new IllegalArgumentException("No valid value given");
     }
 
