@@ -194,9 +194,9 @@ public class NodesSpecification {
         if (byteAmount.endsWith("B"))
             byteAmount = byteAmount.substring(0, byteAmount.length() -1);
 
-        double multiplier = 1/1000^3;
+        double multiplier = 1/Math.pow(1000, 3);
         if (byteAmount.endsWith("K"))
-            multiplier = 1/1000^2;
+            multiplier = 1/Math.pow(1000, 2);
         else if (byteAmount.endsWith("M"))
             multiplier = 1/1000;
         else if (byteAmount.endsWith("G"))
@@ -204,16 +204,13 @@ public class NodesSpecification {
         else if (byteAmount.endsWith("T"))
             multiplier = 1000;
         else if (byteAmount.endsWith("P"))
-            multiplier = 1000^2;
+            multiplier = Math.pow(1000, 2);
         else if (byteAmount.endsWith("E"))
-            multiplier = 1000^3;
+            multiplier = Math.pow(1000, 3);
         else if (byteAmount.endsWith("Z"))
-            multiplier = 1000^4;
+            multiplier = Math.pow(1000, 4);
         else if (byteAmount.endsWith("Y"))
-            multiplier = 1000^5;
-        else
-            throw new IllegalArgumentException("Invalid byte amount '" + byteAmount +
-                                               "': Must end with k, M, G, T, P, E, Z or Y");
+            multiplier = Math.pow(1000, 5);
 
         byteAmount = byteAmount.substring(0, byteAmount.length() -1 ).strip();
         try {
@@ -221,7 +218,8 @@ public class NodesSpecification {
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid byte amount '" + byteAmount +
-                                               "': Must be a floating point number followed by k, M, G, T, P, E, Z or Y");
+                                               "': Must be a floating point number " +
+                                               "optionally followed by k, M, G, T, P, E, Z or Y");
         }
     }
 

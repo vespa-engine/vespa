@@ -1240,7 +1240,7 @@ public class ModelProvisioningTest {
                 "         </nodes>" +
                 "      </controllers>" +
                 "      <nodes count='5'>" +
-                "         <resources vcpu='8' memory='200Gb' disk='1Tb'/>" +
+                "         <resources vcpu='8' memory='200Gb' disk='1Pb'/>" +
                 "      </nodes>" +
                 "   </content>" +
                 "   <content version='1.0' id='bar'>" +
@@ -1264,7 +1264,7 @@ public class ModelProvisioningTest {
         tester.addHosts(new NodeResources(0.1, 0.3, 1), 2); // Slobrok
         tester.addHosts(new NodeResources(12, 10, 30), 4); // Container
         tester.addHosts(new NodeResources(0.8, 3, 2), 2); // Controller-foo
-        tester.addHosts(new NodeResources(8, 200, 1000), 5); // Content-foo
+        tester.addHosts(new NodeResources(8, 200, 1000000), 5); // Content-foo
         tester.addHosts(new NodeResources(0.7, 2, 2.5), 3); // Controller-bar
         tester.addHosts(new NodeResources(10, 64, 200), 6); // Content-bar
         VespaModel model = tester.createModel(services, true, 0);

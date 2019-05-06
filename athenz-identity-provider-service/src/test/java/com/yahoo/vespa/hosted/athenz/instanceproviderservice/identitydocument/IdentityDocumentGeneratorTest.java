@@ -43,6 +43,7 @@ import static org.mockito.Mockito.when;
  * @author valerijf
  */
 public class IdentityDocumentGeneratorTest {
+
     private static final Zone ZONE = new Zone(SystemName.cd, Environment.dev, RegionName.from("us-north-1"));
 
     @Test
