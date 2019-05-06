@@ -99,5 +99,7 @@ public interface CryptoSocket {
      * Returns the security context for the current connection (given handshake completed),
      * or empty if the current connection is not secure.
      */
-    public Optional<SecurityContext> securityContext();
+    default public Optional<SecurityContext> getSecurityContext() {
+        return Optional.empty();
+    }
 }

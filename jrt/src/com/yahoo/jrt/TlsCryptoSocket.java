@@ -218,7 +218,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     }
 
     @Override
-    public Optional<SecurityContext> securityContext() {
+    public Optional<SecurityContext> getSecurityContext() {
         try {
             if (handshakeState != HandshakeState.COMPLETED) {
                 return Optional.empty();

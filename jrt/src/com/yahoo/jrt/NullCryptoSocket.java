@@ -5,7 +5,6 @@ package com.yahoo.jrt;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Optional;
 
 
 /**
@@ -31,5 +30,4 @@ public class NullCryptoSocket implements CryptoSocket {
     @Override public int drain(ByteBuffer dst) throws IOException { return 0; }
     @Override public int write(ByteBuffer src) throws IOException { return channel.write(src); }
     @Override public FlushResult flush() throws IOException { return FlushResult.DONE; }
-    @Override public Optional<SecurityContext> securityContext() { return Optional.empty(); }
 }

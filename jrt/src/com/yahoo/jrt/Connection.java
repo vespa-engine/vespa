@@ -443,7 +443,7 @@ class Connection extends Target {
     @Override
     public Optional<SecurityContext> getSecurityContext() {
         return Optional.ofNullable(socket)
-                .flatMap(CryptoSocket::securityContext);
+                .flatMap(CryptoSocket::getSecurityContext);
     }
 
     public boolean isClient() {
