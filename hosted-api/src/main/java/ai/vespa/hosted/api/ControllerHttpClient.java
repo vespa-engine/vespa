@@ -12,7 +12,6 @@ import com.yahoo.slime.Slime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -52,7 +51,7 @@ public class ControllerHttpClient {
         HttpRequest request = signer.signed(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()).resolve("submit"))
                                                        .timeout(Duration.ofMinutes(30)),
                                             POST,
-                                            new MultiPartStreamer().addJson("submitOptions", metaToSlime(submission))
+                                            new MultiPartStreamer().addJson("submitOptions", metoToJson(submission))
                                                                    .addFile("applicationZip", submission.applicationZip())
                                                                    .addFile("applicationTestZip", submission.applicationTestZip()));
         try {
@@ -84,7 +83,7 @@ public class ControllerHttpClient {
     }
 
     /** Returns a JSON representation of the submission meta data. */
-    private static String metaToSlime(Submission submission) {
+    private static String metaToJson(Submission submission) {
         try {
             Slime slime = new Slime();
             Cursor rootObject = slime.setObject();
