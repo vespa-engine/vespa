@@ -5,20 +5,13 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 
-namespace proton {
+namespace proton::test {
 
-namespace test {
+using Int32Attribute = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t> >;
 
-typedef search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t> > Int32AttributeBase;
+inline std::unique_ptr<Int32Attribute>
+createInt32Attribute(const vespalib::string &name) {
+    return std::make_unique<Int32Attribute>(name, AttributeUtils::getInt32Config());
+}
 
-struct Int32Attribute : public Int32AttributeBase
-{
-    Int32Attribute(const vespalib::string &name) :
-        Int32AttributeBase(name, AttributeUtils::getInt32Config())
-    {
-    }
-};
-
-} // namespace test
-
-} // namespace proton
+}
