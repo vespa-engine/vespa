@@ -27,7 +27,6 @@ import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.test.utils.CommonVespaModelSetup;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
@@ -280,7 +279,7 @@ public class VespaModelTestCase {
                 .applicationPackage(applicationPackage)
                 .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com"))
                 .properties(new TestProperties()
-                        .setConfigServerSpecs(Arrays.asList(new TestProperties.Spec("cfghost", 1234, 1235, 1236)))
+                        .setConfigServerSpecs(Arrays.asList(new TestProperties.Spec("cfghost", 1234, 1236)))
                         .setMultitenant(true))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
