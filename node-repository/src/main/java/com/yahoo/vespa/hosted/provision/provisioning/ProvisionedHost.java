@@ -45,17 +45,19 @@ public class ProvisionedHost {
         return id;
     }
 
-    public String getHostHostname() {
+    public String hostHostname() {
         return hostHostname;
     }
 
-    public Flavor getHostFlavor() {
+    public Flavor hostFlavor() {
         return hostFlavor;
     }
 
-    public String getNodeHostname() {
+    public String nodeHostname() {
         return nodeHostname;
     }
+
+    public NodeResources nodeResources() { return nodeResources; }
 
     @Override
     public boolean equals(Object o) {
