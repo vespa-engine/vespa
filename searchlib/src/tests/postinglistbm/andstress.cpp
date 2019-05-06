@@ -29,8 +29,7 @@ namespace postinglistbm {
 
 class AndStressWorker;
 
-class AndStressMaster
-{
+class AndStressMaster {
 private:
     AndStressMaster(const AndStressMaster &);
 
@@ -60,9 +59,11 @@ private:
     uint32_t _numTasks;
 
 public:
-    typedef std::pair<FakePosting *, FakePosting *> Task;
+    using Task = std::pair<FakePosting *, FakePosting *>;
+
 private:
     std::vector<Task> _tasks;
+
 public:
     AndStressMaster(search::Rand48 &rnd,
                     FakeWordSet &wordSet,
@@ -91,8 +92,7 @@ public:
 };
 
 
-class AndStressWorker : public FastOS_Runnable
-{
+class AndStressWorker : public FastOS_Runnable {
 private:
     AndStressWorker(const AndStressWorker &);
 
@@ -107,14 +107,12 @@ public:
     virtual void Run(FastOS_ThreadInterface *thisThread, void *arg) override;
 };
 
-
 template <class P>
 FakePosting *
 makePosting(FakeWord &fw)
 {
     return new P(fw);
 }
-
 
 AndStressMaster::AndStressMaster(search::Rand48 &rnd,
                                  FakeWordSet &wordSet,
@@ -134,7 +132,7 @@ AndStressMaster::AndStressMaster(search::Rand48 &rnd,
       _skipCommonPairsRate(skipCommonPairsRate),
       _stride(stride),
       _unpack(unpack),
-      _threadPool(NULL),
+      _threadPool(nullptr),
       _workers(),
       _workersDone(0),
       _wordSet(wordSet),
@@ -152,13 +150,13 @@ AndStressMaster::AndStressMaster(search::Rand48 &rnd,
 
 template <class C>
 static void
-clearPtrVector(std::vector<C> &v)
+clearPtrVector(std::vector<C> &vector)
 {
-    for (unsigned int i = 0; i < v.size(); ++i)
-        delete v[i];
-    v.clear();
+    for (auto& elem : vector) {
+        delete elem;
+    }
+    vector.clear();
 }
-
 
 AndStressMaster::~AndStressMaster()
 {
@@ -166,20 +164,19 @@ AndStressMaster::~AndStressMaster()
 
     _threadPool->Close();
     delete _threadPool;
-    _threadPool = NULL;
+    _threadPool = nullptr;
     clearPtrVector(_workers);
     dropPostings();
 }
 
-
 void
 AndStressMaster::dropPostings()
 {
-    for (unsigned int i = 0; i < _postings.size(); ++i)
-        _postings[i].clear();
+    for (auto& posting : _postings) {
+        posting.clear();
+    }
     dropTasks();
 }
-
 
 void
 AndStressMaster::dropTasks()
@@ -188,39 +185,39 @@ AndStressMaster::dropTasks()
     _taskIdx = 0;
 }
 
-
 void
 AndStressMaster::resetTasks()
 {
     _taskIdx = 0;
 }
 
-
 static void
 makeSomePostings(FPFactory *postingFactory,
-                 std::vector<FakeWord *> &w,
-                 std::vector<FakePosting::SP> &p,
+                 std::vector<FakeWord *> &words,
+                 std::vector<FakePosting::SP> &postings,
                  uint32_t stride,
                  bool validate,
                  bool verbose)
 {
-    for (unsigned int i = 0; i < w.size(); ++i) {
-        FakePosting::SP np(postingFactory->make(*w[i]));
+    for (const auto& word : words) {
+        auto posting = postingFactory->make(*word);
         if (validate) {
             TermFieldMatchData md;
             TermFieldMatchDataArray tfmda;
             tfmda.add(&md);
 
-            std::unique_ptr<SearchIterator> sb(np->createIterator(tfmda));
-            if (np->hasWordPositions()) {
-                if (stride != 0)
-                    w[i]->validate(sb.get(), tfmda, stride, verbose);
-                else
-                    w[i]->validate(sb.get(), tfmda, verbose);
-            } else
-                w[i]->validate(sb.get(), verbose);
+            std::unique_ptr<SearchIterator> iterator(posting->createIterator(tfmda));
+            if (posting->hasWordPositions()) {
+                if (stride != 0) {
+                    word->validate(iterator.get(), tfmda, stride, verbose);
+                } else {
+                    word->validate(iterator.get(), tfmda, verbose);
+                }
+            } else {
+                word->validate(iterator.get(), verbose);
+            }
         }
-        p.push_back(np);
+        postings.push_back(posting);
     }
 }
 
@@ -236,7 +233,7 @@ AndStressMaster::makePostingsHelper(FPFactory *postingFactory,
     tv.SetNow();
     before = tv.Secs();
     postingFactory->setup(_wordSet);
-    for (unsigned int i = 0; i < _wordSet._words.size(); ++i)
+    for (size_t i = 0; i < _wordSet._words.size(); ++i)
         makeSomePostings(postingFactory,
                          _wordSet._words[i], _postings[i],
                          _stride,
@@ -249,7 +246,6 @@ AndStressMaster::makePostingsHelper(FPFactory *postingFactory,
         after - before,
         postingFormat.c_str());
 }
-
 
 void
 AndStressMaster::setupTasks(unsigned int numTasks)
@@ -276,19 +272,19 @@ AndStressMaster::setupTasks(unsigned int numTasks)
     }
 }
 
-
 AndStressMaster::Task *
 AndStressMaster::getTask()
 {
-    Task *result = NULL;
+    Task *result = nullptr;
     std::lock_guard<std::mutex> taskGuard(_taskLock);
     if (_taskIdx < _tasks.size()) {
         result = &_tasks[_taskIdx];
         ++_taskIdx;
     } else {
         _workersDone++;
-        if (_workersDone == _workers.size())
+        if (_workersDone == _workers.size()) {
             _taskCond.notify_all();
+        }
     }
     return result;
 }
@@ -298,25 +294,21 @@ AndStressMaster::run()
 {
     LOG(info, "AndStressMaster::run");
 
-    std::vector<std::string>::const_iterator pti;
-    std::vector<std::string>::const_iterator ptie = _postingTypes.end() ;
-
-    for (pti = _postingTypes.begin(); pti != ptie; ++pti) {
-        std::unique_ptr<FPFactory> ff(getFPFactory(*pti, _wordSet.getSchema()));
-        makePostingsHelper(ff.get(), *pti, true, false);
+    for (const auto& type : _postingTypes) {
+        std::unique_ptr<FPFactory> factory(getFPFactory(type, _wordSet.getSchema()));
+        makePostingsHelper(factory.get(), type, true, false);
         setupTasks(_numTasks);
         double totalTime = 0;
         for (unsigned int loop = 0; loop < _loops; ++loop) {
-            totalTime += runWorkers(*pti);
+            totalTime += runWorkers(type);
             resetTasks();
         }
         LOG(info, "AndStressMaster::average run elapsed %10.6f s for workers %s format",
-            totalTime / _loops, pti->c_str());
+            totalTime / _loops, type.c_str());
         dropPostings();
     }
     FastOS_Thread::Sleep(250);
 }
-
 
 double
 AndStressMaster::runWorkers(const std::string &postingFormat)
@@ -328,15 +320,19 @@ AndStressMaster::runWorkers(const std::string &postingFormat)
     tv.SetNow();
     before = tv.Secs();
     unsigned int numWorkers = 8;
-    for (unsigned int i = 0; i < numWorkers; ++i)
+    for (unsigned int i = 0; i < numWorkers; ++i) {
         _workers.push_back(new AndStressWorker(*this, i));
+    }
 
-    for (unsigned int i = 0; i < _workers.size(); ++i)
-        _threadPool->NewThread(_workers[i]);
+    for (auto& worker : _workers) {
+        _threadPool->NewThread(worker);
+    }
+
     {
         std::unique_lock<std::mutex> taskGuard(_taskLock);
-        while (_workersDone < _workers.size())
+        while (_workersDone < _workers.size()) {
             _taskCond.wait(taskGuard);
+        }
     }
     tv.SetNow();
     after = tv.Secs();
@@ -349,7 +345,6 @@ AndStressMaster::runWorkers(const std::string &postingFormat)
     return after - before;
 }
 
-
 AndStressWorker::AndStressWorker(AndStressMaster &master, unsigned int id)
     : _master(master),
       _id(id)
@@ -361,7 +356,6 @@ AndStressWorker::~AndStressWorker()
 {
     LOG(debug, "AndStressWorker::~AndStressWorker, id=%u", _id);
 }
-
 
 static int
 highLevelAndPairPostingScan(SearchIterator &sb1,
@@ -391,7 +385,6 @@ highLevelAndPairPostingScan(SearchIterator &sb1,
     *cycles = after - before;
     return hits;
 }
-
 
 static int
 highLevelAndPairPostingScanUnpack(SearchIterator &sb1,
@@ -441,12 +434,13 @@ testFakePair(FakePosting &f1, FakePosting &f2, unsigned int numDocs,
 
     int hits = 0;
     uint64_t scanUnpackTime = 0;
-    if (unpack)
+    if (unpack) {
         hits = highLevelAndPairPostingScanUnpack(*sb1.get(), *sb2.get(),
-                numDocs, &scanUnpackTime);
-    else
+                                                 numDocs, &scanUnpackTime);
+    } else {
         hits = highLevelAndPairPostingScan(*sb1.get(), *sb2.get(),
-                numDocs, &scanUnpackTime);
+                                           numDocs, &scanUnpackTime);
+    }
 #if 0
     printf("Fakepair %s AND %s => %d hits, %" PRIu64 " cycles\n",
            f1.getName().c_str(),
@@ -468,19 +462,18 @@ AndStressWorker::Run(FastOS_ThreadInterface *thisThread, void *arg)
     bool unpack = _master.getUnpack();
     for (;;) {
         AndStressMaster::Task *task = _master.getTask();
-        if (task == NULL)
+        if (task == nullptr) {
             break;
+        }
         testFakePair(*task->first, *task->second, _master.getNumDocs(),
                      unpack);
     }
 }
 
-
 AndStress::AndStress()
 {
     LOG(debug, "Andstress::AndStress");
 }
-
 
 AndStress::~AndStress()
 {
