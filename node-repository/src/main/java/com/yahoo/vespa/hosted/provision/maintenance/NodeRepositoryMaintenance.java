@@ -56,9 +56,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Optional<HostProvisionMaintainer> hostProvisionMaintainer;
     private final Optional<HostDeprovisionMaintainer> hostDeprovisionMaintainer;
 
-    private final JobControl jobControl;
-    private final InfrastructureVersions infrastructureVersions;
-
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
@@ -77,27 +74,25 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         DefaultTimes defaults = new DefaultTimes(zone);
-        jobControl = new JobControl(nodeRepository.database());
-        infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
-        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, defaults.redeployMaintainerInterval, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
-        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval), jobControl);
-        reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry), jobControl);
-        retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, durationFromEnv("retired_interval").orElse(defaults.retiredInterval), durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry), jobControl);
-        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry), jobControl);
-        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expirer_interval").orElse(defaults.failedExpirerInterval), jobControl);
-        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
-        provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry), jobControl);
-        nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
-        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
-        infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, infrastructureVersions, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), jobControl, duperModelInfraApi);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric, configserverConfig);
+        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, defaults.redeployMaintainerInterval, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval));
+        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval));
+        reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
+        retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, durationFromEnv("retired_interval").orElse(defaults.retiredInterval), durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry));
+        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
+        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expirer_interval").orElse(defaults.failedExpirerInterval));
+        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry));
+        provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry));
+        nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval));
+        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
+        infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), duperModelInfraApi);
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
-                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), jobControl, lbService));
+                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), lbService));
         hostProvisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), jobControl, hostProvisioner, flagSource));
+                new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), hostProvisioner, flagSource));
         hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), jobControl, hostProvisioner, flagSource));
+                new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), hostProvisioner, flagSource));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -105,7 +100,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));
         FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
                 NodeRetirer.SPARE_NODES_POLICY, FlavorSpareCount.constructFlavorSpareCountGraph(zone.nodeFlavors().get().getFlavors()));
-        nodeRetirer = new NodeRetirer(nodeRepository, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, jobControl, policy);
+        nodeRetirer = new NodeRetirer(nodeRepository, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, policy);
     }
 
     @Override
@@ -126,12 +121,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         loadBalancerExpirer.ifPresent(Maintainer::deconstruct);
         hostProvisionMaintainer.ifPresent(Maintainer::deconstruct);
         hostDeprovisionMaintainer.ifPresent(Maintainer::deconstruct);
-    }
-
-    public JobControl jobControl() { return jobControl; }
-
-    public InfrastructureVersions infrastructureVersions() {
-        return infrastructureVersions;
     }
 
     private static Optional<Duration> durationFromEnv(String envVariable) {

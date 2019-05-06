@@ -55,8 +55,8 @@ public class JobControlTest {
     @Test
     public void testJobControlMayDeactivateJobs() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
-        JobControl jobControl = new JobControl(tester.nodeRepository().database());
-        MockMaintainer mockMaintainer = new MockMaintainer(tester.nodeRepository(), jobControl);
+        JobControl jobControl = tester.nodeRepository().jobControl();
+        MockMaintainer mockMaintainer = new MockMaintainer(tester.nodeRepository());
         
         assertTrue(jobControl.jobs().contains("MockMaintainer"));
 
@@ -78,8 +78,8 @@ public class JobControlTest {
         
         int maintenanceInvocations = 0;
         
-        public MockMaintainer(NodeRepository nodeRepository, JobControl jobControl) {
-            super(nodeRepository, Duration.ofHours(1), jobControl);
+        private MockMaintainer(NodeRepository nodeRepository) {
+            super(nodeRepository, Duration.ofHours(1));
         }
 
         @Override

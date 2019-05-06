@@ -33,7 +33,6 @@ public class LoadBalancerExpirerTest {
     public void test_maintain() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
-                                                              new JobControl(tester.nodeRepository().database()),
                                                               tester.loadBalancerService());
         Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
 

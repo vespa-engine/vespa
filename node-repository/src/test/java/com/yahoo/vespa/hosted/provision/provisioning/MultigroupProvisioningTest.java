@@ -10,7 +10,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Ignore;
@@ -25,8 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -138,7 +137,7 @@ public class MultigroupProvisioningTest {
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
                                                                                           Capacity.fromNodeCount(8, Optional.of("large"), false, true), 1)));
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
-                Duration.ofHours(12), new JobControl(tester.nodeRepository().database())).run();
+                Duration.ofHours(12)).run();
 
         assertEquals(8, tester.getNodes(application1, Node.State.inactive).flavor("small").size());
         deploy(application1, 8, 8, "large", tester);

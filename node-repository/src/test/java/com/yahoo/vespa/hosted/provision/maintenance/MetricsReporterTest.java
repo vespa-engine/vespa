@@ -99,8 +99,7 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1),
-                new JobControl(nodeRepository.database())
+                Duration.ofMinutes(1)
         );
         metricsReporter.maintain();
 
@@ -146,8 +145,7 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1),
-                new JobControl(nodeRepository.database())
+                Duration.ofMinutes(1)
         );
         metricsReporter.maintain();
 

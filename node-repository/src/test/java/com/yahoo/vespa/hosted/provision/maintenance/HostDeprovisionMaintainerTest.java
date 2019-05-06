@@ -37,7 +37,7 @@ public class HostDeprovisionMaintainerTest {
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
     private final FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true);
     private final HostDeprovisionMaintainer maintainer = new HostDeprovisionMaintainer(
-            tester.nodeRepository(), Duration.ofDays(1), tester.jobControl(), hostProvisioner, flagSource);
+            tester.nodeRepository(), Duration.ofDays(1), hostProvisioner, flagSource);
 
     @Test
     public void removes_nodes_if_successful() {

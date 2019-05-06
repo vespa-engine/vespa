@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -55,18 +54,15 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
-    private final NodeRepositoryMaintenance maintenance;
     private final NodeFlavors nodeFlavors;
     private final NodeSerializer serializer = new NodeSerializer();
 
     @Inject
     public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                           NodeRepository nodeRepository,
-                           NodeRepositoryMaintenance maintenance, NodeFlavors flavors) {
+                           NodeRepository nodeRepository, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
-        this.maintenance = maintenance;
         this.nodeFlavors = flavors;
     }
 
@@ -103,8 +99,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
-        if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
-        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(maintenance.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
+        if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
+        if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -269,9 +265,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private MessageResponse setJobActive(String jobName, boolean active) {
-        if ( ! maintenance.jobControl().jobs().contains(jobName))
+        if ( ! nodeRepository.jobControl().jobs().contains(jobName))
             throw new NotFoundException("No job named '" + jobName + "'");
-        maintenance.jobControl().setActive(jobName, active);
+        nodeRepository.jobControl().setActive(jobName, active);
         return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
@@ -287,7 +283,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
         if (versionField.valid()) {
             Version version = Version.fromString(versionField.asString());
-            maintenance.infrastructureVersions().setTargetVersion(nodeType, version, force);
+            nodeRepository.infrastructureVersions().setTargetVersion(nodeType, version, force);
             messageParts.add("version to " + version.toFullString());
         }
 

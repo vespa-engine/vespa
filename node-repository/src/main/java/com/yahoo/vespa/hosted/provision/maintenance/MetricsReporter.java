@@ -39,14 +39,13 @@ public class MetricsReporter extends Maintainer {
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
 
-    public MetricsReporter(NodeRepository nodeRepository,
-                           Metric metric,
-                           Orchestrator orchestrator,
-                           ServiceMonitor serviceMonitor,
-                           Supplier<Integer> pendingRedeploymentsSupplier,
-                           Duration interval,
-                           JobControl jobControl) {
-        super(nodeRepository, interval, jobControl);
+    MetricsReporter(NodeRepository nodeRepository,
+                    Metric metric,
+                    Orchestrator orchestrator,
+                    ServiceMonitor serviceMonitor,
+                    Supplier<Integer> pendingRedeploymentsSupplier,
+                    Duration interval) {
+        super(nodeRepository, interval);
         this.metric = metric;
         this.orchestrator = orchestrator.getNodeStatuses();
         this.serviceMonitor = serviceMonitor;
