@@ -55,9 +55,9 @@ public abstract class ControllerHttpClient {
         return new SigningControllerHttpClient(endpoint, privateKeyFile, id);
     }
 
-    /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate of an Athenz identity. */
-    public static ControllerHttpClient withAthenzIdentity(URI endpoint, Path privateKeyFile, Path certificateFile) {
-        return new AthenzControllerHttpClient(endpoint, privateKeyFile, certificateFile);
+    /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
+    public static ControllerHttpClient withKeyAndCertificate(URI endpoint, Path privateKeyFile, Path certificateFile) {
+        return new MutualTlsControllerHttpClient(endpoint, privateKeyFile, certificateFile);
     }
 
     /** Sends submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
@@ -173,10 +173,10 @@ public abstract class ControllerHttpClient {
     }
 
 
-    /** Client that uses a given Athenz identity to authenticate to the remote controller. */
-    private static class AthenzControllerHttpClient extends ControllerHttpClient {
+    /** Client that uses a given key / certificate identity to authenticate to the remote controller. */
+    private static class MutualTlsControllerHttpClient extends ControllerHttpClient {
 
-        private AthenzControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
+        private MutualTlsControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
             super(endpoint,
                   HttpClient.newBuilder().sslContext(new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile).build()));
         }

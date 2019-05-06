@@ -9,14 +9,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Submits a Vespa application package and corresponding test jars to the hosted Vespa API.
@@ -71,7 +66,7 @@ public class SubmitMojo extends AbstractMojo {
         ApplicationId id = ApplicationId.from(tenant, application, instance);
         ControllerHttpClient controller = certificateFile == null
                 ? ControllerHttpClient.withSignatureKey(URI.create(endpointUri), Paths.get(privateKeyFile), id)
-                : ControllerHttpClient.withAthenzIdentity(URI.create(endpointUri), Paths.get(privateKeyFile), Paths.get(certificateFile));
+                : ControllerHttpClient.withKeyAndCertificate(URI.create(endpointUri), Paths.get(privateKeyFile), Paths.get(certificateFile));
 
         Submission submission = new Submission(repository, branch, commit, authorEmail,
                                                Paths.get(applicationZip), Paths.get(applicationTestZip));
