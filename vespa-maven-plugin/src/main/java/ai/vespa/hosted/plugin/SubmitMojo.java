@@ -50,6 +50,9 @@ public class SubmitMojo extends AbstractMojo {
     @Parameter(property = "privateKeyFile", required = true)
     private String privateKeyFile;
 
+    @Parameter(property = "certificateFile")
+    private String certificateFile;
+
     @Parameter(property = "authorEmail", required = true)
     private String authorEmail;
 
@@ -66,9 +69,9 @@ public class SubmitMojo extends AbstractMojo {
     public void execute() {
         setup();
         ApplicationId id = ApplicationId.from(tenant, application, instance);
-        ControllerHttpClient controller = ControllerHttpClient.withSignatureKey(URI.create(endpointUri),
-                                                                                Paths.get(privateKeyFile),
-                                                                                id);
+        ControllerHttpClient controller = certificateFile == null
+                ? ControllerHttpClient.withSignatureKey(URI.create(endpointUri), Paths.get(privateKeyFile), id)
+                : ControllerHttpClient.withAthenzIdentity(URI.create(endpointUri), Paths.get(privateKeyFile), Paths.get(certificateFile));
 
         Submission submission = new Submission(repository, branch, commit, authorEmail,
                                                Paths.get(applicationZip), Paths.get(applicationTestZip));

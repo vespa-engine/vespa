@@ -162,7 +162,7 @@ public abstract class ControllerHttpClient {
 
         private SigningControllerHttpClient(URI endpoint, Path privateKeyFile, ApplicationId id) {
             super(endpoint, HttpClient.newBuilder());
-            this.signer = new RequestSigner(unchecked(() -> Files.readString(privateKeyFile)), id.serializedForm());
+            this.signer = new RequestSigner(unchecked(() -> Files.readString(privateKeyFile, UTF_8)), id.serializedForm());
         }
 
         @Override
