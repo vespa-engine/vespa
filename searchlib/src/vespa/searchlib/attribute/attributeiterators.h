@@ -6,10 +6,9 @@
 #include "postinglisttraits.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchcommon/attribute/i_search_context.h>
 
 namespace search {
-
-namespace attribute { class ISearchContext; }
 
 namespace fef {
     class TermFieldMatchData;
@@ -92,11 +91,15 @@ private:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
+    bool matches(uint32_t docId, int32_t &weight) const {
+        return attribute::ISearchContext::matches(_concreteSearchCtx, docId, weight);
+    }
+    bool matches(uint32_t doc) const { return _concreteSearchCtx.find(doc, 0) >= 0; }
     const SC &_concreteSearchCtx;
 
 public:
     AttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData);
-    bool seekFast(uint32_t docId) const { return _concreteSearchCtx.matches(docId); }
+    bool seekFast(uint32_t docId) const { return matches(docId); }
 };
 
 template <typename SC>
@@ -110,11 +113,12 @@ private:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
 
 protected:
+    bool matches(uint32_t doc) const { return _concreteSearchCtx.find(doc, 0) >= 0; }
     const SC &_concreteSearchCtx;
 
 public:
     FilterAttributeIteratorT(const SC &concreteSearchCtx, fef::TermFieldMatchData *matchData);
-    bool seekFast(uint32_t docId) const { return _concreteSearchCtx.matches(docId); }
+    bool seekFast(uint32_t docId) const { return matches(docId); }
 };
 
 
