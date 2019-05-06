@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
@@ -65,7 +65,7 @@ public class DynamicDockerAllocationTest {
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
@@ -108,7 +108,7 @@ public class DynamicDockerAllocationTest {
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
@@ -165,7 +165,7 @@ public class DynamicDockerAllocationTest {
         tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
@@ -194,7 +194,7 @@ public class DynamicDockerAllocationTest {
 
         //Deploy an application having 6 nodes (3 nodes in 2 groups). We only have 5 docker hosts available
         ApplicationId application1 = tester.makeApplicationId();
-        tester.prepare(application1, clusterSpec("myContent.t1.a1"), 6, 2, new FlavorSpec(1, 1, 1));
+        tester.prepare(application1, clusterSpec("myContent.t1.a1"), 6, 2, new NodeResources(1, 1, 1));
 
         fail("Two groups have been allocated to the same parent host");
     }
@@ -212,7 +212,7 @@ public class DynamicDockerAllocationTest {
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         // Deploy initial state (can max deploy 3 nodes due to redundancy requirements)
         ClusterSpec clusterSpec = clusterSpec("myContent.t1.a1");
@@ -246,7 +246,7 @@ public class DynamicDockerAllocationTest {
         tester.makeReadyNodes(3, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         ApplicationId application1 = tester.makeApplicationId();
-        List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 3, 1, new FlavorSpec(1, 1, 1));
+        List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 3, 1, new NodeResources(1, 1, 1));
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
@@ -260,7 +260,7 @@ public class DynamicDockerAllocationTest {
         deployZoneApp(tester);
 
         ApplicationId application = tester.makeApplicationId();
-        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, new FlavorSpec(1, 1, 1));
+        tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, new NodeResources(1, 1, 1));
     }
 
     @Test
@@ -270,7 +270,7 @@ public class DynamicDockerAllocationTest {
         deployZoneApp(tester);
 
         ApplicationId application = tester.makeApplicationId();
-        List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, new FlavorSpec(1, 1, 1));
+        List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, new NodeResources(1, 1, 1));
         tester.activate(application, hosts);
 
         List<Node> activeNodes = tester.nodeRepository().getNodes(application);
@@ -282,12 +282,12 @@ public class DynamicDockerAllocationTest {
         return ApplicationId.from(tenant, appName, "default");
     }
 
-    private void deployApp(ApplicationId id, ClusterSpec spec, FlavorSpec flavor, ProvisioningTester tester, int nodeCount) {
+    private void deployApp(ApplicationId id, ClusterSpec spec, NodeResources flavor, ProvisioningTester tester, int nodeCount) {
         List<HostSpec> hostSpec = tester.prepare(id, spec, nodeCount, 1, flavor);
         tester.activate(id, new HashSet<>(hostSpec));
     }
 
-    private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, FlavorSpec flavor, int index, ProvisioningTester tester) {
+    private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
         Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation

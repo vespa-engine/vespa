@@ -4,8 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -220,7 +219,7 @@ class NodeAllocation {
     }
 
     private boolean hasCompatibleFlavor(Node node) {
-        return requestedNodes.isCompatible(node.flavor().asSpec(), flavors);
+        return requestedNodes.isCompatible(node.flavor(), flavors);
     }
 
     private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire) {
@@ -368,15 +367,15 @@ class NodeAllocation {
 
     static class FlavorCount {
 
-        private final FlavorSpec flavor;
+        private final NodeResources flavor;
         private final int count;
 
-        private FlavorCount(FlavorSpec flavor, int count) {
+        private FlavorCount(NodeResources flavor, int count) {
             this.flavor = flavor;
             this.count = count;
         }
 
-        FlavorSpec getFlavor() {
+        NodeResources getFlavor() {
             return flavor;
         }
 

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
@@ -218,7 +218,7 @@ class NodePrioritizer {
         PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
                 .withSurplusNode(isSurplusNode)
                 .withNewNode(isNewNode)
-                .withPreferredOnFlavor(preferredOnFlavor(node));
+                .withPreferredOnFlavor(preferredOnLegacyFlavor(node));
 
         allNodes.parentOf(node).ifPresent(parent -> {
             builder.withParent(parent).withFreeParentCapacity(capacity.freeCapacityOf(parent, false));
@@ -232,11 +232,11 @@ class NodePrioritizer {
     }
 
     /** Needed to handle requests for legacy non-docker nodes only */
-    private boolean preferredOnFlavor(Node node) {
+    private boolean preferredOnLegacyFlavor(Node node) {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
-            FlavorSpec requestedFlavorSpec = ((NodeSpec.CountNodeSpec)requestedNodes).getFlavor();
-            if (requestedFlavorSpec.allocateByLegacyName()) {
-                Flavor requestedFlavor = flavors.getFlavorOrThrow(requestedFlavorSpec.legacyFlavorName());
+            NodeResources requestedNodeResources = ((NodeSpec.CountNodeSpec)requestedNodes).getFlavor();
+            if (requestedNodeResources.allocateByLegacyName()) {
+                Flavor requestedFlavor = flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get());
                 return ! requestedFlavor.isStock() && node.flavor().equals(requestedFlavor);
             }
         }
@@ -257,7 +257,7 @@ class NodePrioritizer {
         return requestedNodes.fulfilledBy(nofNodesInCluster - nodeFailedNodes);
     }
 
-    private static FlavorSpec getFlavor(NodeSpec requestedNodes) {
+    private static NodeResources getFlavor(NodeSpec requestedNodes) {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
             NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
             return countSpec.getFlavor();
@@ -266,7 +266,7 @@ class NodePrioritizer {
     }
 
     private boolean isDocker() {
-        FlavorSpec flavor = getFlavor(requestedNodes);
+        NodeResources flavor = getFlavor(requestedNodes);
         return (flavor != null) && ! flavor.allocateByLegacyName();
     }
 

@@ -6,7 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -45,12 +45,12 @@ public class AclProvisioningTest {
         List<Node> dockerHost = tester.makeReadyNodes(1, "d-1-1-1", NodeType.host);
         ApplicationId zoneApplication = tester.makeApplicationId();
         deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
-        tester.makeReadyVirtualDockerNodes(1, FlavorSpec.fromLegacyFlavorName("d-1-1-1"), dockerHost.get(0).hostname());
+        tester.makeReadyVirtualDockerNodes(1, NodeResources.fromLegacyName("d-1-1-1"), dockerHost.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, "d-1-1-1", NodeType.proxy);
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, FlavorSpec.fromLegacyFlavorName("d-1-1-1"), false, true));
+        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, NodeResources.fromLegacyName("d-1-1-1"), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
@@ -132,7 +132,7 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new FlavorSpec(1, 1, 1),
+        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 1, 1),
                                                              dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);

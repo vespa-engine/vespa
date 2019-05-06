@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 // to remove these tests
 public class VirtualNodeProvisioningTest {
 
-    private static final FlavorSpec flavor = new FlavorSpec(4, 8, 100);
+    private static final NodeResources flavor = new NodeResources(4, 8, 100);
     private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false, Collections.emptySet());
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false, Collections.emptySet());
 
@@ -82,7 +82,7 @@ public class VirtualNodeProvisioningTest {
 
         // Allowed to use same parent host for several nodes in same cluster in dev
         {
-            FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+            NodeResources flavor = new NodeResources(1, 1, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyVirtualDockerNodes(4, flavor, "parentHost1");
 
@@ -295,7 +295,7 @@ public class VirtualNodeProvisioningTest {
         return tester.prepare(applicationId, clusterSpec, nodeCount, groups, flavor);
     }
 
-    private List<HostSpec> prepare(ClusterSpec clusterSpec, int nodeCount, int groups, FlavorSpec flavor) {
+    private List<HostSpec> prepare(ClusterSpec clusterSpec, int nodeCount, int groups, NodeResources flavor) {
         return tester.prepare(applicationId, clusterSpec, nodeCount, groups, flavor);
     }
 

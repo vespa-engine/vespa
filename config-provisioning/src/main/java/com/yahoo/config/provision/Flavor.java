@@ -7,6 +7,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A host flavor (type). This is a value object where the identity is the name.
@@ -15,6 +16,11 @@ import java.util.List;
  * @author bratseth
  */
 public class Flavor {
+
+    private boolean configured;
+
+    /** The hardware resources of this flavor */
+    private NodeResources resources;
 
     private final String name;
     private final int cost;
@@ -36,6 +42,7 @@ public class Flavor {
      * @param flavorConfig config to be used for Flavor.
      */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
+        this.configured = true;
         this.name = flavorConfig.name();
         this.replacesFlavors = new ArrayList<>();
         this.cost = flavorConfig.cost();
@@ -49,25 +56,28 @@ public class Flavor {
         this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
         this.idealHeadroom = flavorConfig.idealHeadroom();
+        this.resources = new NodeResources(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
     }
 
     /** Create a Flavor from a Flavor spec and all other fields set to Docker defaults */
-    public Flavor(FlavorSpec spec) {
-        if (spec.allocateByLegacyName())
-            throw new IllegalArgumentException("Can not create flavor '" + spec.legacyFlavorName() + "' from a spec: " +
+    public Flavor(NodeResources resources) {
+        if (resources.allocateByLegacyName())
+            throw new IllegalArgumentException("Can not create flavor '" + resources.legacyName() + "' from a flavor: " +
                                                "Non-docker flavors must be of a configured flavor");
-        this.name = spec.legacyFlavorName();
+        this.configured = false;
+        this.name = resources.legacyName().orElse(resources.toString());
         this.cost = 0;
         this.isStock = true;
         this.type = Type.DOCKER_CONTAINER;
-        this.minCpuCores = spec.cpuCores();
-        this.minMainMemoryAvailableGb = spec.memoryGb();
-        this.minDiskAvailableGb = spec.diskGb();
+        this.minCpuCores = resources.vcpu();
+        this.minMainMemoryAvailableGb = resources.memoryGb();
+        this.minDiskAvailableGb = resources.diskGb();
         this.fastDisk = true;
         this.bandwidth = 1;
         this.description = "";
         this.retired = false;
         this.replacesFlavors = Collections.emptyList();
+        this.resources = resources;
     }
 
     /** Returns the unique identity of this flavor */
@@ -160,7 +170,7 @@ public class Flavor {
         replacesFlavors = ImmutableList.copyOf(replacesFlavors);
     }
     
-    /** Returns whether this flavor has at least as much as each hardware resource as the given flavor */
+    /** Returns whether this flavor has at least as much of each hardware resource as the given flavor */
     public boolean isLargerThan(Flavor other) {
         return this.minCpuCores >= other.minCpuCores &&
                this.minDiskAvailableGb >= other.minDiskAvailableGb &&
@@ -168,12 +178,13 @@ public class Flavor {
                this.fastDisk || ! other.fastDisk;
     }
 
-    public FlavorSpec asSpec() {
-        if (isDocker())
-            return new FlavorSpec(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
-        else
-            return FlavorSpec.fromLegacyFlavorName(name);
-    }
+    /**
+     * True if this is a configured flavor used for hosts,
+     * false if it is a virtual flavor created on the fly from node resources
+     */
+    public boolean isConfigured() { return configured; }
+
+    public NodeResources resources() { return resources; }
 
     @Override
     public int hashCode() { return name.hashCode(); }

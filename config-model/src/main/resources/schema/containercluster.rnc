@@ -215,6 +215,7 @@ NodesOfContainerCluster = element nodes {
     attribute preload { text }? &
     attribute allocated-memory { text }? &
     attribute cpu-socket-affinity { xsd:boolean }? &
+    Resources? &
     element environment-variables {
       anyElement +
     } ? &

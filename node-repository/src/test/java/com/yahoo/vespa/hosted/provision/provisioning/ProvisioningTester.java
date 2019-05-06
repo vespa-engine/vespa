@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -130,11 +130,11 @@ public class ProvisioningTester {
 
     public void patchNode(Node node) { nodeRepository.write(node); }
 
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, FlavorSpec flavor) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, NodeResources flavor) {
         return prepare(application, cluster, nodeCount, groups, false, flavor);
     }
 
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, FlavorSpec flavor) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, NodeResources flavor) {
         return prepare(application, cluster, Capacity.fromCount(nodeCount, Optional.ofNullable(flavor), required, true), groups);
     }
 
@@ -275,7 +275,7 @@ public class ProvisioningTester {
             Optional<Flavor> flavor = nodeFlavors.getFlavor(flavorName);
             if (flavor.isEmpty()) {
                 if (type == NodeType.tenant) // Tenant nodes can have any (docker) flavor
-                    flavor = Optional.of(new Flavor(FlavorSpec.fromLegacyFlavorName(flavorName)));
+                    flavor = Optional.of(new Flavor(NodeResources.fromLegacyName(flavorName)));
                 else
                     throw new IllegalArgumentException("No flavor '" + flavorName + "'");
             }
@@ -336,31 +336,31 @@ public class ProvisioningTester {
     }
 
     /** Creates a set of virtual docker hosts */
-    public List<Node> makeReadyVirtualDockerHosts(int n, FlavorSpec flavor) {
+    public List<Node> makeReadyVirtualDockerHosts(int n, NodeResources flavor) {
         return makeReadyVirtualNodes(n, 1, flavor, Optional.empty(),
                 i -> "dockerHost" + i, NodeType.host);
     }
 
     /** Creates a set of virtual docker nodes on a single docker host starting with index 1 and increasing */
-    public List<Node> makeReadyVirtualDockerNodes(int n, FlavorSpec flavor, String dockerHostId) {
+    public List<Node> makeReadyVirtualDockerNodes(int n, NodeResources flavor, String dockerHostId) {
         return makeReadyVirtualNodes(n, 1, flavor, Optional.of(dockerHostId),
                 i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
     }
 
     /** Creates a single of virtual docker node on a single parent host */
-    public List<Node> makeReadyVirtualDockerNode(int index, FlavorSpec flavor, String dockerHostId) {
+    public List<Node> makeReadyVirtualDockerNode(int index, NodeResources flavor, String dockerHostId) {
         return makeReadyVirtualNodes(1, index, flavor, Optional.of(dockerHostId),
                 i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
     }
 
     /** Creates a set of virtual nodes without a parent host */
-    public List<Node> makeReadyVirtualNodes(int n, FlavorSpec flavor) {
+    public List<Node> makeReadyVirtualNodes(int n, NodeResources flavor) {
         return makeReadyVirtualNodes(n, 0, flavor, Optional.empty(),
                 i -> UUID.randomUUID().toString(), NodeType.tenant);
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    private List<Node> makeReadyVirtualNodes(int count, int startIndex, FlavorSpec flavor, Optional<String> parentHostId,
+    private List<Node> makeReadyVirtualNodes(int count, int startIndex, NodeResources flavor, Optional<String> parentHostId,
                                              Function<Integer, String> nodeNamer, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {

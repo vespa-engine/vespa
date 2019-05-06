@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
  */
 public class DockerProvisioningTest {
 
-    private static final FlavorSpec dockerFlavor = new FlavorSpec(1, 1, 1);
+    private static final NodeResources dockerFlavor = new NodeResources(1, 1, 1);
 
     @Test
     public void docker_application_deployment() {
@@ -56,7 +56,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, nodes.size());
-        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().asSpec());
+        assertEquals(dockerFlavor, nodes.asList().get(0).flavor().resources());
 
         // Upgrade Vespa version on nodes
         Version upgradedWantedVespaVersion = Version.fromString("6.40");
@@ -66,7 +66,7 @@ public class DockerProvisioningTest {
         tester.activate(application1, new HashSet<>(upgradedHosts));
         NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
         assertEquals(nodeCount, upgradedNodes.size());
-        assertEquals(dockerFlavor, upgradedNodes.asList().get(0).flavor().asSpec());
+        assertEquals(dockerFlavor, upgradedNodes.asList().get(0).flavor().resources());
         assertEquals(hosts, upgradedHosts);
     }
 
@@ -75,7 +75,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
-        List<Node> parents = tester.makeReadyVirtualDockerHosts(10, new FlavorSpec(2, 2, 2));
+        List<Node> parents = tester.makeReadyVirtualDockerHosts(10, new NodeResources(2, 2, 2));
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
 
@@ -205,7 +205,7 @@ public class DockerProvisioningTest {
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes with cpu cores: 1.0, memory: 1.0 Gb, disk 1.0 Gb for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
                          e.getMessage());
         }
 
@@ -226,7 +226,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals(dockerFlavor.legacyFlavorName(), nodes.asList().get(0).flavor().canonicalName());
+        assertEquals("[vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb]", nodes.asList().get(0).flavor().canonicalName());
     }
 
     private Set<String> hostsOf(NodeList nodes) {

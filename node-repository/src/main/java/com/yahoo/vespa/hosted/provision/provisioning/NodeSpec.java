@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Flavor;
@@ -28,7 +28,7 @@ public interface NodeSpec {
     boolean isExclusive();
 
     /** Returns whether the given flavor is compatible with this spec */
-    boolean isCompatible(FlavorSpec flavor, NodeFlavors flavors);
+    boolean isCompatible(Flavor flavor, NodeFlavors flavors);
 
     /** Returns whether the given node count is sufficient to consider this spec fulfilled to the maximum amount */
     boolean saturatedBy(int count);
@@ -57,7 +57,7 @@ public interface NodeSpec {
      */
     Node assignRequestedFlavor(Node node);
 
-    static NodeSpec from(int nodeCount, FlavorSpec flavor, boolean exclusive, boolean canFail) {
+    static NodeSpec from(int nodeCount, NodeResources flavor, boolean exclusive, boolean canFail) {
         return new CountNodeSpec(nodeCount, flavor, exclusive, canFail);
     }
 
@@ -69,20 +69,19 @@ public interface NodeSpec {
     class CountNodeSpec implements NodeSpec {
 
         private final int count;
-        private final FlavorSpec requestedFlavorSpec;
+        private final NodeResources requestedNodeResources;
         private final boolean exclusive;
         private final boolean canFail;
 
-        CountNodeSpec(int count, FlavorSpec flavor, boolean exclusive, boolean canFail) {
+        CountNodeSpec(int count, NodeResources flavor, boolean exclusive, boolean canFail) {
             this.count = count;
-            this.requestedFlavorSpec = Objects.requireNonNull(flavor, "A flavor must be specified");
+            this.requestedNodeResources = Objects.requireNonNull(flavor, "A flavor must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
         }
 
-        // TODO: Remove usage of this
-        public FlavorSpec getFlavor() {
-            return requestedFlavorSpec;
+        public NodeResources getFlavor() {
+            return requestedNodeResources;
         }
 
         @Override
@@ -92,17 +91,16 @@ public interface NodeSpec {
         public NodeType type() { return NodeType.tenant; }
 
         @Override
-        public boolean isCompatible(FlavorSpec flavorSpec, NodeFlavors flavors) {
-            if (flavorSpec.allocateByLegacyName()) {
-                Flavor flavor = flavors.getFlavorOrThrow(flavorSpec.legacyFlavorName());
-                Flavor requestedFlavor = flavors.getFlavorOrThrow(requestedFlavorSpec.legacyFlavorName());
-                if (flavor.satisfies(requestedFlavor)) return true;
+        public boolean isCompatible(Flavor flavor, NodeFlavors flavors) {
+            if (requestedNodeResources.allocateByLegacyName() && flavor.isConfigured()) {
+                if (flavor.satisfies(flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get())))
+                    return true;
             }
             else {
-                if (flavorSpec.equals(requestedFlavorSpec)) return true;
+                if (requestedNodeResources.equals(flavor.resources()))
+                    return true;
             }
-
-            return requestedFlavorCanBeAchievedByResizing(flavorSpec);
+            return requestedFlavorCanBeAchievedByResizing(flavor);
         }
 
         @Override
@@ -121,7 +119,7 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) {
-            return new CountNodeSpec(count/divisor, requestedFlavorSpec, exclusive, canFail);
+            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail);
         }
 
         @Override
@@ -133,10 +131,10 @@ public interface NodeSpec {
         }
 
         @Override
-        public String toString() { return "request for " + count + " nodes with " + requestedFlavorSpec; }
+        public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
 
         /** Docker nodes can be downsized in place */
-        private boolean requestedFlavorCanBeAchievedByResizing(FlavorSpec flavor) {
+        private boolean requestedFlavorCanBeAchievedByResizing(Flavor flavor) {
             // TODO: Enable this when we can do it safely
             // Then also re-enable ProvisioningTest.application_deployment_with_inplace_downsize()
             // return flavor.isDocker() && requestedFlavor.isDocker() && flavor.isLargerThan(requestedFlavor);
@@ -161,7 +159,7 @@ public interface NodeSpec {
         public boolean isExclusive() { return false; }
 
         @Override
-        public boolean isCompatible(FlavorSpec flavor, NodeFlavors flavors) { return true; }
+        public boolean isCompatible(Flavor flavor, NodeFlavors flavors) { return true; }
 
         @Override
         public boolean saturatedBy(int count) { return false; }

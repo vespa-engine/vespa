@@ -5,7 +5,7 @@ import com.google.common.collect.Iterators;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RotationName;
@@ -140,7 +140,7 @@ public class LoadBalancerProvisionerTest {
         tester.makeReadyNodes(specs.length * 2, "d-1-1-1");
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
-            allNodes.addAll(tester.prepare(application, spec, 2, 1, new FlavorSpec(1, 1, 1)));
+            allNodes.addAll(tester.prepare(application, spec, 2, 1, new NodeResources(1, 1, 1)));
         }
         return allNodes;
     }

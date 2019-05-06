@@ -17,15 +17,15 @@ public final class Capacity {
 
     private final boolean canFail;
 
-    private final Optional<FlavorSpec> flavor;
+    private final Optional<NodeResources> nodeResources;
 
     private final NodeType type;
 
-    private Capacity(int nodeCount, Optional<FlavorSpec> flavor, boolean required, boolean canFail, NodeType type) {
+    private Capacity(int nodeCount, Optional<NodeResources> nodeResources, boolean required, boolean canFail, NodeType type) {
         this.nodeCount = nodeCount;
         this.required = required;
         this.canFail = canFail;
-        this.flavor = flavor;
+        this.nodeResources = nodeResources;
         this.type = type;
     }
 
@@ -33,13 +33,19 @@ public final class Capacity {
     public int nodeCount() { return nodeCount; }
 
     /**
-     * The node flavor requested, or empty if no particular flavor is specified.
-     * This may be satisfied by the requested flavor or a suitable replacement
+     * The node flavor requested, or empty if no legacy flavor name has been used.
+     * This may be satisfied by the requested flavor or a suitable replacement.
+     *
+     * @deprecated use nodeResources instead
      */
-    public Optional<String> flavor() { return flavor.map(FlavorSpec::legacyFlavorName); }
+    @Deprecated
+    public Optional<String> flavor() {
+        if (nodeResources().isEmpty()) return Optional.empty();
+        return nodeResources.get().legacyName();
+    }
 
-    /** Returns the capacity specified for each node, or empty to leave this decision to provisioning */
-    public Optional<FlavorSpec> flavorSpec() { return flavor; }
+    /** Returns the resources requested for each node, or empty to leave this decision to provisioning */
+    public Optional<NodeResources> nodeResources() { return nodeResources; }
 
     /** Returns whether the requested number of nodes must be met exactly for a request for this to succeed */
     public boolean isRequired() { return required; }
@@ -60,7 +66,7 @@ public final class Capacity {
 
     @Override
     public String toString() {
-        return nodeCount + " nodes " + ( flavor.isPresent() ? "of flavor " + flavor.get() : "(default flavor)" );
+        return nodeCount + " nodes " + (nodeResources.isPresent() ? "of flavor " + nodeResources.get() : "(default flavor)" );
     }
 
     /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
@@ -68,16 +74,16 @@ public final class Capacity {
         return fromNodeCount(capacity, Optional.empty(), false, true);
     }
 
-    public static Capacity fromCount(int nodeCount, FlavorSpec flavor, boolean required, boolean canFail) {
+    public static Capacity fromCount(int nodeCount, NodeResources flavor, boolean required, boolean canFail) {
         return new Capacity(nodeCount, Optional.of(flavor), required, canFail, NodeType.tenant);
     }
 
-    public static Capacity fromCount(int nodeCount, Optional<FlavorSpec> flavor, boolean required, boolean canFail) {
+    public static Capacity fromCount(int nodeCount, Optional<NodeResources> flavor, boolean required, boolean canFail) {
         return new Capacity(nodeCount, flavor, required, canFail, NodeType.tenant);
     }
 
     public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
-        return new Capacity(nodeCount, flavor.map(FlavorSpec::fromLegacyFlavorName), required, canFail, NodeType.tenant);
+        return new Capacity(nodeCount, flavor.map(NodeResources::fromLegacyName), required, canFail, NodeType.tenant);
     }
 
     /** Creates this from a node type */

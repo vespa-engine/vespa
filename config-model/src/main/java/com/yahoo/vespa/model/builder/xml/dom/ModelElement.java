@@ -176,6 +176,14 @@ public class ModelElement {
         return xml.getAttribute(name);
     }
 
+    /** Returns the content of the attribute with the given name or throws IllegalArgumentException if not present */
+    public String requiredStringAttribute(String name) {
+        if (stringAttribute(name) == null)
+            throw new IllegalArgumentException("Required attribute '" + name + "' is missing");
+        return stringAttribute(name);
+    }
+
+
     public List<ModelElement> subElements(String name) {
         List<Element> elements = XML.getChildren(xml, name);
 

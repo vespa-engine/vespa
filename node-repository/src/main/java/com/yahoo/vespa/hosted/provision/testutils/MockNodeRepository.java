@@ -9,7 +9,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -80,14 +80,14 @@ public class MockNodeRepository extends NodeRepository {
                              flavors.getFlavorOrThrow("expensive"), NodeType.tenant));
 
         Node node4 = createNode("node4", "host4.yahoo.com", ipAddresses, Optional.of("dockerhost1.yahoo.com"),
-                                new Flavor(new FlavorSpec(1, 1, 100)), NodeType.tenant);
+                                new Flavor(new NodeResources(1, 1, 100)), NodeType.tenant);
         node4 = node4.with(node4.status()
                 .withVespaVersion(new Version("6.41.0"))
                 .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", ipAddresses, Optional.of("dockerhost2.yahoo.com"),
-                                new Flavor(new FlavorSpec(1, 1, 100)), NodeType.tenant);
+                                new Flavor(new NodeResources(1, 1, 100)), NodeType.tenant);
         nodes.add(node5.with(node5.status()
                 .withVespaVersion(new Version("1.2.3"))
                 .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3"))));
@@ -175,7 +175,7 @@ public class MockNodeRepository extends NodeRepository {
                                                    ClusterSpec.Id.from("id3"),
                                                    Version.fromString("6.42"),
                                                    false, Collections.emptySet());
-        activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new FlavorSpec(1, 1, 100), false, true), 1, null), app3, provisioner);
+        activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 1, 100), false, true), 1, null), app3, provisioner);
 
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container,

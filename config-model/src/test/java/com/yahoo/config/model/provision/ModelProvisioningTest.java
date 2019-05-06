@@ -704,7 +704,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testSlobroksClustersAreExpandedToIncludeRetiredNodesWhenRetiredComesLast() throws ParseException {
+    public void testSlobroksClustersAreExpandedToIncludeRetiredNodesWhenRetiredComesLast() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -718,7 +718,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "default09", "default08");
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());

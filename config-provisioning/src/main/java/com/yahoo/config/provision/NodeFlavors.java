@@ -40,11 +40,11 @@ public class NodeFlavors {
         if (configuredFlavors.containsKey(name))
             return Optional.of(configuredFlavors.get(name));
 
-        FlavorSpec flavorSpec = FlavorSpec.fromLegacyFlavorName(name);
-        if (flavorSpec.allocateByLegacyName())
+        NodeResources nodeResources = NodeResources.fromLegacyName(name);
+        if (nodeResources.allocateByLegacyName())
             return Optional.empty();
         else
-            return Optional.of(new Flavor(flavorSpec));
+            return Optional.of(new Flavor(nodeResources));
     }
 
     /**

@@ -1,8 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public interface HostProvisioner {
      *               will be of a flavor that is at least as big or bigger than this.
      * @return list of {@link ProvisionedHost} describing the provisioned hosts and nodes on them.
      */
-    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, FlavorSpec flavor);
+    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources flavor);
 
     /**
      * Continue provisioning of given list of Nodes.

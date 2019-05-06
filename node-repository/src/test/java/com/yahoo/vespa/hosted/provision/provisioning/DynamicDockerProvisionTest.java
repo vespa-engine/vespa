@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.Flags;
@@ -45,7 +45,7 @@ public class DynamicDockerProvisionTest {
         assertEquals(0, tester.nodeRepository().list().size());
 
         ApplicationId application1 = tester.makeApplicationId();
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor);
@@ -65,7 +65,7 @@ public class DynamicDockerProvisionTest {
         deployZoneApp(tester);
 
         ApplicationId application = tester.makeApplicationId();
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
@@ -75,7 +75,7 @@ public class DynamicDockerProvisionTest {
     @Test
     public void allocates_to_hosts_already_hosting_nodes_by_this_tenant() {
         ApplicationId application = tester.makeApplicationId();
-        FlavorSpec flavor = new FlavorSpec(1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 1, 1);
 
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("large"));
@@ -125,7 +125,7 @@ public class DynamicDockerProvisionTest {
     private static void mockHostProvisioner(HostProvisioner hostProvisioner, Flavor hostFlavor) {
         doAnswer(invocation -> {
             List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
-            FlavorSpec nodeFlavor = (FlavorSpec) invocation.getArguments()[1];
+            NodeResources nodeFlavor = (NodeResources) invocation.getArguments()[1];
             return provisionIndexes.stream()
                     .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", new Flavor(nodeFlavor)))
                     .collect(Collectors.toList());

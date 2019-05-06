@@ -4,11 +4,10 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.FlavorSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 
 import java.util.Arrays;
@@ -42,22 +41,28 @@ public class CapacityPolicies {
         }
     }
 
-    public FlavorSpec decideFlavor(Capacity requestedCapacity, ClusterSpec cluster) {
-        Optional<FlavorSpec> requestedFlavor = requestedCapacity.flavorSpec();
+    public NodeResources decideFlavor(Capacity requestedCapacity, ClusterSpec cluster) {
+        Optional<NodeResources> requestedFlavor = requestedCapacity.nodeResources();
         if (requestedFlavor.isPresent() && ! requestedFlavor.get().allocateByLegacyName())
             return requestedFlavor.get();
 
-        FlavorSpec defaultFlavor = FlavorSpec.fromLegacyFlavorName(zone.defaultFlavor(cluster.type()));
+        NodeResources defaultFlavor = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
         if (requestedFlavor.isEmpty())
             return defaultFlavor;
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedFlavor.get().legacyFlavorName()) ? requestedFlavor.get() : defaultFlavor;
+            return flavors.exists(requestedFlavor.get().legacyName().get()) ? requestedFlavor.get() : defaultFlavor;
         else {
             switch (zone.environment()) {
                 case dev: case test: case staging: return defaultFlavor;
-                default: return flavors.getFlavorOrThrow(requestedFlavor.get().legacyFlavorName()).asSpec();
+                default:
+                    // Check existence of the legacy specified flavor
+                    flavors.getFlavorOrThrow(requestedFlavor.get().legacyName().get());
+                    // Return this spec containing the legacy flavor name, not the flavor's capacity object
+                    // which describes the flavors capacity, as the point of legacy allocation is to match
+                    // by name, not by resources
+                    return requestedFlavor.get();
             }
         }
     }
