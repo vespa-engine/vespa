@@ -68,7 +68,7 @@ public class IdentityDocumentGeneratorTest {
                                                    new HashSet<>(),
                                                    containerHostname,
                                                    Optional.of(parentHostname),
-                                                   new MockNodeFlavors().getFlavorOrThrow("default"),
+                                                   new MockNodeFlavors().getFlavorOrThrow("default").resources(),
                                                    NodeType.tenant)
                 .with(allocation);
         NodeRepository nodeRepository = mock(NodeRepository.class);
