@@ -70,35 +70,4 @@ public class RequestSigner {
         }
     }
 
-    /**
-     * Completes, signs and returns the given request builder and data.
-     *
-     * This sets the Content-Type header from the given streamer, and returns
-     * {@code signed(request, method, streamer::data)}.
-     */
-    public HttpRequest signed(HttpRequest.Builder request, Method method, MultiPartStreamer streamer) {
-        request.setHeader("Content-Type", streamer.contentType());
-        return signed(request, method, streamer::data);
-    }
-
-    /**
-     * Completes, signs and returns the given request builder.<br>
-     * <br>
-     * This is simply a convenience for<br>
-     * {@code signed(request, method, () -> new ByteArrayInputStream(data))}.
-     */
-    public HttpRequest signed(HttpRequest.Builder request, Method method, byte[] data) {
-        return signed(request, method, () -> new ByteArrayInputStream(data));
-    }
-
-    /**
-     * Completes, signs and returns the given request builder.<br>
-     * <br>
-     * This sets the data of the request to be empty, and returns <br>
-     * {@code signed(request, method, InputStream::nullInputStream)}.
-     */
-    public HttpRequest signed(HttpRequest.Builder request, Method method) {
-        return signed(request, method, InputStream::nullInputStream);
-    }
-
 }

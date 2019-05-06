@@ -4,6 +4,7 @@ package ai.vespa.hosted.api;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.security.DigestInputStream;
@@ -75,7 +76,7 @@ public class SignaturesTest {
 
         URI requestUri = URI.create("https://host:123/path//./../more%2fpath/?yes=no");
         HttpRequest.Builder builder = HttpRequest.newBuilder(requestUri);
-        HttpRequest request = signer.signed(builder, Method.GET);
+        HttpRequest request = signer.signed(builder, Method.GET, InputStream::nullInputStream);
 
         // GET request with correct signature and URI as-is.
         RequestVerifier verifier = new RequestVerifier(ecPemPublicKey, clock);
@@ -88,7 +89,7 @@ public class SignaturesTest {
         // POST request with correct signature and URI normalized.
         MultiPartStreamer streamer = new MultiPartStreamer().addText("message", new String(message, UTF_8))
                                                             .addBytes("copy", message);
-        request = signer.signed(builder, Method.POST, streamer);
+        request = signer.signed(builder.setHeader("Content-Type", streamer.contentType()), Method.POST, streamer::data);
         assertTrue(verifier.verify(Method.valueOf(request.method()),
                                    request.uri().normalize(),
                                    request.headers().firstValue("X-Timestamp").get(),
