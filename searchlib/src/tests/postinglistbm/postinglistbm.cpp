@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/test/fakedata/fake_match_loop.h>
 #include <vespa/searchlib/test/fakedata/fakeposting.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
@@ -123,136 +124,6 @@ validate_posting_for_word(const FakePosting& posting, const FakeWord& word, bool
     }
 }
 
-int
-highLevelSinglePostingScan(SearchIterator& iterator, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    iterator.initFullRange();
-    uint32_t doc_id = iterator.getDocId();
-    while (doc_id < doc_id_limit) {
-        if (iterator.seek(doc_id)) {
-            ++hits;
-            ++doc_id;
-        } else if (doc_id < iterator.getDocId()) {
-            doc_id = iterator.getDocId();
-        } else {
-            ++doc_id;
-        }
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    elapsed_time_ns = after - before;
-    return hits;
-}
-
-int
-highLevelSinglePostingScan(const FakePosting& posting, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
-{
-    TermFieldMatchData md;
-    TermFieldMatchDataArray tfmda;
-    tfmda.add(&md);
-    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
-    return highLevelSinglePostingScan(*iterator, doc_id_limit, elapsed_time_ns);
-}
-
-int
-highLevelSinglePostingScanUnpack(SearchIterator& iterator, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    iterator.initFullRange();
-    uint32_t doc_id = iterator.getDocId();
-    while (doc_id < doc_id_limit) {
-        if (iterator.seek(doc_id)) {
-            ++hits;
-            iterator.unpack(doc_id);
-            ++doc_id;
-        } else if (doc_id < iterator.getDocId()) {
-            doc_id = iterator.getDocId();
-        } else {
-            ++doc_id;
-        }
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    elapsed_time_ns = after - before;
-    return hits;
-}
-
-int
-highLevelSinglePostingScanUnpack(const FakePosting &posting, uint32_t doc_id_limit, uint64_t& elapsed_time_ns)
-{
-    TermFieldMatchData md;
-    TermFieldMatchDataArray tfmda;
-    tfmda.add(&md);
-    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
-    return highLevelSinglePostingScanUnpack(*iterator, doc_id_limit, elapsed_time_ns);
-}
-
-int
-highLevelAndPairPostingScan(SearchIterator &sb1,
-                            SearchIterator &sb2,
-                            uint32_t numDocs, uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb1.initFullRange();
-    sb2.initFullRange();
-    uint32_t docId = sb1.getDocId();
-    while (docId < numDocs) {
-        if (sb1.seek(docId)) {
-            if (sb2.seek(docId)) {
-                ++hits;
-                ++docId;
-            } else if (docId < sb2.getDocId()) {
-                docId = sb2.getDocId();
-            } else {
-                ++docId;
-            }
-        } else if (docId < sb1.getDocId()) {
-            docId = sb1.getDocId();
-        } else {
-            ++docId;
-        }
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
-int
-highLevelAndPairPostingScanUnpack(SearchIterator &sb1,
-                                  SearchIterator &sb2,
-                                  uint32_t numDocs,
-                                  uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb1.initFullRange();
-    sb1.initFullRange();
-    uint32_t docId = sb1.getDocId();
-    while (docId < numDocs) {
-        if (sb1.seek(docId)) {
-            if (sb2.seek(docId)) {
-                ++hits;
-                sb1.unpack(docId);
-                sb2.unpack(docId);
-                ++docId;
-            } else if (docId < sb2.getDocId()) {
-                docId = sb2.getDocId();
-            } else {
-                ++docId;
-            }
-        } else if (docId < sb1.getDocId()) {
-            docId = sb1.getDocId();
-        } else {
-            ++docId;
-        }
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
 void
 PostingListBM::testFake(const std::string &postingType,
                         const Schema &schema,
@@ -276,8 +147,8 @@ PostingListBM::testFake(const std::string &postingType,
 
     uint64_t scanTime = 0;
     uint64_t scanUnpackTime = 0;
-    int hits1 = highLevelSinglePostingScan(*posting, word.getDocIdLimit(), scanTime);
-    int hits2 = highLevelSinglePostingScanUnpack(*posting, word.getDocIdLimit(), scanUnpackTime);
+    int hits1 = FakeMatchLoop::single_posting_scan(*posting, word.getDocIdLimit(), scanTime);
+    int hits2 = FakeMatchLoop::single_posting_scan_with_unpack(*posting, word.getDocIdLimit(), scanUnpackTime);
 
     printf("testFake '%s' hits1=%d, hits2=%d, scanTime=%" PRIu64
            ", scanUnpackTime=%" PRIu64 "\n",
@@ -299,25 +170,10 @@ testFakePair(const std::string &postingType,
     FakePosting::SP f1(ff->make(fw1));
     FakePosting::SP f2(ff->make(fw2));
 
-    TermFieldMatchData md1;
-    TermFieldMatchDataArray tfmda1;
-    tfmda1.add(&md1);
-    std::unique_ptr<SearchIterator> sb1(f1->createIterator(tfmda1));
-
-    TermFieldMatchData md2;
-    TermFieldMatchDataArray tfmda2;
-    tfmda1.add(&md2);
-    std::unique_ptr<SearchIterator> sb2(f2->createIterator(tfmda2));
-
-    int hits = 0;
     uint64_t scanUnpackTime = 0;
-    if (unpack) {
-        hits = highLevelAndPairPostingScanUnpack(*sb1.get(), *sb2.get(),
-                                                 fw1.getDocIdLimit(), &scanUnpackTime);
-    } else {
-        hits = highLevelAndPairPostingScan(*sb1.get(), *sb2.get(),
-                                           fw1.getDocIdLimit(), &scanUnpackTime);
-    }
+    int hits = unpack ?
+               FakeMatchLoop::and_pair_posting_scan_with_unpack(*f1, *f2, fw1.getDocIdLimit(), scanUnpackTime) :
+               FakeMatchLoop::and_pair_posting_scan(*f1, *f2, fw1.getDocIdLimit(), scanUnpackTime);
     printf("Fakepair %s AND %s => %d hits, %" PRIu64 " cycles\n",
            f1->getName().c_str(),
            f2->getName().c_str(),

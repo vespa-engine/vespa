@@ -2,19 +2,20 @@
 
 #include "andstress.h"
 
-#include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/test/fakedata/fakeword.h>
-#include <vespa/searchlib/test/fakedata/fakewordset.h>
-#include <vespa/searchlib/test/fakedata/fakeposting.h>
-#include <vespa/searchlib/test/fakedata/fakefilterocc.h>
-#include <vespa/searchlib/test/fakedata/fakeegcompr64filterocc.h>
-#include <vespa/searchlib/test/fakedata/fakezcfilterocc.h>
-#include <vespa/searchlib/test/fakedata/fakezcbfilterocc.h>
-#include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/time.h>
-#include <mutex>
+#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/test/fakedata/fake_match_loop.h>
+#include <vespa/searchlib/test/fakedata/fakeegcompr64filterocc.h>
+#include <vespa/searchlib/test/fakedata/fakefilterocc.h>
+#include <vespa/searchlib/test/fakedata/fakeposting.h>
+#include <vespa/searchlib/test/fakedata/fakeword.h>
+#include <vespa/searchlib/test/fakedata/fakewordset.h>
+#include <vespa/searchlib/test/fakedata/fakezcbfilterocc.h>
+#include <vespa/searchlib/test/fakedata/fakezcfilterocc.h>
+#include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <condition_variable>
+#include <mutex>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -357,99 +358,14 @@ AndStressWorker::~AndStressWorker()
     LOG(debug, "AndStressWorker::~AndStressWorker, id=%u", _id);
 }
 
-static int
-highLevelAndPairPostingScan(SearchIterator &sb1,
-                            SearchIterator &sb2,
-                            uint32_t numDocs, uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb1.initFullRange();
-    sb2.initFullRange();
-    uint32_t docId = sb1.getDocId();
-    while (docId < numDocs) {
-        if (sb1.seek(docId)) {
-            if (sb2.seek(docId)) {
-                ++hits;
-                ++docId;
-            } else if (docId < sb2.getDocId())
-                docId = sb2.getDocId();
-            else
-                ++docId;
-        } else if (docId < sb1.getDocId())
-            docId= sb1.getDocId();
-        else
-            ++docId;
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
-static int
-highLevelAndPairPostingScanUnpack(SearchIterator &sb1,
-                                  SearchIterator &sb2,
-                                  uint32_t numDocs,
-                                  uint64_t *cycles)
-{
-    uint32_t hits = 0;
-    uint64_t before = fastos::ClockSystem::now();
-    sb1.initFullRange();
-    sb2.initFullRange();
-    uint32_t docId = sb1.getDocId();
-    while (docId < numDocs) {
-        if (sb1.seek(docId)) {
-            if (sb2.seek(docId)) {
-                ++hits;
-                sb1.unpack(docId);
-                sb2.unpack(docId);
-                ++docId;
-            } else if (docId < sb2.getDocId())
-                docId = sb2.getDocId();
-            else
-                ++docId;
-        } else if (docId < sb1.getDocId())
-            docId= sb1.getDocId();
-        else
-            ++docId;
-    }
-    uint64_t after = fastos::ClockSystem::now();
-    *cycles = after - before;
-    return hits;
-}
-
 void
-testFakePair(FakePosting &f1, FakePosting &f2, unsigned int numDocs,
-             bool unpack)
+testFakePair(const FakePosting &f1, const FakePosting &f2, uint32_t doc_id_limit, bool unpack)
 {
-    TermFieldMatchData md1;
-    TermFieldMatchDataArray tfmda1;
-    tfmda1.add(&md1);
-    std::unique_ptr<SearchIterator> sb1(f1.createIterator(tfmda1));
-
-    TermFieldMatchData md2;
-    TermFieldMatchDataArray tfmda2;
-    tfmda1.add(&md2);
-    std::unique_ptr<SearchIterator> sb2(f2.createIterator(tfmda2));
-
-    int hits = 0;
-    uint64_t scanUnpackTime = 0;
-    if (unpack) {
-        hits = highLevelAndPairPostingScanUnpack(*sb1.get(), *sb2.get(),
-                                                 numDocs, &scanUnpackTime);
-    } else {
-        hits = highLevelAndPairPostingScan(*sb1.get(), *sb2.get(),
-                                           numDocs, &scanUnpackTime);
-    }
-#if 0
-    printf("Fakepair %s AND %s => %d hits, %" PRIu64 " cycles\n",
-           f1.getName().c_str(),
-           f2.getName().c_str(),
-           hits,
-           scanUnpackTime);
-#else
-    (void)hits;
-#endif
+    uint64_t scan_unpack_time = 0;
+    int hits = unpack ?
+        FakeMatchLoop::and_pair_posting_scan_with_unpack(f1, f2, doc_id_limit, scan_unpack_time) :
+        FakeMatchLoop::and_pair_posting_scan(f1, f2, doc_id_limit, scan_unpack_time);
+    (void) hits;
 }
 
 void
