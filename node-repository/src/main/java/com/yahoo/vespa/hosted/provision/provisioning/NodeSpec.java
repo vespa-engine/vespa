@@ -80,7 +80,7 @@ public interface NodeSpec {
             this.canFail = canFail;
         }
 
-        public NodeResources getFlavor() {
+        public NodeResources resources() {
             return requestedNodeResources;
         }
 

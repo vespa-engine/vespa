@@ -125,9 +125,9 @@ public class DynamicDockerProvisionTest {
     private static void mockHostProvisioner(HostProvisioner hostProvisioner, Flavor hostFlavor) {
         doAnswer(invocation -> {
             List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
-            NodeResources nodeFlavor = (NodeResources) invocation.getArguments()[1];
+            NodeResources nodeResources = (NodeResources) invocation.getArguments()[1];
             return provisionIndexes.stream()
-                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", new Flavor(nodeFlavor)))
+                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources))
                     .collect(Collectors.toList());
         }).when(hostProvisioner).provisionHosts(any(), any());
     }

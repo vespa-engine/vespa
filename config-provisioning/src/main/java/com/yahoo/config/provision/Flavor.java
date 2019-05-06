@@ -165,6 +165,16 @@ public class Flavor {
         return false;
     }
 
+    /**
+     * Returns whether this flavor has at least the given resources, i.e if all resources of this are at least
+     * as large as the given resources.
+     */
+    public boolean hasAtLeast(NodeResources resources) {
+        return this.minCpuCores >= resources.vcpu() &&
+               this.minMainMemoryAvailableGb >= resources.memoryGb() &&
+               this.minDiskAvailableGb >= resources.diskGb();
+    }
+
     /** Irreversibly freezes the content of this */
     public void freeze() {
         replacesFlavors = ImmutableList.copyOf(replacesFlavors);

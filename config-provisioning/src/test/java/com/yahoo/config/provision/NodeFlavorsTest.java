@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 public class NodeFlavorsTest {
@@ -54,6 +56,16 @@ public class NodeFlavorsTest {
         FlavorsConfig config = new FlavorsConfig(builder);
         NodeFlavors nodeFlavors = new NodeFlavors(config);
         assertThat(nodeFlavors.getFlavor("banana").get().cost(), is(3));
+    }
+
+    @Test
+    public void testHasAtLeast() {
+        Flavor flavor = new Flavor(new NodeResources(1, 2, 3));
+        assertTrue(flavor.hasAtLeast(new NodeResources(1, 2, 3)));
+        assertTrue(flavor.hasAtLeast(new NodeResources(1, 1.5, 2)));
+        assertFalse(flavor.hasAtLeast(new NodeResources(1, 1.5, 4)));
+        assertFalse(flavor.hasAtLeast(new NodeResources(2, 1.5, 4)));
+        assertFalse(flavor.hasAtLeast(new NodeResources(1, 2.1, 4)));
     }
 
     @Test

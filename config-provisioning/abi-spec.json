@@ -398,6 +398,7 @@
       "public boolean isCanonical()",
       "public java.util.List replaces()",
       "public boolean satisfies(com.yahoo.config.provision.Flavor)",
+      "public boolean hasAtLeast(com.yahoo.config.provision.NodeResources)",
       "public void freeze()",
       "public boolean isLargerThan(com.yahoo.config.provision.Flavor)",
       "public boolean isConfigured()",

@@ -147,7 +147,7 @@ class NodePrioritizer {
 
     void addNewDockerNodesOn(Mutex allocationLock, NodeList candidates) {
         if ( ! isDocker) return;
-        ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(getFlavor(requestedNodes));
+        ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(resources(requestedNodes));
 
         for (Node node : candidates) {
             if (node.type() != NodeType.host) continue;
@@ -174,7 +174,7 @@ class NodePrioritizer {
                                                  Collections.emptySet(),
                                                  allocation.get().hostname(),
                                                  Optional.of(node.hostname()),
-                                                 new Flavor(getFlavor(requestedNodes)),
+                                                 resources(requestedNodes),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
@@ -234,7 +234,7 @@ class NodePrioritizer {
     /** Needed to handle requests for legacy non-docker nodes only */
     private boolean preferredOnLegacyFlavor(Node node) {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
-            NodeResources requestedNodeResources = ((NodeSpec.CountNodeSpec)requestedNodes).getFlavor();
+            NodeResources requestedNodeResources = ((NodeSpec.CountNodeSpec)requestedNodes).resources();
             if (requestedNodeResources.allocateByLegacyName()) {
                 Flavor requestedFlavor = flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get());
                 return ! requestedFlavor.isStock() && node.flavor().equals(requestedFlavor);
@@ -257,16 +257,16 @@ class NodePrioritizer {
         return requestedNodes.fulfilledBy(nofNodesInCluster - nodeFailedNodes);
     }
 
-    private static NodeResources getFlavor(NodeSpec requestedNodes) {
+    private static NodeResources resources(NodeSpec requestedNodes) {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
             NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
-            return countSpec.getFlavor();
+            return countSpec.resources();
         }
         return null;
     }
 
     private boolean isDocker() {
-        NodeResources flavor = getFlavor(requestedNodes);
+        NodeResources flavor = resources(requestedNodes);
         return (flavor != null) && ! flavor.allocateByLegacyName();
     }
 
