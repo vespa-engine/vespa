@@ -194,7 +194,7 @@ AndStressMaster::resetTasks()
 
 static void
 makeSomePostings(FPFactory *postingFactory,
-                 std::vector<FakeWord *> &words,
+                 FakeWordSet::FakeWordVector &words,
                  std::vector<FakePosting::SP> &postings,
                  uint32_t stride,
                  bool validate,

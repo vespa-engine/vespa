@@ -19,12 +19,9 @@ FPFactory::setup(const FakeWordSet &fws)
 {
     std::vector<const FakeWord *> v;
 
-    for (uint32_t wc = 0; wc < fws._words.size(); ++wc) {
-        std::vector<FakeWord *>::const_iterator fwi(fws._words[wc].begin());
-        std::vector<FakeWord *>::const_iterator fwe(fws._words[wc].end());
-        while (fwi != fwe) {
-            v.push_back(*fwi);
-            ++fwi;
+    for (const auto& words : fws._words) {
+        for (const auto& word : words) {
+            v.push_back(word.get());
         }
     }
     setup(v);

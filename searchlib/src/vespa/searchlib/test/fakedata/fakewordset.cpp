@@ -10,28 +10,23 @@ LOG_SETUP(".fakewordset");
 
 namespace search::fakedata {
 
+using FakeWordVector = FakeWordSet::FakeWordVector;
 using index::PostingListParams;
 using index::SchemaUtil;
 using index::schema::CollectionType;
 using index::schema::DataType;
 
-void
-clearFakeWordVector(std::vector<FakeWord *> &v)
-{
-    for (unsigned int i = 0; i < v.size(); ++i) {
-        delete v[i];
-    }
-    v.clear();
-}
+namespace {
 
 void
-applyDocIdBiasToVector(std::vector<FakeWord *> &v, uint32_t docIdBias)
+applyDocIdBiasToVector(FakeWordVector& words, uint32_t docIdBias)
 {
-    for (unsigned int i = 0; i < v.size(); ++i) {
-        v[i]->addDocIdBias(docIdBias);
+    for (auto& word : words) {
+        word->addDocIdBias(docIdBias);
     }
 }
 
+}
 
 FakeWordSet::FakeWordSet()
     : _words(NUM_WORDCLASSES),
@@ -50,10 +45,7 @@ FakeWordSet::FakeWordSet(bool hasElements,
     setupParams(hasElements, hasElementWeights);
 }
 
-FakeWordSet::~FakeWordSet()
-{
-    dropWords();
-}
+FakeWordSet::~FakeWordSet() = default;
 
 void
 FakeWordSet::setupParams(bool hasElements,
@@ -90,7 +82,6 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
     std::string common = "common";
     std::string medium = "medium";
     std::string rare = "rare";
-    FakeWord *fw;
     FastOS_Time tv;
     double before;
     double after;
@@ -103,42 +94,32 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
         std::ostringstream vi;
 
         vi << (i + 1);
-        fw = new FakeWord(numDocs, commonDocFreq, commonDocFreq / 2,
-                          common + vi.str(), rnd,
-                          _fieldsParams[packedIndex],
-                          packedIndex);
-        _words[COMMON_WORD].push_back(fw);
-        fw = new FakeWord(numDocs, 1000, 500,
-                          medium + vi.str(), rnd,
-                          _fieldsParams[packedIndex],
-                          packedIndex);
-        _words[MEDIUM_WORD].push_back(fw);
-        fw = new FakeWord(numDocs, 10, 5,
-                          rare + vi.str(), rnd,
-                          _fieldsParams[packedIndex],
-                          packedIndex);
-        _words[RARE_WORD].push_back(fw);
+        _words[COMMON_WORD].push_back(std::make_unique<FakeWord>(numDocs, commonDocFreq, commonDocFreq / 2,
+                                                                 common + vi.str(), rnd,
+                                                                 _fieldsParams[packedIndex],
+                                                                 packedIndex));
+
+        _words[MEDIUM_WORD].push_back(std::make_unique<FakeWord>(numDocs, 1000, 500,
+                                                                 medium + vi.str(), rnd,
+                                                                 _fieldsParams[packedIndex],
+                                                                 packedIndex));
+
+        _words[RARE_WORD].push_back(std::make_unique<FakeWord>(numDocs, 10, 5,
+                                                               rare + vi.str(), rnd,
+                                                               _fieldsParams[packedIndex],
+                                                               packedIndex));
     }
     tv.SetNow();
     after = tv.Secs();
     LOG(info, "leave setupWords, elapsed %10.6f s", after - before);
 }
 
-void
-FakeWordSet::dropWords()
-{
-    for (unsigned int i = 0; i < _words.size(); ++i) {
-        clearFakeWordVector(_words[i]);
-    }
-}
-
-
 int
-FakeWordSet::getNumWords()
+FakeWordSet::getNumWords() const
 {
     int ret = 0;
-    for (unsigned int i = 0; i < _words.size(); ++i) {
-        ret += _words[i].size();
+    for (const auto& words : _words) {
+        ret += words.size();
     }
     return ret;
 }
@@ -146,8 +127,8 @@ FakeWordSet::getNumWords()
 void
 FakeWordSet::addDocIdBias(uint32_t docIdBias)
 {
-    for (unsigned int i = 0; i < _words.size(); ++i) {
-        applyDocIdBiasToVector(_words[i], docIdBias);
+    for (auto& words : _words) {
+        applyDocIdBiasToVector(words, docIdBias);
     }
 }
 

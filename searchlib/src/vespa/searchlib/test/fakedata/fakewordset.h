@@ -18,6 +18,8 @@ class FakeWordSet {
 public:
     using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
     using Schema = index::Schema;
+    using FakeWordPtr = std::unique_ptr<FakeWord>;
+    using FakeWordVector = std::vector<FakeWordPtr>;
 
     enum {
         COMMON_WORD,
@@ -25,7 +27,7 @@ public:
         RARE_WORD,
         NUM_WORDCLASSES,
     };
-    std::vector<std::vector<FakeWord *> > _words;
+    std::vector<FakeWordVector> _words;
     Schema _schema;
     std::vector<PosOccFieldsParams> _fieldsParams;
 
@@ -44,9 +46,7 @@ public:
                     unsigned int commonDocFreq,
                     unsigned int numWordsPerWordClass);
 
-    void dropWords();
-
-    int getNumWords();
+    int getNumWords() const;
 
     const PosOccFieldsParams& getFieldsParams() const {
         return _fieldsParams.back();
