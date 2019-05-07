@@ -44,7 +44,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -399,24 +398,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-
-        if (queryParameters.containsKey("streaming")) {
-            InputStream logStream = controller.configServer().getLogStream(deployment, queryParameters);
-            return new HttpResponse(200) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    logStream.transferTo(outputStream);
-                }
-            };
-        }
-
-        Optional<Logs> response = controller.configServer().getLogs(deployment, queryParameters);
-        Slime slime = new Slime();
-        Cursor object = slime.setObject();
-        if (response.isPresent()) {
-            response.get().logs().entrySet().stream().forEach(entry -> object.setString(entry.getKey(), entry.getValue()));
-        }
-        return new SlimeJsonResponse(slime);
+        InputStream logStream = controller.configServer().getLogs(deployment, queryParameters);
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                logStream.transferTo(outputStream);
+            }
+        };
     }
 
     private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {

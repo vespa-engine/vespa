@@ -427,7 +427,7 @@ public class InternalStepRunner implements StepRunner {
             try {
                 logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
                 List<LogEntry> entries = new ArrayList<>();
-                String logs = IOUtils.readAll(controller.configServer().getLogStream(new DeploymentId(id.application(), zone),
+                String logs = IOUtils.readAll(controller.configServer().getLogs(new DeploymentId(id.application(), zone),
                                                                                      Collections.emptyMap()), // Get all logs.
                                               StandardCharsets.UTF_8);
                 for (String line : logs.split("\n")) {
