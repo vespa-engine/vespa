@@ -55,28 +55,26 @@ protected:
     Vector _vector;
     HashMap _dimMap; // dimension -> component
 public:
+    VectorBase(VectorBase && rhs) = default;
+    VectorBase & operator = (VectorBase && rhs) = default;
     ~VectorBase();
     const Vector & getVector() const { return _vector; }
-    void syncMap() {
-        Converter<DimensionVType, DimensionHType> conv;
-        _dimMap.clear();
-        _dimMap.resize(_vector.size()*2);
-        for (size_t i = 0; i < _vector.size(); ++i) {
-            _dimMap.insert(std::make_pair(conv.convert(_vector[i].first), _vector[i].second));
-        }
-    }
+    VectorBase & syncMap();
     const HashMap & getDimMap() const { return _dimMap; }
 };
 
 /**
  * Represents a vector where the dimensions are integers.
  **/
-class IntegerVector : public VectorBase<int64_t, int64_t, feature_t> {
+template<typename T>
+class IntegerVectorT : public VectorBase<T, T, feature_t> {
 public:
     void insert(vespalib::stringref label, vespalib::stringref value) {
-        _vector.push_back(std::make_pair(util::strToNum<int64_t>(label), util::strToNum<feature_t>(value)));
+        this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
     }
 };
+
+using IntegerVector = IntegerVectorT<int64_t>;
 
 /**
  * Represents a vector where the dimensions are string values.
@@ -84,26 +82,62 @@ public:
 class StringVector : public VectorBase<vespalib::string, const char *, feature_t, ConstCharComparator> {
 public:
     StringVector();
+    StringVector(StringVector &&) = default;
+    StringVector & operator = (StringVector &&) = default;
     ~StringVector();
     void insert(vespalib::stringref label, vespalib::stringref value) {
-        _vector.push_back(std::make_pair(label, util::strToNum<feature_t>(value)));
+        _vector.emplace_back(label, util::strToNum<feature_t>(value));
     }
 };
 
 /**
  * Represents a vector where the dimensions are enum values for strings.
  **/
-class EnumVector : public VectorBase<search::attribute::EnumHandle, search::attribute::EnumHandle, feature_t> {
+class EnumVector : public VectorBase<attribute::EnumHandle, attribute::EnumHandle, feature_t> {
 private:
     const attribute::IAttributeVector * _attribute;
 public:
     EnumVector(const attribute::IAttributeVector * attribute) : _attribute(attribute) {}
     void insert(vespalib::stringref label, vespalib::stringref value) {
-        search::attribute::EnumHandle e;
+        attribute::EnumHandle e;
         if (_attribute->findEnum(label.data(), e)) {
-            _vector.push_back(std::make_pair(e, util::strToNum<feature_t>(value)));
+            _vector.emplace_back(e, util::strToNum<feature_t>(value));
         }
     }
+};
+
+/**
+ * Common base for handling execution for all wset dot product executors.
+ * Only cares about the underlying value type, not the concrete type of the
+ * attribute vector itself.
+ */
+template <typename BaseType>
+class DotProductExecutorBase : public fef::FeatureExecutor {
+public:
+    using AT = multivalue::WeightedValue<BaseType>;
+    using V  = VectorBase<BaseType, BaseType, feature_t>;
+private:
+    V                                         _queryVector;
+    const typename V::HashMap::const_iterator _end;
+    virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
+public:
+    DotProductExecutorBase(V queryVector);
+    ~DotProductExecutorBase() override;
+    void execute(uint32_t docId) override;
+};
+
+template <typename A>
+class DotProductExecutor final : public DotProductExecutorBase<typename A::BaseType> {
+public:
+    using AT = typename DotProductExecutorBase<typename A::BaseType>::AT;
+    using V  = typename DotProductExecutorBase<typename A::BaseType>::V;
+protected:
+    const A * _attribute;
+private:
+    size_t getAttributeValues(uint32_t docid, const AT * & count) override;
+public:
+    DotProductExecutor(const A * attribute, V queryVector);
+    ~DotProductExecutor();
 };
 
 
@@ -111,15 +145,16 @@ public:
  * Implements the executor for the dotproduct feature.
  */
 template <typename Vector, typename Buffer>
-class DotProductExecutor : public fef::FeatureExecutor {
+class DotProductExecutorByCopy final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector *            _attribute;
-    const Vector                                   _queryVector;
+    Vector                                         _queryVector;
     const typename Vector::HashMap::const_iterator _end;
     Buffer                                         _buffer;
 
 public:
-    DotProductExecutor(const attribute::IAttributeVector * attribute, const Vector & queryVector);
+    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, Vector queryVector);
+    ~DotProductExecutorByCopy() override;
     void execute(uint32_t docId) override;
 };
 
@@ -143,7 +178,7 @@ private:
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);
-    ~DotProductExecutorBase();
+    ~DotProductExecutorBase() override;
     void execute(uint32_t docId) final override;
 };
 
