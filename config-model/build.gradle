@@ -19,7 +19,6 @@ dependencies {
     testCompile junit_4
     testCompile 'com.google.guava:guava-testlib:20.0'
     testCompile project(':testutil')
-    testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':config-lib')
     providedCompile project(':config-provisioning')
     providedCompile project(':provided-dependencies')

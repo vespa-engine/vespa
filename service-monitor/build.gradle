@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'com.yahoo.vespa:annotations:7.28.21'
+    providedCompile 'com.yahoo.vespa:annotations:7.28.21'
     compile 'org.apache.httpcomponents:httpclient:4.5'
     testCompile junit_4
     testCompile 'org.mockito:mockito-core:1.9.5'
@@ -11,6 +11,7 @@ dependencies {
     providedCompile project(':jdisc_core')
     providedCompile project(':configdefinitions')
     providedCompile project(':flags')
+    providedCompile project(':http-utils')
     providedCompile project(':component')
     providedCompile project(':application-model')
     providedCompile project(':config-model-api')

@@ -7,11 +7,12 @@ dependencies {
     compile http_core
     compile http_client
     compile project(':config-model-api')
+    compile project(':flags')
+    compile project(':hosted-api')
     testCompile 'commons-io:commons-io:2.5' // jarhell : IOUtils.toString in ZipBuilderTest
     testCompile junit_4
     testCompile project(':application')
     testCompile project(':testutil')
-    testCompile 'org.apache.httpcomponents:httpmime:4.3.6'
     testCompile 'com.github.tomakehurst:wiremock-standalone:2.6.0'
     providedCompile project(':controller-api')
     providedCompile project(':container-dev')

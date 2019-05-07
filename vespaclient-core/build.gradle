@@ -3,7 +3,6 @@
  */
 
 dependencies {
-    compile project(':metrics')
     testCompile junit_4
     providedCompile project(':container-dev')
 }

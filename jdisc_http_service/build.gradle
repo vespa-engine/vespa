@@ -7,9 +7,9 @@ dependencies {
     testCompile http_client
     testCompile 'org.apache.httpcomponents:httpmime:4.3.6'
     testCompile 'org.cthul:cthul-matchers:1.0'
-    testCompile 'org.mockito:mockito-core:1.9.5'
+    testCompile mockito
+    testCompile junit_4
     testCompile hamcrest_library
-    testCompile 'org.testng:testng:6.10'
     testCompile 'org.springframework:spring-test:4.0.6.RELEASE'
     testCompile bouncycastle
     compileOnly guice

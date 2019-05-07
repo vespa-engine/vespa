@@ -11,7 +11,6 @@ dependencies {
     compile 'net.jcip:jcip-annotations:1.0'
     testCompile junit_4
     testCompile hamcrest_library
-    testCompile 'org.mockito:mockito-core:1.9.5'
     providedCompile project(':provided-dependencies')
     providedCompile project(':component')
     providedCompile project(':config-bundle')

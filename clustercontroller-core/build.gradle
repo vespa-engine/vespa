@@ -5,9 +5,9 @@
 dependencies {
     compile 'commons-lang:commons-lang:2.6'
     compile jettison
+    testCompile junit_4
     testCompile hamcrest_library
     testCompile hamcrest_core
-    testCompile junit_4
     testCompile mockito
     compileOnly 'org.slf4j:slf4j-api:1.7.5'
     compileOnly jackson_core

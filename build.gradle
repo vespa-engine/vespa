@@ -113,7 +113,7 @@ ext {
   http_client = 'org.apache.httpcomponents:httpclient:4.4.1'
   http_core = 'org.apache.httpcomponents:httpcore:4.4.1'
   
-  mockito = 'org.mockito:mockito-all:1.9.5'
+  mockito = 'org.mockito:mockito-core:1.10.19'
   jaxb_api = 'javax.xml.bind:jaxb-api:2.3.0'
   guice = 'com.google.inject:guice:3.0'
   bouncycastle = 'org.bouncycastle:bcpkix-jdk15on:1.58'
@@ -184,8 +184,11 @@ def codegenSpec(dest, spec) {
         new File("${dest}").mkdirs()
       }
 
+      if( !new File("${buildDir}").exists() ) {
+        new File("${buildDir}").mkdirs()
+      }
       javaexec {
-        workingDir = file(buildDir)
+        workingDir = file("${buildDir}")
         outputs.dir "${dest}"
 
         classpath = buildscript.configurations.classpath
