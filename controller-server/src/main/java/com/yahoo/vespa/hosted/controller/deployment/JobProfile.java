@@ -47,7 +47,11 @@ public enum JobProfile {
                           startTests,
                           endTests),
                EnumSet.of(deactivateTester,
-                          report));
+                          report)),
+
+    development(EnumSet.of(deployReal,
+                           installReal),
+                EnumSet.noneOf(Step.class));
 
 
     private final Set<Step> steps;
@@ -64,6 +68,7 @@ public enum JobProfile {
             case test: return systemTest;
             case staging: return stagingTest;
             case prod: return production;
+            case dev: return development;
             default: throw new AssertionError("Unexpected environment '" + type.environment() + "'!");
         }
     }
