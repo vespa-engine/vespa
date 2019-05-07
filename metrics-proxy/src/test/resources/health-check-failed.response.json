@@ -1,0 +1,7 @@
+{
+ "status": {
+   "code": "down",
+   "message":"SOMETHING FAILED"
+  },
+  "metrics": []
+ }
