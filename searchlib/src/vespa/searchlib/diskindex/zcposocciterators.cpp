@@ -13,10 +13,10 @@ using search::index::PostingListCounts;
 
 template <bool bigEndian>
 Zc4RareWordPosOccIterator<bigEndian>::
-Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                           const PosOccFieldsParams *fieldsParams,
                           const TermFieldMatchDataArray &matchData)
-    : Zc4RareWordPostingIterator<bigEndian>(matchData, start, docIdLimit),
+    : Zc4RareWordPostingIterator<bigEndian>(matchData, start, docIdLimit, decode_cheap_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
     assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
@@ -26,11 +26,11 @@ Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimi
 
 template <bool bigEndian>
 Zc4PosOccIterator<bigEndian>::
-Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                   uint32_t minChunkDocs, const PostingListCounts &counts,
                   const PosOccFieldsParams *fieldsParams,
                   const TermFieldMatchDataArray &matchData)
-    : ZcPostingIterator<bigEndian>(minChunkDocs, false, counts, matchData, start, docIdLimit),
+    : ZcPostingIterator<bigEndian>(minChunkDocs, false, counts, matchData, start, docIdLimit, decode_cheap_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
     assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
@@ -40,10 +40,10 @@ Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
 
 template <bool bigEndian>
 ZcRareWordPosOccIterator<bigEndian>::
-ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                          const PosOccFieldsParams *fieldsParams,
                          const TermFieldMatchDataArray &matchData)
-    : ZcRareWordPostingIterator<bigEndian>(matchData, start, docIdLimit),
+    : ZcRareWordPostingIterator<bigEndian>(matchData, start, docIdLimit, decode_cheap_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
     assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
@@ -53,11 +53,11 @@ ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit
 
 template <bool bigEndian>
 ZcPosOccIterator<bigEndian>::
-ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                  uint32_t minChunkDocs, const PostingListCounts &counts,
                  const PosOccFieldsParams *fieldsParams,
                  const TermFieldMatchDataArray &matchData)
-    : ZcPostingIterator<bigEndian>(minChunkDocs, true, counts, matchData, start, docIdLimit),
+    : ZcPostingIterator<bigEndian>(minChunkDocs, true, counts, matchData, start, docIdLimit, decode_cheap_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
     assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));

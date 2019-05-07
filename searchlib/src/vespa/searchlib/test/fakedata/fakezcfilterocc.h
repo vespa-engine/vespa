@@ -5,6 +5,7 @@
 #include "fakeposting.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/diskindex/zc4_posting_params.h>
 
 namespace search {
 
@@ -21,7 +22,6 @@ protected:
     size_t _l2SkipSize;
     size_t _l3SkipSize;
     size_t _l4SkipSize;
-    unsigned int _docIdLimit;
     unsigned int _hitDocs;
     uint32_t _lastDocId;
 
@@ -31,23 +31,27 @@ protected:
     uint64_t _featuresSize;
     const search::bitcompression::PosOccFieldsParams &_fieldsParams;
     bool _bigEndian;
+    diskindex::Zc4PostingParams _posting_params;
 protected:
-    void setup(const FakeWord &fw, bool doFeatures, bool dynamicK);
+    void setup(const FakeWord &fw);
 
     template <bool bigEndian>
-    void setupT(const FakeWord &fw, bool doFeatures, bool dynamicK);
+    void setupT(const FakeWord &fw);
 
     template <bool bigEndian>
-    void read_header(bool do_features, bool dynamic_k, uint32_t min_skip_docs, uint32_t min_cunk_docs);
+    void read_header();
 
-    void validate_read(const FakeWord &fw, bool encode_features, bool dynamic_k) const;
+    void validate_read(const FakeWord &fw) const;
     template <bool bigEndian>
-    void validate_read(const FakeWord &fw, bool encode_features, bool dynamic_k) const;
+    void validate_read(const FakeWord &fw) const;
 
 public:
     FakeZcFilterOcc(const FakeWord &fw);
-    FakeZcFilterOcc(const FakeWord &fw, bool bigEndian, const char *nameSuffix);
-    ~FakeZcFilterOcc();
+    FakeZcFilterOcc(const FakeWord &fw,
+                    bool bigEndian,
+                    const diskindex::Zc4PostingParams &posting_params,
+                    const char *nameSuffix);
+    ~FakeZcFilterOcc() override;
 
     static void forceLink();
 

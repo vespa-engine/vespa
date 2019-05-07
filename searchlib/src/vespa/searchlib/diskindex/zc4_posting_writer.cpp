@@ -83,10 +83,10 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
                                         !hasMore) ?
                                        numDocs : 1,
                                        _docIdLimit);
-        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back().first,
+        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back()._doc_id,
                           docIdK);
     } else {
-        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back().first,
+        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back()._doc_id,
                           K_VALUE_ZCPOSTING_LASTDOCID);
     }
 
@@ -132,7 +132,7 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
         PostingListCounts::Segment seg;
         seg._bitLength = writePos - (_writePos + _counts._bitLength);
         seg._numDocs = numDocs;
-        seg._lastDoc = _docIds.back().first;
+        seg._lastDoc = _docIds.back()._doc_id;
         _counts._segments.push_back(seg);
         _counts._bitLength += seg._bitLength;
     }
@@ -153,11 +153,11 @@ Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures &fe
         uint64_t writeOffset = _encode_features->getWriteOffset();
         uint64_t featureSize = writeOffset - _featureOffset;
         assert(static_cast<uint32_t>(featureSize) == featureSize);
-        _docIds.push_back(std::make_pair(features.doc_id(),
-                                         static_cast<uint32_t>(featureSize)));
+        _docIds.emplace_back(features.doc_id(), features.field_length(), features.num_occs(),
+                             static_cast<uint32_t>(featureSize));
         _featureOffset = writeOffset;
     } else {
-        _docIds.push_back(std::make_pair(features.doc_id(), uint32_t(0)));
+        _docIds.emplace_back(features.doc_id(), features.field_length(), features.num_occs(), 0);
     }
 }
 
@@ -187,10 +187,16 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
     std::vector<DocIdAndFeatureSize>::const_iterator dite = _docIds.end();
 
     for (; dit != dite; ++dit) {
-        uint32_t docId = dit->first;
-        uint32_t featureSize = dit->second;
+        uint32_t docId = dit->_doc_id;
+        uint32_t featureSize = dit->_features_size;
         e.encodeExpGolomb(docId - baseDocId, docIdK);
         baseDocId = docId + 1;
+        if (_encode_cheap_features) {
+            assert(dit->_field_length > 0);
+            e.encodeExpGolomb(dit->_field_length - 1, K_VALUE_ZCPOSTING_FIELD_LENGTH);
+            assert(dit->_num_occs > 0);
+            e.encodeExpGolomb(dit->_num_occs - 1, K_VALUE_ZCPOSTING_NUM_OCCS);
+        }
         if (featureSize != 0) {
             e.writeBits(features + (featureOffset >> 6),
                         featureOffset & 63,

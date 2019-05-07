@@ -24,6 +24,8 @@ protected:
     protected:
         ZcBuf _zc_buf;
         uint32_t _doc_id;
+        uint32_t _field_length;
+        uint32_t _num_occs;
         uint32_t _doc_id_pos;
         uint64_t _features_pos;
     public:
@@ -31,13 +33,17 @@ protected:
         ~NoSkip();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id);
         void set_features_pos(uint64_t features_pos) { _features_pos = features_pos; }
-        void read();
+        void read(bool decode_cheap_features);
         void check_end(uint32_t last_doc_id);
         void check_not_end(uint32_t last_doc_id);
         uint32_t get_doc_id()       const { return _doc_id; }
+        uint32_t get_field_length() const { return _field_length; }
+        uint32_t get_num_occs()     const { return _num_occs; }
         uint32_t get_doc_id_pos()   const { return _doc_id_pos; }
         uint64_t get_features_pos() const { return _features_pos; }
-        void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
+        void set_doc_id(uint32_t doc_id)             { _doc_id = doc_id; }
+        void set_field_length(uint32_t field_length) { _field_length = field_length; }
+        void set_num_occs(uint32_t num_occs)         { _num_occs = num_occs; }
     };
     // Helper class for L1 skip info
     class L1Skip : public NoSkip {

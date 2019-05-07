@@ -107,14 +107,12 @@ FakeWord::DocWordPosFeature::~DocWordPosFeature()
 
 
 FakeWord::DocWordCollapsedFeature::DocWordCollapsedFeature()
+    : _field_len(0),
+      _num_occs(0)
 {
 }
 
-
-FakeWord::DocWordCollapsedFeature::~DocWordCollapsedFeature()
-{
-}
-
+FakeWord::DocWordCollapsedFeature::~DocWordCollapsedFeature() = default;
 
 FakeWord::DocWordFeature::DocWordFeature()
     : _docId(0),
@@ -235,14 +233,16 @@ FakeWord::fakeup(search::BitVector &bitmap,
             DocWordPosFeature dwpf;
             dwpf._wordPos = rnd.lrand48() % 8192;
             dwpf._elementId = 0;
-            if (_fieldsParams.getFieldParams()[0]._hasElements)
+            if (_fieldsParams.getFieldParams()[0]._hasElements) {
                 dwpf._elementId = rnd.lrand48() % 4;
+            }
             wpf.push_back(dwpf);
         }
         if (positions > 1) {
             /* Sort wordpos list and "avoid" duplicate positions */
             std::sort(wpf.begin(), wpf.end());
         }
+        uint32_t field_len = 0;
         do {
             DocWordPosFeatureList::iterator ie(wpf.end());
             DocWordPosFeatureList::iterator i(wpf.begin());
@@ -274,8 +274,14 @@ FakeWord::fakeup(search::BitVector &bitmap,
                     pi->_elementWeight = elementWeight;
                     ++pi;
                 }
+                field_len += elementLen;
+            }
+            if (_fieldsParams.getFieldParams()[0]._hasElements) {
+                field_len += ((rnd.lrand48() % 10) + 10);
             }
         } while (0);
+        dwf._collapsedDocWordFeatures._field_len = field_len;
+        dwf._collapsedDocWordFeatures._num_occs = dwf._positions;
         dwf._accPositions = wordPosFeatures.size();
         assert(dwf._positions == wpf.size());
         postings.push_back(dwf);

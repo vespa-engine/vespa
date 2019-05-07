@@ -8,6 +8,8 @@ namespace search::index {
 
 DocIdAndFeatures::DocIdAndFeatures()
     : _doc_id(0),
+      _field_length(1),
+      _num_occs(1),
       _elements(),
       _word_positions(),
       _blob(),
@@ -19,6 +21,6 @@ DocIdAndFeatures::DocIdAndFeatures()
 
 DocIdAndFeatures::DocIdAndFeatures(const DocIdAndFeatures &) = default;
 DocIdAndFeatures & DocIdAndFeatures::operator = (const DocIdAndFeatures &) = default;
-DocIdAndFeatures::~DocIdAndFeatures() { }
+DocIdAndFeatures::~DocIdAndFeatures() = default;
 
 }

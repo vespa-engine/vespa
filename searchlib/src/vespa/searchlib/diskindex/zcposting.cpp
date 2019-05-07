@@ -16,6 +16,7 @@ namespace {
 vespalib::string myId5("Zc.5");
 vespalib::string myId4("Zc.4");
 vespalib::string emptyId;
+vespalib::string cheap_features("cheap_features");
 
 }
 
@@ -165,6 +166,9 @@ Zc4PostingSeqRead::readHeader()
     posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
     posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
     posting_params._min_skip_docs = header.getTag("minSkipDocs").asInteger();
+    if (header.hasTag(cheap_features) && (header.getTag(cheap_features).asInteger() != 0)) {
+       posting_params._encode_cheap_features = true;
+    }
     assert(header.getTag("endian").asString() == "big");
     // Read feature decoding specific subheader
     d.readHeader(header, "features.");
@@ -233,6 +237,7 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
     header.putTag(Tag("fileBitSize", 0));
     header.putTag(Tag("format.0", myId));
     header.putTag(Tag("format.1", f.getIdentifier()));
+    header.putTag(Tag("cheap_features", _writer.get_encode_cheap_features() ? 1 : 0));
     header.putTag(Tag("numWords", 0));
     header.putTag(Tag("minChunkDocs", _writer.get_min_chunk_docs()));
     header.putTag(Tag("docIdLimit", _writer.get_docid_limit()));

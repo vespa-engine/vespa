@@ -24,6 +24,7 @@ protected:
     uint64_t _headerBitSize;
     bitcompression::PosOccFieldsParams _fieldsParams;
     bool _dynamicK;
+    bool _decode_cheap_features;
 
 
 public:

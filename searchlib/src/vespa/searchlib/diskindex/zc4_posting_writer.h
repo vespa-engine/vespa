@@ -12,7 +12,9 @@ namespace search::diskindex {
  * Class used to write posting lists of type "Zc.4" and "Zc.5" (dynamic k).
  *
  * Common words have docid deltas and skip info separate from
- * features.
+ * features. If "cheap" features are enabled then they are interleaved
+ * with docid deltas for quick access during sequential scan while the
+ * full features still remains separate.
  * 
  * Rare words do not have skip info, and docid deltas and features are
  * interleaved.
