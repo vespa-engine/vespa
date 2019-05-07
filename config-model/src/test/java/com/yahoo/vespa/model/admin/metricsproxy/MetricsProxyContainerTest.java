@@ -1,6 +1,7 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames;
@@ -8,14 +9,18 @@ import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Test;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CONTAINER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_FLAVOR;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -40,6 +45,34 @@ public class MetricsProxyContainerTest {
                     .count();
             assertThat(metricsProxies, is(1L));
         }
+    }
+
+    @Test
+    public void http_server_is_running_on_expected_port() {
+        VespaModel model = getModel(servicesWithContent());
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
+        assertEquals(19092, container.getSearchPort());
+        assertEquals(19092, container.getHealthPort());
+        assertEquals("http", container.getPortSuffixes()[0]);
+
+        assertTrue(container.getPortsMeta().getTagsAt(0).contains("http"));
+        assertTrue(container.getPortsMeta().getTagsAt(0).contains("state"));
+    }
+
+    @Test
+    public void rpc_server_is_running_on_expected_port() {
+        VespaModel model = getModel(servicesWithContent());
+
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
+
+        int rpcPort = container.metricsRpcPortOffset();
+        assertTrue(container.getPortsMeta().getTagsAt(rpcPort).contains("rpc"));
+        assertTrue(container.getPortsMeta().getTagsAt(rpcPort).contains("metrics"));
+
+        assertEquals("rpc/metrics", container.getPortSuffixes()[rpcPort]);
+
+        RpcConnectorConfig config = getRpcConnectorConfig(model);
+        assertEquals(19094, config.port());
     }
 
     @Test

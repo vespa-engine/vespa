@@ -59,6 +59,10 @@ public class MetricsProxyContainer extends Container implements
         addMetricsProxyComponent(VespaServices.class);
     }
 
+    int metricsRpcPortOffset() {
+        return numHttpServerPorts;
+    }
+
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
@@ -66,7 +70,7 @@ public class MetricsProxyContainer extends Container implements
 
     @Override
     public int getWantedPort() {
-        return 19092; // TODO: current metrics-proxy uses 19091 as rpc port, will now get 19093.
+        return 19092;
     }
 
     @Override
@@ -74,9 +78,15 @@ public class MetricsProxyContainer extends Container implements
         return true;
     }
 
+    // Must have predictable ports for both http and rpc.
+    @Override
+    public boolean requiresConsecutivePorts() {
+        return true;
+    }
+
     @Override
     public int getPortCount() {
-        return super.getPortCount() + 1;
+        return metricsRpcPortOffset() + 1;
     }
 
     @Override
@@ -86,8 +96,15 @@ public class MetricsProxyContainer extends Container implements
     }
 
     @Override
+    public String[] getPortSuffixes() {
+        var suffixes = super.getPortSuffixes();
+        suffixes[metricsRpcPortOffset()] = "rpc/metrics";
+        return suffixes;
+    }
+
+    @Override
     public void getConfig(RpcConnectorConfig.Builder builder) {
-        builder.port(getRelativePort(0));
+        builder.port(getRelativePort(metricsRpcPortOffset()));
     }
 
     @Override

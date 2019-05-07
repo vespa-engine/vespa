@@ -7,6 +7,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -26,6 +27,9 @@ class MetricsProxyModelTester {
     static final String MY_APPLICATION = "myapp";
     static final String MY_INSTANCE = "myinstance";
     static final String MY_FLAVOR = "myflavor";
+
+    // Used for all configs that are produced by the container, not the cluster.
+    static final String CONTAINER_CONFIG_ID = "admin/metrics/0";
 
     static VespaModel getModel(String servicesXml) {
         var numberOfHosts = 1;
@@ -79,14 +83,16 @@ class MetricsProxyModelTester {
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model) {
-        String configId = "admin/metrics/0";  // This config is produced by the container, not the cluster
-        return new NodeDimensionsConfig((NodeDimensionsConfig.Builder) model.getConfig(new NodeDimensionsConfig.Builder(), configId));
+        return new NodeDimensionsConfig((NodeDimensionsConfig.Builder) model.getConfig(new NodeDimensionsConfig.Builder(), CONTAINER_CONFIG_ID));
     }
 
     static VespaServicesConfig getVespaServicesConfig(String servicesXml) {
-        String configId = "admin/metrics/0";  // This config is produced by the container, not the cluster
         VespaModel model = getModel(servicesXml);
-        return new VespaServicesConfig((VespaServicesConfig.Builder) model.getConfig(new VespaServicesConfig.Builder(), configId));
+        return new VespaServicesConfig((VespaServicesConfig.Builder) model.getConfig(new VespaServicesConfig.Builder(), CONTAINER_CONFIG_ID));
+    }
+
+    static RpcConnectorConfig getRpcConnectorConfig(VespaModel model) {
+        return new RpcConnectorConfig((RpcConnectorConfig.Builder) model.getConfig(new RpcConnectorConfig.Builder(), CONTAINER_CONFIG_ID));
     }
 
     private static Flavor flavorFromString(String name) {
