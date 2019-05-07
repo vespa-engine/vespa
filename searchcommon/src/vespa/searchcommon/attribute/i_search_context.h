@@ -52,15 +52,17 @@ public:
 
     int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onFind(docId, elementId, weight); }
     int32_t find(DocId docId, int32_t elementId) const { return onFind(docId, elementId); }
-    bool matches(DocId docId, int32_t &weight) const {
+    template<typename SC>
+    static bool matches(const SC & sc, DocId docId, int32_t &weight) {
         weight = 0;
         int32_t oneWeight(0);
-        int32_t firstId = find(docId, 0, oneWeight);
-        for (int32_t id(firstId); id >= 0; id = find(docId, id + 1, oneWeight)) {
+        int32_t firstId = sc.find(docId, 0, oneWeight);
+        for (int32_t id(firstId); id >= 0; id = sc.find(docId, id + 1, oneWeight)) {
             weight += oneWeight;
         }
         return firstId >= 0;
     }
+    bool matches(DocId docId, int32_t &weight) const { return matches(*this, docId, weight); }
     bool matches(DocId doc) const { return find(doc, 0) >= 0; }
 
 };
