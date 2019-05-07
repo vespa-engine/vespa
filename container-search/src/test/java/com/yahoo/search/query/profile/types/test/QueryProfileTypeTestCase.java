@@ -77,7 +77,7 @@ public class QueryProfileTypeTestCase {
         type.addField(new FieldDescription("myBoolean", FieldType.fromString("boolean", registry)), registry);
         type.addField(new FieldDescription("ranking.features.query(myTensor1)", FieldType.fromString("tensor(a{},b{})", registry)), registry);
         type.addField(new FieldDescription("ranking.features.query(myTensor2)", FieldType.fromString("tensor(x[2],y[2])", registry)), registry);
-        type.addField(new FieldDescription("ranking.features.query(myTensor3)", FieldType.fromString("tensor(x{})",registry)), registry);
+        type.addField(new FieldDescription("ranking.features.query(myTensor3)", FieldType.fromString("tensor<float>(x{})",registry)), registry);
         type.addField(new FieldDescription("myQuery", FieldType.fromString("query", registry)), registry);
         type.addField(new FieldDescription("myQueryProfile", FieldType.fromString("query-profile", registry),"qp"), registry);
     }
@@ -136,7 +136,7 @@ public class QueryProfileTypeTestCase {
         assertEquals(true, properties.get("myBoolean"));
         assertEquals(Tensor.from(tensorString1), properties.get("ranking.features.query(myTensor1)"));
         assertEquals(Tensor.from("tensor(x[2],y[2])", tensorString2), properties.get("ranking.features.query(myTensor2)"));
-        assertEquals(Tensor.from("tensor(x{})", tensorString3), properties.get("ranking.features.query(myTensor3)"));
+        assertEquals(Tensor.from("tensor<float>(x{})", tensorString3), properties.get("ranking.features.query(myTensor3)"));
         // TODO: assertEquals(..., cprofile.get("myQuery"));
         assertEquals("value1", properties.get("myQueryProfile.anyString"));
         assertEquals("value1", properties.get("QP.anyString"));

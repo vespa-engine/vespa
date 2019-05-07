@@ -54,14 +54,14 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         // Note: These two elements only exists in admin version 4.0
         // This build handles admin version 3.0 by ignoring its content (as the content is not useful)
         Optional<NodesSpecification> requestedSlobroks = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"), context);
+                NodesSpecification.optionalDedicatedFromParent(adminElement.child("slobroks"), context);
         Optional<NodesSpecification> requestedLogservers = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
+                NodesSpecification.optionalDedicatedFromParent(adminElement.child("logservers"), context);
 
         assignSlobroks(deployState.getDeployLogger(), requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
-        addLogForwarders(adminElement.getChild("logforwarding"), admin);
+        addLogForwarders(adminElement.child("logforwarding"), admin);
     }
 
     private void assignSlobroks(DeployLogger deployLogger, NodesSpecification nodesSpecification, Admin admin) {
@@ -110,7 +110,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
 
-        LogserverContainer container = new LogserverContainer(logServerCluster, deployState.getProperties().useSeparateServiceTypeForLogserverContainer());
+        LogserverContainer container = new LogserverContainer(logServerCluster);
         container.setHostResource(hostResource);
         container.initService(deployState.getDeployLogger());
         logServerCluster.addContainer(container);

@@ -20,8 +20,13 @@ public class MapEncoder {
 
     // TODO: Time to refactor
 
-    private static final String TYPE_SUFFIX = ".type";
-    private static final String TENSOR_TYPE = "tensor";
+    private static byte [] getUtf8(Object value) {
+        if (value instanceof Tensor) {
+            return TypedBinaryFormat.encode((Tensor)value);
+        } else {
+            return Utf8.toBytes(value.toString());
+        }
+    }
 
     /**
      * Encodes a single value as a complete binary map.
@@ -39,7 +44,7 @@ public class MapEncoder {
         utf8 = Utf8.toBytes(key);
         buffer.putInt(utf8.length);
         buffer.put(utf8);
-        utf8 = Utf8.toBytes(value.toString());
+        utf8 = getUtf8(value);
         buffer.putInt(utf8.length);
         buffer.put(utf8);
 
@@ -64,7 +69,12 @@ public class MapEncoder {
             utf8 = Utf8.toBytes(key);
             buffer.putInt(utf8.length);
             buffer.put(utf8);
-            utf8 = Utf8.toBytes(property.getValue() != null ? property.getValue().toString() : "");
+            Object value = property.getValue();
+            if (value == null) {
+                utf8 = Utf8.toBytes("");
+            } else {
+                utf8 = getUtf8(value);
+            }
             buffer.putInt(utf8.length);
             buffer.put(utf8);
         }
@@ -78,53 +88,21 @@ public class MapEncoder {
      *
      * Returns the number of maps encoded - 0 or 1
      */
-    public static int encodeStringMultiMap(String mapName, Map<String,List<String>> map, ByteBuffer buffer) {
-        if (map.isEmpty()) return 0;
 
-        byte [] utf8 = Utf8.toBytes(mapName);
-        buffer.putInt(utf8.length);
-        buffer.put(utf8);
-        buffer.putInt(countStringEntries(map));
-        for (Map.Entry<String, List<String>> property : map.entrySet()) {
-            String key = property.getKey();
-            for (Object value : property.getValue()) {
-                utf8 = Utf8.toBytes(key);
-                buffer.putInt(utf8.length);
-                buffer.put(utf8);
-                utf8 = Utf8.toBytes(value.toString());
-                buffer.putInt(utf8.length);
-                buffer.put(utf8);
-            }
-        }
-
-        return 1;
-    }
-
-    /**
-     * Encodes a multi-map as binary.
-     * Does nothing if the value is null.
-     *
-     * Returns the number of maps encoded - 0 or 1
-     */
-    public static int encodeObjectMultiMap(String mapName, Map<String,List<Object>> map, ByteBuffer buffer) {
+    public static <T> int encodeMultiMap(String mapName, Map<String,List<T>> map, ByteBuffer buffer) {
         if (map.isEmpty()) return 0;
 
         byte[] utf8 = Utf8.toBytes(mapName);
         buffer.putInt(utf8.length);
         buffer.put(utf8);
-        addTensorTypeInfo(map);
-        buffer.putInt(countObjectEntries(map));
-        for (Map.Entry<String, List<Object>> property : map.entrySet()) {
+        buffer.putInt(countEntries(map));
+        for (Map.Entry<String, List<T>> property : map.entrySet()) {
             String key = property.getKey();
             for (Object value : property.getValue()) {
                 utf8 = Utf8.toBytes(key);
                 buffer.putInt(utf8.length);
                 buffer.put(utf8);
-                if (value instanceof Tensor) {
-                    utf8 = TypedBinaryFormat.encode((Tensor)value);
-                } else {
-                    utf8 = Utf8.toBytes(value.toString());
-                }
+                utf8 = getUtf8(value);
                 buffer.putInt(utf8.length);
                 buffer.put(utf8);
             }
@@ -133,32 +111,9 @@ public class MapEncoder {
         return 1;
     }
 
-    private static void addTensorTypeInfo(Map<String, List<Object>> map) {
-        Map<String, Tensor> tensorsToTag = new HashMap<>();
-        for (Map.Entry<String, List<Object>> entry : map.entrySet()) {
-            for (Object value : entry.getValue()) {
-                if (value instanceof Tensor) {
-                    tensorsToTag.put(entry.getKey(), (Tensor)value);
-                }
-            }
-        }
-        for (Map.Entry<String, Tensor> entry : tensorsToTag.entrySet()) {
-            // Ensure that we only have a single tensor associated with each key
-            map.put(entry.getKey(), Arrays.asList(entry.getValue()));
-            map.put(entry.getKey() + TYPE_SUFFIX, Arrays.asList(TENSOR_TYPE));
-        }
-    }
-
-    private static int countStringEntries(Map<String, List<String>> value) {
+    private static <T> int countEntries(Map<String, List<T>> value) {
         int entries = 0;
-        for (Map.Entry<String, List<String>> property : value.entrySet())
-            entries += property.getValue().size();
-        return entries;
-    }
-
-    private static int countObjectEntries(Map<String, List<Object>> value) {
-        int entries = 0;
-        for (Map.Entry<String, List<Object>> property : value.entrySet())
+        for (Map.Entry<String, List<T>> property : value.entrySet())
             entries += property.getValue().size();
         return entries;
     }

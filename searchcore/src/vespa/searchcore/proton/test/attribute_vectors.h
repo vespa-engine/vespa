@@ -1,24 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "attribute_utils.h"
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
+#include <vespa/searchlib/attribute/singlenumericattribute.h>
 
-namespace proton {
+namespace proton::test {
 
-namespace test {
+using Int32Attribute = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t> >;
 
-typedef search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t> > Int32AttributeBase;
+std::unique_ptr<Int32Attribute> createInt32Attribute(const vespalib::string &name);
 
-struct Int32Attribute : public Int32AttributeBase
-{
-    Int32Attribute(const vespalib::string &name) :
-        Int32AttributeBase(name, AttributeUtils::getInt32Config())
-    {
-    }
-};
-
-} // namespace test
-
-} // namespace proton
+}

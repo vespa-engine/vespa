@@ -58,7 +58,6 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
@@ -93,7 +92,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
         BundlesConfig.Producer,
-        FeederConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         SchemamappingConfig.Producer,
@@ -212,9 +210,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
         stateHandler.addServerBindings("http://*" + StateHandler.STATE_API_ROOT,
-                                       "https://*" + StateHandler.STATE_API_ROOT,
-                                       "http://*" + StateHandler.STATE_API_ROOT + "/*",
-                                       "https://*" + StateHandler.STATE_API_ROOT + "/*");
+                                       "http://*" + StateHandler.STATE_API_ROOT + "/*");
         addComponent(stateHandler);
     }
 
@@ -242,13 +238,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
                         APPLICATION_STATUS_HANDLER_CLASS, null), null));
-        statusHandler.addServerBindings("http://*/ApplicationStatus", "https://*/ApplicationStatus");
+        statusHandler.addServerBindings("http://*/ApplicationStatus");
         addComponent(statusHandler);
     }
 
     public void addVipHandler() {
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
-        vipHandler.addServerBindings("http://*/status.html", "https://*/status.html");
+        vipHandler.addServerBindings("http://*/status.html");
         addComponent(vipHandler);
     }
 
@@ -556,11 +552,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
         if (containerSearch != null) containerSearch.getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(FeederConfig.Builder builder) {
-        if (containerDocumentApi != null) containerDocumentApi.getConfig(builder);
     }
 
     @Override

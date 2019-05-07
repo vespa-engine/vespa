@@ -11,7 +11,6 @@ import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageHandler;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
 import org.junit.Test;
@@ -19,9 +18,11 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
@@ -36,7 +37,7 @@ public class SimpleFeederTest {
     private static final String CONFIG_DIR = "target/test-classes/";
 
     @Test
-    public void requireThatFeederWorks() throws Throwable {
+    public void requireThatXMLFeederWorks() throws Throwable {
         assertFeed("<vespafeed>" +
                    "    <document documenttype='simple' documentid='doc:scheme:0'>" +
                    "        <my_str>foo</my_str>" +
@@ -58,6 +59,133 @@ public class SimpleFeederTest {
                    "",
                    "(.+\n)+" +
                    "\\s*\\d+,\\s*3,.+\n");
+    }
+
+    @Test
+    public void requireThatXML2JsonFeederWorks() throws Throwable {
+        ByteArrayOutputStream dump = new ByteArrayOutputStream();
+        assertFeed(new FeederParams().setDumpStream(dump),
+                "<vespafeed>" +
+                        "    <document documenttype='simple' documentid='id:simple:simple::0'>" +
+                        "        <my_str>foo</my_str>" +
+                        "    </document>" +
+                        "    <update documenttype='simple' documentid='id:simple:simple::1'>" +
+                        "        <assign field='my_str'>bar</assign>" +
+                        "    </update>" +
+                        "    <remove documenttype='simple' documentid='id:simple:simple::2'/>" +
+                        "</vespafeed>",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
+        assertEquals(58, dump.size());
+        assertEquals("[\n{\"id\":\"id:simple:simple::0\",\"fields\":{\"my_str\":\"foo\"}}\n]", dump.toString());
+    }
+
+    @Test
+    public void requireThatDualPutXML2JsonFeederWorks() throws Throwable {
+        ByteArrayOutputStream dump = new ByteArrayOutputStream();
+        assertFeed(new FeederParams().setDumpStream(dump),
+                "<vespafeed>" +
+                        "    <document documenttype='simple' documentid='id:simple:simple::0'>" +
+                        "        <my_str>foo</my_str>" +
+                        "    </document>" +
+                        "    <document documenttype='simple' documentid='id:simple:simple::1'>" +
+                        "        <my_str>bar</my_str>" +
+                        "    </document>" +
+                        "    <remove documenttype='simple' documentid='id:simple:simple::2'/>" +
+                        "</vespafeed>",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
+        assertEquals(115, dump.size());
+        assertEquals("[\n{\"id\":\"id:simple:simple::0\",\"fields\":{\"my_str\":\"foo\"}},\n {\"id\":\"id:simple:simple::1\",\"fields\":{\"my_str\":\"bar\"}}\n]", dump.toString());
+        assertFeed(dump.toString(),
+                new MessageHandler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*2,.+\n");
+    }
+
+    @Test
+    public void requireThatJson2VespaFeederWorks() throws Throwable {
+        ByteArrayOutputStream dump = new ByteArrayOutputStream();
+        assertFeed(new FeederParams().setDumpStream(dump).setDumpFormat(FeederParams.DumpFormat.VESPA),
+                "[" +
+                        "  { \"put\": \"id:simple:simple::0\", \"fields\": { \"my_str\":\"foo\"}}," +
+                        "  { \"update\": \"id:simple:simple::1\", \"fields\": { \"my_str\": { \"assign\":\"bar\"}}}," +
+                        "  { \"remove\": \"id:simple:simple::2\", \"condition\":\"true\"}" +
+                        "]",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
+        assertEquals(187, dump.size());
+        assertFeed(new ByteArrayInputStream(dump.toByteArray()),
+                new MessageHandler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
+    }
+
+    @Test
+    public void requireThatJsonFeederWorks() throws Throwable {
+        assertFeed("[" +
+                        "  { \"put\": \"id:simple:simple::0\", \"fields\": { \"my_str\":\"foo\"}}," +
+                        "  { \"update\": \"id:simple:simple::1\", \"fields\": { \"my_str\": { \"assign\":\"bar\"}}}," +
+                        "  { \"remove\": \"id:simple:simple::2\"}" +
+                        "]",
+                new MessageHandler() {
+
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Reply reply = ((DocumentMessage)msg).createReply();
+                        reply.swapState(msg);
+                        reply.popHandler().handleReply(reply);
+                    }
+                },
+                "",
+                "(.+\n)+" +
+                        "\\s*\\d+,\\s*3,.+\n");
     }
 
     @Test
@@ -84,7 +212,7 @@ public class SimpleFeederTest {
                                            "    <document documenttype='simple' documentid='doc:scheme:0'/>" +
                                            "</vespafeed>",
                                            null);
-        getSourceSession(driver).close();
+        driver.feeder.getSourceSession().close();
         try {
             driver.run();
             fail();
@@ -130,17 +258,13 @@ public class SimpleFeederTest {
 
     @Test
     public void requireThatSerialTransferModeConfiguresStaticThrottling() throws Exception {
-        TestDriver driver = new TestDriver(new FeederParams().setSerialTransfer(true), "", null);
+        TestDriver driver = new TestDriver(new FeederParams().setSerialTransfer(), "", null);
         assertEquals(StaticThrottlePolicy.class, getThrottlePolicy(driver).getClass());
         assertTrue(driver.close());
     }
 
-    private static SourceSession getSourceSession(TestDriver driver) {
-        return (SourceSession)getField(driver.feeder, "session");
-    }
-
     private static ThrottlePolicy getThrottlePolicy(TestDriver driver) {
-        return (ThrottlePolicy)getField(getSourceSession(driver), "throttlePolicy");
+        return (ThrottlePolicy)getField(driver.feeder.getSourceSession(), "throttlePolicy");
     }
 
     private static Object getField(Object obj, String fieldName) {
@@ -153,9 +277,17 @@ public class SimpleFeederTest {
         }
     }
 
-    private static void assertFeed(String in, MessageHandler validator, String expectedErr, String expectedOut)
-            throws Throwable {
-        TestDriver driver = new TestDriver(new FeederParams(), in, validator);
+    private static void assertFeed(String in, MessageHandler validator, String expectedErr, String expectedOut) throws Throwable {
+        assertFeed(new FeederParams(), in, validator, expectedErr, expectedOut);
+    }
+    private static void assertFeed(InputStream in, MessageHandler validator, String expectedErr, String expectedOut) throws Throwable {
+        assertFeed(new FeederParams(), in, validator, expectedErr, expectedOut);
+    }
+    private static void assertFeed(FeederParams params, String in, MessageHandler validator, String expectedErr, String expectedOut) throws Throwable {
+        assertFeed(params, new ByteArrayInputStream(in.getBytes(StandardCharsets.UTF_8)), validator, expectedErr, expectedOut);
+    }
+    private static void assertFeed(FeederParams params, InputStream in, MessageHandler validator, String expectedErr, String expectedOut) throws Throwable {
+        TestDriver driver = new TestDriver(params, in, validator);
         driver.run();
         assertMatches(expectedErr, new String(driver.err.toByteArray(), StandardCharsets.UTF_8));
         assertMatches(expectedOut, new String(driver.out.toByteArray(), StandardCharsets.UTF_8));
@@ -175,12 +307,14 @@ public class SimpleFeederTest {
         final SimpleFeeder feeder;
         final SimpleServer server;
 
-        public TestDriver(FeederParams params, String in, MessageHandler validator)
-                throws IOException, ListenFailedException {
+        TestDriver(FeederParams params, String in, MessageHandler validator) throws IOException, ListenFailedException {
+            this(params, new ByteArrayInputStream(in.getBytes(StandardCharsets.UTF_8)), validator);
+        }
+        TestDriver(FeederParams params, InputStream in, MessageHandler validator) throws IOException, ListenFailedException {
             server = new SimpleServer(CONFIG_DIR, validator);
             feeder = new SimpleFeeder(params.setConfigId("dir:" + CONFIG_DIR)
                                             .setStdErr(new PrintStream(err))
-                                            .setStdIn(new ByteArrayInputStream(in.getBytes(StandardCharsets.UTF_8)))
+                                            .setInputStreams(Arrays.asList(in))
                                             .setStdOut(new PrintStream(out)));
         }
 
@@ -188,7 +322,7 @@ public class SimpleFeederTest {
             feeder.run();
         }
 
-        boolean close() {
+        boolean close() throws Exception {
             feeder.close();
             server.close();
             return true;

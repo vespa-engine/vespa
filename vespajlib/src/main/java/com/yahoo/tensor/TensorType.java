@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,25 +25,40 @@ import java.util.stream.Collectors;
  */
 public class TensorType {
 
-    public enum ValueType { DOUBLE, FLOAT};
+    /** The permissible cell value types. Default is double. */
+    public enum Value {
+
+        // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
+        DOUBLE, FLOAT;
+
+        public static Value largestOf(List<Value> values) {
+            if (values.isEmpty()) return Value.DOUBLE; // Default
+            Value largest = null;
+            for (Value value : values) {
+                if (largest == null)
+                    largest = value;
+                else
+                    largest = largestOf(largest, value);
+            }
+            return largest;
+        }
+
+        public static Value largestOf(Value value1, Value value2) {
+            if (value1 == DOUBLE || value2 == DOUBLE) return DOUBLE;
+            return FLOAT;
+        }
+
+    };
 
     /** The empty tensor type - which is the same as a double */
-    public static final TensorType empty = new TensorType(ValueType.DOUBLE, Collections.emptyList());
+    public static final TensorType empty = new TensorType(Value.DOUBLE, Collections.emptyList());
 
-    private ValueType valueType;
-
-    public final ValueType valueType() { return valueType; }
-
-    //TODO Remove once value type is wired in were it should.
-    public final TensorType valueType(ValueType valueType) {
-        this.valueType = valueType;
-        return this;
-    }
+    private final Value valueType;
 
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
-    private TensorType(ValueType valueType, Collection<Dimension> dimensions) {
+    private TensorType(Value valueType, Collection<Dimension> dimensions) {
         this.valueType = valueType;
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
@@ -63,6 +79,9 @@ public class TensorType {
     public static TensorType fromSpec(String specString) {
         return TensorTypeParser.fromSpec(specString);
     }
+
+    /** Returns the numeric type of the cell values of this */
+    public Value valueType() { return valueType; }
 
     /** Returns the number of dimensions of this: dimensions().size() */
     public int rank() { return dimensions.size(); }
@@ -124,6 +143,7 @@ public class TensorType {
     }
 
     private boolean isConvertibleOrAssignableTo(TensorType generalization, boolean convertible, boolean considerName) {
+        if ( this.valueType() != generalization.valueType()) return false; // TODO: This can be relaxed
         if (generalization.dimensions().size() != this.dimensions().size()) return false;
         for (int i = 0; i < generalization.dimensions().size(); i++) {
             Dimension thisDimension = this.dimensions().get(i);
@@ -149,10 +169,14 @@ public class TensorType {
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if (other == null || getClass() != other.getClass()) return false;
-        return dimensions.equals(((TensorType)other).dimensions);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TensorType other = (TensorType)o;
+        if ( this.valueType != other.valueType) return false;
+        if ( ! this.dimensions.equals(other.dimensions)) return false;
+        return true;
     }
 
     /** Returns whether the given type has the same dimension names as this */
@@ -173,7 +197,7 @@ public class TensorType {
         if (this.equals(other)) return Optional.of(this); // shortcut
         if (this.dimensions.size() != other.dimensions.size()) return Optional.empty();
 
-        Builder b = new Builder();
+        Builder b = new Builder(TensorType.Value.largestOf(valueType, other.valueType));
         for (int i = 0; i < dimensions.size(); i++) {
             Dimension thisDim = this.dimensions().get(i);
             Dimension otherDim = other.dimensions().get(i);
@@ -386,14 +410,14 @@ public class TensorType {
 
         private final Map<String, Dimension> dimensions = new LinkedHashMap<>();
 
-        private final ValueType valueType;
+        private final Value valueType;
 
-        /** Creates an empty builder with cells of type double*/
+        /** Creates an empty builder with cells of type double */
         public Builder() {
-            this(ValueType.DOUBLE);
+            this(Value.DOUBLE);
         }
 
-        public Builder(ValueType valueType) {
+        public Builder(Value valueType) {
             this.valueType = valueType;
         }
 
@@ -403,23 +427,22 @@ public class TensorType {
          * If the same dimension is indexed with different size restrictions the largest size will be used.
          * If it is size restricted in one argument but not the other it will not be size restricted.
          * If it is indexed in one and mapped in the other it will become mapped.
+         *
+         * The value type will be the largest of the value types of the input types
          */
         public Builder(TensorType ... types) {
-            this(ValueType.DOUBLE, types);
-        }
-        public Builder(ValueType valueType, TensorType ... types) {
-            this.valueType = valueType;
+            this.valueType = TensorType.Value.largestOf(Arrays.stream(types).map(type -> type.valueType()).collect(Collectors.toList()));
             for (TensorType type : types)
                 addDimensionsOf(type);
         }
 
-        /**
-         * Creates a builder from the given dimensions.
-         */
+        /** Creates a builder from the given dimensions, having double as the value type */
         public Builder(Iterable<Dimension> dimensions) {
-            this(ValueType.DOUBLE, dimensions);
+            this(Value.DOUBLE, dimensions);
         }
-        public Builder(ValueType valueType, Iterable<Dimension> dimensions) {
+
+        /** Creates a builder from the given value type and dimensions */
+        public Builder(Value valueType, Iterable<Dimension> dimensions) {
             this.valueType = valueType;
             for (TensorType.Dimension dimension : dimensions) {
                 dimension(dimension);

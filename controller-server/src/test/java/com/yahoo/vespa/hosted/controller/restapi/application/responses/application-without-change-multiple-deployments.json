@@ -1,4 +1,5 @@
 {
+  "tenant": "tenant1",
   "application": "application1",
   "instance": "default",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/",
@@ -230,28 +231,26 @@
   "changeBlockers": [],
   "compileVersion": "(ignore)",
   "globalRotations": [
-    "http://application1.tenant1.global.vespa.yahooapis.com:4080/",
-    "https://application1--tenant1.global.vespa.yahooapis.com:4443/",
     "https://application1--tenant1.global.vespa.oath.cloud:4443/"
   ],
   "rotationId": "rotation-id-1",
   "instances": [
     {
-      "environment": "prod",
-      "region": "us-west-1",
-      "instance": "default",
       "bcpStatus": {
         "rotationStatus": "IN"
       },
+      "environment": "prod",
+      "region": "us-west-1",
+      "instance": "default",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default"
     },
     {
-      "environment": "prod",
-      "region": "us-east-3",
-      "instance": "default",
       "bcpStatus": {
         "rotationStatus": "UNKNOWN"
       },
+      "environment": "prod",
+      "region": "us-east-3",
+      "instance": "default",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default"
     }
   ],

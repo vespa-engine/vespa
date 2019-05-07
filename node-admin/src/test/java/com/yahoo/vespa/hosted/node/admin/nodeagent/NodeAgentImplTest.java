@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.io.IOUtils;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -30,7 +30,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,8 +82,6 @@ public class NodeAgentImplTest {
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
     private final HealthChecker healthChecker = mock(HealthChecker.class);
-    private final ContainerStats emptyContainerStats = new ContainerStats(Collections.emptyMap(),
-            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
@@ -645,18 +643,10 @@ public class NodeAgentImplTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testGetRelevantMetrics() throws Exception {
-        final ObjectMapper objectMapper = new ObjectMapper();
         ClassLoader classLoader = getClass().getClassLoader();
-        URL statsFile = classLoader.getResource("docker.stats.json");
-        Map<String, Map<String, Object>> dockerStats = objectMapper.readValue(statsFile, Map.class);
-
-        Map<String, Object> networks = dockerStats.get("networks");
-        Map<String, Object> precpu_stats = dockerStats.get("precpu_stats");
-        Map<String, Object> cpu_stats = dockerStats.get("cpu_stats");
-        Map<String, Object> memory_stats = dockerStats.get("memory_stats");
-        Map<String, Object> blkio_stats = dockerStats.get("blkio_stats");
-        ContainerStats stats1 = new ContainerStats(networks, precpu_stats, memory_stats, blkio_stats);
-        ContainerStats stats2 = new ContainerStats(networks, cpu_stats, memory_stats, blkio_stats);
+        String json = IOUtils.readAll(classLoader.getResourceAsStream("docker.stats.json"), StandardCharsets.UTF_8);
+        ContainerStats stats2 = ContainerStats.fromJson(json);
+        ContainerStats stats1 = ContainerStats.fromJson(json.replace("\"cpu_stats\"", "\"cpu_stats2\"").replace("\"precpu_stats\"", "\"cpu_stats\""));
 
         NodeOwner owner = new NodeOwner("tester", "testapp", "testinstance");
         NodeMembership membership = new NodeMembership("clustType", "clustId", "grp", 3, false);
@@ -759,7 +749,6 @@ public class NodeAgentImplTest {
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
         mockGetContainer(dockerImage, isRunning);
 
-        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));
         doNothing().when(storageMaintainer).writeMetricsConfig(any());
 
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, dockerOperations,

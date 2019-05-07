@@ -66,17 +66,8 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
     cfg.datatype.back().id = structType.getId();
 }
 
-}
-
-DocTypeBuilder::DocTypeBuilder(const Schema &schema)
-    : _schema(schema),
-      _iFields()
-{
-    _iFields.setup(schema);
-}
-
-namespace {
 using namespace document::config_builder;
+
 TypeOrId makeCollection(TypeOrId datatype,
                         Schema::CollectionType collection_type) {
     switch (collection_type) {
@@ -103,7 +94,14 @@ struct TypeCache {
     }
 };
 
-}  // namespace
+}
+
+DocTypeBuilder::DocTypeBuilder(const Schema &schema)
+    : _schema(schema),
+      _iFields()
+{
+    _iFields.setup(schema);
+}
 
 document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     using namespace document::config_builder;
@@ -141,9 +139,9 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     for (uint32_t i = 0; i < _schema.getNumAttributeFields(); ++i) {
         const Schema::AttributeField &field = _schema.getAttributeField(i);
         UsedFields::const_iterator usf = usedFields.find(field.getName());
-        if (usf != usedFields.end())
+        if (usf != usedFields.end()) {
             continue;   // taken as index field
-
+        }
         const DataType *primitiveType = convert(field.getDataType());
         if (primitiveType->getId() == DataType::T_TENSOR) {
             header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());
@@ -157,8 +155,9 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
     for (uint32_t i = 0; i < _schema.getNumSummaryFields(); ++i) {
         const Schema::SummaryField &field = _schema.getSummaryField(i);
         UsedFields::const_iterator usf = usedFields.find(field.getName());
-        if (usf != usedFields.end())
+        if (usf != usedFields.end()) {
             continue;   // taken as index field or attribute field
+        }
         const DataType *primitiveType(convert(field.getDataType()));
         if (primitiveType->getId() == DataType::T_TENSOR) {
             header_struct.addTensorField(field.getName(), dynamic_cast<const TensorDataType &>(*primitiveType).getTensorType().to_spec());

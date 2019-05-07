@@ -1,5 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/btree/btreenode.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
@@ -7,16 +12,11 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/memoryindex/dictionary.h>
-#include <vespa/searchlib/memoryindex/documentinverter.h>
-#include <vespa/searchlib/memoryindex/postingiterator.h>
-#include <vespa/searchlib/diskindex/diskindex.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchlib/memoryindex/document_inverter.h>
+#include <vespa/searchlib/memoryindex/field_index_collection.h>
+#include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fusion_test");
@@ -27,7 +27,7 @@ using document::Document;
 using fef::FieldPositionsIterator;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
-using memoryindex::Dictionary;
+using memoryindex::FieldIndexCollection;
 using memoryindex::DocumentInverter;
 using queryeval::SearchIterator;
 using search::common::FileHeaderContext;
@@ -54,9 +54,9 @@ public:
 namespace {
 
 void
-myPushDocument(DocumentInverter &inv, Dictionary &d)
+myPushDocument(DocumentInverter &inv, FieldIndexCollection &fieldIndexes)
 {
-    inv.pushDocuments(d, std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(fieldIndexes, std::shared_ptr<IDestructorCallback>());
 }
 
 }
@@ -274,7 +274,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
                                addField("f0").addField("f1").
                                addField("f2").addField("f3").
                                addField("f4"));
-    Dictionary d(schema);
+    FieldIndexCollection fic(schema);
     DocBuilder b(schema);
     SequencedTaskExecutor invertThreads(2);
     SequencedTaskExecutor pushThreads(2);
@@ -301,7 +301,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
     doc = b.endDocument();
     inv.invertDocument(10, *doc);
     invertThreads.sync();
-    myPushDocument(inv, d);
+    myPushDocument(inv, fic);
     pushThreads.sync();
 
     b.startDocument("doc::11").
@@ -311,7 +311,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
     doc = b.endDocument();
     inv.invertDocument(11, *doc);
     invertThreads.sync();
-    myPushDocument(inv, d);
+    myPushDocument(inv, fic);
     pushThreads.sync();
 
     b.startDocument("doc::12").
@@ -321,14 +321,14 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
     doc = b.endDocument();
     inv.invertDocument(12, *doc);
     invertThreads.sync();
-    myPushDocument(inv, d);
+    myPushDocument(inv, fic);
     pushThreads.sync();
 
     IndexBuilder ib(schema);
     vespalib::string dump2dir = prefix + "dump2";
     ib.setPrefix(dump2dir);
     uint32_t numDocs = 12 + 1;
-    uint32_t numWords = d.getNumUniqueWords();
+    uint32_t numWords = fic.getNumUniqueWords();
     bool dynamicKPosOcc = false;
     TuneFileIndexing tuneFileIndexing;
     TuneFileSearch tuneFileSearch;
@@ -341,7 +341,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
     if (readmmap)
         tuneFileSearch._read.setWantMemoryMap();
     ib.open(numDocs, numWords, tuneFileIndexing, fileHeaderContext);
-    d.dump(ib);
+    fic.dump(ib);
     ib.close();
 
     vespalib::string tsName = dump2dir + "/.teststamp";

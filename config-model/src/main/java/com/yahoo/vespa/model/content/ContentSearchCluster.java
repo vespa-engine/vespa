@@ -86,11 +86,11 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, globallyDistributedDocuments,
                     getFlushOnShutdown(flushOnShutdownElem, deployState));
 
-            ModelElement tuning = clusterElem.getChildByPath("engine.proton.tuning");
+            ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
             if (tuning != null) {
                 search.setTuning(new DomSearchTuningBuilder().build(deployState, search, tuning.getXml()));
             }
-            ModelElement protonElem = clusterElem.getChildByPath("engine.proton");
+            ModelElement protonElem = clusterElem.childByPath("engine.proton");
             if (protonElem != null) {
                 search.setResourceLimits(DomResourceLimitsBuilder.build(protonElem));
             }
@@ -112,14 +112,14 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
 
         private void buildAllStreamingSearchClusters(DeployState deployState, ModelElement clusterElem, String clusterName, ContentSearchCluster search) {
-            ModelElement docElem = clusterElem.getChild("documents");
+            ModelElement docElem = clusterElem.child("documents");
 
             if (docElem == null) {
                 return;
             }
 
             for (ModelElement docType : docElem.subElements("document")) {
-                String mode = docType.getStringAttribute("mode");
+                String mode = docType.stringAttribute("mode");
                 if ("streaming".equals(mode)) {
                     buildStreamingSearchCluster(deployState, clusterElem, clusterName, search, docType);
                 }
@@ -128,7 +128,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
         private void buildStreamingSearchCluster(DeployState deployState, ModelElement clusterElem, String clusterName,
                                                  ContentSearchCluster search, ModelElement docType) {
-            String docTypeName = docType.getStringAttribute("type");
+            String docTypeName = docType.stringAttribute("type");
             StreamingSearchCluster cluster = new StreamingSearchCluster(search, clusterName + "." + docTypeName, 0, docTypeName, clusterName);
             search.addSearchCluster(deployState, cluster, getQueryTimeout(clusterElem), Arrays.asList(docType));
         }
@@ -151,13 +151,13 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
         private List<ModelElement> getIndexedSearchDefinitions(ModelElement clusterElem) {
             List<ModelElement> indexedDefs = new ArrayList<>();
-            ModelElement docElem = clusterElem.getChild("documents");
+            ModelElement docElem = clusterElem.child("documents");
             if (docElem == null) {
                 return indexedDefs;
             }
 
             for (ModelElement docType : docElem.subElements("document")) {
-                String mode = docType.getStringAttribute("mode");
+                String mode = docType.stringAttribute("mode");
                 if ("index".equals(mode)) {
                     indexedDefs.add(docType);
                 }

@@ -17,6 +17,8 @@ import java.util.Set;
  *
  * @author Christian Andersen
  */
+// TODO Delete once YCA filter is removed
+@Deprecated(forRemoval = true)
 public class RoutingProducer implements RoutingConfig.Producer {
 
     static final ApplicationName ROUTING_APPLICATION = ApplicationName.from("routing");

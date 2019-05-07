@@ -22,8 +22,13 @@ bool is_concrete_dense_stable_rename(const ValueType &from_type, const ValueType
                                      const std::vector<vespalib::string> &from,
                                      const std::vector<vespalib::string> &to)
 {
-    if (!from_type.is_dense() || from_type.is_abstract() ||
-        !to_type.is_dense() || to_type.is_abstract() ||
+    if (from_type.cell_type() != ValueType::CellType::DOUBLE ||
+        to_type.cell_type() != ValueType::CellType::DOUBLE)
+    {
+        return false; // non-double cell types not supported
+    }
+    if (!from_type.is_dense() ||
+        !to_type.is_dense() ||
         (from.size() != to.size()))
     {
         return false;

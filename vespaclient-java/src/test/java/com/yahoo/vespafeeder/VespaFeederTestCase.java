@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespafeeder;
 
-import static org.junit.Assert.*;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -16,16 +13,22 @@ import com.yahoo.clientmetrics.RouteMetricSet;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.feedapi.DummySessionFactory;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespaclient.config.FeederConfig;
-import com.yahoo.vespafeeder.Arguments.HelpShownException;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class VespaFeederTestCase {
 
@@ -35,7 +38,7 @@ public class VespaFeederTestCase {
     @Test
     public void testParseArgs() throws Exception {
         String argsS="--abortondataerror false --abortonsenderror false --file foo.xml --maxpending 10" +
-                " --maxpendingsize 11 --maxfeedrate 29 --mode benchmark --noretry --retrydelay 12 --route e6 --timeout 13 --trace 4" +
+                " --maxfeedrate 29 --mode benchmark --noretry --route e6 --timeout 13 --trace 4" +
                 " --validate -v bar.xml --priority LOW_1";
 
         Arguments arguments = new Arguments(argsS.split(" "), DummySessionFactory.createWithAutoReply());
@@ -44,12 +47,10 @@ public class VespaFeederTestCase {
         assertEquals(false, config.abortondocumenterror());
         assertEquals(13.0, config.timeout(), 0.00001);
         assertEquals(false, config.retryenabled());
-        assertEquals(12.0, config.retrydelay(), 0.0001);
         assertEquals("e6", config.route());
         assertEquals(4, config.tracelevel());
         assertEquals(false, config.abortonsenderror());
         assertEquals(10, config.maxpendingdocs());
-        assertEquals(11, config.maxpendingbytes());
         assertEquals(29.0, config.maxfeedrate(), 0.0001);
         assertTrue(arguments.isVerbose());
         assertFalse(config.createifnonexistent());
@@ -203,8 +204,7 @@ public class VespaFeederTestCase {
         feed("src/test/files/malformedfeed.json", false);
     }
 
-    protected FeedFixture feed(String feed, boolean abortOnDataError) throws HelpShownException,
-            FileNotFoundException, Exception {
+    protected FeedFixture feed(String feed, boolean abortOnDataError) throws Exception {
         String abortOnDataErrorArgument = abortOnDataError ? "" : " --abortondataerror no";
         FeedFixture feedFixture = new FeedFixture();
         Arguments arguments = new Arguments(("--file "

@@ -6,14 +6,13 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.test.TestDriver;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -25,7 +24,7 @@ public class SecurityResponseFilterChainTest {
         driver.activateContainer(driver.newContainerBuilder());
         HttpRequest request = HttpRequest.newServerRequest(driver, uri, method, version, address);
         request.release();
-        Assert.assertTrue(driver.close());
+        assertTrue(driver.close());
         return request;
     }
 

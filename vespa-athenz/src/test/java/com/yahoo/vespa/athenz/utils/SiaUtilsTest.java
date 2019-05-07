@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.utils;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,7 +36,7 @@ public class SiaUtilsTest {
         AthenzService barService = new AthenzService("my.domain.bar");
         Files.createFile(SiaUtils.getPrivateKeyFile(siaRoot, barService));
 
-        List<AthenzService> siaIdentities = SiaUtils.findSiaServices(siaRoot);
+        List<AthenzIdentity> siaIdentities = SiaUtils.findSiaServices(siaRoot);
         assertThat(siaIdentities.size(), equalTo(2));
         assertThat(siaIdentities, hasItem(fooService));
         assertThat(siaIdentities, hasItem(barService));

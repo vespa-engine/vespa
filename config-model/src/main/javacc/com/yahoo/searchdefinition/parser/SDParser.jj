@@ -331,6 +331,7 @@ TOKEN :
 | < LOWERBOUND: "lower-bound" >
 | < UPPERBOUND: "upper-bound" >
 | < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
+| < EXPERIMENTALPOSTINGLISTFORMAT: "experimental-posting-list-format" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
@@ -1781,6 +1782,7 @@ Object indexBody(IndexOperation index) :
       | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
+      | <EXPERIMENTALPOSTINGLISTFORMAT>                                { index.setExperimentalPostingListFormat(true); }
     )
     { return null; }
 }

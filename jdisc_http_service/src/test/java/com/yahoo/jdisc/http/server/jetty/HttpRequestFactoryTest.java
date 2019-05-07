@@ -10,7 +10,7 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.server.HttpConnection;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -18,10 +18,10 @@ import java.net.URI;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.fail;
 
 /**
  * @author Steinar Knutsen

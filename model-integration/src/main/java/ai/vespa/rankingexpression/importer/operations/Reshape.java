@@ -32,18 +32,16 @@ public class Reshape extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
+
         IntermediateOperation newShape = inputs.get(1);
-        if (!newShape.getConstantValue().isPresent()) {
-            throw new IllegalArgumentException("Reshape in " + name + ": " +
-                    "shape input must be a constant.");
-        }
+        if ( ! newShape.getConstantValue().isPresent())
+            throw new IllegalArgumentException("Reshape in " + name + ": Shape input must be a constant.");
+
         Tensor shape = newShape.getConstantValue().get().asTensor();
 
         OrderedTensorType inputType = inputs.get(0).type().get();
-        OrderedTensorType.Builder outputTypeBuilder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder outputTypeBuilder = new OrderedTensorType.Builder(resultValueType());
         int dimensionIndex = 0;
         for (Iterator<Tensor.Cell> cellIterator = shape.cellIterator(); cellIterator.hasNext();) {
             Tensor.Cell cell = cellIterator.next();
@@ -61,12 +59,9 @@ public class Reshape extends IntermediateOperation {
 
     @Override
     protected TensorFunction lazyGetFunction() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
-        if (!allInputFunctionsPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
+        if ( ! allInputFunctionsPresent(2)) return null;
+
         OrderedTensorType inputType = inputs.get(0).type().get();
         TensorFunction inputFunction = inputs.get(0).function().get();
         return reshape(inputFunction, inputType.type(), type.type());
@@ -80,9 +75,8 @@ public class Reshape extends IntermediateOperation {
     }
 
     public static TensorFunction reshape(TensorFunction inputFunction, TensorType inputType, TensorType outputType) {
-        if (!OrderedTensorType.tensorSize(inputType).equals(OrderedTensorType.tensorSize(outputType))) {
+        if ( ! OrderedTensorType.tensorSize(inputType).equals(OrderedTensorType.tensorSize(outputType)))
             throw new IllegalArgumentException("New and old shape of tensor must have the same size when reshaping");
-        }
 
         // Conceptually, reshaping consists on unrolling a tensor to an array using the dimension order,
         // then use the dimension order of the new shape to roll back into a tensor.
@@ -96,20 +90,17 @@ public class Reshape extends IntermediateOperation {
 
         TensorType transformationType = new TensorType.Builder(inputType, outputType).build();
         Generate transformTensor = new Generate(transformationType,
-                new GeneratorLambdaFunctionNode(transformationType, transformExpression).asLongListToDoubleOperator());
+                                                new GeneratorLambdaFunctionNode(transformationType, transformExpression).asLongListToDoubleOperator());
 
-        TensorFunction outputFunction = new Reduce(
-                new com.yahoo.tensor.functions.Join(inputFunction, transformTensor, ScalarFunctions.multiply()),
-                Reduce.Aggregator.sum,
-                inputType.dimensions().stream().map(TensorType.Dimension::name).collect(Collectors.toList()));
-
-        return outputFunction;
+        return new Reduce(new com.yahoo.tensor.functions.Join(inputFunction, transformTensor, ScalarFunctions.multiply()),
+                          Reduce.Aggregator.sum,
+                          inputType.dimensions().stream().map(TensorType.Dimension::name).collect(Collectors.toList()));
     }
 
     private static ExpressionNode unrollTensorExpression(TensorType type) {
-        if (type.rank() == 0) {
+        if (type.rank() == 0)
             return new ConstantNode(DoubleValue.zero);
-        }
+
         List<ExpressionNode> children = new ArrayList<>();
         List<ArithmeticOperator> operators = new ArrayList<>();
         int size = 1;

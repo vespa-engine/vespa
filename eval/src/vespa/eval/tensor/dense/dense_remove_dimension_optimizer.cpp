@@ -15,7 +15,10 @@ using namespace eval::tensor_function;
 namespace {
 
 bool is_concrete_dense_tensor(const ValueType &type) {
-    return (type.is_dense() && !type.is_abstract());
+    if (type.cell_type() != ValueType::CellType::DOUBLE) {
+        return false; // non-double cell types not supported
+    }
+    return type.is_dense();
 }
 
 bool is_ident_aggr(Aggr aggr) {

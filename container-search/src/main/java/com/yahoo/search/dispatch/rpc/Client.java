@@ -2,8 +2,6 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
-import com.yahoo.compress.Compressor;
-import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.FastHit;
 
 import java.util.List;
@@ -15,14 +13,6 @@ import java.util.Optional;
  * @author bratseth
  */
 interface Client {
-
-    void getDocsums(List<FastHit> hits, NodeConnection node, CompressionType compression,
-                    int uncompressedLength, byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver,
-                    double timeoutSeconds);
-
-    void request(String rpcMethod, NodeConnection node, CompressionType compression, int uncompressedLength,
-            byte[] compressedPayload, ResponseReceiver responseReceiver, double timeoutSeconds);
-
     /** Creates a connection to a particular node in this */
     NodeConnection createConnection(String hostname, int port);
 
@@ -91,6 +81,11 @@ interface Client {
     }
 
     interface NodeConnection {
+        void getDocsums(List<FastHit> hits, CompressionType compression, int uncompressedLength, byte[] compressedSlime,
+                RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds);
+
+        void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
+                ResponseReceiver responseReceiver, double timeoutSeconds);
 
         /** Closes this connection */
         void close();

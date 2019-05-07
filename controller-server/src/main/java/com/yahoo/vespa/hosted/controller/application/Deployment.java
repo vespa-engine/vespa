@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Instant;
 import java.util.Collections;

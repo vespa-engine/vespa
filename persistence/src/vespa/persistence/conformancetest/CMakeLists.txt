@@ -2,6 +2,4 @@
 vespa_add_library(persistence_conformancetest_lib OBJECT
     SOURCES
     conformancetest.cpp
-    DEPENDS
-    vdstestlib
 )

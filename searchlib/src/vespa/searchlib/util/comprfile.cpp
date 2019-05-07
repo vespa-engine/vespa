@@ -408,76 +408,13 @@ ComprFileReadContext::referenceWriteContext(const ComprFileWriteContext &rhs)
     }
 }
 
-
 void
-ComprFileReadContext::copyWriteContext(const ComprFileWriteContext &rhs)
-{
-    ComprFileEncodeContext *e = rhs.getEncodeContext();
-    ComprFileDecodeContext *d = getDecodeContext();
-
-    assert(e != NULL);
-    int usedUnits = e->getUsedUnits(rhs._comprBuf);
-    assert(usedUnits >= 0);
-
-    dropComprBuf();
-    allocComprBuf(usedUnits, 32768);
-    assert(_comprBufSize >= static_cast<unsigned int>(usedUnits));
-    memcpy(_comprBuf, rhs._comprBuf,
-           static_cast<size_t>(usedUnits) * _unitSize);
-    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * _unitSize);
-    setFileSize(static_cast<uint64_t>(usedUnits) * _unitSize);
-    if (d != NULL) {
-        d->afterRead(_comprBuf,
-                     usedUnits,
-                     static_cast<uint64_t>(usedUnits) * _unitSize,
-                     false);
-        d->setupBits(0);
-        setBitOffset(-1);
-        assert(d->getBitPosV() == 0);
-    }
-}
-
-
-void
-ComprFileReadContext::referenceReadContext(const ComprFileReadContext &rhs)
+ComprFileReadContext::reference_compressed_buffer(void *buffer, size_t usedUnits)
 {
     ComprFileDecodeContext *d = getDecodeContext();
 
-    int usedUnits = rhs.getBufferEndFilePos() / _unitSize;
-    assert(usedUnits >= 0);
-    assert(static_cast<uint64_t>(usedUnits) * _unitSize ==
-           rhs.getBufferEndFilePos());
-
-    referenceComprBuf(rhs);
-    setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * _unitSize);
-    setFileSize(static_cast<uint64_t>(usedUnits) * _unitSize);
-    if (d != NULL) {
-        d->afterRead(_comprBuf,
-                     usedUnits,
-                     static_cast<uint64_t>(usedUnits) * _unitSize,
-                     false);
-        d->setupBits(0);
-        setBitOffset(-1);
-        assert(d->getBitPosV() == 0);
-    }
-}
-
-
-void
-ComprFileReadContext::copyReadContext(const ComprFileReadContext &rhs)
-{
-    ComprFileDecodeContext *d = getDecodeContext();
-
-    int usedUnits = rhs.getBufferEndFilePos() / _unitSize;
-    assert(usedUnits >= 0);
-    assert(static_cast<uint64_t>(usedUnits) * _unitSize ==
-           rhs.getBufferEndFilePos());
-
-    dropComprBuf();
-    allocComprBuf(usedUnits, 32768);
-    assert(_comprBufSize >= static_cast<unsigned int>(usedUnits));
-    memcpy(_comprBuf, rhs._comprBuf,
-           static_cast<size_t>(usedUnits) * _unitSize);
+    _comprBuf = buffer;
+    _comprBufSize = usedUnits;
     setBufferEndFilePos(static_cast<uint64_t>(usedUnits) * _unitSize);
     setFileSize(static_cast<uint64_t>(usedUnits) * _unitSize);
     if (d != NULL) {

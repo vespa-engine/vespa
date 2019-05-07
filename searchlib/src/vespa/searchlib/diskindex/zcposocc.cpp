@@ -16,14 +16,12 @@ using search::index::PostingListCountFileSeqRead;
 using search::index::PostingListCountFileSeqWrite;
 
 Zc4PosOccSeqRead::Zc4PosOccSeqRead(PostingListCountFileSeqRead *countFile)
-    : Zc4PostingSeqRead(countFile),
+    : Zc4PostingSeqRead(countFile, false),
       _fieldsParams(),
       _cookedDecodeContext(&_fieldsParams),
       _rawDecodeContext(&_fieldsParams)
 {
-    _decodeContext = &_cookedDecodeContext;
-    _decodeContext->setReadContext(&_readContext);
-    _readContext.setDecodeContext(_decodeContext);
+    _reader.set_decode_features(&_cookedDecodeContext);
 }
 
 
@@ -31,18 +29,17 @@ void
 Zc4PosOccSeqRead::
 setFeatureParams(const PostingListParams &params)
 {
-    bool oldCooked = _decodeContext == &_cookedDecodeContext;
+    bool oldCooked = &_reader.get_decode_features() == &_cookedDecodeContext;
     bool newCooked = oldCooked;
     params.get("cooked", newCooked);
     if (oldCooked != newCooked) {
         if (newCooked) {
             _cookedDecodeContext = _rawDecodeContext;
-            _decodeContext = &_cookedDecodeContext;
+            _reader.set_decode_features(&_cookedDecodeContext);
         } else {
             _rawDecodeContext = _cookedDecodeContext;
-            _decodeContext = &_rawDecodeContext;
+            _reader.set_decode_features(&_rawDecodeContext);
         }
-        _readContext.setDecodeContext(_decodeContext);
     }
 }
 
@@ -63,22 +60,18 @@ Zc4PosOccSeqWrite::Zc4PosOccSeqWrite(const Schema &schema,
       _fieldsParams(),
       _realEncodeFeatures(&_fieldsParams)
 {
-    _encodeFeatures = &_realEncodeFeatures;
-    _encodeFeatures->setWriteContext(&_featureWriteContext);
-    _featureWriteContext.setEncodeContext(_encodeFeatures);
+    _writer.set_encode_features(&_realEncodeFeatures);
     _fieldsParams.setSchemaParams(schema, indexId);
 }
 
 
 ZcPosOccSeqRead::ZcPosOccSeqRead(PostingListCountFileSeqRead *countFile)
-    : ZcPostingSeqRead(countFile),
+    : Zc4PostingSeqRead(countFile, true),
       _fieldsParams(),
       _cookedDecodeContext(&_fieldsParams),
       _rawDecodeContext(&_fieldsParams)
 {
-    _decodeContext = &_cookedDecodeContext;
-    _decodeContext->setReadContext(&_readContext);
-    _readContext.setDecodeContext(_decodeContext);
+    _reader.set_decode_features(&_cookedDecodeContext);
 }
 
 
@@ -86,18 +79,17 @@ void
 ZcPosOccSeqRead::
 setFeatureParams(const PostingListParams &params)
 {
-    bool oldCooked = _decodeContext == &_cookedDecodeContext;
+    bool oldCooked = &_reader.get_decode_features() == &_cookedDecodeContext;
     bool newCooked = oldCooked;
     params.get("cooked", newCooked);
     if (oldCooked != newCooked) {
         if (newCooked) {
             _cookedDecodeContext = _rawDecodeContext;
-            _decodeContext = &_cookedDecodeContext;
+            _reader.set_decode_features(&_cookedDecodeContext);
         } else {
             _rawDecodeContext = _cookedDecodeContext;
-            _decodeContext = &_rawDecodeContext;
+            _reader.set_decode_features(&_rawDecodeContext);
         }
-        _readContext.setDecodeContext(_decodeContext);
     }
 }
 
@@ -118,9 +110,7 @@ ZcPosOccSeqWrite::ZcPosOccSeqWrite(const Schema &schema,
       _fieldsParams(),
       _realEncodeFeatures(&_fieldsParams)
 {
-    _encodeFeatures = &_realEncodeFeatures;
-    _encodeFeatures->setWriteContext(&_featureWriteContext);
-    _featureWriteContext.setEncodeContext(_encodeFeatures);
+    _writer.set_encode_features(&_realEncodeFeatures);
     _fieldsParams.setSchemaParams(schema, indexId);
 }
 

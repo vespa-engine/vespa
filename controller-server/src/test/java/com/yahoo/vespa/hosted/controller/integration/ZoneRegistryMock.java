@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
@@ -12,10 +13,10 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilter;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilterMock;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneFilter;
+import com.yahoo.config.provision.zone.ZoneFilterMock;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
@@ -35,12 +36,21 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
     private List<ZoneId> zones = new ArrayList<>();
-    private SystemName system = SystemName.main;
+    private SystemName system;
     private UpgradePolicy upgradePolicy = null;
     private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
 
     @Inject
+    public ZoneRegistryMock(ConfigserverConfig config) {
+        this(SystemName.valueOf(config.system()));
+    }
+
     public ZoneRegistryMock() {
+        this(SystemName.main);
+    }
+
+    public ZoneRegistryMock(SystemName system) {
+        this.system = system;
         zones.add(ZoneId.from("prod", "us-east-3"));
         zones.add(ZoneId.from("prod", "us-west-1"));
         zones.add(ZoneId.from("prod", "us-central-1"));
@@ -91,7 +101,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return ZoneFilterMock.from(Collections.unmodifiableList(zones));
     }
 
-    public AthenzService getConfigServerAthenzService(ZoneId zone) {
+    public AthenzService getConfigServerAthenzIdentity(ZoneId zone) {
         return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
     }
 

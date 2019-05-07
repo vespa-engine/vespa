@@ -24,10 +24,12 @@ ZcBuf::clearReserve(size_t reserveSize)
 {
     if (reserveSize + zcSlack() > _mallocSize) {
         size_t newSize = _mallocSize * 2;
-        if (newSize < 16)
+        if (newSize < 16) {
             newSize = 16;
-        while (newSize < reserveSize + zcSlack())
+        }
+        while (newSize < reserveSize + zcSlack()) {
             newSize *= 2;
+        }
         uint8_t *newBuf = static_cast<uint8_t *>(malloc(newSize));
         free(_mallocStart);
         _mallocStart = newBuf;
@@ -43,13 +45,15 @@ ZcBuf::expand()
 {
     size_t newSize = _mallocSize * 2;
     size_t oldSize = size();
-    if (newSize < 16)
+    if (newSize < 16) {
         newSize = 16;
+    }
 
     uint8_t *newBuf = static_cast<uint8_t *>(malloc(newSize));
 
-    if (oldSize > 0)
+    if (oldSize > 0) {
         memcpy(newBuf, _mallocStart, oldSize);
+    }
     free(_mallocStart);
     _mallocStart = newBuf;
     _mallocSize = newSize;
@@ -57,4 +61,4 @@ ZcBuf::expand()
     _valE = _mallocStart + newSize - zcSlack();
 }
 
-} // namespace search::diskindex
+}

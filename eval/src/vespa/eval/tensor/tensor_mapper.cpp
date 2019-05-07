@@ -53,9 +53,7 @@ SparseTensorMapper(const ValueType &type)
 }
 
 template <class TensorT>
-SparseTensorMapper<TensorT>::~SparseTensorMapper()
-{
-}
+SparseTensorMapper<TensorT>::~SparseTensorMapper() = default;
 
 template <class TensorT>
 std::unique_ptr<Tensor>
@@ -98,111 +96,6 @@ SparseTensorMapper<TensorT>::map(const Tensor &tensor,
                                  const ValueType &type)
 {
     SparseTensorMapper<TensorT> mapper(type);
-    tensor.accept(mapper);
-    return mapper.build();
-}
-
-//-----------------------------------------------------------------------------
-
-class TensorTypeMapper : public TensorVisitor
-{
-    ValueType _type;
-    std::vector<ValueType::Dimension> _dimensions;
-
-    bool addressOK(const TensorAddress &address);
-    void expandUnboundDimensions(const TensorAddress &address);
-
-    virtual void visit(const TensorAddress &address, double value) override;
-
-    TensorTypeMapper(const ValueType &type);
-    ~TensorTypeMapper();
-
-    ValueType build();
-public:
-    static ValueType map(const Tensor &tensor, const ValueType &type);
-};
-
-bool
-TensorTypeMapper::addressOK(const TensorAddress &address)
-{
-    TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    auto dimIterator = _dimensions.begin();
-    for (const auto &dimension : _type.dimensions()) {
-        if (addressIterator.skipToDimension(dimension.name)) {
-            if (dimension.is_indexed()) {
-                uint32_t label = DenseTensorAddressMapper::mapLabelToNumber(addressIterator.label());
-                if (label == DenseTensorAddressMapper::BAD_LABEL ||
-                    (dimension.is_bound() && label >= dimIterator->size)) {
-                    return false;
-                }
-            }
-            addressIterator.next();
-        }
-        ++dimIterator;
-    }
-    assert(dimIterator == _dimensions.end());
-    return true;
-}
-
-
-void
-TensorTypeMapper::expandUnboundDimensions(const TensorAddress &address)
-{
-    TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    auto dimIterator = _dimensions.begin();
-    for (const auto &dimension : _type.dimensions()) {
-        if (addressIterator.skipToDimension(dimension.name)) {
-            if (dimension.is_indexed()) {
-                uint32_t label = DenseTensorAddressMapper::mapLabelToNumber(addressIterator.label());
-                if (label != DenseTensorAddressMapper::BAD_LABEL &&
-                    !dimension.is_bound() &&
-                    label >= dimIterator->size) {
-                    dimIterator->size = label + 1;
-                }
-            }
-            addressIterator.next();
-        }
-        ++dimIterator;
-    }
-    assert(dimIterator == _dimensions.end());
-}
-
-void
-TensorTypeMapper::visit(const TensorAddress &address, double value)
-{
-    (void) value;
-    if (addressOK(address)) {
-        expandUnboundDimensions(address);
-    }
-}
-
-TensorTypeMapper::TensorTypeMapper(const ValueType &type)
-    : _type(type),
-      _dimensions(type.dimensions())
-{
-    for (auto &dimension : _dimensions) {
-        if (dimension.is_indexed()) {
-            if (!dimension.is_bound()) {
-                dimension.size = 1;
-            }
-        }
-    }
-}
-
-TensorTypeMapper::~TensorTypeMapper()
-{
-}
-
-ValueType
-TensorTypeMapper::build()
-{
-    return ValueType::tensor_type(std::move(_dimensions));
-}
-
-ValueType
-TensorTypeMapper::map(const Tensor &tensor, const ValueType &type)
-{
-    TensorTypeMapper mapper(type);
     tensor.accept(mapper);
     return mapper.build();
 }
@@ -261,9 +154,7 @@ DenseTensorMapper::visit(const TensorAddress &address, double value)
 std::unique_ptr<Tensor>
 DenseTensorMapper::map(const Tensor &tensor, const ValueType &type)
 {
-    DenseTensorMapper mapper(type.is_abstract() ?
-                             TensorTypeMapper::map(tensor, type) :
-                             type);
+    DenseTensorMapper mapper(type);
     tensor.accept(mapper);
     return mapper.build();
 }
@@ -324,9 +215,7 @@ WrappedTensorMapper::visit(const TensorAddress &address, double value)
 std::unique_ptr<Tensor>
 WrappedTensorMapper::map(const Tensor &tensor, const ValueType &type)
 {
-    WrappedTensorMapper mapper(type.is_abstract() ?
-                               TensorTypeMapper::map(tensor, type) :
-                               type);
+    WrappedTensorMapper mapper(type);
     tensor.accept(mapper);
     return mapper.build();
 }

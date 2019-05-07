@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/memoryindex/memoryindex.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchcorespi/index/imemoryindex.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/tunefileinfo.h>

@@ -17,8 +17,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +32,6 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
 
     private final DocumentProcessingHandler docprocHandler;
     private RequestContext requestContext;
-    private int waitCounter;
 
     private final static AtomicLong seq = new AtomicLong();
     private final long seqNum;
@@ -45,7 +42,6 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
         seqNum = seq.getAndIncrement();
         this.requestContext = requestContext;
         this.docprocHandler = docprocHandler;
-        this.waitCounter = 10;
         this.service = service;
     }
 
@@ -77,18 +73,6 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
                 Runtime.getRuntime().halt(1);
             }
         }
-    }
-
-    /**
-     * Used by DocprocThreadManager. If a ProcessingTask has been taken by a thread, it can wait() no longer than
-     * waitCounter (currently 10) times before being executed. This is to prevent large tasks from being delayed
-     * forever.
-     *
-     * @return true if this task can wait, false if it must run NOW.
-     */
-    boolean doWait() {
-        --waitCounter;
-        return (waitCounter > 0);
     }
 
     /**

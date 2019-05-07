@@ -76,7 +76,10 @@ void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
 }
 
 bool isConcreteDenseTensor(const ValueType &type, size_t d) {
-    return (type.is_dense() && (type.dimensions().size() == d) && !type.is_abstract());
+    if (type.cell_type() != ValueType::CellType::DOUBLE) {
+        return false; // non-double cell types not supported
+    }
+    return (type.is_dense() && (type.dimensions().size() == d));
 }
 
 bool isDenseXWProduct(const ValueType &res, const ValueType &vec, const ValueType &mat) {

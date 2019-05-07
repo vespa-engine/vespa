@@ -20,7 +20,10 @@ using namespace eval::operation;
 namespace {
 
 bool is_concrete_dense_tensor(const ValueType &type) {
-    return (type.is_dense() && !type.is_abstract());
+    if (type.cell_type() != ValueType::CellType::DOUBLE) {
+        return false; // non-double cell types not supported
+    }
+    return type.is_dense();
 }
 
 bool not_overlapping(const ValueType &a, const ValueType &b) {

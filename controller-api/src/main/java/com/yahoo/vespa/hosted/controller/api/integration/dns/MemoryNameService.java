@@ -22,23 +22,40 @@ public class MemoryNameService implements NameService {
         return Collections.unmodifiableSet(records);
     }
 
+    private void add(Record record) {
+        if (records.stream().anyMatch(r -> r.type().equals(record.type()) &&
+                                           r.name().equals(record.name()) &&
+                                           r.data().equals(record.data()))) {
+            throw new IllegalArgumentException("Record already exists: " + record);
+        }
+        records.add(record);
+    }
+
     @Override
     public Record createCname(RecordName name, RecordData canonicalName) {
-        Record record = new Record(Record.Type.CNAME, name, canonicalName);
-        records.add(record);
+        var record = new Record(Record.Type.CNAME, name, canonicalName);
+        add(record);
         return record;
     }
 
     @Override
     public List<Record> createAlias(RecordName name, Set<AliasTarget> targets) {
-        List<Record> records = targets.stream()
-                                     .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
-                                     .map(target -> new Record(Record.Type.ALIAS, name,
-                                                               RecordData.fqdn(target.name().value())))
-                                     .collect(Collectors.toList());
+        var records = targets.stream()
+                             .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
+                             .map(target -> new Record(Record.Type.ALIAS, name, target.asData()))
+                             .collect(Collectors.toList());
         // Satisfy idempotency contract of interface
         removeRecords(findRecords(Record.Type.ALIAS, name));
-        this.records.addAll(records);
+        records.forEach(this::add);
+        return records;
+    }
+
+    @Override
+    public List<Record> createTxtRecords(RecordName name, List<RecordData> txtData) {
+        var records = txtData.stream()
+                             .map(data -> new Record(Record.Type.TXT, name, data))
+                             .collect(Collectors.toList());
+        records.forEach(this::add);
         return records;
     }
 
@@ -58,7 +75,7 @@ public class MemoryNameService implements NameService {
 
     @Override
     public void updateRecord(Record record, RecordData newData) {
-        List<Record> records = findRecords(record.type(), record.name());
+        var records = findRecords(record.type(), record.name());
         if (records.isEmpty()) {
             throw new IllegalArgumentException("No record with data '" + newData.asString() + "' exists");
         }
@@ -66,9 +83,9 @@ public class MemoryNameService implements NameService {
             throw new IllegalArgumentException("Cannot update multi-value record '" + record.name().asString() +
                                                "' with '" + newData.asString() + "'");
         }
-        Record existing = records.get(0);
+        var existing = records.get(0);
         this.records.remove(existing);
-        this.records.add(new Record(existing.type(), existing.name(), newData));
+        add(new Record(existing.type(), existing.name(), newData));
     }
 
     @Override

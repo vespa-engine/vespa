@@ -386,13 +386,12 @@ public class Join extends PrimitiveTensorFunction {
         return true;
     }
 
-    /**
-     * Returns common dimension of a and b as a new tensor type
-     */
+    /** Returns common dimension of a and b as a new tensor type */
     private static TensorType commonDimensions(Tensor a, Tensor b) {
-        TensorType.Builder typeBuilder = new TensorType.Builder();
         TensorType aType = a.type();
         TensorType bType = b.type();
+        TensorType.Builder typeBuilder = new TensorType.Builder(TensorType.Value.largestOf(aType.valueType(),
+                                                                                           bType.valueType()));
         for (int i = 0; i < aType.dimensions().size(); ++i) {
             TensorType.Dimension aDim = aType.dimensions().get(i);
             for (int j = 0; j < bType.dimensions().size(); ++j) {

@@ -5,7 +5,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.document.json.readers.TensorRemoveUpdateReader;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
@@ -18,7 +17,6 @@ import com.yahoo.tensor.TensorType;
  *
  * @author baldersheim
  */
-@SuppressWarnings("deprecation")
 public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
 
     public VespaDocumentDeserializerHead(DocumentTypeManager manager, GrowableByteBuffer buffer) {

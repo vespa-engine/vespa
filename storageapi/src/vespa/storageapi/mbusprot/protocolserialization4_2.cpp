@@ -20,7 +20,7 @@ namespace storage::mbusprot {
 
 ProtocolSerialization4_2::ProtocolSerialization4_2(
         const std::shared_ptr<const document::DocumentTypeRepo>& repo)
-    : ProtocolSerialization(repo)
+    : LegacyProtocolSerialization(repo)
 {
 }
 

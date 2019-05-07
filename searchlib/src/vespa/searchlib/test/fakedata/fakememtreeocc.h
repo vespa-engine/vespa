@@ -4,8 +4,8 @@
 #include "fakeword.h"
 #include "fakeposting.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/memoryindex/dictionary.h>
-#include <vespa/searchlib/memoryindex/featurestore.h>
+#include <vespa/searchlib/memoryindex/feature_store.h>
+#include <vespa/searchlib/memoryindex/field_index.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
@@ -15,7 +15,7 @@ namespace fakedata {
 class FakeMemTreeOccMgr : public FakeWord::RandomizedWriter
 {
 public:
-    typedef memoryindex::Dictionary::PostingList Tree;
+    typedef memoryindex::FieldIndex::PostingList Tree;
     typedef Tree::NodeAllocatorType NodeAllocator;
     typedef memoryindex::FeatureStore FeatureStore;
     typedef datastore::EntryRef EntryRef;

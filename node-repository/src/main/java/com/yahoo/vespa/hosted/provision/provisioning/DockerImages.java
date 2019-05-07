@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;

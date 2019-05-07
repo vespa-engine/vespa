@@ -16,7 +16,7 @@ class Function;
  * calculations for a single function. The constructor performs type
  * resolution for each node in the AST based on the type of all
  * function parameters. The default constructor creates an empty type
- * repo representing an unknown number of unknown values.
+ * repo where all lookups will result in error types.
  **/
 class NodeTypes
 {

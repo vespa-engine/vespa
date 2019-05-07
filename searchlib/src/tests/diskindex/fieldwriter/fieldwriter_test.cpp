@@ -299,11 +299,10 @@ writeField(FakeWordSet &wordSet,
     ostate.open();
 
     unsigned int wordNum = 1;
-    for (unsigned int wc = 0; wc < wordSet._words.size(); ++wc) {
-        for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
-            FakeWord &fw = *wordSet._words[wc][wi];
+    for (const auto& words : wordSet.words()) {
+        for (const auto& word : words) {
             ostate._fieldWriter->newWord(makeWordString(wordNum));
-            fw.dump(*ostate._fieldWriter, false);
+            word->dump(*ostate._fieldWriter, false);
             ++wordNum;
         }
     }
@@ -349,15 +348,12 @@ readField(FakeWordSet &wordSet,
     TermFieldMatchData mdfield1;
 
     unsigned int wordNum = 1;
-    for (unsigned int wc = 0; wc < wordSet._words.size(); ++wc) {
-        for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
-            FakeWord &fw = *wordSet._words[wc][wi];
-
+    for (const auto& words : wordSet.words()) {
+        for (const auto& word : words) {
             TermFieldMatchDataArray tfmda;
             tfmda.add(&mdfield1);
 
-            fw.validate(*istate._fieldReader, wordNum,
-                        tfmda, verbose);
+            word->validate(*istate._fieldReader, wordNum, tfmda, verbose);
             ++wordNum;
         }
     }
@@ -425,10 +421,8 @@ randReadField(FakeWordSet &wordSet,
 
     for (int loop = 0; loop < 1; ++loop) {
         unsigned int wordNum = 1;
-        for (unsigned int wc = 0; wc < wordSet._words.size(); ++wc) {
-            for (unsigned int wi = 0; wi < wordSet._words[wc].size(); ++wi) {
-                FakeWord &fw = *wordSet._words[wc][wi];
-
+        for (const auto& words : wordSet.words()) {
+            for (const auto& word : words) {
                 PostingListOffsetAndCounts offsetAndCounts;
                 uint64_t checkWordNum;
                 dictFile->lookup(makeWordString(wordNum),
@@ -456,12 +450,12 @@ randReadField(FakeWordSet &wordSet,
                     sb(handle.createIterator(counts, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
-                fw.validate(sb.get(), tfmda, verbose);
-                fw.validate(sb.get(), tfmda, 19, verbose);
-                fw.validate(sb.get(), tfmda, 99, verbose);
-                fw.validate(sb.get(), tfmda, 799, verbose);
-                fw.validate(sb.get(), tfmda, 6399, verbose);
-                fw.validate(sb.get(), tfmda, 11999, verbose);
+                word->validate(sb.get(), tfmda, verbose);
+                word->validate(sb.get(), tfmda, 19, verbose);
+                word->validate(sb.get(), tfmda, 99, verbose);
+                word->validate(sb.get(), tfmda, 799, verbose);
+                word->validate(sb.get(), tfmda, 6399, verbose);
+                word->validate(sb.get(), tfmda, 11999, verbose);
                 ++wordNum;
             }
         }

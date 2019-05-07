@@ -4,14 +4,9 @@
 #include <map>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search
-{
+namespace search::index {
 
-namespace index
-{
-
-class PostingListParams
-{
+class PostingListParams {
     typedef std::map<vespalib::string, vespalib::string> Map;
     Map _map;
 public:
@@ -42,7 +37,4 @@ public:
     operator!=(const PostingListParams &rhs) const;
 };
 
-} // namespace index
-
-} // namespace search
-
+}

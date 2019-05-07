@@ -4,10 +4,14 @@ package com.yahoo.messagebus;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.metrics.MessageBusMetricSet;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.NetworkOwner;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.Resender;
+import com.yahoo.messagebus.routing.RetryPolicy;
+import com.yahoo.messagebus.routing.RoutingPolicy;
+import com.yahoo.messagebus.routing.RoutingSpec;
+import com.yahoo.messagebus.routing.RoutingTable;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
 
@@ -58,18 +62,17 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private static Logger log = Logger.getLogger(MessageBus.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final ProtocolRepository protocolRepository = new ProtocolRepository();
-    private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<Map<String, RoutingTable>>(null);
-    private final CopyOnWriteHashMap<String, MessageHandler> sessions = new CopyOnWriteHashMap<String, MessageHandler>();
+    private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<>(null);
+    private final CopyOnWriteHashMap<String, MessageHandler> sessions = new CopyOnWriteHashMap<>();
     private final Network net;
     private final Messenger msn;
     private final Resender resender;
-    private int maxPendingCount = 0;
-    private int maxPendingSize = 0;
+    private int maxPendingCount;
+    private int maxPendingSize;
     private int pendingCount = 0;
     private int pendingSize = 0;
     private final Thread careTaker = new Thread(this::sendBlockedMessages);
     private final ConcurrentHashMap<SendBlockedMessages, Long> blockedSenders = new ConcurrentHashMap<>();
-    private MessageBusMetricSet metrics = new MessageBusMetricSet();
 
     public interface SendBlockedMessages {
         /**
@@ -126,10 +129,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         maxPendingSize  = params.getMaxPendingSize();
         for (int i = 0, len = params.getNumProtocols(); i < len; ++i) {
             protocolRepository.putProtocol(params.getProtocol(i));
-
-            if (params.getProtocol(i).getMetrics() != null) {
-                metrics.protocols.addMetric(params.getProtocol(i).getMetrics());
-            }
         }
 
         // Attach and start network.
@@ -152,15 +151,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         careTaker.start();
 
         msn.start();
-    }
-
-    /**
-     * <p>Returns the metrics used by this messagebus.</p>
-     *
-     * @return The metric set.
-     */
-    public MessageBusMetricSet getMetrics() {
-        return metrics;
     }
 
     /**
@@ -440,7 +430,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
 
     @Override
     public void setupRouting(RoutingSpec spec) {
-        Map<String, RoutingTable> tables = new HashMap<String, RoutingTable>();
+        Map<String, RoutingTable> tables = new HashMap<>();
         for (int i = 0, len = spec.getNumTables(); i < len; ++i) {
             RoutingTableSpec table = spec.getTable(i);
             String name = table.getProtocol();

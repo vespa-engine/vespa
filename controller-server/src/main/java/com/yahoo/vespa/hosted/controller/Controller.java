@@ -8,9 +8,9 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
@@ -19,14 +19,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -47,6 +50,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * API to the controller. This contains the object model of everything the controller cares about, mainly tenants and
@@ -76,6 +80,8 @@ public class Controller extends AbstractComponent {
     private final Chef chef;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
+    private final FlagSource flagSource;
+    private final NameServiceForwarder nameServiceForwarder;
 
     /**
      * Creates a controller 
@@ -85,24 +91,24 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
-                      NameService nameService, RoutingGenerator routingGenerator, Chef chef,
+                      RoutingGenerator routingGenerator, Chef chef,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Mailer mailer) {
+                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
-             configServer, metricsService, nameService, routingGenerator, chef,
+             configServer, metricsService, routingGenerator, chef,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer);
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
-                      MetricsService metricsService, NameService nameService,
+                      MetricsService metricsService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer) {
+                      Mailer mailer, FlagSource flagSource) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -113,17 +119,19 @@ public class Controller extends AbstractComponent {
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
+        this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
+        this.nameServiceForwarder = new NameServiceForwarder(curator);
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
-                                                          clock);
+                                                          clock
+        );
         tenantController = new TenantController(this, curator, accessControl);
         auditLogger = new AuditLogger(curator, clock);
 
@@ -146,9 +154,18 @@ public class Controller extends AbstractComponent {
         return mailer;
     }
 
+    /** Provides access to the feature flags of this */
+    public FlagSource flagSource() {
+        return flagSource;
+    }
+
     public Clock clock() { return clock; }
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
+
+    public NameServiceForwarder nameServiceForwarder() {
+        return nameServiceForwarder;
+    }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
@@ -279,6 +296,22 @@ public class Controller extends AbstractComponent {
 
     public AuditLogger auditLogger() {
         return auditLogger;
+    }
+
+    /** Returns all other roles the given tenant role implies. */
+    public Set<Role> impliedRoles(TenantRole role) {
+        return Stream.concat(Roles.tenantRoles(role.tenant()).stream(),
+                             applications().asList(role.tenant()).stream()
+                                           .flatMap(application -> Roles.applicationRoles(application.id().tenant(), application.id().application()).stream()))
+                .filter(role::implies)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** Returns all other roles the given application role implies. */
+    public Set<Role> impliedRoles(ApplicationRole role) {
+        return Roles.applicationRoles(role.tenant(), role.application()).stream()
+                .filter(role::implies)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private Set<CloudName> clouds() {

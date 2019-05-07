@@ -40,6 +40,9 @@ minWaitAfterCoverageFactor double default=0
 # Maximum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
 maxWaitAfterCoverageFactor double default=1
 
+# Number of JRT connection supervisors
+numJrtSupervisors int default=8
+
 # The unique key of a search node
 node[].key int
 

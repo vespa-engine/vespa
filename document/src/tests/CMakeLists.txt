@@ -4,11 +4,33 @@
 # NOTE: All new test classes should be added here.
 vespa_add_executable(document_gtest_runner_app TEST
     SOURCES
+    arrayfieldvaluetest.cpp
+    bucketselectortest.cpp
+    buckettest.cpp
     documentcalculatortestcase.cpp
     documentidtest.cpp
+    documentselectparsertest.cpp
+    documenttestcase.cpp
+    documenttypetestcase.cpp
     documentupdatetestcase.cpp
+    fieldpathupdatetestcase.cpp
+    fieldsettest.cpp
+    fixed_bucket_spaces_test.cpp
+    forcelinktest.cpp
+    gid_filter_test.cpp
+    globalidtest.cpp
     gtest_runner.cpp
+    orderingselectortest.cpp
+    positiontypetest.cpp
+    primitivefieldvaluetest.cpp
+    stringtokenizertest.cpp
+    structfieldvaluetest.cpp
+    testbytebuffer.cpp
+    testdocmantest.cpp
     teststringutil.cpp
+    testxml.cpp
+    urltypetest.cpp
+    weightedsetfieldvaluetest.cpp
     DEPENDS
     document
     gtest
@@ -19,42 +41,4 @@ vespa_add_executable(document_gtest_runner_app TEST
 vespa_add_test(
     NAME document_gtest_runner_app
     COMMAND document_gtest_runner_app
-)
-
-# Runner for unit tests written in CppUnit (DEPRECATED).
-vespa_add_executable(document_testrunner_app TEST
-    SOURCES
-    testbytebuffer.cpp
-    stringtokenizertest.cpp
-    buckettest.cpp
-    globalidtest.cpp
-    documenttypetestcase.cpp
-    primitivefieldvaluetest.cpp
-    arrayfieldvaluetest.cpp
-    weightedsetfieldvaluetest.cpp
-    structfieldvaluetest.cpp
-    documenttestcase.cpp
-    testdocmantest.cpp
-    fieldpathupdatetestcase.cpp
-    documentselectparsertest.cpp
-    bucketselectortest.cpp
-    testxml.cpp
-    forcelinktest.cpp
-    orderingselectortest.cpp
-    testrunner.cpp
-    heapdebuggerother.cpp
-    positiontypetest.cpp
-    urltypetest.cpp
-    fieldsettest.cpp
-    gid_filter_test.cpp
-    fixed_bucket_spaces_test.cpp
-    DEPENDS
-    document
-    AFTER
-    document_documentconfig
-)
-
-vespa_add_test(
-    NAME document_testrunner_app
-    COMMAND document_testrunner_app
 )

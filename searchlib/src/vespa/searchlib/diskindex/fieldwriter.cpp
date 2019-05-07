@@ -98,7 +98,6 @@ FieldWriter::open(const vespalib::string &prefix,
     return true;
 }
 
-
 void
 FieldWriter::flush()
 {
@@ -108,8 +107,9 @@ FieldWriter::flush()
         assert(_compactWordNum != 0);
         _dictFile->writeWord(_word, counts);
         // Write bitmap entries
-        if (_bvc.getCrossedBitVectorLimit())
+        if (_bvc.getCrossedBitVectorLimit()) {
             _bmapfile.addWordSingle(_compactWordNum, _bvc.getBitVector());
+        }
         _bvc.clear();
         counts.clear();
     } else {
@@ -118,7 +118,6 @@ FieldWriter::flush()
         assert(_compactWordNum == 0);
     }
 }
-
 
 void
 FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
@@ -133,13 +132,11 @@ FieldWriter::newWord(uint64_t wordNum, vespalib::stringref word)
     _prevDocId = 0;
 }
 
-
 void
 FieldWriter::newWord(vespalib::stringref word)
 {
     newWord(_wordNum + 1, word);
 }
-
 
 bool
 FieldWriter::close()
@@ -182,7 +179,6 @@ FieldWriter::getFeatureParams(PostingListParams &params)
     _posoccfile->getFeatureParams(params);
 }
 
-
 static const char *termOccNames[] =
 {
     "boolocc.bdat",
@@ -197,7 +193,6 @@ static const char *termOccNames[] =
     "dictionary.words",
     nullptr,
 };
-
 
 void
 FieldWriter::remove(const vespalib::string &prefix)

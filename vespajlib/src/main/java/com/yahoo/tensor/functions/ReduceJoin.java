@@ -268,7 +268,8 @@ public class ReduceJoin extends CompositeTensorFunction {
     }
 
     private TensorType dimensionsInCommon(IndexedTensor a, IndexedTensor b) {
-        TensorType.Builder builder = new TensorType.Builder();
+        TensorType.Builder builder = new TensorType.Builder(TensorType.Value.largestOf(a.type().valueType(),
+                                                                                       b.type().valueType()));
         for (TensorType.Dimension aDim : a.type().dimensions()) {
             for (TensorType.Dimension bDim : b.type().dimensions()) {
                 if (aDim.name().equals(bDim.name())) {

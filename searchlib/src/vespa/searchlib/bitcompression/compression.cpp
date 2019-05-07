@@ -17,9 +17,10 @@ CodingTables::CodingTables()
     unsigned int x;
     uint8_t log2Val;
 
-    for(x=0; x<65536; x++) {
+    for (x = 0; x < 65536; x++) {
         unsigned int val = x;
-        for (log2Val = 0; (val >>= 1) != 0; log2Val++);
+        for (log2Val = 0; (val >>= 1) != 0; log2Val++) {
+        }
         _log2Table[x] = log2Val;
     }
 }
@@ -132,15 +133,14 @@ vespalib::string noFeatures = "NoFeatures";
 
 }
 
-template <bool bigEndian>
 void
-FeatureDecodeContext<bigEndian>::
-readBytes(uint8_t *buf, size_t len)
+DecodeContext64Base::readBytes(uint8_t *buf, size_t len)
 {
     while (len > 0) {
         // Ensure that buffer to read from isn't empty
-        if (__builtin_expect(_valI >= _valE, false))
+        if (__builtin_expect(_valI >= _valE, false)) {
             _readContext->readComprBuffer();
+        }
         uint64_t readOffset = getReadOffset();
         // Validate that read offset is byte aligned
         assert((readOffset & 7) == 0);
@@ -159,14 +159,14 @@ readBytes(uint8_t *buf, size_t len)
         // Adjust read position to account for bytes read
         _readContext->setPosition(readOffset + copySize * 8);
     }
-    if (__builtin_expect(_valI >= _valE, false))
+    if (__builtin_expect(_valI >= _valE, false)) {
         _readContext->readComprBuffer();
+    }
 }
 
 
-template <bool bigEndian>
 uint32_t
-FeatureDecodeContext<bigEndian>::
+DecodeContext64Base::
 readHeader(vespalib::GenericHeader &header, int64_t fileSize)
 {
     size_t hhSize = vespalib::GenericHeader::getMinSize();
@@ -272,8 +272,9 @@ writeString(vespalib::stringref buf)
     size_t len = buf.size();
     for (unsigned int i = 0; i < len; ++i) {
         writeBits(static_cast<unsigned char>(buf[i]), 8);
-        if (__builtin_expect(_valI >= _valE, false))
+        if (__builtin_expect(_valI >= _valE, false)) {
             _writeContext->writeComprBuffer(false);
+        }
     }
     writeBits(0, 8);
 }

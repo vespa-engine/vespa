@@ -61,7 +61,7 @@ public class TenantController {
                       .collect(Collectors.toList());
     }
 
-    /** Returns the lsit of tenants accessible to the given user. */
+    /** Returns the list of tenants accessible to the given user. */
     public List<Tenant> asList(Credentials credentials) {
         return accessControl.accessibleTenants(asList(), credentials);
     }
@@ -147,10 +147,11 @@ public class TenantController {
     }
 
     private void requireNonExistent(TenantName name) {
-        if (get(name).isPresent() ||
+        if (   "hosted-vespa".equals(name.value())
+            || get(name).isPresent()
             // Underscores are allowed in existing tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.
-            get(name.value().replace('-', '_')).isPresent()) {
+            || get(name.value().replace('-', '_')).isPresent()) {
             throw new IllegalArgumentException("Tenant '" + name + "' already exists");
         }
     }

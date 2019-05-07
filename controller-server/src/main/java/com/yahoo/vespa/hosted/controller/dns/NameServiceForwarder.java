@@ -1,0 +1,86 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.dns;
+
+import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+/**
+ * This adds name service requests to the {@link NameServiceQueue}.
+ *
+ * Name service requests passed to this are not immediately sent to a name service, but are instead persisted
+ * in a curator-backed queue. Enqueued requests are later dispatched to a {@link NameService} by
+ * {@link NameServiceDispatcher}.
+ *
+ * @author mpolden
+ */
+public class NameServiceForwarder {
+
+    private static final int maxQueuedRequests = 200;
+
+    private static final Logger log = Logger.getLogger(NameServiceForwarder.class.getName());
+
+    private final CuratorDb db;
+
+    public NameServiceForwarder(CuratorDb db) {
+        this.db = Objects.requireNonNull(db, "db must be non-null");
+    }
+
+    /** Create or update a CNAME record with given name and data */
+    public Record createCname(RecordName name, RecordData canonicalName, NameServiceQueue.Priority priority) {
+        return forward(new CreateRecord(new Record(Record.Type.CNAME, name, canonicalName)), priority).affectedRecords().get(0);
+    }
+
+    /** Create or update an ALIAS record with given name and targets */
+    public List<Record> createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
+        var records = targets.stream().map(AliasTarget::asData)
+                             .map(data -> new Record(Record.Type.ALIAS, name, data))
+                             .collect(Collectors.toList());
+        return forward(new CreateRecords(records), priority).affectedRecords();
+    }
+
+    /** Create or update a TXT record with given name and data */
+    public List<Record> createTxt(RecordName name, List<RecordData> txtData, NameServiceQueue.Priority priority) {
+        var records = txtData.stream()
+                             .map(data -> new Record(Record.Type.TXT, name, data))
+                             .collect(Collectors.toList());
+        return forward(new CreateRecords(records), priority).affectedRecords();
+    }
+
+    /** Remove all records of given type and name */
+    public void removeRecords(Record.Type type, RecordName name, NameServiceQueue.Priority priority) {
+        forward(new RemoveRecords(type, name), priority);
+    }
+
+    /** Remove all records of given type and data */
+    public void removeRecords(Record.Type type, RecordData data, NameServiceQueue.Priority priority) {
+        forward(new RemoveRecords(type, data), priority);
+    }
+
+    private NameServiceRequest forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
+        try (Lock lock = db.lockNameServiceQueue()) {
+            NameServiceQueue queue = db.readNameServiceQueue();
+            var queued = queue.requests().size();
+            if (queued >= maxQueuedRequests) {
+                log.log(LogLevel.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
+                                          "requests. This likely means that the name service is not successfully " +
+                                          "executing requests");
+            }
+            db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
+        }
+        return request;
+    }
+
+}

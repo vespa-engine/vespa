@@ -5,13 +5,11 @@
 #include "sparse/sparse_tensor.h"
 #include "sparse/sparse_tensor_builder.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 struct DefaultTensor {
     using type = SparseTensor;
     using builder = SparseTensorBuilder;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

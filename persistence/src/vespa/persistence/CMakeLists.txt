@@ -12,5 +12,5 @@ vespa_add_library(persistence_persistence_conformancetest
     INSTALL lib64
     DEPENDS
     persistence
-    vdstestlib
+    gtest
 )

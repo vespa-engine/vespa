@@ -6,7 +6,6 @@
 #include <limits>
 #include <algorithm>
 
-
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
@@ -83,8 +82,7 @@ DenseTensorBuilder::calculateCellAddress()
         const auto &dim = _dimensions[i];
         if (label == UNDEFINED_LABEL) {
             throw IllegalArgumentException(make_string("Label for dimension '%s' is undefined. "
-                    "Expected a value in the range [0, %u>",
-                    dim.name.c_str(), dim.size));
+                    "Expected a value in the range [0, %u>", dim.name.c_str(), dim.size));
         }
         result += (label * multiplier);
         multiplier *= dim.size;
@@ -102,12 +100,10 @@ DenseTensorBuilder::DenseTensorBuilder()
 {
 }
 
-DenseTensorBuilder::~DenseTensorBuilder() {
-}
+DenseTensorBuilder::~DenseTensorBuilder() = default;
 
 DenseTensorBuilder::Dimension
-DenseTensorBuilder::defineDimension(const vespalib::string &dimension,
-                                    size_t dimensionSize)
+DenseTensorBuilder::defineDimension(const vespalib::string &dimension, size_t dimensionSize)
 {
     auto itr = _dimensionsEnum.find(dimension);
     if (itr != _dimensionsEnum.end()) {
@@ -135,8 +131,7 @@ DenseTensorBuilder::addLabel(Dimension dimension, size_t label)
     Dimension mappedDimension = _dimensionsMapping[dimension];
     const auto &dim = _dimensions[mappedDimension];
     validateLabelInRange(label, dim.size, dim.name);
-    validateLabelNotSpecified(_addressBuilder[mappedDimension],
-                              dim.name);
+    validateLabelNotSpecified(_addressBuilder[mappedDimension], dim.name);
     _addressBuilder[mappedDimension] = label;
     return *this;
 }
@@ -154,14 +149,13 @@ DenseTensorBuilder::addCell(double value)
     return *this;
 }
 
-Tensor::UP
+std::unique_ptr<DenseTensor>
 DenseTensorBuilder::build()
 {
     if (_cells.empty()) {
         allocateCellsStorage();
     }
-    Tensor::UP result = std::make_unique<DenseTensor>(makeValueType(std::move(_dimensions)),
-                                                      std::move(_cells));
+    auto result = std::make_unique<DenseTensor>(makeValueType(std::move(_dimensions)), std::move(_cells));
     _dimensionsEnum.clear();
     _dimensions.clear();
     DenseTensor::Cells().swap(_cells);

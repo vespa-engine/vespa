@@ -21,18 +21,15 @@ DummyFileHeaderContext::DummyFileHeaderContext()
     assert(!_hostName.empty());
 }
 
-
 DummyFileHeaderContext::~DummyFileHeaderContext()
 {
 }
-
 
 void
 DummyFileHeaderContext::disableFileName()
 {
     _disableFileName = true;
 }
-
 
 void
 DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
@@ -52,7 +49,6 @@ DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
     }
     header.putTag(Tag("DummyFileHeaderContext", "enabled"));
 }
-
 
 void
 DummyFileHeaderContext::setCreator(const vespalib::string &creator)

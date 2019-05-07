@@ -27,11 +27,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -52,10 +50,10 @@ public class NodeFailer extends Maintainer {
     private static final Duration nodeRequestInterval = Duration.ofMinutes(10);
 
     /** Metric for number of nodes that we want to fail, but cannot due to throttling */
-    public static final String throttledNodeFailuresMetric = "throttledNodeFailures";
+    static final String throttledNodeFailuresMetric = "throttledNodeFailures";
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
-    public static final String throttlingActiveMetric = "nodeFailThrottling";
+    static final String throttlingActiveMetric = "nodeFailThrottling";
 
     /** Provides information about the status of ready hosts */
     private final HostLivenessTracker hostLivenessTracker;
@@ -76,10 +74,9 @@ public class NodeFailer extends Maintainer {
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
                       ThrottlePolicy throttlePolicy, Metric metric,
-                      JobControl jobControl,
                       ConfigserverConfig configserverConfig) {
         // check ping status every five minutes, but at least twice as often as the down time limit
-        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)), jobControl);
+        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
         this.deployer = deployer;
         this.hostLivenessTracker = hostLivenessTracker;
         this.serviceMonitor = serviceMonitor;
@@ -113,12 +110,10 @@ public class NodeFailer extends Maintainer {
 
         updateNodeDownState();
         List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
-        Set<Node> nodesWithFailureReason = new HashSet<>();
 
         // Fail active nodes
         for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason(activeNodes).entrySet()) {
             Node node = entry.getKey();
-            nodesWithFailureReason.add(node);
             if (!failAllowedFor(node.type())) {
                 continue;
             }
@@ -239,7 +234,7 @@ public class NodeFailer extends Maintainer {
     }
 
     /** Returns whether node has any kind of hardware issue */
-    public static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
+    static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
         if (node.status().hardwareFailureDescription().isPresent() || node.status().hardwareDivergence().isPresent()) {
             return true;
         }
@@ -308,7 +303,7 @@ public class NodeFailer extends Maintainer {
      * Returns true if the node is considered bad: all monitored services services are down.
      * If a node remains bad for a long time, the NodeFailer will eventually try to fail the node.
      */
-    public static boolean badNode(List<ServiceInstance> services) {
+    static boolean badNode(List<ServiceInstance> services) {
         Map<ServiceStatus, Long> countsByStatus = services.stream()
                 .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
 

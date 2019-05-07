@@ -34,7 +34,7 @@ public:
 };
 
 
-class ZcPosOccSeqRead : public ZcPostingSeqRead
+class ZcPosOccSeqRead : public Zc4PostingSeqRead
 {
 private:
     bitcompression::PosOccFieldsParams _fieldsParams;

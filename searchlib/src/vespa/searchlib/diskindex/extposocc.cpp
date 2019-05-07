@@ -69,7 +69,7 @@ makePosOccWrite(const vespalib::string &name,
             fileHeader.getBigEndian() &&
             fileHeader.getFormats().size() == 2 &&
             fileHeader.getFormats()[0] ==
-            ZcPosOccSeqRead::getIdentifier() &&
+            Zc4PosOccSeqRead::getIdentifier(true) &&
             fileHeader.getFormats()[1] ==
             ZcPosOccSeqRead::getSubIdentifier()) {
             dynamicK = true;
@@ -77,7 +77,7 @@ makePosOccWrite(const vespalib::string &name,
                    fileHeader.getBigEndian() &&
                    fileHeader.getFormats().size() == 2 &&
                    fileHeader.getFormats()[0] ==
-                   Zc4PosOccSeqRead::getIdentifier() &&
+                   Zc4PosOccSeqRead::getIdentifier(false) &&
                    fileHeader.getFormats()[1] ==
                    Zc4PosOccSeqRead::getSubIdentifier()) {
             dynamicK = false;
@@ -87,11 +87,12 @@ makePosOccWrite(const vespalib::string &name,
                 name.c_str());
         }
     }
-    if (dynamicK)
+    if (dynamicK) {
         posOccWrite =  new ZcPosOccSeqWrite(schema, indexId, posOccCountWrite);
-    else
+    } else {
         posOccWrite =
             new Zc4PosOccSeqWrite(schema, indexId, posOccCountWrite);
+    }
 
     posOccWrite->setFeatureParams(featureParams);
     posOccWrite->setParams(params);
@@ -114,7 +115,7 @@ makePosOccRead(const vespalib::string &name,
             fileHeader.getBigEndian() &&
             fileHeader.getFormats().size() == 2 &&
             fileHeader.getFormats()[0] ==
-            ZcPosOccSeqRead::getIdentifier() &&
+            Zc4PosOccSeqRead::getIdentifier(true) &&
             fileHeader.getFormats()[1] ==
             ZcPosOccSeqRead::getSubIdentifier()) {
             dynamicK = true;
@@ -122,7 +123,7 @@ makePosOccRead(const vespalib::string &name,
                    fileHeader.getBigEndian() &&
                    fileHeader.getFormats().size() == 2 &&
                    fileHeader.getFormats()[0] ==
-                   Zc4PosOccSeqRead::getIdentifier() &&
+                   Zc4PosOccSeqRead::getIdentifier(false) &&
                    fileHeader.getFormats()[1] ==
                    Zc4PosOccSeqRead::getSubIdentifier()) {
             dynamicK = false;
@@ -132,10 +133,11 @@ makePosOccRead(const vespalib::string &name,
                 name.c_str());
         }
     }
-    if (dynamicK)
+    if (dynamicK) {
         posOccRead =  new ZcPosOccSeqRead(posOccCountRead);
-    else
+    } else {
         posOccRead =  new Zc4PosOccSeqRead(posOccCountRead);
+    }
 
     posOccRead->setFeatureParams(featureParams);
     return posOccRead;

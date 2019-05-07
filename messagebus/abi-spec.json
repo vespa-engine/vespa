@@ -114,7 +114,7 @@
       "public void <init>(com.yahoo.concurrent.Timer)",
       "public double getWindowSizeIncrement()",
       "public double getWindowSizeBackOff()",
-      "public void setMaxThroughput(double)",
+      "public com.yahoo.messagebus.DynamicThrottlePolicy setMaxThroughput(double)",
       "public boolean canSend(com.yahoo.messagebus.Message, int)",
       "public void processMessage(com.yahoo.messagebus.Message)",
       "public void processReply(com.yahoo.messagebus.Reply)",
@@ -174,7 +174,10 @@
     ],
     "methods": [
       "public void <init>()",
-      "public static java.lang.String getName(int)"
+      "public static java.lang.String getName(int)",
+      "public static boolean isFatal(int)",
+      "public static boolean isTransient(int)",
+      "public static boolean isMBusError(int)"
     ],
     "fields": [
       "public static final int NONE",
@@ -307,7 +310,6 @@
       "public void register(com.yahoo.messagebus.MessageBus$SendBlockedMessages)",
       "public void <init>(com.yahoo.messagebus.network.Network, java.util.List)",
       "public void <init>(com.yahoo.messagebus.network.Network, com.yahoo.messagebus.MessageBusParams)",
-      "public com.yahoo.messagebus.metrics.MessageBusMetricSet getMetrics()",
       "public boolean destroy()",
       "public void sync()",
       "public com.yahoo.messagebus.SourceSession createSourceSession(com.yahoo.messagebus.ReplyHandler)",
@@ -576,7 +578,6 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void addRecurrentTask(com.yahoo.messagebus.Messenger$Task)",
       "public void start()",
       "public void deliverMessage(com.yahoo.messagebus.Message, com.yahoo.messagebus.MessageHandler)",
       "public void deliverReply(com.yahoo.messagebus.Reply, com.yahoo.messagebus.ReplyHandler)",
@@ -613,8 +614,7 @@
       "public abstract java.lang.String getName()",
       "public abstract byte[] encode(com.yahoo.component.Version, com.yahoo.messagebus.Routable)",
       "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.component.Version, byte[])",
-      "public abstract com.yahoo.messagebus.routing.RoutingPolicy createPolicy(java.lang.String, java.lang.String)",
-      "public abstract com.yahoo.messagebus.metrics.MetricSet getMetrics()"
+      "public abstract com.yahoo.messagebus.routing.RoutingPolicy createPolicy(java.lang.String, java.lang.String)"
     ],
     "fields": []
   },

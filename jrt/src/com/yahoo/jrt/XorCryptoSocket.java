@@ -119,4 +119,5 @@ public class XorCryptoSocket implements CryptoSocket {
             return FlushResult.DONE;
         }
     }
+
 }

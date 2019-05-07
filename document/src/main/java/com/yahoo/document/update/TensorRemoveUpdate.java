@@ -97,7 +97,7 @@ public class TensorRemoveUpdate extends ValueUpdate<TensorFieldValue> {
     }
 
     public static TensorType extractSparseDimensions(TensorType type) {
-        TensorType.Builder builder = new TensorType.Builder();
+        TensorType.Builder builder = new TensorType.Builder(type.valueType());
         type.dimensions().stream().filter(dim -> ! dim.isIndexed()).forEach(dim -> builder.mapped(dim.name()));
         return builder.build();
     }

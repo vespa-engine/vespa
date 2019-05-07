@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,10 +132,7 @@ class HttpRequestDispatch {
                             error,
                             () -> "Network connection was unexpectedly terminated: " + parent.jettyRequest.getRequestURI());
                     parent.metricReporter.prematurelyClosed();
-                } else if (!(error instanceof CompletionException && error.getCause() instanceof OverloadException
-                        || error instanceof OverloadException
-                        || error instanceof BindingNotFoundException
-                        || error instanceof RequestException)) {
+                } else if (!isErrorOfType(error, OverloadException.class, BindingNotFoundException.class, RequestException.class)) {
                     log.log(Level.WARNING, "Request failed: " + parent.jettyRequest.getRequestURI(), error);
                 }
                 reportedError = true;
@@ -151,6 +149,15 @@ class HttpRequestDispatch {
                 log.log(level, "async.complete failed", throwable);
             }
         };
+    }
+
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    private static boolean isErrorOfType(Throwable throwable, Class<? extends Throwable>... handledTypes) {
+        return Arrays.stream(handledTypes)
+                .anyMatch(
+                        exceptionType -> exceptionType.isInstance(throwable)
+                                || throwable instanceof CompletionException && exceptionType.isInstance(throwable.getCause()));
     }
 
     @SuppressWarnings("try")

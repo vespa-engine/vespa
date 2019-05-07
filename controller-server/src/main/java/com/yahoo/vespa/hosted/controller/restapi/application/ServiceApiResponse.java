@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
@@ -77,6 +77,11 @@ class ServiceApiResponse extends HttpResponse {
     @Override
     public void render(OutputStream stream) throws IOException {
         new JsonFormat(true).encode(stream, slime);
+    }
+
+    @Override
+    public String getContentType() {
+        return "application/json";
     }
 
     @SuppressWarnings("unchecked")

@@ -5,7 +5,7 @@ LOG_SETUP("feed_and_search_test");
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchlib/memoryindex/memoryindex.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/fef.h>

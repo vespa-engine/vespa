@@ -2,7 +2,6 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
@@ -15,11 +14,11 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class MessageTypePolicy implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<MessagetyperouteselectorpolicyConfig> {
 
-    private final AtomicReference<Map<Integer, Route>> configRef = new AtomicReference<Map<Integer, Route>>();
+    private final AtomicReference<Map<Integer, Route>> configRef = new AtomicReference<>();
     private ConfigSubscriber subscriber;
     private volatile Route defaultRoute;
 
-    public MessageTypePolicy(String configId) {
+    MessageTypePolicy(String configId) {
         subscriber = new ConfigSubscriber();
         subscriber.subscribe(this, MessagetyperouteselectorpolicyConfig.class, configId);
     }
@@ -42,11 +41,6 @@ public class MessageTypePolicy implements DocumentProtocolRoutingPolicy, ConfigS
     @Override
     public void destroy() {
         if (subscriber!=null) subscriber.close();
-    }
-
-    @Override
-    public MetricSet getMetrics() {
-        return null;
     }
 
     @Override

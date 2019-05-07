@@ -51,7 +51,7 @@ class GraphImporter {
         String nodeName = node.getName();
         String modelName = graph.name();
         int nodePort = IntermediateOperation.indexPartOf(nodeName);
-        OrderedTensorType nodeType = TypeConverter.fromTensorFlowType(node);
+        OrderedTensorType nodeType = TypeConverter.typeFrom(node);
         AttributeConverter attributes = AttributeConverter.convert(node);
 
         switch (node.getOp().toLowerCase()) {

@@ -36,8 +36,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
                                                                                  new LinkedBlockingQueue<>(),
                                                                                  new DaemonThreadFactory("node repo application maintainer"));
 
-    protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
-        super(nodeRepository, interval, jobControl);
+    protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
+        super(nodeRepository, interval);
         this.deployer = deployer;
     }
 

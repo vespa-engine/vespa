@@ -39,10 +39,6 @@
         </exclusion>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
-          <artifactId>metrics</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
           <artifactId>vespaclient-core</artifactId>
         </exclusion>
         <exclusion>

@@ -32,13 +32,11 @@ public class Mean extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
+
         IntermediateOperation reductionIndices = inputs.get(1);
-        if (!reductionIndices.getConstantValue().isPresent()) {
-            throw new IllegalArgumentException("Mean in " + name + ": " +
-                                               "reduction indices must be a constant.");
+        if ( ! reductionIndices.getConstantValue().isPresent()) {
+            throw new IllegalArgumentException("Mean in " + name + ": Reduction indices must be a constant.");
         }
         Tensor indices = reductionIndices.getConstantValue().get().asTensor();
         reduceDimensions = new ArrayList<>();
@@ -59,14 +57,14 @@ public class Mean extends IntermediateOperation {
 
     @Override
     protected TensorFunction lazyGetFunction() {
-        if (!allInputTypesPresent(2)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(2)) return null;
+
+
         TensorFunction inputFunction = inputs.get(0).function().get();
         TensorFunction output = new Reduce(inputFunction, Reduce.Aggregator.avg, reduceDimensions);
         if (shouldKeepDimensions()) {
             // multiply with a generated tensor created from the reduced dimensions
-            TensorType.Builder typeBuilder = new TensorType.Builder();
+            TensorType.Builder typeBuilder = new TensorType.Builder(resultValueType());
             for (String name : reduceDimensions) {
                 typeBuilder.indexed(name, 1);
             }
@@ -99,9 +97,9 @@ public class Mean extends IntermediateOperation {
     }
 
     private OrderedTensorType reducedType(OrderedTensorType inputType, boolean keepDimensions) {
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(resultValueType());
         for (TensorType.Dimension dimension: inputType.type().dimensions()) {
-            if (!reduceDimensions.contains(dimension.name())) {
+            if ( ! reduceDimensions.contains(dimension.name())) {
                 builder.add(dimension);
             } else if (keepDimensions) {
                 builder.add(TensorType.Dimension.indexed(dimension.name(), 1L));

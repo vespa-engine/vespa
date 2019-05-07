@@ -1,10 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.jrt.slobrok.api.Mirror;
@@ -16,7 +15,6 @@ import org.junit.Before;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 
 public class SlobrokTest {
 
@@ -71,14 +69,13 @@ public class SlobrokTest {
                 return a.compareTo(b);
             }
         };
-        Mirror.Entry[] expect =
-            result.toArray(new Mirror.Entry[result.size()]);
-        Arrays.sort(expect, cmp);
-        Mirror.Entry[] actual = new Mirror.Entry[0];
+        List<Entry> expect = result;
+        expect.sort(cmp);
+        List<Entry> actual = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             actual = mirror.lookup(pattern);
-            Arrays.sort(actual, cmp);
-            if (Arrays.equals(actual, expect)) {
+            actual.sort(cmp);
+            if (actual.equals(expect)) {
                 // err("lookup successful for pattern: " + pattern);
                 return;
             }
@@ -87,18 +84,18 @@ public class SlobrokTest {
         error = true;
         err("lookup failed for pattern: " + pattern);
         err("actual values:");
-        if (actual.length == 0) {
+        if (actual.isEmpty()) {
             err("  { EMPTY }");
         }
-        for (int i = 0; i < actual.length; i++) {
-            err("  {" + actual[i].getName() + ", " + actual[i].getSpec() + "}");
+        for (Entry e : actual) {
+            err("  {" + e.getName() + ", " + e.getSpec() + "}");
         }
         err("expected values:");
-        if (expect.length == 0) {
+        if (expect.isEmpty()) {
             err("  { EMPTY }");
         }
-        for (int i = 0; i < expect.length; i++) {
-            err("  {" + expect[i].getName() + ", " + expect[i].getSpec() + "}");
+        for (Entry e : expect) {
+            err("  {" + e.getName() + ", " + e.getSpec() + "}");
         }
     }
 
@@ -113,9 +110,9 @@ public class SlobrokTest {
         assertTrue(mirror.ready());
         assertTrue(mirror.updates() > 0);
 
-        Mirror.Entry[] oneArr = mirror.lookup("*/*/*");
-        assertTrue(oneArr.length == 1);
-        Mirror.Entry one = oneArr[0];
+        List<Entry> oneArr = mirror.lookup("*/*/*");
+        assertTrue(oneArr.size() == 1);
+        Mirror.Entry one = oneArr.get(0);
         assertTrue(one.equals(new Mirror.Entry(wantName, mySpec)));
         assertFalse(one.equals(new Mirror.Entry("B/x/w", mySpec)));
         assertFalse(one.equals(new Mirror.Entry(wantName, "foo:99")));

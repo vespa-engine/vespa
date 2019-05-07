@@ -1,15 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.routing;
 
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
-import com.yahoo.messagebus.metrics.RouteMetricSet;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
+import com.yahoo.messagebus.SendProxy;
+import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceLevel;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.ServiceAddress;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -32,13 +44,12 @@ public class RoutingNode implements ReplyHandler {
     private final AtomicInteger pending = new AtomicInteger(0);
     private final Message msg;
     private Reply reply = null;
-    private Route route = null;
+    private Route route;
     private RoutingPolicy policy = null;
     private RoutingContext routingContext = null;
     private ServiceAddress serviceAddress = null;
     private boolean isActive = true;
     private boolean shouldRetry = false;
-    private RouteMetricSet routeMetrics;
 
     /**
      * Constructs a new instance of this class. This is the root node constructor, and will be used by the different
@@ -60,10 +71,6 @@ public class RoutingNode implements ReplyHandler {
         this.trace = new Trace(msg.getTrace().getLevel());
         this.route = msg.getRoute();
         this.parent = null;
-
-        if (route != null) {
-            routeMetrics = mbus.getMetrics().getRouteMetrics(route);
-        }
     }
 
     /**
@@ -122,7 +129,7 @@ public class RoutingNode implements ReplyHandler {
      *
      * @param msg The error message to assign.
      */
-    public void notifyAbort(String msg) {
+    private void notifyAbort(String msg) {
         Stack<RoutingNode> stack = new Stack<>();
         stack.push(this);
         while (!stack.isEmpty()) {
@@ -237,7 +244,7 @@ public class RoutingNode implements ReplyHandler {
             policy.merge(routingContext);
         } catch (RuntimeException e) {
             setError(ErrorCode.POLICY_ERROR,
-                     "Policy '" + dir.getName() + "' threw an exception; " + exceptionMessageWithTrace(e));
+                     "Policy '" + dir.getName() + "' threw an exception during merge; " + exceptionMessageWithTrace(e));
         }
         if (reply == null) {
             setError(ErrorCode.APP_FATAL_ERROR,
@@ -532,7 +539,7 @@ public class RoutingNode implements ReplyHandler {
             policy.select(routingContext);
         } catch (RuntimeException e) {
             setError(ErrorCode.POLICY_ERROR,
-                     "Policy '" + dir.getName() + "' threw an exception; " + exceptionMessageWithTrace(e));
+                     "Policy '" + dir.getName() + "' threw an exception during select; " + exceptionMessageWithTrace(e));
             return false;
         }
         if (children.isEmpty()) {
@@ -801,11 +808,6 @@ public class RoutingNode implements ReplyHandler {
     @Override
     public void handleReply(Reply reply) {
         setReply(reply);
-        if (routeMetrics != null) {
-            for (int i = 0; i < reply.getNumErrors(); i++) {
-                routeMetrics.addError(reply.getError(i));
-            }
-        }
         notifyParent();
     }
 }

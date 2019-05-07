@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -45,12 +46,12 @@ public final class Node {
     private final History history;
 
     /** The current allocation of this node, if any */
-    private Optional<Allocation> allocation;
+    private final Optional<Allocation> allocation;
 
     /** Temporary method until we can merge it with the other create method */
-    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node("fake-" + hostname, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.reserved,
-                Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
+    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, NodeResources resources, NodeType type) {
+        return new Node("fake-" + hostname, ipAddresses, ipAddressPool, hostname, parentHostname, new Flavor(resources), Status.initial(), State.reserved,
+                        Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
     }
 
     /** Creates a node in the initial state (provisioned) */

@@ -15,10 +15,11 @@ import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.hosted.provision.flag.Flags;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
+import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
+import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -85,9 +86,10 @@ public class NodeRepository extends AbstractComponent {
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
     private final OsVersions osVersions;
+    private final InfrastructureVersions infrastructureVersions;
     private final FirmwareChecks firmwareChecks;
     private final DockerImages dockerImages;
-    private final Flags flags;
+    private final JobControl jobControl;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -109,10 +111,11 @@ public class NodeRepository extends AbstractComponent {
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
-        this.osVersions = new OsVersions(this.db);
+        this.osVersions = new OsVersions(db);
+        this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
-        this.flags = new Flags(this.db);
+        this.jobControl = new JobControl(db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -131,16 +134,17 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the OS versions to use for nodes in this */
     public OsVersions osVersions() { return osVersions; }
 
+    /** Returns the infrastructure versions to use for nodes in this */
+    public InfrastructureVersions infrastructureVersions() { return infrastructureVersions; }
+
     /** Returns the status of firmware checks for hosts managed by this. */
     public FirmwareChecks firmwareChecks() { return firmwareChecks; }
 
     /** Returns the docker images to use for nodes in this. */
     public DockerImages dockerImages() { return dockerImages; }
 
-    /** Returns feature flags of this node repository */
-    public Flags flags() {
-        return flags;
-    }
+    /** Returns the status of maintenance jobs managed by this. */
+    public JobControl jobControl() { return jobControl; }
 
     // ---------------- Query API ----------------------------------------------------------------
 
@@ -242,6 +246,7 @@ public class NodeRepository extends AbstractComponent {
                 // - config servers
                 // - all connections from the world on 4080 (insecure tb removed), and 4443
                 trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
+                trustedPorts.add(443);
                 trustedPorts.add(4080);
                 trustedPorts.add(4443);
                 break;

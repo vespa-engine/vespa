@@ -33,6 +33,9 @@ public class BindingRepository<T> implements Iterable<Map.Entry<UriPattern, T>> 
      * @throws IllegalArgumentException If the URI pattern string could not be parsed.
      */
     public void bind(String uriPattern, T target) {
+        if (uriPattern.startsWith("https://")) {
+            log.warning(() -> String.format("For binding '%s': 'https' is deprecated, use 'http' to match both 'http' and 'https'", uriPattern));
+        }
         put(new UriPattern(uriPattern), target);
     }
 

@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 /**
- * Serializer for OS version status.
+ * Serializer for {@link OsVersionStatus}.
  *
  * @author mpolden
  */

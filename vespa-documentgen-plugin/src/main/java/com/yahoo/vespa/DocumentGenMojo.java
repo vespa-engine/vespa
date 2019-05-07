@@ -3,11 +3,14 @@ package com.yahoo.vespa;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
@@ -18,7 +21,6 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -469,11 +471,33 @@ public class DocumentGenMojo extends AbstractMojo {
         exportHashCode(allUniqueFields, out, 1, "(getDataType() != null ? getDataType().hashCode() : 0) + getId().hashCode()");
         exportEquals(className, allUniqueFields, out, 1);
         Set<DataType> exportedStructs = exportStructTypes(docType.getTypes(), out, 1, null);
+        if (hasAnyPositionField(allUniqueFields)) {
+            exportedStructs = exportStructTypes(Arrays.asList(PositionDataType.INSTANCE), out, 1, exportedStructs);
+        }
         docTypes.put(docType.getName(), packageName+"."+className);
         for (DataType exportedStruct : exportedStructs) {
             structTypes.put(exportedStruct.getName(), packageName+"."+className+"."+className(exportedStruct.getName()));
         }
         out.write("}\n");
+    }
+
+    private static boolean hasAnyPostionDataType(DataType dt) {
+        if (dt instanceof CollectionDataType) {
+            return hasAnyPostionDataType(((CollectionDataType)dt).getNestedType());
+        } else if (dt instanceof StructuredDataType) {
+            return hasAnyPositionField(((StructuredDataType)dt).getFields());
+        } else {
+            return PositionDataType.INSTANCE.equals(dt);
+        }
+    }
+
+    private static boolean hasAnyPositionField(Collection<Field> fields) {
+        for (Field f : fields) {
+            if (hasAnyPostionDataType(f.getDataType())) {
+                return true;
+            }
+        }
+        return true;
     }
 
     private Collection<Field> getAllUniqueFields(Boolean multipleInheritance, Collection<Field> allFields) {
@@ -733,7 +757,8 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind)+" *  Input struct type: "+structType.getName()+"\n" +
                 ind(ind)+" *  Date: "+new Date()+"\n" +
                 ind(ind)+" */\n" +
-                ind(ind)+"@com.yahoo.document.Generated public static class "+structClassName+" extends com.yahoo.document.datatypes.Struct {\n\n" +
+                ind(ind)+"@com.yahoo.document.Generated\n" +
+                ind(ind) + "public static class "+structClassName+" extends com.yahoo.document.datatypes.Struct {\n\n" +
                 ind(ind+1)+"/** The type of this.*/\n" +
                 ind(ind+1)+"public static final com.yahoo.document.StructDataType type = getStructType();\n\n");
                 out.write(ind(ind+1)+"public "+structClassName+"() {\n" +

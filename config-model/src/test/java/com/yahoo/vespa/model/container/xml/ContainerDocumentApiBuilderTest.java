@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespaclient.config.FeederConfig;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -16,7 +15,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
@@ -37,34 +35,11 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void document_api_config_is_added_to_container_cluster() {
-        Element elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
-                "  <document-api>",
-                "    <abortondocumenterror>false</abortondocumenterror>",
-                "    <maxpendingdocs>4321</maxpendingdocs>",
-                "    <retrydelay>12.34</retrydelay>",
-                "    <route>non-default</route>",
-                "  </document-api>",
-                nodesXml,
-                "</jdisc>");
-        createModel(root, elem);
-        ContainerCluster cluster = (ContainerCluster)root.getProducer("cluster1");
-        FeederConfig.Builder builder = new FeederConfig.Builder();
-        cluster.getDocumentApi().getConfig(builder);
-        FeederConfig config = new FeederConfig(builder);
-        assertThat(config.abortondocumenterror(), is(false));
-        assertThat(config.maxpendingdocs(), is(4321));
-        assertThat(config.retrydelay(), is(12.34));
-        assertThat(config.route(), is("non-default"));
-    }
-
-    @Test
     public void custom_bindings_are_allowed() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api>",
-                "    <binding>https://*/document-api/</binding>",
+                "    <binding>http://*/document-api/</binding>",
                 "    <binding>missing-trailing-slash</binding>",
                 "  </document-api>",
                 nodesXml,
@@ -77,8 +52,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     private void verifyCustomBindings(String id, String bindingSuffix) {
         Handler<?> handler = getHandlers("cluster1").get(id);
 
-        assertThat(handler.getServerBindings(), hasItem("https://*/document-api/" + bindingSuffix));
-        assertThat(handler.getServerBindings(), hasItem("https://*/document-api/" + bindingSuffix + "/"));
+        assertThat(handler.getServerBindings(), hasItem("http://*/document-api/" + bindingSuffix));
+        assertThat(handler.getServerBindings(), hasItem("http://*/document-api/" + bindingSuffix + "/"));
         assertThat(handler.getServerBindings(), hasItem("missing-trailing-slash/" + bindingSuffix));
         assertThat(handler.getServerBindings(), hasItem("missing-trailing-slash/" + bindingSuffix + "/"));
 
@@ -102,9 +77,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().contains("http://*/" + ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"), is(true));
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().contains("https://*/" + ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"), is(true));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().contains("http://*/" + ContainerCluster.RESERVED_URI_PREFIX + "/feedapi/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().contains("https://*/" + ContainerCluster.RESERVED_URI_PREFIX + "/feedapi/"), is(true));
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size(), equalTo(4));
+        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size(), equalTo(2));
     }
 }

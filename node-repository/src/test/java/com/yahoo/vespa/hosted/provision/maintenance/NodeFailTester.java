@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -26,7 +27,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.monitoring.MetricsReporterTest;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -129,7 +129,7 @@ public class NodeFailTester {
         List<Node> hosts = tester.createHostNodes(numberOfHosts);
         for (int i = 0; i < hosts.size(); i++) {
             tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + i),
-                    nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);
+                                    nodeFlavors.getFlavorOrThrow("d-1-1-1"), NodeType.tenant);
         }
 
         // Create applications
@@ -137,8 +137,8 @@ public class NodeFailTester {
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false, Collections.emptySet());
         ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false, Collections.emptySet());
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
-        Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"), false, true);
-        Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"), false, true);
+        Capacity capacity1 = Capacity.fromCount(3, new NodeResources(1, 1, 1), false, true);
+        Capacity capacity2 = Capacity.fromCount(5, new NodeResources(1, 1, 1), false, true);
         tester.activate(nodeAdminApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
@@ -207,7 +207,7 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric, new JobControl(nodeRepository.database()), configserverConfig);
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric, configserverConfig);
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {

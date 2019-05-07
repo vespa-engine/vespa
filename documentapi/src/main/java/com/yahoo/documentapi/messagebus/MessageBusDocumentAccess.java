@@ -1,18 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus;
 
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AsyncParameters;
+import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.documentapi.DocumentAccessException;
+import com.yahoo.documentapi.SubscriptionParameters;
+import com.yahoo.documentapi.SubscriptionSession;
+import com.yahoo.documentapi.SyncParameters;
+import com.yahoo.documentapi.VisitorDestinationParameters;
+import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.NetworkMessageBus;
 import com.yahoo.messagebus.RPCMessageBus;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.local.LocalNetwork;
-import com.yahoo.messagebus.network.local.LocalWire;
-import com.yahoo.messagebus.routing.RoutingTable;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

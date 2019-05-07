@@ -1,0 +1,44 @@
+{
+  "tenant": "my-tenant",
+  "roleNames": [
+    "tenantOwner",
+    "tenantAdmin",
+    "tenantOperator"
+  ],
+  "users": [
+    {
+      "name": "owner@tenant",
+      "roles": {
+        "tenantOwner": {
+          "explicit": true,
+          "implied": false
+        },
+        "tenantAdmin": {
+          "explicit": false,
+          "implied": true
+        },
+        "tenantOperator": {
+          "explicit": false,
+          "implied": true
+        }
+      }
+    },
+    {
+      "name": "operator@tenant",
+      "roles": {
+        "tenantOwner": {
+          "explicit": false,
+          "implied": false
+        },
+        "tenantAdmin": {
+          "explicit": false,
+          "implied": false
+        },
+        "tenantOperator": {
+          "explicit": true,
+          "implied": false
+        }
+      }
+    }
+  ]
+}

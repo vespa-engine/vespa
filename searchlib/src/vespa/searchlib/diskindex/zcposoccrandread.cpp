@@ -48,8 +48,9 @@ ZcPosOccRandRead::ZcPosOccRandRead()
 
 ZcPosOccRandRead::~ZcPosOccRandRead()
 {
-    if (_file->IsOpened())
+    if (_file->IsOpened()) {
         close();
+    }
 }
 
 
@@ -68,8 +69,9 @@ createIterator(const PostingListCounts &counts,
     assert((counts._numDocs != 0) == (counts._bitLength != 0));
     assert(handle._bitOffsetMem <= handle._bitOffset);
 
-    if (handle._bitLength == 0)
+    if (handle._bitLength == 0) {
         return new search::queryeval::EmptySearch;
+    }
 
     const char *cmem = static_cast<const char *>(handle._mem);
     uint64_t memOffset = reinterpret_cast<unsigned long>(cmem) & 7;
@@ -112,8 +114,9 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
     (void) counts;
 
     handle.drop();
-    if (handle._bitLength == 0)
+    if (handle._bitLength == 0) {
         return;
+    }
 
     uint64_t startOffset = (handle._bitOffset + _headerBitSize) >> 3;
     // Align start at 64-bit boundary
@@ -136,8 +139,9 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
         size_t padExtraAfter;       // Decode prefetch space
         _file->DirectIOPadding(startOffset, vectorLen, padBefore, padAfter);
         padExtraAfter = 0;
-        if (padAfter < 16)
+        if (padAfter < 16) {
             padExtraAfter = 16 - padAfter;
+        }
 
         size_t mallocLen = padBefore + vectorLen + padAfter + padExtraAfter;
         void *mallocStart = nullptr;
@@ -275,8 +279,9 @@ createIterator(const PostingListCounts &counts,
     assert((counts._numDocs != 0) == (counts._bitLength != 0));
     assert(handle._bitOffsetMem <= handle._bitOffset);
 
-    if (handle._bitLength == 0)
+    if (handle._bitLength == 0) {
         return new search::queryeval::EmptySearch;
+    }
 
     const char *cmem = static_cast<const char *>(handle._mem);
     uint64_t memOffset = reinterpret_cast<unsigned long>(cmem) & 7;

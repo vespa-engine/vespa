@@ -1,7 +1,10 @@
 {
+  "tenant": "tenant1",
+  "application": "application1",
+  "instance": "default",
   "environment": "dev",
   "region": "us-west-1",
-  "instance": "default",
+  "endpoints": [],
   "serviceUrls": [
     "http://old-endpoint.vespa.yahooapis.com:4080",
     "http://qrs-endpoint.vespa.yahooapis.com:4080",

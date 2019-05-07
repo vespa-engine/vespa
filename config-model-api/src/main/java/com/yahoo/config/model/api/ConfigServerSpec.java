@@ -10,7 +10,8 @@ public interface ConfigServerSpec {
 
     String getHostName();
     int getConfigServerPort();
-    int getHttpPort();
+    // TODO: Remove when latest model version in use is 7.47
+    default int getHttpPort() { return getConfigServerPort() + 1; }
     int getZooKeeperPort();
 
 }

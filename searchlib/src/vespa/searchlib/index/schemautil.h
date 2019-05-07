@@ -4,21 +4,14 @@
 
 #include <vespa/searchcommon/common/schema.h>
 
-namespace search {
+namespace search::index {
 
-namespace index {
-
-class SchemaUtil
-{
+class SchemaUtil {
 public:
 
-    class IndexSettings
-    {
+    class IndexSettings {
         schema::DataType _dataType;
         bool _error;        // Schema is bad.
-        bool _prefix;
-        bool _phrases;
-        bool _positions;
 
     public:
         const schema::DataType & getDataType() const {
@@ -26,36 +19,21 @@ public:
         }
 
         bool hasError() const { return _error; }
-        bool hasPrefix() const { return _prefix; }
-        bool hasPhrases() const { return _phrases; }
-        bool hasPositions() const { return _positions; }
 
         IndexSettings()
             : _dataType(schema::DataType::STRING),
-              _error(false),
-              _prefix(false),
-              _phrases(false),
-              _positions(false)
+              _error(false)
         { }
 
         IndexSettings(const IndexSettings &rhs)
             : _dataType(rhs._dataType),
-              _error(rhs._error),
-              _prefix(rhs._prefix),
-              _phrases(rhs._phrases),
-              _positions(rhs._positions)
+              _error(rhs._error)
         { }
 
         IndexSettings(schema::DataType dataType,
-                      bool error,
-                      bool prefix,
-                      bool phrases,
-                      bool positions)
+                      bool error)
             : _dataType(dataType),
-              _error(error),
-              _prefix(prefix),
-              _phrases(phrases),
-              _positions(positions)
+              _error(error)
         { }
 
         IndexSettings & operator=(const IndexSettings &rhs) {
@@ -67,14 +45,10 @@ public:
         void swap(IndexSettings &rhs) {
             std::swap(_dataType, rhs._dataType);
             std::swap(_error, rhs._error);
-            std::swap(_prefix, rhs._prefix);
-            std::swap(_phrases, rhs._phrases);
-            std::swap(_positions, rhs._positions);
         }
     };
 
-    class IndexIterator
-    {
+    class IndexIterator {
         const Schema &_schema;
         uint32_t _index;
 
@@ -126,13 +100,11 @@ public:
 
         /**
          * Return if old schema has at least one usable input field
-         * with matching data type.  If we want phrases then all input
-         * fields usable for terms must also be usable for phrases.
+         * with matching data type.
          *
          * @param oldSchema old schema, present in an input index
-         * @param phrases   ask for phrase files
          */
-        bool hasOldFields(const Schema &oldSchema, bool phrases) const;
+        bool hasOldFields(const Schema &oldSchema) const;
 
         /**
          * Return if fields in old schema matches fields in new
@@ -141,9 +113,8 @@ public:
          * also match between new and old schema.
          *
          * @param oldSchema old schema, present in an input index
-         * @param phrases   ask for phrase files
          */
-        bool hasMatchingOldFields(const Schema &oldSchema, bool phrases) const;
+        bool hasMatchingOldFields(const Schema &oldSchema) const;
     };
 
     static IndexSettings getIndexSettings(const Schema &schema, const uint32_t index);
@@ -166,8 +137,4 @@ public:
     static bool getIndexIds(const Schema &schema, schema::DataType dataType, std::vector<uint32_t> &indexes);
 };
 
-
-} // namespace search::index
-
-} // namespace search
-
+}

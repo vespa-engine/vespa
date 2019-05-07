@@ -3,7 +3,6 @@ package com.yahoo.config.model.producer;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.subscription.ConfigInstanceUtil;

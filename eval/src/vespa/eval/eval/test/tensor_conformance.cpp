@@ -597,14 +597,6 @@ struct TestContext {
                               spec({x(1),y(1)}, Seq({ 3 })),
                               spec({x(1),y(1)}, Seq({ 5 }))));
         TEST_DO(test_apply_op(eval,
-                              spec(x(1), Seq({ op(3, 0) })),
-                              spec(x(1), Seq({ 3 })),
-                              spec(x(2), Seq({ 0, 7 }))));
-        TEST_DO(test_apply_op(eval,
-                              spec(x(1), Seq({ op(0, 5) })),
-                              spec(x(2), Seq({ 0, 3 })),
-                              spec(x(1), Seq({ 5 }))));
-        TEST_DO(test_apply_op(eval,
                               spec({x(2),y(2),z(2)},
                                    Seq({        op(1,  7), op(1, 11),
                                                 op(2, 13), op(2, 17),
@@ -623,11 +615,9 @@ struct TestContext {
         std::vector<Layout> layouts = {
             {},                                    {},
             {x(5)},                                {x(5)},
-            {x(5)},                                {x(3)},
             {x(5)},                                {y(5)},
             {x(5)},                                {x(5),y(5)},
             {y(3)},                                {x(2),z(3)},
-            {x(3),y(5)},                           {x(4),y(4)},
             {x(3),y(5)},                           {y(5),z(7)},
             {x({"a","b","c"})},                    {x({"a","b","c"})},
             {x({"a","b","c"})},                    {x({"a","b"})},
@@ -696,12 +686,6 @@ struct TestContext {
         TEST_DO(test_dot_product(((2 * 7) + (3 * 11) + (5 * 13)),
                                  spec(x(3), Seq({ 2, 3, 5 })),
                                  spec(x(3), Seq({ 7, 11, 13 }))));
-        TEST_DO(test_dot_product(((2 * 7) + (3 * 11)),
-                                 spec(x(2), Seq({ 2, 3 })),
-                                 spec(x(3), Seq({ 7, 11, 13 }))));
-        TEST_DO(test_dot_product(((2 * 7) + (3 * 11)),
-                                 spec(x(3), Seq({ 2, 3, 5 })),
-                                 spec(x(2), Seq({ 7, 11 }))));
     }
 
     //-------------------------------------------------------------------------
@@ -729,7 +713,7 @@ struct TestContext {
                             spec({x(4),y(2)}, Seq({1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 6.0, 6.0}))));
         TEST_DO(test_concat(spec(z(3), Seq({1.0, 2.0, 3.0})), spec(y(2), Seq({4.0, 5.0})), "x",
                             spec({x(2),y(2),z(3)}, Seq({1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0}))));
-        TEST_DO(test_concat(spec(y(3), Seq({1.0, 2.0, 3.0})), spec(y(2), Seq({4.0, 5.0})), "x",
+        TEST_DO(test_concat(spec(y(2), Seq({1.0, 2.0})), spec(y(2), Seq({4.0, 5.0})), "x",
                             spec({x(2), y(2)}, Seq({1.0, 2.0, 4.0, 5.0}))));
     }
 

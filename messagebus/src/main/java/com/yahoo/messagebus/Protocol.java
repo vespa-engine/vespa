@@ -2,7 +2,6 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.component.Version;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 
 /**
@@ -46,9 +45,4 @@ public interface Protocol {
      * @return The created policy.
      */
     public RoutingPolicy createPolicy(String name, String param);
-
-    /**
-     * Returns the metrics associated with this protocol.
-     */
-    MetricSet getMetrics();
 }

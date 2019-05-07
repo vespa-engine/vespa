@@ -1,4 +1,5 @@
 {
+  "tenant": "tenant2",
   "application": "application2",
   "instance": "default",
   "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2"

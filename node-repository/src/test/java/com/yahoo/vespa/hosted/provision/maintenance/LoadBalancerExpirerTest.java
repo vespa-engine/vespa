@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -34,9 +34,7 @@ public class LoadBalancerExpirerTest {
     public void test_maintain() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
-                                                              new JobControl(tester.nodeRepository().database()),
                                                               tester.loadBalancerService());
-        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, true);
         Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
 
         // Deploy two applications with load balancers
@@ -79,11 +77,11 @@ public class LoadBalancerExpirerTest {
     }
 
     private void deployApplication(ApplicationId application, ClusterSpec.Id cluster) {
-        tester.makeReadyNodes(10, "default");
+        tester.makeReadyNodes(10, "d-1-1-1");
         List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
                                                                                Vtag.currentVersion, false, Collections.emptySet()),
                                               2, 1,
-                                              "default");
+                                              new NodeResources(1, 1, 1));
         tester.activate(application, hosts);
     }
 

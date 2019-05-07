@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.messagebus.metrics.CountMetric;
-import com.yahoo.messagebus.metrics.MetricSet;
-import com.yahoo.messagebus.metrics.ValueMetric;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Load balances over a set of nodes based on statistics gathered from those nodes.
@@ -16,24 +15,10 @@ import java.util.List;
  */
 public class LoadBalancer {
 
-    public static class NodeMetrics extends MetricSet {
-        public CountMetric sent = new CountMetric("sent", this);
-        public CountMetric busy = new CountMetric("busy", this);
-        public ValueMetric<Double> weight = new ValueMetric<Double>("weight", 1.0, this);
-
-        public NodeMetrics(String name, MetricSet owner) {
-            super(name);
-            owner.addMetric(this);
-        }
-    }
-
-    public static class Metrics extends MetricSet {
-        MetricSet targets = new MetricSet("nodes");
-
-        public Metrics(String name) {
-            super(name);
-            addMetric(targets);
-        }
+    public static class NodeMetrics {
+        public AtomicLong sent = new AtomicLong();
+        public AtomicLong busy = new AtomicLong();
+        public double weight = 1.0;
     }
 
     public static class Node {
@@ -44,14 +29,12 @@ public class LoadBalancer {
     }
 
     /** Statistics on each node we are load balancing over. Populated lazily. */
-    private List<NodeMetrics> nodeWeights = new ArrayList<NodeMetrics>();
+    private final List<NodeMetrics> nodeWeights = new CopyOnWriteArrayList<>();
 
-    private Metrics metrics;
-    private String cluster;
-    private double position = 0.0;
+    private final String cluster;
+    private final AtomicDouble safePosition = new AtomicDouble(0.0);
 
-    public LoadBalancer(String cluster, String session, Metrics metrics) {
-        this.metrics = metrics;
+    public LoadBalancer(String cluster) {
         this.cluster = cluster;
     }
 
@@ -80,15 +63,16 @@ public class LoadBalancer {
      * @param choices the node choices, represented as Slobrok entries
      * @return the chosen node, or null only if the given choices were zero
      */
-    public Node getRecipient(Mirror.Entry[] choices) {
-        if (choices.length == 0) return null;
+    public Node getRecipient(List<Mirror.Entry> choices) {
+        if (choices.isEmpty()) return null;
 
         double weightSum = 0.0;
         Node selectedNode = null;
+        double position = safePosition.get();
         for (Mirror.Entry entry : choices) {
             NodeMetrics nodeMetrics = getNodeMetrics(entry);
 
-            weightSum += nodeMetrics.weight.get();
+            weightSum += nodeMetrics.weight;
 
             if (weightSum > position) {
                 selectedNode = new Node(entry, nodeMetrics);
@@ -97,10 +81,11 @@ public class LoadBalancer {
         }
         if (selectedNode == null) { // Position>sum of all weights: Wrap around (but keep the remainder for some reason)
             position -= weightSum;
-            selectedNode = new Node(choices[0], getNodeMetrics(choices[0]));
+            selectedNode = new Node(choices.get(0), getNodeMetrics(choices.get(0)));
         }
         position += 1.0;
-        selectedNode.metrics.sent.inc(1);
+        safePosition.set(position);
+        selectedNode.metrics.sent.incrementAndGet();
         return selectedNode;
     }
 
@@ -116,7 +101,7 @@ public class LoadBalancer {
 
         NodeMetrics nodeMetrics = nodeWeights.get(index);
         if (nodeMetrics == null) { // initialize statistics for this node
-            nodeMetrics = new NodeMetrics("node_" + index, metrics.targets);
+            nodeMetrics = new NodeMetrics();
             nodeWeights.set(index, nodeMetrics);
         }
         return nodeMetrics;
@@ -126,25 +111,25 @@ public class LoadBalancer {
     private void increaseWeights() {
         for (NodeMetrics n : nodeWeights) {
             if (n == null) continue;
-            double want = n.weight.get() * 1.01010101010101010101;
+            double want = n.weight * 1.01010101010101010101;
             if (want >= 1.0) {
-                n.weight.set(want);
+                n.weight = want;
             } else {
-                n.weight.set(1.0);
+                n.weight = 1.0;
             }
         }
     }
 
     public void received(Node node, boolean busy) {
         if (busy) {
-            double wantWeight = node.metrics.weight.get() - 0.01;
+            double wantWeight = node.metrics.weight - 0.01;
             if (wantWeight < 1.0) {
                 increaseWeights();
-                node.metrics.weight.set(1.0);
+                node.metrics.weight = 1.0;
             } else {
-                node.metrics.weight.set(wantWeight);
+                node.metrics.weight = wantWeight;
             }
-            node.metrics.busy.inc(1);
+            node.metrics.busy.incrementAndGet();
         }
     }
 

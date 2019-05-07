@@ -3,12 +3,10 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +93,7 @@ public class SerializationContext extends FunctionReferenceContext {
 
     @Override
     public SerializationContext withBindings(Map<String, String> bindings) {
-        return new SerializationContext(functions().values(), bindings, this.serializedFunctions);
+        return new SerializationContext(functions(), bindings, this.serializedFunctions);
     }
 
     public Map<String, String> serializedFunctions() { return serializedFunctions; }

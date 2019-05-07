@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
@@ -126,12 +127,12 @@ void
 LegacyForwarder::forwardLine(std::string_view line)
 {
     assert(_logserver_fd >= 0);
-    assert (line.size() > 0);
     assert (line.size() < 1024*1024);
-    assert (line[line.size() - 1] == '\n');
 
     if (parseLine(line)) {
-        forwardText(line.data(), line.size());
+        std::ostringstream line_copy;
+        line_copy << line << std::endl;
+        forwardText(line_copy.str().data(), line_copy.str().size());
     }
 }
 

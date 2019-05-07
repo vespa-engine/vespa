@@ -6,7 +6,6 @@ import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
@@ -83,7 +82,7 @@ public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
             entry.generation = upd;
             entry.recipients.clear();
             for (int i = 0; i < ctx.getNumRecipients(); ++i) {
-                Mirror.Entry[] arr = ctx.getMirror().lookup(ctx.getRecipient(i).getHop(0).toString());
+                List<Mirror.Entry> arr = ctx.getMirror().lookup(ctx.getRecipient(i).getHop(0).toString());
                 for (Mirror.Entry item : arr) {
                     entry.recipients.add(Hop.parse(item.getName()));
                 }
@@ -117,9 +116,5 @@ public class RoundRobinPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     public void destroy() {
-    }
-
-    public MetricSet getMetrics() {
-        return null;
     }
 }

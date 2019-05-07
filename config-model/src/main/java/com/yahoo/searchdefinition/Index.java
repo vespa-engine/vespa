@@ -56,6 +56,9 @@ public class Index implements Cloneable, Serializable {
     /** The boolean index definition, if set */
     private BooleanIndexDefinition boolIndex;
 
+    // TODO: Remove when experimental posting list format is made default
+    private boolean experimentalPostingListFormat = false;
+
     public Index(String name) {
         this(name, false);
     }
@@ -179,6 +182,14 @@ public class Index implements Cloneable, Serializable {
      */
     public void setBooleanIndexDefiniton(BooleanIndexDefinition def) {
         boolIndex = def;
+    }
+
+    public void setExperimentalPostingListFormat(boolean value) {
+        experimentalPostingListFormat = value;
+    }
+
+    public boolean useExperimentalPostingListFormat() {
+        return experimentalPostingListFormat;
     }
 
 }

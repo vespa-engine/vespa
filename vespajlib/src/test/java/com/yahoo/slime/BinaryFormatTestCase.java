@@ -57,7 +57,6 @@ public class BinaryFormatTestCase {
 
     @Test
     public void testZigZagConversion() {
-        System.out.println("test zigzag conversion");
         assertThat(encode_zigzag(0), is((long)0));
         assertThat(decode_zigzag(encode_zigzag(0)), is(0L));
 
@@ -88,7 +87,6 @@ public class BinaryFormatTestCase {
 
     @Test
     public void testDoubleConversion() {
-        System.out.println("test double conversion");
         assertThat(encode_double(0.0), is(0L));
         assertThat(decode_double(encode_double(0.0)), is(0.0));
 
@@ -116,7 +114,6 @@ public class BinaryFormatTestCase {
 
     @Test
     public void testTypeAndMetaMangling() {
-        System.out.println("test type and meta mangling");
         for (byte type = 0; type < TYPE_LIMIT; ++type) {
             for (int meta = 0; meta < META_LIMIT; ++meta) {
                 byte mangled = encode_type_and_meta(type, meta);
@@ -126,10 +123,8 @@ public class BinaryFormatTestCase {
         }
     }
 
-    // was testCmprUlong
     @Test
-    public void testCmprLong() {
-        System.out.println("test compressed long");
+    public void testCompressedLong() {
         {
             long value = 0;
             byte[] wanted = { 0 };
@@ -217,11 +212,8 @@ public class BinaryFormatTestCase {
     // testWriteBytes -> buffered IO test
     // testReadByte -> buffered IO test
     // testReadBytes -> buffered IO test
-
     @Test
-    public void testTypeAndSize() {
-        System.out.println("test type and size conversion");
-
+    public void testTypeAndSizeConversion() {
         for (byte type = 0; type < TYPE_LIMIT; ++type) {
             for (long size = 0; size < 500; ++size) {
                 BufferedOutput expect = new BufferedOutput();
@@ -271,8 +263,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testTypeAndBytes() {
-        System.out.println("test encoding and decoding of type and bytes");
+    public void testEncodingAndDecodingOfTypeAndBytes() {
         for (byte type = 0; type < TYPE_LIMIT; ++type) {
             for (int n = 0; n < MAX_NUM_SIZE; ++n) {
                 for (int pre = 0; (pre == 0) || (pre < n); ++pre) {
@@ -307,9 +298,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testEmpty() {
-        System.out.println("test encoding empty slime");
-
+    public void testEncodingEmptySlime() {
         Slime slime = new Slime();
         BufferedOutput expect = new BufferedOutput();
         expect.put((byte)0); // num symbols
@@ -321,8 +310,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testBasic() {
-        System.out.println("test encoding slime holding a single basic value");
+    public void testEncodingSlimeHoldingASingleBasicValue() {
         {
             Slime slime = new Slime();
             slime.setBool(false);
@@ -427,8 +415,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testArray() {
-        System.out.println("test encoding slime holding an array of various basic values");
+    public void testEncodingSlimeArray() {
         Slime slime = new Slime();
         Cursor c = slime.setArray();
         byte[] data = { 'd', 'a', 't', 'a' };
@@ -452,8 +439,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testObject() {
-        System.out.println("test encoding slime holding an object of various basic values");
+    public void testEncodingSlimeObject() {
         Slime slime = new Slime();
         Cursor c = slime.setObject();
         byte[] data = { 'd', 'a', 't', 'a' };
@@ -478,8 +464,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testNesting() {
-        System.out.println("test encoding slime holding a more complex structure");
+    public void testEncodingComplexSlimeStructure() {
         Slime slime = new Slime();
         Cursor c1 = slime.setObject();
         c1.setLong("bar", 10);
@@ -503,8 +488,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testSymbolReuse() {
-        System.out.println("test encoding slime reusing symbols");
+    public void testEncodingSlimeReusingSymbols() {
         Slime slime = new Slime();
         Cursor c1 = slime.setArray();
         {
@@ -533,8 +517,7 @@ public class BinaryFormatTestCase {
     }
 
     @Test
-    public void testOptionalDecodeOrder() {
-        System.out.println("test decoding slime with different symbol order");
+    public void testDecodingSlimeWithDifferentSymbolOrder() {
         byte[] data = {
             5, // num symbols
             1, 'd', 1, 'e', 1, 'f', 1, 'b', 1, 'c', // symbol table
@@ -564,4 +547,5 @@ public class BinaryFormatTestCase {
         assertThat(c.field("f").asData(), is(expd));
         assertThat(c.entry(5).valid(), is(false)); // not ARRAY
     }
+
 }

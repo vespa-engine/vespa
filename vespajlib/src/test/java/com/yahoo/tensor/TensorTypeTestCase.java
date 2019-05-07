@@ -58,10 +58,13 @@ public class TensorTypeTestCase {
 
     @Test
     public void requireThatIllegalSyntaxInSpecThrowsException() {
-        assertIllegalTensorType("foo(x[10])", "Tensor type spec must start with 'tensor(' and end with ')', but was 'foo(x[10])'");
-        assertIllegalTensorType("tensor(x_@[10])", "Failed parsing element 'x_@[10]' in type spec 'tensor(x_@[10])'");
-        assertIllegalTensorType("tensor(x[10a])", "Failed parsing element 'x[10a]' in type spec 'tensor(x[10a])'");
-        assertIllegalTensorType("tensor(x{10})", "Failed parsing element 'x{10}' in type spec 'tensor(x{10})'");
+        assertIllegalTensorType("foo(x[10])", "but was 'foo(x[10])'.");
+        assertIllegalTensorType("tensor(x_@[10])", "Dimension 'x_@[10]' is on the wrong format");
+        assertIllegalTensorType("tensor(x[10a])", "Dimension 'x[10a]' is on the wrong format");
+        assertIllegalTensorType("tensor(x{10})", "Dimension 'x{10}' is on the wrong format");
+        assertIllegalTensorType("tensor<(x{})", " Value type spec must be enclosed in <>");
+        assertIllegalTensorType("tensor<>(x{})", "Value type must be");
+        assertIllegalTensorType("tensor<notavalue>(x{})", "Value type must be");
     }
 
     @Test
@@ -86,6 +89,13 @@ public class TensorTypeTestCase {
         assertIsConvertibleTo("tensor(x[5])", "tensor(x[10])"); // Different from assignable
         assertUnconvertibleTo("tensor(x{})", "tensor(x[])");
         assertIsConvertibleTo("tensor(x{},y[10])", "tensor(x{},y[])");
+    }
+
+    @Test
+    public void testValueType() {
+        assertValueType(TensorType.Value.DOUBLE, "tensor(x[])");
+        assertValueType(TensorType.Value.DOUBLE, "tensor<double>(x[])");
+        assertValueType(TensorType.Value.FLOAT, "tensor<float>(x[])");
     }
 
     private static void assertTensorType(String typeSpec) {
@@ -119,6 +129,10 @@ public class TensorTypeTestCase {
 
     private void assertUnconvertibleTo(String specificType, String generalType) {
         assertFalse(TensorType.fromSpec(specificType).isConvertibleTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertValueType(TensorType.Value expectedValueType, String tensorTypeSpec) {
+        assertEquals(expectedValueType, TensorType.fromSpec(tensorTypeSpec).valueType());
     }
 
 }

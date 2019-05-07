@@ -3,12 +3,10 @@ package com.yahoo.documentapi.messagebus.protocol.test;
 
 import com.yahoo.documentapi.messagebus.protocol.LoadBalancer;
 import com.yahoo.jrt.slobrok.api.Mirror;
-import com.yahoo.text.XMLWriter;
 import org.junit.Test;
 
-import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -33,8 +31,7 @@ public class LoadBalancerTestCase {
     }
 
     private static void assertIllegalArgument(String clusterName, String recipient, String expectedMessage) {
-        LoadBalancer.Metrics metric = new LoadBalancer.Metrics("");
-        LoadBalancer policy = new LoadBalancer(clusterName, "", metric);
+        LoadBalancer policy = new LoadBalancer(clusterName);
         try {
             fail("Expected exception, got index " + policy.getIndex(recipient) + ".");
         } catch (IllegalArgumentException e) {
@@ -44,12 +41,11 @@ public class LoadBalancerTestCase {
 
     @Test
     public void testLoadBalancer() {
-        LoadBalancer.Metrics m = new LoadBalancer.Metrics("");
-        LoadBalancer lb = new LoadBalancer("foo", "", m);
+        LoadBalancer lb = new LoadBalancer("foo");
 
-        Mirror.Entry[] entries = new Mirror.Entry[]{ new Mirror.Entry("foo/0/default", "tcp/bar:1"),
-                                                     new Mirror.Entry("foo/1/default", "tcp/bar:2"),
-                                                     new Mirror.Entry("foo/2/default", "tcp/bar:3") };
+        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
+                                                   new Mirror.Entry("foo/1/default", "tcp/bar:2"),
+                                                   new Mirror.Entry("foo/2/default", "tcp/bar:3"));
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
 
         {
@@ -58,13 +54,13 @@ public class LoadBalancerTestCase {
                 assertEquals("foo/" + (i % 3) + "/default" , node.entry.getName());
             }
 
-            assertEquals(33, weights.get(0).sent.get().intValue());
-            assertEquals(33, weights.get(1).sent.get().intValue());
-            assertEquals(33, weights.get(2).sent.get().intValue());
+            assertEquals(33, weights.get(0).sent.intValue());
+            assertEquals(33, weights.get(1).sent.intValue());
+            assertEquals(33, weights.get(2).sent.intValue());
 
-            weights.get(0).sent.set(new AtomicLong(0));
-            weights.get(1).sent.set(new AtomicLong(0));
-            weights.get(2).sent.set(new AtomicLong(0));
+            weights.get(0).sent.set(0);
+            weights.get(1).sent.set(0);
+            weights.get(2).sent.set(0);
         }
 
         {
@@ -83,13 +79,9 @@ public class LoadBalancerTestCase {
                 lb.received(new LoadBalancer.Node(new Mirror.Entry("foo/1/default", "tcp/bar:2"), weights.get(1)), false);
             }
 
-            PrintWriter writer = new PrintWriter(System.out);
-            m.toXML(new XMLWriter(writer));
-            writer.flush();
-
-            assertEquals(421, (int)(100 * weights.get(0).weight.get() / weights.get(1).weight.get()));
-            assertEquals(100, (int)(100 * weights.get(1).weight.get()));
-            assertEquals(421, (int)(100 * weights.get(2).weight.get() / weights.get(1).weight.get()));
+            assertEquals(421, (int)(100 * weights.get(0).weight / weights.get(1).weight));
+            assertEquals(100, (int)(100 * weights.get(1).weight));
+            assertEquals(421, (int)(100 * weights.get(2).weight / weights.get(1).weight));
         }
 
 
@@ -107,10 +99,9 @@ public class LoadBalancerTestCase {
 
     @Test
     public void testLoadBalancerOneItemOnly() {
-        LoadBalancer.Metrics m = new LoadBalancer.Metrics("");
-        LoadBalancer lb = new LoadBalancer("foo", "", m);
+        LoadBalancer lb = new LoadBalancer("foo");
 
-        Mirror.Entry[] entries = new Mirror.Entry[]{ new Mirror.Entry("foo/0/default", "tcp/bar:1") };
+        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1") );
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
 
         assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
@@ -120,5 +111,4 @@ public class LoadBalancerTestCase {
         assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());
 
     }
-
 }

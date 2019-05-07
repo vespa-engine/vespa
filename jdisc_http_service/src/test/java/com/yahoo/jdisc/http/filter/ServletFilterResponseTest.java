@@ -4,12 +4,12 @@ package com.yahoo.jdisc.http.filter;
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.servlet.ServletResponse;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -23,8 +23,8 @@ public class ServletFilterResponseTest {
     private DiscFilterResponse filterResponse;
     private ServletResponse parentResponse;
 
-    @BeforeMethod
-    private void init() throws Exception {
+    @Before
+    public void init() throws Exception {
         filterResponse = new ServletFilterResponse(newServletResponse());
         parentResponse = ((ServletFilterResponse)filterResponse).getServletResponse();
 

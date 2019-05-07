@@ -20,7 +20,7 @@ public class CloudAccessControlRequests implements AccessControlRequests {
 
     @Override
     public Credentials credentials(TenantName tenant, Inspector requestObject, HttpRequest request) {
-        // TODO Pick out JWT data and return a specialised credentials thing.
+        // TODO Include roles, if this is to be used for displaying accessible data.
         return new Credentials(request.getUserPrincipal());
     }
 

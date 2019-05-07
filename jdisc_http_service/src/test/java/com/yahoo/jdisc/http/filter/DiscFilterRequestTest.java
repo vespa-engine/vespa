@@ -1,24 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
-import static org.testng.AssertJUnit.assertTrue;
-
-import java.net.InetSocketAddress;
-import java.net.URI;
-
-import java.util.*;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import com.yahoo.jdisc.HeaderFields;
-import com.yahoo.jdisc.test.TestDriver;
-
 import com.yahoo.jdisc.http.Cookie;
-
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Version;
+import com.yahoo.jdisc.test.TestDriver;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 public class DiscFilterRequestTest {
 
@@ -43,7 +43,7 @@ public class DiscFilterRequestTest {
 		cookies.add(new Cookie("ABC", "value"));
 		httpReq.encodeCookieHeader(cookies);
 		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
-		Assert.assertSame(request.getParentRequest(),httpReq);
+		Assert.assertSame(request.getParentRequest(), httpReq);
 		Assert.assertEquals(request.getHeader("X-Custom-Header"),"custom_header");
 		Assert.assertEquals(request.getHeader(HttpHeaders.Names.CONTENT_TYPE),"text/html;charset=UTF-8");
 

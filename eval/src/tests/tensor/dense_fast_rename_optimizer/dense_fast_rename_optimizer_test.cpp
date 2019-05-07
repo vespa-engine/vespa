@@ -25,7 +25,7 @@ const TensorEngine &prod_engine = DefaultTensorEngine::ref();
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("x5", spec({x(5)}, N()))
-        .add("x5_u", spec({x(5)}, N()), "tensor(x[])")
+        .add("x5f", spec({x(5)}, N()), "tensor<float>(x[5])")
         .add("x_m", spec({x({"a", "b", "c"})}, N()))
         .add("x5y3", spec({x(5),y(3)}, N()));
 }
@@ -64,16 +64,16 @@ TEST("require that transposing dense renames are not optimized") {
     TEST_DO(verify_not_optimized("rename(x5y3,(y,x),(a,b))"));
 }
 
-TEST("require that abstract dense renames are not optimized") {
-    TEST_DO(verify_not_optimized("rename(x5_u,x,y)"));
-}
-
 TEST("require that non-dense renames are not optimized") {
     TEST_DO(verify_not_optimized("rename(x_m,x,y)"));
 }
 
 TEST("require that chained optimized renames are compacted into a single operation") {
     TEST_DO(verify_optimized("rename(rename(x5,x,y),y,z)"));
+}
+
+TEST("require that optimization is disabled for tensors with non-double cells") {
+    TEST_DO(verify_not_optimized("rename(x5f,x,y)"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

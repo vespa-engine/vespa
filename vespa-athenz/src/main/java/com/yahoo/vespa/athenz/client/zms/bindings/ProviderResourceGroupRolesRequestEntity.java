@@ -33,7 +33,7 @@ public class ProviderResourceGroupRolesRequestEntity {
     @JsonProperty("resourceGroup")
     private final String resourceGroup;
 
-    public ProviderResourceGroupRolesRequestEntity(AthenzService providerService, AthenzDomain tenantDomain, Set<RoleAction> rolesActions, String resourceGroup) {
+    public ProviderResourceGroupRolesRequestEntity(AthenzIdentity providerService, AthenzDomain tenantDomain, Set<RoleAction> rolesActions, String resourceGroup) {
         this.domain = providerService.getDomainName();
         this.service = providerService.getName();
         this.tenant = tenantDomain.getName();

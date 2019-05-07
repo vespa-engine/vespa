@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -98,7 +98,7 @@ public class DeploymentTrigger {
                                              report.jobType(),
                                              report.applicationId(),
                                              report.projectId()));
-        if ( ! applications().get(report.applicationId()).isPresent()) {
+        if (applications().get(report.applicationId()).isEmpty()) {
             log.log(LogLevel.WARNING, "Ignoring completion of job of project '" + report.projectId() +
                                       "': Unknown application '" + report.applicationId() + "'");
             return;
@@ -285,7 +285,7 @@ public class DeploymentTrigger {
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {
-        return ! o1.isPresent() ? o2 : ! o2.isPresent() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
+        return o1.isEmpty() ? o2 : o2.isEmpty() ? o1 : o1.get().compareTo(o2.get()) >= 0 ? o1 : o2;
     }
 
     // ---------- Ready job computation ----------
@@ -396,11 +396,11 @@ public class DeploymentTrigger {
     /** Returns whether the given job can trigger at the given instant */
     public boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
-        if ( ! jobStatus.isPresent()) return true;
+        if (jobStatus.isEmpty()) return true;
         if (jobStatus.get().pausedUntil().isPresent() && jobStatus.get().pausedUntil().getAsLong() > clock.instant().toEpochMilli()) return false;
         if (jobStatus.get().isSuccess()) return true; // Success
-        if ( ! jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
-        if ( ! jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
+        if (jobStatus.get().lastCompleted().isEmpty()) return true; // Never completed
+        if (jobStatus.get().firstFailing().isEmpty()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
         if ( ! versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
         if (application.deploymentSpec().upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
 
@@ -516,7 +516,7 @@ public class DeploymentTrigger {
         if ( ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return false;
         if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
-        return ! application.change().platform().isPresent();
+        return application.change().platform().isEmpty();
     }
 
     private Change remainingChange(Application application) {
@@ -552,7 +552,7 @@ public class DeploymentTrigger {
         for (JobType jobType : steps(application.deploymentSpec()).testJobs()) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
-            if ( ! completion.isPresent() && condition.test(jobType))
+            if (completion.isEmpty() && condition.test(jobType))
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
         }
         return jobs;

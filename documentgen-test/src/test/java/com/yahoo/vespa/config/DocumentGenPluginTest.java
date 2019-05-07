@@ -5,21 +5,53 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.docproc.proxy.ProxyDocument;
-import com.yahoo.document.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.Field;
+import com.yahoo.document.Generated;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.document.datatypes.*;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.document.NodeImpl;
 import com.yahoo.vespa.document.dom.DocumentImpl;
-import com.yahoo.vespa.documentgen.test.*;
+import com.yahoo.vespa.documentgen.test.Book;
 import com.yahoo.vespa.documentgen.test.Book.Ss0;
 import com.yahoo.vespa.documentgen.test.Book.Ss1;
+import com.yahoo.vespa.documentgen.test.Common;
+import com.yahoo.vespa.documentgen.test.ConcreteDocumentFactory;
+import com.yahoo.vespa.documentgen.test.Music;
+import com.yahoo.vespa.documentgen.test.Music3;
+import com.yahoo.vespa.documentgen.test.Music4;
+import com.yahoo.vespa.documentgen.test.Parent;
 import com.yahoo.vespa.documentgen.test.annotation.Artist;
 import com.yahoo.vespa.documentgen.test.annotation.Date;
 import com.yahoo.vespa.documentgen.test.annotation.Emptyannotation;
@@ -32,10 +64,24 @@ import java.lang.Class;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotSame;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
+
 
 /**
  * Testcases for vespa-documentgen-plugin
@@ -675,7 +721,7 @@ public class DocumentGenPluginTest {
         }
         if (generated.getAnnotation(com.yahoo.document.Generated.class)==null) return null;
         Book book = new Book(d.getId());
-        for (Iterator<Map.Entry<Field, FieldValue>>i=d.iterator() ; i.hasNext() ; ) {
+        for (Iterator<Map.Entry<Field, FieldValue>> i = d.iterator(); i.hasNext() ; ) {
             Map.Entry<Field, FieldValue> e = i.next();
             Field f = e.getKey();
             FieldValue fv = e.getValue();
@@ -927,6 +973,13 @@ public class DocumentGenPluginTest {
         assertNull(book.getVector());
         book.setVector(Tensor.from("{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}"));
         assertEquals("tensor(x{}):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", book.getVector().toString());
+    }
+
+    @Test
+    public void testPositionType() {
+        Music4 book = new Music4(new DocumentId("doc:music4:0"));
+        book.setPos(new Music4.Position().setX(7).setY(8));
+        assertEquals(new Music4.Position().setX(7).setY(8), book.getPos());
     }
     
 }

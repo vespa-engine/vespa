@@ -74,7 +74,7 @@ apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func)
     }
     const DenseTensor *dense = dynamic_cast<const DenseTensor *>(&rhs);
     if (dense) {
-        return apply(lhs, DenseTensorView(*dense), func);
+        return apply(lhs, *dense, func);
     }
     return Tensor::UP();
 }

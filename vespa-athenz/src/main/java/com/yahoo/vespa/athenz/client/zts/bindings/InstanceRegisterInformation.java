@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.client.zts.bindings;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrUtils;
@@ -32,8 +33,8 @@ public class InstanceRegisterInformation {
     @JsonProperty("token")
     private final boolean token;
 
-    public InstanceRegisterInformation(AthenzService providerIdentity,
-                                       AthenzService instanceIdentity,
+    public InstanceRegisterInformation(AthenzIdentity providerIdentity,
+                                       AthenzIdentity instanceIdentity,
                                        String attestationData,
                                        Pkcs10Csr csr,
                                        boolean requestServiceToken) {

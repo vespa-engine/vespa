@@ -5,58 +5,28 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.metrics.*;
 import com.yahoo.messagebus.Error;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
 * @author thomasg
 */
-public class MessageTypeMetricSet extends MetricSet {
-    ValueMetric<Long> latency;
-    CountMetric count;
-    CountMetric ignored;
+public class MessageTypeMetricSet {
+    public long latency_total;
+    public long latency_min = Long.MAX_VALUE;
+    public long latency_max = Long.MIN_VALUE;
+    public long count = 0;
+    public long ignored = 0;
+    public long errorCount = 0;
+    private final Map<String, Long> errorCounts = new HashMap<>();
 
-    SumMetric errorSum;
-    MetricSet errors;
-    String msgName;
+    private final String msgName;
 
-    class ErrorMetric extends CountMetric {
-        ErrorMetric(String name, MetricSet owner) {
-            super(name, "", "Number of errors of type " + name, owner);
-        }
-
-        ErrorMetric(ErrorMetric other, CopyType copyType, MetricSet owner) {
-            super(other, copyType, owner);
-        }
-
-        @Override
-        public String getXMLTag() {
-            return "error";
-        }
-
-        @Override
-        public Metric clone(CopyType type, MetricSet owner, boolean includeUnused) {
-            return new ErrorMetric(this, type, owner);
-        }
-
-    }
-
-    public MessageTypeMetricSet(String msgName, MetricSet owner) {
-        super(msgName.toLowerCase(), "", "", owner);
+    public MessageTypeMetricSet(String msgName) {
         this.msgName = msgName;
-        latency = new ValueMetric<Long>("latency", "", "Latency (in ms)", this).averageMetric();
-        count = new CountMetric("count", "", "Number received", this);
-        ignored = new CountMetric("ignored", "", "Number ignored due to no matching document routing selectors", this);
-        errors = new SimpleMetricSet("errors", "", "The errors returned", this);
-        errorSum = new SumMetric("total", "", "Total number of errors", errors);
-    }
-
-    public MessageTypeMetricSet(MessageTypeMetricSet source, CopyType copyType, MetricSet owner, boolean includeUnused) {
-        super(source, copyType, owner, includeUnused);
-        msgName = source.msgName;
     }
 
     public String getMessageName() {
@@ -72,29 +42,29 @@ public class MessageTypeMetricSet extends MetricSet {
     }
 
     private void updateFailureMetrics(Reply r) {
+        errorCount++;
         String error = DocumentProtocol.getErrorName(r.getError(0).getCode());
-        CountMetric s = (CountMetric)errors.getMetric(error);
+        Long s = errorCounts.get(error);
         if (s == null) {
-            s = new ErrorMetric(error, errors);
-            errorSum.addMetricToSum(s);
+            errorCounts.put(error, 1L);
+        } else {
+            errorCounts.put(error, s+1);
         }
-        s.inc();
     }
 
     private void updateSuccessMetrics(Reply r) {
         if (!(r instanceof DocumentIgnoredReply)) {
             if (r.getMessage().getTimeReceived() != 0) {
-                latency.addValue(SystemTimer.INSTANCE.milliTime() - r.getMessage().getTimeReceived());
+                long latency = (SystemTimer.INSTANCE.milliTime() - r.getMessage().getTimeReceived());
+                latency_max = Math.max(latency_max, latency);
+                latency_min = Math.min(latency_min, latency);
+                latency_total += latency;
             }
-            count.inc();
+            count++;
         } else {
-            ignored.inc();
+            ignored++;
         }
     }
-
-    @Override
-    public Metric clone(CopyType type, MetricSet owner, boolean includeUnused)
-        { return new MessageTypeMetricSet(this, type, owner, includeUnused); }
 
     /**
      * Returns true if every error in a stream is a test and set condition failed

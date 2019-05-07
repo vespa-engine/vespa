@@ -22,7 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -59,10 +59,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
+    private final Map<DeploymentId, Set<String>> rotationCnames = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
     private ConfigChangeActions configChangeActions = null;
+    private String log = "INFO - All good";
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
@@ -100,11 +102,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void addNodes(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
+                NodeType nodeType = type.orElseGet(() -> {
+                    // Zone application has two node types. Use proxy
+                    if (application == SystemApplication.zone) return NodeType.proxy;
+                    if (application.nodeTypes().size() != 1) throw new IllegalArgumentException(application + " has several node types. Unable to detect type automatically");
+                    return application.nodeTypes().iterator().next();
+                });
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    Node.State.active, type.orElseGet(() -> application.nodeTypes().iterator().next()),
+                                                    Node.State.active, nodeType,
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion
@@ -178,6 +186,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         warnings.put(deployment, List.copyOf(logs));
     }
 
+    public Map<DeploymentId, Set<String>> rotationCnames() {
+        return Collections.unmodifiableMap(rotationCnames);
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -221,6 +233,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
+        this.rotationCnames.put(deployment, Set.copyOf(rotationCnames));
+
         return new PreparedApplication() {
 
             // TODO: Remove when no longer part of interface
@@ -248,7 +262,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
                 for (Node node : nodes) {
                     nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
-                                                                               node.state(), node.type(),
+                                                                               Node.State.active,
+                                                                               node.type(),
                                                                                node.owner(),
                                                                                node.currentVersion(),
                                                                                application.version().get()));
@@ -360,7 +375,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public InputStream getLogStream(DeploymentId deployment, Map<String, String> queryParameters) {
-        return IOUtils.toInputStream("INFO - All good");
+        return IOUtils.toInputStream(log);
+    }
+
+    public void setLogStream(String log) {
+        this.log = log;
     }
 
     @Override

@@ -1,13 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/cppunittestrunner.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("persistencecppunittests");
+LOG_SETUP("persistenceunittests");
 
-int
-main(int argc, const char *argv[])
-{
-    vdstestlib::CppUnitTestRunner testRunner;
-    return testRunner.run(argc, argv);
-}
+GTEST_MAIN_RUN_ALL_TESTS()

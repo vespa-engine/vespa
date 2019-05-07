@@ -52,9 +52,9 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "</http>");
         Http http = buildHttp(xml);
 
-        Http.Binding binding = first(http.bindings);
-        assertThat(binding.filterId.getName(), is("my-request-chain"));
-        assertThat(binding.binding, is(MY_CHAIN_BINDING));
+        Binding binding = first(http.bindings);
+        assertThat(binding.filterId().getName(), is("my-request-chain"));
+        assertThat(binding.binding(), is(MY_CHAIN_BINDING));
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-request-chain");
         assertNotNull("Missing chain", myChain);
@@ -72,9 +72,9 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "</http>");
         Http http = buildHttp(xml);
 
-        Http.Binding binding = first(http.bindings);
-        assertThat(binding.filterId.getName(), is("my-response-chain"));
-        assertThat(binding.binding, is(MY_CHAIN_BINDING));
+        Binding binding = first(http.bindings);
+        assertThat(binding.filterId().getName(), is("my-response-chain"));
+        assertThat(binding.binding(), is(MY_CHAIN_BINDING));
 
         Chain<Filter> myChain = http.getFilterChains().allChains().getComponent("my-response-chain");
         assertNotNull("Missing chain", myChain);

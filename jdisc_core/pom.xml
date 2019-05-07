@@ -47,9 +47,8 @@
             <version>1.2</version>
         </dependency>
         <dependency>
-            <!-- TODO: mockito-all is deprecated (includes old hamcrest). Use mockito-core if possible -->
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

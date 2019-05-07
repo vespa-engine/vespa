@@ -11,8 +11,8 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
@@ -268,7 +268,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         AthenzIdentityVerifier hostnameVerifier =
                 new AthenzIdentityVerifier(
                         singleton(
-                                zoneRegistry.getConfigServerAthenzService(
+                                zoneRegistry.getConfigServerAthenzIdentity(
                                         ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")

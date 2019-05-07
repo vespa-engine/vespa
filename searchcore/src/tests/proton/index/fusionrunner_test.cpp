@@ -4,7 +4,7 @@
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcorespi/index/fusionrunner.h>
-#include <vespa/searchlib/memoryindex/memoryindex.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>

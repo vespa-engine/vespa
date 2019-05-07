@@ -48,18 +48,12 @@ public class PhraseItem extends CompositeIndexedItem {
         }
     }
 
-    /**
-     * Sets whether this was explicitly written as a phrase using quotes by the
-     * user
-     */
+    /** Sets whether this was explicitly written as a phrase using quotes by the user */
     public void setExplicit(boolean explicit) {
         this.explicit = explicit;
     }
 
-    /**
-     * Returns whether this was explicitly written as a phrase using quotes by
-     * the user Default is false
-     */
+    /** Returns whether this was explicitly written as a phrase using quotes by the user Default is false */
     public boolean isExplicit() {
         return explicit;
     }
@@ -74,8 +68,7 @@ public class PhraseItem extends CompositeIndexedItem {
      * this phrase. If the item is a word, it will simply be added, if the item
      * is a phrase, each of the words of the phrase will be added.
      *
-     * @throws IllegalArgumentException
-     *             if the given item is not a WordItem or PhraseItem
+     * @throws IllegalArgumentException if the given item is not a WordItem or PhraseItem
      */
     public void addItem(Item item) {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
@@ -89,8 +82,7 @@ public class PhraseItem extends CompositeIndexedItem {
                 addIndexedItem((IndexedItem) i.next());
             }
         } else {
-            throw new IllegalArgumentException("Can not add " + item
-                    + " to a phrase");
+            throw new IllegalArgumentException("Can not add " + item + " to a phrase");
         }
     }
 
@@ -107,8 +99,7 @@ public class PhraseItem extends CompositeIndexedItem {
                 addIndexedItem(index++, (WordItem) i.next());
             }
         } else {
-            throw new IllegalArgumentException("Can not add " + item
-                    + " to a phrase");
+            throw new IllegalArgumentException("Can not add " + item + " to a phrase");
         }
     }
 
@@ -130,8 +121,7 @@ public class PhraseItem extends CompositeIndexedItem {
             }
             return toReturn;
         } else {
-            throw new IllegalArgumentException("Can not add " + item
-                    + " to a phrase");
+            throw new IllegalArgumentException("Can not add " + item + " to a phrase");
         }
     }
 
@@ -153,10 +143,8 @@ public class PhraseItem extends CompositeIndexedItem {
     /**
      * Returns a subitem as a word item
      *
-     * @param index
-     *            the (0-base) index of the item to return
-     * @throws IndexOutOfBoundsException
-     *             if there is no subitem at index
+     * @param index the (0-base) index of the item to return
+     * @throws IndexOutOfBoundsException if there is no subitem at index
      */
     public WordItem getWordItem(int index) {
         return (WordItem) getItem(index);
@@ -197,9 +185,7 @@ public class PhraseItem extends CompositeIndexedItem {
         return itemCount;
     }
 
-    /**
-     * Returns false, no parenthezes for phrases
-     */
+    /** Returns false, no parenthezes for phrases */
     protected boolean shouldParenthize() {
         return false;
     }
@@ -263,4 +249,5 @@ public class PhraseItem extends CompositeIndexedItem {
         super.disclose(discloser);
         discloser.addProperty("explicit", explicit);
     }
+
 }

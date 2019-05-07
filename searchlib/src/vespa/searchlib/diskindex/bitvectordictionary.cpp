@@ -9,7 +9,6 @@ LOG_SETUP(".diskindex.bitvectordictionary");
 
 namespace search::diskindex {
 
-
 BitVectorDictionary::BitVectorDictionary()
     : _docIdLimit(),
       _entries(),

@@ -29,6 +29,8 @@ public class IndexOperation implements FieldOperation {
     private OptionalLong lowerBound = OptionalLong.empty();
     private OptionalLong upperBound = OptionalLong.empty();
     private OptionalDouble densePostingListThreshold = OptionalDouble.empty();
+    // TODO: Remove when experimental posting list format is made default
+    private Optional<Boolean> experimentalPostingListFormat = Optional.empty();
 
     public String getIndexName() {
         return indexName;
@@ -87,6 +89,9 @@ public class IndexOperation implements FieldOperation {
             index.setBooleanIndexDefiniton(
                     new BooleanIndexDefinition(arity, lowerBound, upperBound, densePostingListThreshold));
         }
+        if (experimentalPostingListFormat.isPresent()) {
+            index.setExperimentalPostingListFormat(experimentalPostingListFormat.get());
+        }
     }
 
     public Type getType() {
@@ -111,6 +116,9 @@ public class IndexOperation implements FieldOperation {
 
     public void setDensePostingListThreshold(double densePostingListThreshold) {
         this.densePostingListThreshold = OptionalDouble.of(densePostingListThreshold);
+    }
+    public void setExperimentalPostingListFormat(boolean value) {
+        experimentalPostingListFormat = Optional.of(value);
     }
 
 }

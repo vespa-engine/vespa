@@ -3,8 +3,10 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.metrics.MetricSet;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.Hop;
+import com.yahoo.messagebus.routing.Route;
+import com.yahoo.messagebus.routing.RoutingContext;
+import com.yahoo.messagebus.routing.VerbatimDirective;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +23,7 @@ public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
 
     private static Logger log = Logger.getLogger(SubsetServicePolicy.class.getName());
     private final int subsetSize;
-    private final Map<String, CacheEntry> cache = new HashMap<String, CacheEntry>();
+    private final Map<String, CacheEntry> cache = new HashMap<>();
 
     /**
      * Creates an instance of a subset service policy. The parameter string is parsed as an integer number that is the
@@ -29,7 +31,7 @@ public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
      *
      * @param param The number of services to include in the set.
      */
-    public SubsetServicePolicy(String param) {
+    SubsetServicePolicy(String param) {
         int subsetSize = 5;
         if (param != null && param.length() > 0) {
             try {
@@ -107,10 +109,10 @@ public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
             entry.generation = upd;
             entry.recipients.clear();
 
-            Mirror.Entry[] arr = ctx.getMirror().lookup(ctx.getHopPrefix() + "*" + ctx.getHopSuffix());
+            List<Mirror.Entry> arr = ctx.getMirror().lookup(ctx.getHopPrefix() + "*" + ctx.getHopSuffix());
             int pos = ctx.getMessageBus().getConnectionSpec().hashCode();
-            for (int i = 0; i < subsetSize && i < arr.length; ++i) {
-                entry.recipients.add(Hop.parse(arr[((pos + i) & Integer.MAX_VALUE) % arr.length].getName()));
+            for (int i = 0; i < subsetSize && i < arr.size(); ++i) {
+                entry.recipients.add(Hop.parse(arr.get(((pos + i) & Integer.MAX_VALUE) % arr.size()).getName()));
             }
         }
         return entry;
@@ -131,15 +133,11 @@ public class SubsetServicePolicy implements DocumentProtocolRoutingPolicy {
      * Defines the necessary cache data.
      */
     private class CacheEntry {
-        private final List<Hop> recipients = new ArrayList<Hop>();
+        private final List<Hop> recipients = new ArrayList<>();
         private int generation = 0;
         private int offset = 0;
     }
 
     public void destroy() {
-    }
-
-    public MetricSet getMetrics() {
-        return null;
     }
 }

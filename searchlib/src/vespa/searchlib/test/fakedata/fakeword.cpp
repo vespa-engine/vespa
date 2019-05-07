@@ -584,7 +584,7 @@ FakeWord::validate(FieldReader &fieldReader,
     for (residue = numDocs; residue > 0; --residue) {
         assert(fieldReader._wordNum == wordNum);
         DocIdAndFeatures &features(fieldReader._docIdAndFeatures);
-        docId = features._docId;
+        docId = features.doc_id();
         assert(d != de);
         assert(d->_docId == docId);
         if (matchData.valid()) {
@@ -598,15 +598,15 @@ FakeWord::validate(FieldReader &fieldReader,
             typedef WordDocElementWordPosFeatures Positions;
 
             std::vector<Elements>::const_iterator element =
-                features._elements.begin();
+                features.elements().begin();
             std::vector<Positions>::const_iterator position =
-                features._wordPositions.begin();
+                features.word_positions().begin();
 
             TermFieldMatchData *tfmd = matchData[0];
             assert(tfmd != 0);
-            tfmd->reset(features._docId);
+            tfmd->reset(features.doc_id());
 
-            uint32_t elementResidue = features._elements.size();
+            uint32_t elementResidue = features.elements().size();
             while (elementResidue != 0) {
                 uint32_t positionResidue = element->getNumOccs();
                 while (positionResidue != 0) {

@@ -4436,8 +4436,7 @@
       "public static com.yahoo.document.serialization.DocumentSerializer createHead(com.yahoo.io.GrowableByteBuffer)",
       "public static com.yahoo.document.serialization.DocumentSerializer create6(com.yahoo.io.GrowableByteBuffer)",
       "public static com.yahoo.document.serialization.DocumentSerializer create6()",
-      "public static com.yahoo.document.serialization.DocumentSerializer create42(com.yahoo.io.GrowableByteBuffer)",
-      "public static com.yahoo.document.serialization.DocumentSerializer create42()"
+      "public static com.yahoo.document.serialization.DocumentSerializer create42(com.yahoo.io.GrowableByteBuffer)"
     ],
     "fields": []
   },

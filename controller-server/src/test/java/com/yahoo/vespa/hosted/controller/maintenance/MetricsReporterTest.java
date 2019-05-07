@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -235,6 +235,29 @@ public class MetricsReporterTest {
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
                      getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, tester.app()));
+    }
+
+    @Test
+    public void test_name_service_queue_size_metric() {
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(), false);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .globalServiceId("default")
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        Application application = tester.createApplication("app1", "tenant1", 1, 11L);
+        reporter.maintain();
+        assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
+
+        tester.deployCompletely(application, applicationPackage);
+        reporter.maintain();
+        assertEquals("Deployment queues name services requests", 6, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
+
+        tester.updateDns();
+        reporter.maintain();
+        assertEquals("Queue consumed", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
     }
 
     private Duration getAverageDeploymentDuration(Application application) {

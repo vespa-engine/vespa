@@ -1055,7 +1055,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
             // TODO: Push down
             if (presentation.getHighlight() != null) {
-                mapCount += MapEncoder.encodeStringMultiMap(Highlight.HIGHLIGHTTERMS, presentation.getHighlight().getHighlightTerms(), buffer);
+                mapCount += MapEncoder.encodeMultiMap(Highlight.HIGHLIGHTTERMS, presentation.getHighlight().getHighlightTerms(), buffer);
             }
 
             // TODO: Push down

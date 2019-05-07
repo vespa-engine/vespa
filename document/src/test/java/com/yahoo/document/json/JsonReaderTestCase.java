@@ -914,16 +914,17 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void misspelledFieldTest()  throws IOException{
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:smoke::whee',",
+    public void misspelledFieldTest()  throws IOException{
+        JsonReader r = createReader(inputJson(
+                "{ 'put': 'id:unittest:smoke::whee',",
                 "  'fields': {",
                 "    'smething': 'smoketest',",
                 "    'nalle': 'bamse' }}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        exception.expect(NullPointerException.class);
-        exception.expectMessage("Could not get field \"smething\" in the structure of type \"smoke\".");
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("No field 'smething' in the structure of type 'smoke'");
         new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
     }
 
@@ -954,9 +955,9 @@ public class JsonReaderTestCase {
     }
 
     private void testFeedWithTestAndSetCondition(String jsonDoc) {
-        final ByteArrayInputStream parseInfoDoc = new ByteArrayInputStream(Utf8.toBytes(jsonDoc));
-        final JsonReader reader = new JsonReader(types, parseInfoDoc, parserFactory);
-        final int NUM_OPERATIONS_IN_FEED = 3;
+        ByteArrayInputStream parseInfoDoc = new ByteArrayInputStream(Utf8.toBytes(jsonDoc));
+        JsonReader reader = new JsonReader(types, parseInfoDoc, parserFactory);
+        int NUM_OPERATIONS_IN_FEED = 3;
 
         for (int i = 0; i < NUM_OPERATIONS_IN_FEED; i++) {
             DocumentOperation operation = reader.next();
@@ -1005,7 +1006,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testFeedWithTestAndSetConditionOrderingTwo() {
+    public void testFeedWithTestAndSetConditionOrderingTwo() {
         testFeedWithTestAndSetCondition(
                 inputJson("[",
                         "      {",
@@ -1037,7 +1038,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public final void testFeedWithTestAndSetConditionOrderingThree() {
+    public void testFeedWithTestAndSetConditionOrderingThree() {
         testFeedWithTestAndSetCondition(
                 inputJson("[",
                         "      {",
@@ -1108,7 +1109,7 @@ public class JsonReaderTestCase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidFieldWithoutFieldsFieldShouldFailParse() {
-        final String jsonData = inputJson(
+        String jsonData = inputJson(
                 "[",
                 "      {",
                 "          'remove': 'id:unittest:smoke::whee',",

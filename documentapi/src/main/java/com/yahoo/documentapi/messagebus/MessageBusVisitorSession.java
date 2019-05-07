@@ -4,12 +4,35 @@ package com.yahoo.documentapi.messagebus;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.AckToken;
+import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorDataQueue;
+import com.yahoo.documentapi.VisitorIterator;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorResponse;
+import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
+import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage;
+import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
+import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.RoutingTable;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vdslib.state.ClusterState;
@@ -574,7 +597,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
         private final long messageTimeoutMs;
 
-        public SendCreateVisitorsTask(long messageTimeoutMs) {
+        SendCreateVisitorsTask(long messageTimeoutMs) {
             this.messageTimeoutMs = messageTimeoutMs;
         }
 
@@ -687,7 +710,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     private class HandleReplyTask implements Runnable {
         private Reply reply;
-        public HandleReplyTask(Reply reply) {
+        HandleReplyTask(Reply reply) {
             this.reply = reply;
         }
 

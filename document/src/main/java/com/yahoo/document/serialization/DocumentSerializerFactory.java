@@ -42,12 +42,4 @@ public class DocumentSerializerFactory {
         return new VespaDocumentSerializer42(buf);
     }
 
-    /**
-     * Creates a serializer for the document format that was created on Vespa 4.2.
-     */
-    @SuppressWarnings("deprecation")
-    public static DocumentSerializer create42() {
-        return new VespaDocumentSerializer42();
-    }
-
 }

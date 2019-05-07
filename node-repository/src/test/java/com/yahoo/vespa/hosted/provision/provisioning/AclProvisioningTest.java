@@ -6,16 +6,17 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -37,35 +38,29 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_allocated_node() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        List<Node> configServers = tester.makeConfigServers(3, "d-1-1-1", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, "default");
-        List<Node> dockerHost = tester.makeReadyNodes(1, "default", NodeType.host);
+        tester.makeReadyNodes(10, "d-1-1-1");
+        List<Node> dockerHost = tester.makeReadyNodes(1, "d-1-1-1", NodeType.host);
         ApplicationId zoneApplication = tester.makeApplicationId();
         deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
-        tester.makeReadyVirtualDockerNodes(1, "default", dockerHost.get(0).hostname());
-        List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.makeReadyVirtualDockerNodes(1, NodeResources.fromLegacyName("d-1-1-1"), dockerHost.get(0).hostname());
+        List<Node> proxyNodes = tester.makeReadyNodes(3, "d-1-1-1", NodeType.proxy);
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = deploy(application, 2);
+        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, NodeResources.fromLegacyName("d-1-1-1"), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
         Supplier<List<NodeAcl>> nodeAcls = () -> tester.nodeRepository().getNodeAcls(node, false);
 
-        // Trusted nodes is active nodes in same application, proxy nodes and config servers
-        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost), nodeAcls.get());
-
-        // Allocate load balancer
-        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, application, true);
-        deploy(application, 2);
-
-        // Load balancer networks are added to ACLs
+        // Trusted nodes are active nodes in same application, proxy nodes and config servers
         assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost),
-                   ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"), nodeAcls.get());
+                   ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
+                   nodeAcls.get());
     }
 
     @Test
@@ -137,7 +132,7 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, "dockerSmall",
+        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 1, 1),
                                                              dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);
@@ -218,12 +213,16 @@ public class AclProvisioningTest {
     }
 
     private static void assertAcls(List<List<Node>> expectedNodes, Set<String> expectedNetworks, List<NodeAcl> actual) {
-        Set<Node> expectedTrustedNodes = expectedNodes.stream()
+        List<Node> expectedTrustedNodes = expectedNodes.stream()
                 .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-        Set<Node> actualTrustedNodes = actual.stream()
+                .distinct()
+                .sorted(Comparator.comparing(Node::hostname))
+                .collect(Collectors.toList());
+        List<Node> actualTrustedNodes = actual.stream()
                 .flatMap(acl -> acl.trustedNodes().stream())
-                .collect(Collectors.toSet());
+                .distinct()
+                .sorted(Comparator.comparing(Node::hostname))
+                .collect(Collectors.toList());
         assertEquals(expectedTrustedNodes, actualTrustedNodes);
 
         Set<String> actualTrustedNetworks = actual.stream()

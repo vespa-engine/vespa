@@ -5,11 +5,9 @@
 #include "postinglistcounts.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 
-namespace search {
+namespace search::common { class FileHeaderContext; }
 
-namespace common { class FileHeaderContext; }
-
-namespace index {
+namespace search::index {
 
 class PostingListCounts;
 class PostingListHandle;
@@ -24,8 +22,7 @@ class PostingListHandle;
  * allowing for less data in posting list files being duplicated from
  * the count file.
  */
-class PostingListCountFileSeqRead
-{
+class PostingListCountFileSeqRead {
 public:
     PostingListCountFileSeqRead();
 
@@ -48,8 +45,7 @@ public:
 };
 
 
-class PostingListCountFileSeqWrite
-{
+class PostingListCountFileSeqWrite {
 public:
     PostingListCountFileSeqWrite();
 
@@ -78,8 +74,4 @@ public:
     virtual void getParams(PostingListParams &params);
 };
 
-
-} // namespace index
-
-} // namespace search
-
+}

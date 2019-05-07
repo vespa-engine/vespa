@@ -155,6 +155,13 @@ ConfigHandler::doConfigure()
         }
     }
     _services.swap(services);
+    for (auto & entry : services) {
+        Service::UP svc = std::move(entry.second);
+        if (svc && svc->isRunning()) {
+            svc->remove();
+            _orphans[entry.first] = std::move(svc);
+        }
+    }
     vespalib::ComponentConfigProducer::Config current("sentinel", _subscriber.getGeneration(), "ok");
     _stateApi.myComponents.addConfig(current);
 }
@@ -168,7 +175,7 @@ ConfigHandler::doWork()
     if (_subscriber.nextGeneration(0)) {
         doConfigure();
     }
-
+    handleRestarts();
     handleCommands();
     handleOutputs();
     handleChildDeaths();
@@ -183,6 +190,16 @@ ConfigHandler::doWork()
     return false;
 }
 
+void
+ConfigHandler::handleRestarts()
+{
+    for (const auto & entry : _services) {
+        Service & svc = *(entry.second);
+        if (svc.wantsRestart()) {
+            svc.start();
+        }
+    }
+}
 
 void
 ConfigHandler::handleChildDeaths()
@@ -198,6 +215,7 @@ ConfigHandler::handleChildDeaths()
             LOG(debug, "pid %d finished, Service:%s", (int)pid,
                 service->name().c_str());
             service->youExited(status);
+            _orphans.erase(service->name());
         } else {
             LOG(warning, "Unknown child pid %d exited (wait-status = %d)",
                 (int)pid, status);
@@ -264,6 +282,12 @@ ConfigHandler::serviceByPid(pid_t pid)
 {
     for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
         Service *service = it->second.get();
+        if (service->pid() == pid) {
+            return service;
+        }
+    }
+    for (const auto & it : _orphans) {
+        Service *service = it.second.get();
         if (service->pid() == pid) {
             return service;
         }

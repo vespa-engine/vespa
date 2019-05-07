@@ -5,12 +5,12 @@ import com.google.common.collect.Iterators;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
@@ -44,7 +44,6 @@ public class LoadBalancerProvisionerTest {
         ClusterSpec.Id containerCluster1 = ClusterSpec.Id.from("qrs1");
         ClusterSpec.Id contentCluster = ClusterSpec.Id.from("content");
         Set<RotationName> rotationsCluster1 = Set.of(RotationName.from("r1-1"), RotationName.from("r1-2"));
-        tester.nodeRepository().flags().setEnabled(FlagId.exclusiveLoadBalancer, true);
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1, rotationsCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
@@ -138,10 +137,10 @@ public class LoadBalancerProvisionerTest {
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {
-        tester.makeReadyNodes(specs.length * 2, "default");
+        tester.makeReadyNodes(specs.length * 2, "d-1-1-1");
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
-            allNodes.addAll(tester.prepare(application, spec, 2, 1, "default"));
+            allNodes.addAll(tester.prepare(application, spec, 2, 1, new NodeResources(1, 1, 1)));
         }
         return allNodes;
     }

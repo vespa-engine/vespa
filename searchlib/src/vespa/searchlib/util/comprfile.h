@@ -136,23 +136,8 @@ public:
      * For unit testing only. Reference data owned by rhs, only works as
      * long as rhs is live and unchanged.
      */
-    void referenceReadContext(const ComprFileReadContext &rhs);
-
-    /*
-     * For unit testing only. Copy data owned by rhs.
-     */
-    void copyReadContext(const ComprFileReadContext &rhs);
-
-    /*
-     * For unit testing only. Reference data owned by rhs, only works as
-     * long as rhs is live and unchanged.
-     */
     void referenceWriteContext(const ComprFileWriteContext &rhs);
-
-    /*
-     * For unit testing only. Copy data owned by rhs.
-     */
-    void copyWriteContext(const ComprFileWriteContext &rhs);
+    void reference_compressed_buffer(void *buffer, size_t usedUnits);
 };
 
 

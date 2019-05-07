@@ -2,7 +2,11 @@
 package com.yahoo.messagebus.network.rpc;
 
 import com.yahoo.component.Version;
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
 import com.yahoo.log.LogLevel;
 
 import java.util.LinkedList;
@@ -43,7 +47,7 @@ public class RPCTarget implements RequestWaiter {
      *
      * @return The target.
      */
-    public Target getJRTTarget() {
+    Target getJRTTarget() {
         return target;
     }
 
@@ -54,7 +58,7 @@ public class RPCTarget implements RequestWaiter {
      *
      * @see #subRef()
      */
-    public void addRef() {
+    void addRef() {
         ref.incrementAndGet();
     }
 
@@ -65,7 +69,7 @@ public class RPCTarget implements RequestWaiter {
      *
      * @see #addRef()
      */
-    public void subRef() {
+    void subRef() {
         if (ref.decrementAndGet() == 0) {
             target.close();
         }
@@ -77,7 +81,7 @@ public class RPCTarget implements RequestWaiter {
      *
      * @return The number of references in use.
      */
-    public int getRefCount() {
+    int getRefCount() {
         return ref.get();
     }
 
@@ -90,7 +94,7 @@ public class RPCTarget implements RequestWaiter {
      * @param timeout The timeout for the request in seconds.
      * @param handler The handler to be called once the version is available.
      */
-    public void resolveVersion(double timeout, VersionHandler handler) {
+    void resolveVersion(double timeout, VersionHandler handler) {
         boolean hasVersion = false;
         boolean shouldInvoke = false;
         boolean shouldLog = log.isLoggable(LogLevel.DEBUG);
@@ -168,6 +172,6 @@ public class RPCTarget implements RequestWaiter {
          *
          * @param ver The version of corresponding target, or null.
          */
-        public void handleVersion(Version ver);
+        void handleVersion(Version ver);
     }
 }

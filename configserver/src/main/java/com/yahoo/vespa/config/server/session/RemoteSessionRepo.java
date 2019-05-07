@@ -1,33 +1,36 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.ReloadHandler;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.yolean.Exceptions;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.log.LogLevel;
-import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.server.ReloadHandler;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.*;
 
 /**
  * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper, set for example
@@ -115,19 +118,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         return (created.plus(expiryTime).isBefore(Instant.now()));
     }
 
-    private void loadActiveSession(RemoteSession session) {
-        tryReload(session.ensureApplicationLoaded(), session.logPre());
-    }
-
-    private void tryReload(ApplicationSet applicationSet, String logPre) {
-        try {
-            reloadHandler.reloadConfig(applicationSet);
-            log.log(LogLevel.INFO, logPre + "Application activated successfully: " + applicationSet.getId());
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, logPre + "Skipping loading of application '" + applicationSet.getId() + "': " + Exceptions.toMessageString(e));
-        }
-    }
-
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
         return getSessionList(children.stream()
                                       .map(child -> Path.fromString(child.getPath()).getName())
@@ -190,15 +180,16 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     }
 
     private void loadSessionIfActive(RemoteSession session) {
-        for (ApplicationId applicationId : applicationRepo.listApplications()) {
+        for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             try {
-                if (applicationRepo.getSessionIdForApplication(applicationId) == session.getSessionId()) {
+                if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                     log.log(LogLevel.DEBUG, "Found active application for session " + session.getSessionId() + " , loading it");
-                    loadActiveSession(session);
-                    break;
+                    reloadHandler.reloadConfig(session.ensureApplicationLoaded());
+                    log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId);
+                    return;
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + " error reading session id for " + applicationId, e);
+                log.log(LogLevel.WARNING, session.logPre() + "Skipping loading of application '" + applicationId + "': " + Exceptions.toMessageString(e));
             }
         }
     }

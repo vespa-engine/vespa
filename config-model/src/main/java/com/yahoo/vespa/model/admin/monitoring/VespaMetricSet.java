@@ -101,28 +101,36 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("handled.requests.count"));
-        metrics.add(new Metric("handled.latency.average"));
+        metrics.add(new Metric("handled.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("handled.latency.max"));
+        metrics.add(new Metric("handled.latency.sum"));
+        metrics.add(new Metric("handled.latency.count"));
 
         metrics.add(new Metric("serverRejectedRequests.rate"));
         metrics.add(new Metric("serverRejectedRequests.count"));
 
-        metrics.add(new Metric("serverThreadPoolSize.average"));
-        metrics.add(new Metric("serverThreadPoolSize.min"));
-        metrics.add(new Metric("serverThreadPoolSize.max"));
-        metrics.add(new Metric("serverThreadPoolSize.rate"));
-        metrics.add(new Metric("serverThreadPoolSize.count"));
+        metrics.add(new Metric("serverThreadPoolSize.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverThreadPoolSize.min")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverThreadPoolSize.max")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverThreadPoolSize.rate")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverThreadPoolSize.count")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("serverThreadPoolSize.last"));
 
-        metrics.add(new Metric("serverActiveThreads.average"));
+        metrics.add(new Metric("serverActiveThreads.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("serverActiveThreads.min"));
         metrics.add(new Metric("serverActiveThreads.max"));
-        metrics.add(new Metric("serverActiveThreads.rate"));
+        metrics.add(new Metric("serverActiveThreads.rate")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("serverActiveThreads.count"));
         metrics.add(new Metric("serverActiveThreads.last"));
 
-        metrics.add(new Metric("httpapi_latency.average"));
-        metrics.add(new Metric("httpapi_pending.average"));
+        metrics.add(new Metric("httpapi_latency.max"));
+        metrics.add(new Metric("httpapi_latency.sum"));
+        metrics.add(new Metric("httpapi_latency.count"));
+        metrics.add(new Metric("httpapi_latency.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("httpapi_pending.max"));
+        metrics.add(new Metric("httpapi_pending.sum"));
+        metrics.add(new Metric("httpapi_pending.count"));
+        metrics.add(new Metric("httpapi_pending.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("httpapi_num_operations.rate"));
         metrics.add(new Metric("httpapi_num_updates.rate"));
         metrics.add(new Metric("httpapi_num_removes.rate"));
@@ -133,6 +141,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("mem.heap.total.average"));
         metrics.add(new Metric("mem.heap.free.average"));
         metrics.add(new Metric("mem.heap.used.average"));
+        metrics.add(new Metric("mem.heap.used.max"));
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
 
@@ -158,10 +167,14 @@ public class VespaMetricSet {
         metrics.add(new Metric("http.status.401.rate"));
         metrics.add(new Metric("http.status.403.rate"));
 
-        metrics.add(new Metric("jdisc.http.request.uri_length.average"));
         metrics.add(new Metric("jdisc.http.request.uri_length.max"));
-        metrics.add(new Metric("jdisc.http.request.content_size.average"));
+        metrics.add(new Metric("jdisc.http.request.uri_length.sum"));
+        metrics.add(new Metric("jdisc.http.request.uri_length.count"));
+        metrics.add(new Metric("jdisc.http.request.uri_length.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("jdisc.http.request.content_size.max"));
+        metrics.add(new Metric("jdisc.http.request.content_size.sum"));
+        metrics.add(new Metric("jdisc.http.request.content_size.count"));
+        metrics.add(new Metric("jdisc.http.request.content_size.average")); // TODO: Remove in Vespa 8
         return metrics;
     }
 
@@ -197,36 +210,59 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("peak_qps.max"));
-        metrics.add(new Metric("search_connections.average"));
-        metrics.add(new Metric("active_queries.average"));
-        metrics.add(new Metric("feed.latency.average"));
+        metrics.add(new Metric("search_connections.max"));
+        metrics.add(new Metric("search_connections.sum"));
+        metrics.add(new Metric("search_connections.count"));
+        metrics.add(new Metric("search_connections.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("active_queries.max"));
+        metrics.add(new Metric("active_queries.sum"));
+        metrics.add(new Metric("active_queries.count"));
+        metrics.add(new Metric("active_queries.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("feed.latency.max"));
+        metrics.add(new Metric("feed.latency.sum"));
+        metrics.add(new Metric("feed.latency.count"));
+        metrics.add(new Metric("feed.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("feed.http-requests.count"));
         metrics.add(new Metric("feed.http-requests.rate"));
         metrics.add(new Metric("queries.rate"));
-        metrics.add(new Metric("query_container_latency.average"));
-        metrics.add(new Metric("query_latency.average"));
+        metrics.add(new Metric("query_container_latency.max"));
+        metrics.add(new Metric("query_container_latency.sum"));
+        metrics.add(new Metric("query_container_latency.count"));
+        metrics.add(new Metric("query_container_latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("query_latency.max"));
+        metrics.add(new Metric("query_latency.sum"));
+        metrics.add(new Metric("query_latency.count"));
+        metrics.add(new Metric("query_latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("query_latency.95percentile"));
         metrics.add(new Metric("query_latency.99percentile"));
         metrics.add(new Metric("failed_queries.rate"));
         metrics.add(new Metric("degraded_queries.rate"));
-        metrics.add(new Metric("hits_per_query.average"));
+        metrics.add(new Metric("hits_per_query.max"));
+        metrics.add(new Metric("hits_per_query.sum"));
+        metrics.add(new Metric("hits_per_query.count"));
+        metrics.add(new Metric("hits_per_query.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("documents_covered.count"));
         metrics.add(new Metric("documents_total.count"));
         metrics.add(new Metric("dispatch_internal.rate"));
         metrics.add(new Metric("dispatch_fdispatch.rate"));
 
-        metrics.add(new Metric("totalhits_per_query.average"));
+        metrics.add(new Metric("totalhits_per_query.max"));
+        metrics.add(new Metric("totalhits_per_query.sum"));
+        metrics.add(new Metric("totalhits_per_query.count"));
+        metrics.add(new Metric("totalhits_per_query.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("empty_results.rate"));
         metrics.add(new Metric("requestsOverQuota.rate"));
         metrics.add(new Metric("requestsOverQuota.count"));
 
-        metrics.add(new Metric("relevance.at_1.average"));
+        metrics.add(new Metric("relevance.at_1.sum"));
         metrics.add(new Metric("relevance.at_1.count"));
-        metrics.add(new Metric("relevance.at_3.average"));
+        metrics.add(new Metric("relevance.at_1.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("relevance.at_3.sum"));
         metrics.add(new Metric("relevance.at_3.count"));
-        metrics.add(new Metric("relevance.at_10.average"));
+        metrics.add(new Metric("relevance.at_3.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("relevance.at_10.sum"));
         metrics.add(new Metric("relevance.at_10.count"));
+        metrics.add(new Metric("relevance.at_10.average")); // TODO: Remove in Vespa 8
 
         // Errors from qrserver
         metrics.add(new Metric("error.timeout.rate"));

@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::tensor {
 
-using DimensionsSet = vespalib::hash_set<vespalib::stringref>;
 
 /**
  * An iterator for tensor address elements used to simplify 3-way merge

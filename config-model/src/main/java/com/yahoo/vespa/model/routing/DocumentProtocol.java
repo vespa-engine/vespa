@@ -34,9 +34,9 @@ import java.util.TreeMap;
 public final class DocumentProtocol implements Protocol, DocumentrouteselectorpolicyConfig.Producer {
 
     private static final String NAME = "document";
-    private ApplicationSpec application;
-    private RoutingTableSpec routingTable;
-    ConfigModelRepo repo;
+    private final ApplicationSpec application;
+    private final RoutingTableSpec routingTable;
+    private final ConfigModelRepo repo;
 
     public static String getIndexedRouteName(String configId) {
         return configId + "-index";
@@ -51,7 +51,7 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
      *
      * @param plugins The plugins to reflect on.
      */
-    public DocumentProtocol(ConfigModelRepo plugins) {
+    DocumentProtocol(ConfigModelRepo plugins) {
         application = createApplicationSpec(plugins);
         routingTable = createRoutingTable(plugins);
         this.repo = plugins;
@@ -249,7 +249,13 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
         route.addHop("indexing");
         table.addRoute(route);
 
-        table.addRoute(new RouteSpec("default-get").addHop("indexing"));
+        if (content.size() == 1) {
+            table.addRoute(new RouteSpec("default-get").addHop("[Content:cluster=" + content.get(0).getConfigId() + "]"));
+        } else {
+            //TODO This should ideally skip indexing and go directly to correct cluster.
+            // But will handle the single cluster for now.
+            table.addRoute(new RouteSpec("default-get").addHop("indexing"));
+        }
     }
 
     private static boolean indexingHopExists(RoutingTableSpec table) {

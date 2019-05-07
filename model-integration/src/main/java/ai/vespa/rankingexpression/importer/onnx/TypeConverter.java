@@ -30,13 +30,10 @@ class TypeConverter {
         }
     }
 
-    static OrderedTensorType fromOnnxType(Onnx.TypeProto type) {
-        return fromOnnxType(type, "d");  // standard naming convention: d0, d1, ...
-    }
-
-    private static OrderedTensorType fromOnnxType(Onnx.TypeProto type, String dimensionPrefix) {
+    static OrderedTensorType typeFrom(Onnx.TypeProto type) {
+        String dimensionPrefix = "d"; // standard naming convention: d0, d1, ...
         Onnx.TensorShapeProto shape = type.getTensorType().getShape();
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder();
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(toValueType(type.getTensorType().getElemType()));
         for (int i = 0; i < shape.getDimCount(); ++ i) {
             String dimensionName = dimensionPrefix + i;
             Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(i);
@@ -47,6 +44,30 @@ class TypeConverter {
             }
         }
         return builder.build();
+    }
+
+    static OrderedTensorType typeFrom(Onnx.TensorProto tensor) {
+        return OrderedTensorType.fromDimensionList(toValueType(tensor.getDataType()),
+                                                   tensor.getDimsList());
+    }
+
+    private static TensorType.Value toValueType(Onnx.TensorProto.DataType dataType) {
+        switch (dataType) {
+            case FLOAT: return TensorType.Value.FLOAT;
+            case DOUBLE: return TensorType.Value.DOUBLE;
+            // Imperfect conversion, for now:
+            case BOOL: return TensorType.Value.FLOAT;
+            case INT8: return TensorType.Value.FLOAT;
+            case INT16: return TensorType.Value.FLOAT;
+            case INT32: return TensorType.Value.FLOAT;
+            case INT64: return TensorType.Value.DOUBLE;
+            case UINT8: return TensorType.Value.FLOAT;
+            case UINT16: return TensorType.Value.FLOAT;
+            case UINT32: return TensorType.Value.FLOAT;
+            case UINT64: return TensorType.Value.DOUBLE;
+            default: throw new IllegalArgumentException("A ONNX tensor with data type " + dataType +
+                                                        " cannot be converted to a Vespa tensor type");
+        }
     }
 
 }

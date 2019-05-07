@@ -349,7 +349,7 @@ public abstract class IOUtils {
     }
 
     /**
-     * Reads all the content of the given array, in chunks of at max chunkSize
+     * Reads all the content of the given input stream, in chunks of at max chunkSize
      */
     public static byte[] readBytes(InputStream stream, int chunkSize) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();

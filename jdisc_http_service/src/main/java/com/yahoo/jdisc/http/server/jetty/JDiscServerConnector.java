@@ -17,6 +17,7 @@ import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +29,7 @@ class JDiscServerConnector extends ServerConnector {
     public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
     private final static Logger log = Logger.getLogger(JDiscServerConnector.class.getName());
     private final Metric.Context metricCtx;
-    private final Map<String, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();
+    private final Map<RequestDimensions, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();
     private final ServerConnectionStatistics statistics;
     private final boolean tcpKeepAlive;
     private final boolean tcpNoDelay;
@@ -124,9 +125,12 @@ class JDiscServerConnector extends ServerConnector {
 
     public Metric.Context getRequestMetricContext(HttpServletRequest request) {
         String method = request.getMethod();
-        return requestMetricContextCache.computeIfAbsent(method, ignored -> {
+        String scheme = request.getScheme();
+        var requestDimensions = new RequestDimensions(method, scheme);
+        return requestMetricContextCache.computeIfAbsent(requestDimensions, ignored -> {
             Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
             dimensions.put(JettyHttpServer.Metrics.METHOD_DIMENSION, method);
+            dimensions.put(JettyHttpServer.Metrics.SCHEME_DIMENSION, scheme);
             return metric.createContext(dimensions);
         });
     }
@@ -140,6 +144,29 @@ class JDiscServerConnector extends ServerConnector {
         props.put(JettyHttpServer.Metrics.NAME_DIMENSION, connectorName);
         props.put(JettyHttpServer.Metrics.PORT_DIMENSION, listenPort);
         return props;
+    }
+
+    private static class RequestDimensions {
+        final String method;
+        final String scheme;
+
+        RequestDimensions(String method, String scheme) {
+            this.method = method;
+            this.scheme = scheme;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RequestDimensions that = (RequestDimensions) o;
+            return Objects.equals(method, that.method) && Objects.equals(scheme, that.scheme);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(method, scheme);
+        }
     }
 
 }

@@ -2,13 +2,13 @@
 
 #include "fakememtreeocc.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/queryeval/iterators.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
+#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/memoryindex/postingiterator.h>
+#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
 
 #include <vespa/log/log.h>
@@ -206,7 +206,7 @@ FakeMemTreeOccMgr::add(uint32_t wordIdx, index::DocIdAndFeatures &features)
 
     _featureSizes[wordIdx] += RefType::align((r.second + 7) / 8) * 8;
 
-    _unflushed.push_back(PendingOp(wordIdx, features._docId, r.first));
+    _unflushed.push_back(PendingOp(wordIdx, features.doc_id(), r.first));
 
     if (_unflushed.size() >= 10000)
         flush();

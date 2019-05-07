@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.messagebus.metrics.RouteMetricSet;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.routing.Resender;
 import com.yahoo.messagebus.routing.RoutingNode;
@@ -24,7 +22,6 @@ public class SendProxy implements MessageHandler, ReplyHandler {
     private final Resender resender;
     private Message msg = null;
     private boolean logTrace = false;
-    private long sendTime = 0;
 
     /**
      * Constructs a new instance of this class to maintain sending of a single message.
@@ -37,7 +34,6 @@ public class SendProxy implements MessageHandler, ReplyHandler {
         this.mbus = mbus;
         this.net = net;
         this.resender = resender;
-        sendTime = SystemTimer.INSTANCE.milliTime();
     }
 
     public void handleMessage(Message msg) {
@@ -75,16 +71,6 @@ public class SendProxy implements MessageHandler, ReplyHandler {
             }
             reply.swapState(msg);
             reply.setMessage(msg);
-
-            if (msg.getRoute() != null) {
-                RouteMetricSet metrics = mbus.getMetrics().getRouteMetrics(msg.getRoute());
-                for (int i = 0; i < reply.getNumErrors(); i++) {
-                    metrics.addFailure(reply.getError(i));
-                }
-                if (reply.getNumErrors() == 0) {
-                    metrics.latency.addValue(msg.getTimeReceived() - sendTime);
-                }
-            }
 
             ReplyHandler handler = reply.popHandler();
             handler.handleReply(reply);

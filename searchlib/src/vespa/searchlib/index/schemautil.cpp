@@ -15,88 +15,58 @@ SchemaUtil::IndexSettings
 SchemaUtil::getIndexSettings(const Schema &schema,
                              const uint32_t index)
 {
-    IndexSettings ret;
     Schema::DataType indexDataType(DataType::STRING);
     bool error = false;
-    bool somePrefixes = false;
-    bool someNotPrefixes = false;
-    bool somePhrases = false;
-    bool someNotPhrases = false;
-    bool somePositions = false;
-    bool someNotPositions = false;
 
     const Schema::IndexField &iField = schema.getIndexField(index);
-    if (iField.hasPhrases())
-        somePhrases = true;
-    else
-        someNotPhrases = true;
-    if (iField.hasPrefix())
-        somePrefixes = true;
-    else
-        someNotPrefixes = true;
-    if (iField.hasPositions())
-        somePositions = true;
-    else
-        someNotPositions = true;
     indexDataType = iField.getDataType();
     if (indexDataType != DataType::STRING) {
         error = true;
         LOG(error, "Field %s has bad data type", iField.getName().c_str());
     }
 
-    return IndexSettings(indexDataType, error,
-                         somePrefixes && !someNotPrefixes,
-                         somePhrases && !someNotPhrases,
-                         somePositions && !someNotPositions);
+    return IndexSettings(indexDataType, error);
 }
 
-
 bool
-SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema,
-                                        bool phrases) const
+SchemaUtil::IndexIterator::hasOldFields(const Schema &oldSchema) const
 {
     assert(isValid());
     const Schema::IndexField &newField =
         getSchema().getIndexField(getIndex());
     const vespalib::string &fieldName = newField.getName();
     uint32_t oldFieldId = oldSchema.getIndexFieldId(fieldName);
-    if (oldFieldId == Schema::UNKNOWN_FIELD_ID)
+    if (oldFieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
+    }
     const Schema::IndexField &oldField =
         oldSchema.getIndexField(oldFieldId);
-    if (oldField.getDataType() != newField.getDataType())
+    if (oldField.getDataType() != newField.getDataType()) {
         return false;   // wrong data type
-    if (!phrases)
-        return true;
-    return oldField.hasPhrases();
+    }
+    return true;
 }
 
-
 bool
-SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema,
-        bool phrases) const
+SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema) const
 {
     assert(isValid());
     const Schema::IndexField &newField =
         getSchema().getIndexField(getIndex());
     const vespalib::string &fieldName = newField.getName();
     uint32_t oldFieldId = oldSchema.getIndexFieldId(fieldName);
-    if (oldFieldId == Schema::UNKNOWN_FIELD_ID)
+    if (oldFieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
-    if (phrases) {
-        IndexIterator oldIterator(oldSchema, oldFieldId);
-        IndexSettings settings = oldIterator.getIndexSettings();
-        if (!settings.hasPhrases())
-            return false;
     }
     const Schema::IndexField &oldField =
         oldSchema.getIndexField(oldFieldId);
     if (oldField.getDataType() != newField.getDataType() ||
         oldField.getCollectionType() != newField.getCollectionType())
+    {
         return false;
+    }
     return true;
 }
-
 
 bool
 SchemaUtil::validateIndexField(const Schema::IndexField &field)
@@ -108,43 +78,17 @@ SchemaUtil::validateIndexField(const Schema::IndexField &field)
             field.getName().c_str());
         ok = false;
     }
-    if (field.getDataType() != DataType::STRING) {
-        if (field.hasPrefix()) {
-            LOG(error,
-                "Field %s is non-string but has prefix",
-                field.getName().c_str());
-            ok = false;
-        }
-        if (field.hasPhrases()) {
-            LOG(error,
-                "Field %s is non-string but has phrases",
-                field.getName().c_str());
-            ok = false;
-        }
-        if (field.hasPositions()) {
-            LOG(error,
-                "Field %s is non-string but has positions",
-                field.getName().c_str());
-            ok = false;
-        }
-    }
-    if (field.hasPhrases() && !field.hasPositions()) {
-        LOG(error,
-            "Field %s has phrases but not positions",
-            field.getName().c_str());
-        ok = false;
-    }
     return ok;
 }
-
 
 bool
 SchemaUtil::addIndexField(Schema &schema,
                           const Schema::IndexField &field)
 {
     bool ok = true;
-    if (!validateIndexField(field))
+    if (!validateIndexField(field)) {
         ok = false;
+    }
     uint32_t fieldId = schema.getIndexFieldId(field.getName());
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
         LOG(error,
@@ -152,11 +96,11 @@ SchemaUtil::addIndexField(Schema &schema,
             field.getName().c_str());
         ok = false;
     }
-    if (ok)
+    if (ok) {
         schema.addIndexField(field);
+    }
     return ok;
 }
-
 
 bool
 SchemaUtil::validateSchema(const Schema &schema)
@@ -165,8 +109,9 @@ SchemaUtil::validateSchema(const Schema &schema)
     for (IndexIterator it(schema); it.isValid(); ++it) {
         uint32_t fieldId = it.getIndex();
         const Schema::IndexField &field = schema.getIndexField(fieldId);
-        if (!validateIndexField(field))
+        if (!validateIndexField(field)) {
             ok = false;
+        }
         if (schema.getIndexFieldId(field.getName()) != fieldId) {
             LOG(error,
                 "Duplcate field %s",
@@ -186,7 +131,6 @@ SchemaUtil::validateSchema(const Schema &schema)
     return ok;
 }
 
-
 bool
 SchemaUtil::getIndexIds(const Schema &schema,
                         schema::DataType dataType,
@@ -195,10 +139,12 @@ SchemaUtil::getIndexIds(const Schema &schema,
     indexes.clear();
     for (IndexIterator i(schema); i.isValid(); ++i) {
         SchemaUtil::IndexSettings settings = i.getIndexSettings();
-        if (settings.hasError())
+        if (settings.hasError()) {
             return false;
-        if (settings.getDataType() == dataType)
+        }
+        if (settings.getDataType() == dataType) {
             indexes.push_back(i.getIndex());
+        }
     }
     return true;
 }

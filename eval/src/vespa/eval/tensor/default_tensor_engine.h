@@ -4,8 +4,7 @@
 
 #include <vespa/eval/eval/tensor_engine.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * This is a tensor engine implementation wrapping the default tensor
@@ -34,5 +33,4 @@ public:
     const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const override;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

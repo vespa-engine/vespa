@@ -1,16 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
-
-import com.google.common.collect.ImmutableList;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
@@ -55,7 +53,7 @@ public class OsApiTest extends ControllerContainerTest {
                           .setZones(zone1, zone2, zone3)
                           .setOsUpgradePolicy(cloud1, UpgradePolicy.create().upgrade(zone1).upgrade(zone2))
                           .setOsUpgradePolicy(cloud2, UpgradePolicy.create().upgrade(zone3));
-        osUpgraders = ImmutableList.of(
+        osUpgraders = List.of(
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
                                new JobControl(tester.controller().curator()),
                                cloud1),
@@ -149,7 +147,7 @@ public class OsApiTest extends ControllerContainerTest {
                             node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
                             node.wantedVersion(), node.wantedOsVersion(), node.wantedOsVersion(), node.serviceState(),
                             node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
-                            node.wantedRebootGeneration()));
+                            node.wantedRebootGeneration(), node.canonicalFlavor(), node.clusterId(), node.clusterType()));
                 }
             }
         }

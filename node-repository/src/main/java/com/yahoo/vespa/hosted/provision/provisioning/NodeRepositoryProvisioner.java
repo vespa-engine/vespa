@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -21,7 +21,6 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.flag.FlagId;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -43,7 +42,7 @@ import java.util.logging.Logger;
  */
 public class NodeRepositoryProvisioner implements Provisioner {
 
-    private static Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
+    private static final Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
     private static final int SPARE_CAPACITY_PROD = 0;
     private static final int SPARE_CAPACITY_NONPROD = 0;
 
@@ -87,7 +86,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         log.log(zone.system() == SystemName.cd ? Level.INFO : LogLevel.DEBUG,
                 () -> "Received deploy prepare request for " + requestedCapacity + " in " +
-                        wantedGroups + " groups for application " + application + ", cluster " + cluster);
+                      wantedGroups + " groups for application " + application + ", cluster " + cluster);
 
         int effectiveGroups;
         NodeSpec requestedNodes;
@@ -97,7 +96,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
+            NodeResources flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
             log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
@@ -116,13 +115,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
         validate(hosts);
         activator.activate(application, hosts, transaction);
         transaction.onCommitted(() -> {
-            if (nodeRepository.flags().get(FlagId.exclusiveLoadBalancer).isEnabled(application)) {
-                try {
-                    loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
-                } catch (Exception e) {
-                    log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
-                                            application.toShortString(), e);
-                }
+            try {
+                loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
+            } catch (Exception e) {
+                log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
+                                        application.toShortString(), e);
             }
         });
     }

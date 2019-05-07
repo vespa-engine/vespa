@@ -37,10 +37,17 @@ public class MemoryCache {
     /**
      * Put in cache, except when config has an error
      *
-     * @param config config to put in cache
+     * @param config config to update in cache
      */
-    public void put(RawConfig config) {
+    public void update(RawConfig config) {
+        // Do not cache errors
         if (config.isError()) return;
+
+        // Do not cache empty configs (which have generation 0), remove everything in cache
+        if (config.getGeneration() == 0) {
+            cache.clear();
+            return;
+        }
 
         log.log(LogLevel.DEBUG, () -> "Putting '" + config + "' into memory cache");
         cache.put(new ConfigCacheKey(config.getKey(), config.getDefMd5()), config);

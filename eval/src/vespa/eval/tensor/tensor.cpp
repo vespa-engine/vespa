@@ -4,8 +4,7 @@
 #include "default_tensor_engine.h"
 #include <sstream>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 Tensor::Tensor()
     : eval::Tensor(DefaultTensorEngine::ref())
@@ -18,6 +17,9 @@ Tensor::supported(TypeList types)
     bool sparse = false;
     bool dense = false;
     for (const eval::ValueType &type: types) {
+        if (type.cell_type() != eval::ValueType::CellType::DOUBLE) {
+            return false; // non-double cell types not supported
+        }
         dense = (dense || type.is_double());
         for (const auto &dim: type.dimensions()) {
             dense = (dense || dim.is_indexed());
@@ -34,5 +36,4 @@ operator<<(std::ostream &out, const Tensor &value)
     return out;
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

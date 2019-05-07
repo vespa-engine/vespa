@@ -1,0 +1,6 @@
+{
+  "tenant": "my-tenant",
+  "application": "my-app",
+  "instance": "default",
+  "url": "http://localhost:8080/application/v4/tenant/my-tenant/application/my-app"
+}

@@ -31,18 +31,29 @@ find_tab(std::string_view log_line, const char *tab_name, std::string_view::size
 }
 
 int64_t
-parse_time_field(std::string time_field)
+parse_time_subfield(std::string time_subfield, const std::string &time_field)
 {
-    std::istringstream time_stream(time_field);
-    time_stream.imbue(clocale);
-    double logtime = 0;
-    time_stream >> logtime;
-    if (!time_stream.eof()) {
+    std::istringstream subfield_stream(time_subfield);
+    subfield_stream.imbue(clocale);
+    int64_t result = 0;
+    subfield_stream >> result;
+    if (!subfield_stream.eof()) {
         std::ostringstream os;
         os << "Bad time field: " << time_field;
         throw BadLogLineException(os.str());
     }
-    return logtime * 1000000000;
+    return result;
+}
+
+int64_t
+parse_time_field(std::string time_field)
+{
+    auto dotPos = time_field.find('.');
+    int64_t log_time = parse_time_subfield(time_field.substr(0, dotPos), time_field) * 1000000000;
+    if (dotPos != std::string::npos) {
+        log_time += parse_time_subfield((time_field.substr(dotPos + 1) + "000000000").substr(0, 9), time_field);
+    }
+    return log_time;
 }
 
 struct PidFieldParser

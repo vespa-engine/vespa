@@ -1,25 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.api.IMirror;
-import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
-import com.yahoo.cloud.config.SlobroksConfig;
 
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 /**
  * Routing policy to load balance between nodes in a randomly distributed cluster, such as a docproc cluster.
@@ -32,42 +23,36 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
  */
-public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
-    String cluster = null;
-    String session = null;
-    private String pattern = null;
+public class LoadBalancerPolicy extends SlobrokPolicy {
+    private final String session;
+    private final String pattern;
 
-    LoadBalancer.Metrics metrics;
-    LoadBalancer loadBalancer;
+    private final LoadBalancer loadBalancer;
 
-    public LoadBalancerPolicy(String param) {
-        this(param, parse(param));
+    LoadBalancerPolicy(String param) {
+        this(parse(param));
     }
 
-    public LoadBalancerPolicy(String param, Map<String, String> params) {
-        super(params);
+    private LoadBalancerPolicy(Map<String, String> params) {
+        super();
 
-        cluster = params.get("cluster");
+        String cluster = params.get("cluster");
         session = params.get("session");
 
         if (cluster == null) {
-            error = "Required parameter pattern not set";
-            return;
+            throw new IllegalArgumentException("Required parameter 'cluster' not set");
         }
 
         if (session == null) {
-            error = "Required parameter session not set";
-            return;
+            throw new IllegalArgumentException("Required parameter 'session' not set");
         }
 
-        metrics = new LoadBalancer.Metrics(param);
-        metrics.setXmlTagName("loadbalancer");
         pattern = cluster + "/*/" + session;
-        loadBalancer = new LoadBalancer(cluster, session, metrics);
+        loadBalancer = new LoadBalancer(cluster);
     }
 
     @Override
-    public void doSelect(RoutingContext context) {
+    public void select(RoutingContext context) {
         LoadBalancer.Node node = getRecipient(context);
 
         if (node != null) {
@@ -76,8 +61,7 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
             route.setHop(0, Hop.parse(node.entry.getSpec() + "/" + session));
             context.addChild(route);
         } else {
-            context.setError(ErrorCode.NO_ADDRESS_FOR_SERVICE,
-                             "Could not resolve any nodes to send to in pattern " + pattern);
+            context.setError(ErrorCode.NO_ADDRESS_FOR_SERVICE, "Could not resolve any nodes to send to in pattern " + pattern);
         }
     }
 
@@ -86,8 +70,8 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
 
        @return Returns a hop representing the TCP address of the target, or null if none could be found.
     */
-    LoadBalancer.Node getRecipient(RoutingContext context) {
-        Mirror.Entry [] lastLookup = lookup(context, pattern);
+    private LoadBalancer.Node getRecipient(RoutingContext context) {
+        List<Mirror.Entry> lastLookup = lookup(context, pattern);
         return loadBalancer.getRecipient(lastLookup);
     }
 
@@ -107,7 +91,8 @@ public class LoadBalancerPolicy extends ExternalSlobrokPolicy {
         context.setReply(reply);
     }
 
-    public MetricSet getMetrics() {
-        return metrics;
+    @Override
+    public void destroy() {
+
     }
 }

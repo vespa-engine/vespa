@@ -226,7 +226,6 @@ public class RetiredExpirerTest {
                 deployer,
                 clock,
                 Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
-                RETIRED_EXPIRATION,
-                new JobControl(nodeRepository.database()));
+                RETIRED_EXPIRATION);
     }
 }

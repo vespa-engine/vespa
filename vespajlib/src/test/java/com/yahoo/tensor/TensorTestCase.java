@@ -37,6 +37,17 @@ public class TensorTestCase {
     }
 
     @Test
+    public void testValueTypes() {
+        assertEquals(Tensor.from("tensor<double>(x[1]):{{x:0}:5}").getClass(), IndexedDoubleTensor.class);
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<double>(x[1])")).cell(5.0, 0).build().getClass(),
+                     IndexedDoubleTensor.class);
+
+        assertEquals(Tensor.from("tensor<float>(x[1]):{{x:0}:5}").getClass(), IndexedFloatTensor.class);
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(x[1])")).cell(5.0, 0).build().getClass(),
+                     IndexedFloatTensor.class);
+    }
+
+    @Test
     public void testParseError() {
         try {
             Tensor.from("--");

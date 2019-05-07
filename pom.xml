@@ -79,6 +79,7 @@
         <module>filedistribution</module>
         <module>flags</module>
         <module>fsa</module>
+        <module>http-utils</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
@@ -137,5 +138,6 @@
         <module>vsm</module>
         <module>yolean</module>
         <module>zkfacade</module>
+        <module>hosted-api</module>
     </modules>
 </project>

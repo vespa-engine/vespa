@@ -114,7 +114,7 @@ public class UrlDownloadRpcServer {
     }
 
     private static String urlToDirName(String uri) {
-        return String.valueOf(XXHashFactory.nativeInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0));
+        return String.valueOf(XXHashFactory.fastestJavaInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0));
     }
 
     private static void setIfModifiedSince(HttpURLConnection connection, File downloadDir) throws IOException {

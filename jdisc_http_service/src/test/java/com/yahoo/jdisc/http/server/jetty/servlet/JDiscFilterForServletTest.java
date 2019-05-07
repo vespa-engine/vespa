@@ -18,7 +18,7 @@ import com.yahoo.jdisc.http.server.jetty.FilterInvoker;
 import com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

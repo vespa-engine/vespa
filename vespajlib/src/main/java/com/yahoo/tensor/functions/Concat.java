@@ -73,8 +73,8 @@ public class Concat extends PrimitiveTensorFunction {
             MutableLong concatSize = new MutableLong(0);
             a.sizeOfDimension(dimension).ifPresent(concatSize::add);
             b.sizeOfDimension(dimension).ifPresent(concatSize::add);
-                builder.set(TensorType.Dimension.indexed(dimension, concatSize.get()));
-                */
+            builder.set(TensorType.Dimension.indexed(dimension, concatSize.get()));
+            */
         }
         return builder.build();
     }
@@ -141,7 +141,11 @@ public class Concat extends PrimitiveTensorFunction {
             if (tensor.type().dimensions().stream().anyMatch(d -> ! d.isIndexed()))
                 throw new IllegalArgumentException("Concat requires an indexed tensor, " +
                                                    "but got a tensor with type " + tensor.type());
-            Tensor unitTensor = Tensor.Builder.of(new TensorType.Builder().indexed(dimensionName, 1).build()).cell(1,0).build();
+            Tensor unitTensor = Tensor.Builder.of(new TensorType.Builder(tensor.type().valueType())
+                                                          .indexed(dimensionName, 1)
+                                                          .build())
+                                              .cell(1,0)
+                                              .build();
             return tensor.multiply(unitTensor);
         }
 

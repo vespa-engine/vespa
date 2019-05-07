@@ -25,8 +25,8 @@ public class DirtyExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    public DirtyExpirer(NodeRepository nodeRepository, Clock clock, Duration dirtyTimeout, JobControl jobControl) {
-        super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, clock, dirtyTimeout, jobControl);
+    DirtyExpirer(NodeRepository nodeRepository, Clock clock, Duration dirtyTimeout) {
+        super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, clock, dirtyTimeout);
         this.nodeRepository = nodeRepository;
     }
 

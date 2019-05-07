@@ -16,16 +16,16 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         }
 
        private Integer getThreads(ModelElement clusterElem) {
-           ModelElement tuning = clusterElem.getChild("tuning");
+           ModelElement tuning = clusterElem.child("tuning");
            if (tuning == null) {
                return null;
            }
-           ModelElement threads = tuning.getChild("persistence-threads");
+           ModelElement threads = tuning.child("persistence-threads");
            if (threads == null) {
                return null;
            }
 
-           Integer count = threads.getIntegerAttribute("count");
+           Integer count = threads.integerAttribute("count");
            if (count != null) {
                return count;
            }
@@ -33,7 +33,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
            // Backward compatible fallback
            int numThreads = 0;
            for (ModelElement thread : threads.subElements("thread")) {
-               count = thread.getIntegerAttribute("count");
+               count = thread.integerAttribute("count");
                numThreads += (count == null) ? 1 : count;
            }
 

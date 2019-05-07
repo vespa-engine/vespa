@@ -8,8 +8,9 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Implementation of a sparse binary format for a tensor on the form:
@@ -23,6 +24,15 @@ import java.util.Optional;
  * @author geirst
  */
 class SparseBinaryFormat implements BinaryFormat {
+
+    private final TensorType.Value serializationValueType;
+
+    SparseBinaryFormat() {
+        this(TensorType.Value.DOUBLE);
+    }
+    SparseBinaryFormat(TensorType.Value serializationValueType) {
+        this.serializationValueType = serializationValueType;
+    }
 
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {
@@ -39,10 +49,17 @@ class SparseBinaryFormat implements BinaryFormat {
 
     private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
         buffer.putInt1_4Bytes((int)tensor.size()); // XXX: Size truncation
+        switch (serializationValueType) {
+            case DOUBLE: encodeCells(buffer, tensor, buffer::putDouble); break;
+            case FLOAT: encodeCells(buffer, tensor, (val) -> buffer.putFloat(val.floatValue())); break;
+        }
+    }
+
+    private void encodeCells(GrowableByteBuffer buffer, Tensor tensor, Consumer<Double> consumer) {
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
-            Map.Entry<TensorAddress, Double> cell = i.next();
+            Tensor.Cell cell = i.next();
             encodeAddress(buffer, cell.getKey());
-            buffer.putDouble(cell.getValue());
+            consumer.accept(cell.getValue());
         }
     }
 
@@ -56,6 +73,10 @@ class SparseBinaryFormat implements BinaryFormat {
         TensorType type;
         if (optionalType.isPresent()) {
             type = optionalType.get();
+            if (type.valueType() != this.serializationValueType) {
+                throw new IllegalArgumentException("Tensor value type mismatch. Value type " + type.valueType() +
+                        " is not " + this.serializationValueType);
+            }
             TensorType serializedType = decodeType(buffer);
             if ( ! serializedType.isAssignableTo(type))
                 throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
@@ -71,18 +92,25 @@ class SparseBinaryFormat implements BinaryFormat {
 
     private TensorType decodeType(GrowableByteBuffer buffer) {
         int numDimensions = buffer.getInt1_4Bytes();
-        TensorType.Builder builder = new TensorType.Builder();
+        TensorType.Builder builder = new TensorType.Builder(serializationValueType);
         for (int i = 0; i < numDimensions; ++i)
             builder.mapped(buffer.getUtf8String());
         return builder.build();
     }
 
     private void decodeCells(GrowableByteBuffer buffer, Tensor.Builder builder, TensorType type) {
+        switch (serializationValueType) {
+            case DOUBLE: decodeCells(buffer, builder, type, buffer::getDouble); break;
+            case FLOAT: decodeCells(buffer, builder, type, () -> (double)buffer.getFloat()); break;
+        }
+    }
+
+    private void decodeCells(GrowableByteBuffer buffer, Tensor.Builder builder, TensorType type, Supplier<Double> supplier) {
         long numCells = buffer.getInt1_4Bytes(); // XXX: Size truncation
         for (long i = 0; i < numCells; ++i) {
             Tensor.Builder.CellBuilder cellBuilder = builder.cell();
             decodeAddress(buffer, cellBuilder, type);
-            cellBuilder.value(buffer.getDouble());
+            cellBuilder.value(supplier.get());
         }
     }
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
@@ -31,8 +31,8 @@ public class AuthorizationFilter implements SecurityRequestFilter {
     private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
 
     @Inject
-    public AuthorizationFilter(Zone zone, NodeRepository nodeRepository) {
-        this.authorizer = new Authorizer(zone.system(), nodeRepository);
+    public AuthorizationFilter(NodeRepository nodeRepository, ConfigServerSecurityConfig securityConfig) {
+        this.authorizer = new Authorizer(nodeRepository, securityConfig);
         this.rejectAction = AuthorizationFilter::logAndReject;
     }
 

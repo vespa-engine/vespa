@@ -7,93 +7,140 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class FeederParams {
+class FeederParams {
 
-    private InputStream stdIn = System.in;
+    private static final int BUFFER_SIZE = 0x100000;
+    enum DumpFormat {JSON, VESPA}
     private PrintStream stdErr = System.err;
     private PrintStream stdOut = System.out;
     private Route route = Route.parse("default");
     private String configId = "client";
-    private boolean serialTransferEnabled = false;
+    private OutputStream dumpStream = null;
+    private DumpFormat dumpFormat = DumpFormat.JSON;
+    private boolean benchmarkMode = false;
+    private int numDispatchThreads = 1;
+    private int maxPending = 0;
+    private List<InputStream> inputStreams = new ArrayList<>();
 
-    public InputStream getStdIn() {
-        return stdIn;
+    FeederParams() {
+        inputStreams.add(System.in);
     }
 
-    public FeederParams setStdIn(InputStream stdIn) {
-        this.stdIn = stdIn;
-        return this;
-    }
-
-    public PrintStream getStdErr() {
+    PrintStream getStdErr() {
         return stdErr;
     }
 
-    public FeederParams setStdErr(PrintStream stdErr) {
+    FeederParams setStdErr(PrintStream stdErr) {
         this.stdErr = stdErr;
         return this;
     }
 
-    public PrintStream getStdOut() {
+    PrintStream getStdOut() {
         return stdOut;
     }
 
-    public FeederParams setStdOut(PrintStream stdOut) {
+    FeederParams setStdOut(PrintStream stdOut) {
         this.stdOut = stdOut;
         return this;
     }
 
-    public Route getRoute() {
+    Route getRoute() {
         return route;
     }
-
-    public FeederParams setRoute(Route route) {
-        this.route = new Route(route);
+    OutputStream getDumpStream() { return dumpStream; }
+    FeederParams setDumpStream(OutputStream dumpStream) {
+        this.dumpStream = dumpStream;
         return this;
     }
 
-    public String getConfigId() {
+    DumpFormat getDumpFormat() { return dumpFormat; }
+    FeederParams setDumpFormat(DumpFormat dumpFormat) {
+        this.dumpFormat = dumpFormat;
+        return this;
+    }
+
+    String getConfigId() {
         return configId;
     }
 
-    public FeederParams setConfigId(String configId) {
+    FeederParams setConfigId(String configId) {
         this.configId = configId;
         return this;
     }
 
-    public boolean isSerialTransferEnabled() {
-        return serialTransferEnabled;
+    boolean isSerialTransferEnabled() {
+        return maxPending == 1;
     }
 
-    public FeederParams setSerialTransfer(boolean serial) {
-        this.serialTransferEnabled = serial;
+    FeederParams setSerialTransfer() {
+        maxPending = 1;
+        numDispatchThreads = 1;
+        return this;
+    }
+    List<InputStream> getInputStreams() { return inputStreams; }
+    FeederParams setInputStreams(List<InputStream> inputStreams) {
+        this.inputStreams = inputStreams;
         return this;
     }
 
-    public FeederParams parseArgs(String... args) throws ParseException {
+    int getNumDispatchThreads() { return numDispatchThreads; }
+    int getMaxPending() { return maxPending; }
+    boolean isBenchmarkMode() { return benchmarkMode; }
+
+    FeederParams parseArgs(String... args) throws ParseException, FileNotFoundException {
         Options opts = new Options();
-        opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation");
+        opts.addOption("s", "serial", false, "use serial transfer mode, at most 1 pending operation and a single thread");
+        opts.addOption("n", "numthreads", true, "Number of clients for sending messages. Anything, but 1 will bypass sequencing by document id.");
+        opts.addOption("m", "maxpending", true, "Max number of inflights messages. Default is auto.");
+        opts.addOption("r", "route", true, "Route for sending messages. default is 'default'....");
+        opts.addOption("b", "mode", true, "Mode for benchmarking.");
+        opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .vespa) json will be produced if no extension.");
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
-        serialTransferEnabled = cmd.hasOption("s");
-        route = newRoute(cmd.getArgs());
+
+        if (cmd.hasOption('n')) {
+            numDispatchThreads = Integer.valueOf(cmd.getOptionValue('n').trim());
+        }
+        if (cmd.hasOption('m')) {
+            maxPending = Integer.valueOf(cmd.getOptionValue('m').trim());
+        }
+        if (cmd.hasOption('r')) {
+            route = Route.parse(cmd.getOptionValue('r').trim());
+        }
+        benchmarkMode =  cmd.hasOption('b');
+        if (cmd.hasOption('o')) {
+            String fileName = cmd.getOptionValue('o').trim();
+            dumpStream = new FileOutputStream(new File(fileName));
+            if (fileName.endsWith(".vespa")) {
+                dumpFormat = DumpFormat.VESPA;
+            }
+        }
+        if (cmd.hasOption('s')) {
+            setSerialTransfer();
+        }
+
+        if ( !cmd.getArgList().isEmpty()) {
+            inputStreams.clear();
+            for (String fileName : cmd.getArgList()) {
+                inputStreams.add(new BufferedInputStream(new FileInputStream(new File(fileName)), BUFFER_SIZE));
+            }
+        }
+
         return this;
     }
 
-    private static Route newRoute(String... args) {
-        if (args.length == 0) {
-            return Route.parse("default");
-        }
-        StringBuilder out = new StringBuilder();
-        for (String arg : args) {
-            out.append(arg).append(' ');
-        }
-        return Route.parse(out.toString());
-    }
 }

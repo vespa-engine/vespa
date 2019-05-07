@@ -2,18 +2,9 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.collections.TinyIdentitySet;
-import com.yahoo.data.access.simple.Value;
-import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.fs4.DocsumPacket;
-import com.yahoo.fs4.DocumentInfo;
-import com.yahoo.fs4.FS4Properties;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.fs4.QueryPacketData;
-import com.yahoo.fs4.QueryResultPacket;
-import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.log.LogLevel;
-import com.yahoo.prelude.ConfigurationException;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -24,20 +15,14 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
-import com.yahoo.search.query.Sorting;
-import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
-import com.yahoo.slime.BinaryFormat;
-import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -55,8 +40,6 @@ import java.util.logging.Logger;
  */
 public abstract class VespaBackEndSearcher extends PingableSearcher {
 
-    static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
-    static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
     private static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
 
     private String serverId;
@@ -198,19 +181,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return result;
     }
 
-    protected QueryPacket createQueryPacket(String serverId, Query query) {
-        QueryPacket queryPacket = QueryPacket.create(serverId, query);
-        int compressionLimit = query.properties().getInteger(PACKET_COMPRESSION_LIMIT, 0);
-        queryPacket.setCompressionLimit(compressionLimit);
-        if (compressionLimit != 0)
-            queryPacket.setCompressionType(query.properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
-
-        if (isLoggingFine())
-            getLogger().fine("made QueryPacket: " + queryPacket);
-
-        return queryPacket;
-    }
-
     private List<Result> partitionHits(Result result, String summaryClass) {
         List<Result> parts = new ArrayList<>();
         TinyIdentitySet<Query> queryMap = new TinyIdentitySet<>(4);
@@ -343,49 +313,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    private void addBackendTrace(Query query, QueryResultPacket resultPacket) {
-        if (resultPacket.propsArray == null) return;
-        Value.ArrayValue traces = new Value.ArrayValue();
-        for (FS4Properties properties : resultPacket.propsArray) {
-            if ( ! properties.getName().equals("trace")) continue;
-            for (FS4Properties.Entry entry : properties.getEntries()) {
-                traces.add(new SlimeAdapter(BinaryFormat.decode(entry.getValue()).get()));
-            }
-        }
-        query.trace(traces, query.getTraceLevel());
-    }
-
-    void addMetaInfo(Query query, QueryPacketData queryPacketData, QueryResultPacket resultPacket, Result result) {
-        result.setTotalHitCount(resultPacket.getTotalDocumentCount());
-
-        addBackendTrace(query, resultPacket);
-
-        // Grouping
-        if (resultPacket.getGroupData() != null) {
-            byte[] data = resultPacket.getGroupData();
-            ArrayList<Grouping> list = new ArrayList<>();
-            BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(ByteBuffer.wrap(data)));
-            int cnt = buf.getInt(null);
-            for (int i = 0; i < cnt; i++) {
-                Grouping g = new Grouping();
-                g.deserialize(buf);
-                list.add(g);
-            }
-            GroupingListHit hit = new GroupingListHit(list, getDocsumDefinitionSet(query));
-            hit.setQuery(result.getQuery());
-            hit.setSource(getName());
-            hit.setQueryPacketData(queryPacketData);
-            result.hits().add(hit);
-        }
-
-        if (resultPacket.getCoverageFeature()) {
-            result.setCoverage(new Coverage(resultPacket.getCoverageDocs(), resultPacket.getActiveDocs(), resultPacket.getNodesReplied())
-                    .setSoonActive(resultPacket.getSoonActiveDocs())
-                    .setDegradedReason(resultPacket.getDegradedReason())
-                    .setNodesTried(resultPacket.getNodesQueried()));
-        }
-    }
-
     static class FillHitResult {
         final boolean ok;
         final String error;
@@ -451,19 +378,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return new FillHitsResult(skippedHits, lastError);
     }
 
-    private void extractDocumentInfo(FastHit hit, DocumentInfo document, Sorting sorting) {
-        hit.setSource(getName());
-
-        Number rank = document.getMetric();
-
-        hit.setRelevance(new Relevance(rank.doubleValue()));
-
-        hit.setDistributionKey(document.getDistributionKey());
-        hit.setGlobalId(document.getGlobalId());
-        hit.setPartId(document.getPartId());
-        hit.setSortData(document.getSortData(), sorting);
-    }
-
     protected DocsumDefinitionSet getDocsumDefinitionSet(Query query) {
         DocumentDatabase db = getDocumentDatabase(query);
         return db.getDocsumDefinitionSet();
@@ -481,46 +395,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             hit.setFilled(summaryClass);
         }
         return error;
-    }
-
-    /**
-     * Creates unfilled hits from a List of DocumentInfo instances. Do note
-     * cacheKey should be available if a cache is active, even if the hit is not
-     * created from a cache in the current call path.
-     *
-     * @param queryPacketData binary data from first phase of search, or null
-     * @param channelDistributionKey distribution key of the node producing these hits.
-     *                               Only set if produced directly by a search node, not dispatch
-     *                               (in which case it is not set in the received packets.)
-     */
-    void addUnfilledHits(Result result,
-                            List<DocumentInfo> documents,
-                            QueryPacketData queryPacketData,
-                            Optional<Integer> channelDistributionKey) {
-        Query myQuery = result.getQuery();
-        Sorting sorting = myQuery.getRanking().getSorting();
-
-        for (DocumentInfo document : documents) {
-
-            try {
-                FastHit hit = new FastHit();
-                hit.setQuery(myQuery);
-                if (queryPacketData != null)
-                    hit.setQueryPacketData(queryPacketData);
-
-                hit.setFillable();
-                hit.setCached(false);
-
-                extractDocumentInfo(hit, document, sorting);
-                channelDistributionKey.ifPresent(hit::setDistributionKey);
-
-                result.hits().add(hit);
-            } catch (ConfigurationException e) {
-                getLogger().log(LogLevel.WARNING, "Skipping hit", e);
-            } catch (Exception e) {
-                getLogger().log(LogLevel.ERROR, "Skipping malformed hit", e);
-            }
-        }
     }
 
     @SuppressWarnings("rawtypes")

@@ -5,6 +5,7 @@ import com.yahoo.document.restapi.OperationHandler;
 import com.yahoo.document.restapi.Response;
 import com.yahoo.document.restapi.RestApiException;
 import com.yahoo.document.restapi.RestUri;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.util.Optional;
@@ -31,13 +32,13 @@ public class MockedOperationHandler implements OperationHandler {
 
     @Override
     @SuppressWarnings("deprecation")
-    public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
+    public void put(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         log.append("PUT: " + data.getDocument().getId());
         log.append(data.getDocument().getBody().toString());
     }
 
     @Override
-    public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
+    public void update(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         log.append("UPDATE: " + data.getDocumentUpdate().getId());
         log.append(data.getDocumentUpdate().fieldUpdates().toString());
         if (data.getDocumentUpdate().getCreateIfNonExistent()) {

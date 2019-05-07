@@ -10,6 +10,7 @@ import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -26,6 +27,8 @@ import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
+import com.yahoo.vespa.model.routing.DocumentProtocol;
+import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Rule;
@@ -853,44 +856,73 @@ public class ContentClusterTest extends ContentBaseTest {
         }
     }
 
-    @Test
-    public void all_clusters_bucket_spaces_config_contains_mappings_across_all_clusters() {
+    private VespaModel createDualContentCluster() {
         String xml =
                 "<services>" +
-                "<admin version=\"2.0\">" +
-                "  <adminserver hostalias=\"node0\"/>" +
-                "</admin>" +
-                "<content version=\"1.0\" id=\"foocluster\">" +
-                "  <redundancy>1</redundancy>" +
-                "  <documents>" +
-                "    <document type=\"bunnies\" mode=\"index\"/>" +
-                "    <document type=\"hares\" mode=\"index\"/>" +
-                "  </documents>" +
-                "  <group>" +
-                "    <node distribution-key=\"0\" hostalias=\"node0\"/>" +
-                "  </group>" +
-                "</content>" +
-                "<content version=\"1.0\" id=\"barcluster\">" +
-                "  <redundancy>1</redundancy>" +
-                "  <documents>" +
-                "    <document type=\"rabbits\" mode=\"index\" global=\"true\"/>" +
-                "  </documents>" +
-                "  <group>" +
-                "    <node distribution-key=\"0\" hostalias=\"node0\"/>" +
-                "  </group>" +
-                "</content>" +
-                "</services>";
+                        "<admin version=\"2.0\">" +
+                        "  <adminserver hostalias=\"node0\"/>" +
+                        "</admin>" +
+                        "<content version=\"1.0\" id=\"foo_c\">" +
+                        "  <redundancy>1</redundancy>" +
+                        "  <documents>" +
+                        "    <document type=\"bunnies\" mode=\"index\"/>" +
+                        "    <document type=\"hares\" mode=\"index\"/>" +
+                        "  </documents>" +
+                        "  <group>" +
+                        "    <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                        "  </group>" +
+                        "</content>" +
+                        "<content version=\"1.0\" id=\"bar_c\">" +
+                        "  <redundancy>1</redundancy>" +
+                        "  <documents>" +
+                        "    <document type=\"rabbits\" mode=\"index\" global=\"true\"/>" +
+                        "  </documents>" +
+                        "  <group>" +
+                        "    <node distribution-key=\"0\" hostalias=\"node0\"/>" +
+                        "  </group>" +
+                        "</content>" +
+                        "</services>";
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("bunnies", "hares", "rabbits");
-        VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
+        return new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
+    }
 
+    @Test
+    public void all_clusters_bucket_spaces_config_contains_mappings_across_all_clusters() {
+        VespaModel model = createDualContentCluster();
         AllClustersBucketSpacesConfig.Builder builder = new AllClustersBucketSpacesConfig.Builder();
         model.getConfig(builder, "client");
         AllClustersBucketSpacesConfig config = builder.build();
 
         assertEquals(2, config.cluster().size());
 
-        assertClusterHasBucketSpaceMappings(config, "foocluster", Arrays.asList("bunnies", "hares"), Collections.emptyList());
-        assertClusterHasBucketSpaceMappings(config, "barcluster", Collections.emptyList(), Collections.singletonList("rabbits"));
+        assertClusterHasBucketSpaceMappings(config, "foo_c", Arrays.asList("bunnies", "hares"), Collections.emptyList());
+        assertClusterHasBucketSpaceMappings(config, "bar_c", Collections.emptyList(), Collections.singletonList("rabbits"));
+    }
+    @Test
+    public void test_routing_with_multiple_clusters() {
+        VespaModel model = createDualContentCluster();
+        Routing routing = model.getRouting();
+        assertNotNull(routing);
+        assertEquals("[]", routing.getErrors().toString());
+        assertEquals(1, routing.getProtocols().size());
+        DocumentProtocol protocol = (DocumentProtocol) routing.getProtocols().get(0);
+        RoutingTableSpec spec = protocol.getRoutingTableSpec();
+        assertEquals(3, spec.getNumHops());
+        assertEquals("docproc/cluster.bar_c.indexing/chain.indexing", spec.getHop(0).getName());
+        assertEquals("docproc/cluster.foo_c.indexing/chain.indexing", spec.getHop(1).getName());
+        assertEquals("indexing", spec.getHop(2).getName());
+
+        assertEquals(10, spec.getNumRoutes());
+        assertRoute(spec.getRoute(0), "bar_c", "[MessageType:bar_c]");
+        assertRoute(spec.getRoute(1), "bar_c-direct", "[Content:cluster=bar_c]");
+        assertRoute(spec.getRoute(2), "bar_c-index", "docproc/cluster.bar_c.indexing/chain.indexing", "[Content:cluster=bar_c]");
+        assertRoute(spec.getRoute(3), "default", "indexing");
+        assertRoute(spec.getRoute(4), "default-get", "indexing");
+        assertRoute(spec.getRoute(5), "foo_c", "[MessageType:foo_c]");
+        assertRoute(spec.getRoute(6), "foo_c-direct", "[Content:cluster=foo_c]");
+        assertRoute(spec.getRoute(7), "foo_c-index", "docproc/cluster.foo_c.indexing/chain.indexing", "[Content:cluster=foo_c]");
+        assertRoute(spec.getRoute(8), "storage/cluster.bar_c", "route:bar_c");
+        assertRoute(spec.getRoute(9), "storage/cluster.foo_c", "route:foo_c");
     }
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {

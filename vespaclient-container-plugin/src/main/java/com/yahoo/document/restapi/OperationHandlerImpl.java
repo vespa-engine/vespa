@@ -25,7 +25,7 @@ import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
-import com.yahoo.vespaclient.ClusterList;
+import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import com.yahoo.yolean.concurrent.ResourceFactory;
@@ -170,10 +170,9 @@ public class OperationHandlerImpl implements OperationHandler {
         }
     }
 
-    private VisitResult doVisit(
-            VisitorControlHandler visitorControlHandler,
-            LocalDataVisitorHandler localDataVisitorHandler,
-            RestUri restUri) throws RestApiException {
+    private VisitResult doVisit(VisitorControlHandler visitorControlHandler,
+                                LocalDataVisitorHandler localDataVisitorHandler,
+                                RestUri restUri) throws RestApiException {
         try {
             visitorControlHandler.waitUntilDone(); // VisitorParameters' session timeout implicitly triggers timeout failures.
             throwIfFatalVisitingError(visitorControlHandler, restUri);
@@ -196,13 +195,14 @@ public class OperationHandlerImpl implements OperationHandler {
         if (! (session instanceof MessageBusSyncSession)) {
             // Not sure if this ever could happen but better be safe.
             throw new RestApiException(Response.createErrorResponse(
-                    400, "Can not set route since the API is not using message bus.", RestUri.apiErrorCodes.NO_ROUTE_WHEN_NOT_PART_OF_MESSAGEBUS));
+                    400, "Can not set route since the API is not using message bus.",
+                    RestUri.apiErrorCodes.NO_ROUTE_WHEN_NOT_PART_OF_MESSAGEBUS));
         }
         ((MessageBusSyncSession) session).setRoute(route.orElse("default"));
     }
 
     @Override
-    public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
+    public void put(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {
@@ -226,7 +226,7 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
+    public void update(RestUri restUri, FeedOperation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {

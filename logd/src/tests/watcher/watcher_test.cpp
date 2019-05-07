@@ -71,8 +71,7 @@ struct DummyForwarder : public Forwarder {
     void sendMode() override { ++sendModeCount; }
     void forwardLine(std::string_view log_line) override {
         std::lock_guard guard(lock);
-        assert(log_line.size() > 0u);
-        lines.emplace_back(log_line.substr(0, log_line.size() - 1));
+        lines.emplace_back(log_line);
         cond.notify_all();
     }
     void flush() override { }

@@ -20,6 +20,7 @@ import com.yahoo.tensor.functions.ScalarFunctions;
 import onnx.Onnx;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -33,8 +34,8 @@ class GraphImporter {
     private static IntermediateOperation mapOperation(Onnx.NodeProto node,
                                                      List<IntermediateOperation> inputs,
                                                      IntermediateGraph graph) {
-        String nodeName = node.getName();
         String modelName = graph.name();
+        String nodeName = getNodeName(node);
 
         switch (node.getOpType().toLowerCase()) {
             case "abs":         return new Map(modelName, nodeName, inputs, ScalarFunctions.abs());
@@ -74,7 +75,7 @@ class GraphImporter {
             case "tanh":        return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());
         }
 
-        IntermediateOperation op = new NoOp(modelName, node.getName(), inputs);
+        IntermediateOperation op = new NoOp(modelName, nodeName, inputs);
         op.warning("Operation '" + node.getOpType() + "' is currently not implemented");
         return op;
     }
@@ -105,8 +106,8 @@ class GraphImporter {
         if (isArgumentTensor(name, onnxGraph)) {
             Onnx.ValueInfoProto valueInfoProto = getArgumentTensor(name, onnxGraph);
             if (valueInfoProto == null)
-                throw new IllegalArgumentException("Could not find argument tensor: " + name);
-            OrderedTensorType type = TypeConverter.fromOnnxType(valueInfoProto.getType());
+                throw new IllegalArgumentException("Could not find argument tensor '" + name + "'");
+            OrderedTensorType type = TypeConverter.typeFrom(valueInfoProto.getType());
             operation = new Argument(intermediateGraph.name(), valueInfoProto.getName(), type);
 
             intermediateGraph.inputs(intermediateGraph.defaultSignature())
@@ -114,7 +115,7 @@ class GraphImporter {
 
         } else if (isConstantTensor(name, onnxGraph)) {
             Onnx.TensorProto tensorProto = getConstantTensor(name, onnxGraph);
-            OrderedTensorType defaultType = OrderedTensorType.fromDimensionList(tensorProto.getDimsList());
+            OrderedTensorType defaultType = TypeConverter.typeFrom(tensorProto);
             operation = new Constant(intermediateGraph.name(), name, defaultType);
             operation.setConstantValueFunction(type -> new TensorValue(TensorConverter.toVespaTensor(tensorProto, type)));
 
@@ -199,18 +200,47 @@ class GraphImporter {
     }
 
     private static Onnx.NodeProto getNodeFromGraph(String nodeName, Onnx.GraphProto graph) {
-        boolean hasPortNumber = nodeName.contains(":");
-        for (Onnx.NodeProto node : graph.getNodeList()) {
-            if (hasPortNumber) {
-                for (String outputName : node.getOutputList()) {
-                    if (outputName.equals(nodeName)) {
-                        return node;
-                    }
-                }
-            } else if (node.getName().equals(nodeName)) {
-                return node;
+        Optional<Onnx.NodeProto> node;
+        if (nodeName.contains(":")) {
+            node = getNodeFromGraphOutputs(nodeName, graph);
+        } else {
+            node = getNodeFromGraphNames(nodeName, graph);
+            if (node.isEmpty()) {
+                node = getNodeFromGraphOutputs(nodeName, graph);
             }
         }
-        throw new IllegalArgumentException("Node '" + nodeName + "' not found in ONNX graph");
+        return node.orElseThrow(() -> new IllegalArgumentException("Node '" + nodeName + "' not found in ONNX graph"));
     }
+
+    private static Optional<Onnx.NodeProto> getNodeFromGraphOutputs(String nodeName, Onnx.GraphProto graph) {
+        for (Onnx.NodeProto node : graph.getNodeList()) {
+            for (String outputName : node.getOutputList()) {
+                if (outputName.equals(nodeName)) {
+                    return Optional.of(node);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<Onnx.NodeProto> getNodeFromGraphNames(String nodeName, Onnx.GraphProto graph) {
+        for (Onnx.NodeProto node : graph.getNodeList()) {
+            if (node.getName().equals(nodeName)) {
+                return Optional.of(node);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String getNodeName(Onnx.NodeProto node) {
+        String nodeName = node.getName();
+        if (nodeName.length() > 0)
+            return nodeName;
+        if (node.getOutputCount() == 1)
+            return node.getOutput(0);
+        throw new IllegalArgumentException("Unable to find a suitable name for node '" + node.toString() + "'. " +
+                "Either no explicit name given or no single output name.");
+    }
+
+
 }

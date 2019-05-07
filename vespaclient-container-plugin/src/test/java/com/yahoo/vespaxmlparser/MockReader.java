@@ -7,7 +7,6 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.vespa.http.server.MetaStream;
 import com.yahoo.vespa.http.server.util.ByteLimitedInputStream;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader.Operation;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -45,9 +44,9 @@ public class MockReader implements FeedReader {
     }
 
     @Override
-    public void read(Operation operation) throws Exception {
+    public FeedOperation read() throws Exception {
         if (finished) {
-            return;
+            return FeedOperation.INVALID;
         }
 
         byte whatToDo = stream.getNextOperation();
@@ -55,19 +54,14 @@ public class MockReader implements FeedReader {
         DocumentType docType = new DocumentType("banana");
         switch (whatToDo) {
         case 0:
-            finished = true;
-            break;
+            return FeedOperation.INVALID;
         case 1:
-            Document doc = new Document(docType, id);
-            operation.setDocument(doc);
-            break;
+            return new DocumentFeedOperation(new Document(docType, id));
         case 2:
-            operation.setRemove(id);
-            break;
+            return new RemoveFeedOperation(id);
         case 3:
-            operation.setDocumentUpdate(new DocumentUpdate(docType, id));
-            break;
-        case 4:
+            return new DocumentUpdateFeedOperation(new DocumentUpdate(docType, id));
+        default:
             throw new RuntimeException("boom");
         }
     }

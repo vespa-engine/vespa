@@ -172,8 +172,9 @@ public:
     }                                                                 \
     val64 = (val >> (63 - olength - (k))) - (UINT64_C(1) << (k));     \
     val <<= olength + 1 + (k);                                        \
-    if (__builtin_expect(olength + 1 + (k) == 64, false))             \
+    if (__builtin_expect(olength + 1 + (k) == 64, false)) {           \
       val = 0;                                                        \
+    }                                                                 \
     length += olength + 1 + (k);                                      \
     UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
   } while (0)
@@ -236,8 +237,9 @@ public:
       length = 0;                                                     \
     }                                                                 \
     val <<= olength + 1 + (k);                                        \
-    if (__builtin_expect(olength + 1 + (k) == 64, false))             \
+    if (__builtin_expect(olength + 1 + (k) == 64, false)) {           \
       val = 0;                                                        \
+    }                                                                 \
     length += olength + 1 + (k);                                      \
     UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
   } while (0)
@@ -393,8 +395,9 @@ public:
       ::search::bitcompression::EncodeContext64LE::ffsl(val);       \
     length = olength + 1;                                           \
     val >>= length;                                                 \
-    if (__builtin_expect(length == 64, false))                      \
+    if (__builtin_expect(length == 64, false)) {                    \
       val = 0;                                                      \
+    }                                                               \
     if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {      \
       UC64LE_READBITS(val, valI, preRead, cacheInt, EC);            \
       length = 0;                                                   \
@@ -459,8 +462,9 @@ public:
       ::search::bitcompression::EncodeContext64LE::ffsl(val);     \
     length = olength + 1;                                         \
     val >>= length;                                               \
-    if (__builtin_expect(length == 64, false))                    \
+    if (__builtin_expect(length == 64, false)) {                  \
       val = 0;                                                    \
+    }                                                             \
     if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {    \
       UC64LE_READBITS(val, valI, preRead, cacheInt, EC);          \
       length = 0;                                                 \
@@ -723,8 +727,8 @@ public:
 
     EncodeContext64Base()
         : search::ComprFileEncodeContext(),
-          _valI(NULL),
-          _valE(NULL),
+          _valI(nullptr),
+          _valE(nullptr),
           _cacheInt(0),
           _cacheFree(64),
           _fileWriteBias(64)
@@ -897,8 +901,9 @@ public:
     }
 
     void smallPadBits(uint32_t length) {
-        if (length > 0)
+        if (length > 0) {
             writeBits(0, length);
+        }
     }
 
     virtual void padBits(uint32_t length) {
@@ -970,18 +975,20 @@ public:
             uint32_t upper32 = lower >> 32;
         if (upper32 != 0) {
             uint32_t upper16 = upper32 >> 16;
-            if (upper16 != 0)
+            if (upper16 != 0) {
                 retVal = 48 + CodingTables::_log2Table[upper16];
-            else
+            } else {
                 retVal = 32 + CodingTables::_log2Table[upper32];
+            }
         } else {
             uint32_t lower32 = static_cast<uint32_t>(x);
             uint32_t upper16 = lower32 >> 16;
 
-            if (upper16 != 0)
+            if (upper16 != 0) {
                 retVal = 16 + CodingTables::_log2Table[upper16];
-            else
+            } else {
                 retVal = CodingTables::_log2Table[lower32];
+            }
         }
 #endif
 
@@ -1010,9 +1017,9 @@ public:
             uint32_t log2qx2 = asmlog2((x >> k) + 1) * 2;
             uint64_t expGolomb = x + (UINT64_C(1) << k);
 
-            if (log2qx2 < 64 - k)
+            if (log2qx2 < 64 - k) {
                 writeBits(expGolomb, k + log2qx2 + 1);
-            else {
+            } else {
                 writeBits(0, k + log2qx2 + 1 - 64);
                 writeBits(expGolomb, 64);
             }
@@ -1022,9 +1029,9 @@ public:
             uint64_t expGolomb = x + (UINT64_C(1) << k) -
                                  (UINT64_C(1) << (k + log2q));
 
-            if (log2qx2 < 64 - k)
+            if (log2qx2 < 64 - k) {
                 writeBits(((expGolomb << 1) | 1) << log2q, k + log2qx2 + 1);
-            else {
+            } else {
                 writeBits(0, log2q);
                 writeBits((expGolomb << 1) | 1, log2q + k + 1);
             }
@@ -1055,10 +1062,12 @@ public:
     static uint32_t
     encodeDExpGolombSpace(uint64_t x, uint32_t k)
     {
-        if (x == 0)
+        if (x == 0) {
             return 1;
-        if (x == 1)
+        }
+        if (x == 1) {
             return 2;
+        }
         return 2 + encodeExpGolombSpace(x, k);
     }
 
@@ -1076,18 +1085,20 @@ public:
     static uint32_t
     encodeD0ExpGolombSpace(uint64_t x, uint32_t k)
     {
-        if (x == 0)
+        if (x == 0) {
             return 1;
+        }
         return 1 + encodeExpGolombSpace(x, k);
     }
 
     static uint64_t
     convertToUnsigned(int64_t val)
     {
-        if (val < 0)
+        if (val < 0) {
             return ((- val) << 1) - 1;
-        else
+        } else {
             return (val << 1);
+        }
     }
 };
 
@@ -1125,16 +1136,18 @@ public:
     // File position for end of buffer minus byte address of end of buffer
     // minus sizeof uint64_t.  Then shifted left by 3 to represent bits.
     uint64_t _fileReadBias;
+    search::ComprFileReadContext *_readContext;
 
     DecodeContext64Base()
         : search::ComprFileDecodeContext(),
-          _valI(NULL),
-          _valE(NULL),
-          _realValE(NULL),
+          _valI(nullptr),
+          _valE(static_cast<const uint64_t *>(nullptr) - 1),
+          _realValE(nullptr),
           _val(0),
           _cacheInt(0),
           _preRead(0),
-          _fileReadBias(0)
+          _fileReadBias(0),
+          _readContext(nullptr)
     {
     }
 
@@ -1152,7 +1165,8 @@ public:
           _val(val),
           _cacheInt(cacheInt),
           _preRead(preRead),
-          _fileReadBias(0)
+          _fileReadBias(0),
+          _readContext(nullptr)
     {
     }
 
@@ -1172,6 +1186,7 @@ public:
         _cacheInt = rhs._cacheInt;
         _preRead = rhs._preRead;
         _fileReadBias = rhs._fileReadBias;
+        _readContext = rhs._readContext;
         return *this;
     }
 
@@ -1206,9 +1221,9 @@ public:
 
     uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const override {
         int intOffset = _realValE - _valI;
-        if (bitOffset == -1)
+        if (bitOffset == -1) {
             bitOffset = -64 - _preRead;
-
+        }
         return (bufferEndFilePos << 3) - (static_cast<uint64_t>(intOffset) << 6) + bitOffset;
     }
 
@@ -1230,9 +1245,9 @@ public:
 
     void emptyBuffer(uint64_t newBitPosition) override {
         _fileReadBias = newBitPosition;
-        _valI = NULL;
-        _valE = NULL;
-        _realValE = NULL;
+        _valI = nullptr;
+        _valE = nullptr;
+        _realValE = nullptr;
         _preRead = 0;
     }
 
@@ -1245,10 +1260,11 @@ public:
      */
     void setEnd(unsigned int unitCount, bool moreData) {
         _valE = _realValE = _valI + unitCount;
-        if (moreData)
+        if (moreData) {
             _valE -= END_BUFFER_SAFETY;
-        else
+        } else {
             _valE += END_BUFFER_SAFETY;
+        }
     }
 
     const uint64_t *getCompr() const {
@@ -1260,11 +1276,32 @@ public:
     }
 
     static int64_t convertToSigned(uint64_t val) {
-        if ((val & 1) != 0)
+        if ((val & 1) != 0) {
             return - (val >> 1) - 1;
-        else
+        } else {
             return (val >> 1);
+        }
     }
+
+    void setReadContext(search::ComprFileReadContext *readContext) {
+        _readContext = readContext;
+    }
+    search::ComprFileReadContext *getReadContext() const {
+        return _readContext;
+    }
+    void readComprBuffer() {
+        _readContext->readComprBuffer();
+    }
+    void readComprBufferIfNeeded() {
+        if (__builtin_expect(_valI >= _valE, false)) {
+            readComprBuffer();
+        }
+    }
+    virtual uint64_t readBits(uint32_t length) = 0;
+    virtual void align(uint32_t alignment) = 0;
+    virtual uint64_t decode_exp_golomb(int k) = 0;
+    void readBytes(uint8_t *buf, size_t len);
+    uint32_t readHeader(vespalib::GenericHeader &header, int64_t fileSize);
 };
 
 
@@ -1286,8 +1323,8 @@ public:
     DecodeContext64(const uint64_t *compr,
                     int bitOffset)
         : DecodeContext64Base(compr + 1,
-                              NULL,
-                              NULL,
+                              static_cast<const uint64_t *>(nullptr) - 1,
+                              nullptr,
                               0,
                               EC::bswap(*compr),
                               64 - bitOffset)
@@ -1306,8 +1343,8 @@ public:
                     int bitOffset,
                     uint64_t bitLength)
         : DecodeContext64Base(compr + 1,
-                              NULL,
-                              NULL,
+                              nullptr,
+                              nullptr,
                               0,
                               EC::bswap(*compr),
                               64 - bitOffset)
@@ -1364,24 +1401,29 @@ public:
 
         cacheInt = EC::bswap(*valI++);
         preRead = 64 - length;
-        if (bigEndian)
+        if (bigEndian) {
             val |= (cacheInt >> preRead);
-        else
+        } else {
             val |= (cacheInt << preRead);
+        }
     };
 
     void skipBits(int bits) override {
+        readComprBufferIfNeeded();
         while (bits >= 64) {
             _val = 0;
             ReadBits(64, _val, _cacheInt, _preRead, _valI);
             bits -= 64;
+            readComprBufferIfNeeded();
         }
         if (bits > 0) {
-            if (bigEndian)
+            if (bigEndian) {
                 _val <<= bits;
-            else
+            } else {
                 _val >>= bits;
+            }
             ReadBits(bits, _val, _cacheInt, _preRead, _valI);
+            readComprBufferIfNeeded();
         }
     }
 
@@ -1421,7 +1463,7 @@ public:
     }
 
     uint64_t
-    readBits(uint32_t length)
+    readBits(uint32_t length) override
     {
         uint64_t res;
         if (length < 64) {
@@ -1437,19 +1479,32 @@ public:
             _val = 0;
         }
         UC64_READBITS(_val, _valI, _preRead, _cacheInt, EC);
+        readComprBufferIfNeeded();
         return res;
     }
 
+    uint64_t decode_exp_golomb(int k) override {
+        uint32_t length;
+        uint64_t val64;
+        UC64_DECODEEXPGOLOMB(_val, _valI, _preRead, _cacheInt, k, EC);
+        readComprBufferIfNeeded();
+        return val64;
+    }
+
     void
-    align(uint32_t alignment)
+    align(uint32_t alignment) override
     {
+        readComprBufferIfNeeded();
         uint64_t pad = (- getReadOffset()) & (alignment - 1);
         while (pad > 64) {
             (void) readBits(64);
             pad -= 64;
+            readComprBufferIfNeeded();
         }
-        if (pad > 0)
+        if (pad > 0) {
             (void) readBits(pad);
+        }
+        readComprBufferIfNeeded();
     }
 
     /*
@@ -1459,8 +1514,9 @@ public:
     smallAlign(uint32_t alignment)
     {
         uint64_t pad = _preRead & (alignment - 1);
-        if (pad > 0)
+        if (pad > 0) {
             (void) readBits(pad);
+        }
     }
 };
 
@@ -1472,7 +1528,6 @@ template <bool bigEndian>
 class FeatureDecodeContext : public DecodeContext64<bigEndian>
 {
 public:
-    search::ComprFileReadContext *_readContext;
     typedef DecodeContext64<bigEndian> ParentClass;
     typedef index::DocIdAndFeatures DocIdAndFeatures;
     typedef index::PostingListParams PostingListParams;
@@ -1487,66 +1542,28 @@ public:
     using ParentClass::getBitOffset;
     using ParentClass::readBits;
     using ParentClass::ReadBits;
+    using ParentClass::readComprBuffer;
+    using ParentClass::readComprBufferIfNeeded;
+    using ParentClass::readHeader;
+    using ParentClass::readBytes;
 
     FeatureDecodeContext()
-        : ParentClass(),
-          _readContext(NULL)
+        : ParentClass()
     {
     }
 
     FeatureDecodeContext(const uint64_t *compr,
                          int bitOffset)
-        : ParentClass(compr, bitOffset),
-          _readContext(NULL)
+        : ParentClass(compr, bitOffset)
     {
     }
 
     FeatureDecodeContext(const uint64_t *compr,
                          int bitOffset,
                          uint64_t bitLength)
-        : ParentClass(compr, bitOffset, bitLength),
-          _readContext(NULL)
+        : ParentClass(compr, bitOffset, bitLength)
     {
     }
-
-    FeatureDecodeContext &
-    operator=(const FeatureDecodeContext &rhs)
-    {
-        ParentClass::operator=(rhs);
-        _readContext = rhs._readContext;
-        return *this;
-    }
-
-    void
-    setReadContext(search::ComprFileReadContext *readContext)
-    {
-        _readContext = readContext;
-    }
-
-    search::ComprFileReadContext *
-    getReadContext() const
-    {
-        return _readContext;
-    }
-
-    void
-    readComprBuffer()
-    {
-        _readContext->readComprBuffer();
-    }
-
-    void
-    readComprBufferIfNeeded()
-    {
-        if (__builtin_expect(_valI >= _valE, false))
-            readComprBuffer();
-    }
-
-    void
-    readBytes(uint8_t *buf, size_t len);
-
-    virtual uint32_t
-    readHeader(vespalib::GenericHeader &header, int64_t fileSize);
 
     virtual void
     readHeader(const vespalib::GenericHeader &header,
@@ -1576,39 +1593,6 @@ public:
      */
     virtual void
     getParams(PostingListParams &params) const;
-
-    void skipBits(int bits) override {
-        readComprBufferIfNeeded();
-        while (bits >= 64) {
-            _val = 0;
-            ReadBits(64, _val, _cacheInt, _preRead, _valI);
-            bits -= 64;
-            readComprBufferIfNeeded();
-        }
-        if (bits > 0) {
-            if (bigEndian)
-                _val <<= bits;
-            else
-                _val >>= bits;
-            ReadBits(bits, _val, _cacheInt, _preRead, _valI);
-            readComprBufferIfNeeded();
-        }
-    }
-
-    void
-    align(uint32_t alignment)
-    {
-        readComprBufferIfNeeded();
-        uint64_t pad = (- getReadOffset()) & (alignment - 1);
-        while (pad > 64) {
-            (void) readBits(64);
-            pad -= 64;
-            readComprBufferIfNeeded();
-        }
-        if (pad > 0)
-            (void) readBits(pad);
-        readComprBufferIfNeeded();
-    }
 };
 
 typedef FeatureDecodeContext<true> FeatureDecodeContextBE;
@@ -1630,7 +1614,7 @@ public:
 public:
     FeatureEncodeContext()
         : ParentClass(),
-          _writeContext(NULL)
+          _writeContext(nullptr)
     {
     }
 
@@ -1674,8 +1658,9 @@ public:
     void
     writeComprBufferIfNeeded()
     {
-        if (_valI >= _valE)
+        if (_valI >= _valE) {
             _writeContext->writeComprBuffer(false);
+        }
     }
 
     void

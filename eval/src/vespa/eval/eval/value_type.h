@@ -4,7 +4,6 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
-#include <memory>
 
 namespace vespalib::eval {
 
@@ -16,7 +15,8 @@ namespace vespalib::eval {
 class ValueType
 {
 public:
-    enum class Type { ANY, ERROR, DOUBLE, TENSOR };
+    enum class Type { ERROR, DOUBLE, TENSOR };
+    enum class CellType { FLOAT, DOUBLE };
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
@@ -36,13 +36,15 @@ public:
     };
 
 private:
-    Type _type;
+    Type                   _type;
+    CellType               _cell_type;
     std::vector<Dimension> _dimensions;
 
-    explicit ValueType(Type type_in)
-        : _type(type_in), _dimensions() {}
-    ValueType(Type type_in, std::vector<Dimension> &&dimensions_in)
-        : _type(type_in), _dimensions(std::move(dimensions_in)) {}
+    ValueType(Type type_in)
+        : _type(type_in), _cell_type(CellType::DOUBLE), _dimensions() {}
+
+    ValueType(Type type_in, CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
+        : _type(type_in), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
     ValueType(ValueType &&) = default;
@@ -51,7 +53,7 @@ public:
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     Type type() const { return _type; }
-    bool is_any() const { return (_type == Type::ANY); }
+    CellType cell_type() const { return _cell_type; }
     bool is_error() const { return (_type == Type::ERROR); }
     bool is_double() const { return (_type == Type::DOUBLE); }
     bool is_tensor() const { return (_type == Type::TENSOR); }
@@ -60,18 +62,10 @@ public:
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
-    bool maybe_tensor() const { return (is_any() || is_tensor()); }
-    bool unknown_dimensions() const { return (maybe_tensor() && _dimensions.empty()); }
-    bool is_abstract() const {
-        for (const auto &dimension: _dimensions) {
-            if (dimension.is_indexed() && !dimension.is_bound()) {
-                return true;
-            }
-        }
-        return (is_any() || (is_tensor() && (dimensions().empty())));
-    }
     bool operator==(const ValueType &rhs) const {
-        return ((_type == rhs._type) && (_dimensions == rhs._dimensions));
+        return ((_type == rhs._type) &&
+                (_cell_type == rhs._cell_type) &&
+                (_dimensions == rhs._dimensions));
     }
     bool operator!=(const ValueType &rhs) const { return !(*this == rhs); }
 
@@ -79,10 +73,9 @@ public:
     ValueType rename(const std::vector<vespalib::string> &from,
                      const std::vector<vespalib::string> &to) const;
 
-    static ValueType any_type() { return ValueType(Type::ANY); }
-    static ValueType error_type() { return ValueType(Type::ERROR); };
+    static ValueType error_type() { return ValueType(Type::ERROR); }
     static ValueType double_type() { return ValueType(Type::DOUBLE); }
-    static ValueType tensor_type(std::vector<Dimension> dimensions_in);
+    static ValueType tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type = CellType::DOUBLE);
     static ValueType from_spec(const vespalib::string &spec);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);

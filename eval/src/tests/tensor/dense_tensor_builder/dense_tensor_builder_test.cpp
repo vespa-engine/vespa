@@ -40,6 +40,7 @@ assertTensorSpec(const TensorSpec &expSpec, const Tensor &tensor)
 struct Fixture
 {
     Builder builder;
+    Fixture() : builder() {}
 };
 
 Tensor::UP

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
+import com.yahoo.vespaxmlparser.FeedOperation;
 
 /**
  * Wrapper class for SimpleFeedAccess to send various XML operations.
@@ -18,7 +18,7 @@ public class VespaFeedSender {
         return sender.isAborted();
     }
 
-    public void sendOperation(VespaXMLFeedReader.Operation op) {
+    public void sendOperation(FeedOperation op) {
         switch (op.getType()) {
             case DOCUMENT:
                 sender.put(op.getDocument(), op.getCondition());

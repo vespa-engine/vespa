@@ -15,7 +15,12 @@ import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 public class SlobrokClient implements NodeLookup {
@@ -190,8 +195,8 @@ public class SlobrokClient implements NodeLookup {
 
     private Map<Node, SlobrokData> getSlobrokData(String pattern) {
         Map<Node, SlobrokData> result = new TreeMap<>();
-        Mirror.Entry[] entries = mirror.lookup(pattern);
-        log.log(LogLevel.SPAM, "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.length + " entries.");
+        List<Mirror.Entry> entries = mirror.lookup(pattern);
+        log.log(LogLevel.SPAM, "Looking for slobrok entries with pattern '" + pattern + "'. Found " + entries.size() + " entries.");
         for (Mirror.Entry entry : entries) {
             StringTokenizer st = new StringTokenizer(entry.getName(), "/");
             String addressType = st.nextToken();
@@ -209,7 +214,7 @@ public class SlobrokClient implements NodeLookup {
     private static class SlobrokData {
 
         public Node node;
-        public String rpcAddress;
+        String rpcAddress;
 
         SlobrokData(Node node, String rpcAddress) {
             this.node = node;

@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-
 import java.util.List;
-
 
 /**
  * An iterator-like view of a list of tokens, but typed, random-accessible
@@ -183,8 +181,7 @@ final class TokenPosition {
     /**
      * Skips one or zero items of the given kind.
      *
-     * @return true if one item was skipped, false if none was,
-     *         or if there are no more tokens
+     * @return true if one item was skipped, false if none was, or if there are no more tokens
      */
     public boolean skip(Token.Kind kind) {
         Token current = current();
@@ -198,20 +195,16 @@ final class TokenPosition {
     }
 
     /**
-     * Skips one or zero items of the given kind, without ignoring
-     * spaces
+     * Skips one or zero items of the given kind, without ignoring spaces
      *
-     * @return true if one item was skipped, false if none was,
-     *         or if there are no more tokens
+     * @return true if one item was skipped, false if none was or if there are no more tokens
      */
     public boolean skipNoIgnore(Token.Kind kind) {
         Token current = currentNoIgnore();
 
-        if (current == null || current.kind != kind) {
-            return false;
-        }
+        if (current == null || current.kind != kind) return false;
 
-        skip();
+        skipNoIgnore();
         return true;
     }
     

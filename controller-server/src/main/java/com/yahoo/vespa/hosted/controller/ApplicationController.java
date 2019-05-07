@@ -9,10 +9,14 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -32,16 +36,15 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -51,8 +54,10 @@ import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -108,25 +113,25 @@ public class ApplicationController {
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
     private final AccessControl accessControl;
-    private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
     private final Clock clock;
+    private final BooleanFlag redirectLegacyDnsFlag;
 
     private final DeploymentTrigger deploymentTrigger;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
-                          NameService nameService, ConfigServer configServer,
+                          ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
         this.accessControl = accessControl;
-        this.nameService = nameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
         this.clock = clock;
+        this.redirectLegacyDnsFlag = Flags.REDIRECT_LEGACY_DNS_NAMES.bindTo(controller.flagSource());
 
         this.artifactRepository = artifactRepository;
         this.applicationStore = applicationStore;
@@ -231,14 +236,14 @@ public class ApplicationController {
                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
             Optional<Tenant> tenant = controller.tenants().get(id.tenant());
-            if ( ! tenant.isPresent())
+            if (tenant.isEmpty())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
             if (get(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (tenant.get().type() != Tenant.Type.user) {
-                if ( ! credentials.isPresent())
+                if (credentials.isEmpty())
                     throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
 
                 if (id.instance().isDefault()) // Only store the application permits for non-user applications.
@@ -269,7 +274,7 @@ public class ApplicationController {
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
         Tenant tenant = controller.tenants().require(applicationId.tenant());
-        if (tenant.type() == Tenant.Type.user && ! get(applicationId).isPresent())
+        if (tenant.type() == Tenant.Type.user && get(applicationId).isEmpty())
             createApplication(applicationId, Optional.empty());
 
         try (Lock deploymentLock = lockForDeployment(applicationId, zone)) {
@@ -277,7 +282,7 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             Set<String> rotationNames = new HashSet<>();
-            Set<String> cnames = new HashSet<>();
+            Set<String> cnames;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(require(applicationId), lock);
@@ -292,15 +297,15 @@ public class ApplicationController {
                             () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
                     platformVersion = options.vespaVersion.map(Version::new).orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                                                       .flatMap(this::lastCompatibleVersion)
-                                                                                                      .orElse(controller.systemVersion()));
+                                                                                                      .orElseGet(controller::systemVersion));
                 }
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
                                              .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
                     Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
-                    if (   ! job.isPresent()
-                        || ! job.get().lastTriggered().isPresent()
-                        ||   job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
+                    if (   job.isEmpty()
+                        || job.get().lastTriggered().isEmpty()
+                        || job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
                         return unexpectedDeployment(applicationId, zone);
                     JobRun triggered = job.get().lastTriggered().get();
                     platformVersion = preferOldestVersion ? triggered.sourcePlatform().orElse(triggered.platform())
@@ -318,13 +323,10 @@ public class ApplicationController {
                 // Assign global rotation
                 application = withRotation(application, zone);
                 Application app = application.get();
-                app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
-                    rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
-                    cnames.add(applicationRotation.dnsName());
-                    cnames.add(applicationRotation.secureDnsName());
-                    cnames.add(applicationRotation.oathDnsName());
-                });
-
+                // Include global DNS names
+                cnames = app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).collect(Collectors.toSet());
+                // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
+                app.rotation().map(RotationId::asString).ifPresent(cnames::add);
                 // Update application with information from application package
                 if (   ! preferOldestVersion
                     && ! application.get().deploymentJobs().deployedInternally()
@@ -382,7 +384,7 @@ public class ApplicationController {
         application = withoutUnreferencedDeploymentJobs(application);
 
         store(application);
-        return(application);
+        return application;
     }
 
     /** Deploy a system application to given zone */
@@ -432,20 +434,30 @@ public class ApplicationController {
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
-                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().dnsName());
-                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().secureDnsName());
-                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().oathDnsName());
+                boolean redirectLegacyDns = redirectLegacyDnsFlag.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm())
+                                                                 .value();
+
+                EndpointList globalEndpoints = application.get()
+                                                          .endpointsIn(controller.system())
+                                                          .scope(Endpoint.Scope.global);
+                globalEndpoints.main().ifPresent(mainEndpoint -> {
+                    registerCname(mainEndpoint.dnsName(), rotation.name());
+                    if (redirectLegacyDns) {
+                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), mainEndpoint.dnsName()));
+                    } else {
+                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), rotation.name()));
+                    }
+                });
             }
         }
         return application;
     }
 
-    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone) {
-
+    private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
-        logEntry.message = "Ignoring deployment of " + require(applicationId) + " to " + zone +
+        logEntry.message = "Ignoring deployment of application '" + application + "' to " + zone +
                            " as a deployment is not currently expected";
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = Collections.singletonList(logEntry);
@@ -495,28 +507,9 @@ public class ApplicationController {
                                  options.deployCurrentVersion);
     }
 
-    /** Register a DNS name for rotation */
-    private void registerRotationInDns(Rotation rotation, String dnsName) {
-        try {
-
-            RecordData rotationName = RecordData.fqdn(rotation.name());
-            List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordName.from(dnsName));
-            records.forEach(record -> {
-                // Ensure that the existing record points to the correct rotation
-                if ( ! record.data().equals(rotationName)) {
-                    nameService.updateRecord(record, rotationName);
-                    log.info("Updated mapping for record '" + record + "': '" + dnsName
-                             + "' -> '" + rotation.name() + "'");
-                }
-            });
-
-            if (records.isEmpty()) {
-                Record record = nameService.createCname(RecordName.from(dnsName), rotationName);
-                log.info("Registered mapping as record  '" + record + "'");
-            }
-        } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to register CNAME", e);
-        }
+    /** Register a CNAME record in DNS */
+    private void registerCname(String name, String targetName) {
+        controller.nameServiceForwarder().createCname(RecordName.from(name), RecordData.fqdn(targetName), Priority.normal);
     }
 
     /** Returns the endpoints of the deployment, or an empty list if the request fails */

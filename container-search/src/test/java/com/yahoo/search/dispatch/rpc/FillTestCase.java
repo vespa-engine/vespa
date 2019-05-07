@@ -22,7 +22,6 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-
 /**
  * Tests using a dispatcher to fill a result
  *
@@ -38,7 +37,7 @@ public class FillTestCase {
         nodes.put(0, client.createConnection("host0", 123));
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
-        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
         RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
@@ -75,7 +74,7 @@ public class FillTestCase {
         nodes.put(0, client.createConnection("host0", 123));
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
-        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
         RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
@@ -90,7 +89,7 @@ public class FillTestCase {
         client.setDocsumReponse("host2", 1, "summaryClass1", map("field1", "s.2.1", "field2", 1));
         client.setDocsumReponse("host1", 2, "summaryClass1", new HashMap<>());
         client.setDocsumReponse("host2", 3, "summaryClass1", map("field1", "s.2.3", "field2", 3));
-        client.setDocsumReponse("host0", 4, "summaryClass1",new HashMap<>());
+        client.setDocsumReponse("host0", 4, "summaryClass1", new HashMap<>());
 
         factory.createFillInvoker(db()).fill(result, "summaryClass1");
 
@@ -115,7 +114,7 @@ public class FillTestCase {
 
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
-        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
         RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
@@ -133,14 +132,13 @@ public class FillTestCase {
 
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
-        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
         RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
 
         Query query = new Query();
         Result result = new Result(query);
         result.hits().add(createHit(0, 0));
         result.hits().add(createHit(1, 1));
-
 
         factory.createFillInvoker(db()).fill(result, "summaryClass1");
 
@@ -151,8 +149,7 @@ public class FillTestCase {
         List<DocsumField> fields = new ArrayList<>();
         fields.add(DocsumField.create("field1", "string"));
         fields.add(DocsumField.create("field2", "int64"));
-        DocsumDefinitionSet docsums = new DocsumDefinitionSet(Collections.singleton(new DocsumDefinition("summaryClass1",
-                                                                                                         fields)));
+        DocsumDefinitionSet docsums = new DocsumDefinitionSet(Collections.singleton(new DocsumDefinition("summaryClass1", fields)));
         return new DocumentDatabase("default", docsums, Collections.emptySet());
     }
 

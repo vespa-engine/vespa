@@ -9,16 +9,16 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
@@ -199,9 +199,10 @@ public class Application {
         return rotation;
     }
 
-    /** Returns the global rotation dns name, if present */
-    public Optional<GlobalDnsName> globalDnsName(SystemName system) {
-        return rotation.map(ignored -> new GlobalDnsName(id, system));
+    /** Returns the default global endpoints for this in given system */
+    public EndpointList endpointsIn(SystemName system) {
+        if (rotation.isEmpty()) return EndpointList.EMPTY;
+        return EndpointList.defaultGlobal(id, system);
     }
 
     public Optional<String> pemDeployKey() { return pemDeployKey; }

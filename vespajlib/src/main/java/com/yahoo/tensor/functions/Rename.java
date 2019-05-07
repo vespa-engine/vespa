@@ -75,7 +75,7 @@ public class Rename extends PrimitiveTensorFunction {
     }
 
     private TensorType type(TensorType type) {
-        TensorType.Builder builder = new TensorType.Builder();
+        TensorType.Builder builder = new TensorType.Builder(type.valueType());
         for (TensorType.Dimension dimension : type.dimensions())
             builder.dimension(dimension.withName(fromToMap.getOrDefault(dimension.name(), dimension.name())));
         return builder.build();

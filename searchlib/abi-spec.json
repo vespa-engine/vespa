@@ -886,6 +886,7 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.LambdaFunctionNode lambdaFunction()",
       "public final com.yahoo.tensor.functions.Reduce$Aggregator tensorReduceAggregator()",
       "public final com.yahoo.tensor.TensorType tensorTypeArgument()",
+      "public final com.yahoo.tensor.TensorType$Value optionalTensorValueTypeParameter()",
       "public final void tensorTypeDimension(com.yahoo.tensor.TensorType$Builder)",
       "public final java.lang.String tensorFunctionName()",
       "public final com.yahoo.searchlib.rankingexpression.rule.Function unaryFunctionName()",
@@ -1381,7 +1382,7 @@
       "public void <init>(java.util.Map)",
       "public void <init>(java.util.Map, java.util.Map)",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction getFunction(java.lang.String)",
-      "protected java.util.Map functions()",
+      "protected final com.google.common.collect.ImmutableMap functions()",
       "public java.lang.String getBinding(java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
     ],

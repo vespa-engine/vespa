@@ -453,10 +453,9 @@ public class ConvertedModel {
      */
     // TODO: determine when this is not necessary!
     private static ExpressionNode expandBatchDimensionsAtOutput(ExpressionNode node, TensorType before, TensorType after) {
-        if (after.equals(before)) {
-            return node;
-        }
-        TensorType.Builder typeBuilder = new TensorType.Builder();
+        if (after.equals(before)) return node;
+
+        TensorType.Builder typeBuilder = new TensorType.Builder(after.valueType());
         for (TensorType.Dimension dimension : before.dimensions()) {
             if (dimension.size().orElse(-1L) == 1 && !after.dimensionNames().contains(dimension.name())) {
                 typeBuilder.indexed(dimension.name(), 1);

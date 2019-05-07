@@ -2,10 +2,7 @@
 package com.yahoo.feedapi;
 
 import com.yahoo.document.Document;
-import com.yahoo.documentapi.VisitorParameters;
-import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
@@ -24,95 +21,39 @@ public class DummySessionFactory implements SessionFactory {
     }
 
     public final List<Message> messages;
-    private boolean autoReply = false;
-    private ReplyFactory autoReplyFactory = null;
-    private Error autoError;
-    private int sessionsCreated = 0;
-    OutputStream output = null;
+    private boolean autoReply;
+    private OutputStream output = null;
 
-    protected DummySessionFactory() {
-        messages = new ArrayList<>();
-    }
-
-    public static DummySessionFactory createDefault() {
-        return new DummySessionFactory();
-    }
-
-    protected DummySessionFactory(boolean autoReply) {
+    private DummySessionFactory(boolean autoReply) {
         this.autoReply = autoReply;
         messages = new ArrayList<>();
-    }
-
-    protected DummySessionFactory(ReplyFactory autoReplyFactory) {
-        this.autoReply = true;
-        this.autoReplyFactory = autoReplyFactory;
-        messages = new ArrayList<>();
-    }
-
-    public static DummySessionFactory createWithAutoReplyFactory(ReplyFactory autoReplyFactory) {
-        return new DummySessionFactory(autoReplyFactory);
-    }
-
-    protected DummySessionFactory(Error e) {
-        autoReply = true;
-        this.autoError = e;
-        messages = new ArrayList<>();
-    }
-
-    public static DummySessionFactory createWithErrorAutoReply(Error e) {
-        return new DummySessionFactory(e);
     }
 
     public static DummySessionFactory createWithAutoReply() {
         return new DummySessionFactory(true);
     }
 
-    public DummySessionFactory(Error e, OutputStream out) {
+    public DummySessionFactory(OutputStream out) {
         messages = null;
         autoReply = true;
         output = out;
     }
 
-    public int sessionsCreated() {
-        return sessionsCreated;
-    }
-    void add(Message m) {
+    private void add(Message m) {
         if (messages != null) {
             messages.add(m);
         }
-
     }
 
     @Override
-    public SendSession createSendSession(ReplyHandler r, Metric metric) {
-        ++sessionsCreated;
-
+    public SendSession createSendSession(ReplyHandler r) {
         if (output != null) {
             return new DumpDocuments(output, r, this);
         }
         if (autoReply) {
-            return new AutoReplySession(r, autoReplyFactory, autoError, this);
+            return new AutoReplySession(r, null, null, this);
         }
         return new DummySession(r, this);
-    }
-
-    @Override
-    public VisitorSession createVisitorSession(VisitorParameters p) {
-        return null;
-    }
-
-    public void sendReply(Message m, Error error) {
-        MyContext ctxt = (MyContext) m.getContext();
-
-        Reply r = new EmptyReply();
-        r.setMessage(m);
-        r.setContext(ctxt.oldContext);
-
-        if (error != null) {
-            r.addError(error);
-        }
-
-        ctxt.handler.handleReply(r);
     }
 
     private class MyContext {
@@ -132,7 +73,7 @@ public class DummySessionFactory implements SessionFactory {
         Error e;
         DummySessionFactory owner;
 
-        public AutoReplySession(ReplyHandler handler, ReplyFactory replyFactory,
+        AutoReplySession(ReplyHandler handler, ReplyFactory replyFactory,
                                 Error e, DummySessionFactory owner) {
             this.handler = handler;
             this.replyFactory = replyFactory;
@@ -145,7 +86,7 @@ public class DummySessionFactory implements SessionFactory {
         }
 
         @Override
-        protected Result onSend(Message m, boolean blockIfQueueFull) throws InterruptedException {
+        protected Result onSend(Message m, boolean blockIfQueueFull) {
             owner.add(m);
             handleMessage(m);
             Reply r;
@@ -174,7 +115,7 @@ public class DummySessionFactory implements SessionFactory {
 
     private class DumpDocuments extends AutoReplySession {
         final OutputStream out;
-        public DumpDocuments(OutputStream out, ReplyHandler r, DummySessionFactory factory) {
+        DumpDocuments(OutputStream out, ReplyHandler r, DummySessionFactory factory) {
             super(r, null, null, factory);
             this.out = out;
         }
@@ -191,13 +132,13 @@ public class DummySessionFactory implements SessionFactory {
         ReplyHandler handler;
         DummySessionFactory owner;
 
-        public DummySession(ReplyHandler handler, DummySessionFactory owner) {
+        DummySession(ReplyHandler handler, DummySessionFactory owner) {
             this.handler = handler;
             this.owner = owner;
         }
 
         @Override
-        protected Result onSend(Message m, boolean blockIfQueueFull) throws InterruptedException {
+        protected Result onSend(Message m, boolean blockIfQueueFull) {
             m.setContext(new MyContext(handler, m.getContext()));
             owner.add(m);
             return Result.ACCEPTED;

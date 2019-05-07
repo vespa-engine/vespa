@@ -6,8 +6,9 @@ namespace search::index {
 
 IndexBuilder::IndexBuilder(const Schema &schema)
     : _schema(schema)
-{ }
+{
+}
 
-IndexBuilder::~IndexBuilder() { }
+IndexBuilder::~IndexBuilder() = default;
 
 }

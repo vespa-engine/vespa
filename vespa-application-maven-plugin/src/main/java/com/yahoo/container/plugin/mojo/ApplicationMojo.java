@@ -4,7 +4,6 @@ package com.yahoo.container.plugin.mojo;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -13,7 +12,6 @@ import org.apache.maven.project.MavenProject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,8 +24,11 @@ import java.util.List;
 @Mojo(name = "packageApplication", defaultPhase = LifecyclePhase.PACKAGE, threadSafe = true)
 public class ApplicationMojo extends AbstractMojo {
 
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
+
+    @Parameter(property = "vespaversion")
+    private String vespaversion;
 
     @Parameter(defaultValue = "src/main/application")
     private String sourceDir;
@@ -36,7 +37,7 @@ public class ApplicationMojo extends AbstractMojo {
     private String destinationDir;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         File applicationPackage = new File(project.getBasedir(), sourceDir);
         File applicationDestination = new File(project.getBasedir(), destinationDir);
         copyApplicationPackage(applicationPackage, applicationDestination);
@@ -47,20 +48,22 @@ public class ApplicationMojo extends AbstractMojo {
         copyBundlesForSubModules(componentsDir);
 
         try {
-            Compression.zipDirectory(applicationDestination);
+            Compression.zipDirectory(applicationDestination, "");
         } catch (Exception e) {
             throw new MojoExecutionException("Failed zipping application.", e);
         }
     }
 
-    /** Writes meta data about this package if the destination directory exists, and the "vespaversion" property is set. */
+    /** Writes meta data about this package if the destination directory exists. */
     private void addBuildMetaData(File applicationDestination) throws MojoExecutionException {
-        String compileVersion = project.getProperties().getProperty("vespaversion");
-        if ( ! applicationDestination.exists() || compileVersion == null)
+        if ( ! applicationDestination.exists())
             return;
 
+        if (vespaversion == null) // Get the build version of the parent project unless specifically set.
+            vespaversion = project.getProperties().getProperty("vespaversion");
+
         String metaData = String.format("{\"compileVersion\": \"%s\",\n \"buildTime\": %d}",
-                                        compileVersion,
+                                        vespaversion,
                                         System.currentTimeMillis());
         try {
             Files.write(applicationDestination.toPath().resolve("build-meta.json"),
@@ -103,13 +106,9 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyModuleBundles(File moduleDir, File componentsDir) throws MojoExecutionException {
         File moduleTargetDir = new File(moduleDir, "target");
         if (moduleTargetDir.exists()) {
-            File[] bundles = moduleTargetDir.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith("-deploy.jar") || name.endsWith("-jar-with-dependencies.jar");
-                }
-            });
-
+            File[] bundles = moduleTargetDir.listFiles((dir, name) -> name.endsWith("-deploy.jar") ||
+                                                                      name.endsWith("-jar-with-dependencies.jar"));
+            if (bundles == null) return;
             for (File bundle : bundles) {
                 try {
                     copyFile(bundle, new File(componentsDir, bundle.getName()));
@@ -123,14 +122,12 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyFile(File source, File destination) throws IOException {
         try (FileInputStream sourceStream = new FileInputStream(source);
              FileOutputStream destinationStream = new FileOutputStream(destination)) {
-            Compression.copyBytes(sourceStream, destinationStream);
+            sourceStream.transferTo(destinationStream);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> List<T> emptyListIfNull(List<T> modules) {
-        return modules == null ?
-                Collections.emptyList():
-                modules;
+    private static <T> List<T> emptyListIfNull(List<T> modules) {
+        return modules == null ? Collections.emptyList(): modules;
     }
+
 }

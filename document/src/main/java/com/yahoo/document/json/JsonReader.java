@@ -4,7 +4,6 @@ package com.yahoo.document.json;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.google.common.annotations.Beta;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentType;
@@ -50,7 +49,7 @@ public class JsonReader {
             parser = parserFactory.createParser(input);
         } catch (IOException e) {
             state = END_OF_FEED;
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -62,13 +61,13 @@ public class JsonReader {
      */
     public DocumentOperation readSingleDocument(DocumentParser.SupportedOperation operationType, String docIdString) {
         DocumentId docId = new DocumentId(docIdString);
-        final DocumentParseInfo documentParseInfo;
+        DocumentParseInfo documentParseInfo;
         try {
             DocumentParser documentParser = new DocumentParser(parser);
             documentParseInfo = documentParser.parse(Optional.of(docId)).get();
         } catch (IOException e) {
             state = END_OF_FEED;
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
         documentParseInfo.operationType = operationType;
         VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader();
@@ -97,9 +96,9 @@ public class JsonReader {
         } catch (IOException r) {
             // Jackson is not able to recover from structural parse errors
             state = END_OF_FEED;
-            throw new RuntimeException(r);
+            throw new IllegalArgumentException(r);
         }
-        if (! documentParseInfo.isPresent()) {
+        if ( ! documentParseInfo.isPresent()) {
             state = END_OF_FEED;
             return null;
         }
@@ -118,9 +117,8 @@ public class JsonReader {
 
     private static DocumentType getDocumentTypeFromString(String docTypeString, DocumentTypeManager typeManager) {
         final DocumentType docType = typeManager.getDocumentType(docTypeString);
-        if (docType == null) {
+        if (docType == null)
             throw new IllegalArgumentException(String.format("Document type %s does not exist", docTypeString));
-        }
         return docType;
     }
 
@@ -130,7 +128,7 @@ public class JsonReader {
         } catch (IOException e) {
             // Jackson is not able to recover from structural parse errors
             state = END_OF_FEED;
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 }

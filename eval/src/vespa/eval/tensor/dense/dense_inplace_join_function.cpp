@@ -41,7 +41,12 @@ void my_inplace_join_op(eval::InterpretedFunction::State &state, uint64_t param)
 }
 
 bool sameShapeConcreteDenseTensors(const ValueType &a, const ValueType &b) {
-    return (a.is_dense() && !a.is_abstract() && (a == b));
+    if (a.cell_type() != ValueType::CellType::DOUBLE ||
+        b.cell_type() != ValueType::CellType::DOUBLE)
+    {
+        return false; // non-double cell types not supported
+    }
+    return (a.is_dense() && (a == b));
 }
 
 } // namespace vespalib::tensor::<unnamed>

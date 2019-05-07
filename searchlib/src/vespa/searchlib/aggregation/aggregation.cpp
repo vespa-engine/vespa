@@ -17,6 +17,17 @@ bool isReady(const ResultNode *myRes, const ResultNode &ref) {
     return (myRes != 0 && myRes->getClass().id() == ref.getClass().id());
 }
 
+template<typename Wanted, typename Fallback>
+std::unique_ptr<Wanted>
+createAndEnsureWanted(const ResultNode & result) {
+    std::unique_ptr<ResultNode> tmp = result.createBaseType();
+    if (dynamic_cast<Wanted *>(tmp.get()) != nullptr) {
+        return std::unique_ptr<Wanted>(static_cast<Wanted *>(tmp.release()));
+    } else {
+        return std::make_unique<Fallback>();
+    }
+}
+
 } // namespace search::aggregation::<unnamed>
 
 
@@ -38,14 +49,14 @@ IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult, AggregationResult)
 IMPLEMENT_AGGREGATIONRESULT(StandardDeviationAggregationResult, AggregationResult);
 
 AggregationResult::AggregationResult() :
-    _expressionTree(new ExpressionTree()),
+    _expressionTree(std::make_shared<ExpressionTree>()),
     _tag(-1)
 { }
 
 AggregationResult::AggregationResult(const AggregationResult &) = default;
 AggregationResult & AggregationResult::operator = (const AggregationResult &) = default;
 
-AggregationResult::~AggregationResult() { }
+AggregationResult::~AggregationResult() = default;
 
 void
 AggregationResult::aggregate(const document::Document & doc, HitRank rank) {
@@ -66,14 +77,16 @@ AggregationResult::aggregate(DocId docId, HitRank rank) {
     }
 }
 
-bool AggregationResult::Configure::check(const vespalib::Identifiable &obj) const
+bool
+AggregationResult::Configure::check(const vespalib::Identifiable &obj) const
 {
     return obj.inherits(AggregationResult::classId);
 }
 
-void AggregationResult::Configure::execute(vespalib::Identifiable &obj)
+void
+AggregationResult::Configure::execute(vespalib::Identifiable &obj)
 {
-    AggregationResult & a(static_cast<AggregationResult &>(obj));
+    auto & a(static_cast<AggregationResult &>(obj));
     a.prepare();
 }
 
@@ -85,37 +98,40 @@ AggregationResult::setExpression(ExpressionNode::UP expr)
     return *this;
 }
 
-void CountAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
+void
+CountAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     (void) result;
     (void) useForInit;
 }
 
-void SumAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
+void
+SumAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     if (isReady(_sum.get(), result)) {
         return;
     }
-    _sum.reset(dynamic_cast<SingleResultNode *>(result.createBaseType().release()));
+    _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     if ( useForInit ) {
         _sum->set(result);
     }
 }
 
-MinAggregationResult::MinAggregationResult() : AggregationResult() { }
+MinAggregationResult::MinAggregationResult() = default;
 MinAggregationResult::MinAggregationResult(const ResultNode::CP &result)
     : AggregationResult()
 {
     setResult(result);
 }
-MinAggregationResult::~MinAggregationResult() { }
+MinAggregationResult::~MinAggregationResult() = default;
 
-void MinAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
+void
+MinAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     if (isReady(_min.get(), result)) {
         return;
     }
-    _min.reset(dynamic_cast<SingleResultNode *>(result.createBaseType().release()));
+    _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
     if ( !useForInit ) {
         _min->setMax();
     } else {
@@ -123,19 +139,20 @@ void MinAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     }
 }
 
-MaxAggregationResult::MaxAggregationResult() : AggregationResult(), _max() { }
+MaxAggregationResult::MaxAggregationResult() = default;
 MaxAggregationResult::MaxAggregationResult(const SingleResultNode & max)
     : AggregationResult(),
       _max(max)
 { }
-MaxAggregationResult::~MaxAggregationResult() { }
+MaxAggregationResult::~MaxAggregationResult() = default;
 
-void MaxAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
+void
+MaxAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     if (isReady(_max.get(), result)) {
         return;
     }
-    _max.reset(dynamic_cast<SingleResultNode *>(result.createBaseType().release()));
+    _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
     if ( !useForInit ) {
         _max->setMin();  ///Should figure out how to set min too for float.
     } else {
@@ -143,29 +160,33 @@ void MaxAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
     }
 }
 
-void AverageAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
+void
+AverageAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     if (isReady(_sum.get(), result)) {
         return;
     }
-    _sum.reset(dynamic_cast<NumericResultNode *>(result.createBaseType().release()));
+    _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     if ( useForInit ) {
         _sum->set(result);
     }
 }
 
-void XorAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
+void
+XorAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
     (void) result;
     (void) useForInit;
 }
 
-void SumAggregationResult::onMerge(const AggregationResult & b)
+void
+SumAggregationResult::onMerge(const AggregationResult & b)
 {
     _sum->add(*static_cast<const SumAggregationResult &>(b)._sum);
 }
 
-void SumAggregationResult::onAggregate(const ResultNode & result)
+void
+SumAggregationResult::onAggregate(const ResultNode & result)
 {
     if (result.isMultiValue()) {
         static_cast<const ResultNodeVector &>(result).flattenSum(*_sum);
@@ -174,17 +195,20 @@ void SumAggregationResult::onAggregate(const ResultNode & result)
     }
 }
 
-void SumAggregationResult::onReset()
+void
+SumAggregationResult::onReset()
 {
-    _sum.reset(static_cast<SingleResultNode *>(_sum->getClass().create()));
+    _sum.reset(static_cast<NumericResultNode *>(_sum->getClass().create()));
 }
 
-void CountAggregationResult::onMerge(const AggregationResult & b)
+void
+CountAggregationResult::onMerge(const AggregationResult & b)
 {
     _count.add(static_cast<const CountAggregationResult &>(b)._count);
 }
 
-void CountAggregationResult::onAggregate(const ResultNode & result)
+void
+CountAggregationResult::onAggregate(const ResultNode & result)
 {
     if (result.isMultiValue()) {
         _count += static_cast<const ResultNodeVector &>(result).size();
@@ -193,17 +217,20 @@ void CountAggregationResult::onAggregate(const ResultNode & result)
     }
 }
 
-void CountAggregationResult::onReset()
+void
+CountAggregationResult::onReset()
 {
     setCount(0);
 }
 
-void MaxAggregationResult::onMerge(const AggregationResult & b)
+void
+MaxAggregationResult::onMerge(const AggregationResult & b)
 {
     _max->max(*static_cast<const MaxAggregationResult &>(b)._max);
 }
 
-void MaxAggregationResult::onAggregate(const ResultNode & result)
+void
+MaxAggregationResult::onAggregate(const ResultNode & result)
 {
     if (result.isMultiValue()) {
         static_cast<const ResultNodeVector &>(result).flattenMax(*_max);
@@ -212,18 +239,21 @@ void MaxAggregationResult::onAggregate(const ResultNode & result)
     }
 }
 
-void MaxAggregationResult::onReset()
+void
+MaxAggregationResult::onReset()
 {
     _max.reset(static_cast<SingleResultNode *>(_max->getClass().create()));
     _max->setMin();
 }
 
-void MinAggregationResult::onMerge(const AggregationResult & b)
+void
+MinAggregationResult::onMerge(const AggregationResult & b)
 {
     _min->min(*static_cast<const MinAggregationResult &>(b)._min);
 }
 
-void MinAggregationResult::onAggregate(const ResultNode & result)
+void
+MinAggregationResult::onAggregate(const ResultNode & result)
 {
     if (result.isMultiValue()) {
         static_cast<const ResultNodeVector &>(result).flattenMin(*_min);
@@ -232,22 +262,25 @@ void MinAggregationResult::onAggregate(const ResultNode & result)
     }
 }
 
-void MinAggregationResult::onReset()
+void
+MinAggregationResult::onReset()
 {
     _min.reset(static_cast<SingleResultNode *>(_min->getClass().create()));
     _min->setMax();
 }
 
-AverageAggregationResult::~AverageAggregationResult() {}
+AverageAggregationResult::~AverageAggregationResult() = default;
 
-void AverageAggregationResult::onMerge(const AggregationResult & b)
+void
+AverageAggregationResult::onMerge(const AggregationResult & b)
 {
-    const AverageAggregationResult & avg(static_cast<const AverageAggregationResult &>(b));
+    const auto & avg(static_cast<const AverageAggregationResult &>(b));
     _sum->add(*avg._sum);
     _count += avg._count;
 }
 
-void AverageAggregationResult::onAggregate(const ResultNode & result)
+void
+AverageAggregationResult::onAggregate(const ResultNode & result)
 {
     if (result.isMultiValue()) {
         static_cast<const ResultNodeVector &>(result).flattenSum(*_sum);
@@ -258,13 +291,15 @@ void AverageAggregationResult::onAggregate(const ResultNode & result)
     }
 }
 
-void AverageAggregationResult::onReset()
+void
+AverageAggregationResult::onReset()
 {
     _count = 0;
     _sum.reset(static_cast<NumericResultNode *>(_sum->getClass().create()));
 }
 
-const NumericResultNode & AverageAggregationResult::getAverage() const
+const NumericResultNode &
+AverageAggregationResult::getAverage() const
 {
     _averageScratchPad = _sum;
     if ( _count > 0 ) {
@@ -275,12 +310,14 @@ const NumericResultNode & AverageAggregationResult::getAverage() const
     return *_averageScratchPad;
 }
 
-void XorAggregationResult::onMerge(const AggregationResult & b)
+void
+XorAggregationResult::onMerge(const AggregationResult & b)
 {
     _xor.xorOp(static_cast<const XorAggregationResult &>(b)._xor);
 }
 
-void XorAggregationResult::onAggregate(const ResultNode & result)
+void
+XorAggregationResult::onAggregate(const ResultNode & result)
 {
     if (result.isMultiValue()) {
         for (size_t i(0), m(static_cast<const ResultNodeVector &>(result).size()); i < m; i++) {
@@ -291,21 +328,24 @@ void XorAggregationResult::onAggregate(const ResultNode & result)
     }
 }
 
-void XorAggregationResult::onReset()
+void
+XorAggregationResult::onReset()
 {
     _xor = 0;
 }
 
 static FieldBase _G_tagField("tag");
 
-Serializer & AggregationResult::onSerialize(Serializer & os) const
+Serializer &
+AggregationResult::onSerialize(Serializer & os) const
 {
     return (os << *_expressionTree).put(_G_tagField, _tag);
 }
 
-Deserializer & AggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+AggregationResult::onDeserialize(Deserializer & is)
 {
-    _expressionTree.reset(new ExpressionTree());
+    _expressionTree = std::make_shared<ExpressionTree>();
     return (is >> *_expressionTree).get(_G_tagField, _tag);
 }
 
@@ -315,18 +355,21 @@ AggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "expression", _expressionTree);
 }
 
-void AggregationResult::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
+void
+AggregationResult::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
 {
     _expressionTree->select(predicate,operation);
 }
 
-Serializer & CountAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+CountAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     return _count.serialize(os);
 }
 
-Deserializer & CountAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+CountAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     return _count.deserialize(is);
@@ -339,27 +382,27 @@ CountAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "count", _count);
 }
 
-Serializer & SumAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+SumAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     return os << _sum;
 }
 
-Deserializer & SumAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+SumAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     return is >> _sum;
 }
 
-SumAggregationResult::SumAggregationResult()
-    : AggregationResult(),
-      _sum()
-{ }
-SumAggregationResult::SumAggregationResult(SingleResultNode::UP sum)
+SumAggregationResult::SumAggregationResult() = default;
+
+SumAggregationResult::SumAggregationResult(NumericResultNode::UP sum)
     : AggregationResult(),
       _sum(sum.release())
 { }
-SumAggregationResult::~SumAggregationResult() {}
+SumAggregationResult::~SumAggregationResult() = default;
 
 void
 SumAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -368,13 +411,15 @@ SumAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "sum", _sum);
 }
 
-Serializer & MinAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+MinAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     return os << _min;
 }
 
-Deserializer & MinAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+MinAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     return is >> _min;
@@ -387,13 +432,15 @@ MinAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "min", _min);
 }
 
-Serializer & MaxAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+MaxAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     return os << _max;
 }
 
-Deserializer & MaxAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+MaxAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     return is >> _max;
@@ -406,16 +453,19 @@ MaxAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "max", _max);
 }
 
-static FieldBase _G_countField("count");
-static FieldBase _G_sumField("sum");
+namespace {
+    FieldBase _G_countField("count");
+}
 
-Serializer & AverageAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+AverageAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     return os.put(_G_countField, _count) << _sum;
 }
 
-Deserializer & AverageAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+AverageAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     return is.get(_G_countField, _count) >> _sum;
@@ -429,13 +479,15 @@ AverageAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "sum", _sum);
 }
 
-Serializer & XorAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+XorAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     return _xor.serialize(os);
 }
 
-Deserializer & XorAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+XorAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     return _xor.deserialize(is);
@@ -451,7 +503,8 @@ XorAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
 namespace {
 // Calculates the sum of all buckets.
 template <int BucketBits, typename HashT>
-int calculateRank(const Sketch<BucketBits, HashT> &sketch) {
+int
+calculateRank(const Sketch<BucketBits, HashT> &sketch) {
     if (sketch.getClassId() == SparseSketch<BucketBits, HashT>::classId) {
         return static_cast<const SparseSketch<BucketBits, HashT>&>(sketch)
             .getSize();
@@ -465,13 +518,14 @@ int calculateRank(const Sketch<BucketBits, HashT> &sketch) {
 }
 }  // namespace
 
-void ExpressionCountAggregationResult::onMerge(const AggregationResult &r) {
-    const ExpressionCountAggregationResult &result =
-        Identifiable::cast<const ExpressionCountAggregationResult &>(r);
+void
+ExpressionCountAggregationResult::onMerge(const AggregationResult &r) {
+    const auto & result = Identifiable::cast<const ExpressionCountAggregationResult &>(r);
     _hll.merge(result._hll);
     _rank.set(calculateRank(_hll.getSketch()));
 }
-void ExpressionCountAggregationResult::onAggregate(const ResultNode &result) {
+void
+ExpressionCountAggregationResult::onAggregate(const ResultNode &result) {
     size_t hash = result.hash();
     const unsigned int seed = 42;
     hash = XXH32(&hash, sizeof(hash), seed);
@@ -479,36 +533,38 @@ void ExpressionCountAggregationResult::onAggregate(const ResultNode &result) {
     // almost the same ordering as the actual estimates.
     _rank += _hll.aggregate(hash);
 }
-void ExpressionCountAggregationResult::onReset() {
+void
+ExpressionCountAggregationResult::onReset() {
     _hll = HyperLogLog<PRECISION>();
     _rank.set(0);
 }
-Serializer &ExpressionCountAggregationResult::onSerialize(
-        Serializer &os) const {
+Serializer &
+ExpressionCountAggregationResult::onSerialize(Serializer &os) const {
     AggregationResult::onSerialize(os);
     _hll.serialize(os);
     return os;
 }
-Deserializer &ExpressionCountAggregationResult::onDeserialize(
-        Deserializer &is) {
+Deserializer &
+ExpressionCountAggregationResult::onDeserialize(Deserializer &is) {
     AggregationResult::onDeserialize(is);
     _hll.deserialize(is);
     _rank.set(calculateRank(_hll.getSketch()));
     return is;
 }
 
-ExpressionCountAggregationResult::ExpressionCountAggregationResult() : AggregationResult(), _hll() { }
-ExpressionCountAggregationResult::~ExpressionCountAggregationResult() {}
+ExpressionCountAggregationResult::ExpressionCountAggregationResult() = default;
+ExpressionCountAggregationResult::~ExpressionCountAggregationResult() = default;
 
 StandardDeviationAggregationResult::StandardDeviationAggregationResult()
-        : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
+    : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
 {
     _stdDevScratchPad.reset(new expression::FloatResultNode());
 }
 
-StandardDeviationAggregationResult::~StandardDeviationAggregationResult() {}
+StandardDeviationAggregationResult::~StandardDeviationAggregationResult() = default;
 
-const NumericResultNode& StandardDeviationAggregationResult::getStandardDeviation() const noexcept
+const NumericResultNode&
+StandardDeviationAggregationResult::getStandardDeviation() const noexcept
 {
     if (_count == 0) {
         _stdDevScratchPad->set(Int64ResultNode(0));
@@ -520,15 +576,16 @@ const NumericResultNode& StandardDeviationAggregationResult::getStandardDeviatio
     return *_stdDevScratchPad;
 }
 
-void StandardDeviationAggregationResult::onMerge(const AggregationResult &r) {
-    const StandardDeviationAggregationResult &result =
-            Identifiable::cast<const StandardDeviationAggregationResult &>(r);
+void
+StandardDeviationAggregationResult::onMerge(const AggregationResult &r) {
+    const auto & result = Identifiable::cast<const StandardDeviationAggregationResult &>(r);
     _count += result._count;
     _sum.add(result._sum);
     _sumOfSquared.add(result._sumOfSquared);
 }
 
-void StandardDeviationAggregationResult::onAggregate(const ResultNode &result) {
+void
+StandardDeviationAggregationResult::onAggregate(const ResultNode &result) {
     if (result.isMultiValue()) {
         static_cast<const ResultNodeVector &>(result).flattenSum(_sum);
         static_cast<const ResultNodeVector &>(result).flattenSumOfSquared(_sumOfSquared);
@@ -542,14 +599,16 @@ void StandardDeviationAggregationResult::onAggregate(const ResultNode &result) {
     }
 }
 
-void StandardDeviationAggregationResult::onReset()
+void
+StandardDeviationAggregationResult::onReset()
 {
     _count = 0;
     _sum.set(0.0);
     _sumOfSquared.set(0.0);
 }
 
-Serializer & StandardDeviationAggregationResult::onSerialize(Serializer & os) const
+Serializer &
+StandardDeviationAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     double sum = _sum.getFloat();
@@ -557,7 +616,8 @@ Serializer & StandardDeviationAggregationResult::onSerialize(Serializer & os) co
     return os << _count << sum << sumOfSquared;
 }
 
-Deserializer & StandardDeviationAggregationResult::onDeserialize(Deserializer & is)
+Deserializer &
+StandardDeviationAggregationResult::onDeserialize(Deserializer & is)
 {
     AggregationResult::onDeserialize(is);
     double sum;
@@ -568,7 +628,8 @@ Deserializer & StandardDeviationAggregationResult::onDeserialize(Deserializer & 
     return r;
 }
 
-void StandardDeviationAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
+void
+StandardDeviationAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AggregationResult::visitMembers(visitor);
     visit(visitor, "count", _count);

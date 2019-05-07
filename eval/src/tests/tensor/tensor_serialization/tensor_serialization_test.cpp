@@ -11,6 +11,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <ostream>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 
 using namespace vespalib::tensor;
 using vespalib::nbostream;
@@ -32,16 +33,13 @@ std::ostream &operator<<(std::ostream &out, const std::vector<uint8_t> &rhs)
 
 }
 
-namespace vespalib {
-
-namespace tensor {
+namespace vespalib::tensor {
 
 static bool operator==(const Tensor &lhs, const Tensor &rhs)
 {
     return lhs.equals(rhs);
 }
 
-}
 }
 
 template <class BuilderType>
@@ -69,7 +67,7 @@ struct Fixture
     Fixture() : _builder() {}
 
     Tensor::UP createTensor(const TensorCells &cells) {
-        return vespalib::tensor::TensorFactory::create(cells, _builder);
+        return TensorFactory::create(cells, _builder);
     }
     Tensor::UP createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
         return TensorFactory::create(cells, dimensions, _builder);
@@ -84,7 +82,7 @@ struct Fixture
         auto formatId = wrapStream.getInt1_4Bytes();
         ASSERT_EQUAL(formatId, 1u); // sparse format
         SparseBinaryFormat::deserialize(wrapStream, builder);
-        EXPECT_TRUE(wrapStream.size() == 0);
+        EXPECT_TRUE(wrapStream.empty());
         auto ret = builder.build();
         checkDeserialize<BuilderType>(stream, *ret);
         stream.adjustReadPos(stream.size());
@@ -162,93 +160,129 @@ struct DenseFixture
         return ret;
     }
     void assertSerialized(const ExpBuffer &exp, const DenseTensorCells &rhs) {
+        assertSerialized(exp, SerializeFormat::DOUBLE, rhs);
+    }
+    template <typename T>
+    void assertCellsOnly(const ExpBuffer &exp, const DenseTensorView & rhs) {
+        nbostream a(&exp[0], exp.size());
+        std::vector<T> v;
+        TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(a, v);
+        EXPECT_EQUAL(v.size(), rhs.cellsRef().size());
+        for (size_t i(0); i < v.size(); i++) {
+            EXPECT_EQUAL(v[i], rhs.cellsRef()[i]);
+        }
+    }
+    void assertSerialized(const ExpBuffer &exp, SerializeFormat cellType, const DenseTensorCells &rhs) {
         Tensor::UP rhsTensor(createTensor(rhs));
         nbostream rhsStream;
-        serialize(rhsStream, *rhsTensor);
+        TypedBinaryFormat::serialize(rhsStream, *rhsTensor, cellType);
         EXPECT_EQUAL(exp, rhsStream);
         auto rhs2 = deserialize(rhsStream);
         EXPECT_EQUAL(*rhs2, *rhsTensor);
+
+        assertCellsOnly<float>(exp, dynamic_cast<const DenseTensorView &>(*rhs2));
+        assertCellsOnly<double>(exp, dynamic_cast<const DenseTensorView &>(*rhs2));
     }
 };
 
 
-TEST_F("test tensor serialization for DenseTensor", DenseFixture)
-{
-    TEST_DO(f.assertSerialized({        0x02, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00},
+TEST_F("test tensor serialization for DenseTensor", DenseFixture) {
+    TEST_DO(f.assertSerialized({0x02, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
                                {}));
-    TEST_DO(f.assertSerialized({        0x02, 0x01, 0x01, 0x78, 0x01,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00},
-                               { {{{"x",0}}, 0} }));
-    TEST_DO(f.assertSerialized({        0x02, 0x02, 0x01, 0x78, 0x01,
-                                        0x01, 0x79, 0x01,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00 },
-                               { {{{"x",0},{"y", 0}}, 0} }));
-    TEST_DO(f.assertSerialized({        0x02, 0x01, 0x01, 0x78, 0x02,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x40, 0x08, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00 },
-                               { {{{"x",1}}, 3} }));
-    TEST_DO(f.assertSerialized({        0x02, 0x02, 0x01, 0x78, 0x01,
-                                        0x01, 0x79, 0x01,
-                                        0x40, 0x08, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00 },
-                               { {{{"x",0},{"y",0}}, 3} }));
-    TEST_DO(f.assertSerialized({        0x02, 0x02, 0x01, 0x78, 0x02,
-                                        0x01, 0x79, 0x01,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x40, 0x08, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00 },
-                               { {{{"x",1},{"y",0}}, 3} }));
-    TEST_DO(f.assertSerialized({        0x02, 0x02, 0x01, 0x78, 0x01,
-                                        0x01, 0x79, 0x04,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x40, 0x08, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00 },
-                               { {{{"x",0},{"y",3}}, 3} }));
-    TEST_DO(f.assertSerialized({        0x02, 0x02, 0x01, 0x78, 0x03,
-                                        0x01, 0x79, 0x05,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x40, 0x08, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00 },
-                               { {{{"x",2}, {"y",4}}, 3} }));
+    TEST_DO(f.assertSerialized({0x02, 0x01, 0x01, 0x78, 0x01,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 0}}, 0}}));
+    TEST_DO(f.assertSerialized({0x02, 0x02, 0x01, 0x78, 0x01,
+                                0x01, 0x79, 0x01,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 0}, {"y", 0}}, 0}}));
+    TEST_DO(f.assertSerialized({0x02, 0x01, 0x01, 0x78, 0x02,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x40, 0x08, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 1}}, 3}}));
+    TEST_DO(f.assertSerialized({0x02, 0x02, 0x01, 0x78, 0x01,
+                                0x01, 0x79, 0x01,
+                                0x40, 0x08, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 0}, {"y", 0}}, 3}}));
+    TEST_DO(f.assertSerialized({0x02, 0x02, 0x01, 0x78, 0x02,
+                                0x01, 0x79, 0x01,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x40, 0x08, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 1}, {"y", 0}}, 3}}));
+    TEST_DO(f.assertSerialized({0x02, 0x02, 0x01, 0x78, 0x01,
+                                0x01, 0x79, 0x04,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x40, 0x08, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 0}, {"y", 3}}, 3}}));
+    TEST_DO(f.assertSerialized({0x02, 0x02, 0x01, 0x78, 0x03,
+                                0x01, 0x79, 0x05,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x40, 0x08, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00},
+                               {{{{"x", 2}, {"y", 4}}, 3}}));
+}
+
+TEST_F("test 'float' cells", DenseFixture) {
+    TEST_DO(f.assertSerialized({0x06, 0x01, 0x02, 0x01, 0x78, 0x03,
+                                0x01, 0x79, 0x05,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x40, 0x40, 0x00, 0x00 },
+                               SerializeFormat::FLOAT, { {{{"x",2}, {"y",4}}, 3} }));
 }
 
 

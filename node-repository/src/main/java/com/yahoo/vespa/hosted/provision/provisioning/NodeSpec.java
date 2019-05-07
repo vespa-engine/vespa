@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -26,13 +28,7 @@ public interface NodeSpec {
     boolean isExclusive();
 
     /** Returns whether the given flavor is compatible with this spec */
-    boolean isCompatible(Flavor flavor);
-
-    /** Returns whether the given flavor is exactly specified by this node spec */
-    boolean matchesExactly(Flavor flavor);
-
-    /** Returns whether this requests a non-stock flavor */
-    boolean specifiesNonStockFlavor();
+    boolean isCompatible(Flavor flavor, NodeFlavors flavors);
 
     /** Returns whether the given node count is sufficient to consider this spec fulfilled to the maximum amount */
     boolean saturatedBy(int count);
@@ -61,7 +57,7 @@ public interface NodeSpec {
      */
     Node assignRequestedFlavor(Node node);
 
-    static NodeSpec from(int nodeCount, Flavor flavor, boolean exclusive, boolean canFail) {
+    static NodeSpec from(int nodeCount, NodeResources flavor, boolean exclusive, boolean canFail) {
         return new CountNodeSpec(nodeCount, flavor, exclusive, canFail);
     }
 
@@ -73,20 +69,19 @@ public interface NodeSpec {
     class CountNodeSpec implements NodeSpec {
 
         private final int count;
-        private final Flavor requestedFlavor;
+        private final NodeResources requestedNodeResources;
         private final boolean exclusive;
         private final boolean canFail;
 
-        CountNodeSpec(int count, Flavor flavor, boolean exclusive, boolean canFail) {
+        CountNodeSpec(int count, NodeResources flavor, boolean exclusive, boolean canFail) {
             this.count = count;
-            this.requestedFlavor = Objects.requireNonNull(flavor, "A flavor must be specified");
+            this.requestedNodeResources = Objects.requireNonNull(flavor, "A flavor must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
         }
 
-        // TODO: Remove usage of this
-        public Flavor getFlavor() {
-            return requestedFlavor;
+        public NodeResources resources() {
+            return requestedNodeResources;
         }
 
         @Override
@@ -96,16 +91,17 @@ public interface NodeSpec {
         public NodeType type() { return NodeType.tenant; }
 
         @Override
-        public boolean isCompatible(Flavor flavor) {
-            if (flavor.satisfies(requestedFlavor)) return true;
+        public boolean isCompatible(Flavor flavor, NodeFlavors flavors) {
+            if (requestedNodeResources.allocateByLegacyName() && flavor.isConfigured()) {
+                if (flavor.satisfies(flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get())))
+                    return true;
+            }
+            else {
+                if (requestedNodeResources.equals(flavor.resources()))
+                    return true;
+            }
             return requestedFlavorCanBeAchievedByResizing(flavor);
         }
-
-        @Override
-        public boolean matchesExactly(Flavor flavor) { return flavor.equals(this.requestedFlavor); }
-
-        @Override
-        public boolean specifiesNonStockFlavor() { return ! requestedFlavor.isStock(); }
 
         @Override
         public boolean saturatedBy(int count) { return fulfilledBy(count); } // min=max for count specs
@@ -123,20 +119,19 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) {
-            return new CountNodeSpec(count/divisor, requestedFlavor, exclusive, canFail);
+            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail);
         }
 
         @Override
         public Node assignRequestedFlavor(Node node) {
-            // Docker nodes can change flavor in place
-            if (requestedFlavorCanBeAchievedByResizing(node.flavor()))
-                return node.with(requestedFlavor);
-
+            // Docker nodes can change flavor in place - disabled - see below
+            // if (requestedFlavorCanBeAchievedByResizing(node.flavor()))
+            //    return node.with(requestedFlavor);
             return node;
         }
 
         @Override
-        public String toString() { return "request for " + count + " nodes of " + requestedFlavor; }
+        public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
 
         /** Docker nodes can be downsized in place */
         private boolean requestedFlavorCanBeAchievedByResizing(Flavor flavor) {
@@ -164,13 +159,7 @@ public interface NodeSpec {
         public boolean isExclusive() { return false; }
 
         @Override
-        public boolean isCompatible(Flavor flavor) { return true; }
-
-        @Override
-        public boolean matchesExactly(Flavor flavor) { return false; }
-
-        @Override
-        public boolean specifiesNonStockFlavor() { return false; }
+        public boolean isCompatible(Flavor flavor, NodeFlavors flavors) { return true; }
 
         @Override
         public boolean saturatedBy(int count) { return false; }
@@ -180,11 +169,9 @@ public interface NodeSpec {
 
         @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {
-            /*
-             * All nodes marked with wantToRetire get marked as retired just before this function is called,
-             * the job of this function is to throttle the retired count. If no nodes are marked as retired
-             * then continue this way, otherwise allow only 1 node to be retired
-             */
+             // All nodes marked with wantToRetire get marked as retired just before this function is called,
+             // the job of this function is to throttle the retired count. If no nodes are marked as retired
+             // then continue this way, otherwise allow only 1 node to be retired
             return Math.min(1, currentRetiredCount);
         }
 

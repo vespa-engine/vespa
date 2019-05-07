@@ -13,12 +13,16 @@ namespace search::diskindex {
 
 class BitVectorCandidate;
 
-class IndexBuilder : public index::IndexBuilder
-{
+/**
+ * Class used to build a disk index for the set of index fields specified in a schema.
+ *
+ * The resulting disk index consists of field indexes that are independent of each other.
+ */
+class IndexBuilder : public index::IndexBuilder {
 public:
     class FieldHandle;
 
-    typedef index::Schema Schema;
+    using Schema = index::Schema;
 private:
     // Text fields
     FieldHandle             *_currentField;
@@ -32,7 +36,7 @@ private:
     uint32_t                 _docIdLimit;
     uint64_t                 _numWordIds;
 
-    const Schema &_schema;  // Ptr to allow being std::vector member
+    const Schema &_schema;
 
     static uint32_t noDocId() {
         return std::numeric_limits<uint32_t>::max();
@@ -45,23 +49,16 @@ private:
 public:
     typedef index::WordDocElementWordPosFeatures WordDocElementWordPosFeatures;
 
-    // schema argument must live until indexbuilder has been deleted.
+    // Schema argument must live until IndexBuilder has been deleted.
     IndexBuilder(const Schema &schema); 
     ~IndexBuilder() override;
 
-    void startWord(vespalib::stringref word) override;
-    void endWord() override;
-    void startDocument(uint32_t docId) override;
-    void endDocument() override;
     void startField(uint32_t fieldId) override;
     void endField() override;
-    void startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) override;
-    void endElement() override;
-    void addOcc(const WordDocElementWordPosFeatures &features) override;
+    void startWord(vespalib::stringref word) override;
+    void endWord() override;
+    void add_document(const index::DocIdAndFeatures &features) override;
 
-    // TODO: methods for attribute vectors.
-
-    // TODO: methods for document summary.
     void setPrefix(vespalib::stringref prefix);
 
     vespalib::string appendToPrefix(vespalib::stringref name);

@@ -30,9 +30,9 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     private final Clock clock;
     private final Instant start;
 
-    public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, 
-                                         Duration interval, Duration minTimeBetweenRedeployments, JobControl jobControl) {
-        super(deployer, nodeRepository, interval, jobControl);
+    PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository,
+                                  Duration interval, Duration minTimeBetweenRedeployments) {
+        super(deployer, nodeRepository, interval);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
         this.clock = nodeRepository.clock();
         this.start = clock.instant();

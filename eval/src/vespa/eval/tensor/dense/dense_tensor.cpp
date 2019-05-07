@@ -75,6 +75,8 @@ DenseTensor::DenseTensor(eval::ValueType &&type_in,
     checkCellsSize(*this);
 }
 
+DenseTensor::~DenseTensor() = default;
+
 bool
 DenseTensor::operator==(const DenseTensor &rhs) const
 {

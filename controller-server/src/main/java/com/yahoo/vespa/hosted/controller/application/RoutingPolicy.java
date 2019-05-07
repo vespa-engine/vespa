@@ -6,14 +6,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RotationName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Represents the DNS routing policy for a load balancer.
@@ -24,26 +23,21 @@ import java.util.stream.Collectors;
 public class RoutingPolicy {
 
     private final ApplicationId owner;
+    private final ClusterSpec.Id cluster;
     private final ZoneId zone;
-    private final HostName alias;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(ApplicationId owner, ZoneId zone, HostName alias, HostName canonicalName,
+    public RoutingPolicy(ApplicationId owner, ClusterSpec.Id cluster, ZoneId zone, HostName canonicalName,
                          Optional<String> dnsZone, Set<RotationName> rotations) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
+        this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
         this.zone = Objects.requireNonNull(zone, "zone must be non-null");
-        this.alias = Objects.requireNonNull(alias, "alias must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
-    }
-
-    public RoutingPolicy(ApplicationId owner, ZoneId zone, ClusterSpec.Id cluster, HostName canonicalName,
-                         Optional<String> dnsZone, Set<RotationName> rotations) {
-        this(owner, zone, HostName.from(aliasOf(cluster, owner, zone)), canonicalName, dnsZone, rotations);
     }
 
     /** The application owning this */
@@ -56,9 +50,9 @@ public class RoutingPolicy {
         return zone;
     }
 
-    /** This alias (lhs of a CNAME or ALIAS record) */
-    public HostName alias() {
-        return alias;
+    /** The cluster this applies to */
+    public ClusterSpec.Id cluster() {
+        return cluster;
     }
 
     /** The canonical name for this (rhs of a CNAME or ALIAS record) */
@@ -76,43 +70,39 @@ public class RoutingPolicy {
         return rotations;
     }
 
+    /** Returns the endpoint of this */
+    public Endpoint endpointIn(SystemName system) {
+        return Endpoint.of(owner).target(cluster, zone).on(Port.tls()).directRouting().in(system);
+    }
+
+    /** Returns rotation endpoints of this */
+    public EndpointList rotationEndpointsIn(SystemName system) {
+        return EndpointList.of(rotations.stream().map(rotation -> endpointOf(owner, rotation, system)));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RoutingPolicy policy = (RoutingPolicy) o;
-        return owner.equals(policy.owner) &&
-               zone.equals(policy.zone) &&
-               canonicalName.equals(policy.canonicalName);
+        return canonicalName.equals(policy.canonicalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, zone, canonicalName);
+        return Objects.hash(canonicalName);
     }
 
     @Override
     public String toString() {
-        return String.format("%s -> %s [rotations: %s%s], owned by %s, in %s", alias, canonicalName, rotations,
-                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), owner.toShortString(),
+        return String.format("%s [rotations: %s%s], %s owned by %s, in %s", canonicalName, rotations,
+                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), cluster, owner.toShortString(),
                              zone.value());
     }
 
-    /** Returns the alias to use for the given application cluster in zone */
-    private static String aliasOf(ClusterSpec.Id cluster, ApplicationId application, ZoneId zone) {
-        List<String> parts = List.of(ignorePartIfDefault(cluster.value()),
-                                     ignorePartIfDefault(application.instance().value()),
-                                     application.application().value(),
-                                     application.tenant().value() +
-                                     "." + zone.value() + "." + "vespa.oath.cloud"
-        );
-        return parts.stream()
-                    .filter(Predicate.not(String::isBlank))
-                    .collect(Collectors.joining("--"));
-    }
-
-    private static String ignorePartIfDefault(String s) {
-        return "default".equalsIgnoreCase(s) ? "" : s;
+    /** Returns the endpoint of given rotation */
+    public static Endpoint endpointOf(ApplicationId application, RotationName rotation, SystemName system) {
+        return Endpoint.of(application).target(rotation).on(Port.tls()).directRouting().in(system);
     }
 
 }

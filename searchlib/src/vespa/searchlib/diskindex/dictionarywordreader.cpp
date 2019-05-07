@@ -2,7 +2,6 @@
 
 #include "dictionarywordreader.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/index/olddictionaryfile.h>
 #include <vespa/vespalib/util/error.h>
 
 #include <vespa/log/log.h>
@@ -40,8 +39,9 @@ DictionaryWordReader::open(const vespalib::string & dictionaryName,
     _wordNum = noWordNum();
 
     // Make a mapping from old to new wordID
-    if (tuneFileRead.getWantDirectIO())
+    if (tuneFileRead.getWantDirectIO()) {
         _old2newwordfile->EnableDirectIO();
+    }
     // no checking possible
     _old2newwordfile->WriteOpen(wordMapName.c_str());
     _old2newwordfile->SetSize(0);
@@ -52,8 +52,9 @@ DictionaryWordReader::open(const vespalib::string & dictionaryName,
 void
 DictionaryWordReader::close()
 {
-    if (!_dictFile->close())
+    if (!_dictFile->close()) {
         LOG(error, "Error closing input dictionary");
+    }
     _old2newwordfile->Flush();
     _old2newwordfile->Sync();
     _old2newwordfile->Close();

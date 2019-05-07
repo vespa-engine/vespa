@@ -7,8 +7,7 @@ using search::tensor::ITensorAttribute;
 using vespalib::eval::Tensor;
 using vespalib::tensor::MutableDenseTensorView;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 DenseTensorAttributeExecutor::
 DenseTensorAttributeExecutor(const ITensorAttribute *attribute)
@@ -24,5 +23,4 @@ DenseTensorAttributeExecutor::execute(uint32_t docId)
     outputs().set_object(0, _tensorView);
 }
 
-} // namespace features
-} // namespace search
+}

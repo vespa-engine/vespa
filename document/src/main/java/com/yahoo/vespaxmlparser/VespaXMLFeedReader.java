@@ -12,7 +12,6 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -57,7 +56,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
     /**
      * Skips the initial "vespafeed" tag.
      */
-    void readInitial() throws Exception {
+    private void readInitial() throws Exception {
         boolean found = false;
 
         while (reader.hasNext()) {
@@ -75,127 +74,6 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
         }
     }
 
-    public enum OperationType {
-        DOCUMENT,
-        REMOVE,
-        UPDATE,
-        INVALID
-    }
-
-    /**
-     * Represents a feed operation found by the parser. Can be one of the following types:
-     * - getType() == DOCUMENT: getDocument() is valid.
-     * - getType() == REMOVE: getRemove() is valid.
-     * - getType() == UPDATE: getUpdate() is valid.
-     */
-    public static class Operation {
-
-        private OperationType type;
-        private Document doc;
-        private DocumentId remove;
-        private DocumentUpdate docUpdate;
-        private FeedOperation feedOperation;
-        private TestAndSetCondition condition;
-
-        public Operation() {
-            setInvalid();
-        }
-
-        public void setInvalid() {
-            type = OperationType.INVALID;
-            doc = null;
-            remove = null;
-            docUpdate = null;
-            feedOperation = null;
-            condition = null;
-        }
-
-        public OperationType getType() {
-            return type;
-        }
-
-        public Document getDocument() {
-            return doc;
-        }
-
-        public void setDocument(Document doc) {
-            this.type = OperationType.DOCUMENT;
-            this.doc = doc;
-        }
-
-        public DocumentId getRemove() {
-            return remove;
-        }
-
-        public void setRemove(DocumentId remove) {
-            this.type = OperationType.REMOVE;
-            this.remove = remove;
-        }
-
-        public DocumentUpdate getDocumentUpdate() {
-            return docUpdate;
-        }
-
-        public void setDocumentUpdate(DocumentUpdate docUpdate) {
-            this.type = OperationType.UPDATE;
-            this.docUpdate = docUpdate;
-        }
-
-        public FeedOperation getFeedOperation() {
-            return feedOperation;
-        }
-
-        public void setCondition(TestAndSetCondition condition) {
-            this.condition = condition;
-        }
-
-        public TestAndSetCondition getCondition() {
-            return condition;
-        }
-
-        @Override
-        public String toString() {
-            return "Operation{" +
-                   "type=" + type +
-                   ", doc=" + doc +
-                   ", remove=" + remove +
-                   ", docUpdate=" + docUpdate +
-                   ", feedOperation=" + feedOperation +
-                   '}';
-        }
-    }
-
-    public static class FeedOperation {
-
-        private String name;
-        private Integer generation;
-        private Integer increment;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Integer getGeneration() {
-            return generation;
-        }
-
-        public void setGeneration(int generation) {
-            this.generation = generation;
-        }
-
-        public Integer getIncrement() {
-            return increment;
-        }
-
-        public void setIncrement(int increment) {
-            this.increment = increment;
-        }
-    }
-
     /**
      * <p>Reads all operations from the XML stream and puts into a list. Note
      * that if the XML stream is large, this may cause out of memory errors, so
@@ -203,12 +81,11 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
      *
      * @return The list of all read operations.
      */
-    public List<Operation> readAll() throws Exception {
-        List<Operation> list = new ArrayList<Operation>();
+    public List<FeedOperation> readAll() throws Exception {
+        List<FeedOperation> list = new ArrayList<>();
         while (true) {
-            Operation op = new Operation();
-            read(op);
-            if (op.getType() == OperationType.INVALID) {
+            FeedOperation op = read();
+            if (op.getType() == FeedOperation.Type.INVALID) {
                 return list;
             } else {
                 list.add(op);
@@ -220,10 +97,8 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
      * @see com.yahoo.vespaxmlparser.FeedReader#read(com.yahoo.vespaxmlparser.VespaXMLFeedReader.Operation)
      */
     @Override
-    public void read(Operation operation) throws Exception {
+    public FeedOperation read() throws Exception {
         String startTag = null;
-        operation.setInvalid();
-
         try {
             while (reader.hasNext()) {
                 int type = reader.next();
@@ -234,36 +109,28 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
                     if ("document".equals(startTag)) {
                         VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(reader, docTypeManager);
                         Document document = new Document(documentReader);
-                        operation.setDocument(document);
-                        operation.setCondition(TestAndSetCondition.fromConditionString(documentReader.getCondition()));
-                        return;
+                        return new DocumentFeedOperation(document, TestAndSetCondition.fromConditionString(documentReader.getCondition()));
                     } else if ("update".equals(startTag)) {
                         VespaXMLUpdateReader updateReader = new VespaXMLUpdateReader(reader, docTypeManager);
                         DocumentUpdate update = new DocumentUpdate(updateReader);
-                        operation.setDocumentUpdate(update);
-                        operation.setCondition(TestAndSetCondition.fromConditionString(updateReader.getCondition()));
-                        return;
+                        return new DocumentUpdateFeedOperation(update, TestAndSetCondition.fromConditionString(updateReader.getCondition()));
                     } else if ("remove".equals(startTag)) {
-                        boolean documentIdFound = false;
+                        DocumentId documentId = null;
 
                         Optional<String> condition = Optional.empty();
                         for (int i = 0; i < reader.getAttributeCount(); i++) {
                             final String attributeName = reader.getAttributeName(i).toString();
                             if ("documentid".equals(attributeName) || "id".equals(attributeName)) {
-                                operation.setRemove(new DocumentId(reader.getAttributeValue(i)));
-                                documentIdFound = true;
+                                documentId = new DocumentId(reader.getAttributeValue(i));
                             } else if ("condition".equals(attributeName)) {
                                 condition = Optional.of(reader.getAttributeValue(i));
                             }
                         }
 
-                        if (!documentIdFound) {
+                        if (documentId == null) {
                             throw newDeserializeException("Missing \"documentid\" attribute for remove operation");
                         }
-
-                        operation.setCondition(TestAndSetCondition.fromConditionString(condition));
-
-                        return;
+                        return new RemoveFeedOperation(documentId, TestAndSetCondition.fromConditionString(condition));
                     } else {
                         throw newDeserializeException("Element \"" + startTag + "\" not allowed in this context");
                     }
@@ -282,32 +149,7 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
 
             throw(e);
         }
-    }
-
-    public void read(FeedOperation fo) throws XMLStreamException {
-        while (reader.hasNext()) {
-            int type = reader.next();
-
-            if (type == XMLStreamReader.START_ELEMENT) {
-                if ("name".equals(reader.getName().toString())) {
-                    fo.setName(reader.getElementText().toString());
-                    skipToEnd("name");
-                } else if ("generation".equals(reader.getName().toString())) {
-                    fo.setGeneration(Integer.parseInt(reader.getElementText().toString()));
-                    skipToEnd("generation");
-                } else if ("increment".equals(reader.getName().toString())) {
-                    String text = reader.getElementText();
-                    if ("autodetect".equals(text)) {
-                        fo.setIncrement(-1);
-                    } else {
-                        fo.setIncrement(Integer.parseInt(text));
-                    }
-                    skipToEnd("increment");
-                }
-            } else if (type == XMLStreamReader.END_ELEMENT) {
-                return;
-            }
-        }
+        return FeedOperation.INVALID;
     }
 
 }

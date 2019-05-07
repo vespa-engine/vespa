@@ -8,6 +8,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -63,7 +64,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private final URI ztsEndpoint;
     private final Path trustStorePath;
-    private final AthenzService configserverIdentity;
+    private final AthenzIdentity configserverIdentity;
     private final Clock clock;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;

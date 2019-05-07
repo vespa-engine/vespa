@@ -10,15 +10,13 @@
 
 namespace search::diskindex {
 
-/*
- * FieldWriter is used to write a dictionary and posting list file
- * together.
+/**
+ * FieldWriter is used to write a dictionary and posting list file together.
  *
  * It is used by the fusion code to write the merged output for a field,
  * and by the memory index dump code to write a field to disk.
  */
-class FieldWriter
-{
+class FieldWriter {
 private:
     uint64_t _wordNum;
     uint32_t _prevDocId;
@@ -28,14 +26,15 @@ public:
 
     using DictionaryFileSeqWrite = index::DictionaryFileSeqWrite;
 
-    typedef index::PostingListFileSeqWrite PostingListFileSeqWrite;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::Schema Schema;
-    typedef index::PostingListCounts PostingListCounts;
-    typedef index::PostingListParams PostingListParams;
+    using PostingListFileSeqWrite = index::PostingListFileSeqWrite;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using Schema = index::Schema;
+    using PostingListCounts = index::PostingListCounts;
+    using PostingListParams = index::PostingListParams;
 
     std::unique_ptr<DictionaryFileSeqWrite> _dictFile;
     std::unique_ptr<PostingListFileSeqWrite> _posoccfile;
+
 private:
     BitVectorCandidate _bvc;
     BitVectorFileWrite _bmapfile;
@@ -59,11 +58,11 @@ public:
     void newWord(vespalib::stringref word);
 
     void add(const DocIdAndFeatures &features) {
-        assert(features._docId < _docIdLimit);
-        assert(features._docId > _prevDocId);
+        assert(features.doc_id() < _docIdLimit);
+        assert(features.doc_id() > _prevDocId);
         _posoccfile->writeDocIdAndFeatures(features);
-        _bvc.add(features._docId);
-        _prevDocId = features._docId;
+        _bvc.add(features.doc_id());
+        _prevDocId = features.doc_id();
     }
 
     uint64_t getSparseWordNum() const { return _wordNum; }

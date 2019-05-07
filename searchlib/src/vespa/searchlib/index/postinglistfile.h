@@ -8,11 +8,9 @@
 
 class FastOS_FileInterface;
 
-namespace search {
+namespace search::common { class FileHeaderContext; }
 
-namespace common { class FileHeaderContext; }
-
-namespace index {
+namespace search::index {
 
 class DocIdAndFeatures;
 
@@ -20,11 +18,7 @@ class DocIdAndFeatures;
  * Interface for posting list files containing document ids and features
  * for words.
  */
-class PostingListFileSeqRead
-{
-protected:
-    PostingListCounts _counts;
-    unsigned int _residueDocs;  // Docids left to read for word
+class PostingListFileSeqRead {
 public:
     PostingListFileSeqRead();
 
@@ -66,42 +60,13 @@ public:
      * Get current (word, docid) feature parameters.
      */
     virtual void getFeatureParams(PostingListParams &params);
-
-    // Methods used when generating posting list for common word pairs.
-
-    /*
-     * Get current posting offset, measured in bits.  First posting list
-     * starts at 0, i.e.  file header is not accounted for here.
-     *
-     * @return current posting offset, measured in bits.
-     */
-    virtual uint64_t getCurrentPostingOffset() const = 0;
-
-    /**
-     * Set current posting offset, measured in bits.  First posting
-     * list starts at 0, i.e.  file header is not accounted for here.
-     *
-     * @param Offset start of posting lists for word pair.
-     * @param endOffset end of posting lists for word pair.
-     * @param readAheadOffset end of posting list for either this or a
-     *               later word pair, depending on disk seek cost.
-     */
-    virtual void setPostingOffset(uint64_t offset, uint64_t endOffset, uint64_t readAheadOffset) = 0;
-
-    /**
-     * Get counts read by last readCounts().
-     */
-    const PostingListCounts &getCounts() const { return _counts; }
-
-    PostingListCounts &getCounts() { return _counts; }
 };
 
 /**
  * Interface for posting list files containing document ids and features
  * for words.
  */
-class PostingListFileSeqWrite
-{
+class PostingListFileSeqWrite {
 protected:
     PostingListCounts _counts;
 public:
@@ -160,8 +125,7 @@ public:
  * Interface for posting list files containing document ids and features
  * for words.
  */
-class PostingListFileRandRead
-{
+class PostingListFileRandRead {
 protected:
     // Can be examined after open
     bool _memoryMapped;
@@ -215,8 +179,7 @@ protected:
 /**
  * Passthrough class.
  */
-class PostingListFileRandReadPassThrough : public PostingListFileRandRead
-{
+class PostingListFileRandReadPassThrough : public PostingListFileRandRead {
 protected:
     PostingListFileRandRead *_lower;
     bool _ownLower;
@@ -238,7 +201,4 @@ public:
     bool close() override;
 };
 
-
-} // namespace index
-
-} // namespace search
+}

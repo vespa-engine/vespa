@@ -169,7 +169,7 @@ public class CommandLineArguments {
 
     @Option(name = {"--numPersistentConnectionsPerEndpoint"},
             description = "How many tcp connections to establish per endoint.)")
-    private int numPersistentConnectionsPerEndpoint = 16;
+    private int numPersistentConnectionsPerEndpoint = 4;
 
     @Option(name = {"--maxChunkSizeBytes"},
             description = "How much data to send to gateway in each message.")
@@ -226,7 +226,6 @@ public class CommandLineArguments {
                         connectionParamsBuilder
                                 .setHostnameVerifier(insecure ? NoopHostnameVerifier.INSTANCE :
                                         SSLConnectionSocketFactory.getDefaultHostnameVerifier())
-                                .setNumPersistentConnectionsPerEndpoint(16)
                                 .setUseCompression(useCompressionArg)
                                 .setMaxRetries(noRetryArg ? 0 : 100)
                                 .setMinTimeBetweenRetries(retrydelayArg, TimeUnit.SECONDS)

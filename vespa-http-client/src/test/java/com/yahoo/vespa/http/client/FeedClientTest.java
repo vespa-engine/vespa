@@ -34,13 +34,14 @@ public class FeedClientTest {
                     .build())
             .build();
     final AtomicInteger resultsReceived = new AtomicInteger(0);
+
     FeedClient.ResultCallback resultCallback = (docId, documentResult) -> {
         assertTrue(documentResult.isSuccess());
         assertEquals(DOCID, docId);
         resultsReceived.incrementAndGet();
     };
 
-    FeedClient feedClient = new FeedClientImpl(sessionParams, resultCallback, SessionFactory.createTimeoutExecutor());
+    FeedClient feedClient = new FeedClientImpl(sessionParams, resultCallback, FeedClientFactory.createTimeoutExecutor());
 
     @Test
     public void testStreamAndClose() {

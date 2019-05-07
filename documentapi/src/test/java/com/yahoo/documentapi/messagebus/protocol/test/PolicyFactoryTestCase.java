@@ -9,8 +9,13 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
-import com.yahoo.messagebus.metrics.MetricSet;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Protocol;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
@@ -103,10 +108,6 @@ public class PolicyFactoryTestCase {
         }
 
         public void destroy() {
-        }
-
-        public MetricSet getMetrics() {
-            return null;
         }
     }
 

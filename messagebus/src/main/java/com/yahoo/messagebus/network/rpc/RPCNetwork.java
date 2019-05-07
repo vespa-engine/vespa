@@ -17,7 +17,6 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.Register;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
@@ -44,7 +43,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +52,6 @@ import java.util.stream.Collectors;
  */
 public class RPCNetwork implements Network, MethodHandler {
 
-    private static final Logger log = Logger.getLogger(RPCNetwork.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final Identity identity;
     private final Supervisor orb;
@@ -68,10 +65,12 @@ public class RPCNetwork implements Network, MethodHandler {
     private final SlobrokConfigSubscriber slobroksConfig;
     private final LinkedHashMap<String, Route> lruRouteMap = new LinkedHashMap<>(10000, 0.5f, true);
     private final ExecutorService executor =
-            new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
-                                   0L, TimeUnit.SECONDS,
+            new ThreadPoolExecutor(getNumThreads(), getNumThreads(), 0L, TimeUnit.SECONDS,
                                    new SynchronousQueue<>(false),
                                    ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"), new ThreadPoolExecutor.CallerRunsPolicy());
+    private static int getNumThreads() {
+        return Math.max(2, Runtime.getRuntime().availableProcessors()/2);
+    }
 
     /**
      * Create an RPCNetwork. The servicePrefix is combined with session names to create service names. If the service
@@ -258,7 +257,7 @@ public class RPCNetwork implements Network, MethodHandler {
                     String.format("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
                                   buildRecipientListString(ctx), identity.getHostname()));
         } else {
-            executor.execute(new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx));
+            new SendTask(owner.getProtocol(ctx.msg.getProtocol()), ctx).run();
         }
     }
 

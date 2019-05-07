@@ -4,6 +4,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
@@ -30,7 +31,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final NodeSpec node;
     private final Acl acl;
     private final ContainerName containerName;
-    private final AthenzService identity;
+    private final AthenzIdentity identity;
     private final DockerNetworking dockerNetworking;
     private final ZoneId zoneId;
     private final Path pathToNodeRootOnHost;
@@ -38,7 +39,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final String vespaUser;
     private final String vespaUserOnHost;
 
-    public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzService identity,
+    public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 DockerNetworking dockerNetworking, ZoneId zoneId,
                                 Path pathToContainerStorage, Path pathToVespaHome,
                                 String vespaUser, String vespaUserOnHost) {
@@ -71,7 +72,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public AthenzService identity() {
+    public AthenzIdentity identity() {
         return identity;
     }
 
@@ -157,7 +158,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     public static class Builder {
         private NodeSpec.Builder nodeSpecBuilder = new NodeSpec.Builder();
         private Acl acl;
-        private AthenzService identity;
+        private AthenzIdentity identity;
         private DockerNetworking dockerNetworking;
         private ZoneId zoneId;
         private Path pathToContainerStorage;
@@ -192,7 +193,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder identity(AthenzService identity) {
+        public Builder identity(AthenzIdentity identity) {
             this.identity = identity;
             return this;
         }

@@ -94,13 +94,6 @@ TEST_F("require that TensorDataType can check for assignable tensor type", Tenso
     EXPECT_TRUE(f.isAssignableType("tensor(x[2])"));
     EXPECT_FALSE(f.isAssignableType("tensor(x[3])"));
     EXPECT_FALSE(f.isAssignableType("tensor(y[2])"));
-    EXPECT_FALSE(f.isAssignableType("tensor(x[])"));
-    EXPECT_FALSE(f.isAssignableType("tensor(x{})"));
-    f.setup("tensor(x[])");
-    EXPECT_TRUE(f.isAssignableType("tensor(x[2])"));
-    EXPECT_TRUE(f.isAssignableType("tensor(x[3])"));
-    EXPECT_FALSE(f.isAssignableType("tensor(y[2])"));
-    EXPECT_FALSE(f.isAssignableType("tensor(x[])"));
     EXPECT_FALSE(f.isAssignableType("tensor(x{})"));
 }
 

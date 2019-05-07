@@ -191,6 +191,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         else { // default
             dimension = ((ReferenceNode)arg0).reference().arguments().expressions().get(0).toString();
         }
+
+        // TODO: Determine the type of the weighted set/vector and use that as value type
         return Optional.of(new TensorType.Builder().mapped(dimension).build());
     }
 

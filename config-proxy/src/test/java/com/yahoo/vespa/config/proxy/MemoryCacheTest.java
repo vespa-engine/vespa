@@ -76,8 +76,8 @@ public class MemoryCacheTest {
     public void basic() {
         MemoryCache cache = new MemoryCache();
 
-        cache.put(config);
-        cache.put(config2);
+        cache.update(config);
+        cache.update(config2);
         assertThat(cache.size(), is(2));
         assertTrue(cache.containsKey(cacheKey));
         assertTrue(cache.containsKey(cacheKey2));
@@ -101,8 +101,8 @@ public class MemoryCacheTest {
     public void testSameConfigNameDifferentMd5() {
         MemoryCache cache = new MemoryCache();
 
-        cache.put(config);
-        cache.put(configDifferentMd5); // same name, different defMd5
+        cache.update(config);
+        cache.update(configDifferentMd5); // same name, different defMd5
         assertThat(cache.size(), is(2));
         assertTrue(cache.containsKey(cacheKey));
 

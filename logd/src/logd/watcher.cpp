@@ -222,7 +222,7 @@ Watcher::watchfile()
                 }
                 while (nnl != nullptr && elapsed(tickStart) < 1) {
                     ++nnl;
-                    _forwarder.forwardLine(std::string_view(l, (nnl - l)));
+                    _forwarder.forwardLine(std::string_view(l, (nnl - l) - 1));
                     ssize_t wsize = nnl - l;
                     offset += wsize;
                     l = nnl;

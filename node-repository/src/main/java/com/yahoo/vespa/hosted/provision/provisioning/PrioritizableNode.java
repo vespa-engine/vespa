@@ -90,7 +90,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (other.parent.isPresent() && !this.parent.isPresent()) return 1;
 
         // Choose the node with parent node with the least capacity (TODO parameterize this as this is pretty much the core of the algorithm)
-        int freeCapacity = this.freeParentCapacity.compare(other.freeParentCapacity);
+        int freeCapacity = ResourceCapacityComparator.defaultOrder().compare(this.freeParentCapacity, other.freeParentCapacity);
         if (freeCapacity != 0) return freeCapacity;
 
         // Choose cheapest node

@@ -40,6 +40,7 @@ import static com.yahoo.document.json.readers.TensorRemoveUpdateReader.createTen
  * @author freva
  */
 public class VespaJsonDocumentReader {
+
     private static final String UPDATE_REMOVE = "remove";
     private static final String UPDATE_ADD = "add";
 
@@ -67,8 +68,8 @@ public class VespaJsonDocumentReader {
             throw JsonReaderException.addDocId(e, documentParseInfo.documentId);
         }
         if (documentParseInfo.create.isPresent()) {
-            if (!(documentOperation instanceof DocumentUpdate)) {
-                throw new RuntimeException("Could not set create flag on non update operation.");
+            if (! ( documentOperation instanceof DocumentUpdate)) {
+                throw new IllegalArgumentException("Could not set create flag on non update operation.");
             }
             DocumentUpdate update = (DocumentUpdate) documentOperation;
             update.setCreateIfNonExistent(documentParseInfo.create.get());

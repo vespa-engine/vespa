@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -10,16 +11,16 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 
 import java.util.Set;
 import java.util.TreeSet;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Container implementation for cluster-controllers
@@ -87,8 +88,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void addHandler(Handler h, String binding) {
-        h.addServerBindings("http://*/" + binding,
-                            "https://*/" + binding);
+        h.addServerBindings("http://*/" + binding);
         super.addHandler(h);
     }
 

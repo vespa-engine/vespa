@@ -7,7 +7,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
-import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -31,7 +30,7 @@ public class TenantBuilder {
     private SessionFactory sessionFactory;
     private LocalSessionLoader localSessionLoader;
     private TenantApplications applicationRepo;
-    private ReloadHandler reloadHandler;
+    private TenantRequestHandler reloadHandler;
     private RequestHandler requestHandler;
     private RemoteSessionFactory remoteSessionFactory;
     private TenantFileSystemDirs tenantFileSystemDirs;
@@ -120,7 +119,7 @@ public class TenantBuilder {
 
     private void createApplicationRepo() {
         if (applicationRepo == null) {
-            applicationRepo = TenantApplications.create(componentRegistry.getCurator(), reloadHandler, tenant);
+            applicationRepo = reloadHandler.applications();
         }
     }
 
@@ -130,7 +129,8 @@ public class TenantBuilder {
                                                                  tenant,
                                                                  Collections.singletonList(componentRegistry.getReloadListener()),
                                                                  ConfigResponseFactory.create(componentRegistry.getConfigserverConfig()),
-                                                                 componentRegistry.getHostRegistries());
+                                                                 componentRegistry.getHostRegistries(),
+                                                                 componentRegistry.getCurator());
             if (hostValidator == null) {
                 this.hostValidator = impl;
             }
@@ -162,10 +162,6 @@ public class TenantBuilder {
         if (tenantFileSystemDirs == null) {
             tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant);
         }
-    }
-
-    public TenantApplications getApplicationRepo() {
-        return applicationRepo;
     }
 
     public TenantName getTenantName() { return tenant; }

@@ -17,7 +17,7 @@ namespace search {
 namespace fakedata {
 
 
-/*
+/**
  * General representation of a faked word, containing all features used
  * by any of the candidate posting list formats.
  */

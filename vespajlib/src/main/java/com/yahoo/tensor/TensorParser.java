@@ -11,14 +11,14 @@ class TensorParser {
     static Tensor tensorFrom(String tensorString, Optional<TensorType> type) {
         tensorString = tensorString.trim();
         try {
-            if (tensorString.startsWith("tensor(")) {
+            if (tensorString.startsWith("tensor")) {
                 int colonIndex = tensorString.indexOf(':');
                 String typeString = tensorString.substring(0, colonIndex);
                 String valueString = tensorString.substring(colonIndex + 1);
                 TensorType typeFromString = TensorTypeParser.fromSpec(typeString);
                 if (type.isPresent() && ! type.get().equals(typeFromString))
                     throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
-                                                       "passed type " + type);
+                                                       "passed type " + type.get());
                 return tensorFromValueString(valueString, typeFromString);
             }
             else if (tensorString.startsWith("{")) {
@@ -48,7 +48,7 @@ class TensorParser {
         addressBody = addressBody.substring(1); // remove key start
         if (addressBody.isEmpty()) return TensorType.empty; // Empty key
 
-        TensorType.Builder builder = new TensorType.Builder();
+        TensorType.Builder builder = new TensorType.Builder(TensorType.Value.DOUBLE);
         for (String elementString : addressBody.split(",")) {
             String[] pair = elementString.split(":");
             if (pair.length != 2)

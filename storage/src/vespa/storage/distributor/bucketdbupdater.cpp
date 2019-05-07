@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketdbupdater.h"
+#include "bucket_db_prune_elision.h"
 #include "distributor.h"
 #include "distributor_bucket_space.h"
 #include "simpleclusterinformation.h"
@@ -119,23 +120,37 @@ BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
 
 void
 BucketDBUpdater::removeSuperfluousBuckets(
-        const lib::ClusterStateBundle& newState)
+        const lib::ClusterStateBundle& newState,
+        bool is_distribution_config_change)
 {
     const bool move_to_read_only_db = shouldDeferStateEnabling();
-    for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
-        const auto &newDistribution(elem.second->getDistribution());
-        const auto &oldClusterState(elem.second->getClusterState());
-        auto &bucketDb(elem.second->getBucketDatabase());
+    const char* up_states = _distributorComponent.getDistributor().getStorageNodeUpStates();
+    for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
+        const auto& newDistribution(elem.second->getDistribution());
+        const auto& oldClusterState(elem.second->getClusterState());
+        const auto& new_cluster_state = newState.getDerivedClusterState(elem.first);
+
+        // Running a full DB sweep is expensive, so if the cluster state transition does
+        // not actually indicate that buckets should possibly be removed, we elide it entirely.
+        if (!is_distribution_config_change
+            && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
+        {
+            LOG(debug, "Eliding DB pruning for state transition '%s' -> '%s'",
+                oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
+            continue;
+        }
+
+        auto& bucketDb(elem.second->getBucketDatabase());
         auto& readOnlyDb(_distributorComponent.getReadOnlyBucketSpaceRepo().get(elem.first).getBucketDatabase());
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
         NodeRemover proc(
                 oldClusterState,
-                *newState.getDerivedClusterState(elem.first),
+                *new_cluster_state,
                 _distributorComponent.getIndex(),
                 newDistribution,
-                _distributorComponent.getDistributor().getStorageNodeUpStates());
+                up_states);
         bucketDb.forEach(proc);
 
         for (const auto & bucket : proc.getBucketsToRemove()) {
@@ -184,7 +199,7 @@ BucketDBUpdater::storageDistributionChanged()
 {
     ensureTransitionTimerStarted();
 
-    removeSuperfluousBuckets(_distributorComponent.getClusterStateBundle());
+    removeSuperfluousBuckets(_distributorComponent.getClusterStateBundle(), true);
 
     ClusterInformation::CSP clusterInfo(new SimpleClusterInformation(
             _distributorComponent.getIndex(),
@@ -234,8 +249,10 @@ BucketDBUpdater::onSetSystemState(
         return false;
     }
     ensureTransitionTimerStarted();
-
-    removeSuperfluousBuckets(cmd->getClusterStateBundle());
+    // Separate timer since _transitionTimer might span multiple pending states.
+    framework::MilliSecTimer process_timer(_distributorComponent.getClock());
+    
+    removeSuperfluousBuckets(cmd->getClusterStateBundle(), false);
     replyToPreviousPendingClusterStateIfAny();
 
     ClusterInformation::CSP clusterInfo(
@@ -254,6 +271,9 @@ BucketDBUpdater::onSetSystemState(
             _outdatedNodesMap,
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
+
+    _distributorComponent.getDistributor().getMetrics().set_cluster_state_processing_time.addValue(
+            process_timer.getElapsedTimeAsDouble());
 
     if (isPendingClusterStateCompleted()) {
         processCompletedPendingClusterState();
@@ -579,6 +599,8 @@ BucketDBUpdater::processCompletedPendingClusterState()
 void
 BucketDBUpdater::activatePendingClusterState()
 {
+    framework::MilliSecTimer process_timer(_distributorComponent.getClock());
+
     _pendingClusterState->mergeIntoBucketDatabases();
 
     if (_pendingClusterState->isVersionedTransition()) {
@@ -601,6 +623,9 @@ BucketDBUpdater::activatePendingClusterState()
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
     clearReadOnlyBucketRepoDatabases();
+
+    _distributorComponent.getDistributor().getMetrics().activate_cluster_state_processing_time.addValue(
+            process_timer.getElapsedTimeAsDouble());
 }
 
 void
@@ -720,6 +745,23 @@ BucketDBUpdater::BucketListGenerator::process(BucketDatabase::Entry& e)
     return true;
 }
 
+BucketDBUpdater::NodeRemover::NodeRemover(
+        const lib::ClusterState& oldState,
+        const lib::ClusterState& s,
+        uint16_t localIndex,
+        const lib::Distribution& distribution,
+        const char* upStates)
+    : _oldState(oldState),
+      _state(s),
+      _nonOwnedBuckets(),
+      _removedBuckets(),
+      _localIndex(localIndex),
+      _distribution(distribution),
+      _upStates(upStates),
+      _cachedDecisionSuperbucket(UINT64_MAX),
+      _cachedOwned(false)
+{}
+
 void
 BucketDBUpdater::NodeRemover::logRemove(const document::BucketId& bucketId, const char* msg) const
 {
@@ -727,14 +769,35 @@ BucketDBUpdater::NodeRemover::logRemove(const document::BucketId& bucketId, cons
     LOG_BUCKET_OPERATION_NO_LOCK(bucketId, msg);    
 }
 
+namespace {
+
+uint64_t superbucket_from_id(const document::BucketId& id, uint16_t distribution_bits) noexcept {
+    // The n LSBs of the bucket ID contain the superbucket number. Mask off the rest.
+    return id.getRawId() & ~(UINT64_MAX << distribution_bits);
+}
+
+}
+
 bool
 BucketDBUpdater::NodeRemover::distributorOwnsBucket(
         const document::BucketId& bucketId) const
 {
+    // TODO "no distributors available" case is the same for _all_ buckets; cache once in constructor.
+    // TODO "too few bits used" case can be cheaply checked without needing exception
     try {
-        uint16_t distributor(
-                _distribution.getIdealDistributorNode(_state, bucketId, "uim"));
-        if (distributor != _localIndex) {
+        const auto bits = _state.getDistributionBitCount();
+        const auto this_superbucket = superbucket_from_id(bucketId, bits);
+        if (_cachedDecisionSuperbucket == this_superbucket) {
+            if (!_cachedOwned) {
+                logRemove(bucketId, "bucket now owned by another distributor (cached)");
+            }
+            return _cachedOwned;
+        }
+
+        uint16_t distributor = _distribution.getIdealDistributorNode(_state, bucketId, "uim");
+        _cachedDecisionSuperbucket = this_superbucket;
+        _cachedOwned = (distributor == _localIndex);
+        if (!_cachedOwned) {
             logRemove(bucketId, "bucket now owned by another distributor");
             return false;
         }

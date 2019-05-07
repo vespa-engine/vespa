@@ -32,7 +32,6 @@ public abstract class CollectionDataType extends DataType {
         return type;
     }
 
-    @SuppressWarnings("deprecation")
     public DataType getNestedType() {
         return nestedType;
     }
@@ -58,11 +57,7 @@ public abstract class CollectionDataType extends DataType {
             return false;
         }
         CollectionFieldValue cfv = (CollectionFieldValue) value;
-        if (equals(cfv.getDataType())) {
-            //the field value if of this type:
-            return true;
-        }
-        return false;
+        return equals(cfv.getDataType());
     }
 
     @Override

@@ -5,10 +5,9 @@ import com.yahoo.collections.Pair;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
-import com.yahoo.documentapi.messagebus.protocol.AsyncInitializationPolicy;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy;
-import com.yahoo.documentapi.messagebus.protocol.ExternalSlobrokPolicy;
+import com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory;
 import com.yahoo.documentapi.messagebus.protocol.StoragePolicy;
@@ -110,6 +109,7 @@ public abstract class StoragePolicyTestEnvironment {
         private Integer avoidPickingAtRandom = null;
 
         public TestHostFetcher(String clusterName, Set<Integer> nodes) {
+            super(60);
             this.clusterName = clusterName;
             this.nodes = nodes;
         }
@@ -148,16 +148,16 @@ public abstract class StoragePolicyTestEnvironment {
         private final Distribution distribution;
 
         public TestParameters(String parameters, Set<Integer> nodes) {
-            super(AsyncInitializationPolicy.parse(parameters));
+            super(SlobrokPolicy.parse(parameters));
             hostFetcher = new TestHostFetcher(getClusterName(), nodes);
             distribution = new Distribution(Distribution.getDefaultDistributionConfig(2, 10));
         }
 
         @Override
-        public StoragePolicy.HostFetcher createHostFetcher(ExternalSlobrokPolicy policy) { return hostFetcher; }
+        public StoragePolicy.HostFetcher createHostFetcher(SlobrokPolicy policy, int percent) { return hostFetcher; }
 
         @Override
-        public Distribution createDistribution(ExternalSlobrokPolicy policy) { return distribution; }
+        public Distribution createDistribution(SlobrokPolicy policy) { return distribution; }
     }
 
     public static class StoragePolicyTestFactory implements RoutingPolicyFactory {
@@ -170,13 +170,13 @@ public abstract class StoragePolicyTestEnvironment {
         }
         public DocumentProtocolRoutingPolicy createPolicy(String parameters) {
             parameterInstances.addLast(new TestParameters(parameters, nodes));
-            ((TestHostFetcher) parameterInstances.getLast().createHostFetcher(null)).setAvoidPickingAtRandom(avoidPickingAtRandom);
-            return new StoragePolicy(parameterInstances.getLast(), AsyncInitializationPolicy.parse(parameters));
+            ((TestHostFetcher) parameterInstances.getLast().createHostFetcher(null, 60)).setAvoidPickingAtRandom(avoidPickingAtRandom);
+            return new StoragePolicy(parameterInstances.getLast());
         }
         public void avoidPickingAtRandom(Integer distributor) {
             avoidPickingAtRandom = distributor;
             for (TestParameters params : parameterInstances) {
-                ((TestHostFetcher) params.createHostFetcher(null)).setAvoidPickingAtRandom(avoidPickingAtRandom);
+                ((TestHostFetcher) params.createHostFetcher(null, 60)).setAvoidPickingAtRandom(avoidPickingAtRandom);
             }
         }
         public TestParameters getLastParameters() { return parameterInstances.getLast(); }

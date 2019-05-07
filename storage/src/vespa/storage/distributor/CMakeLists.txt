@@ -4,6 +4,7 @@ vespa_add_library(storage_distributor
     activecopy.cpp
     blockingoperationstarter.cpp
     bucketdbupdater.cpp
+    bucket_db_prune_elision.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
     clusterinformation.cpp

@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +36,7 @@ import java.util.Optional;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
+import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
@@ -286,9 +287,42 @@ public class InternalStepRunnerTest {
                      mailer.inbox("b@a").get(0).subject());
     }
 
+    @Test
+    public void vespaLogIsCopied() {
+        RunId id = tester.startSystemTestTests();
+        tester.cloud().set(TesterCloud.Status.ERROR);
+        tester.configServer().setLogStream(vespaLog);
+        long lastId = tester.jobs().details(id).get().lastId().getAsLong();
+        tester.runner().run();
+        assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
+        assertTestLogEntries(id, Step.copyVespaLogs,
+                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in zone test.us-east-1 in default ..."),
+                             new LogEntry(lastId + 3, 1554970337084L, info,
+                                          "17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\n" +
+                                          "Switching to the latest deployed set of configurations and components. Application switch number: 2"),
+                             new LogEntry(lastId + 4, 1554970337935L, info,
+                                          "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
+                                          "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
+                             new LogEntry(lastId + 5, 1554970337947L, info,
+                                          "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
+                                          "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
+                             new LogEntry(lastId + 6, 1554970337947L, info,
+                                          "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
+                                          "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
+                             new LogEntry(lastId + 7, 1554970337947L, warning,
+                                          "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstderr\n" +
+                                          "java.lang.NullPointerException\n\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\n\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)"));
+    }
+
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {
         assertEquals(List.of(entries), tester.jobs().details(id).get().get(step));
     }
+
+    private static final String vespaLog = "1554970337.084804\t17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\t5549/832\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\tinfo\tSwitching to the latest deployed set of configurations and components. Application switch number: 2\n" +
+                                           "1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
+                                           "1554970337.947777\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
+                                           "1554970337.947820\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
+                                           "1554970337.947844\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)";
 
     @Test
     public void generates_correct_services_xml_test() {

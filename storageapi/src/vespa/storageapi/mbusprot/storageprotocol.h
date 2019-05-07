@@ -3,6 +3,7 @@
 
 #include "protocolserialization5_2.h"
 #include "protocolserialization6_0.h"
+#include "protocolserialization7.h"
 #include <vespa/messagebus/iprotocol.h>
 
 namespace storage::mbusprot {
@@ -28,6 +29,7 @@ private:
     ProtocolSerialization5_1 _serializer5_1;
     ProtocolSerialization5_2 _serializer5_2;
     ProtocolSerialization6_0 _serializer6_0;
+    ProtocolSerialization7 _serializer7_0;
 };
 
 }

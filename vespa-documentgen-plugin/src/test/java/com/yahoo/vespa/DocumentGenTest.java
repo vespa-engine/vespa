@@ -5,8 +5,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Search;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.junit.Test;
 
 import java.io.File;
@@ -19,7 +17,7 @@ import static org.junit.Assert.fail;
 public class DocumentGenTest {
 
     @Test
-    public void testMusic() throws MojoExecutionException, MojoFailureException {
+    public void testMusic() {
         DocumentGenMojo mojo = new DocumentGenMojo();
         mojo.execute(new File("etc/music/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
@@ -28,19 +26,21 @@ public class DocumentGenTest {
     }
 
     @Test
-    public void testComplex() throws MojoFailureException {
+    public void testComplex() {
         DocumentGenMojo mojo = new DocumentGenMojo();
         mojo.execute(new File("etc/complex/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
         assertEquals(searches.get("video").getDocument("video").getField("weight").getDataType(), DataType.FLOAT);
         assertEquals(searches.get("book").getDocument("book").getField("sw1").getDataType(), DataType.FLOAT);
+        assertTrue(searches.get("music3").getDocument("music3").getField("pos").getDataType() instanceof StructDataType);
+        assertEquals(searches.get("music3").getDocument("music3").getField("pos").getDataType().getName(), "position");
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
         assertTrue(searches.get("book").getDocument("book").getField("mywsfloat").getDataType() instanceof WeightedSetDataType);
         assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsfloat").getDataType())).getNestedType() == DataType.FLOAT);
     }
 
     @Test
-    public void testLocalApp() throws MojoFailureException {
+    public void testLocalApp() {
         DocumentGenMojo mojo = new DocumentGenMojo();
         mojo.execute(new File("etc/localapp/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
@@ -51,7 +51,7 @@ public class DocumentGenTest {
     }
 
     @Test
-    public void testEmptyPkgNameForbidden() throws MojoFailureException {
+    public void testEmptyPkgNameForbidden() {
         DocumentGenMojo mojo = new DocumentGenMojo();
         try {
             mojo.execute(new File("etc/localapp/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "");

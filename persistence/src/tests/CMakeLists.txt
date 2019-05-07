@@ -3,7 +3,6 @@ vespa_add_executable(persistence_testrunner_app TEST
     SOURCES
     testrunner.cpp
     DEPENDS
-    persistence_testdummyimpl
     persistence_testspi
 )
 

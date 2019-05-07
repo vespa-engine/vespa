@@ -39,22 +39,19 @@ EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("y1", spec({y(1)}, MyVecSeq()))
         .add("y3", spec({y(3)}, MyVecSeq()))
+        .add("y3f", spec({y(3)}, MyVecSeq()), "tensor<float>(y[3])")
         .add("y5", spec({y(5)}, MyVecSeq()))
         .add("y16", spec({y(16)}, MyVecSeq()))
         .add("x1y1", spec({x(1),y(1)}, MyMatSeq()))
         .add("y1z1", spec({y(1),z(1)}, MyMatSeq()))
         .add("x2y3", spec({x(2),y(3)}, MyMatSeq()))
+        .add("x2y3f", spec({x(2),y(3)}, MyMatSeq()), "tensor<float>(x[2],y[3])")
         .add("x2z3", spec({x(2),z(3)}, MyMatSeq()))
         .add("y3z2", spec({y(3),z(2)}, MyMatSeq()))
         .add("x8y5", spec({x(8),y(5)}, MyMatSeq()))
         .add("y5z8", spec({y(5),z(8)}, MyMatSeq()))
         .add("x5y16", spec({x(5),y(16)}, MyMatSeq()))
-        .add("y16z5", spec({y(16),z(5)}, MyMatSeq()))
-        .add("a_y3", spec({y(3)}, MyVecSeq()), "any")
-        .add("y3_u", spec({y(3)}, MyVecSeq()), "tensor(y[])")
-        .add("a_x2y3", spec({x(2),y(3)}, MyMatSeq()), "any")
-        .add("x2_uy3", spec({x(2),y(3)}, MyMatSeq()), "tensor(x[],y[3])")
-        .add("x2y3_u", spec({x(2),y(3)}, MyMatSeq()), "tensor(x[2],y[])");
+        .add("y16z5", spec({y(16),z(5)}, MyMatSeq()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -91,14 +88,6 @@ TEST("require that xw product gives same results as reference join/reduce") {
     TEST_DO(verify_optimized("reduce(y16*y16z5,sum,y)", 16, 5, false));
 }
 
-TEST("require that xw product is not optimized for abstract types") {
-    TEST_DO(verify_not_optimized("reduce(a_y3*x2y3,sum)"));
-    TEST_DO(verify_not_optimized("reduce(y3*a_x2y3,sum)"));
-    TEST_DO(verify_not_optimized("reduce(y3_u*x2y3,sum)"));
-    TEST_DO(verify_not_optimized("reduce(y3*x2_uy3,sum)"));
-    TEST_DO(verify_not_optimized("reduce(y3*x2y3_u,sum)"));
-}
-
 TEST("require that various variants of xw product can be optimized") {
     TEST_DO(verify_optimized("reduce(y3*x2y3,sum,y)", 3, 2, true));
     TEST_DO(verify_optimized("reduce(x2y3*y3,sum,y)", 3, 2, true));
@@ -118,8 +107,6 @@ TEST("require that expressions similar to xw product are not optimized") {
 }
 
 TEST("require that xw products with incompatible dimensions are not optimized") {
-    TEST_DO(verify_not_optimized("reduce(y3*x1y1,sum,y)"));
-    TEST_DO(verify_not_optimized("reduce(y3*x8y5,sum,y)"));
     TEST_DO(verify_not_optimized("reduce(y3*x2z3,sum,y)"));
     TEST_DO(verify_not_optimized("reduce(y3*x2z3,sum,z)"));
 }
@@ -130,6 +117,12 @@ TEST("require that xw product can be debug dumped") {
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
     fprintf(stderr, "%s\n", info[0]->as_string().c_str());
+}
+
+TEST("require that optimization is disabled for tensors with non-double cells") {
+    TEST_DO(verify_not_optimized("reduce(y3f*x2y3,sum,y)"));
+    TEST_DO(verify_not_optimized("reduce(y3*x2y3f,sum,y)"));
+    TEST_DO(verify_not_optimized("reduce(y3f*x2y3f,sum,y)"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

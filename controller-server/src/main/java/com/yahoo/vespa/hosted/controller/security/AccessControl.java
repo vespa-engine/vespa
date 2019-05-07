@@ -49,10 +49,10 @@ public interface AccessControl {
     /**
      * Sets up access control for the given application, based on the given credentials.
      *
-     * @param application the ID of the application to create
+     * @param id the ID of the application to create
      * @param credentials the credentials for the entity requesting the creation
      */
-    void createApplication(ApplicationId application, Credentials credentials);
+    void createApplication(ApplicationId id, Credentials credentials);
 
     /**
      * Deletes access control for the given tenant.

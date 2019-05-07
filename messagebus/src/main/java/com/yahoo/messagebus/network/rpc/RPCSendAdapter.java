@@ -17,7 +17,7 @@ public interface RPCSendAdapter {
      *
      * @param net The network to attach to.
      */
-    public void attach(RPCNetwork net);
+    void attach(RPCNetwork net);
 
     /**
      * Performs the actual sending to the given recipient.
@@ -27,5 +27,5 @@ public interface RPCSendAdapter {
      * @param payload       The already serialized payload of the message to send.
      * @param timeRemaining The time remaining until the message expires.
      */
-    public void send(RoutingNode recipient, Version version, byte[] payload, long timeRemaining);
+    void send(RoutingNode recipient, Version version, byte[] payload, long timeRemaining);
 }

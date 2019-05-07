@@ -1325,6 +1325,75 @@ TEST("testAggregationResults") {
                           FloatResultNode(15.54));
 }
 
+TEST("test Average over integer") {
+    AggregationResult::Configure conf;
+    AverageAggregationResult avg;
+    avg.setExpression(createScalarInt(I4)).select(conf, conf);
+    avg.aggregate(0, 0);
+    EXPECT_EQUAL(I4, avg.getAverage().getInteger());
+}
+
+TEST("test Average over float") {
+    AggregationResult::Configure conf;
+    AverageAggregationResult avg;
+    avg.setExpression(createScalarFloat(I4)).select(conf, conf);
+    avg.aggregate(0, 0);
+    EXPECT_EQUAL(I4, avg.getAverage().getInteger());
+}
+
+TEST("test Average over numeric string") {
+    AggregationResult::Configure conf;
+    AverageAggregationResult avg;
+    avg.setExpression(createScalarString("7.8")).select(conf, conf);
+    avg.aggregate(0, 0);
+    EXPECT_EQUAL(7.8, avg.getAverage().getFloat());
+}
+
+TEST("test Average over non-numeric string") {
+    AggregationResult::Configure conf;
+    AverageAggregationResult avg;
+    avg.setExpression(createScalarString("ABC")).select(conf, conf);
+    avg.aggregate(0, 0);
+    EXPECT_EQUAL(0, avg.getAverage().getInteger());
+}
+
+TEST("test Sum over integer") {
+    AggregationResult::Configure conf;
+    SumAggregationResult sum;
+    sum.setExpression(createScalarInt(I4)).select(conf, conf);
+    sum.aggregate(0, 0);
+    sum.aggregate(0, 0);
+    EXPECT_EQUAL(I4*2, sum.getSum().getInteger());
+}
+
+TEST("test Sum over float") {
+    AggregationResult::Configure conf;
+    SumAggregationResult sum;
+    sum.setExpression(createScalarFloat(I4)).select(conf, conf);
+    sum.aggregate(0, 0);
+    sum.aggregate(0, 0);
+    EXPECT_EQUAL(I4*2, sum.getSum().getInteger());
+}
+
+TEST("test Sum over numeric string") {
+    AggregationResult::Configure conf;
+    SumAggregationResult sum;
+    sum.setExpression(createScalarString("7.8")).select(conf, conf);
+    sum.aggregate(0, 0);
+    sum.aggregate(0, 0);
+    EXPECT_EQUAL(7.8*2, sum.getSum().getFloat());
+}
+
+TEST("test Sum over non-numeric string") {
+    AggregationResult::Configure conf;
+    SumAggregationResult sum;
+    sum.setExpression(createScalarString("ABC")).select(conf, conf);
+    sum.aggregate(0, 0);
+    sum.aggregate(0, 0);
+    EXPECT_EQUAL(0, sum.getSum().getInteger());
+}
+
+
 TEST("testGrouping") {
     AttributeGuard attr1 = createInt64Attribute();
     ExpressionNode::UP result1(new CountAggregationResult());

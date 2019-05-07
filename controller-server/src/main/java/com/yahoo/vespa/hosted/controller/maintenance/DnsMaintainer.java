@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Performs DNS maintenance tasks such as removing DNS aliases for unassigned rotations.
@@ -28,15 +26,10 @@ import java.util.stream.Collectors;
  */
 public class DnsMaintainer extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(DnsMaintainer.class.getName());
-
-    private final NameService nameService;
     private final AtomicInteger rotationIndex = new AtomicInteger(0);
 
-    public DnsMaintainer(Controller controller, Duration interval, JobControl jobControl,
-                         NameService nameService) {
+    public DnsMaintainer(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl);
-        this.nameService = nameService;
     }
 
     private RotationRepository rotationRepository() {
@@ -54,15 +47,7 @@ public class DnsMaintainer extends Maintainer {
     /** Remove CNAME(s) for unassigned rotation */
     private void removeCname(Rotation rotation) {
         // When looking up CNAME by data, the data must be a FQDN
-        List<Record> records = nameService.findRecords(Record.Type.CNAME, RecordData.fqdn(rotation.name())).stream()
-                                          .filter(DnsMaintainer::canUpdate)
-                                          .collect(Collectors.toList());
-        if (records.isEmpty()) {
-            return;
-        }
-        log.info(String.format("Removing DNS records %s because they point to the unassigned " +
-                               "rotation %s (%s)", records, rotation.id().asString(), rotation.name()));
-        nameService.removeRecords(records);
+        controller().nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordData.fqdn(rotation.name()), Priority.normal);
     }
 
     /**
@@ -72,20 +57,13 @@ public class DnsMaintainer extends Maintainer {
     private Optional<Rotation> rotationToCheckOf(Collection<Rotation> rotations) {
         if (rotations.isEmpty()) return Optional.empty();
         List<Rotation> rotationList = new ArrayList<>(rotations);
-        int index = rotationIndex.getAndUpdate((i)-> {
+        int index = rotationIndex.getAndUpdate((i) -> {
             if (i < rotationList.size() - 1) {
                 return ++i;
             }
             return 0;
         });
         return Optional.of(rotationList.get(index));
-    }
-
-    /** Returns whether we can update the given record */
-    private static boolean canUpdate(Record record) {
-        String recordName = record.name().asString();
-        return recordName.endsWith(GlobalDnsName.DNS_SUFFIX) ||
-               recordName.endsWith(GlobalDnsName.OATH_DNS_SUFFIX);
     }
 
 }

@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/types.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace vespalib::tensor {

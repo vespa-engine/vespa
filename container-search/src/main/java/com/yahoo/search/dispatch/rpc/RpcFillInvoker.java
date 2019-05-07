@@ -100,7 +100,7 @@ public class RpcFillInvoker extends FillInvoker {
     /** Send a getDocsums request to a node. Responses will be added to the given receiver. */
     private void sendGetDocsumsRequest(int nodeId, List<FastHit> hits, String summaryClass, CompressionType compression,
                                        Result result, GetDocsumsResponseReceiver responseReceiver) {
-        Client.NodeConnection node = resourcePool.nodeConnections().get(nodeId);
+        Client.NodeConnection node = resourcePool.getConnection(nodeId);
         if (node == null) {
             String error = "Could not fill hits from unknown node " + nodeId;
             responseReceiver.receive(Client.ResponseOrError.fromError(error));
@@ -114,9 +114,8 @@ public class RpcFillInvoker extends FillInvoker {
         byte[] serializedSlime = BinaryFormat
                 .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(), query.getSessionId(), hits));
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
-        Compressor.Compression compressionResult = resourcePool.compressor().compress(compression, serializedSlime);
-        resourcePool.client().getDocsums(hits, node, compressionResult.type(), serializedSlime.length, compressionResult.data(),
-                responseReceiver, timeoutSeconds);
+        Compressor.Compression compressionResult = resourcePool.compress(query, serializedSlime);
+        node.getDocsums(hits, compressionResult.type(), serializedSlime.length, compressionResult.data(), responseReceiver, timeoutSeconds);
     }
 
     static private Slime toSlime(String rankProfile, String summaryClass, String docType, SessionId sessionId, List<FastHit> hits) {

@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace vespalib {
+namespace vespalib { class nbostream; }
 
-class nbostream;
-
-namespace tensor {
+namespace vespalib::tensor {
 
 class Tensor;
 class TensorBuilder;
@@ -21,5 +19,4 @@ public:
     static void deserialize(nbostream &stream, TensorBuilder &builder);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

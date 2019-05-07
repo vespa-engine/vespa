@@ -23,12 +23,14 @@ public:
     metrics::LoadMetric<PersistenceOperationMetricSet> getbucketlists;
     metrics::LoadMetric<VisitorMetricSet> visits;
     metrics::DoubleAverageMetric stateTransitionTime;
+    metrics::DoubleAverageMetric set_cluster_state_processing_time;
+    metrics::DoubleAverageMetric activate_cluster_state_processing_time;
     metrics::DoubleAverageMetric recoveryModeTime;
     metrics::LongValueMetric docsStored;
     metrics::LongValueMetric bytesStored;
 
-    DistributorMetricSet(const metrics::LoadTypeSet& lt);
-    ~DistributorMetricSet();
+    explicit DistributorMetricSet(const metrics::LoadTypeSet& lt);
+    ~DistributorMetricSet() override;
 };
 
 }

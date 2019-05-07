@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.log.LogLevel;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
@@ -30,7 +29,7 @@ public class StateV1HealthClient implements AutoCloseable {
     private final Function<HttpEntity, String> getContentFunction;
 
     StateV1HealthClient(URL url, Duration requestTimeout, Duration connectionKeepAlive) {
-        this(new ApacheHttpClient(url, requestTimeout, connectionKeepAlive, PlainConnectionSocketFactory.getSocketFactory()),
+        this(new ApacheHttpClient(url, requestTimeout, connectionKeepAlive),
                 entity -> uncheck(() -> EntityUtils.toString(entity)));
     }
 

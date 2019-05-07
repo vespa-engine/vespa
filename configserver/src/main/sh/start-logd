@@ -74,7 +74,7 @@ ROOT=${VESPA_HOME%/}
 
 export VESPA_CONFIG_ID="file:$VESPA_HOME/conf/logd/logd.cfg"
 
-if [ "$multitenant" = "true" ]; then
+if [ "$cloudconfig_server__multitenant" = "true" ]; then
     PIDFILE_LOGD=var/run/logd.pid
     VESPA_SERVICE_NAME=logd
     export VESPA_SERVICE_NAME

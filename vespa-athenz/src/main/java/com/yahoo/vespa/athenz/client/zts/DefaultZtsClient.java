@@ -1,10 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zts;
 
+import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.NToken;
@@ -22,7 +22,6 @@ import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.TenantDomainsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.security.Pkcs10Csr;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -65,8 +64,8 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public InstanceIdentity registerInstance(AthenzService providerIdentity,
-                                             AthenzService instanceIdentity,
+    public InstanceIdentity registerInstance(AthenzIdentity providerIdentity,
+                                             AthenzIdentity instanceIdentity,
                                              String instanceId,
                                              String attestationData,
                                              boolean requestServiceToken,
@@ -81,8 +80,8 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public InstanceIdentity refreshInstance(AthenzService providerIdentity,
-                                            AthenzService instanceIdentity,
+    public InstanceIdentity refreshInstance(AthenzIdentity providerIdentity,
+                                            AthenzIdentity instanceIdentity,
                                             String instanceId,
                                             boolean requestServiceToken,
                                             Pkcs10Csr csr) {
@@ -101,7 +100,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public Identity getServiceIdentity(AthenzService identity, String keyId, Pkcs10Csr csr) {
+    public Identity getServiceIdentity(AthenzIdentity identity, String keyId, Pkcs10Csr csr) {
         URI uri = ztsUrl.resolve(String.format("instance/%s/%s/refresh", identity.getDomainName(), identity.getName()));
         HttpUriRequest request = RequestBuilder.post()
                 .setUri(uri)
@@ -114,7 +113,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public Identity getServiceIdentity(AthenzService identity, String keyId, KeyPair keyPair, String dnsSuffix) {
+    public Identity getServiceIdentity(AthenzIdentity identity, String keyId, KeyPair keyPair, String dnsSuffix) {
         Pkcs10Csr csr = new IdentityCsrGenerator(dnsSuffix).generateIdentityCsr(identity, keyPair);
         return getServiceIdentity(identity, keyId, csr);
     }

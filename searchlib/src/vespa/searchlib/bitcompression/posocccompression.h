@@ -27,11 +27,7 @@
 #define K_VALUE_POSOCC_ELEMENTID 0
 #define K_VALUE_POSOCC_ELEMENTWEIGHT 9
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 class DocIdAndPosOccFeatures : public DocIdAndFeatures
 {
@@ -44,8 +40,7 @@ public:
                uint32_t elementLen)
     {
         assert(wordPos < elementLen);
-        if (_elements.empty() ||
-            elementId > _elements.back().getElementId()) {
+        if (_elements.empty() || elementId > _elements.back().getElementId()) {
             _elements.emplace_back(elementId, elementWeight, elementLen);
         } else {
             assert(elementId == _elements.back().getElementId());
@@ -53,22 +48,15 @@ public:
             assert(elementLen == _elements.back().getElementLen());
         }
         assert(_elements.back().getNumOccs() == 0 ||
-               wordPos > _wordPositions.back().getWordPos());
+               wordPos > _word_positions.back().getWordPos());
         _elements.back().incNumOccs();
-        _wordPositions.emplace_back(wordPos);
+        _word_positions.emplace_back(wordPos);
     }
 };
 
-} // namespace search::index
+}
 
-} // namespace search
-
-
-namespace search
-{
-
-namespace bitcompression
-{
+namespace search::bitcompression {
 
 class PosOccFieldParams
 {
@@ -123,12 +111,12 @@ public:
 
     void cacheParamsRef() {
         _numFields = _params.size();
-        _fieldParams = _params.empty() ? NULL : &_params[0];
+        _fieldParams = _params.empty() ? nullptr : &_params[0];
     }
 
     void assertCachedParamsRef() const {
         assert(_numFields == _params.size());
-        assert(_fieldParams == (_params.empty() ? NULL : &_params[0]));
+        assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
     }
 
     uint32_t getNumFields() const { return _numFields; }
@@ -474,6 +462,4 @@ extern template class EGPosOccDecodeContextCooked<false>;
 extern template class EGPosOccEncodeContext<true>;
 extern template class EGPosOccEncodeContext<false>;
 
-} // namespace bitcompression
-
-} // namespace search
+}

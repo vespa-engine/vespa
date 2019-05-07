@@ -104,10 +104,9 @@ void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestB
     std::vector<Layout> layouts = {
         {},                                    {},
         {x(5)},                                {x(5)},
-        {x(5)},                                {x(3)},
         {x(5)},                                {y(5)},
         {x(5)},                                {x(5),y(5)},
-        {x(3),y(5)},                           {x(4),y(4)},
+        {x(5),y(3)},                           {x(5),y(3)},
         {x(3),y(5)},                           {y(5),z(7)},
         {x({"a","b","c"})},                    {x({"a","b","c"})},
         {x({"a","b","c"})},                    {x({"a","b"})},
@@ -161,10 +160,6 @@ void generate_tensor_join(TestBuilder &dst) {
 void generate_dot_product(TestBuilder &dst) {
     dst.add("reduce(a*b,sum)", {{"a", spec(x(3), Seq({ 2, 3, 5 }))}, {"b", spec(x(3), Seq({ 7, 11, 13 }))}},
             spec((2 * 7) + (3 * 11) + (5 * 13)));
-    dst.add("reduce(a*b,sum)", {{"a", spec(x(2), Seq({ 2, 3 }))}, {"b", spec(x(3), Seq({ 7, 11, 13 }))}},
-            spec((2 * 7) + (3 * 11)));
-    dst.add("reduce(a*b,sum)", {{"a", spec(x(3), Seq({ 2, 3, 5 }))}, {"b", spec(x(2), Seq({ 7, 11 }))}},
-            spec((2 * 7) + (3 * 11)));
 }
 
 //-----------------------------------------------------------------------------
@@ -191,7 +186,7 @@ void generate_tensor_concat(TestBuilder &dst) {
             spec({x(4),y(2)}, Seq({1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 6.0, 6.0})));
     dst.add("concat(a,b,x)", {{"a", spec(z(3), Seq({1.0, 2.0, 3.0}))}, {"b", spec(y(2), Seq({4.0, 5.0}))}},
             spec({x(2),y(2),z(3)}, Seq({1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0})));
-    dst.add("concat(a,b,x)", {{"a", spec(y(3), Seq({1.0, 2.0, 3.0}))}, {"b", spec(y(2), Seq({4.0, 5.0}))}},
+    dst.add("concat(a,b,x)", {{"a", spec(y(2), Seq({1.0, 2.0}))}, {"b", spec(y(2), Seq({4.0, 5.0}))}},
             spec({x(2), y(2)}, Seq({1.0, 2.0, 4.0, 5.0})));
     dst.add("concat(concat(a,b,x),concat(c,d,x),y)", {{"a", spec(1.0)}, {"b", spec(2.0)}, {"c", spec(3.0)}, {"d", spec(4.0)}},
             spec({x(2), y(2)}, Seq({1.0, 3.0, 2.0, 4.0})));

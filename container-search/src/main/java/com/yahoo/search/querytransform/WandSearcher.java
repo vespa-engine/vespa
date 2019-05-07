@@ -15,7 +15,6 @@ import com.yahoo.text.MapParser;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.yahoo.container.protect.Error.UNSPECIFIED;
 import com.yahoo.yolean.Exceptions;
 
 /**
@@ -147,7 +146,7 @@ public class WandSearcher extends Searcher {
             InputResolver inputs = new InputResolver(query, execution);
             if ( ! inputs.hasValidData()) return execution.search(query);
 
-            QueryTreeUtil.andQueryItemWithRoot(query, createWandQueryItem(inputs));
+            query.getModel().getQueryTree().and(createWandQueryItem(inputs));
             query.trace("WandSearcher: Added WAND operator", true, 4);
             return execution.search(query);
         }

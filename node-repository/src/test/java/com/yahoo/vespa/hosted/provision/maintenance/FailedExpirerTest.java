@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -89,7 +90,7 @@ public class FailedExpirerTest {
 
         scenario.clock().advance(Duration.ofDays(2));
         scenario.expirer().run();
-        scenario.assertNodesIn(Node.State.failed, "node1");
+        scenario.assertNodesIn(Node.State.dirty, "node1");
         scenario.assertNodesIn(Node.State.parked, "node2", "node3");
     }
 
@@ -125,7 +126,7 @@ public class FailedExpirerTest {
         scenario.clock().advance(Duration.ofHours(2));
         scenario.expirer().run();
 
-        scenario.assertNodesIn(Node.State.failed, "node1");
+        scenario.assertNodesIn(Node.State.dirty, "node1");
         scenario.assertNodesIn(Node.State.parked, "node2", "node3");
     }
 
@@ -186,20 +187,24 @@ public class FailedExpirerTest {
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node4", "parent1")
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node5", "parent1")
+                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node4", "parent3")
+                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node5", "parent3")
                 .setReady("node1", "node2", "node3")
                 .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node3")
-                .failWithHardwareFailure("parent1");
+                .failNode(1, "node3")
+                .setReady("node4")
+                .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node4")
+                .failNode(1, "node4")
+                .setReady("node5")
+                .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node5")
+                .failWithHardwareFailure("parent3");
 
-        scenario.clock().advance(Duration.ofDays(2));
-        scenario.failNode(1, "node4", "node5");
         scenario.clock().advance(Duration.ofDays(3));
 
         scenario.expirer().run(); // Run twice because parent can only be parked after the child
         scenario.expirer().run();
 
-        scenario.assertNodesIn(Node.State.failed, "parent1", "node4", "node5");
+        scenario.assertNodesIn(Node.State.failed, "parent3", "node3", "node4");
     }
 
     @Test
@@ -232,8 +237,8 @@ public class FailedExpirerTest {
     private static class FailureScenario {
 
         private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "docker");
-        public static final Flavor defaultFlavor = nodeFlavors.getFlavorOrThrow("default");
-        public static final Flavor dockerFlavor = nodeFlavors.getFlavorOrThrow("docker");
+        public static final NodeResources defaultFlavor = new NodeResources(2, 2, 2);
+        public static final NodeResources dockerFlavor = new NodeResources(1, 1, 1);
         
         private final MockCurator curator = new MockCurator();
         private final ManualClock clock = new ManualClock();
@@ -252,8 +257,7 @@ public class FailedExpirerTest {
                                                      DockerImage.fromString("docker-image"),
                                                      true);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
-            this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30),
-                                             new JobControl(nodeRepository.database()));
+            this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30));
         }
 
         public ManualClock clock() {
@@ -269,15 +273,15 @@ public class FailedExpirerTest {
                                  .orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
         }
 
-        public FailureScenario withNode(NodeType type, Flavor flavor, String hostname, String parentHostname) {
+        public FailureScenario withNode(NodeType type, NodeResources flavor, String hostname, String parentHostname) {
             nodeRepository.addNodes(Collections.singletonList(
                     nodeRepository.createNode(UUID.randomUUID().toString(), hostname,
-                                              Optional.ofNullable(parentHostname), flavor, type)
+                                              Optional.ofNullable(parentHostname), new Flavor(flavor), type)
             ));
             return this;
         }
 
-        public FailureScenario withNode(NodeType type, Flavor flavor, String hostname) {
+        public FailureScenario withNode(NodeType type, NodeResources flavor, String hostname) {
             return withNode(type, flavor, hostname, null);
         }
 
@@ -317,13 +321,13 @@ public class FailedExpirerTest {
             return allocate(clusterType, defaultFlavor, hostname);
         }
 
-        public FailureScenario allocate(ClusterSpec.Type clusterType, Flavor flavor, String... hostname) {
+        public FailureScenario allocate(ClusterSpec.Type clusterType, NodeResources flavor, String... hostname) {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
                                                           false,
                                                           Collections.emptySet());
-            Capacity capacity = Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false, true);
+            Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
 

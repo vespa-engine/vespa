@@ -3,7 +3,6 @@ package com.yahoo.messagebus;
 
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.subscription.ConfigURI;
-import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.messagebus.routing.HopSpec;
 import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingSpec;

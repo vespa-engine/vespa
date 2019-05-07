@@ -16,6 +16,7 @@ import java.util.Optional;
  */
 @Beta
 public class TestAndSetCondition {
+
     public static final TestAndSetCondition NOT_PRESENT_CONDITION = new TestAndSetCondition();
 
     private final String conditionStr;
@@ -33,9 +34,9 @@ public class TestAndSetCondition {
     public boolean isPresent() { return !conditionStr.isEmpty(); }
 
     /**
-     * Maps and optional test and set conditiong string to a TestAndSetCondition.
+     * Maps and optional test and set condition string to a TestAndSetCondition.
      * If the condition string is not present, a "not present" condition is returned
-     * @param conditionString test and set conditiong string (document selection)
+     * @param conditionString test and set condition string (document selection)
      * @return a TestAndSetCondition representing the condition string or a "not present" condition
      */
     public static TestAndSetCondition fromConditionString(Optional<String> conditionString) {
@@ -43,4 +44,5 @@ public class TestAndSetCondition {
                 .map(TestAndSetCondition::new)
                 .orElse(TestAndSetCondition.NOT_PRESENT_CONDITION);
     }
+
 }

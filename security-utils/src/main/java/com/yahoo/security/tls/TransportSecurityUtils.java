@@ -1,9 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
-import com.yahoo.security.tls.https.TlsAwareHttpClientBuilder;
-
-import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -49,12 +46,6 @@ public class TransportSecurityUtils {
     public static Optional<TlsContext> createTlsContext() {
         return getConfigFile()
                 .map(configFile -> new ReloadingTlsContext(configFile, getInsecureAuthorizationMode()));
-    }
-
-    public static HttpClient.Builder createHttpClientBuilder(String userAgent) {
-        return createTlsContext()
-                .map(tlsContext -> new TlsAwareHttpClientBuilder(tlsContext, userAgent))
-                .orElseGet(() -> new TlsAwareHttpClientBuilder(userAgent));
     }
 
     private static Optional<String> getEnvironmentVariable(String environmentVariable) {

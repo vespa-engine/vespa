@@ -33,7 +33,6 @@ import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -534,13 +533,13 @@ public class NodeAgentImpl implements NodeAgent {
 
         ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
-        final int totalNumCpuCores = ((List<Number>) ((Map) stats.getCpuStats().get("cpu_usage")).get("percpu_usage")).size();
-        final long cpuContainerKernelTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("usage_in_kernelmode")).longValue();
-        final long cpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
-        final long cpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
-        final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
-        final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
-        final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
+        final int totalNumCpuCores = stats.getCpuStats().getOnlineCpus();
+        final long cpuContainerKernelTime = stats.getCpuStats().getUsageInKernelMode();
+        final long cpuContainerTotalTime = stats.getCpuStats().getTotalUsage();
+        final long cpuSystemTotalTime = stats.getCpuStats().getSystemCpuUsage();
+        final long memoryTotalBytes = stats.getMemoryStats().getLimit();
+        final long memoryTotalBytesUsage = stats.getMemoryStats().getUsage();
+        final long memoryTotalBytesCache = stats.getMemoryStats().getCache();
         final long diskTotalBytes = (long) (node.getMinDiskAvailableGb() * BYTES_IN_GB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(context);
 
@@ -573,14 +572,13 @@ public class NodeAgentImpl implements NodeAgent {
 
         stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
             Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
-            Map<String, Number> infStats = (Map<String, Number>) interfaceStats;
             DimensionMetrics networkMetrics = new DimensionMetrics.Builder(APP, netDims)
-                    .withMetric("net.in.bytes", infStats.get("rx_bytes").longValue())
-                    .withMetric("net.in.errors", infStats.get("rx_errors").longValue())
-                    .withMetric("net.in.dropped", infStats.get("rx_dropped").longValue())
-                    .withMetric("net.out.bytes", infStats.get("tx_bytes").longValue())
-                    .withMetric("net.out.errors", infStats.get("tx_errors").longValue())
-                    .withMetric("net.out.dropped", infStats.get("tx_dropped").longValue())
+                    .withMetric("net.in.bytes", interfaceStats.getRxBytes())
+                    .withMetric("net.in.errors", interfaceStats.getRxErrors())
+                    .withMetric("net.in.dropped", interfaceStats.getRxDropped())
+                    .withMetric("net.out.bytes", interfaceStats.getTxBytes())
+                    .withMetric("net.out.errors", interfaceStats.getTxErrors())
+                    .withMetric("net.out.dropped", interfaceStats.getTxDropped())
                     .build();
             metrics.add(networkMetrics);
         });

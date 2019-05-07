@@ -1,38 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/document/bucket/bucket.h>
+#include <gtest/gtest.h>
 
 namespace document {
-
-class BucketTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(BucketTest);
-    CPPUNIT_TEST(testBucketId);
-    CPPUNIT_TEST(testBucketGeneration);
-    CPPUNIT_TEST(testBucketSerialization);
-    CPPUNIT_TEST(testReverseBucket);
-    CPPUNIT_TEST(testContains);
-    CPPUNIT_TEST(testGetBit);
-    CPPUNIT_TEST(testToString);
-    CPPUNIT_TEST(testOperators);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
-    void testBucketId();
-    void testBucketGeneration();
-    void testBucketSerialization();
-    void testReverseBucket();
-    void testContains();
-    void testGetBit();
-    void testToString();
-    void testOperators();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketTest);
 
 struct Hex {
     BucketId::Type val;
@@ -46,62 +21,62 @@ inline std::ostream& operator<<(std::ostream& out, const Hex& h) {
     return out;
 }
 
-void BucketTest::testBucketId()
+TEST(BucketTest, testBucketId)
 {
     // Test empty (invalid) buckets
     BucketId id1;
     BucketId id2;
-    CPPUNIT_ASSERT_EQUAL(id1, id2);
-    CPPUNIT_ASSERT(!(id1 < id2) && !(id2 < id1));
-    CPPUNIT_ASSERT_EQUAL(Hex(0), Hex(id1.getId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0), Hex(id1.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("BucketId(0x0000000000000000)"),
+    EXPECT_EQ(id1, id2);
+    EXPECT_TRUE(!(id1 < id2) && !(id2 < id1));
+    EXPECT_EQ(Hex(0), Hex(id1.getId()));
+    EXPECT_EQ(Hex(0), Hex(id1.getRawId()));
+    EXPECT_EQ(vespalib::string("BucketId(0x0000000000000000)"),
                          id1.toString());
-    CPPUNIT_ASSERT_EQUAL(0u, id1.getUsedBits());
+    EXPECT_EQ(0u, id1.getUsedBits());
 
     // Test bucket with a value
     id2 = BucketId((BucketId::Type(16) << 58) | 0x123);
-    CPPUNIT_ASSERT(id1 != id2);
-    CPPUNIT_ASSERT((id1 < id2) && !(id2 < id1));
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000000123ull), Hex(id2.getId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000000123ull), Hex(id2.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("BucketId(0x4000000000000123)"),
-                         id2.toString());
-    CPPUNIT_ASSERT_EQUAL(16u, id2.getUsedBits());
+    EXPECT_TRUE(id1 != id2);
+    EXPECT_TRUE((id1 < id2) && !(id2 < id1));
+    EXPECT_EQ(Hex(0x4000000000000123ull), Hex(id2.getId()));
+    EXPECT_EQ(Hex(0x4000000000000123ull), Hex(id2.getRawId()));
+    EXPECT_EQ(vespalib::string("BucketId(0x4000000000000123)"),
+              id2.toString());
+    EXPECT_EQ(16u, id2.getUsedBits());
 
     // Test copy constructor and operator=
     BucketId id3(id2);
-    CPPUNIT_ASSERT_EQUAL(id2, id3);
+    EXPECT_EQ(id2, id3);
     id3 = id1;
-    CPPUNIT_ASSERT(!(id2 == id3));
+    EXPECT_TRUE(!(id2 == id3));
     id3 = id2;
-    CPPUNIT_ASSERT_EQUAL(id2, id3);
+    EXPECT_EQ(id2, id3);
 }
 
-void BucketTest::testGetBit()
+TEST(BucketTest, testGetBit)
 {
     for (uint32_t i = 0; i < 58; ++i) {
-        CPPUNIT_ASSERT_EQUAL(0, (int)document::BucketId(16, 0).getBit(i));
+        EXPECT_EQ(0, (int)document::BucketId(16, 0).getBit(i));
     }
 
     for (uint32_t i = 0; i < 4; ++i) {
-        CPPUNIT_ASSERT_EQUAL(0, (int)document::BucketId(16, 16).getBit(i));
+        EXPECT_EQ(0, (int)document::BucketId(16, 16).getBit(i));
     }
 
-    CPPUNIT_ASSERT_EQUAL(1, (int)document::BucketId(16, 16).getBit(4));
+    EXPECT_EQ(1, (int)document::BucketId(16, 16).getBit(4));
 
     for (uint32_t i = 5; i < 59; ++i) {
-        CPPUNIT_ASSERT_EQUAL(0, (int)document::BucketId(16, 16).getBit(i));
+        EXPECT_EQ(0, (int)document::BucketId(16, 16).getBit(i));
     }
 
-    CPPUNIT_ASSERT_EQUAL(0, (int)document::BucketId(17, 0x0ffff).getBit(16));
+    EXPECT_EQ(0, (int)document::BucketId(17, 0x0ffff).getBit(16));
 
     for (uint32_t i = 0; i < 16; ++i) {
-        CPPUNIT_ASSERT_EQUAL(1, (int)document::BucketId(17, 0x0ffff).getBit(i));
+        EXPECT_EQ(1, (int)document::BucketId(17, 0x0ffff).getBit(i));
     }
 }
 
-void BucketTest::testBucketGeneration()
+TEST(BucketTest, testBucketGeneration)
 {
     BucketIdFactory factory;
     DocumentId doc1("doc:ns:spec");
@@ -136,49 +111,49 @@ void BucketTest::testBucketGeneration()
     BucketId orderDocBucket5(factory.getBucketId(orderDoc5));
     BucketId orderDocBucket6(factory.getBucketId(orderDoc6));
 
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe99703f200000012ull), Hex(userDocBucket1.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xebfa518a00000012ull), Hex(userDocBucket2.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xeac1850800000013ull), Hex(userDocBucket3.getRawId()));
+    EXPECT_EQ(Hex(0xe99703f200000012ull), Hex(userDocBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xebfa518a00000012ull), Hex(userDocBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xeac1850800000013ull), Hex(userDocBucket3.getRawId()));
 
-    CPPUNIT_ASSERT_EQUAL(Hex(0xeae764e90000000dull), Hex(orderDocBucket1.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xeacb85f10000000dull), Hex(orderDocBucket2.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xea68ddf10000000dull), Hex(orderDocBucket3.getRawId()));
+    EXPECT_EQ(Hex(0xeae764e90000000dull), Hex(orderDocBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xeacb85f10000000dull), Hex(orderDocBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xea68ddf10000000dull), Hex(orderDocBucket3.getRawId()));
 
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe87526540000000dull), Hex(orderDocBucket4.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xea59f8f20000000dull), Hex(orderDocBucket5.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe9eb703d0000000dull), Hex(orderDocBucket6.getRawId()));
+    EXPECT_EQ(Hex(0xe87526540000000dull), Hex(orderDocBucket4.getRawId()));
+    EXPECT_EQ(Hex(0xea59f8f20000000dull), Hex(orderDocBucket5.getRawId()));
+    EXPECT_EQ(Hex(0xe9eb703d0000000dull), Hex(orderDocBucket6.getRawId()));
 
     userDocBucket1.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000000012ull), Hex(userDocBucket1.getId()));
+    EXPECT_EQ(Hex(0x4000000000000012ull), Hex(userDocBucket1.getId()));
     userDocBucket2.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000000012ull), Hex(userDocBucket2.getId()));
+    EXPECT_EQ(Hex(0x4000000000000012ull), Hex(userDocBucket2.getId()));
     userDocBucket3.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000000013ull), Hex(userDocBucket3.getId()));
+    EXPECT_EQ(Hex(0x4000000000000013ull), Hex(userDocBucket3.getId()));
 
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe90ce4b09a1acd50ull), Hex(groupDocBucket1.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe9cedaa49a1acd50ull), Hex(groupDocBucket2.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe8cdb18bafe81f24ull), Hex(groupDocBucket3.getRawId()));
+    EXPECT_EQ(Hex(0xe90ce4b09a1acd50ull), Hex(groupDocBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xe9cedaa49a1acd50ull), Hex(groupDocBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xe8cdb18bafe81f24ull), Hex(groupDocBucket3.getRawId()));
 
     groupDocBucket1.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x400000000000cd50ull), Hex(groupDocBucket1.getId()));
+    EXPECT_EQ(Hex(0x400000000000cd50ull), Hex(groupDocBucket1.getId()));
     groupDocBucket2.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x400000000000cd50ull), Hex(groupDocBucket2.getId()));
+    EXPECT_EQ(Hex(0x400000000000cd50ull), Hex(groupDocBucket2.getId()));
     groupDocBucket3.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000001f24ull), Hex(groupDocBucket3.getId()));
+    EXPECT_EQ(Hex(0x4000000000001f24ull), Hex(groupDocBucket3.getId()));
 
-    CPPUNIT_ASSERT_EQUAL(Hex(0xe980c9abd5fd8d11ull), Hex(docBucket1.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xeafe870c5f9c37b9ull), Hex(docBucket2.getRawId()));
-    CPPUNIT_ASSERT_EQUAL(Hex(0xeaebe9473ecbcd69ull), Hex(docBucket3.getRawId()));
+    EXPECT_EQ(Hex(0xe980c9abd5fd8d11ull), Hex(docBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xeafe870c5f9c37b9ull), Hex(docBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xeaebe9473ecbcd69ull), Hex(docBucket3.getRawId()));
 
     docBucket1.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x4000000000008d11ull), Hex(docBucket1.getId()));
+    EXPECT_EQ(Hex(0x4000000000008d11ull), Hex(docBucket1.getId()));
     docBucket2.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x40000000000037b9ull), Hex(docBucket2.getId()));
+    EXPECT_EQ(Hex(0x40000000000037b9ull), Hex(docBucket2.getId()));
     docBucket3.setUsedBits(16);
-    CPPUNIT_ASSERT_EQUAL(Hex(0x400000000000cd69ull), Hex(docBucket3.getId()));
+    EXPECT_EQ(Hex(0x400000000000cd69ull), Hex(docBucket3.getId()));
 }
 
-void BucketTest::testBucketSerialization()
+TEST(BucketTest, testBucketSerialization)
 {
     BucketIdFactory factory;
     DocumentId doc(DocIdString("ns", "spec"));
@@ -186,7 +161,7 @@ void BucketTest::testBucketSerialization()
 
     std::ostringstream ost;
     ost << bucket.getRawId();
-    CPPUNIT_ASSERT_EQUAL(std::string("16825669947722927377"),
+    EXPECT_EQ(std::string("16825669947722927377"),
                          ost.str());
 
     BucketId::Type id;
@@ -194,96 +169,99 @@ void BucketTest::testBucketSerialization()
     ist >> id;
     BucketId bucket2(id);
 
-    CPPUNIT_ASSERT_EQUAL(bucket, bucket2);
+    EXPECT_EQ(bucket, bucket2);
 }
 
-void BucketTest::testReverseBucket()
+TEST(BucketTest, testReverseBucket)
 {
     {
         BucketId id(0x3000000000000012ull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0x480000000000000cull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0x480000000000000cull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
 
     {
         BucketId id(0x4000000000000012ull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0x4800000000000010ull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0x4800000000000010ull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
 
     {
         BucketId id(0x600000000000ffffull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0xffff000000000018ull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0xffff000000000018ull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
 
     {
         BucketId id(0x540000000001ffffull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0xffff800000000015ull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0xffff800000000015ull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
 
     {
         BucketId id(0xa80000000003ffffull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0xffffc0000000002aull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0xffffc0000000002aull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
 
     {
         BucketId id(0xbc0000000007ffffull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0xffffe0000000002full), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0xffffe0000000002full), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
     {
         BucketId id(0xcc0000000002ffffull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0xffff400000000033ull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0xffff400000000033ull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
     {
         BucketId id(0xebffffffffffffffull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0xfffffffffffffffaull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0xfffffffffffffffaull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
     {
         BucketId id(0xeaaaaaaaaaaaaaaaull);
-        CPPUNIT_ASSERT_EQUAL(Hex(0x555555555555557aull), Hex(id.toKey()));
-        CPPUNIT_ASSERT_EQUAL(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
+        EXPECT_EQ(Hex(0x555555555555557aull), Hex(id.toKey()));
+        EXPECT_EQ(Hex(id.getId()), Hex(document::BucketId::keyToBucketId(id.stripUnused().toKey())));
     }
 }
 
-void BucketTest::testContains() {
+TEST(BucketTest, testContains)
+{
     BucketId id(18, 0x123456789ULL);
-    CPPUNIT_ASSERT(id.contains(BucketId(20, 0x123456789ULL)));
-    CPPUNIT_ASSERT(id.contains(BucketId(18, 0x888f56789ULL)));
-    CPPUNIT_ASSERT(id.contains(BucketId(24, 0x888456789ULL)));
-    CPPUNIT_ASSERT(!id.contains(BucketId(24, 0x888886789ULL)));
-    CPPUNIT_ASSERT(!id.contains(BucketId(16, 0x123456789ULL)));
+    EXPECT_TRUE(id.contains(BucketId(20, 0x123456789ULL)));
+    EXPECT_TRUE(id.contains(BucketId(18, 0x888f56789ULL)));
+    EXPECT_TRUE(id.contains(BucketId(24, 0x888456789ULL)));
+    EXPECT_TRUE(!id.contains(BucketId(24, 0x888886789ULL)));
+    EXPECT_TRUE(!id.contains(BucketId(16, 0x123456789ULL)));
 }
 
-void BucketTest::testToString() {
+TEST(BucketTest, testToString)
+{
     BucketSpace bucketSpace(0x123450006789ULL);
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("BucketSpace(0x0000123450006789)"), bucketSpace.toString());
+    EXPECT_EQ(vespalib::string("BucketSpace(0x0000123450006789)"), bucketSpace.toString());
     Bucket bucket(bucketSpace, BucketId(0x123456789ULL));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             vespalib::string("Bucket(BucketSpace(0x0000123450006789), BucketId(0x0000000123456789))"),
             bucket.toString());
 }
 
-void BucketTest::testOperators() {
-    CPPUNIT_ASSERT(BucketSpace(0x1) == BucketSpace(0x1));
-    CPPUNIT_ASSERT(BucketSpace(0x1) != BucketSpace(0x2));
-    CPPUNIT_ASSERT(BucketSpace(0x1) < BucketSpace(0x2));
+TEST(BucketTest, testOperators)
+{
+    EXPECT_TRUE(BucketSpace(0x1) == BucketSpace(0x1));
+    EXPECT_TRUE(BucketSpace(0x1) != BucketSpace(0x2));
+    EXPECT_TRUE(BucketSpace(0x1) < BucketSpace(0x2));
 
-    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) ==
-                           Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)));
-    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) !=
-                           Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
-    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) !=
-                           Bucket(BucketSpace(0x1), BucketId(0x987654321ULL)));
-    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) <
-                           Bucket(BucketSpace(0x1), BucketId(0x987654321ULL)));
-    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) <
-                           Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
+    EXPECT_TRUE(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) ==
+                Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)));
+    EXPECT_TRUE(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) !=
+                Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
+    EXPECT_TRUE(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) !=
+                Bucket(BucketSpace(0x1), BucketId(0x987654321ULL)));
+    EXPECT_TRUE(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) <
+                Bucket(BucketSpace(0x1), BucketId(0x987654321ULL)));
+    EXPECT_TRUE(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) <
+                Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
 }
 
 } // document

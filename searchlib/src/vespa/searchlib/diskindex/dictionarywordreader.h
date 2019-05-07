@@ -63,10 +63,12 @@ public:
     }
 
     bool operator<(const DictionaryWordReader &rhs) const {
-        if (!isValid())
+        if (!isValid()) {
             return false;
-        if (!rhs.isValid())
+        }
+        if (!rhs.isValid()) {
             return true;
+        }
         return _word < rhs._word;
     }
 

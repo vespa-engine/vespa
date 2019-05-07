@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {
+      "hostname": "host-tenant1:application1:default-prod.us-central-1",
+      "state": "active",
+      "orchestration": "unorchestrated",
+      "version": "6.1",
+      "flavor": "d-2-8-50",
+      "clusterId": "cluster",
+      "clusterType": "container"
+    }
+  ]
+}

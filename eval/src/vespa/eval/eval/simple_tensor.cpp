@@ -16,12 +16,31 @@ using Cells = SimpleTensor::Cells;
 using IndexList = std::vector<size_t>;
 using Label = SimpleTensor::Label;
 using CellRef = std::reference_wrapper<const Cell>;
+using CellType = ValueType::CellType;
 
 namespace {
 
+constexpr uint32_t DOUBLE_CELL_TYPE = 0;
+constexpr uint32_t FLOAT_CELL_TYPE = 1;
+
+uint32_t cell_type_to_id(CellType cell_type) {
+    switch (cell_type) {
+    case CellType::DOUBLE: return DOUBLE_CELL_TYPE;
+    case CellType::FLOAT: return FLOAT_CELL_TYPE;
+    }
+    abort();
+}
+
+CellType id_to_cell_type(uint32_t id) {
+    switch (id) {
+    case DOUBLE_CELL_TYPE: return CellType::DOUBLE;
+    case FLOAT_CELL_TYPE: return CellType::FLOAT;
+    }
+    abort();
+}
+
 void assert_type(const ValueType &type) {
     (void) type;
-    assert(!type.is_abstract());
     assert(type.is_double() || type.is_tensor());
 }
 
@@ -94,10 +113,12 @@ struct TypeMeta {
     IndexList mapped;
     IndexList indexed;
     size_t block_size;
+    CellType cell_type;
     explicit TypeMeta(const ValueType &type)
         : mapped(),
           indexed(),
-          block_size(1)
+          block_size(1),
+          cell_type(type.cell_type())
     {
         for (size_t i = 0; i < type.dimensions().size(); ++i) {
             const auto &dimension = type.dimensions()[i];
@@ -418,19 +439,29 @@ public:
 struct Format {
     bool     is_sparse;
     bool     is_dense;
+    bool     with_cell_type;
     uint32_t tag;
     explicit Format(const TypeMeta &meta)
         : is_sparse(meta.mapped.size() > 0),
           is_dense((meta.indexed.size() > 0) || !is_sparse),
-          tag((is_sparse ? 0x1 : 0) | (is_dense ? 0x2 : 0)) {}
+          with_cell_type(meta.cell_type != CellType::DOUBLE),
+          tag((is_sparse ? 0x1 : 0) | (is_dense ? 0x2 : 0) | (with_cell_type ? 0x4 : 0)) {}
     explicit Format(uint32_t tag_in)
         : is_sparse((tag_in & 0x1) != 0),
           is_dense((tag_in & 0x2) != 0),
+          with_cell_type((tag_in & 0x4) != 0),
           tag(tag_in) {}
     ~Format() {}
 };
 
+void maybe_encode_cell_type(nbostream &output, const Format &format, const TypeMeta &meta) {
+    if (format.with_cell_type) {
+        output.putInt1_4Bytes(cell_type_to_id(meta.cell_type));
+    }
+}
+
 void encode_type(nbostream &output, const Format &format, const ValueType &type, const TypeMeta &meta) {
+    maybe_encode_cell_type(output, format, meta);
     if (format.is_sparse) {
         output.putInt1_4Bytes(meta.mapped.size());
         for (size_t idx: meta.mapped) {
@@ -458,7 +489,15 @@ void encode_mapped_labels(nbostream &output, const TypeMeta &meta, const Address
     }
 }
 
+CellType maybe_decode_cell_type(nbostream &input, const Format &format) {
+    if (format.with_cell_type) {
+        return id_to_cell_type(input.getInt1_4Bytes());
+    }
+    return CellType::DOUBLE;
+}
+
 ValueType decode_type(nbostream &input, const Format &format) {
+    CellType cell_type = maybe_decode_cell_type(input, format);
     std::vector<ValueType::Dimension> dim_list;
     if (format.is_sparse) {
         size_t cnt = input.getInt1_4Bytes();
@@ -476,9 +515,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
             dim_list.emplace_back(name, input.getInt1_4Bytes());
         }
     }
-    return (dim_list.empty()
-            ? ValueType::double_type()
-            : ValueType::tensor_type(std::move(dim_list)));
+    return ValueType::tensor_type(std::move(dim_list), cell_type);
 }
 
 size_t maybe_decode_num_blocks(nbostream &input, const TypeMeta &meta, const Format &format) {
@@ -506,7 +543,10 @@ void decode_cells(nbostream &input, const ValueType &type, const TypeMeta meta,
             decode_cells(input, type, meta, address, n + 1, builder);
         }
     } else {
-        builder.set(address, input.readValue<double>());
+        double value = (meta.cell_type == CellType::FLOAT)
+                       ? input.readValue<float>()
+                       : input.readValue<double>();
+        builder.set(address, value);
     }
 }
 
@@ -684,7 +724,11 @@ SimpleTensor::encode(const SimpleTensor &tensor, nbostream &output)
         encode_mapped_labels(output, meta, block.begin()->get().address);
         View subview(block, meta.indexed);
         for (auto cell = subview.first_range(); !cell.empty(); cell = subview.next_range(cell)) {
-            output << cell.begin()->get().value;
+            if (meta.cell_type == CellType::FLOAT) {
+                output << (float) cell.begin()->get().value;
+            } else {
+                output << cell.begin()->get().value;
+            }
         }
     }
 }

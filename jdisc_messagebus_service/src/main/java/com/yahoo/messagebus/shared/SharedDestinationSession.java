@@ -4,8 +4,14 @@ package com.yahoo.messagebus.shared;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -17,12 +23,10 @@ public class SharedDestinationSession extends AbstractResource implements Messag
 
     private static final Logger log = Logger.getLogger(SharedDestinationSession.class.getName());
     private final AtomicReference<MessageHandler> msgHandler = new AtomicReference<>();
-    private final SharedMessageBus mbus;
     private final DestinationSession session;
     private final ResourceReference mbusReference;
 
-    public SharedDestinationSession(SharedMessageBus mbus, DestinationSessionParams params) {
-        this.mbus = mbus;
+    SharedDestinationSession(SharedMessageBus mbus, DestinationSessionParams params) {
         this.msgHandler.set(params.getMessageHandler());
         this.session = mbus.messageBus().createDestinationSession(params.setMessageHandler(this));
         this.mbusReference = mbus.refer();

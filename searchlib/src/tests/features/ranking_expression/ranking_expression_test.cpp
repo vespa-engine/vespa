@@ -54,7 +54,7 @@ ExpressionReplacer::SP make_replacer() {
     auto replacer = std::make_shared<ListExpressionReplacer>();
     replacer->add(std::make_unique<NullExpressionReplacer>());
     replacer->add(std::make_unique<DummyReplacer>("foo", FeatureType::number()));
-    replacer->add(std::make_unique<DummyReplacer>("bar", FeatureType::object(ValueType::from_spec("tensor(x[])"))));
+    replacer->add(std::make_unique<DummyReplacer>("bar", FeatureType::object(ValueType::from_spec("tensor(x[5])"))));
     return replacer;
 }
 
@@ -124,15 +124,6 @@ TEST("require that ranking expression can resolve to concrete complex type") {
                                FeatureType::object(ValueType::from_spec("tensor(x{},y{},z{})"))));
 }
 
-TEST("require that ranking expression can resolve to abstract complex type") {
-    TEST_DO(verify_output_type({{"a", "tensor"}}, "a*b", FeatureType::object(ValueType::from_spec("tensor"))));
-}
-
-TEST("require that ranking expression can resolve to 'any' type") {
-    TEST_DO(verify_output_type({{"a", "tensor(x{},y{})"}, {"b", "tensor"}}, "a*b",
-                               FeatureType::object(ValueType::from_spec("any"))));
-}
-
 TEST("require that setup fails for incompatible types") {
     TEST_DO(verify_setup_fail({{"a", "tensor(x{},y{})"}, {"b", "tensor(y[10],z{})"}}, "a*b"));
 }
@@ -150,7 +141,7 @@ TEST("require that replaced expressions override result type") {
     TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "foo*b*c",
                                FeatureType::number()));
     TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "a*b*bar",
-                               FeatureType::object(ValueType::from_spec("tensor(x[])"))));
+                               FeatureType::object(ValueType::from_spec("tensor(x[5])"))));
     TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "foo*b*bar",
                                FeatureType::number()));
 }

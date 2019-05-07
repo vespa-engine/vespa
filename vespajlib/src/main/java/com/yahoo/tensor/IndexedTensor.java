@@ -20,7 +20,7 @@ import java.util.function.DoubleBinaryOperator;
  *
  * @author bratseth
  */
-public class IndexedTensor implements Tensor {
+public abstract class IndexedTensor implements Tensor {
 
     /** The prescribed and possibly abstract type this is an instance of */
     private final TensorType type;
@@ -28,17 +28,9 @@ public class IndexedTensor implements Tensor {
     /** The sizes of the dimensions of this in the order of the dimensions of the type */
     private final DimensionSizes dimensionSizes;
 
-    private final double[] values;
-
-    private IndexedTensor(TensorType type, DimensionSizes dimensionSizes, double[] values) {
+    IndexedTensor(TensorType type, DimensionSizes dimensionSizes) {
         this.type = type;
         this.dimensionSizes = dimensionSizes;
-        this.values = values;
-    }
-
-    @Override
-    public long size() {
-        return values.length;
     }
 
     /**
@@ -96,13 +88,23 @@ public class IndexedTensor implements Tensor {
     }
 
     /**
-     * Returns the value at the given indexes
+     * Returns the value at the given indexes as a double
      *
      * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
      * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
      */
     public double get(long ... indexes) {
-        return values[(int)toValueIndex(indexes, dimensionSizes)];
+        return get((int)toValueIndex(indexes, dimensionSizes));
+    }
+
+    /**
+     * Returns the value at the given indexes as a float
+     *
+     * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
+     * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
+     */
+    public float getFloat(long ... indexes) {
+        return getFloat((int)toValueIndex(indexes, dimensionSizes));
     }
 
     /** Returns the value at this address, or NaN if there is no value at this address */
@@ -110,7 +112,7 @@ public class IndexedTensor implements Tensor {
     public double get(TensorAddress address) {
         // optimize for fast lookup within bounds:
         try {
-            return values[(int)toValueIndex(address, dimensionSizes)];
+            return get((int)toValueIndex(address, dimensionSizes));
         }
         catch (IndexOutOfBoundsException e) {
             return Double.NaN;
@@ -118,15 +120,24 @@ public class IndexedTensor implements Tensor {
     }
 
     /**
-     * Returns the value at the given index by direct lookup. Only use
+     * Returns the value at the given index as a double by direct lookup. Only use
      * if you know the underlying data layout.
      *
      * @param valueIndex the direct index into the underlying data.
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
-    public double get(long valueIndex) { return values[(int)valueIndex]; }
+    public abstract double get(long valueIndex);
 
-    private static long toValueIndex(long[] indexes, DimensionSizes sizes) {
+    /**
+     * Returns the value at the given index as a float by direct lookup. Only use
+     * if you know the underlying data layout.
+     *
+     * @param valueIndex the direct index into the underlying data.
+     * @throws IndexOutOfBoundsException if index is out of bounds
+     */
+    public abstract float getFloat(long valueIndex);
+
+    static long toValueIndex(long[] indexes, DimensionSizes sizes) {
         if (indexes.length == 1) return indexes[0]; // for speed
         if (indexes.length == 0) return 0; // for speed
 
@@ -140,7 +151,7 @@ public class IndexedTensor implements Tensor {
         return valueIndex;
     }
 
-    private static long toValueIndex(TensorAddress address, DimensionSizes sizes) {
+    static long toValueIndex(TensorAddress address, DimensionSizes sizes) {
         if (address.isEmpty()) return 0;
 
         long valueIndex = 0;
@@ -160,17 +171,17 @@ public class IndexedTensor implements Tensor {
         return product;
     }
 
+    void throwOnIncompatibleType(TensorType type) {
+        if ( ! this.type().isRenamableTo(type))
+            throw new IllegalArgumentException("Can not change type from " + this.type() + " to " + type +
+                                               ": Types are not compatible");
+    }
+
     @Override
     public TensorType type() { return type; }
 
     @Override
-    public IndexedTensor withType(TensorType type) {
-        if (!this.type.isRenamableTo(type)) {
-            throw new IllegalArgumentException("IndexedTensor.withType: types are not compatible. Current type: '" +
-                    this.type.toString() + "', requested type: '" + type.toString() + "'");
-        }
-        return new IndexedTensor(type, dimensionSizes, values);
-    }
+    public abstract IndexedTensor withType(TensorType type);
 
     public DimensionSizes dimensionSizes() {
         return dimensionSizes;
@@ -179,13 +190,13 @@ public class IndexedTensor implements Tensor {
     @Override
     public Map<TensorAddress, Double> cells() {
         if (dimensionSizes.dimensions() == 0)
-            return Collections.singletonMap(TensorAddress.of(), values[0]);
+            return Collections.singletonMap(TensorAddress.of(), get(0));
 
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
-        Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, values.length);
-        for (long i = 0; i < values.length; i++) {
+        Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, size());
+        for (long i = 0; i < size(); i++) {
             indexes.next();
-            builder.put(indexes.toAddress(), values[(int)i]);
+            builder.put(indexes.toAddress(), get(i));
         }
         return builder.build();
     }
@@ -199,9 +210,6 @@ public class IndexedTensor implements Tensor {
     public Tensor remove(Set<TensorAddress> addresses) {
         throw new IllegalArgumentException("Remove is not supported for indexed tensors");
     }
-
-    @Override
-    public int hashCode() { return Arrays.hashCode(values); }
 
     @Override
     public String toString() { return Tensor.toStandardString(this); }
@@ -222,7 +230,7 @@ public class IndexedTensor implements Tensor {
 
         public static Builder of(TensorType type) {
             if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
-                return new BoundBuilder(type);
+                return of(type, BoundBuilder.dimensionSizesOf(type));
             else
                 return new UnboundBuilder(type);
         }
@@ -235,8 +243,8 @@ public class IndexedTensor implements Tensor {
         public static Builder of(TensorType type, DimensionSizes sizes) {
             // validate
             if (sizes.dimensions() != type.dimensions().size())
-                throw new IllegalArgumentException(sizes.dimensions() + " is the wrong number of dimensions " +
-                                                   "for " + type);
+                throw new IllegalArgumentException(sizes.dimensions() +
+                                                   " is the wrong number of dimensions for " + type);
             for (int i = 0; i < sizes.dimensions(); i++ ) {
                 Optional<Long> size = type.dimensions().get(i).size();
                 if (size.isPresent() && size.get() < sizes.size(i))
@@ -245,10 +253,16 @@ public class IndexedTensor implements Tensor {
                                                        " but cannot be larger than " + size.get() + " in " + type);
             }
 
-            return new BoundBuilder(type, sizes);
+            if (type.valueType() == TensorType.Value.FLOAT)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
+            else if (type.valueType() == TensorType.Value.DOUBLE)
+                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
+            else
+                return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes); // Default
         }
 
         public abstract Builder cell(double value, long ... indexes);
+        public abstract Builder cell(float value, long ... indexes);
 
         @Override
         public TensorType type() { return type; }
@@ -259,74 +273,29 @@ public class IndexedTensor implements Tensor {
     }
 
     /** A bound builder can create the double array directly */
-    public static class BoundBuilder extends Builder {
+    public static abstract class BoundBuilder extends Builder {
 
         private DimensionSizes sizes;
-        private double[] values;
 
-        private BoundBuilder(TensorType type) {
-            this(type, dimensionSizesOf(type));
-        }
-
-        static DimensionSizes dimensionSizesOf(TensorType type) {
+        private static DimensionSizes dimensionSizesOf(TensorType type) {
             DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size());
             for (int i = 0; i < type.dimensions().size(); i++)
                 b.set(i, type.dimensions().get(i).size().get());
             return b.build();
         }
 
-        private BoundBuilder(TensorType type, DimensionSizes sizes) {
+        BoundBuilder(TensorType type, DimensionSizes sizes) {
             super(type);
             if ( sizes.dimensions() != type.dimensions().size())
                 throw new IllegalArgumentException("Must have a dimension size entry for each dimension in " + type);
             this.sizes = sizes;
-            values = new double[(int)sizes.totalSize()];
         }
 
-        @Override
-        public BoundBuilder cell(double value, long ... indexes) {
-            values[(int)toValueIndex(indexes, sizes)] = value;
-            return this;
-        }
+        DimensionSizes sizes() { return sizes; }
 
-        @Override
-        public CellBuilder cell() {
-            return new CellBuilder(type, this);
-        }
+        public abstract void cellByDirectIndex(long index, double value);
 
-        @Override
-        public Builder cell(TensorAddress address, double value) {
-            values[(int)toValueIndex(address, sizes)] = value;
-            return this;
-        }
-
-        @Override
-        public IndexedTensor build() {
-            IndexedTensor tensor = new IndexedTensor(type, sizes, values);
-            // prevent further modification
-            sizes = null;
-            values = null;
-            return tensor;
-        }
-
-        @Override
-        public Builder cell(Cell cell, double value) {
-            long directIndex = cell.getDirectIndex();
-            if (directIndex >= 0) // optimization
-                values[(int)directIndex] = value;
-            else
-                super.cell(cell, value);
-            return this;
-        }
-
-        /**
-         * Set a cell value by the index in the internal layout of this cell.
-         * This requires knowledge of the internal layout of cells in this implementation, and should therefore
-         * probably not be used (but when it can be used it is fast).
-         */
-        public void cellByDirectIndex(long index, double value) {
-            values[(int)index] = value;
-        }
+        public abstract void cellByDirectIndex(long index, float value);
 
     }
 
@@ -348,12 +317,12 @@ public class IndexedTensor implements Tensor {
             if (firstDimension == null) throw new IllegalArgumentException("Tensor of type " + type() + " has no values");
 
             if (type.dimensions().isEmpty()) // single number
-                return new IndexedTensor(type, new DimensionSizes.Builder(type.dimensions().size()).build(), new double[] {(Double) firstDimension.get(0) });
+                return new IndexedDoubleTensor(type, new DimensionSizes.Builder(type.dimensions().size()).build(), new double[] {(Double) firstDimension.get(0) });
 
             DimensionSizes dimensionSizes = findDimensionSizes(firstDimension);
             double[] values = new double[(int)dimensionSizes.totalSize()];
             fillValues(0, 0, firstDimension, dimensionSizes, values);
-            return new IndexedTensor(type, dimensionSizes, values);
+            return new IndexedDoubleTensor(type, dimensionSizes, values);
         }
 
         private DimensionSizes findDimensionSizes(List<Object> firstDimension) {
@@ -406,6 +375,11 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
+        public Builder cell(TensorAddress address, float value) {
+            return cell(address, (double)value);
+        }
+
+        @Override
         public Builder cell(TensorAddress address, double value) {
             long[] indexes = new long[address.size()];
             for (int i = 0; i < address.size(); i++) {
@@ -413,6 +387,11 @@ public class IndexedTensor implements Tensor {
             }
             cell(value, indexes);
             return this;
+        }
+
+        @Override
+        public Builder cell(float value, long... indexes) {
+            return cell((double)value, indexes);
         }
 
         /**
@@ -460,7 +439,7 @@ public class IndexedTensor implements Tensor {
     private final class CellIterator implements Iterator<Cell> {
 
         private long count = 0;
-        private final Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, values.length);
+        private final Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, size());
         private final LazyCell reusedCell = new LazyCell(indexes, Double.NaN);
 
         @Override
@@ -485,13 +464,13 @@ public class IndexedTensor implements Tensor {
 
         @Override
         public boolean hasNext() {
-            return count < values.length;
+            return count < size();
         }
 
         @Override
         public Double next() {
             try {
-                return values[(int)count++];
+                return get(count++);
             }
             catch (IndexOutOfBoundsException e) {
                 throw new NoSuchElementException("No element at position " + count);

@@ -45,10 +45,10 @@ EvalFixture::ParamRepo make_params() {
         .add_mutable("mut_x5_A", spec({x(5)}, seq))
         .add_mutable("mut_x5_B", spec({x(5)}, seq))
         .add_mutable("mut_x5_C", spec({x(5)}, seq))
-        .add_mutable("mut_x4", spec({x(4)}, seq))
+        .add_mutable("mut_x5f_D", spec({x(5)}, seq), "tensor<float>(x[5])")
+        .add_mutable("mut_x5f_E", spec({x(5)}, seq), "tensor<float>(x[5])")
         .add_mutable("mut_x5y3_A", spec({x(5),y(3)}, seq))
         .add_mutable("mut_x5y3_B", spec({x(5),y(3)}, seq))
-        .add_mutable("mut_x5_unbound", spec({x(5)}, seq), "tensor(x[])")
         .add_mutable("mut_x_sparse", spec({x({"a", "b", "c"})}, seq));
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -112,8 +112,6 @@ TEST("require that join(tensor,scalar) operations are not optimized") {
 }
 
 TEST("require that join with different tensor shapes are not optimized") {
-    TEST_DO(verify_not_optimized("mut_x5_A-mut_x4"));
-    TEST_DO(verify_not_optimized("mut_x4-mut_x5_A"));
     TEST_DO(verify_not_optimized("mut_x5_A*mut_x5y3_B"));
 }
 
@@ -122,12 +120,6 @@ TEST("require that inplace join operations can be chained") {
     TEST_DO(verify_p0_optimized("(mut_x5_A-con_x5_B)-con_x5_C", 2));
     TEST_DO(verify_p1_optimized("con_x5_A-(mut_x5_B-con_x5_C)", 2));
     TEST_DO(verify_p2_optimized("con_x5_A-(con_x5_B-mut_x5_C)", 2));
-}
-
-TEST("require that abstract tensors are not optimized") {
-    TEST_DO(verify_not_optimized("mut_x5_unbound+mut_x5_A"));
-    TEST_DO(verify_not_optimized("mut_x5_A+mut_x5_unbound"));
-    TEST_DO(verify_not_optimized("mut_x5_unbound+mut_x5_unbound"));
 }
 
 TEST("require that non-mutable tensors are not optimized") {
@@ -150,6 +142,12 @@ TEST("require that inplace join can be debug dumped") {
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
     fprintf(stderr, "%s\n", info[0]->as_string().c_str());
+}
+
+TEST("require that optimization is disabled for tensors with non-double cells") {
+    TEST_DO(verify_not_optimized("mut_x5_A-mut_x5f_D"));
+    TEST_DO(verify_not_optimized("mut_x5f_D-mut_x5_A"));
+    TEST_DO(verify_not_optimized("mut_x5f_D-mut_x5f_E"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

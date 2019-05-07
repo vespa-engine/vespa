@@ -19,11 +19,10 @@ public class Shape extends IntermediateOperation {
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        if (!allInputTypesPresent(1)) {
-            return null;
-        }
+        if ( ! allInputTypesPresent(1)) return null;
+
         OrderedTensorType inputType = inputs.get(0).type().get();
-        return new OrderedTensorType.Builder()
+        return new OrderedTensorType.Builder(resultValueType())
                 .add(TensorType.Dimension.indexed(vespaName(), inputType.dimensions().size()))
                 .build();
     }

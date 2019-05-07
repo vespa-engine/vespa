@@ -12,7 +12,6 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -301,12 +300,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
-        if (!tenantApplications.listApplications().contains(applicationId)) return false;
+        if (!tenantApplications.activeApplications().contains(applicationId)) return false;
 
         // Deleting an application is done by deleting the remote session and waiting
         // until the config server where the deployment happened picks it up and deletes
         // the local session
-        long sessionId = tenantApplications.getSessionIdForApplication(applicationId);
+        long sessionId = tenantApplications.requireActiveSessionOf(applicationId);
         RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
         remoteSession.createDeleteTransaction().commit();
 
@@ -324,7 +323,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
         // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
         // this is done asynchronously in application maintenance by the node repository)
-        transaction.add(tenantApplications.deleteApplication(applicationId));
+        transaction.add(tenantApplications.createDeleteTransaction(applicationId));
 
         hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
         transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
@@ -425,7 +424,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     Set<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
-                .flatMap(tenant -> tenant.getApplicationRepo().listApplications().stream())
+                .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
                 .collect(Collectors.toSet());
     }
 
@@ -483,7 +482,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (applicationRepo == null)
             throw new IllegalArgumentException("Application repo for tenant '" + tenant.getName() + "' not found");
 
-        return applicationRepo.getSessionIdForApplication(applicationId);
+        return applicationRepo.requireActiveSessionOf(applicationId);
     }
 
     public void validateThatRemoteSessionIsNotActive(Tenant tenant, long sessionId) {
@@ -525,6 +524,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        tenant.getApplicationRepo().createApplication(applicationId);
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
         LocalSession session = sessionFactory.createSession(applicationDirectory, applicationId, timeoutBudget);
@@ -565,7 +565,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private List<ApplicationId> activeApplications(TenantName tenantName) {
-        return tenantRepository.getTenant(tenantName).getApplicationRepo().listApplications();
+        return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
@@ -616,7 +616,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         try {
-            long currentActiveSessionId = applicationRepo.getSessionIdForApplication(appId);
+            long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
             RemoteSession currentActiveSession = getRemoteSession(tenant, currentActiveSessionId);
             if (currentActiveSession != null) {
                 currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
@@ -646,7 +646,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return applicationRepo.listApplications();
+        return applicationRepo.activeApplications();
     }
 
     private void cleanupTempDirectory(File tempDir) {
@@ -658,13 +658,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private LocalSession getExistingSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return getLocalSession(tenant, applicationRepo.getSessionIdForApplication(applicationId));
+        return getLocalSession(tenant, applicationRepo.requireActiveSessionOf(applicationId));
     }
 
     private LocalSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        if (applicationRepo.listApplications().contains(applicationId)) {
-            return tenant.getLocalSessionRepo().getSession(applicationRepo.getSessionIdForApplication(applicationId));
+        if (applicationRepo.activeApplications().contains(applicationId)) {
+            return tenant.getLocalSessionRepo().getSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
     }

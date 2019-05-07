@@ -116,6 +116,7 @@
             "installTester": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"
@@ -159,6 +160,7 @@
             "installTester": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"
@@ -192,6 +194,7 @@
             "installTester": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"
@@ -269,6 +272,7 @@
             "installTester": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"
@@ -310,6 +314,7 @@
             "installTester": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"
@@ -355,6 +360,7 @@
             "installTester": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"
@@ -390,6 +396,7 @@
             "installTester": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
             "deactivateReal": "succeeded",
             "deactivateTester": "succeeded",
             "report": "succeeded"

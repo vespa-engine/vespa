@@ -11,6 +11,7 @@ import com.yahoo.document.json.TokenBuffer;
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class StructReader {
+
     public static void fillStruct(TokenBuffer buffer, StructuredFieldValue parent) {
         // do note the order of initializing initNesting and token is relevant for empty docs
         int initNesting = buffer.nesting();
@@ -32,12 +33,11 @@ public class StructReader {
     }
 
     public static Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
-        Field f = parent.getField(buffer.currentName());
-        if (f == null) {
-            throw new NullPointerException("Could not get field \"" + buffer.currentName() +
-                    "\" in the structure of type \"" + parent.getDataType().getDataTypeName() + "\".");
-        }
-        return f;
+        Field field = parent.getField(buffer.currentName());
+        if (field == null)
+            throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
+                                               parent.getDataType().getDataTypeName() + "'");
+        return field;
     }
 
 }

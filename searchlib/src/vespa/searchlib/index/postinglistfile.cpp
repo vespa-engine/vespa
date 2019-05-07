@@ -6,16 +6,10 @@
 namespace search::index {
 
 PostingListFileSeqRead::PostingListFileSeqRead()
-    : _counts(),
-      _residueDocs(0)
 {
 }
 
-
-PostingListFileSeqRead::~PostingListFileSeqRead()
-{
-}
-
+PostingListFileSeqRead::~PostingListFileSeqRead() = default;
 
 void
 PostingListFileSeqRead::
@@ -24,14 +18,12 @@ getParams(PostingListParams &params)
     params.clear();
 }
 
-
 void
 PostingListFileSeqRead::
 setFeatureParams(const PostingListParams &params)
 {
     (void) params;
 }
-
 
 void
 PostingListFileSeqRead::
@@ -40,17 +32,14 @@ getFeatureParams(PostingListParams &params)
     params.clear();
 }
 
-
 PostingListFileSeqWrite::PostingListFileSeqWrite()
     : _counts()
 {
 }
 
-
 PostingListFileSeqWrite::~PostingListFileSeqWrite()
 {
 }
-
 
 void
 PostingListFileSeqWrite::
@@ -59,14 +48,12 @@ setParams(const PostingListParams &params)
     (void) params;
 }
 
-
 void
 PostingListFileSeqWrite::
 getParams(PostingListParams &params)
 {
     params.clear();
 }
-
 
 void
 PostingListFileSeqWrite::
@@ -75,7 +62,6 @@ setFeatureParams(const PostingListParams &params)
     (void) params;
 }
 
-
 void
 PostingListFileSeqWrite::
 getFeatureParams(PostingListParams &params)
@@ -83,25 +69,21 @@ getFeatureParams(PostingListParams &params)
     params.clear();
 }
 
-
 PostingListFileRandRead::
 PostingListFileRandRead()
     : _memoryMapped(false)
 {
 }
 
-
 PostingListFileRandRead::~PostingListFileRandRead()
 {
 }
 
-
 void
 PostingListFileRandRead::afterOpen(FastOS_FileInterface &file)
 {
-    _memoryMapped = file.MemoryMapPtr(0) != NULL;
+    _memoryMapped = (file.MemoryMapPtr(0) != nullptr);
 }
-
 
 PostingListFileRandReadPassThrough::
 PostingListFileRandReadPassThrough(PostingListFileRandRead *lower,
@@ -111,13 +93,12 @@ PostingListFileRandReadPassThrough(PostingListFileRandRead *lower,
 {
 }
 
-
 PostingListFileRandReadPassThrough::~PostingListFileRandReadPassThrough()
 {
-    if (_ownLower)
+    if (_ownLower) {
         delete _lower;
+    }
 }
-
 
 search::queryeval::SearchIterator *
 PostingListFileRandReadPassThrough::
@@ -128,7 +109,6 @@ createIterator(const PostingListCounts &counts,
 {
     return _lower->createIterator(counts, handle, matchData, usebitVector);
 }
-
 
 void
 PostingListFileRandReadPassThrough::
@@ -141,7 +121,6 @@ readPostingList(const PostingListCounts &counts,
                             handle);
 }
 
-
 bool
 PostingListFileRandReadPassThrough::open(const vespalib::string &name,
         const TuneFileRandRead &tuneFileRead)
@@ -150,7 +129,6 @@ PostingListFileRandReadPassThrough::open(const vespalib::string &name,
     _memoryMapped = _lower->getMemoryMapped();
     return ret;
 }
-
 
 bool
 PostingListFileRandReadPassThrough::close()

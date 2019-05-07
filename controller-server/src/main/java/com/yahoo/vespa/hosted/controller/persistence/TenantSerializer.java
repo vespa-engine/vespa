@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Slime serialization of tenants.
+ * Slime serialization of {@link Tenant} sub-types.
  *
  * @author mpolden
  */

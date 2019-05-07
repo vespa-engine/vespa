@@ -3,7 +3,6 @@ package com.yahoo.messagebus;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Stack;
 
 /**
  * An wrapper around a stack of frame objects that is aware of the message that owns it. It contains functionality to
@@ -75,7 +74,7 @@ public class CallStack {
         private final ReplyHandler handler;
         private final Object context;
 
-        public StackFrame(ReplyHandler handler, Object context) {
+        StackFrame(ReplyHandler handler, Object context) {
             this.handler = handler;
             this.context = context;
         }

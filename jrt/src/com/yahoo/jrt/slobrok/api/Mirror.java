@@ -1,11 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.slobrok.api;
 
-import com.yahoo.jrt.*;
+
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Task;
+import com.yahoo.jrt.Values;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -21,18 +32,18 @@ public class Mirror implements IMirror {
 
     private static Logger log = Logger.getLogger(Mirror.class.getName());
 
-    private Supervisor        orb;
-    private SlobrokList       slobroks;
+    private final Supervisor  orb;
+    private final SlobrokList slobroks;
     private String            currSlobrok;
-    private BackOffPolicy     backOff;
+    private final BackOffPolicy     backOff;
     private volatile int      updates    = 0;
     private boolean requestDone = false;
-    private volatile Entry[]  specs      = new Entry[0];
+    private AtomicReference<Entry[]>  specs = new AtomicReference<>(new Entry[0]);
     private int specsGeneration = 0;
-    private Task              updateTask = null;
-    private RequestWaiter     reqWait    = null;
-    private Target            target     = null;
-    private Request           req        = null;
+    private final Task updateTask;
+    private final RequestWaiter reqWait;
+    private Target target = null;
+    private Request req = null;
 
     /**
      * Create a new MirrorAPI using the given Supervisor and slobrok
@@ -46,9 +57,7 @@ public class Mirror implements IMirror {
         this.orb = orb;
         this.slobroks = slobroks;
         this.backOff = bop;
-        updateTask = orb.transport().createTask(new Runnable() {
-                public void run() { checkForUpdate(); }
-            });
+        updateTask = orb.transport().createTask(this::checkForUpdate);
         reqWait = new RequestWaiter() {
                 public void handleRequestDone(Request req) {
                     requestDone = true;
@@ -75,21 +84,19 @@ public class Mirror implements IMirror {
      */
     public void shutdown() {
         updateTask.kill();
-        orb.transport().perform(new Runnable() {
-                public void run() { handleShutdown(); }
-            });
+        orb.transport().perform(this::handleShutdown);
     }
 
     @Override
-    public Entry[] lookup(String pattern) {
+    public List<Entry> lookup(String pattern) {
         ArrayList<Entry> found = new ArrayList<>();
         char[] p = pattern.toCharArray();
-        for (Entry specEntry : specs) {
+        for (Entry specEntry : specs.get()) {
             if (match(specEntry.getNameArray(), p)) {
                 found.add(specEntry);
             }
         }
-        return found.toArray(new Entry[found.size()]);
+        return found;
     }
 
     @Override
@@ -205,7 +212,7 @@ public class Mirror implements IMirror {
                 for (int idx = 0; idx < numNames; idx++) {
                     newSpecs[idx] = new Entry(n[idx], s[idx]);
                 }
-                specs = newSpecs;
+                specs.set(newSpecs);
 
                 specsGeneration = answer.get(2).asInt32();
                 int u = (updates + 1);
@@ -253,7 +260,7 @@ public class Mirror implements IMirror {
                 }
             } else {
                 Map<String, Entry> map = new HashMap<>();
-                for (Entry e : specs) {
+                for (Entry e : specs.get()) {
                     map.put(e.getName(), e);
                 }
                 for (String rem : r) {
@@ -269,7 +276,7 @@ public class Mirror implements IMirror {
                 }
             }
 
-            specs = newSpecs;
+            specs.set(newSpecs);
 
             specsGeneration = diffToGeneration;
             int u = (updates + 1);
@@ -295,7 +302,7 @@ public class Mirror implements IMirror {
             target.close();
             target = null;
         }
-        specs = new Entry[0];
+        specs.set(new Entry[0]);
     }
 
     /**

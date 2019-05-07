@@ -2,15 +2,10 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.application.container.handler.Request.Method;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.FilterTester.Request;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -18,12 +13,9 @@ import org.junit.Test;
  */
 public class AuthorizationFilterTest {
 
-    private FilterTester tester;
-
-    @Before
-    public void before() {
-        tester = filterTester(SystemName.main);
-    }
+    private final FilterTester tester = new FilterTester(new AuthorizationFilter(
+            new MockNodeRepository(new MockCurator(), new MockNodeFlavors()),
+            NodeIdentifierTest.SECURITY_CONFIG));
 
     @Test
     public void filter() {
@@ -41,13 +33,6 @@ public class AuthorizationFilterTest {
                                    "denied for remote-addr: Invalid credentials: NodePrincipal{identityName='bar', hostname='bar', type=LEGACY}\"}");
 
         tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/foo").commonName("foo"));
-    }
-
-    private static FilterTester filterTester(SystemName system) {
-        Zone zone = new Zone(system, Environment.prod, RegionName.defaultName());
-        return new FilterTester(new AuthorizationFilter(
-                zone,
-                new MockNodeRepository(new MockCurator(), new MockNodeFlavors())));
     }
 
 }

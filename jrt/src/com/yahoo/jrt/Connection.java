@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-import com.yahoo.jrt.CryptoSocket.HandshakeResult;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -11,6 +9,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,9 +19,9 @@ class Connection extends Target {
 
     private static Logger log = Logger.getLogger(Connection.class.getName());
 
-    private static final int READ_SIZE  = 8192;
+    private static final int READ_SIZE  = 32768;
     private static final int READ_REDO  = 10;
-    private static final int WRITE_SIZE = 8192;
+    private static final int WRITE_SIZE = 32768;
     private static final int WRITE_REDO = 10;
 
     private static final int INITIAL    = 0;
@@ -439,6 +438,12 @@ class Connection extends Target {
 
     public Exception getConnectionLostReason() {
         return lostReason;
+    }
+
+    @Override
+    public Optional<SecurityContext> getSecurityContext() {
+        return Optional.ofNullable(socket)
+                .flatMap(CryptoSocket::getSecurityContext);
     }
 
     public boolean isClient() {

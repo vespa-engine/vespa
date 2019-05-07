@@ -102,7 +102,7 @@ Fusion::openInputWordReaders(const SchemaUtil::IndexIterator &index,
         vespalib::string fieldDir(oldindexpath + "/" + index.getName());
         vespalib::string dictName(fieldDir + "/dictionary");
         const Schema &oldSchema = oi.getSchema();
-        if (!index.hasOldFields(oldSchema, false)) {
+        if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
         bool res = reader->open(dictName,
@@ -133,10 +133,9 @@ Fusion::renumberFieldWordIds(const SchemaUtil::IndexIterator &index)
     PostingPriorityQueue<DictionaryWordReader> heap;
     WordAggregator out;
 
-    if (!openInputWordReaders(index, readers, heap))
+    if (!openInputWordReaders(index, readers, heap)) {
         return false;
-
-
+    }
     heap.merge(out, 4);
     assert(heap.empty());
     _numWordIds = out.getWordNum();
@@ -148,9 +147,9 @@ Fusion::renumberFieldWordIds(const SchemaUtil::IndexIterator &index)
 
     // Now read mapping files back into an array
     // XXX: avoid this, and instead make the array here
-    if (!ReadMappingFiles(&index))
+    if (!ReadMappingFiles(&index)) {
         return false;
-
+    }
     LOG(debug, "Finished renumbering words IDs for field %s",
         indexName.c_str());
 
@@ -165,8 +164,9 @@ Fusion::mergeFields()
 
     const Schema &schema = getSchema();
     for (IndexIterator index(schema); index.isValid(); ++index) {
-        if (!mergeField(index.getIndex()))
+        if (!mergeField(index.getIndex())) {
             return false;
+        }
     }
     return true;
 }
@@ -182,13 +182,14 @@ Fusion::mergeField(uint32_t id)
     IndexIterator index(schema, id);
     const vespalib::string &indexName = index.getName();
     IndexSettings settings = index.getIndexSettings();
-    if (settings.hasError())
+    if (settings.hasError()) {
         return false;
+    }
     vespalib::string indexDir = _outDir + "/" + indexName;
 
-    if (FileKit::hasStamp(indexDir + "/.mergeocc_done"))
+    if (FileKit::hasStamp(indexDir + "/.mergeocc_done")) {
         return true;
-
+    }
     vespalib::mkdir(indexDir.c_str(), false);
 
     LOG(debug, "mergeField for field %s dir %s",
@@ -209,12 +210,14 @@ Fusion::mergeField(uint32_t id)
             indexName.c_str(), indexDir.c_str());
         LOG_ABORT("should not be reached");
     }
-    if (!FileKit::createStamp(indexDir +  "/.mergeocc_done"))
+    if (!FileKit::createStamp(indexDir +  "/.mergeocc_done")) {
         return false;
+    }
     vespalib::File::sync(indexDir);
 
-    if (!CleanTmpDirs())
+    if (!CleanTmpDirs()) {
         return false;
+    }
 
     LOG(debug, "Finished mergeField for field %s dir %s",
         indexName.c_str(), indexDir.c_str());
@@ -233,26 +236,32 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
     vespalib::string cookedFormat;
     vespalib::string rawFormat;
 
-    if (!reader.isValid())
+    if (!reader.isValid()) {
         return true;
+    }
     {
         writer.getFeatureParams(featureParams);
         cookedFormat = featureParams.getStr("cookedEncoding");
         rawFormat = featureParams.getStr("encoding");
-        if (rawFormat == "")
+        if (rawFormat == "") {
             rawFormatOK = false;    // Typically uncompressed file
+        }
         outFeatureParams = featureParams;
     }
     {
         reader.getFeatureParams(featureParams);
-        if (cookedFormat != featureParams.getStr("cookedEncoding"))
+        if (cookedFormat != featureParams.getStr("cookedEncoding")) {
             cookedFormatOK = false;
-        if (rawFormat != featureParams.getStr("encoding"))
+        }
+        if (rawFormat != featureParams.getStr("encoding")) {
             rawFormatOK = false;
-        if (featureParams != outFeatureParams)
+        }
+        if (featureParams != outFeatureParams) {
             rawFormatOK = false;
-        if (!reader.allowRawFeatures())
+        }
+        if (!reader.allowRawFeatures()) {
             rawFormatOK = false;    // Reader transforms data
+        }
     }
     if (!cookedFormatOK) {
         LOG(error,
@@ -265,8 +274,9 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
         reader.setFeatureParams(featureParams);
         reader.getFeatureParams(featureParams);
         if (featureParams.isSet("cookedEncoding") ||
-            rawFormat != featureParams.getStr("encoding"))
+            rawFormat != featureParams.getStr("encoding")) {
             rawFormatOK = false;
+        }
         if (!rawFormatOK) {
             LOG(error, "Cannot perform fusion, raw format setting failed");
             return false;
@@ -286,16 +296,15 @@ Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index,
     for (auto &i : _oldIndexes) {
         OldIndex &oi = *i;
         const Schema &oldSchema = oi.getSchema();
-        if (!index.hasOldFields(oldSchema, false)) {
+        if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
         auto reader = FieldReader::allocFieldReader(index, oldSchema);
         reader->setup(oi.getWordNumMapping(),
                       oi.getDocIdMapping());
-        if (!reader->open(oi.getPath() + "/" +
-                          indexName + "/",
-                          _tuneFileIndexing._read))
+        if (!reader->open(oi.getPath() + "/" + indexName + "/", _tuneFileIndexing._read)) {
             return false;
+        }
         readers.push_back(std::move(reader));
     }
     return true;
@@ -332,12 +341,15 @@ Fusion::setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > &
                        PostingPriorityQueue<FieldReader> &heap)
 {
     for (auto &reader : readers) {
-        if (!selectCookedOrRawFeatures(*reader, writer))
+        if (!selectCookedOrRawFeatures(*reader, writer)) {
             return false;
-        if (reader->isValid())
+        }
+        if (reader->isValid()) {
             reader->read();
-        if (reader->isValid())
+        }
+        if (reader->isValid()) {
             heap.initialAdd(reader.get());
+        }
     }
     return true;
 }
@@ -352,19 +364,23 @@ Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index)
     FieldWriter fieldWriter(_docIdLimit, _numWordIds);
     vespalib::string indexName = index.getName();
 
-    if (!openInputFieldReaders(index, readers))
+    if (!openInputFieldReaders(index, readers)) {
         return false;
-    if (!openFieldWriter(index, fieldWriter))
+    }
+    if (!openFieldWriter(index, fieldWriter)) {
         return false;
-    if (!setupMergeHeap(readers, fieldWriter, heap))
+    }
+    if (!setupMergeHeap(readers, fieldWriter, heap)) {
         return false;
+    }
 
     heap.merge(fieldWriter, 4);
     assert(heap.empty());
 
     for (auto &reader : readers) {
-        if (!reader->close())
+        if (!reader->close()) {
             return false;
+        }
     }
     if (!fieldWriter.close()) {
         LOG(error, "Could not close output posocc + dictionary in %s/%s",
@@ -390,12 +406,14 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
         if (!SchemaUtil::getIndexIds(oldSchema,
                                      DataType::STRING,
                                      oldIndexes))
+        {
             return false;
+        }
         if (oldIndexes.empty()) {
             wordNumMapping.noMappingFile();
             continue;
         }
-        if (index && !index->hasOldFields(oldSchema, false)) {
+        if (index && !index->hasOldFields(oldSchema)) {
             continue; // drop data
         }
 
@@ -444,8 +462,9 @@ Fusion::CleanTmpDirs()
         const vespalib::string &tmpindexpath = tmpindexpath0.str();
         FastOS_StatInfo statInfo;
         if (!FastOS_File::Stat(tmpindexpath.c_str(), &statInfo)) {
-            if (statInfo._error == FastOS_StatInfo::FileNotFound)
+            if (statInfo._error == FastOS_StatInfo::FileNotFound) {
                 break;
+            }
             LOG(error, "Failed to stat tmpdir %s", tmpindexpath.c_str());
             return false;
         }
@@ -482,21 +501,24 @@ Fusion::readSchemaFiles()
     OldIndexIterator oldIndexIt = _oldIndexes.begin();
     OldIndexIterator oldIndexIte = _oldIndexes.end();
 
-    for(; oldIndexIt != oldIndexIte; ++oldIndexIt) {
+    for (; oldIndexIt != oldIndexIte; ++oldIndexIt) {
         OldIndex &oi = **oldIndexIt;
         vespalib::string oldcfname = oi.getPath() + "/schema.txt";
         Schema::SP schema(new Schema);
-        if (!schema->loadFromFile(oldcfname))
+        if (!schema->loadFromFile(oldcfname)) {
             return false;
-        if (!SchemaUtil::validateSchema(*_schema))
+        }
+        if (!SchemaUtil::validateSchema(*_schema)) {
             return false;
+        }
         oi.setSchema(schema);
     }
 
     /* TODO: Check compatibility */
     bool res = checkSchemaCompat();
-    if (!res)
+    if (!res) {
         LOG(error, "Index fusion cannot continue due to incompatible indexes");
+    }
     return res;
 }
 
@@ -516,9 +538,9 @@ Fusion::merge(const Schema &schema,
 
     // Limit docIdLimit in output based on selections that cannot be satisfied
     uint32_t sourcesSize = sources.size();
-    while (trimmedDocIdLimit > 0 &&
-           selector[trimmedDocIdLimit - 1] >= sourcesSize)
+    while (trimmedDocIdLimit > 0 && selector[trimmedDocIdLimit - 1] >= sourcesSize) {
         --trimmedDocIdLimit;
+    }
 
     FastOS_StatInfo statInfo;
     if (!FastOS_File::Stat(dir.c_str(), &statInfo)) {
@@ -577,8 +599,9 @@ Fusion::merge(const Schema &schema,
                            idx);
     }
     fusion->setDocIdLimit(trimmedDocIdLimit);
-    if (!fusion->mergeFields())
+    if (!fusion->mergeFields()) {
         return false;
+    }
     return true;
 }
 

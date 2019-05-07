@@ -5,11 +5,9 @@
 
 namespace vespalib { class GenericHeader; }
 
-namespace search {
-namespace index {
+namespace search::index {
 
-class DummyFileHeaderContext : public common::FileHeaderContext
-{
+class DummyFileHeaderContext : public common::FileHeaderContext {
     bool _disableFileName;
     vespalib::string _hostName;
     pid_t _pid;
@@ -23,6 +21,4 @@ public:
     static void setCreator(const vespalib::string &creator);
 };
 
-} // namespace index
-
-} // namespace search
+}

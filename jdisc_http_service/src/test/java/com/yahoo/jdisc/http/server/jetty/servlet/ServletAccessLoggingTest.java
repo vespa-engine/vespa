@@ -8,8 +8,8 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
+import org.junit.Test;
 import org.mockito.verification.VerificationMode;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
  * @author bakksjo
  */
 public class ServletAccessLoggingTest extends ServletTestBase {
-    private static final int MAX_LOG_WAIT_TIME_MILLIS = (int) TimeUnit.SECONDS.toMillis(60);
+    private static final long MAX_LOG_WAIT_TIME_MILLIS = TimeUnit.SECONDS.toMillis(60);
 
     @Test
     public void accessLogIsInvokedForNonJDiscServlet() throws Exception {

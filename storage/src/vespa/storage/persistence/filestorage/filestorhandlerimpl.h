@@ -115,6 +115,9 @@ public:
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
                      api::StorageMessage::Id lockMsgId);
 
+        // Subsumes isLocked
+        bool operationIsInhibited(const vespalib::MonitorGuard&, const document::Bucket&,
+                                  const api::StorageMessage&) const noexcept;
         bool isLocked(const vespalib::MonitorGuard &, const document::Bucket&,
                       api::LockingRequirements lockReq) const noexcept;
 
@@ -230,7 +233,7 @@ public:
         api::LockingRequirements _lockReq;
     };
 
-    FileStorHandlerImpl(uint32_t numStripes, MessageSender&, FileStorMetrics&,
+    FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
                         const spi::PartitionStateList&, ServiceLayerComponentRegister&);
 
     ~FileStorHandlerImpl();
@@ -293,6 +296,8 @@ private:
 
     uint32_t _getNextMessageTimeout;
 
+    uint32_t _activeMergesSoftLimit;
+    mutable std::atomic<uint32_t> _activeMerges;
     vespalib::Monitor _pauseMonitor;
     std::atomic<bool> _paused;
 

@@ -3,28 +3,27 @@
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcorespi/index/index_manager_stats.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchcorespi/index/indexfusiontarget.h>
-#include <vespa/searchcorespi/index/index_manager_stats.h>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/memoryindex/dictionary.h>
-#include <vespa/searchlib/memoryindex/documentinverter.h>
-#include <vespa/searchlib/memoryindex/fieldinverter.h>
-#include <vespa/searchlib/memoryindex/ordereddocumentinserter.h>
-#include <vespa/searchlib/memoryindex/compact_document_words_store.h>
+#include <vespa/searchlib/memoryindex/compact_words_store.h>
+#include <vespa/searchlib/memoryindex/document_inverter.h>
+#include <vespa/searchlib/memoryindex/field_index_collection.h>
+#include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
-#include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/dirtraverse.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
-#include <vespa/fastos/file.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -43,8 +42,8 @@ using search::index::DummyFileHeaderContext;
 using search::index::Schema;
 using search::index::schema::DataType;
 using vespalib::makeLambdaTask;
-using search::memoryindex::CompactDocumentWordsStore;
-using search::memoryindex::Dictionary;
+using search::memoryindex::CompactWordsStore;
+using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
 using std::set;
 using std::string;
@@ -359,14 +358,14 @@ TEST_F("requireThatSourceSelectorIsFlushed", Fixture) {
 
 TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     Schema schema(getSchema());
-    Dictionary dict(schema);
+    FieldIndexCollection fic(schema);
     SequencedTaskExecutor invertThreads(2);
     SequencedTaskExecutor pushThreads(2);
     search::memoryindex::DocumentInverter inverter(schema, invertThreads,
                                                    pushThreads);
 
-    uint64_t fixed_index_size = dict.getMemoryUsage().allocatedBytes();
-    uint64_t index_size = dict.getMemoryUsage().allocatedBytes() - fixed_index_size;
+    uint64_t fixed_index_size = fic.getMemoryUsage().allocatedBytes();
+    uint64_t index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     uint64_t selector_size = (1) * sizeof(Source);
     EXPECT_EQUAL(index_size, f._index_manager->getMaintainer().getFlushStats().memory_before_bytes -
@@ -377,10 +376,10 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     Document::UP doc = f.addDocument(docid);
     inverter.invertDocument(docid, *doc);
     invertThreads.sync();
-    inverter.pushDocuments(dict,
+    inverter.pushDocuments(fic,
                            std::shared_ptr<search::IDestructorCallback>());
     pushThreads.sync();
-    index_size = dict.getMemoryUsage().allocatedBytes() - fixed_index_size;
+    index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 1) * sizeof(Source);
@@ -397,10 +396,10 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     doc = f.addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
     invertThreads.sync();
-    inverter.pushDocuments(dict,
+    inverter.pushDocuments(fic,
                            std::shared_ptr<search::IDestructorCallback>());
     pushThreads.sync();
-    index_size = dict.getMemoryUsage().allocatedBytes() - fixed_index_size;
+    index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 100 + 1) * sizeof(Source);
     EXPECT_EQUAL(index_size,

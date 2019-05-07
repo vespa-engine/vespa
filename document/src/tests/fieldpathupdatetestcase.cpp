@@ -5,7 +5,6 @@
 #include <vespa/document/base/exceptions.h>
 
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/update/documentupdate.h>
 
@@ -17,6 +16,7 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <fcntl.h>
+#include <gtest/gtest.h>
 
 using vespalib::Identifiable;
 using namespace document::config_builder;
@@ -25,102 +25,18 @@ namespace document {
 
 using namespace fieldvalue;
 
-struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
+class FieldPathUpdateTestCase : public ::testing::Test {
+protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     DocumentType _foobar_type;
+    ~FieldPathUpdateTestCase();
 
-    void setUp() override;
-    void tearDown() override;
+    void SetUp() override;
+    void TearDown() override;
 
-    void testWhereClause();
-    void testBrokenWhereClause();
-    void testNoIterateMapValues();
-    void testRemoveField();
-    void testApplyRemoveEntireListField();
-    void testApplyRemoveMultiList();
-    void testApplyRemoveMultiList2();
-    void testApplyRemoveMultiWset();
-    void testApplyAssignSingle();
-    void testApplyAssignMath();
-    void testApplyAssignMathDivZero();
-    void testApplyAssignMathByteToZero();
-    void testApplyAssignMathNotModifiedOnUnderflow();
-    void testApplyAssignMathNotModifiedOnOverflow();
-    void testApplyAssignFieldNotExistingInExpression();
-    void testApplyAssignFieldNotExistingInPath();
-    void testApplyAssignTargetNotExisting();
-    void testAssignSimpleMapValueWithVariable();
-    void testApplyAssignMathRemoveIfZero();
-    void testApplyAssignMultiList();
-    void testApplyAssignMultiWset();
-    void testAssignWsetRemoveIfZero();
-    void testApplyAddMultiList();
-    void testAddAndAssignList();
-    void testAssignMap();
-    void testAssignMapStruct();
-    void testAssignMapStructVariable();
-    void testAssignMapNoExist();
-    void testAssignMapNoExistNoCreate();
-    void testQuotedStringKey();
-    void testEqualityComparison();
-    void testAffectsDocumentBody();
-    void testIncompatibleDataTypeFails();
-    void testSerializeAssign();
-    void testSerializeAdd();
-    void testSerializeRemove();
-    void testSerializeAssignMath();
-    void testReadSerializedFile();
-    void testGenerateSerializedFile();
-    void array_element_update_for_invalid_index_is_ignored();
-
-    CPPUNIT_TEST_SUITE(FieldPathUpdateTestCase);
-    CPPUNIT_TEST(testWhereClause);
-    CPPUNIT_TEST(testBrokenWhereClause);
-    CPPUNIT_TEST(testNoIterateMapValues);
-    CPPUNIT_TEST(testRemoveField);
-    CPPUNIT_TEST(testApplyRemoveEntireListField);
-    CPPUNIT_TEST(testApplyRemoveMultiList);
-    CPPUNIT_TEST(testApplyRemoveMultiList2);
-    CPPUNIT_TEST(testApplyRemoveMultiWset);
-    CPPUNIT_TEST(testApplyAssignSingle);
-    CPPUNIT_TEST(testApplyAssignMath);
-    CPPUNIT_TEST(testApplyAssignMathDivZero);
-    CPPUNIT_TEST(testApplyAssignMathByteToZero);
-    CPPUNIT_TEST(testApplyAssignMathNotModifiedOnUnderflow);
-    CPPUNIT_TEST(testApplyAssignMathNotModifiedOnOverflow);
-    CPPUNIT_TEST(testApplyAssignFieldNotExistingInExpression);
-    CPPUNIT_TEST(testApplyAssignFieldNotExistingInPath);
-    CPPUNIT_TEST(testApplyAssignTargetNotExisting);
-    CPPUNIT_TEST(testAssignSimpleMapValueWithVariable);
-    CPPUNIT_TEST(testApplyAssignMathRemoveIfZero);
-    CPPUNIT_TEST(testApplyAssignMultiList);
-    CPPUNIT_TEST(testApplyAssignMultiWset);
-    CPPUNIT_TEST(testAssignWsetRemoveIfZero);
-    CPPUNIT_TEST(testApplyAddMultiList);
-    CPPUNIT_TEST(testAddAndAssignList);
-    CPPUNIT_TEST(testAssignMap);
-    CPPUNIT_TEST(testAssignMapStruct);
-    CPPUNIT_TEST(testAssignMapStructVariable);
-    CPPUNIT_TEST(testAssignMapNoExist);
-    CPPUNIT_TEST(testAssignMapNoExistNoCreate);
-    CPPUNIT_TEST(testQuotedStringKey);
-    CPPUNIT_TEST(testEqualityComparison);
-    CPPUNIT_TEST(testAffectsDocumentBody);
-    CPPUNIT_TEST(testIncompatibleDataTypeFails);
-    CPPUNIT_TEST(testSerializeAssign);
-    CPPUNIT_TEST(testSerializeAdd);
-    CPPUNIT_TEST(testSerializeRemove);
-    CPPUNIT_TEST(testSerializeAssignMath);
-    CPPUNIT_TEST(testReadSerializedFile);
-    CPPUNIT_TEST(testGenerateSerializedFile);
-    CPPUNIT_TEST(array_element_update_for_invalid_index_is_ignored);
-    CPPUNIT_TEST_SUITE_END();
-private:
     DocumentUpdate::UP
     createDocumentUpdateForSerialization(const DocumentTypeRepo& repo);
 };
-
-CPPUNIT_TEST_SUITE_REGISTRATION(FieldPathUpdateTestCase);
 
 namespace {
 
@@ -233,29 +149,28 @@ void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
         bb->flip();
         DocumentUpdate::UP b(DocumentUpdate::createHEAD(repo, *bb));
 
-        CPPUNIT_ASSERT_EQUAL(size_t(0), bb->getRemaining());
-        CPPUNIT_ASSERT_EQUAL(a.getId().toString(), b->getId().toString());
-        CPPUNIT_ASSERT_EQUAL(a.getUpdates().size(), b->getUpdates().size());
+        EXPECT_EQ(size_t(0), bb->getRemaining());
+        EXPECT_EQ(a.getId().toString(), b->getId().toString());
+        EXPECT_EQ(a.getUpdates().size(), b->getUpdates().size());
         for (size_t i(0); i < a.getUpdates().size(); i++) {
             const FieldUpdate & ua = a.getUpdates()[i];
             const FieldUpdate & ub = b->getUpdates()[i];
 
-            CPPUNIT_ASSERT_EQUAL(&ua.getField(), &ub.getField());
-            CPPUNIT_ASSERT_EQUAL(ua.getUpdates().size(),
+            EXPECT_EQ(&ua.getField(), &ub.getField());
+            EXPECT_EQ(ua.getUpdates().size(),
                                  ub.getUpdates().size());
             for (size_t j(0); j < ua.getUpdates().size(); j++) {
-                CPPUNIT_ASSERT_EQUAL(ua.getUpdates()[j]->getType(),
-                                     ub.getUpdates()[j]->getType());
+                EXPECT_EQ(ua.getUpdates()[j]->getType(), ub.getUpdates()[j]->getType());
             }
         }
-        CPPUNIT_ASSERT_EQUAL(a.getFieldPathUpdates().size(), b->getFieldPathUpdates().size());
+        EXPECT_EQ(a.getFieldPathUpdates().size(), b->getFieldPathUpdates().size());
         for (size_t i(0); i < a.getFieldPathUpdates().size(); i++) {
             const FieldPathUpdate::CP& ua = a.getFieldPathUpdates()[i];
             const FieldPathUpdate::CP& ub = b->getFieldPathUpdates()[i];
 
-            CPPUNIT_ASSERT_EQUAL(*ua, *ub);
+            EXPECT_EQ(*ua, *ub);
         }
-        CPPUNIT_ASSERT_EQUAL(a, *b);
+        EXPECT_EQ(a, *b);
     } catch (std::exception& e) {
         std::cerr << "Failed while testing document field path update:\n"
                   << a.toString(true) << "\n";
@@ -320,8 +235,10 @@ TestFieldPathUpdate::TestFieldPathUpdate(const TestFieldPathUpdate& other)
 {
 }
 
+FieldPathUpdateTestCase::~FieldPathUpdateTestCase() = default;
+
 void
-FieldPathUpdateTestCase::setUp()
+FieldPathUpdateTestCase::SetUp()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(42, "foobar",
@@ -344,62 +261,57 @@ FieldPathUpdateTestCase::setUp()
 }
 
 void
-FieldPathUpdateTestCase::tearDown()
+FieldPathUpdateTestCase::TearDown()
 {
 }
 
-void
-FieldPathUpdateTestCase::testWhereClause()
+TEST_F(FieldPathUpdateTestCase, testWhereClause)
 {
     DocumentTypeRepo repo(getRepoConfig());
     Document::UP doc(createTestDocument(repo));
     std::string where = "test.l1s1.structmap.value.smap{$x} == \"dicaprio\"";
     TestFieldPathUpdate update("l1s1.structmap.value.smap{$x}", where);
     update.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(std::string("dicaprio"), update._str);
+    EXPECT_EQ(std::string("dicaprio"), update._str);
 }
 
-void
-FieldPathUpdateTestCase::testBrokenWhereClause()
+TEST_F(FieldPathUpdateTestCase, testBrokenWhereClause)
 {
     DocumentTypeRepo repo(getRepoConfig());
     Document::UP doc(createTestDocument(repo));
     std::string where = "l1s1.structmap.value.smap{$x} == \"dicaprio\"";
     TestFieldPathUpdate update("l1s1.structmap.value.smap{$x}", where);
     update.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(std::string(""), update._str);
+    EXPECT_EQ(std::string(""), update._str);
 }
 
-void
-FieldPathUpdateTestCase::testNoIterateMapValues()
+TEST_F(FieldPathUpdateTestCase, testNoIterateMapValues)
 {
     DocumentTypeRepo repo(getRepoConfig());
     Document::UP doc(createTestDocument(repo));
     TestFieldPathUpdate update("l1s1.structwset.primitive1", "true");
     update.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(std::string("3;5"), update._str);
+    EXPECT_EQ(std::string("3;5"), update._str);
 }
 
-void
-FieldPathUpdateTestCase::testRemoveField()
+TEST_F(FieldPathUpdateTestCase, testRemoveField)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:thangs")));
-    CPPUNIT_ASSERT(doc->hasValue("strfoo") == false);
+    EXPECT_TRUE(doc->hasValue("strfoo") == false);
     doc->setValue("strfoo", StringFieldValue("cocacola"));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("cocacola"), doc->getValue("strfoo")->getAsString());
+    EXPECT_EQ(vespalib::string("cocacola"), doc->getValue("strfoo")->getAsString());
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strfoo")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT(doc->hasValue("strfoo") == false);
+    EXPECT_TRUE(doc->hasValue("strfoo") == false);
 }
 
-void
-FieldPathUpdateTestCase::testApplyRemoveMultiList()
+TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiList)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:thangs")));
     doc->setRepo(*_repo);
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
     {
         ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
         strArray.add(StringFieldValue("crouching tiger, hidden field"));
@@ -407,7 +319,7 @@ FieldPathUpdateTestCase::testApplyRemoveMultiList()
         strArray.add(StringFieldValue("hello hello"));
         doc->setValue("strarray", strArray);
     }
-    CPPUNIT_ASSERT(doc->hasValue("strarray"));
+    EXPECT_TRUE(doc->hasValue("strarray"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(
@@ -415,18 +327,17 @@ FieldPathUpdateTestCase::testApplyRemoveMultiList()
     docUp.applyTo(*doc);
     {
         std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
-        CPPUNIT_ASSERT_EQUAL(std::size_t(2), strArray->size());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("crouching tiger, hidden field"), (*strArray)[0].getAsString());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("hello hello"), (*strArray)[1].getAsString());
+        ASSERT_EQ(std::size_t(2), strArray->size());
+        EXPECT_EQ(vespalib::string("crouching tiger, hidden field"), (*strArray)[0].getAsString());
+        EXPECT_EQ(vespalib::string("hello hello"), (*strArray)[1].getAsString());
     }
 }
 
-void
-FieldPathUpdateTestCase::testApplyRemoveMultiList2()
+TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiList2)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:thangs")));
     doc->setRepo(*_repo);
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
     {
         ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
         strArray.add(StringFieldValue("remove val 1"));
@@ -434,7 +345,7 @@ FieldPathUpdateTestCase::testApplyRemoveMultiList2()
         strArray.add(StringFieldValue("hello hello"));
         doc->setValue("strarray", strArray);
     }
-    CPPUNIT_ASSERT(doc->hasValue("strarray"));
+    EXPECT_TRUE(doc->hasValue("strarray"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(
@@ -442,16 +353,15 @@ FieldPathUpdateTestCase::testApplyRemoveMultiList2()
     docUp.applyTo(*doc);
     {
         std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
-        CPPUNIT_ASSERT_EQUAL(std::size_t(1), strArray->size());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("hello hello"), (*strArray)[0].getAsString());
+        ASSERT_EQ(std::size_t(1), strArray->size());
+        EXPECT_EQ(vespalib::string("hello hello"), (*strArray)[0].getAsString());
     }
 }
 
-void
-FieldPathUpdateTestCase::testApplyRemoveEntireListField()
+TEST_F(FieldPathUpdateTestCase, testApplyRemoveEntireListField)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:thangs")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
     {
         ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
         strArray.add(StringFieldValue("this list"));
@@ -463,54 +373,51 @@ FieldPathUpdateTestCase::testApplyRemoveEntireListField()
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strarray", "")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT(!doc->hasValue("strarray"));
+    EXPECT_TRUE(!doc->hasValue("strarray"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyRemoveMultiWset()
+TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiWset)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:helan:halvan")));
-    CPPUNIT_ASSERT(doc->hasValue("strwset") == false);
+    EXPECT_TRUE(doc->hasValue("strwset") == false);
     {
         WeightedSetFieldValue strWset(doc->getType().getField("strwset").getDataType());
         strWset.add(StringFieldValue("hello hello"), 10);
         strWset.add(StringFieldValue("remove val 1"), 20);
         doc->setValue("strwset", strWset);
     }
-    CPPUNIT_ASSERT(doc->hasValue("strwset"));
+    EXPECT_TRUE(doc->hasValue("strwset"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strwset{remove val 1}")));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<WeightedSetFieldValue> strWset = doc->getAs<WeightedSetFieldValue>(doc->getField("strwset"));
-        CPPUNIT_ASSERT_EQUAL(std::size_t(1), strWset->size());
-        CPPUNIT_ASSERT_EQUAL(10, strWset->get(StringFieldValue("hello hello")));
+        ASSERT_EQ(std::size_t(1), strWset->size());
+        EXPECT_EQ(10, strWset->get(StringFieldValue("hello hello")));
     }
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignSingle()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignSingle)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:drekka:karsk")));
-    CPPUNIT_ASSERT(doc->hasValue("strfoo") == false);
+    EXPECT_TRUE(doc->hasValue("strfoo") == false);
     // Test assignment of non-existing
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(
             new AssignFieldPathUpdate(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("himert"))));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT(doc->hasValue("strfoo"));
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("himert"), doc->getValue("strfoo")->getAsString());
+    EXPECT_TRUE(doc->hasValue("strfoo"));
+    EXPECT_EQ(vespalib::string("himert"), doc->getValue("strfoo")->getAsString());
     // Test overwriting existing
     DocumentUpdate docUp2(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp2.addFieldPathUpdate(FieldPathUpdate::CP(
             new AssignFieldPathUpdate(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("wunderbaum"))));
     docUp2.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("wunderbaum"), doc->getValue("strfoo")->getAsString());
+    EXPECT_EQ(vespalib::string("wunderbaum"), doc->getValue("strfoo")->getAsString());
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMath()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMath)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
     doc->setValue("num", IntFieldValue(34));
@@ -518,11 +425,10 @@ FieldPathUpdateTestCase::testApplyAssignMath()
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "($value * 2) / $value")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(2)), *doc->getValue("num"));
+    EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(2)), *doc->getValue("num"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMathByteToZero()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMathByteToZero)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
     doc->setValue("byteval", ByteFieldValue(3));
@@ -530,11 +436,10 @@ FieldPathUpdateTestCase::testApplyAssignMathByteToZero()
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value - 3")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(ByteFieldValue(0)), *doc->getValue("byteval"));
+    EXPECT_EQ(static_cast<const FieldValue&>(ByteFieldValue(0)), *doc->getValue("byteval"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMathNotModifiedOnUnderflow()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMathNotModifiedOnUnderflow)
 {
     int low_value = -126;
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
@@ -544,11 +449,10 @@ FieldPathUpdateTestCase::testApplyAssignMathNotModifiedOnUnderflow()
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value - 4")));
     docUp.applyTo(*doc);
     // Over/underflow will happen. You must have control of your data types.
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(ByteFieldValue((char)(low_value - 4))), *doc->getValue("byteval"));
+    EXPECT_EQ(static_cast<const FieldValue&>(ByteFieldValue((char)(low_value - 4))), *doc->getValue("byteval"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMathNotModifiedOnOverflow()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMathNotModifiedOnOverflow)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
     doc->setValue("byteval", ByteFieldValue(127));
@@ -557,38 +461,35 @@ FieldPathUpdateTestCase::testApplyAssignMathNotModifiedOnOverflow()
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value + 200")));
     docUp.applyTo(*doc);
     // Over/underflow will happen. You must have control of your data types.
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(ByteFieldValue(static_cast<char>(static_cast<int>(127+200)))), *doc->getValue("byteval"));
+    EXPECT_EQ(static_cast<const FieldValue&>(ByteFieldValue(static_cast<char>(static_cast<int>(127+200)))), *doc->getValue("byteval"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMathDivZero()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMathDivZero)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
-    CPPUNIT_ASSERT(doc->hasValue("num") == false);
+    EXPECT_TRUE(doc->hasValue("num") == false);
     doc->setValue("num", IntFieldValue(10));
 
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "$value / ($value - 10)")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
+    EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInExpression()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignFieldNotExistingInExpression)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
     doc->setRepo(*_repo);
-    CPPUNIT_ASSERT(doc->hasValue("num") == false);
+    EXPECT_TRUE(doc->hasValue("num") == false);
     doc->setValue("num", IntFieldValue(10));
 
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "foobar.num2 + $value")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
+    EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInPath()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignFieldNotExistingInPath)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
     doc->setRepo(*_repo);
@@ -597,25 +498,23 @@ FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInPath()
     try {
         docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("nosuchnum", "", "foobar.num + $value")));
         docUp.applyTo(*doc);
-        CPPUNIT_ASSERT(false);
+        EXPECT_TRUE(false);
     } catch (const FieldNotFoundException&) {
     }
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignTargetNotExisting()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignTargetNotExisting)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
-    CPPUNIT_ASSERT(doc->hasValue("num") == false);
+    EXPECT_TRUE(doc->hasValue("num") == false);
 
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "$value + 5")));
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(5)), *doc->getValue("num"));
+    EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(5)), *doc->getValue("num"));
 }
 
-void
-FieldPathUpdateTestCase::testAssignSimpleMapValueWithVariable()
+TEST_F(FieldPathUpdateTestCase, testAssignSimpleMapValueWithVariable)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bug:hunter")));
     doc->setRepo(*_repo);
@@ -634,22 +533,21 @@ FieldPathUpdateTestCase::testAssignSimpleMapValueWithVariable()
 
     std::unique_ptr<MapFieldValue> valueNow(doc->getAs<MapFieldValue>(doc->getField("strmap")));
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(2), valueNow->size());
-    CPPUNIT_ASSERT_EQUAL(
+    ASSERT_EQ(std::size_t(2), valueNow->size());
+    EXPECT_EQ(
             static_cast<const FieldValue&>(StringFieldValue("shinyvalue")),
             *valueNow->get(StringFieldValue("foo")));
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             static_cast<const FieldValue&>(StringFieldValue("bananas")),
             *valueNow->get(StringFieldValue("baz")));
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMathRemoveIfZero()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMathRemoveIfZero)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
-    CPPUNIT_ASSERT(doc->hasValue("num") == false);
+    EXPECT_TRUE(doc->hasValue("num") == false);
     doc->setValue("num", IntFieldValue(34));
-    CPPUNIT_ASSERT(doc->hasValue("num") == true);
+    EXPECT_TRUE(doc->hasValue("num") == true);
 
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
     FieldPathUpdate::CP up1(new AssignFieldPathUpdate("num", "", "($value * 2) / $value - 2"));
@@ -657,21 +555,20 @@ FieldPathUpdateTestCase::testApplyAssignMathRemoveIfZero()
     docUp.addFieldPathUpdate(up1);
 
     docUp.applyTo(*doc);
-    CPPUNIT_ASSERT(doc->hasValue("num") == false);
+    EXPECT_TRUE(doc->hasValue("num") == false);
 }
 
-void
-FieldPathUpdateTestCase::testApplyAssignMultiList()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMultiList)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:fest:skinnvest")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
 
     {
         ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
         strArray.add(StringFieldValue("hello hello"));
         strArray.add(StringFieldValue("blah blargh"));
         doc->setValue("strarray", strArray);
-        CPPUNIT_ASSERT(doc->hasValue("strarray"));
+        EXPECT_TRUE(doc->hasValue("strarray"));
     }
 
     ArrayFieldValue updateArray(doc->getType().getField("strarray").getDataType());
@@ -685,25 +582,24 @@ FieldPathUpdateTestCase::testApplyAssignMultiList()
     {
         std::unique_ptr<ArrayFieldValue> strArray =
             doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
-        CPPUNIT_ASSERT_EQUAL(std::size_t(2), strArray->size());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("assigned val 0"), (*strArray)[0].getAsString());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("assigned val 1"), (*strArray)[1].getAsString());
+        ASSERT_EQ(std::size_t(2), strArray->size());
+        EXPECT_EQ(vespalib::string("assigned val 0"), (*strArray)[0].getAsString());
+        EXPECT_EQ(vespalib::string("assigned val 1"), (*strArray)[1].getAsString());
     }
 }
 
 
-void
-FieldPathUpdateTestCase::testApplyAssignMultiWset()
+TEST_F(FieldPathUpdateTestCase, testApplyAssignMultiWset)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:fest:skinnvest")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
 
     {
         WeightedSetFieldValue strWset(doc->getType().getField("strwset").getDataType());
         strWset.add(StringFieldValue("hello gentlemen"), 10);
         strWset.add(StringFieldValue("what you say"), 20);
         doc->setValue("strwset", strWset);
-        CPPUNIT_ASSERT(doc->hasValue("strwset"));
+        EXPECT_TRUE(doc->hasValue("strwset"));
     }
 
     WeightedSetFieldValue assignWset(doc->getType().getField("strwset").getDataType());
@@ -718,24 +614,23 @@ FieldPathUpdateTestCase::testApplyAssignMultiWset()
     //doc->print(std::cerr, true, "");
     {
         std::unique_ptr<WeightedSetFieldValue> strWset = doc->getAs<WeightedSetFieldValue>(doc->getField("strwset"));
-        CPPUNIT_ASSERT_EQUAL(std::size_t(2), strWset->size());
-        CPPUNIT_ASSERT_EQUAL(5, strWset->get(StringFieldValue("assigned val 0")));
-        CPPUNIT_ASSERT_EQUAL(10, strWset->get(StringFieldValue("assigned val 1")));
+        ASSERT_EQ(std::size_t(2), strWset->size());
+        EXPECT_EQ(5, strWset->get(StringFieldValue("assigned val 0")));
+        EXPECT_EQ(10, strWset->get(StringFieldValue("assigned val 1")));
     }
 }
 
-void
-FieldPathUpdateTestCase::testAssignWsetRemoveIfZero()
+TEST_F(FieldPathUpdateTestCase, testAssignWsetRemoveIfZero)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:tronder:bataljon")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
 
     {
         WeightedSetFieldValue strWset(doc->getType().getField("strwset").getDataType());
         strWset.add(StringFieldValue("you say goodbye"), 164);
         strWset.add(StringFieldValue("but i say hello"), 243);
         doc->setValue("strwset", strWset);
-        CPPUNIT_ASSERT(doc->hasValue("strwset"));
+        EXPECT_TRUE(doc->hasValue("strwset"));
     }
 
     {
@@ -750,17 +645,16 @@ FieldPathUpdateTestCase::testAssignWsetRemoveIfZero()
         //doc->print(std::cerr, true, "");
         {
             std::unique_ptr<WeightedSetFieldValue> strWset = doc->getAs<WeightedSetFieldValue>(doc->getField("strwset"));
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), strWset->size());
-            CPPUNIT_ASSERT_EQUAL(243, strWset->get(StringFieldValue("but i say hello")));
+            ASSERT_EQ(std::size_t(1), strWset->size());
+            EXPECT_EQ(243, strWset->get(StringFieldValue("but i say hello")));
         }
     }
 }
 
-void
-FieldPathUpdateTestCase::testApplyAddMultiList()
+TEST_F(FieldPathUpdateTestCase, testApplyAddMultiList)
 {
    Document::UP doc(new Document(_foobar_type, DocumentId("doc:george:costanza")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
 
     ArrayFieldValue adds(doc->getType().getField("strarray").getDataType());
     adds.add(StringFieldValue("serenity now"));
@@ -773,21 +667,20 @@ FieldPathUpdateTestCase::testApplyAddMultiList()
     //doc->print(std::cerr, true, "");
     docUp.applyTo(*doc);
     //doc->print(std::cerr, true, "");
-    CPPUNIT_ASSERT(doc->hasValue("strarray"));
+    EXPECT_TRUE(doc->hasValue("strarray"));
 }
 
-void
-FieldPathUpdateTestCase::testAddAndAssignList()
+TEST_F(FieldPathUpdateTestCase, testAddAndAssignList)
 {
    Document::UP doc(new Document(_foobar_type, DocumentId("doc:fancy:pants")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
 
     {
         ArrayFieldValue strArray(doc->getType().getField("strarray").getDataType());
         strArray.add(StringFieldValue("hello hello"));
         strArray.add(StringFieldValue("blah blargh"));
         doc->setValue("strarray", strArray);
-        CPPUNIT_ASSERT(doc->hasValue("strarray"));
+        EXPECT_TRUE(doc->hasValue("strarray"));
     }
 
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
@@ -805,10 +698,10 @@ FieldPathUpdateTestCase::testAddAndAssignList()
     //doc->print(std::cerr, true, "");
     {
         std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
-        CPPUNIT_ASSERT_EQUAL(std::size_t(3), strArray->size());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("hello hello"), (*strArray)[0].getAsString());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("assigned val 1"), (*strArray)[1].getAsString());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("new value"), (*strArray)[2].getAsString());
+        ASSERT_EQ(std::size_t(3), strArray->size());
+        EXPECT_EQ(vespalib::string("hello hello"), (*strArray)[0].getAsString());
+        EXPECT_EQ(vespalib::string("assigned val 1"), (*strArray)[1].getAsString());
+        EXPECT_EQ(vespalib::string("new value"), (*strArray)[2].getAsString());
     }
 }
 
@@ -866,8 +759,7 @@ Fixture::Fixture(const DocumentType &doc_type, const Keys &k)
 
 }  // namespace
 
-void
-FieldPathUpdateTestCase::testAssignMap()
+TEST_F(FieldPathUpdateTestCase, testAssignMap)
 {
     Keys k;
     Fixture f(_foobar_type, k);
@@ -878,17 +770,16 @@ FieldPathUpdateTestCase::testAssignMap()
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
-    CPPUNIT_ASSERT_EQUAL(std::size_t(3), valueNow->size());
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv1),
+    ASSERT_EQ(std::size_t(3), valueNow->size());
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv1),
                          *valueNow->get(StringFieldValue(k.key1)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv4),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv4),
                          *valueNow->get(StringFieldValue(k.key2)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv3),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv3),
                          *valueNow->get(StringFieldValue(k.key3)));
 }
 
-void
-FieldPathUpdateTestCase::testAssignMapStruct()
+TEST_F(FieldPathUpdateTestCase, testAssignMapStruct)
 {
     Keys k;
     Fixture f(_foobar_type, k);
@@ -900,17 +791,16 @@ FieldPathUpdateTestCase::testAssignMapStruct()
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
-    CPPUNIT_ASSERT_EQUAL(std::size_t(3), valueNow->size());
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv1),
+    ASSERT_EQ(std::size_t(3), valueNow->size());
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv1),
                          *valueNow->get(StringFieldValue(k.key1)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv4),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv4),
                          *valueNow->get(StringFieldValue(k.key2)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv3),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv3),
                          *valueNow->get(StringFieldValue(k.key3)));
 }
 
-void
-FieldPathUpdateTestCase::testAssignMapStructVariable()
+TEST_F(FieldPathUpdateTestCase, testAssignMapStructVariable)
 {
     Keys k;
     Fixture f(_foobar_type, k);
@@ -923,17 +813,16 @@ FieldPathUpdateTestCase::testAssignMapStructVariable()
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
-    CPPUNIT_ASSERT_EQUAL(std::size_t(3), valueNow->size());
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv1),
+    ASSERT_EQ(std::size_t(3), valueNow->size());
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv1),
                          *valueNow->get(StringFieldValue(k.key1)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv4),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv4),
                          *valueNow->get(StringFieldValue(k.key2)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv3),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv3),
                          *valueNow->get(StringFieldValue(k.key3)));
 }
 
-void
-FieldPathUpdateTestCase::testAssignMapNoExist()
+TEST_F(FieldPathUpdateTestCase, testAssignMapNoExist)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:planet:express")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -951,12 +840,11 @@ FieldPathUpdateTestCase::testAssignMapNoExist()
 
     std::unique_ptr<MapFieldValue> valueNow =
         doc->getAs<MapFieldValue>(doc->getField("structmap"));
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), valueNow->size());
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(fv1), *valueNow->get(StringFieldValue("foo")));
+    ASSERT_EQ(std::size_t(1), valueNow->size());
+    EXPECT_EQ(static_cast<FieldValue&>(fv1), *valueNow->get(StringFieldValue("foo")));
 }
 
-void
-FieldPathUpdateTestCase::testAssignMapNoExistNoCreate()
+TEST_F(FieldPathUpdateTestCase, testAssignMapNoExistNoCreate)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:planet:express")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -976,11 +864,10 @@ FieldPathUpdateTestCase::testAssignMapNoExistNoCreate()
     //doc->print(std::cerr, true, "");
 
     std::unique_ptr<MapFieldValue> valueNow = doc->getAs<MapFieldValue>(doc->getField("structmap"));
-    CPPUNIT_ASSERT(valueNow.get() == 0);
+    EXPECT_TRUE(valueNow.get() == 0);
 }
 
-void
-FieldPathUpdateTestCase::testQuotedStringKey()
+TEST_F(FieldPathUpdateTestCase, testQuotedStringKey)
 {
     Keys k;
     k.key2 = "here is a \"fancy\" 'map' :-} key :-{";
@@ -993,17 +880,16 @@ FieldPathUpdateTestCase::testQuotedStringKey()
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
-    CPPUNIT_ASSERT_EQUAL(std::size_t(3), valueNow->size());
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv1),
+    ASSERT_EQ(std::size_t(3), valueNow->size());
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv1),
                          *valueNow->get(StringFieldValue(k.key1)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv4),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv4),
                          *valueNow->get(StringFieldValue(k.key2)));
-    CPPUNIT_ASSERT_EQUAL(static_cast<FieldValue&>(f.fv3),
+    EXPECT_EQ(static_cast<FieldValue&>(f.fv3),
                          *valueNow->get(StringFieldValue(k.key3)));
 }
 
-void
-FieldPathUpdateTestCase::testEqualityComparison()
+TEST_F(FieldPathUpdateTestCase, testEqualityComparison)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:foo:zoo")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -1015,14 +901,14 @@ FieldPathUpdateTestCase::testEqualityComparison()
     {
         DocumentUpdate docUp1(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
         DocumentUpdate docUp2(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
-        CPPUNIT_ASSERT(docUp1 == docUp2);
+        EXPECT_TRUE(docUp1 == docUp2);
 
         FieldPathUpdate::CP assignUp1(new AssignFieldPathUpdate(*doc->getDataType(),
                                               "structmap{here be dragons}", std::string(), fv4));
         docUp1.addFieldPathUpdate(assignUp1);
-        CPPUNIT_ASSERT(docUp1 != docUp2);
+        EXPECT_TRUE(docUp1 != docUp2);
         docUp2.addFieldPathUpdate(assignUp1);
-        CPPUNIT_ASSERT(docUp1 == docUp2);
+        EXPECT_TRUE(docUp1 == docUp2);
     }
     {
         DocumentUpdate docUp1(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
@@ -1034,7 +920,7 @@ FieldPathUpdateTestCase::testEqualityComparison()
                                               "structmap{here be dragons}", "false", fv4));
         docUp1.addFieldPathUpdate(assignUp1);
         docUp2.addFieldPathUpdate(assignUp2);
-        CPPUNIT_ASSERT(docUp1 != docUp2);
+        EXPECT_TRUE(docUp1 != docUp2);
     }
     {
         DocumentUpdate docUp1(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
@@ -1046,13 +932,12 @@ FieldPathUpdateTestCase::testEqualityComparison()
                                               "structmap{here be kittens}", std::string(), fv4));
         docUp1.addFieldPathUpdate(assignUp1);
         docUp2.addFieldPathUpdate(assignUp2);
-        CPPUNIT_ASSERT(docUp1 != docUp2);
+        EXPECT_TRUE(docUp1 != docUp2);
     }
 
 }
 
-void
-FieldPathUpdateTestCase::testAffectsDocumentBody()
+TEST_F(FieldPathUpdateTestCase, testAffectsDocumentBody)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:stuff")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -1082,8 +967,7 @@ FieldPathUpdateTestCase::testAffectsDocumentBody()
 
 }
 
-void
-FieldPathUpdateTestCase::testIncompatibleDataTypeFails()
+TEST_F(FieldPathUpdateTestCase, testIncompatibleDataTypeFails)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:things:stuff")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -1093,14 +977,13 @@ FieldPathUpdateTestCase::testIncompatibleDataTypeFails()
     try {
         FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(), "structmap{foo}",
                                                               std::string(), StringFieldValue("bad things")));
-        CPPUNIT_ASSERT(false);
+        EXPECT_TRUE(false);
     } catch (const vespalib::IllegalArgumentException& e) {
         // OK
     }
 }
 
-void
-FieldPathUpdateTestCase::testSerializeAssign()
+TEST_F(FieldPathUpdateTestCase, testSerializeAssign)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:weloveto:serializestuff")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -1118,11 +1001,10 @@ FieldPathUpdateTestCase::testSerializeAssign()
     testSerialize(*_repo, docUp);
 }
 
-void
-FieldPathUpdateTestCase::testSerializeAdd()
+TEST_F(FieldPathUpdateTestCase, testSerializeAdd)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:george:costanza")));
-    CPPUNIT_ASSERT(doc->hasValue("strarray") == false);
+    EXPECT_TRUE(doc->hasValue("strarray") == false);
 
     ArrayFieldValue adds(doc->getType().getField("strarray").getDataType());
     adds.add(StringFieldValue("serenity now"));
@@ -1137,8 +1019,7 @@ FieldPathUpdateTestCase::testSerializeAdd()
     testSerialize(*_repo, docUp);
 }
 
-void
-FieldPathUpdateTestCase::testSerializeRemove()
+TEST_F(FieldPathUpdateTestCase, testSerializeRemove)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:weloveto:serializestuff")));
     MapFieldValue mfv(doc->getType().getField("structmap").getDataType());
@@ -1151,11 +1032,10 @@ FieldPathUpdateTestCase::testSerializeRemove()
     testSerialize(*_repo, docUp);
 }
 
-void
-FieldPathUpdateTestCase::testSerializeAssignMath()
+TEST_F(FieldPathUpdateTestCase, testSerializeAssignMath)
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
-    CPPUNIT_ASSERT(doc->hasValue("num") == false);
+    EXPECT_TRUE(doc->hasValue("num") == false);
     doc->setValue("num", IntFieldValue(34));
 
     DocumentUpdate docUp(*_repo, _foobar_type, DocumentId("doc:barbar:foofoo"));
@@ -1184,8 +1064,7 @@ FieldPathUpdateTestCase::createDocumentUpdateForSerialization(const DocumentType
     return docUp;
 }
 
-void
-FieldPathUpdateTestCase::testReadSerializedFile()
+TEST_F(FieldPathUpdateTestCase, testReadSerializedFile)
 {
     // Reads a file serialized from java
     const std::string cfg_file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
@@ -1205,11 +1084,10 @@ FieldPathUpdateTestCase::testReadSerializedFile()
     DocumentUpdate& upd(*updp);
 
     DocumentUpdate::UP compare(createDocumentUpdateForSerialization(repo));
-    CPPUNIT_ASSERT_EQUAL(*compare, upd);
+    EXPECT_EQ(*compare, upd);
 }
 
-void
-FieldPathUpdateTestCase::testGenerateSerializedFile()
+TEST_F(FieldPathUpdateTestCase, testGenerateSerializedFile)
 {
     const std::string cfg_file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
     DocumentTypeRepo repo(readDocumenttypesConfig(cfg_file_name));
@@ -1226,7 +1104,8 @@ FieldPathUpdateTestCase::testGenerateSerializedFile()
     close(fd);
 }
 
-void FieldPathUpdateTestCase::array_element_update_for_invalid_index_is_ignored() {
+TEST_F(FieldPathUpdateTestCase, array_element_update_for_invalid_index_is_ignored)
+{
     auto doc = std::make_unique<Document>(_foobar_type, DocumentId("id::foobar::1"));
     doc->setRepo(*_repo);
     auto& field = doc->getType().getField("strarray");
@@ -1242,7 +1121,7 @@ void FieldPathUpdateTestCase::array_element_update_for_invalid_index_is_ignored(
 
     // Doc is unmodified.
     auto new_arr = doc->getAs<ArrayFieldValue>(field);
-    CPPUNIT_ASSERT_EQUAL(str_array, *new_arr);
+    EXPECT_EQ(str_array, *new_arr);
 }
 
 }

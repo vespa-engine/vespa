@@ -17,7 +17,7 @@ public class DomDispatchBuilder {
 
     public static DispatchSpec build(ModelElement contentXml) {
         DispatchSpec.Builder builder = new DispatchSpec.Builder();
-        ModelElement dispatchElement = contentXml.getChild("dispatch");
+        ModelElement dispatchElement = contentXml.child("dispatch");
         if (dispatchElement == null) {
             return builder.build();
         }
@@ -48,6 +48,6 @@ public class DomDispatchBuilder {
     }
 
     private static DispatchSpec.Node buildNode(ModelElement nodeElement) {
-        return new DispatchSpec.Node(nodeElement.getIntegerAttribute("distribution-key"));
+        return new DispatchSpec.Node(nodeElement.integerAttribute("distribution-key"));
     }
 }

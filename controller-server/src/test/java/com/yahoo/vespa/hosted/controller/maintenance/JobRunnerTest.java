@@ -45,6 +45,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
@@ -149,6 +150,10 @@ public class JobRunnerTest {
         outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
+        assertEquals(List.of(copyVespaLogs, deactivateTester), run.get().readySteps());
+
+        outcomes.put(copyVespaLogs, running);
+        runner.maintain();
         assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
 
         // Abortion does nothing, as the run has already failed.

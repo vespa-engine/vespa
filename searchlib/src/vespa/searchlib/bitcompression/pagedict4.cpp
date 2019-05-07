@@ -10,9 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".pagedict4");
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 namespace {
 
@@ -108,11 +106,9 @@ getLCP(vespalib::stringref word,
     size_t len2 = prevWord.size();
 
     size_t res = 0;
-    while (res < len1 &&
-           res < len2 &&
-           res < 254u &&
-           word[res] == prevWord[res])
+    while ((res < len1) && (res < len2) && (res < 254u) && (word[res] == prevWord[res])) {
         ++res;
+    }
     return res;
 }
 
@@ -490,13 +486,13 @@ PageDict4SPWriter::addL3Skip(vespalib::stringref word,
     _l3WordNum = wordNum;
     ++_l3Entries;
     ++_l4StrideCheck;
-    if (_l4StrideCheck >= getL4SkipStride())
+    if (_l4StrideCheck >= getL4SkipStride()) {
         addL4Skip(lcp);
+    }
     addLCPWord(word, lcp, _words);
     _l3WordOffset = _words.size();
     _l3PageNum = pageNum;
-    if (_l3Size + _l4Size + _l5Size + _headerSize + 8 * _l3WordOffset >
-        getPageBitSize()) {
+    if (_l3Size + _l4Size + _l5Size + _headerSize + (8 * _l3WordOffset) > getPageBitSize()) {
         // Cannot convert tentative writes to full writes due to overflow.
         // Flush existing full writes.
         flushPage();
@@ -520,8 +516,9 @@ PageDict4SPWriter::addL4Skip(size_t &lcp)
 {
     size_t tlcp = getLCP(_l3Word, _l4Word);
     assert(tlcp <= lcp);
-    if (tlcp < lcp)
+    if (tlcp < lcp) {
         lcp = tlcp;
+    }
     _l4StrideCheck = 0u;
     _eL4.encodeExpGolomb(_l3WordOffset - _l4WordOffset,
                          K_VALUE_COUNTFILE_L4_WORDOFFSET);
@@ -556,8 +553,9 @@ PageDict4SPWriter::addL5Skip(size_t &lcp)
 {
     size_t tlcp = getLCP(_l3Word, _l5Word);
     assert(tlcp <= lcp);
-    if (tlcp < lcp)
+    if (tlcp < lcp) {
         lcp = tlcp;
+    }
     _eL5.encodeExpGolomb(_l3WordOffset - _l5WordOffset,
                          K_VALUE_COUNTFILE_L5_WORDOFFSET);
     _eL5.writeComprBufferIfNeeded();
@@ -776,10 +774,12 @@ addCounts(vespalib::stringref word,
 {
     assert(_countsWordOffset == _words.size());
     size_t lcp = getLCP(_pendingCountsWord, _countsWord);
-    if (_l1StrideCheck >= getL1SkipStride())
+    if (_l1StrideCheck >= getL1SkipStride()) {
         addL1Skip(lcp);
-    if (_countsEntries > 0)
+    }
+    if (_countsEntries > 0) {
         addLCPWord(_pendingCountsWord, lcp, _words);
+    }
     _eCounts.writeCounts(counts);
     uint32_t eCountsOffset = static_cast<uint32_t>(_eCounts.getWriteOffset());
     if (eCountsOffset + _l1Size + _l2Size + _headerSize +
@@ -865,8 +865,9 @@ PageDict4PWriter::addL1Skip(size_t &lcp)
     _prevL2Size = _l2Size;  // Prepare for undo
     size_t tlcp = getLCP(_pendingCountsWord, _l1Word);
     assert(tlcp <= lcp);
-    if (tlcp < lcp)
+    if (tlcp < lcp) {
         lcp = tlcp;
+    }
     _l1StrideCheck = 0u;
     _eL1.encodeExpGolomb(_countsWordOffset - _l1WordOffset,
                          K_VALUE_COUNTFILE_L1_WORDOFFSET);
@@ -883,8 +884,9 @@ PageDict4PWriter::addL1Skip(size_t &lcp)
     _curCountOffsetL1 = _countsSize;
     _l1Size = _eL1.getWriteOffset();
     ++_l2StrideCheck;
-    if (_l2StrideCheck >= getL2SkipStride())
+    if (_l2StrideCheck >= getL2SkipStride()) {
         addL2Skip(lcp);
+    }
     _l1WordOffset = _countsWordOffset + 2 + _pendingCountsWord.size() - lcp;
 }
 
@@ -894,8 +896,9 @@ PageDict4PWriter::addL2Skip(size_t &lcp)
 {
     size_t tlcp = getLCP(_pendingCountsWord, _l2Word);
     assert(tlcp <= lcp);
-    if (tlcp < lcp)
+    if (tlcp < lcp) {
         lcp = tlcp;
+    }
     _l2StrideCheck = 0;
     _eL2.encodeExpGolomb(_countsWordOffset - _l2WordOffset,
                          K_VALUE_COUNTFILE_L2_WORDOFFSET);
@@ -1028,8 +1031,9 @@ PageDict4SSReader::setup(DC &ssd)
         if (l7StrideCheck >= getL7SkipStride() ||
             (l7StrideCheck > 0 && (overflow || forceL7Entry))) {
             // Don't update l7Ref if this L7 entry points to an overflow entry
-            if (!forceL7Entry)
+            if (!forceL7Entry) {
                 l7Ref = _l7.size(); // Self-ref if referencing L6 entry
+            }
             _l7.push_back(L7Entry(word, startOffset, l6WordNum,
                                   l6Offset, sparsePageNum, pageNum, l7Ref));
             l7StrideCheck = 0;
@@ -1071,8 +1075,9 @@ PageDict4SSReader::setup(DC &ssd)
         l6Offset = dL6.getReadOffset();
     }
     if (l7StrideCheck > 0) {
-        if (!forceL7Entry)
+        if (!forceL7Entry) {
             l7Ref = _l7.size(); // Self-ref if referencing L6 entry
+        }
         _l7.push_back(L7Entry(word, startOffset, l6WordNum,
                               l6Offset, sparsePageNum, pageNum, l7Ref));
     }
@@ -1187,8 +1192,9 @@ lookup(vespalib::stringref key)
             LOG_ABORT("FATAL: Missing L7 entry for overflow entry"); // counts < key, should not happen (missing L7 entry)
         } else {
             bool l6NotLessThanKey = !(word < key);
-            if (l6NotLessThanKey)
+            if (l6NotLessThanKey) {
                 break;  // key <= counts
+            }
             UC64_DECODECONTEXT_LOAD(o, dL6._);
             UC64_DECODEEXPGOLOMB_NS(o,
                                     K_VALUE_COUNTFILE_L6_PAGENUM,
@@ -1204,10 +1210,11 @@ lookup(vespalib::stringref key)
     }
     assert(l6Offset <= _ssFileBitLen);
     res._l6Word = l6Word;
-    if (l6Offset >= _ssFileBitLen)
+    if (l6Offset >= _ssFileBitLen) {
         res._lastWord.clear();  // Mark that word is beyond end of dictionary
-    else
+    } else {
         res._lastWord = word;
+    }
     res._l6StartOffset = l6StartOffset;
     res._pageNum = pageNum;
     res._sparsePageNum = sparsePageNum;
@@ -1344,8 +1351,9 @@ lookup(const SSReader &ssReader,
     dL4.copyParams(ssReader.getSSD());
     dL5.copyParams(ssReader.getSSD());
     uint32_t spStartOffset = 0;
-    if (l6WordNum == 1)
+    if (l6WordNum == 1) {
         spStartOffset = ssReader._spFirstPageOffset;
+    }
     setDecoderPositionInPage(dL5, sparsePage, spStartOffset);
 
     uint32_t l5Size = dL5.readBits(15);
@@ -1392,8 +1400,9 @@ lookup(const SSReader &ssReader,
         assert(lcp <= _l3Word.size());
         word = _l3Word.substr(0, lcp) + l5WordBuf;
         bool l3NotLessThanKey = !(word < key);
-        if (l3NotLessThanKey)
+        if (l3NotLessThanKey) {
             break;
+        }
         _l3Word = word;
         l3WordOffset = l5WordOffset + 2 + word.size() - lcp;
         l5WordOffset = l3WordOffset;
@@ -1434,8 +1443,9 @@ lookup(const SSReader &ssReader,
         assert(lcp <= _l3Word.size());
         word = _l3Word.substr(0, lcp) + l4WordBuf;
         bool l3NotLessThanKey = !(word < key);
-        if (l3NotLessThanKey)
+        if (l3NotLessThanKey) {
             break;
+        }
         _l3Word = word;
         l3WordOffset = l4WordOffset + 2 + word.size() - lcp;
         l4WordOffset = l3WordOffset;
@@ -1466,16 +1476,18 @@ lookup(const SSReader &ssReader,
             assert(lcp <= _l3Word.size());
             word = _l3Word.substr(0, lcp) + l3WordBuf;
             bool l3NotLessThanKey = !(word < key);
-            if (l3NotLessThanKey)
+            if (l3NotLessThanKey) {
                 break;
+            }
             _l3Word = word;
             l3WordOffset += 2 + word.size() - lcp;
         } else {
             word = lastSPWord;
             assert(!word.empty()); // Should've stopped at SS level
             bool l3NotLessThanKey = !(word < key);
-            if (l3NotLessThanKey)
+            if (l3NotLessThanKey) {
                 break;
+            }
             LOG_ABORT("should not be reached");
             _l3Word = word;
         }
@@ -1511,7 +1523,7 @@ PageDict4PLookupRes()
       _startOffset(),
       _wordNum(1u),
       _res(false),
-      _nextWord(NULL)
+      _nextWord(nullptr)
 {
 }
 
@@ -1540,8 +1552,9 @@ lookup(const SSReader &ssReader,
     dL2.copyParams(ssReader.getSSD());
 
     uint32_t pStartOffset = 0;
-    if (l3WordNum == 1)
+    if (l3WordNum == 1) {
         pStartOffset = ssReader._pFirstPageOffset;
+    }
     setDecoderPositionInPage(dL2, page, pStartOffset);
 
     uint32_t l2Size = dL2.readBits(15);
@@ -1598,8 +1611,9 @@ lookup(const SSReader &ssReader,
         assert(lcp <= countsWord.size());
         word = countsWord.substr(0, lcp) + l2WordBuf;
         bool countsNotLessThanKey = !(word < key);
-        if (countsNotLessThanKey)
+        if (countsNotLessThanKey) {
             break;
+        }
         countsWord = word;
         countsWordOffset = l2WordOffset + 2 + word.size() - lcp;
         l2WordOffset = countsWordOffset;
@@ -1638,8 +1652,9 @@ lookup(const SSReader &ssReader,
         assert(lcp <= countsWord.size());
         word = countsWord.substr(0, lcp) + l1WordBuf;
         bool countsNotLessThanKey = !(word < key);
-        if (countsNotLessThanKey)
+        if (countsNotLessThanKey) {
             break;
+        }
         countsWord = word;
         countsWordOffset = l1WordOffset + 2 + word.size() - lcp;
         l1WordOffset = countsWordOffset;
@@ -1670,16 +1685,18 @@ lookup(const SSReader &ssReader,
             assert(lcp <= countsWord.size());
             word = countsWord.substr(0, lcp) + countsWordBuf;
             bool countsNotLessThanKey = !(word < key);
-            if (countsNotLessThanKey)
+            if (countsNotLessThanKey) {
                 break;
+            }
             countsWordOffset += 2 + word.size() - lcp;
             countsWord = word;
         } else {
             word = lastPWord;
             assert(!word.empty()); // Should've stopped at SS level
             bool countsNotLessThanKey = !(word < key);
-            if (countsNotLessThanKey)
+            if (countsNotLessThanKey) {
                 break;
+            }
         }
         countsStartOffset.adjust(counts);
         ++wordNum;
@@ -1759,8 +1776,7 @@ PageDict4Reader::~PageDict4Reader()
 {
 }
 
-namespace
-{
+namespace {
 
 template <typename CheckVector>
 void checkWordOffset(CheckVector &skip, uint32_t &skipAdjust, uint32_t wordOffset, uint32_t wordEntryLen)
@@ -2158,10 +2174,11 @@ PageDict4Reader::readCounts(vespalib::string &word,
             }
         } else {
             assert(_l3Residue > 0);
-            if (_l3Residue > 1)
+            if (_l3Residue > 1) {
                 decodeSPWord(word);
-            else
+            } else {
                 decodeSSWord(word);
+            }
             _lastWord = word;
             --_l3Residue;
         }
@@ -2183,10 +2200,11 @@ PageDict4Reader::readCounts(vespalib::string &word,
         _overflowPage = false;
         assert(_l3Residue > 0);
         vespalib::string tword;
-        if (_l3Residue > 1)
+        if (_l3Residue > 1) {
             decodeSPWord(tword);
-        else
+        } else {
             decodeSSWord(tword);
+        }
         assert(tword == word);
         --_l3Residue;
         _lastWord = word;
@@ -2233,6 +2251,4 @@ PageDict4Reader::readOverflowCounts(vespalib::string &word,
     }
 }
 
-} // namespace bitcompression
-
-} // namespace search
+}

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import ai.vespa.hosted.api.Signatures;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -9,7 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -20,6 +20,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -44,12 +45,13 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
@@ -58,7 +60,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
@@ -87,15 +89,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.DigestInputStream;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.logging.Level;
 
 import static java.util.stream.Collectors.joining;
@@ -132,12 +138,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
+            Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
             switch (request.getMethod()) {
-                case GET: return handleGET(request);
-                case PUT: return handlePUT(request);
-                case POST: return handlePOST(request);
-                case PATCH: return handlePATCH(request);
-                case DELETE: return handleDELETE(request);
+                case GET: return handleGET(path, request);
+                case PUT: return handlePUT(path, request);
+                case POST: return handlePOST(path, request);
+                case PATCH: return handlePATCH(path, request);
+                case DELETE: return handleDELETE(path, request);
                 case OPTIONS: return handleOPTIONS();
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
@@ -163,8 +170,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+    private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
@@ -173,6 +179,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
@@ -186,8 +193,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse handlePUT(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+    private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/user")) return createUser(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
@@ -195,8 +201,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse handlePOST(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+    private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
@@ -214,15 +219,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse handlePATCH(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+    private HttpResponse handlePATCH(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}"))
-            return setMajorVersion(path.get("tenant"), path.get("application"), request);
+            return patchApplication(path.get("tenant"), path.get("application"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse handleDELETE(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+    private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
@@ -311,21 +314,85 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse setMajorVersion(String tenantName, String applicationName, HttpRequest request) {
-        Application application = getApplication(tenantName, applicationName);
-        Inspector majorVersionField = toSlime(request.getData()).get().field("majorVersion");
-        if ( ! majorVersionField.valid())
-            throw new IllegalArgumentException("Request body must contain a majorVersion field");
-        Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int)majorVersionField.asLong();
-        controller.applications().lockIfPresent(application.id(),
-                                                a -> controller.applications().store(a.withMajorVersion(majorVersion)));
-        return new MessageResponse("Set major version to " + ( majorVersion == null ? "empty" : majorVersion));
+    private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
+        Inspector requestObject = toSlime(request.getData()).get();
+        StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
+        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, "default"), application -> {
+            Inspector majorVersionField = requestObject.field("majorVersion");
+            if (majorVersionField.valid()) {
+                Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int) majorVersionField.asLong();
+                application = application.withMajorVersion(majorVersion);
+                messageBuilder.add("Set major version to " + (majorVersion == null ? "empty" : majorVersion));
+            }
+
+            Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
+            if (pemDeployKeyField.valid()) {
+                String pemDeployKey = pemDeployKeyField.type() == Type.NIX ? null : pemDeployKeyField.asString();
+                application = application.withPemDeployKey(pemDeployKey);
+                messageBuilder.add("Set pem deploy key to " + (pemDeployKey == null ? "empty" : pemDeployKey));
+            }
+
+            controller.applications().store(application);
+        });
+        return new MessageResponse(messageBuilder.toString());
     }
 
     private Application getApplication(String tenantName, String applicationName) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
         return controller.applications().get(applicationId)
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
+    }
+
+    private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        List<Node> nodes = controller.configServer().nodeRepository().list(zone, id);
+
+        Slime slime = new Slime();
+        Cursor nodesArray = slime.setObject().setArray("nodes");
+        for (Node node : nodes) {
+            Cursor nodeObject = nodesArray.addObject();
+            nodeObject.setString("hostname", node.hostname().value());
+            nodeObject.setString("state", valueOf(node.state()));
+            nodeObject.setString("orchestration", valueOf(node.serviceState()));
+            nodeObject.setString("version", node.currentVersion().toString());
+            nodeObject.setString("flavor", node.canonicalFlavor());
+            nodeObject.setString("clusterId", node.clusterId());
+            nodeObject.setString("clusterType", valueOf(node.clusterType()));
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static String valueOf(Node.State state) {
+        switch (state) {
+            case failed: return "failed";
+            case parked: return "parked";
+            case dirty: return "dirty";
+            case ready: return "ready";
+            case active: return "active";
+            case inactive: return "inactive";
+            case reserved: return "reserved";
+            case provisioned: return "provisioned";
+            default: throw new IllegalArgumentException("Unexpected node state '" + state + "'.");
+        }
+    }
+
+    private static String valueOf(Node.ServiceState state) {
+        switch (state) {
+            case expectedUp: return "expectedUp";
+            case allowedDown: return "allowedDown";
+            case unorchestrated: return "unorchestrated";
+            default: throw new IllegalArgumentException("Unexpected node state '" + state + "'.");
+        }
+    }
+
+    private static String valueOf(Node.ClusterType type) {
+        switch (type) {
+            case admin: return "admin";
+            case content: return "content";
+            case container: return "container";
+            default: throw new IllegalArgumentException("Unexpected node cluster type '" + type + "'.");
+        }
     }
 
     private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
@@ -367,6 +434,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {
+        object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
         object.setString("deployments", withPath("/application/v4" +
@@ -431,21 +499,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
+        application.endpointsIn(controller.system())
+                   .scope(Endpoint.Scope.global)
+                   .legacy(false) // Hide legacy names
+                   .asList().stream()
+                   .map(Endpoint::url)
+                   .map(URI::toString)
+                   .forEach(globalRotationsArray::addString);
 
-        application.globalDnsName(controller.system()).ifPresent(rotation -> {
-            globalRotationsArray.addString(rotation.url().toString());
-            globalRotationsArray.addString(rotation.secureUrl().toString());
-            globalRotationsArray.addString(rotation.oathUrl().toString());
-            object.setString("rotationId", application.rotation().get().asString());
-        });
+        application.rotation().ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies(application.id());
         for (RoutingPolicy policy : routingPolicies) {
-            for (RotationName rotation : policy.rotations()) {
-                GlobalDnsName dnsName = new GlobalDnsName(application.id(), controller.system(), rotation);
-                globalRotationsArray.addString(dnsName.oathUrl().toString());
-            }
+            policy.rotationEndpointsIn(controller.system()).asList().stream()
+                  .map(Endpoint::url)
+                  .map(URI::toString)
+                  .forEach(globalRotationsArray::addString);
         }
 
         // Deployments sorted according to deployment spec
@@ -456,22 +526,25 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
 
-            deploymentObject.setString("environment", deployment.zone().environment().value());
-            deploymentObject.setString("region", deployment.zone().region().value());
-            deploymentObject.setString("instance", application.id().instance().value()); // pointless
             if (application.rotation().isPresent() && deployment.zone().environment() == Environment.prod) {
                 toSlime(application.rotationStatus(deployment), deploymentObject);
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
-            else
+            else {
+                deploymentObject.setString("environment", deployment.zone().environment().value());
+                deploymentObject.setString("region", deployment.zone().region().value());
+                deploymentObject.setString("instance", application.id().instance().value()); // pointless
                 deploymentObject.setString("url", withPath(request.getUri().getPath() +
                                                            "/environment/" + deployment.zone().environment().value() +
                                                            "/region/" + deployment.zone().region().value() +
                                                            "/instance/" + application.id().instance().value(),
                                                            request.getUri()).toString());
+            }
         }
+
+        application.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
@@ -515,7 +588,25 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
+        response.setString("tenant", deploymentId.applicationId().tenant().value());
+        response.setString("application", deploymentId.applicationId().application().value());
+        response.setString("instance", deploymentId.applicationId().instance().value()); // pointless
+        response.setString("environment", deploymentId.zoneId().environment().value());
+        response.setString("region", deploymentId.zoneId().region().value());
 
+        // Add endpoint(s) defined by routing policies
+        var endpointArray = response.setArray("endpoints");
+        for (var policy : controller.applications().routingPolicies(deploymentId.applicationId())) {
+            Cursor endpointObject = endpointArray.addObject();
+            Endpoint endpoint = policy.endpointIn(controller.system());
+            endpointObject.setString("cluster", policy.cluster().value());
+            endpointObject.setBool("tls", endpoint.tls());
+            endpointObject.setString("url", endpoint.url().toString());
+        }
+
+        // serviceUrls contains zone/cluster-specific endpoints for this deployment. The name of these endpoints may
+        // contain  the cluster name (if non-default) and since the controller has no knowledge of clusters, we have to
+        // ask the routing layer here
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.applications().getDeploymentEndpoints(deploymentId)
                   .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
@@ -824,7 +915,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ZoneId zone = ZoneId.from(environment, region);
 
         // Get deployOptions
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("deployOptions"))
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
@@ -885,14 +976,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
          * Deploy direct is when we want to redeploy the current application - retrieve version
          * info from the application package before deploying
          */
-        if(deployDirectly && !applicationPackage.isPresent() && !applicationVersion.isPresent() && !vespaVersion.isPresent()) {
+        if(deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
 
             // Redeploy the existing deployment with the same versions.
             Optional<Deployment> deployment = controller.applications().get(applicationId)
                     .map(Application::deployments)
                     .flatMap(deployments -> Optional.ofNullable(deployments.get(zone)));
 
-            if(!deployment.isPresent())
+            if(deployment.isEmpty())
                 throw new IllegalArgumentException("Can't redeploy application, no deployment currently exist");
 
             ApplicationVersion version = deployment.get().applicationVersion();
@@ -1154,6 +1245,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Application application, Cursor object, HttpRequest request) {
+        object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
         object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +
@@ -1311,7 +1403,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions);
         String authorEmail = submitOptions.field("authorEmail").asString();
@@ -1330,6 +1422,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+    }
+
+    private static Map<String, byte[]> parseDataParts(HttpRequest request) {
+        String contentHash = request.getHeader("x-Content-Hash");
+        if (contentHash == null)
+            return new MultipartParser().parse(request);
+
+        DigestInputStream digester = Signatures.sha256Digester(request.getData());
+        var dataParts = new MultipartParser().parse(request.getHeader("Content-Type"), digester, request.getUri());
+        if ( ! Arrays.equals(digester.getMessageDigest().digest(), Base64.getDecoder().decode(contentHash)))
+            throw new IllegalArgumentException("Value of X-Content-Hash header does not match computed content hash");
+
+        return dataParts;
     }
 
 }

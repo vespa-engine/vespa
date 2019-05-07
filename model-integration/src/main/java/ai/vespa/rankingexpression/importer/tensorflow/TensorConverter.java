@@ -5,6 +5,7 @@ import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import org.tensorflow.DataType;
 import org.tensorflow.framework.TensorProto;
 
 import java.nio.ByteBuffer;
@@ -27,7 +28,7 @@ public class TensorConverter {
     }
 
     private static Tensor toVespaTensor(org.tensorflow.Tensor<?> tfTensor, String dimensionPrefix) {
-        TensorType type = toVespaTensorType(tfTensor.shape(), dimensionPrefix);
+        TensorType type = TypeConverter.typeFrom(tfTensor, dimensionPrefix);
         Values values = readValuesOf(tfTensor);
         IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)Tensor.Builder.of(type);
         for (int i = 0; i < values.size(); i++)
@@ -53,16 +54,6 @@ public class TensorConverter {
         return builder.build();
     }
 
-    private static TensorType toVespaTensorType(long[] shape, String dimensionPrefix) {
-        TensorType.Builder b = new TensorType.Builder();
-        int dimensionIndex = 0;
-        for (long dimensionSize : shape) {
-            if (dimensionSize == 0) dimensionSize = 1; // TensorFlow ...
-            b.indexed(dimensionPrefix + (dimensionIndex++), dimensionSize);
-        }
-        return b.build();
-    }
-
     public static Long tensorSize(TensorType type) {
         Long size = 1L;
         for (TensorType.Dimension dimension : type.dimensions()) {
@@ -85,7 +76,7 @@ public class TensorConverter {
             case INT64: return new LongValues(tfTensor);
         }
         throw new IllegalArgumentException("Cannot convert a tensor with elements of type " +
-                tfTensor.dataType() + " to a Vespa tensor");
+                                           tfTensor.dataType() + " to a Vespa tensor");
     }
 
     private static Values readValuesOf(TensorProto tensorProto) {
