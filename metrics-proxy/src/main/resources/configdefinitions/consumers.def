@@ -1,0 +1,10 @@
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.metricsproxy.core
+
+# Consumers with metric definitions
+consumer[].name string default=""
+consumer[].metric[].name string
+consumer[].metric[].description string default=""
+consumer[].metric[].outputname string
+consumer[].metric[].dimension[].key string
+consumer[].metric[].dimension[].value string

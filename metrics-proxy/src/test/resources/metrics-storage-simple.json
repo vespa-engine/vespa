@@ -1,0 +1,38 @@
+{
+  "status" : {
+    "code" : "up",
+    "message": "All good"
+  },
+
+  "metrics" : {
+    "snapshot" : {
+      "from": 1335523285,
+      "to": 1335525685
+    },
+    "values": [
+
+      {
+        "name" : "foo",
+        "values" : {
+          "count" : 1
+        },
+        "dimensions" : {
+          "foo": "bar",
+          "bar" : "foo"
+        }
+      },
+
+      {
+        "name" : "bar",
+        "values" : {
+          "count" : 2
+        },
+        "dimensions" : {
+          "d0": "d0val",
+          "d1" : "d1val"
+        }
+      }
+    ]
+
+  }
+}
