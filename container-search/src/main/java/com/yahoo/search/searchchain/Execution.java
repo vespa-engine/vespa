@@ -407,8 +407,6 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      */
     private final Context[] contextCache;
 
-    private static final Logger log = Logger.getLogger(Execution.class.getName());
-
     /**
      * <p>
      * Creates an execution from another. This execution will start at the
@@ -569,7 +567,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         try {
             nextProcessor();
-            onInvokingFill(current, result, summaryClass);
+            onInvokingFill(current, summaryClass);
             current.ensureFilled(result, summaryClass, this);
         }
         finally {
@@ -579,7 +577,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         }
     }
 
-    private void onInvokingFill(Searcher searcher, Result result, String summaryClass) {
+    private void onInvokingFill(Searcher searcher, String summaryClass) {
         int traceFillAt = 5;
         if (trace().getTraceLevel() < traceFillAt) return;
         trace().trace("Invoke fill(" + summaryClass + ") on " + searcher, traceFillAt);

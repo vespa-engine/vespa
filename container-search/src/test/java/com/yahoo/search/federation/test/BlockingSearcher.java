@@ -10,6 +10,7 @@ import com.yahoo.search.searchchain.Execution;
  * @author Tony Vaagenes
  */
 public class BlockingSearcher extends Searcher {
+
     @Override
     public synchronized Result search(Query query, Execution execution) {
         try {
@@ -19,4 +20,5 @@ public class BlockingSearcher extends Searcher {
         }
         return execution.search(query);
     }
+
 }

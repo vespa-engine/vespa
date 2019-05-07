@@ -184,10 +184,7 @@ public class Execution {
     }
 
     public String toString() {
-        StringBuilder s = new StringBuilder("Execution(");
-        s.append(chain.getId());
-        s.append(")#").append(hashCode());
-        return s.toString();
+        return "execution of chain '" + chain.getId() + "'";
     }
 
     public Trace trace() {

@@ -71,12 +71,12 @@ public class FederationSearcherTestCase {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         builder = null;
         chainRegistry = null;
     }
 
-    private void addChained(final Searcher searcher, final String sourceName) {
+    private void addChained(Searcher searcher, String sourceName) {
         builder.target(new FederationConfig.Target.Builder().
                 id(sourceName).
                 searchChain(new FederationConfig.Target.SearchChain.Builder().
