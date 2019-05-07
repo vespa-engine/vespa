@@ -54,7 +54,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected void setup() {
         tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
         application = firstNonBlank(application, project.getProperties().getProperty("application"));
-        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"));
+        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"), "default");
         id = ApplicationId.from(tenant, application, instance);
 
         controller = certificateFile == null
