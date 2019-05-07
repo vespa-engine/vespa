@@ -10,7 +10,6 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -37,10 +36,6 @@ import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
 
 /**
- * Note about components: In general, all components should belong to the cluster and not the container. However,
- * components that need node specific config must be added at the container level, along with the node-specific
- * parts of the config generation (getConfig).
- *
  * @author gjoranv
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
@@ -112,15 +107,11 @@ public abstract class Container extends AbstractService implements
         return components;
     }
 
-    public final void addComponent(Component c) {
+    public void addComponent(Component c) {
         components.addComponent(c);
     }
 
-    public final void addSimpleComponent(String idSpec, String classSpec, String bundleSpec) {
-        addComponent(new SimpleComponent(new ComponentModel(idSpec, classSpec, bundleSpec)));
-    }
-
-    public final void addHandler(Handler h) {
+    public void addHandler(Handler h) {
         handlers.addComponent(h);
     }
     
