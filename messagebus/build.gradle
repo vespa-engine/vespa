@@ -7,8 +7,9 @@ dependencies {
     compile project(':config')
     compile project(':configdefinitions')
     compile project(':jrt')
+
     testCompile junit_4
-    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile hamcrest_all
     providedCompile project(':component')
 }
 

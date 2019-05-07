@@ -13,7 +13,7 @@ dependencies {
     testCompile 'org.easytesting:fest-assert:1.4'
     testCompile project(':testutil')
     testCompile 'org.apache.curator:curator-test:2.9.1'
-    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile hamcrest_all
     providedCompile project(':container-dev')
     providedCompile project(':service-monitor')
     providedCompile project(':application-model')
