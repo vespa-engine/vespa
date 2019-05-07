@@ -60,7 +60,7 @@ public abstract class ControllerHttpClient {
         return new MutualTlsControllerHttpClient(endpoint, privateKeyFile, certificateFile);
     }
 
-    /** Sends submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
+    /** Sends the given submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
     public String submit(Submission submission, TenantName tenant, ApplicationName application) {
         return toMessage(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
                                                  .timeout(Duration.ofMinutes(30)),
@@ -86,12 +86,12 @@ public abstract class ControllerHttpClient {
         return request(request.setHeader("Content-Type", data.contentType()), method, data::data);
     }
 
-    private URI apiPath() {
+    private URI applicationApiPath() {
         return concatenated(endpoint, "application", "v4");
     }
 
     private URI tenantPath(TenantName tenant) {
-        return concatenated(apiPath(), "tenant", tenant.value());
+        return concatenated(applicationApiPath(), "tenant", tenant.value());
     }
 
     private URI applicationPath(TenantName tenant, ApplicationName application) {
@@ -121,13 +121,37 @@ public abstract class ControllerHttpClient {
 
     /** Returns a JSON representation of the submission meta data. */
     private static String metaToJson(Submission submission) {
+        Slime slime = new Slime();
+        Cursor rootObject = slime.setObject();
+        rootObject.setString("repository", submission.repository());
+        rootObject.setString("branch", submission.branch());
+        rootObject.setString("commit", submission.commit());
+        rootObject.setString("authorEmail", submission.authorEmail());
+        return toJson(slime);
+    }
+
+    /** Returns an {@link Inspector} for the assumed JSON formatted response, or throws if the status code is non-2XX. */
+    private static Inspector toInspector(HttpResponse<byte[]> response) {
+        Inspector rootObject = toSlime(response.body()).get();
+        if (response.statusCode() / 100 != 2)
+            throw new RuntimeException(response.request() + " returned code " + response.statusCode() +
+                                       " (" + rootObject.field("error-code").asString() + "): " +
+                                       rootObject.field("message").asString());
+
+        return rootObject;
+    }
+
+    /** Returns the "message" element contained in the JSON formatted response, if 2XX status code, or throws otherwise. */
+    private static String toMessage(HttpResponse<byte[]> response) {
+        return toInspector(response).field("message").asString();
+    }
+
+    private static Slime toSlime(byte[] data) {
+        return new JsonDecoder().decode(new Slime(), data);
+    }
+
+    private static String toJson(Slime slime) {
         try {
-            Slime slime = new Slime();
-            Cursor rootObject = slime.setObject();
-            rootObject.setString("repository", submission.repository());
-            rootObject.setString("branch", submission.branch());
-            rootObject.setString("commit", submission.commit());
-            rootObject.setString("authorEmail", submission.authorEmail());
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             new JsonFormat(true).encode(buffer, slime);
             return buffer.toString(UTF_8);
@@ -135,23 +159,6 @@ public abstract class ControllerHttpClient {
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /** Returns the "message" element contained in the JSON formatted response, if 2XX status code, or throws otherwise. */
-    private static String toMessage(HttpResponse<byte[]> response) {
-        Inspector rootObject = toSlime(response.body()).get();
-        if (response.statusCode() / 100 == 2)
-            return rootObject.field("message").asString();
-
-        else {
-            throw new RuntimeException(response.request() + " returned code " + response.statusCode() +
-                                       " (" + rootObject.field("error-code").asString() + "): " +
-                                       rootObject.field("message").asString());
-        }
-    }
-
-    private static Slime toSlime(byte[] data) {
-        return new JsonDecoder().decode(new Slime(), data);
     }
 
 

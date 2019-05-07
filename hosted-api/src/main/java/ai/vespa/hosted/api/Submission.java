@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 /**
- * A submission intended for hosted Vespa containing an application package with tests and meta data.
+ * A submission intended for hosted Vespa, containing an application package with tests, and meta data.
  *
  * @author jonmv
  */
