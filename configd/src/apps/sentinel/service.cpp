@@ -72,11 +72,12 @@ Service::reconfigure(const SentinelConfig::Service& config)
     delete _config;
     _config = new SentinelConfig::Service(config);
 
-    if (_isAutomatic
-        && ((_state == READY) || (_state == FINISHED)))
-    {
-        LOG(debug, "%s: Restarting due to new config", name().c_str());
-        start();
+    if ((_state == READY) || (_state == FINISHED) || (_state == RESTARTING)) {
+        resetRestartPenalty();
+        if (_isAutomatic) {
+            LOG(debug, "%s: Restarting due to new config", name().c_str());
+            start();
+        }
     }
 }
 
@@ -148,19 +149,14 @@ Service::runCommand(const std::string & command)
     }
 }
 
-int
+void
 Service::start()
 {
-    // make sure the service does not restart in a tight loop:
+    if (_state == REMOVING) {
+        LOG(warning, "tried to start '%s' in REMOVING state", name().c_str());
+        return;
+    }
     time_t now = time(0);
-    int diff = now - _last_start;
-    if (diff < MAX_RESTART_PENALTY) {
-        incrementRestartPenalty();
-    }
-    if (diff > 10 * MAX_RESTART_PENALTY) {
-        resetRestartPenalty();
-    }
-    now += _restartPenalty; // will delay start this much
     _last_start = now;
 
 // make a pipe, close the good ends of it, mark it close-on-exec
@@ -181,7 +177,7 @@ Service::start()
         LOG(error, "%s: Attempted to start, but pipe() failed: %s", name().c_str(),
             strerror(errno));
         setState(FAILED);
-        return -1;
+        return;
     }
 
     fflush(nullptr);
@@ -196,7 +192,7 @@ Service::start()
         close(stdoutpipes[1]);
         close(stderrpipes[0]);
         close(stderrpipes[1]);
-        return -1;
+        return;
     }
 
     if (_pid == 0) {
@@ -218,11 +214,6 @@ Service::start()
         signal(SIGINT, SIG_DFL);
         if (stop()) {
             kill(getpid(), SIGTERM);
-        }
-        if (_restartPenalty > 0) {
-            LOG(info, "%s: Applying %u sec restart penalty", name().c_str(),
-                _restartPenalty);
-            sleep(_restartPenalty);
         }
         EV_STARTING(name().c_str());
         runChild(pipes); // This function should not return.
@@ -260,8 +251,15 @@ Service::start()
           fcntl(stderrpipes[0], F_GETFL) | O_NONBLOCK);
     c = new OutputConnection(stderrpipes[0], p);
     _outputConnections.push_back(c);
+}
 
-    return (_state == RUNNING) ? 0 : -1;
+void
+Service::remove()
+{
+    LOG(info, "%s: removed from config", name().c_str());
+    setAutomatic(false);
+    terminate(false, false);
+    setState(REMOVING);
 }
 
 
@@ -290,18 +288,24 @@ Service::youExited(int status)
 {
     // Someone did a waitpid() and figured out that we exited.
     _exitStatus = status;
+    bool expectedDeath = (_state == KILLING || _state == TERMINATING
+                          || _state == REMOVING
+                          || _state == KILLED  || _state == TERMINATED);
     if (WIFEXITED(status)) {
         LOG(debug, "%s: Exited with exit code %d", name().c_str(),
             WEXITSTATUS(status));
         EV_STOPPED(name().c_str(), _pid, WEXITSTATUS(status));
         setState(FINISHED);
     } else if (WIFSIGNALED(status)) {
-        bool expectedDeath = (_state == KILLING || _state == TERMINATING
-                              || _state == KILLED  || _state == TERMINATED);
         if (expectedDeath) {
             EV_STOPPED(name().c_str(), _pid, WTERMSIG(status));
             LOG(debug, "%s: Exited expectedly by signal %d", name().c_str(),
                 WTERMSIG(status));
+            if (_state == TERMINATING) {
+                setState(TERMINATED);
+            } else if (_state == KILLING) {
+                setState(KILLED);
+            }
         } else {
             EV_CRASH(name().c_str(), _pid, WTERMSIG(status));
             setState(FAILED);
@@ -316,18 +320,26 @@ Service::youExited(int status)
     _metrics.currentlyRunningServices--;
     _metrics.sentinel_running.sample(_metrics.currentlyRunningServices);
 
-    if (_state == TERMINATING) {
-        setState(TERMINATED);
-    } else if (_state == KILLING) {
-        setState(KILLED);
+    if (! expectedDeath) {
+        // make sure the service does not restart in a tight loop:
+        time_t now = time(0);
+        unsigned int diff = now - _last_start;
+        if (diff < MAX_RESTART_PENALTY) {
+            incrementRestartPenalty();
+        }
+        if (diff > 10 * MAX_RESTART_PENALTY) {
+            resetRestartPenalty();
+        }
+        if (diff < _restartPenalty) {
+            LOG(info, "%s: will delay start by %u seconds", name().c_str(), _restartPenalty - diff);
+        }
     }
     if (_isAutomatic && !stop()) {
         // ### Implement some rate limiting here maybe?
         LOG(debug, "%s: Restarting.", name().c_str());
-        setState(READY);
+        setState(RESTARTING);
         _metrics.totalRestartsCounter++;
         _metrics.sentinel_restarts.add();
-        start();
     }
 }
 
@@ -391,6 +403,8 @@ Service::isRunning() const
     case KILLED:
     case TERMINATED:
     case FAILED:
+    case RESTARTING:
+    case REMOVING:
         return false;
 
     case STARTING:
@@ -401,6 +415,19 @@ Service::isRunning() const
     }
     return true; // this will not be reached
 }
+
+bool
+Service::wantsRestart() const
+{
+    if (_state == RESTARTING) {
+        time_t now = time(0);
+        if (now > _last_start + _restartPenalty) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void
 Service::setAutomatic(bool autoStatus)
@@ -418,12 +445,17 @@ Service::incrementRestartPenalty()
     if (_restartPenalty > MAX_RESTART_PENALTY) {
         _restartPenalty = MAX_RESTART_PENALTY;
     }
+    LOG(info, "%s: incremented restart penalty to %u seconds", name().c_str(), _restartPenalty);
 }
 
 
 void
 Service::setState(ServiceState state)
 {
+    if (_state == REMOVING) {
+        // ignore further changes
+        return;
+    }
     if (state != _state) {
         LOG(debug, "%s: %s->%s", name().c_str(), stateName(_state), stateName(state));
         _rawState = state;
@@ -448,6 +480,8 @@ Service::stateName(ServiceState state) const
     case TERMINATED: return "TERMINATED";
     case KILLED: return "KILLED";
     case FAILED: return "FAILED";
+    case RESTARTING: return "RESTARTING";
+    case REMOVING: return "REMOVING";
     }
     return "--BAD--";
 }
