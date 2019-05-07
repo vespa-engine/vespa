@@ -70,11 +70,21 @@ enum PathGroup {
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/{*}"),
 
-    /** Path used to restart application nodes. */ // TODO move to the above when everyone is on new pipeline.
-    applicationRestart(Matcher.tenant,
+    /** Path used to restart development nodes. */
+    developmentRestart(Matcher.tenant,
                        Matcher.application,
                        Optional.of("/api"),
-                       "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/restart"),
+                       "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{ignored}/restart",
+                       "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{ignored}/restart"),
+
+    /** Path used to restart production nodes. */
+    productionRestart(Matcher.tenant,
+                      Matcher.application,
+                      Optional.of("/api"),
+                      "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{ignored}/restart",
+                      "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{ignored}/restart",
+                      "/application/v4/tenant/{tenant}/application/{application}/environment/staging/region/{region}/instance/{ignored}/restart"),
+
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,
                           Matcher.application,

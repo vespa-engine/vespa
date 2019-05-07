@@ -3,7 +3,9 @@ package ai.vespa.hosted.api;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -26,6 +28,8 @@ import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+import static ai.vespa.hosted.api.Method.DELETE;
+import static ai.vespa.hosted.api.Method.GET;
 import static ai.vespa.hosted.api.Method.POST;
 import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 import static java.net.http.HttpRequest.BodyPublishers.ofInputStream;
@@ -60,7 +64,7 @@ public abstract class ControllerHttpClient {
         return new MutualTlsControllerHttpClient(endpoint, privateKeyFile, certificateFile);
     }
 
-    /** Sends submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
+    /** Sends the given submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
     public String submit(Submission submission, TenantName tenant, ApplicationName application) {
         return toMessage(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
                                                  .timeout(Duration.ofMinutes(30)),
@@ -68,6 +72,37 @@ public abstract class ControllerHttpClient {
                                       new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
                                                              .addFile("applicationZip", submission.applicationZip())
                                                              .addFile("applicationTestZip", submission.applicationTestZip()))));
+    }
+
+    /** Sends the given deployment to the given application in the given zone, or throws if this fails. */
+    public DeploymentResult deploy(Deployment deployment, ApplicationId id, ZoneId zone) {
+        return toDeploymentResult(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
+                                                          .timeout(Duration.ofMinutes(60)),
+                                               POST,
+                                               toDataStream(deployment))));
+    }
+
+    /** Deactivates the deployment of the given application in the given zone. */
+    public String deactivate(ApplicationId id, ZoneId zone) {
+        return asText(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
+                                                 .timeout(Duration.ofSeconds(10)),
+                                      DELETE)));
+    }
+
+    /** Returns the default {@link Environment#dev} {@link ZoneId}, to use for development deployments. */
+    public ZoneId devZone() {
+        Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath())
+                                                                   .timeout(Duration.ofSeconds(10)),
+                                                        GET)));
+        return ZoneId.from("dev", rootObject.field("name").asString());
+    }
+
+    /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
+    public String compileVersion(ApplicationId id) {
+        return toInspector(send(request(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()))
+                                                   .timeout(Duration.ofSeconds(10)),
+                                        GET)))
+                .field("compileVersion").asString();
     }
 
     protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
@@ -86,12 +121,12 @@ public abstract class ControllerHttpClient {
         return request(request.setHeader("Content-Type", data.contentType()), method, data::data);
     }
 
-    private URI apiPath() {
+    private URI applicationApiPath() {
         return concatenated(endpoint, "application", "v4");
     }
 
     private URI tenantPath(TenantName tenant) {
-        return concatenated(apiPath(), "tenant", tenant.value());
+        return concatenated(applicationApiPath(), "tenant", tenant.value());
     }
 
     private URI applicationPath(TenantName tenant, ApplicationName application) {
@@ -100,6 +135,17 @@ public abstract class ControllerHttpClient {
 
     private URI instancePath(ApplicationId id) {
         return concatenated(applicationPath(id.tenant(), id.application()), "instance", id.instance().value());
+    }
+
+    private URI deploymentPath(ApplicationId id, ZoneId zone) {
+        return concatenated(applicationPath(id.tenant(), id.application()),
+                            "environment", zone.environment().value(),
+                            "region", zone.region().value(),
+                            "instance", id.instance().value());
+    }
+
+    private URI defaultRegionPath() {
+        return concatenated(endpoint, "zone", "v1", "environment", Environment.dev.value(), "default");
     }
 
     private static URI concatenated(URI base, String... parts) {
@@ -119,15 +165,86 @@ public abstract class ControllerHttpClient {
         }
     }
 
+    /** Returns a JSON representation of the deployment meta data. */
+    private static String metaToJson(Deployment deployment) {
+        Slime slime = new Slime();
+        Cursor rootObject = slime.setObject();
+
+        if (deployment.repository().isPresent()) {
+            Cursor revisionObject = rootObject.setObject("sourceRevision");
+            deployment.repository().ifPresent(repository -> revisionObject.setString("repository", repository));
+            deployment.branch().ifPresent(branch -> revisionObject.setString("branch", branch));
+            deployment.commit().ifPresent(commit -> revisionObject.setString("commit", commit));
+            deployment.build().ifPresent(build -> rootObject.setLong("buildNumber", build));
+        }
+
+        deployment.version().ifPresent(version -> rootObject.setString("vespaVersion", version));
+
+        if (deployment.ignoreValidationErrors()) rootObject.setBool("ignoreValidationErrors", true);
+        rootObject.setBool("deployDirectly", true);
+
+        return toJson(slime);
+    }
+
     /** Returns a JSON representation of the submission meta data. */
     private static String metaToJson(Submission submission) {
+        Slime slime = new Slime();
+        Cursor rootObject = slime.setObject();
+        rootObject.setString("repository", submission.repository());
+        rootObject.setString("branch", submission.branch());
+        rootObject.setString("commit", submission.commit());
+        rootObject.setString("authorEmail", submission.authorEmail());
+        submission.projectId().ifPresent(projectId -> rootObject.setLong("projectId", projectId));
+        return toJson(slime);
+    }
+
+    /** Returns a multi part data stream with meta data and, if contained in the deployment, an application package. */
+    private static MultiPartStreamer toDataStream(Deployment deployment) {
+        MultiPartStreamer streamer = new MultiPartStreamer();
+        streamer.addJson("deployOptions", metaToJson(deployment));
+        deployment.applicationZip().ifPresent(zip -> streamer.addFile("applicationZip", zip));
+        return streamer;
+    }
+
+    private static String asText(HttpResponse<byte[]> response) {
+        toInspector(response);
+        return new String(response.body(), UTF_8);
+    }
+
+    /** Returns an {@link Inspector} for the assumed JSON formatted response, or throws if the status code is non-2XX. */
+    private static Inspector toInspector(HttpResponse<byte[]> response) {
+        Inspector rootObject = toSlime(response.body()).get();
+        if (response.statusCode() / 100 != 2)
+            throw new RuntimeException(response.request() + " returned code " + response.statusCode() +
+                                       " (" + rootObject.field("error-code").asString() + "): " +
+                                       rootObject.field("message").asString());
+
+        return rootObject;
+    }
+
+    /** Returns the "message" element contained in the JSON formatted response, if 2XX status code, or throws otherwise. */
+    private static String toMessage(HttpResponse<byte[]> response) {
+        return toInspector(response).field("message").asString();
+    }
+
+    private static DeploymentResult toDeploymentResult(HttpResponse<byte[]> response) {
         try {
-            Slime slime = new Slime();
-            Cursor rootObject = slime.setObject();
-            rootObject.setString("repository", submission.repository());
-            rootObject.setString("branch", submission.branch());
-            rootObject.setString("commit", submission.commit());
-            rootObject.setString("authorEmail", submission.authorEmail());
+            Inspector responseObject = toInspector(response);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            new JsonFormat(false).encode(buffer, responseObject); // Pretty-print until done properly.
+            return new DeploymentResult(buffer.toString(UTF_8));
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static Slime toSlime(byte[] data) {
+        return new JsonDecoder().decode(new Slime(), data);
+    }
+
+    private static String toJson(Slime slime) {
+        try {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             new JsonFormat(true).encode(buffer, slime);
             return buffer.toString(UTF_8);
@@ -135,23 +252,6 @@ public abstract class ControllerHttpClient {
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /** Returns the "message" element contained in the JSON formatted response, if 2XX status code, or throws otherwise. */
-    private static String toMessage(HttpResponse<byte[]> response) {
-        Inspector rootObject = toSlime(response.body()).get();
-        if (response.statusCode() / 100 == 2)
-            return rootObject.field("message").asString();
-
-        else {
-            throw new RuntimeException(response.request() + " returned code " + response.statusCode() +
-                                       " (" + rootObject.field("error-code").asString() + "): " +
-                                       rootObject.field("message").asString());
-        }
-    }
-
-    private static Slime toSlime(byte[] data) {
-        return new JsonDecoder().decode(new Slime(), data);
     }
 
 

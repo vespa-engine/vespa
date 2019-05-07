@@ -80,12 +80,12 @@ enum Policy {
 
     /** Full access to application information and settings. */
     applicationOperations(Privilege.grant(Action.write())
-                                   .on(PathGroup.applicationInfo, PathGroup.applicationRestart)
+                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart)
                                    .in(SystemName.all())),
 
     /** Full access to application development deployments. */
     developmentDeployment(Privilege.grant(Action.all())
-                                   .on(PathGroup.developmentDeployment)
+                                   .on(PathGroup.developmentDeployment, PathGroup.developmentRestart)
                                    .in(SystemName.all())),
 
     /** Full access to application production deployments. */
@@ -105,7 +105,7 @@ enum Policy {
 
     /** Full access to the additional tasks needed for continuous deployment. */
     deploymentPipeline(Privilege.grant(Action.all()) // TODO remove when everyone is on new pipeline.
-                                .on(PathGroup.buildService, PathGroup.applicationRestart)
+                                .on(PathGroup.buildService, PathGroup.productionRestart)
                                 .in(SystemName.all())),
 
     /** Read access to all information in select systems. */
