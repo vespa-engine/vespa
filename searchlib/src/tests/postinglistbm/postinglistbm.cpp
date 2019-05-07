@@ -61,8 +61,9 @@ public:
 void
 PostingListBM::usage()
 {
-    printf("postinglistbm "
+    printf("Usage: postinglistbm "
            "[-C <skipCommonPairsRate>] "
+           "[-T {string, array, weightedSet}] "
            "[-a] "
            "[-c <commonDoqFreq>] "
            "[-d <numDocs>] "
@@ -70,8 +71,9 @@ PostingListBM::usage()
            "[-s <stride>] "
            "[-t <postingType>] "
            "[-u] "
-           "[-q] "
-           "[-v]\n");
+           "[-v] "
+           "[-w <numWordsPerClass>] "
+           "[-q]\n");
 }
 
 void
