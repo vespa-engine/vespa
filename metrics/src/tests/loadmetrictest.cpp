@@ -3,7 +3,7 @@
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace metrics {
 
@@ -20,30 +20,11 @@ struct LoadTypeSetImpl : public LoadTypeSet {
             const LoadType& lt(LoadTypeSet::operator[](i));
             if (lt.getName() == name) return lt;
         }
-        CPPUNIT_FAIL("No load type with name " + name);
-        return operator[](0); // Should never get here
+        abort();
     }
 };
 
-struct LoadMetricTest : public CppUnit::TestFixture {
-    void testNormalUsage();
-    void testClone(Metric::CopyType);
-    void testInactiveCopy() { testClone(Metric::INACTIVE); }
-    void testActiveCopy() { testClone(Metric::CLONE); }
-    void testAdding();
-
-    CPPUNIT_TEST_SUITE(LoadMetricTest);
-    CPPUNIT_TEST(testNormalUsage);
-    CPPUNIT_TEST(testActiveCopy);
-    CPPUNIT_TEST(testInactiveCopy);
-    CPPUNIT_TEST(testAdding);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(LoadMetricTest);
-
-void
-LoadMetricTest::testNormalUsage()
+TEST(LoadMetricTest, test_normal_usage)
 {
     LoadTypeSetImpl loadTypes;
     loadTypes.add(32, "foo").add(1000, "bar");
@@ -76,7 +57,7 @@ namespace {
 }
 
 void
-LoadMetricTest::testClone(Metric::CopyType copyType)
+test_clone(Metric::CopyType copyType)
 {
     LoadTypeSetImpl loadTypes;
     loadTypes.add(32, "foo").add(1000, "bar");
@@ -87,7 +68,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
 
     std::vector<Metric::UP> ownerList;
     MetricSet::UP copy(dynamic_cast<MetricSet*>(top.clone(ownerList, copyType, 0, true)));
-    CPPUNIT_ASSERT(copy.get());
+    ASSERT_TRUE(copy.get());
 
     std::string expected =
         "top:\n"
@@ -101,12 +82,21 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
         "    bar:\n"
         "      tack average=0 last=0 count=0 total=0";
 
-    CPPUNIT_ASSERT_EQUAL(expected, std::string(top.toString(true)));
-    CPPUNIT_ASSERT_EQUAL(expected, std::string(copy->toString(true)));
+    EXPECT_EQ(expected, std::string(top.toString(true)));
+    EXPECT_EQ(expected, std::string(copy->toString(true)));
 }
 
-void
-LoadMetricTest::testAdding()
+TEST(LoadMetricTest, test_inactive_copy)
+{
+    test_clone(Metric::INACTIVE);
+}
+
+TEST(LoadMetricTest, test_active_copy)
+{
+    test_clone(Metric::CLONE);
+}
+
+TEST(LoadMetricTest, test_adding)
 {
     LoadTypeSetImpl loadTypes;
     loadTypes.add(32, "foo").add(1000, "bar");
@@ -118,7 +108,7 @@ LoadMetricTest::testAdding()
     std::vector<Metric::UP> ownerList;
     MetricSet::UP copy(dynamic_cast<MetricSet*>(
                 top.clone(ownerList, Metric::INACTIVE, 0, false)));
-    CPPUNIT_ASSERT(copy.get());
+    ASSERT_TRUE(copy.get());
 
     top.reset();
 
@@ -132,8 +122,7 @@ LoadMetricTest::testAdding()
         "    foo:\n"
         "      tack average=5 last=5 min=5 max=5 count=1 total=5";
 
-    CPPUNIT_ASSERT_EQUAL(expected, std::string(copy->toString(true)));
-
+    EXPECT_EQ(expected, std::string(copy->toString(true)));
 }
 
-} // documentapi
+}
