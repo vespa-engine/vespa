@@ -5,6 +5,8 @@
 vespa_add_executable(metrics_gtest_runner_app TEST
     SOURCES
     countmetrictest.cpp
+    loadmetrictest.cpp
+    summetrictest.cpp
     gtest_runner.cpp
     DEPENDS
     metrics
@@ -23,9 +25,7 @@ vespa_add_executable(metrics_testrunner_app TEST
     testrunner.cpp
     valuemetrictest.cpp
     metricsettest.cpp
-    summetrictest.cpp
     metricmanagertest.cpp
-    loadmetrictest.cpp
     snapshottest.cpp
     stresstest.cpp
     metrictest.cpp
