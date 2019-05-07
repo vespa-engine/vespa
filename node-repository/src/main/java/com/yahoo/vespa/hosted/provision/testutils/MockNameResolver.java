@@ -7,12 +7,11 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -35,13 +34,8 @@ public class MockNameResolver implements NameResolver {
     public MockNameResolver addRecord(String hostname, String... ipAddress) {
         Objects.requireNonNull(hostname, "hostname must be non-null");
         Arrays.stream(ipAddress).forEach(ip -> Objects.requireNonNull(ip, "ipAddress must be non-null"));
-        records.compute(hostname, (ignored, ipAddresses) -> {
-            if (ipAddresses == null) {
-                ipAddresses = new LinkedHashSet<>();
-            }
-            ipAddresses.addAll(Arrays.asList(ipAddress));
-            return ipAddresses;
-        });
+        records.putIfAbsent(hostname, new HashSet<>());
+        records.get(hostname).addAll(Arrays.asList(ipAddress));
         return this;
     }
 
@@ -55,6 +49,11 @@ public class MockNameResolver implements NameResolver {
         return this;
     }
 
+    /**
+     * When true, only records added with {@link MockNameResolver#addReverseRecord(String, String)} are considered by
+     * {@link MockNameResolver#getHostname(String)}. Otherwise the latter returns the IP address by reversing the lookup
+     * implicitly.
+     */
     public MockNameResolver explicitReverseRecords() {
         this.explicitReverseRecords = true;
         return this;
@@ -80,10 +79,6 @@ public class MockNameResolver implements NameResolver {
                           .filter(kv -> kv.getValue().contains(ipAddress))
                           .map(Map.Entry::getKey)
                           .findFirst();
-        }
-        if (mockAnyLookup) {
-            String hostname = UUID.randomUUID().toString();
-            records.put(hostname, Collections.singleton(ipAddress));
         }
         return Optional.ofNullable(records.get(ipAddress))
                        .flatMap(values -> values.stream().findFirst());
