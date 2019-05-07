@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -16,6 +17,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -76,23 +78,21 @@ public class FailedExpirer extends Maintainer {
 
     @Override
     protected void maintain() {
-        List<Node> containerNodes = getExpiredNodes(containerExpiry)
-                .stream()
-                .filter(node -> node.allocation().isPresent() &&
-                                node.allocation().get().membership().cluster().type() == ClusterSpec.Type.container)
-                .collect(Collectors.toList());
-        List<Node> remainingNodes = getExpiredNodes(defaultExpiry);
-        remainingNodes.removeAll(containerNodes);
-        recycle(containerNodes);
-        recycle(remainingNodes);
+        List<Node> remainingNodes = new ArrayList<>(nodeRepository.getNodes(Node.State.failed));
+
+        recycleIf(remainingNodes, node -> node.allocation().isEmpty());
+        recycleIf(remainingNodes, node ->
+                node.allocation().get().membership().cluster().type() == ClusterSpec.Type.container &&
+                node.history().hasEventBefore(History.Event.Type.failed, clock.instant().minus(containerExpiry)));
+        recycleIf(remainingNodes, node ->
+                node.history().hasEventBefore(History.Event.Type.failed, clock.instant().minus(defaultExpiry)));
     }
 
-    /** Get failed nodes that have expired according to given expiry */
-    private List<Node> getExpiredNodes(Duration expiry) {
-        return nodeRepository.getNodes(Node.State.failed).stream()
-                             .filter(node -> node.history()
-                                     .hasEventBefore(History.Event.Type.failed, clock.instant().minus(expiry)))
-                             .collect(Collectors.toList());
+    /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */
+    private void recycleIf(List<Node> nodes, Predicate<Node> recycleCondition) {
+        List<Node> nodesToRecycle = nodes.stream().filter(recycleCondition).collect(Collectors.toList());
+        nodes.removeAll(nodesToRecycle);
+        recycle(nodesToRecycle);
     }
 
     /** Move eligible nodes to dirty. This may be a subset of the given nodes */

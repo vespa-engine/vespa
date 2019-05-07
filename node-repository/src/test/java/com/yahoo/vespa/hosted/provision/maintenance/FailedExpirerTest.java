@@ -187,20 +187,24 @@ public class FailedExpirerTest {
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node4", "parent1")
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node5", "parent1")
+                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node4", "parent3")
+                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node5", "parent3")
                 .setReady("node1", "node2", "node3")
                 .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node3")
-                .failWithHardwareFailure("parent1");
+                .failNode(1, "node3")
+                .setReady("node4")
+                .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node4")
+                .failNode(1, "node4")
+                .setReady("node5")
+                .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node5")
+                .failWithHardwareFailure("parent3");
 
-        scenario.clock().advance(Duration.ofDays(2));
-        scenario.failNode(1, "node4", "node5");
         scenario.clock().advance(Duration.ofDays(3));
 
         scenario.expirer().run(); // Run twice because parent can only be parked after the child
         scenario.expirer().run();
 
-        scenario.assertNodesIn(Node.State.failed, "parent1", "node4", "node5");
+        scenario.assertNodesIn(Node.State.failed, "parent3", "node3", "node4");
     }
 
     @Test
