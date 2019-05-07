@@ -45,9 +45,9 @@ public class NodeRetirer extends Maintainer {
     private final FlavorSpareChecker flavorSpareChecker;
     private final RetirementPolicy retirementPolicy;
 
-    public NodeRetirer(NodeRepository nodeRepository, FlavorSpareChecker flavorSpareChecker, Duration interval,
-                       Deployer deployer, JobControl jobControl, RetirementPolicy retirementPolicy) {
-        super(nodeRepository, interval, jobControl);
+    NodeRetirer(NodeRepository nodeRepository, FlavorSpareChecker flavorSpareChecker, Duration interval,
+                       Deployer deployer, RetirementPolicy retirementPolicy) {
+        super(nodeRepository, interval);
         this.deployer = deployer;
         this.retirementPolicy = retirementPolicy;
         this.flavorSpareChecker = flavorSpareChecker;

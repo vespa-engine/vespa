@@ -18,6 +18,8 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
+import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
+import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -84,8 +86,10 @@ public class NodeRepository extends AbstractComponent {
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
     private final OsVersions osVersions;
+    private final InfrastructureVersions infrastructureVersions;
     private final FirmwareChecks firmwareChecks;
     private final DockerImages dockerImages;
+    private final JobControl jobControl;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -107,9 +111,11 @@ public class NodeRepository extends AbstractComponent {
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
-        this.osVersions = new OsVersions(this.db);
+        this.osVersions = new OsVersions(db);
+        this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
+        this.jobControl = new JobControl(db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -128,11 +134,17 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the OS versions to use for nodes in this */
     public OsVersions osVersions() { return osVersions; }
 
+    /** Returns the infrastructure versions to use for nodes in this */
+    public InfrastructureVersions infrastructureVersions() { return infrastructureVersions; }
+
     /** Returns the status of firmware checks for hosts managed by this. */
     public FirmwareChecks firmwareChecks() { return firmwareChecks; }
 
     /** Returns the docker images to use for nodes in this. */
     public DockerImages dockerImages() { return dockerImages; }
+
+    /** Returns the status of maintenance jobs managed by this. */
+    public JobControl jobControl() { return jobControl; }
 
     // ---------------- Query API ----------------------------------------------------------------
 

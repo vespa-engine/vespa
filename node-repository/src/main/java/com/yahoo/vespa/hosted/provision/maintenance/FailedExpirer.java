@@ -58,9 +58,8 @@ public class FailedExpirer extends Maintainer {
     private final Duration defaultExpiry; // Grace period to allow recovery of data
     private final Duration containerExpiry; // Stateless nodes, no data to recover
 
-    public FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration interval,
-                         JobControl jobControl) {
-        super(nodeRepository, interval, jobControl);
+    FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration interval) {
+        super(nodeRepository, interval);
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.clock = clock;

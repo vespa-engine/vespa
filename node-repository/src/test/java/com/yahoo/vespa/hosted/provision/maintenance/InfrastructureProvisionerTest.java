@@ -54,11 +54,10 @@ public class InfrastructureProvisionerTest {
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final Provisioner provisioner = mock(Provisioner.class);
     private final NodeRepository nodeRepository = tester.nodeRepository();
-    private final InfrastructureVersions infrastructureVersions = mock(InfrastructureVersions.class);
+    private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfrastructureProvisioner infrastructureProvisioner = new InfrastructureProvisioner(
-            provisioner, nodeRepository, infrastructureVersions, Duration.ofDays(99), new JobControl(nodeRepository.database()),
-            duperModelInfraApi);
+            provisioner, nodeRepository, Duration.ofDays(99), duperModelInfraApi);
     private final HostName node1 = HostName.from("node-1");
     private final HostName node2 = HostName.from("node-2");
     private final HostName node3 = HostName.from("node-3");
@@ -76,7 +75,6 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void remove_application_if_without_target_version() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.empty());
         addNode(1, Node.State.active, Optional.of(target));
         when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
         infrastructureProvisioner.maintain();
@@ -95,7 +93,7 @@ public class InfrastructureProvisionerTest {
     }
 
     private void remove_application_without_nodes(boolean applicationIsActive) {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
         addNode(1, Node.State.failed, Optional.of(target));
         addNode(2, Node.State.parked, Optional.empty());
         when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(applicationIsActive);
@@ -110,7 +108,7 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void activate_when_no_op() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         addNode(1, Node.State.failed, Optional.of(oldVersion));
         addNode(2, Node.State.parked, Optional.of(target));
@@ -128,7 +126,7 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void activates_after_target_has_been_set_the_first_time() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         addNode(1, Node.State.inactive, Optional.empty());
         addNode(2, Node.State.parked, Optional.empty());
@@ -150,7 +148,7 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void always_activates_for_dupermodel() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         addNode(1, Node.State.active, Optional.of(target));
 
@@ -173,7 +171,7 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void provision_usable_nodes_on_old_version() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         addNode(1, Node.State.failed, Optional.of(oldVersion));
         addNode(2, Node.State.inactive, Optional.of(target));
@@ -193,7 +191,7 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void provision_with_usable_node_without_version() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         addNode(1, Node.State.failed, Optional.of(oldVersion));
         addNode(2, Node.State.ready, Optional.empty());
@@ -213,8 +211,8 @@ public class InfrastructureProvisionerTest {
 
     @Test
     public void avoid_provisioning_if_no_usable_nodes() {
-        when(infrastructureVersions.getTargetVersionFor(eq(nodeType))).thenReturn(Optional.of(target));
         when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         infrastructureProvisioner.maintain();
         verifyRemoved(1);

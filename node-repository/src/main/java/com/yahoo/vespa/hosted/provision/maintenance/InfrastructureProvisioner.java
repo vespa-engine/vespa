@@ -34,15 +34,12 @@ public class InfrastructureProvisioner extends Maintainer {
     private static final Logger logger = Logger.getLogger(InfrastructureProvisioner.class.getName());
 
     private final Provisioner provisioner;
-    private final InfrastructureVersions infrastructureVersions;
     private final DuperModelInfraApi duperModel;
 
-    public InfrastructureProvisioner(Provisioner provisioner, NodeRepository nodeRepository,
-                                     InfrastructureVersions infrastructureVersions, Duration interval, JobControl jobControl,
-                                     DuperModelInfraApi duperModel) {
-        super(nodeRepository, interval, jobControl);
+    InfrastructureProvisioner(Provisioner provisioner, NodeRepository nodeRepository,
+                              Duration interval, DuperModelInfraApi duperModel) {
+        super(nodeRepository, interval);
         this.provisioner = provisioner;
-        this.infrastructureVersions = infrastructureVersions;
         this.duperModel = duperModel;
     }
 
@@ -52,7 +49,7 @@ public class InfrastructureProvisioner extends Maintainer {
             try (Mutex lock = nodeRepository().lock(application.getApplicationId())) {
                 NodeType nodeType = application.getCapacity().type();
 
-                Optional<Version> targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
+                Optional<Version> targetVersion = nodeRepository().infrastructureVersions().getTargetVersionFor(nodeType);
                 if (!targetVersion.isPresent()) {
                     logger.log(LogLevel.DEBUG, "No target version set for " + nodeType + ", removing application");
                     removeApplication(application.getApplicationId());

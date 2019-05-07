@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.monitoring;
+package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
@@ -15,8 +15,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
-import com.yahoo.vespa.hosted.provision.maintenance.MetricsReporter;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -49,7 +47,7 @@ import static org.mockito.Mockito.when;
 public class MetricsReporterTest {
 
     @Test
-    public void test_registered_metric() throws Exception {
+    public void test_registered_metric() {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
@@ -102,8 +100,7 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1),
-                new JobControl(nodeRepository.database())
+                Duration.ofMinutes(1)
         );
         metricsReporter.maintain();
 
@@ -111,7 +108,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void docker_metrics() throws Exception {
+    public void docker_metrics() {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
@@ -152,8 +149,7 @@ public class MetricsReporterTest {
                 orchestrator,
                 serviceMonitor,
                 () -> 42,
-                Duration.ofMinutes(1),
-                new JobControl(nodeRepository.database())
+                Duration.ofMinutes(1)
         );
         metricsReporter.maintain();
 

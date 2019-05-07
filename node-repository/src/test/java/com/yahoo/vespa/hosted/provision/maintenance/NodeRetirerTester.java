@@ -61,7 +61,6 @@ public class NodeRetirerTester {
     public final NodeRepository nodeRepository;
     private final FlavorSpareChecker flavorSpareChecker = mock(FlavorSpareChecker.class);
     private final MockDeployer deployer;
-    private final JobControl jobControl;
     private final List<Flavor> flavors;
 
     // Use LinkedHashMap to keep order in which applications were deployed
@@ -76,7 +75,6 @@ public class NodeRetirerTester {
         Curator curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
-        jobControl = new JobControl(nodeRepository.database());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
         deployer = new MockDeployer(provisioner, clock, apps);
         flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::name)).collect(Collectors.toList());
@@ -89,7 +87,7 @@ public class NodeRetirerTester {
     }
 
     NodeRetirer makeNodeRetirer(RetirementPolicy policy) {
-         return new NodeRetirer(nodeRepository, flavorSpareChecker, Duration.ofDays(1), deployer, jobControl, policy);
+         return new NodeRetirer(nodeRepository, flavorSpareChecker, Duration.ofDays(1), deployer, policy);
     }
 
     void createReadyNodesByFlavor(int... nums) {
@@ -127,8 +125,8 @@ public class NodeRetirerTester {
 
     void iterateMaintainers() {
         if (retiredExpirer == null) {
-            retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, Duration.ofDays(30), Duration.ofMinutes(10), jobControl);
-            inactiveExpirer = new InactiveExpirer(nodeRepository, clock, Duration.ofMinutes(10), jobControl);
+            retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, Duration.ofDays(30), Duration.ofMinutes(10));
+            inactiveExpirer = new InactiveExpirer(nodeRepository, clock, Duration.ofMinutes(10));
         }
 
         clock.advance(Duration.ofMinutes(11));
