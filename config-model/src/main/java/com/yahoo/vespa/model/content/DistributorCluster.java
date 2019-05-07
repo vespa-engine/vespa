@@ -52,7 +52,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             DocumentSelector s = new DocumentSelector(selStr);
             boolean enableGC = false;
             if (documentNode != null) {
-                enableGC = documentNode.getBooleanAttribute("garbage-collection", false);
+                enableGC = documentNode.booleanAttribute("garbage-collection", false);
             }
             if (!enableGC) {
                 return null;
@@ -64,7 +64,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         private int getGCInterval(ModelElement documentNode) {
             int gcInterval = 3600;
             if (documentNode != null) {
-                gcInterval = documentNode.getIntegerAttribute("garbage-collection-interval", gcInterval);
+                gcInterval = documentNode.integerAttribute("garbage-collection-interval", gcInterval);
             }
             return gcInterval;
         }
@@ -90,13 +90,13 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         private boolean clusterContainsIndexedDocumentType(ModelElement documentsNode) {
             return documentsNode != null
                     && documentsNode.subElements("document").stream()
-                    .anyMatch(node -> documentModeImpliesIndexing(node.getStringAttribute("mode")));
+                    .anyMatch(node -> documentModeImpliesIndexing(node.stringAttribute("mode")));
         }
 
         @Override
         protected DistributorCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             final ModelElement clusterElement = new ModelElement(producerSpec);
-            final ModelElement documentsNode = clusterElement.getChild("documents");
+            final ModelElement documentsNode = clusterElement.child("documents");
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
 

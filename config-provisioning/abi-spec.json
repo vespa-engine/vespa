@@ -135,11 +135,14 @@
     "methods": [
       "public int nodeCount()",
       "public java.util.Optional flavor()",
+      "public java.util.Optional nodeResources()",
       "public boolean isRequired()",
       "public boolean canFail()",
       "public com.yahoo.config.provision.NodeType type()",
       "public java.lang.String toString()",
       "public static com.yahoo.config.provision.Capacity fromNodeCount(int)",
+      "public static com.yahoo.config.provision.Capacity fromCount(int, com.yahoo.config.provision.NodeResources, boolean, boolean)",
+      "public static com.yahoo.config.provision.Capacity fromCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromNodeCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromRequiredNodeType(com.yahoo.config.provision.NodeType)"
     ],
@@ -377,6 +380,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.config.provisioning.FlavorsConfig$Flavor)",
+      "public void <init>(com.yahoo.config.provision.NodeResources)",
       "public java.lang.String name()",
       "public int cost()",
       "public boolean isStock()",
@@ -394,8 +398,11 @@
       "public boolean isCanonical()",
       "public java.util.List replaces()",
       "public boolean satisfies(com.yahoo.config.provision.Flavor)",
+      "public boolean hasAtLeast(com.yahoo.config.provision.NodeResources)",
       "public void freeze()",
       "public boolean isLargerThan(com.yahoo.config.provision.Flavor)",
+      "public boolean isConfigured()",
+      "public com.yahoo.config.provision.NodeResources resources()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
@@ -560,7 +567,28 @@
       "public void <init>(com.yahoo.config.provisioning.FlavorsConfig)",
       "public java.util.List getFlavors()",
       "public java.util.Optional getFlavor(java.lang.String)",
-      "public com.yahoo.config.provision.Flavor getFlavorOrThrow(java.lang.String)"
+      "public com.yahoo.config.provision.Flavor getFlavorOrThrow(java.lang.String)",
+      "public boolean exists(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.NodeResources": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(double, double, double)",
+      "public double vcpu()",
+      "public double memoryGb()",
+      "public double diskGb()",
+      "public boolean allocateByLegacyName()",
+      "public java.util.Optional legacyName()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public static com.yahoo.config.provision.NodeResources fromLegacyName(java.lang.String)"
     ],
     "fields": []
   },

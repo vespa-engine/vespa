@@ -37,6 +37,7 @@ ClusterV3 = element cluster {
   DocprocClusterAttributes? &
 
   element nodes {
+    Resources? &
     attribute jvmargs { text }? &
     attribute preload { text }? &
     element node {

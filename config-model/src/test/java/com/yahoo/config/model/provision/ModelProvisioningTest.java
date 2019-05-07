@@ -9,6 +9,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
@@ -114,34 +115,34 @@ public class ModelProvisioningTest {
         VespaModel model = creator.create(new DeployState.Builder().modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(new StringReader(hosts)), true)));
         ApplicationContainerCluster mydisc = model.getContainerClusters().get("mydisc");
         ApplicationContainerCluster mydisc2 = model.getContainerClusters().get("mydisc2");
-        assertThat(mydisc.getContainers().size(), is(3));
-        assertThat(mydisc.getContainers().get(0).getConfigId(), is("mydisc/container.0"));
+        assertEquals(3, mydisc.getContainers().size());
+        assertEquals("mydisc/container.0", (mydisc.getContainers().get(0).getConfigId()));
         assertTrue(mydisc.getContainers().get(0).isInitialized());
-        assertThat(mydisc.getContainers().get(1).getConfigId(), is("mydisc/container.1"));
+        assertEquals("mydisc/container.1", mydisc.getContainers().get(1).getConfigId());
         assertTrue(mydisc.getContainers().get(1).isInitialized());
-        assertThat(mydisc.getContainers().get(2).getConfigId(), is("mydisc/container.2"));
+        assertEquals("mydisc/container.2", mydisc.getContainers().get(2).getConfigId());
         assertTrue(mydisc.getContainers().get(2).isInitialized());
 
-        assertThat(mydisc2.getContainers().size(), is(2));
-        assertThat(mydisc2.getContainers().get(0).getConfigId(), is("mydisc2/container.0"));
+        assertEquals(2, mydisc2.getContainers().size());
+        assertEquals("mydisc2/container.0", mydisc2.getContainers().get(0).getConfigId());
         assertTrue(mydisc2.getContainers().get(0).isInitialized());
-        assertThat(mydisc2.getContainers().get(1).getConfigId(), is("mydisc2/container.1"));
+        assertEquals("mydisc2/container.1", mydisc2.getContainers().get(1).getConfigId());
         assertTrue(mydisc2.getContainers().get(1).isInitialized());
 
-        assertThat(mydisc.getContainers().get(0).getJvmOptions(), is(""));
-        assertThat(mydisc.getContainers().get(1).getJvmOptions(), is(""));
-        assertThat(mydisc.getContainers().get(2).getJvmOptions(), is(""));
-        assertThat(mydisc.getContainers().get(0).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(mydisc.getContainers().get(1).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(mydisc.getContainers().get(2).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(mydisc.getMemoryPercentage(), is(Optional.empty()));
+        assertEquals("", mydisc.getContainers().get(0).getJvmOptions());
+        assertEquals("", mydisc.getContainers().get(1).getJvmOptions());
+        assertEquals("", mydisc.getContainers().get(2).getJvmOptions());
+        assertEquals(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so"), mydisc.getContainers().get(0).getPreLoad());
+        assertEquals(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so"), mydisc.getContainers().get(1).getPreLoad());
+        assertEquals(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so"), mydisc.getContainers().get(2).getPreLoad());
+        assertEquals(Optional.empty(), mydisc.getMemoryPercentage());
 
-        assertThat(mydisc2.getContainers().get(0).getJvmOptions(), is("-verbosegc"));
-        assertThat(mydisc2.getContainers().get(1).getJvmOptions(), is("-verbosegc"));
-        assertThat(mydisc2.getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
-        assertThat(mydisc2.getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
-        assertThat(mydisc2.getMemoryPercentage(), is(Optional.of(45)));
-        assertThat(mydisc2.getJvmGCOptions(), is(Optional.of("-XX:+UseParNewGC")));
+        assertEquals("-verbosegc", mydisc2.getContainers().get(0).getJvmOptions());
+        assertEquals("-verbosegc", mydisc2.getContainers().get(1).getJvmOptions());
+        assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(0).getPreLoad());
+        assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(1).getPreLoad());
+        assertEquals(Optional.of(45), mydisc2.getMemoryPercentage());
+        assertEquals(Optional.of("-XX:+UseParNewGC"), mydisc2.getJvmGCOptions());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         mydisc2.getConfig(qrStartBuilder);
         QrStartConfig qrsStartConfig = new QrStartConfig(qrStartBuilder);
@@ -704,7 +705,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testSlobroksClustersAreExpandedToIncludeRetiredNodesWhenRetiredComesLast() throws ParseException {
+    public void testSlobroksClustersAreExpandedToIncludeRetiredNodesWhenRetiredComesLast() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -718,7 +719,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "default09", "default08");
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());
@@ -833,7 +834,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void test2ContentNodesWithContainerClusterProducesMixedClusterControllerCluster() throws ParseException {
+    public void test2ContentNodesWithContainerClusterProducesMixedClusterControllerCluster() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
@@ -860,7 +861,7 @@ public class ModelProvisioningTest {
 
     @Ignore // TODO: unignore when feature is enabled again
     @Test
-    public void test2ContentNodesOn2ClustersWithContainerClusterProducesMixedClusterControllerCluster() throws ParseException {
+    public void test2ContentNodesOn2ClustersWithContainerClusterProducesMixedClusterControllerCluster() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
@@ -1204,7 +1205,70 @@ public class ModelProvisioningTest {
         tester.addHosts("controller-bar-flavor", 3);
         tester.addHosts("content-bar-flavor", 6);
         VespaModel model = tester.createModel(services, true, 0); // fails unless the right flavors+counts are requested
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(totalHosts));
+        assertEquals(totalHosts, model.getRoot().getHostSystem().getHosts().size());
+    }
+
+    @Test
+    public void testRequestingSpecificNodeResources() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "   <admin version='4.0'>" +
+                "      <logservers>" +
+                "         <nodes count='1' dedicated='true'>" +
+                "            <resources vcpu='0.1' memory='0.2Gb' disk='300Gb'/>" +
+                "         </nodes>" +
+                "      </logservers>" +
+                "      <slobroks>" +
+                "         <nodes count='2' dedicated='true'>" +
+                "            <resources vcpu='0.1' memory='0.3Gb' disk='1Gb'/>" +
+                "         </nodes>" +
+                "      </slobroks>" +
+                "   </admin>" +
+                "   <container version='1.0' id='container'>" +
+                "      <nodes count='4'>" +
+                "         <resources vcpu='12' memory='10Gb' disk='30Gb'/>" +
+                "      </nodes>" +
+                "   </container>" +
+                "   <content version='1.0' id='foo'>" +
+                "      <documents>" +
+                "        <document type='type1' mode='index'/>" +
+                "      </documents>" +
+                "      <controllers>" +
+                "         <nodes count='2' dedicated='true'>" +
+                "            <resources vcpu='0.8' memory='3Gb' disk='2Gb'/>" +
+                "         </nodes>" +
+                "      </controllers>" +
+                "      <nodes count='5'>" +
+                "         <resources vcpu='8' memory='200Gb' disk='1Pb'/>" +
+                "      </nodes>" +
+                "   </content>" +
+                "   <content version='1.0' id='bar'>" +
+                "      <documents>" +
+                "        <document type='type1' mode='index'/>" +
+                "      </documents>" +
+                "      <controllers>" +
+                "         <nodes count='3' dedicated='true'>" +
+                "            <resources vcpu='0.7' memory='2Gb' disk='2.5Gb'/>" +
+                "         </nodes>" +
+                "      </controllers>" +
+                "      <nodes count='6'>" +
+                "         <resources vcpu='10' memory='64Gb' disk='200Gb'/>" +
+                "      </nodes>" +
+                "   </content>" +
+                "</services>";
+
+        int totalHosts = 23;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(new NodeResources(0.1, 0.2, 300), 1);// Logserver
+        tester.addHosts(new NodeResources(0.1, 0.3, 1), 2); // Slobrok
+        tester.addHosts(new NodeResources(12, 10, 30), 4); // Container
+        tester.addHosts(new NodeResources(0.8, 3, 2), 2); // Controller-foo
+        tester.addHosts(new NodeResources(8, 200, 1000000), 5); // Content-foo
+        tester.addHosts(new NodeResources(0.7, 2, 2.5), 3); // Controller-bar
+        tester.addHosts(new NodeResources(10, 64, 200), 6); // Content-bar
+        VespaModel model = tester.createModel(services, true, 0);
+        assertEquals(totalHosts, model.getRoot().getHostSystem().getHosts().size());
     }
 
     @Test
