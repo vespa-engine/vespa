@@ -28,11 +28,8 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "::11"
   ],
   "additionalIpAddresses": [
-    "::10",
-    "::11"
   ]
 }

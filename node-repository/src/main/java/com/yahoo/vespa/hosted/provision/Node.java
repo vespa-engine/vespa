@@ -78,6 +78,8 @@ public final class Node {
 
         if (state == State.active)
             requireNonEmpty(ipAddresses, "An active node must have at least one valid IP address");
+        if (parentHostname.isPresent() && !ipAddressPool.isEmpty())
+            throw new IllegalArgumentException("A child node cannot have an IP address pool");
 
         this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
         this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
