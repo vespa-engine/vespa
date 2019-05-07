@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.config.provision.SystemName.vaas;
 
 /** Job types that exist in the build system */
 public enum JobType {
@@ -58,6 +59,12 @@ public enum JobType {
     productionAwsUsEast1b  ("production-aws-us-east-1b",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b"))),
 
+    devUsEast1             ("dev-us-east-1",
+                            Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
+
+    devAwsUsEast2a         ("dev-aws-us-east-2a",
+                            Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
+
     productionCdAwsUsEast1a("production-cd-aws-us-east-1a",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a"))),
 
@@ -69,12 +76,21 @@ public enum JobType {
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2"))),
 
     productionCdUsWest1    ("production-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1")));
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1"))),
+
+    devCdUsCentral1        ("dev-cd-us-central-1",
+                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
+
+    devAwsUsEast1b         ("dev-aws-us-east-1b",
+                            Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b")));
 
     private final String jobName;
     private final Map<SystemName, ZoneId> zones;
 
     JobType(String jobName, Map<SystemName, ZoneId> zones) {
+        if (zones.values().stream().map(ZoneId::environment).distinct().count() > 1)
+            throw new IllegalArgumentException("All zones of a job must be in the same environment");
+
         this.jobName = jobName;
         this.zones = zones;
     }
@@ -97,12 +113,8 @@ public enum JobType {
 
     /** Returns the environment of this job type, or null if it does not have an environment */
     public Environment environment() {
-        switch (this) {
-            case component: return null;
-            case systemTest: return Environment.test;
-            case stagingTest: return Environment.staging;
-            default: return Environment.prod;
-        }
+        if (this == component) return null;
+        return zones.values().iterator().next().environment();
     }
 
     public static Optional<JobType> fromOptionalJobName(String jobName) {
@@ -118,10 +130,9 @@ public enum JobType {
 
     /** Returns the job type for the given zone */
     public static Optional<JobType> from(SystemName system, ZoneId zone) {
-        for (JobType job : values())
-            if (zone.equals(job.zones.get(system)))
-                return Optional.of(job);
-        return Optional.empty();
+        return Stream.of(values())
+                     .filter(job -> zone.equals(job.zones.get(system)))
+                     .findAny();
     }
 
     /** Returns the job job type for the given environment and region or null if none */
