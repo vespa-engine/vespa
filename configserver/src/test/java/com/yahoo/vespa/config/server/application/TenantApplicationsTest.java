@@ -47,18 +47,8 @@ public class TenantApplicationsTest {
         assertThat(repo.requireActiveSessionOf(applications.get(1)), is(3L));
     }
 
-    @Test
-    public void require_that_invalid_entries_are_skipped() throws Exception {
-        writeApplicationData(createApplicationId("foo"), 3L);
-        writeApplicationData("invalid", 3L);
-        TenantApplications repo = createZKAppRepo();
-        List<ApplicationId> applications = repo.activeApplications();
-        assertThat(applications.size(), is(1));
-        assertThat(applications.get(0).application().value(), is("foo"));
-    }
-
     @Test(expected = IllegalArgumentException.class)
-    public void require_that_requesting_session_for_unknown_application_throws_exception() throws Exception {
+    public void require_that_requesting_session_for_unknown_application_throws_exception() {
         TenantApplications repo = createZKAppRepo();
         repo.requireActiveSessionOf(createApplicationId("nonexistent"));
     }
@@ -80,15 +70,15 @@ public class TenantApplicationsTest {
         repo.createApplication(myapp);
         repo.createPutTransaction(myapp, 3l).commit();
         String path = TenantRepository.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
-        assertTrue(curatorFramework.checkExists().forPath(path) != null);
+        assertNotNull(curatorFramework.checkExists().forPath(path));
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("3"));
         repo.createPutTransaction(myapp, 5l).commit();
-        assertTrue(curatorFramework.checkExists().forPath(path) != null);
+        assertNotNull(curatorFramework.checkExists().forPath(path));
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("5"));
     }
 
     @Test
-    public void require_that_application_ids_can_be_deleted() throws Exception {
+    public void require_that_application_ids_can_be_deleted() {
         TenantApplications repo = createZKAppRepo();
         ApplicationId id1 = createApplicationId("myapp");
         ApplicationId id2 = createApplicationId("myapp2");

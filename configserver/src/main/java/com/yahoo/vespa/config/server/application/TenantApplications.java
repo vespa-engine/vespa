@@ -45,21 +45,19 @@ public class TenantApplications {
             Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(TenantApplications.class.getName()));
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
-    private final TenantName tenant;
 
-    private TenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler, TenantName tenant) {
+    private TenantApplications(Curator curator, Path applicationsPath, ReloadHandler reloadHandler) {
         this.curator = curator;
         this.applicationsPath = applicationsPath;
         curator.create(applicationsPath);
         this.reloadHandler = reloadHandler;
-        this.tenant = tenant;
         this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this::childEvent);
     }
 
     public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
-        return new TenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler, tenant);
+        return new TenantApplications(curator, TenantRepository.getApplicationsPath(tenant), reloadHandler);
     }
 
     /**
@@ -69,32 +67,14 @@ public class TenantApplications {
      */
     public List<ApplicationId> activeApplications() {
         return curator.getChildren(applicationsPath).stream()
-                      .filter(this::isValid)
                       .sorted()
                       .map(ApplicationId::fromSerializedForm)
                       .filter(id -> activeSessionOf(id).isPresent())
                       .collect(Collectors.toUnmodifiableList());
     }
 
-    private boolean isValid(String appNode) { // TODO jvenstad: Remove after it has run once everywhere.
-        try {
-            ApplicationId.fromSerializedForm(appNode);
-            return true;
-        } catch (IllegalArgumentException __) {
-            log.log(LogLevel.INFO, TenantRepository.logPre(tenant) + "Unable to parse application id from '" +
-                    appNode + "'; deleting it as it shouldn't be here.");
-            try {
-                curator.delete(applicationsPath.append(appNode));
-            }
-            catch (Exception e) {
-                log.log(LogLevel.WARNING, TenantRepository.logPre(tenant) + "Failed to clean up stray node '" + appNode + "'!", e);
-            }
-            return false;
-        }
-    }
-
     /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
-    public OptionalLong activeSessionOf(ApplicationId id) {
+    private OptionalLong activeSessionOf(ApplicationId id) {
         String data = curator.getData(applicationPath(id)).map(Utf8::toString)
                              .orElseThrow(() -> new IllegalArgumentException("Unknown application '" + id + "'."));
         return data.isEmpty() ? OptionalLong.empty() : OptionalLong.of(Long.parseLong(data));
