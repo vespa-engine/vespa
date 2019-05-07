@@ -12,7 +12,7 @@ vespa_define_module(
     src/binref
     src/java
     src/jrt-test/simpleserver
-
+# TODO : Commented this out since running cmake stopped compilation 
 #    TESTS
 #    src/tests/connect-close
 #    src/tests/echo

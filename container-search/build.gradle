@@ -53,4 +53,3 @@ compileTestJava.dependsOn generateConfigurationsTask(
 	"${projectDir}/src/test/vespa-configdef/", 
 	"${buildDir}/generated-sources/configgen-test/")
 
-

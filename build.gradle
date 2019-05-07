@@ -27,7 +27,6 @@ buildscript {
                   name: 'javacc-gradle-plugin',
                   version: '3.0.2'
   }
-
 }
 
 allprojects {
@@ -100,7 +99,11 @@ subprojects {
     test {
       reports.html.enabled = false
 
-      jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED', '--add-opens=java.base/java.net=ALL-UNNAMED', '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED', '--add-opens=java.base/java.io=ALL-UNNAMED', '--illegal-access=warn'
+      jvmArgs 	'--add-opens=java.base/java.lang=ALL-UNNAMED', 
+		'--add-opens=java.base/java.net=ALL-UNNAMED', 
+		'--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED', 
+		'--add-opens=java.base/java.io=ALL-UNNAMED', 
+		'--illegal-access=warn'
     }
 
 }

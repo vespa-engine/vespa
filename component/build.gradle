@@ -20,7 +20,9 @@ task generateVtag(type: JavaExec) {
 		"${rootDir}/vespajlib/build/classes/java/main"
 	])
 	main = "com.yahoo.vespa.VersionTagger"
-	args = [ "${rootDir}/dist/vtag.map", "com.yahoo.component", "${buildDir}/generated-sources/vtag", "vtag"  ]
+	args = [ "${rootDir}/dist/vtag.map", 
+		"com.yahoo.component", 
+		"${buildDir}/generated-sources/vtag", "vtag"  ]
 }
 
 compileJava.dependsOn generateVtag
