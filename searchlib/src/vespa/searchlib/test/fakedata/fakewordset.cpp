@@ -15,20 +15,21 @@ using index::SchemaUtil;
 using index::schema::CollectionType;
 using index::schema::DataType;
 
-static void
+void
 clearFakeWordVector(std::vector<FakeWord *> &v)
 {
-    for (unsigned int i = 0; i < v.size(); ++i)
+    for (unsigned int i = 0; i < v.size(); ++i) {
         delete v[i];
+    }
     v.clear();
 }
 
-
-static void
+void
 applyDocIdBiasToVector(std::vector<FakeWord *> &v, uint32_t docIdBias)
 {
-    for (unsigned int i = 0; i < v.size(); ++i)
+    for (unsigned int i = 0; i < v.size(); ++i) {
         v[i]->addDocIdBias(docIdBias);
+    }
 }
 
 
@@ -40,7 +41,6 @@ FakeWordSet::FakeWordSet()
     setupParams(false, false);
 }
 
-
 FakeWordSet::FakeWordSet(bool hasElements,
                          bool hasElementWeights)
     : _words(NUM_WORDCLASSES),
@@ -50,12 +50,10 @@ FakeWordSet::FakeWordSet(bool hasElements,
     setupParams(hasElements, hasElementWeights);
 }
 
-
 FakeWordSet::~FakeWordSet()
 {
     dropWords();
 }
-
 
 void
 FakeWordSet::setupParams(bool hasElements,
@@ -82,7 +80,6 @@ FakeWordSet::setupParams(bool hasElements,
             setSchemaParams(_schema, it.getIndex());
     }
 }
-
 
 void
 FakeWordSet::setupWords(search::Rand48 &rnd,
@@ -127,12 +124,12 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
     LOG(info, "leave setupWords, elapsed %10.6f s", after - before);
 }
 
-
 void
 FakeWordSet::dropWords()
 {
-    for (unsigned int i = 0; i < _words.size(); ++i)
+    for (unsigned int i = 0; i < _words.size(); ++i) {
         clearFakeWordVector(_words[i]);
+    }
 }
 
 
@@ -140,16 +137,18 @@ int
 FakeWordSet::getNumWords()
 {
     int ret = 0;
-    for (unsigned int i = 0; i < _words.size(); ++i)
+    for (unsigned int i = 0; i < _words.size(); ++i) {
         ret += _words[i].size();
+    }
     return ret;
 }
 
 void
 FakeWordSet::addDocIdBias(uint32_t docIdBias)
 {
-    for (unsigned int i = 0; i < _words.size(); ++i)
+    for (unsigned int i = 0; i < _words.size(); ++i) {
         applyDocIdBiasToVector(_words[i], docIdBias);
+    }
 }
 
 }
