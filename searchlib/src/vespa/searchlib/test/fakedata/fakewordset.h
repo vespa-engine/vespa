@@ -5,25 +5,21 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search
-{
-class Rand48;
-}
+namespace search { class Rand48; }
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 class FakeWord;
 
-class FakeWordSet
-{
+/**
+ * Contains lists of fake words for 3 word classes categorized based on number of occurrences.
+ */
+class FakeWordSet {
 public:
-    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
-    typedef bitcompression::PosOccFieldParams PosOccFieldParams;
-    typedef index::Schema Schema;
+    using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
+    using Schema = index::Schema;
+    using FakeWordPtr = std::unique_ptr<FakeWord>;
+    using FakeWordVector = std::vector<FakeWordPtr>;
 
     enum {
         COMMON_WORD,
@@ -31,10 +27,13 @@ public:
         RARE_WORD,
         NUM_WORDCLASSES,
     };
-    std::vector<std::vector<FakeWord *> > _words;
+
+private:
+    std::vector<FakeWordVector> _words;
     Schema _schema;
     std::vector<PosOccFieldsParams> _fieldsParams;
 
+public:
     FakeWordSet();
 
     FakeWordSet(bool hasElements,
@@ -42,51 +41,36 @@ public:
 
     ~FakeWordSet();
 
-    void
-    setupParams(bool hasElements,
-                bool hasElementWeights);
+    void setupParams(bool hasElements,
+                     bool hasElementWeights);
 
-    void
-    setupWords(search::Rand48 &rnd,
-               unsigned int numDocs,
-               unsigned int commonDocFreq,
-               unsigned int numWordsPerWordClass);
+    void setupWords(search::Rand48 &rnd,
+                    unsigned int numDocs,
+                    unsigned int commonDocFreq,
+                    unsigned int numWordsPerWordClass);
 
-    void
-    dropWords();
+    const std::vector<FakeWordVector>& words() const { return _words; }
 
-    int
-    getNumWords();
+    int getNumWords() const;
 
-    const PosOccFieldsParams &
-    getFieldsParams() const
-    {
+    const PosOccFieldsParams& getFieldsParams() const {
         return _fieldsParams.back();
     }
 
-    uint32_t
-    getPackedIndex() const
-    {
+    uint32_t getPackedIndex() const {
         return _fieldsParams.size() - 1;
     }
 
-    const std::vector<PosOccFieldsParams> &
-    getAllFieldsParams() const
-    {
+    const std::vector<PosOccFieldsParams>& getAllFieldsParams() const {
         return _fieldsParams;
     }
 
-    const Schema &
-    getSchema() const
-    {
+    const Schema& getSchema() const {
         return _schema;
     }
 
-    void
-    addDocIdBias(uint32_t docIdBias);
+    void addDocIdBias(uint32_t docIdBias);
 };
 
-} // namespace fakedata
-
-} // namespace search
+}
 

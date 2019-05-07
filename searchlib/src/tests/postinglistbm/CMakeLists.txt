@@ -1,4 +1,14 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(searchlib_posting_list_test_app TEST
+    SOURCES
+    posting_list_test.cpp
+    DEPENDS
+    searchlib_test
+    searchlib
+    gtest
+)
+vespa_add_test(NAME searchlib_posting_list_test_app NO_VALGRIND COMMAND searchlib_posting_list_test_app)
+
 vespa_add_executable(searchlib_postinglistbm_app TEST
     SOURCES
     postinglistbm.cpp
@@ -7,4 +17,3 @@ vespa_add_executable(searchlib_postinglistbm_app TEST
     searchlib_test
     searchlib
 )
-vespa_add_test(NAME searchlib_postinglistbm_app NO_VALGRIND COMMAND searchlib_postinglistbm_app -q -a)

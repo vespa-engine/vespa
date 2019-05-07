@@ -24,21 +24,16 @@ using search::queryeval::SearchIterator;
 using namespace search::index;
 using namespace search::fakedata;
 
-// needed to resolve external symbol from httpd.h on AIX
-void FastS_block_usr2() {}
-
-
 namespace postinglistbm {
 
 class PostingListBM : public FastOS_Application {
 private:
-    bool _verbose;
     uint32_t _numDocs;
     uint32_t _commonDocFreq;
     uint32_t _numWordsPerClass;
     std::vector<std::string> _postingTypes;
     uint32_t _loops;
-    unsigned int _skipCommonPairsRate;
+    uint32_t _skipCommonPairsRate;
     FakeWordSet _wordSet;
     uint32_t _stride;
     bool _unpack;
@@ -46,12 +41,6 @@ private:
 public:
     search::Rand48 _rnd;
 
-private:
-    void usage();
-    void badPostingType(const std::string &postingType);
-    void testFake(const std::string &postingType,
-                  const Schema &schema,
-                  const FakeWord &word);
 public:
     PostingListBM();
     ~PostingListBM();
@@ -59,23 +48,23 @@ public:
 };
 
 void
-PostingListBM::usage()
+usage()
 {
-    printf("postinglistbm "
+    printf("Usage: postinglistbm "
            "[-C <skipCommonPairsRate>] "
-           "[-a] "
+           "[-T {string, array, weightedSet}] "
            "[-c <commonDoqFreq>] "
            "[-d <numDocs>] "
            "[-l <numLoops>] "
            "[-s <stride>] "
            "[-t <postingType>] "
            "[-u] "
-           "[-q] "
-           "[-v]\n");
+           "[-w <numWordsPerClass>] "
+           "[-q]\n");
 }
 
 void
-PostingListBM::badPostingType(const std::string &postingType)
+badPostingType(const std::string &postingType)
 {
     printf("Bad posting list type: %s\n", postingType.c_str());
     printf("Supported types: ");
@@ -93,8 +82,7 @@ PostingListBM::badPostingType(const std::string &postingType)
 }
 
 PostingListBM::PostingListBM()
-    : _verbose(false),
-      _numDocs(10000000),
+    : _numDocs(10000000),
       _commonDocFreq(50000),
       _numWordsPerClass(100),
       _postingTypes(),
@@ -109,93 +97,19 @@ PostingListBM::PostingListBM()
 
 PostingListBM::~PostingListBM() = default;
 
-void
-validate_posting_for_word(const FakePosting& posting, const FakeWord& word, bool verbose)
-{
-    TermFieldMatchData md;
-    TermFieldMatchDataArray tfmda;
-    tfmda.add(&md);
-
-    std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
-    if (posting.hasWordPositions()) {
-        word.validate(iterator.get(), tfmda, verbose);
-    } else {
-        word.validate(iterator.get(), verbose);
-    }
-}
-
-void
-PostingListBM::testFake(const std::string &postingType,
-                        const Schema &schema,
-                        const FakeWord &word)
-{
-    auto posting_factory = getFPFactory(postingType, schema);
-    std::vector<const FakeWord *> words;
-    words.push_back(&word);
-    posting_factory->setup(words);
-    auto posting = posting_factory->make(word);
-
-    printf("%s.bitsize=%d+%d+%d+%d+%d\n",
-           posting->getName().c_str(),
-           static_cast<int>(posting->bitSize()),
-           static_cast<int>(posting->l1SkipBitSize()),
-           static_cast<int>(posting->l2SkipBitSize()),
-           static_cast<int>(posting->l3SkipBitSize()),
-           static_cast<int>(posting->l4SkipBitSize()));
-
-    validate_posting_for_word(*posting, word, _verbose);
-
-    uint64_t scanTime = 0;
-    uint64_t scanUnpackTime = 0;
-    int hits1 = FakeMatchLoop::single_posting_scan(*posting, word.getDocIdLimit(), scanTime);
-    int hits2 = FakeMatchLoop::single_posting_scan_with_unpack(*posting, word.getDocIdLimit(), scanUnpackTime);
-
-    printf("testFake '%s' hits1=%d, hits2=%d, scanTime=%" PRIu64
-           ", scanUnpackTime=%" PRIu64 "\n",
-           posting->getName().c_str(),
-           hits1, hits2, scanTime, scanUnpackTime);
-}
-
-void
-testFakePair(const std::string &postingType,
-             const Schema &schema,
-             bool unpack,
-             const FakeWord &fw1, const FakeWord &fw2)
-{
-    std::unique_ptr<FPFactory> ff(getFPFactory(postingType, schema));
-    std::vector<const FakeWord *> v;
-    v.push_back(&fw1);
-    v.push_back(&fw2);
-    ff->setup(v);
-    FakePosting::SP f1(ff->make(fw1));
-    FakePosting::SP f2(ff->make(fw2));
-
-    uint64_t scanUnpackTime = 0;
-    int hits = unpack ?
-               FakeMatchLoop::and_pair_posting_scan_with_unpack(*f1, *f2, fw1.getDocIdLimit(), scanUnpackTime) :
-               FakeMatchLoop::and_pair_posting_scan(*f1, *f2, fw1.getDocIdLimit(), scanUnpackTime);
-    printf("Fakepair %s AND %s => %d hits, %" PRIu64 " cycles\n",
-           f1->getName().c_str(),
-           f2->getName().c_str(),
-           hits,
-           scanUnpackTime);
-}
-
 int
 PostingListBM::Main()
 {
     int argi;
     char c;
     const char *optArg;
-    bool doandstress;
 
-    doandstress = false;
     argi = 1;
     bool hasElements = false;
     bool hasElementWeights = false;
     bool quick = false;
 
-    while ((c = GetOpt("C:ac:d:l:s:t:uvw:T:q", optArg, argi)) != -1) {
+    while ((c = GetOpt("C:c:d:l:s:t:uw:T:q", optArg, argi)) != -1) {
         switch(c) {
         case 'C':
             _skipCommonPairsRate = atoi(optArg);
@@ -214,9 +128,6 @@ PostingListBM::Main()
                 printf("Bad collection type: %s\n", optArg);
                 return 1;
             }
-            break;
-        case 'a':
-            doandstress = true;
             break;
         case 'c':
             _commonDocFreq = atoi(optArg);
@@ -248,9 +159,6 @@ PostingListBM::Main()
         case 'u':
             _unpack = true;
             break;
-        case 'v':
-            _verbose = true;
-            break;
         case 'w':
             _numWordsPerClass = atoi(optArg);
             break;
@@ -273,65 +181,24 @@ PostingListBM::Main()
 
     _wordSet.setupParams(hasElements, hasElementWeights);
 
-    uint32_t w1dfreq = 10;
-    uint32_t w4dfreq = 790000;
-    uint32_t w5dfreq = 290000;
-    uint32_t w4w5od = 100000;
     uint32_t numTasks = 40000;
     if (quick) {
-        w1dfreq = 2;
-        w4dfreq = 19000;
-        w5dfreq = 5000;
-        w4w5od = 1000;
         numTasks = 40;
     }
     
-
-    FakeWord word1(_numDocs, w1dfreq, w1dfreq / 2, "word1", _rnd,
-                   _wordSet.getFieldsParams(), _wordSet.getPackedIndex());
-    FakeWord word2(_numDocs, 1000, 500, "word2", word1, 4, _rnd,
-                   _wordSet.getFieldsParams(), _wordSet.getPackedIndex());
-    FakeWord word3(_numDocs, _commonDocFreq, _commonDocFreq / 2,
-                   "word3", word1, 10, _rnd,
-                   _wordSet.getFieldsParams(), _wordSet.getPackedIndex());
-    FakeWord word4(_numDocs, w4dfreq, w4dfreq / 2,
-                   "word4", _rnd,
-                   _wordSet.getFieldsParams(), _wordSet.getPackedIndex());
-    FakeWord word5(_numDocs, w5dfreq, w5dfreq / 2,
-                   "word5", word4, w4w5od, _rnd,
-                   _wordSet.getFieldsParams(), _wordSet.getPackedIndex());
-
     if (_postingTypes.empty()) {
         _postingTypes = getPostingTypes();
     }
 
-    for (const auto& type : _postingTypes) {
-        testFake(type, _wordSet.getSchema(), word1);
-        testFake(type, _wordSet.getSchema(), word2);
-        testFake(type, _wordSet.getSchema(), word3);
-    }
+    _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _numWordsPerClass);
 
-    for (const auto& type : _postingTypes) {
-        testFakePair(type, _wordSet.getSchema(), false, word1, word3);
-        testFakePair(type, _wordSet.getSchema(), false, word2, word3);
-    }
-
-    for (const auto& type : _postingTypes) {
-        testFakePair(type, _wordSet.getSchema(), false, word4, word5);
-    }
-
-    if (doandstress) {
-        _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _numWordsPerClass);
-    }
-    if (doandstress) {
-        AndStress andstress;
-        andstress.run(_rnd, _wordSet,
-                      _numDocs, _commonDocFreq, _postingTypes, _loops,
-                      _skipCommonPairsRate,
-                      numTasks,
-                      _stride,
-                      _unpack);
-    }
+    AndStress andstress;
+    andstress.run(_rnd, _wordSet,
+                  _numDocs, _commonDocFreq, _postingTypes, _loops,
+                  _skipCommonPairsRate,
+                  numTasks,
+                  _stride,
+                  _unpack);
     return 0;
 }
 

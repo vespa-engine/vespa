@@ -192,9 +192,9 @@ AndStressMaster::resetTasks()
     _taskIdx = 0;
 }
 
-static void
+void
 makeSomePostings(FPFactory *postingFactory,
-                 std::vector<FakeWord *> &words,
+                 const FakeWordSet::FakeWordVector &words,
                  std::vector<FakePosting::SP> &postings,
                  uint32_t stride,
                  bool validate,
@@ -234,9 +234,9 @@ AndStressMaster::makePostingsHelper(FPFactory *postingFactory,
     tv.SetNow();
     before = tv.Secs();
     postingFactory->setup(_wordSet);
-    for (size_t i = 0; i < _wordSet._words.size(); ++i)
+    for (size_t i = 0; i < _wordSet.words().size(); ++i)
         makeSomePostings(postingFactory,
-                         _wordSet._words[i], _postings[i],
+                         _wordSet.words()[i], _postings[i],
                          _stride,
                          validate,
                          verbose);
