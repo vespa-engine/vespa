@@ -118,8 +118,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
 
     LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(T)) == 0);
-    vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
-                                   udatBuffer->size() / sizeof(T));
+    vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()), udatBuffer->size() / sizeof(T));
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, attribute::NoSaveLoadedEnum());
     this->checkSetMaxValueCount(maxvc);
     
@@ -154,9 +153,7 @@ MultiValueNumericAttribute<B, M>::onLoad()
         const uint32_t valueCount(attrReader.getNextValueCount());
         for (uint32_t i(0); i < valueCount; i++) {
             MValueType currData = attrReader.getNextData();
-            values.push_back(MultiValueType(currData,
-                                            hasWeight ?
-                                            attrReader.getNextWeight() : 1));
+            values.emplace_back(currData, hasWeight ? attrReader.getNextWeight() : 1);
         }
         this->checkSetMaxValueCount(valueCount);
         setNewValues(doc, values);
@@ -173,11 +170,9 @@ MultiValueNumericAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
 {
     (void) params;
     if (this->hasArrayType()) {
-        return std::unique_ptr<AttributeVector::SearchContext>
-            (new ArraySearchContext(std::move(qTerm), *this));
+        return std::make_unique<ArraySearchContext>(std::move(qTerm), *this);
     } else {
-        return std::unique_ptr<AttributeVector::SearchContext>
-            (new SetSearchContext(std::move(qTerm), *this));
+        return std::make_unique<SetSearchContext>(std::move(qTerm), *this);
     }
 }
 
@@ -186,8 +181,7 @@ template <typename B, typename M>
 std::unique_ptr<AttributeSaver>
 MultiValueNumericAttribute<B, M>::onInitSave(vespalib::stringref fileName)
 {
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
-                                             takeGuard());
+    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
         (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping);
 }
@@ -212,18 +206,16 @@ std::unique_ptr<queryeval::SearchIterator>
 MultiValueNumericAttribute<B, M>::SetSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<SetSearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<SetSearchContext>(*this, matchData));
+        return strict
+                 ? std::make_unique<FilterAttributeIteratorStrict<SetSearchContext>>(*this, matchData)
+                 : std::make_unique<FilterAttributeIteratorT<SetSearchContext>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<SetSearchContext>(*this, matchData)
-             : new AttributeIteratorT<SetSearchContext>(*this, matchData));
+    return strict
+             ? std::make_unique<AttributeIteratorStrict<SetSearchContext>>(*this, matchData)
+             : std::make_unique<AttributeIteratorT<SetSearchContext>>(*this, matchData);
 }
 
 template <typename B, typename M>
@@ -246,18 +238,16 @@ std::unique_ptr<queryeval::SearchIterator>
 MultiValueNumericAttribute<B, M>::ArraySearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<ArraySearchContext>(*this, matchData));
+        return strict
+                 ? std::make_unique<FilterAttributeIteratorStrict<ArraySearchContext>>(*this, matchData)
+                 : std::make_unique<FilterAttributeIteratorT<ArraySearchContext>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-             : new AttributeIteratorT<ArraySearchContext>(*this, matchData));
+    return strict
+             ? std::make_unique<AttributeIteratorStrict<ArraySearchContext>>(*this, matchData)
+             : std::make_unique<AttributeIteratorT<ArraySearchContext>>(*this, matchData);
 }
 
 } // namespace search
