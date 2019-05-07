@@ -14,6 +14,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -44,7 +45,7 @@ public class VespaModelTester {
     private final ConfigModelRegistry configModelRegistry;
 
     private boolean hosted = true;
-    private Map<String, Collection<Host>> hostsByFlavor = new HashMap<>();
+    private Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
     private boolean enableMetricsProxyContainer = false;
@@ -62,24 +63,30 @@ public class VespaModelTester {
 
     /** Adds some hosts to this system */
     public Hosts addHosts(String flavor, int count) { 
-        return addHosts(Optional.empty(), flavor, count);
+        return addHosts(Optional.empty(), NodeResources.fromLegacyName(flavor), count);
     }
 
     public void addHosts(Flavor flavor, int count) {
-        addHosts(Optional.of(flavor), flavor.name(), count);
+        addHosts(Optional.of(flavor), NodeResources.fromLegacyName(flavor.name()), count);
     }
 
-    private Hosts addHosts(Optional<Flavor> flavor, String flavorName, int count) {
+    public void addHosts(NodeResources resources, int count) {
+        addHosts(Optional.of(new Flavor(resources)), resources, count);
+    }
+
+    private Hosts addHosts(Optional<Flavor> flavor, NodeResources resources, int count) {
         List<Host> hosts = new ArrayList<>();
         
         for (int i = 0; i < count; ++i) {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format("%s%02d", flavorName, count - i);
+            String hostname = String.format("%s%02d",
+                                            resources.allocateByLegacyName() ? resources.legacyName().get() : resources.toString(),
+                                            count - i);
             hosts.add(new Host(hostname, ImmutableList.of(), flavor));
         }
-        this.hostsByFlavor.put(flavorName, hosts);
+        this.hostsByResources.put(resources, hosts);
 
         if (hosts.size() > 100)
             throw new IllegalStateException("The host naming scheme is nameNN. To test more than 100 hosts, change to nameNNN");
@@ -135,7 +142,7 @@ public class VespaModelTester {
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
         HostProvisioner provisioner = hosted ? 
-                                      new InMemoryProvisioner(hostsByFlavor, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
+                                      new InMemoryProvisioner(hostsByResources, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
 
         TestProperties properties = new TestProperties()

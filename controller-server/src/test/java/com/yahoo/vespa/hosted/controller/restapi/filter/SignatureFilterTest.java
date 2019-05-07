@@ -14,6 +14,8 @@ import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterR
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.Set;
@@ -70,7 +72,7 @@ public class SignatureFilterTest {
         assertNull(unsigned.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
         // Signed request gets no role when no key is stored for the application.
-        DiscFilterRequest signed = requestOf(signer.signed(request, Method.GET), emptyBody);
+        DiscFilterRequest signed = requestOf(signer.signed(request, Method.GET, InputStream::nullInputStream), emptyBody);
         filter.filter(signed);
         assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
@@ -90,7 +92,7 @@ public class SignatureFilterTest {
 
         // Signed POST request also gets a build service role.
         byte[] hiBytes = new byte[]{0x48, 0x69};
-        signed = requestOf(signer.signed(request, Method.POST), hiBytes);
+        signed = requestOf(signer.signed(request, Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes);
         filter.filter(signed);
         securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
         assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());

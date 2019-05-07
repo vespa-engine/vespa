@@ -11,11 +11,11 @@ public class DomSearchCoverageBuilder {
 
     public static SearchCoverage build(ModelElement contentXml) {
         SearchCoverage.Builder builder = new SearchCoverage.Builder();
-        ModelElement searchElement = contentXml.getChild("search");
+        ModelElement searchElement = contentXml.child("search");
         if (searchElement == null) {
             return builder.build();
         }
-        ModelElement coverageElement = searchElement.getChild("coverage");
+        ModelElement coverageElement = searchElement.child("coverage");
         if (coverageElement == null) {
             return builder.build();
         }

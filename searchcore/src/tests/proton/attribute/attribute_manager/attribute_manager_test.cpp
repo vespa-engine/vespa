@@ -53,6 +53,7 @@ using namespace search;
 using namespace search::index;
 using proton::initializer::InitializerTask;
 using proton::test::AttributeUtils;
+using proton::test::createInt32Attribute;
 using proton::test::Int32Attribute;
 using search::ForegroundTaskExecutor;
 using search::TuneFileAttributes;
@@ -415,17 +416,15 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
 
 TEST_F("require that extra attribute is added", Fixture)
 {
-    AttributeVector::SP extra(new Int32Attribute("extra"));
-    f._m.addExtraAttribute(extra);
+    f._m.addExtraAttribute(createInt32Attribute("extra"));
     AttributeGuard::UP exguard(f._m.getAttribute("extra"));
-    EXPECT_TRUE(dynamic_cast<Int32Attribute *>(exguard->operator->()) !=
-                NULL);
+    EXPECT_TRUE(dynamic_cast<Int32Attribute *>(exguard->operator->()) != nullptr);
 }
 
 TEST_F("require that reconfig can add attributes", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
-    AttributeVector::SP ex(new Int32Attribute("ex"));
+    AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
 
     AttrSpecList newSpec;
@@ -530,7 +529,7 @@ TEST_F("require that removed attributes cannot resurrect", BaseFixture)
 
 TEST_F("require that extra attribute is not treated as removed", Fixture)
 {
-    AttributeVector::SP ex(new Int32Attribute("ex"));
+    AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
     ex->commit(1,1);
 
@@ -561,7 +560,7 @@ TEST_F("require that lid space can be compacted", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
-    AttributeVector::SP ex(new Int32Attribute("ex"));
+    AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
     AttributeWriter aw(f._msp);
     const int64_t attrValue = 33;
@@ -590,7 +589,7 @@ TEST_F("require that lid space compaction op can be ignored", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
-    AttributeVector::SP ex(new Int32Attribute("ex"));
+    AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
     AttributeWriter aw(f._msp);
     const int64_t attrValue = 33;
@@ -629,7 +628,7 @@ TEST_F("require that writable attributes can be retrieved", Fixture)
 {
     auto a1 = f.addAttribute("a1");
     auto a2 = f.addAttribute("a2");
-    AttributeVector::SP ex(new Int32Attribute("ex"));
+    AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
     auto &vec = f._m.getWritableAttributes();
     EXPECT_EQUAL(2u, vec.size());

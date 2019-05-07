@@ -7,6 +7,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -43,15 +44,15 @@ public class NodesSpecification {
     
     private final boolean exclusive;
 
-    /** The flavor the nodes should have, or empty to use the default */
-    private final Optional<String> flavor;
+    /** The resources each node should have, or empty to use the default */
+    private final Optional<NodeResources> resources;
 
     /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
     private NodesSpecification(boolean dedicated, int count, int groups, Version version,
                                boolean required, boolean canFail, boolean exclusive,
-                               Optional<String> flavor, Optional<String> dockerImage) {
+                               Optional<NodeResources> resources, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
@@ -59,25 +60,23 @@ public class NodesSpecification {
         this.required = required;
         this.canFail = canFail;
         this.exclusive = exclusive;
-        this.flavor = flavor;
+        this.resources = resources;
         this.dockerImage = dockerImage;
     }
 
     private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
         this(dedicated,
              nodesElement.requiredIntegerAttribute("count"),
-             nodesElement.getIntegerAttribute("groups", 1),
+             nodesElement.integerAttribute("groups", 1),
              version,
-             nodesElement.getBooleanAttribute("required", false),
+             nodesElement.booleanAttribute("required", false),
              canFail,
-             nodesElement.getBooleanAttribute("exclusive", false),
-             Optional.ofNullable(nodesElement.getStringAttribute("flavor")),
-             Optional.ofNullable(nodesElement.getStringAttribute("docker-image")));
+             nodesElement.booleanAttribute("exclusive", false),
+             getFlavor(nodesElement),
+             Optional.ofNullable(nodesElement.stringAttribute("docker-image")));
     }
 
-    /**
-     * Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element
-     */
+    /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
     public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
         return new NodesSpecification(true,
                                       ! context.getDeployState().getProperties().isBootstrap(),
@@ -92,7 +91,7 @@ public class NodesSpecification {
      */
     public static Optional<NodesSpecification> fromParent(ModelElement parentElement, ConfigModelContext context) {
         if (parentElement == null) return Optional.empty();
-        ModelElement nodesElement = parentElement.getChild("nodes");
+        ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
         return Optional.of(from(nodesElement, context));
     }
@@ -105,9 +104,9 @@ public class NodesSpecification {
     public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement,
                                                                            ConfigModelContext context) {
         if (parentElement == null) return Optional.empty();
-        ModelElement nodesElement = parentElement.getChild("nodes");
+        ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false),
+        return Optional.of(new NodesSpecification(nodesElement.booleanAttribute("dedicated", false),
                                                   ! context.getDeployState().getProperties().isBootstrap(),
                                                   context.getDeployState().getWantedNodeVespaVersion(),
                                                   nodesElement));
@@ -171,13 +170,63 @@ public class NodesSpecification {
                                                           DeployLogger logger,
                                                           Set<RotationName> rotations) {
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive, rotations);
-        return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required, canFail), groups, logger);
+        return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
+    }
+
+    private static Optional<NodeResources> getFlavor(ModelElement nodesElement) {
+        ModelElement flavor = nodesElement.child("resources");
+        if (flavor != null) {
+            return Optional.of(new NodeResources(flavor.requiredDoubleAttribute("vcpu"),
+                                                 parseGbAmount(flavor.requiredStringAttribute("memory")),
+                                                 parseGbAmount(flavor.requiredStringAttribute("disk"))));
+        }
+        else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
+            return Optional.of(NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor")));
+        }
+        else { // Get the default
+            return Optional.empty();
+        }
+    }
+
+    private static double parseGbAmount(String byteAmount) {
+        byteAmount = byteAmount.strip();
+        byteAmount = byteAmount.toUpperCase();
+        if (byteAmount.endsWith("B"))
+            byteAmount = byteAmount.substring(0, byteAmount.length() -1);
+
+        double multiplier = 1/Math.pow(1000, 3);
+        if (byteAmount.endsWith("K"))
+            multiplier = 1/Math.pow(1000, 2);
+        else if (byteAmount.endsWith("M"))
+            multiplier = 1/1000;
+        else if (byteAmount.endsWith("G"))
+            multiplier = 1;
+        else if (byteAmount.endsWith("T"))
+            multiplier = 1000;
+        else if (byteAmount.endsWith("P"))
+            multiplier = Math.pow(1000, 2);
+        else if (byteAmount.endsWith("E"))
+            multiplier = Math.pow(1000, 3);
+        else if (byteAmount.endsWith("Z"))
+            multiplier = Math.pow(1000, 4);
+        else if (byteAmount.endsWith("Y"))
+            multiplier = Math.pow(1000, 5);
+
+        byteAmount = byteAmount.substring(0, byteAmount.length() -1 ).strip();
+        try {
+            return Double.parseDouble(byteAmount) * multiplier;
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid byte amount '" + byteAmount +
+                                               "': Must be a floating point number " +
+                                               "optionally followed by k, M, G, T, P, E, Z or Y");
+        }
     }
 
     @Override
     public String toString() {
         return "specification of " + count + (dedicated ? " dedicated " : " ") + "nodes" +
-               (flavor.isPresent() ? " of flavor " + flavor.get() : "") +
+               (resources.isPresent() ? " with resources " + resources.get() : "") +
                (groups > 1 ? " in " + groups + " groups" : "");
     }
 

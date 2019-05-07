@@ -21,7 +21,7 @@ public class SearchDefinitionBuilder {
 
         if (elem != null) {
             for (ModelElement e : elem.subElements("document")) {
-                String name = e.getStringAttribute("type"); // Schema-guaranteed presence
+                String name = e.stringAttribute("type"); // Schema-guaranteed presence
                 NewDocumentType documentType = repo.getDocumentType(name);
                 if (documentType != null) {
                     docTypes.put(documentType.getName(), documentType);

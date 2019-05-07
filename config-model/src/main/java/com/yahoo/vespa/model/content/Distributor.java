@@ -27,8 +27,8 @@ public class Distributor extends ContentNode {
 
         @Override
         protected Distributor doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
-            return new Distributor((DistributorCluster)ancestor, new ModelElement(producerSpec).getIntegerAttribute("distribution-key"),
-                    clusterXml.getIntegerAttribute("distributor-base-port"), persistenceProvider);
+            return new Distributor((DistributorCluster)ancestor, new ModelElement(producerSpec).integerAttribute("distribution-key"),
+                                   clusterXml.integerAttribute("distributor-base-port"), persistenceProvider);
         }
     }
 

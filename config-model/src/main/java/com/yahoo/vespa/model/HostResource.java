@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
  *
  * @author Ulf Lilleengen
  */
-public class HostResource implements Comparable<HostResource>
-{
+public class HostResource implements Comparable<HostResource> {
+
     private final HostPorts hostPorts;
 
     public HostPorts ports() { return hostPorts; }

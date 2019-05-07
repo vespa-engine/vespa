@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
@@ -69,8 +70,14 @@ public class NodeSerializer {
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
 
-    // Configuration fields
+    // Node resource fields
+    // ...for hosts and nodes allocated by legacy flavor specs
     private static final String flavorKey = "flavor";
+    // ...for nodes allocated by resources
+    private static final String resourcesKey = "resources";
+    private static final String vcpuKey = "vcpu";
+    private static final String memoryKey = "memory";
+    private static final String diskKey = "disk";
 
     // Allocation fields
     private static final String tenantIdKey = "tenantId";
@@ -114,7 +121,7 @@ public class NodeSerializer {
         toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey), IP::requireAddressPool);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
-        object.setString(flavorKey, node.flavor().name());
+        toSlime(node.flavor(), object);
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
@@ -132,6 +139,19 @@ public class NodeSerializer {
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
+    }
+
+    private void toSlime(Flavor flavor, Cursor object) {
+        if (flavor.isConfigured()) {
+            object.setString(flavorKey, flavor.name());
+        }
+        else {
+            NodeResources resources = flavor.resources();
+            Cursor resourcesObject = object.setObject(resourcesKey);
+            resourcesObject.setDouble(vcpuKey, resources.vcpu());
+            resourcesObject.setDouble(memoryKey, resources.memoryGb());
+            resourcesObject.setDouble(diskKey, resources.diskGb());
+        }
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -198,7 +218,15 @@ public class NodeSerializer {
     }
 
     private Flavor flavorFromSlime(Inspector object) {
-        return flavors.getFlavorOrThrow(object.field(flavorKey).asString());
+        if (object.field(flavorKey).valid()) {
+            return flavors.getFlavorOrThrow(object.field(flavorKey).asString());
+        }
+        else {
+            Inspector resources = object.field(resourcesKey);
+            return new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
+                                                resources.field(memoryKey).asDouble(),
+                                                resources.field(diskKey).asDouble()));
+        }
     }
 
     private Optional<Allocation> allocationFromSlime(Inspector object) {

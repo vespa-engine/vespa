@@ -9,14 +9,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Submits a Vespa application package and corresponding test jars to the hosted Vespa API.
@@ -50,6 +45,9 @@ public class SubmitMojo extends AbstractMojo {
     @Parameter(property = "privateKeyFile", required = true)
     private String privateKeyFile;
 
+    @Parameter(property = "certificateFile")
+    private String certificateFile;
+
     @Parameter(property = "authorEmail", required = true)
     private String authorEmail;
 
@@ -64,20 +62,16 @@ public class SubmitMojo extends AbstractMojo {
 
     @Override
     public void execute() {
-        try {
-            setup();
-            ControllerHttpClient controller = new ControllerHttpClient(URI.create(endpointUri),
-                                                                       Files.readString(Paths.get(privateKeyFile), UTF_8),
-                                                                       ApplicationId.from(tenant, application, instance));
+        setup();
+        ApplicationId id = ApplicationId.from(tenant, application, instance);
+        ControllerHttpClient controller = certificateFile == null
+                ? ControllerHttpClient.withSignatureKey(URI.create(endpointUri), Paths.get(privateKeyFile), id)
+                : ControllerHttpClient.withKeyAndCertificate(URI.create(endpointUri), Paths.get(privateKeyFile), Paths.get(certificateFile));
 
-            Submission submission = new Submission(repository, branch, commit, authorEmail,
-                                                   Paths.get(applicationZip), Paths.get(applicationTestZip));
+        Submission submission = new Submission(repository, branch, commit, authorEmail,
+                                               Paths.get(applicationZip), Paths.get(applicationTestZip));
 
-            System.out.println(controller.submit(submission));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        System.out.println(controller.submit(submission, id.tenant(), id.application()));
     }
 
     private void setup() {
@@ -92,11 +86,12 @@ public class SubmitMojo extends AbstractMojo {
         return project.getBasedir().toPath().resolve(Path.of(first, rest)).toString();
     }
 
-    /** Returns the first of the given strings which is non-null and non-blank. */
+    /** Returns the first of the given strings which is non-null and non-blank, or throws IllegalArgumentException. */
     private static String firstNonBlank(String... values) {
         for (String value : values)
             if (value != null && ! value.isBlank())
                 return value;
+
         throw new IllegalArgumentException("No valid value given");
     }
 

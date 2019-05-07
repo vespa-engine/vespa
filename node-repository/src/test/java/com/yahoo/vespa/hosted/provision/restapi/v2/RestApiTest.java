@@ -798,7 +798,7 @@ public class RestApiTest {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
                 createIpAddresses(ipAddress) +
                 createAdditionalIpAddresses(additionalIpCount) +
-                "\"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
+                "\"openStackId\":\"" + hostname + "\",\"flavor\":\"d-1-1-100\"}";
     }
 
     private String asNodeJson(String hostname, String flavor, String... ipAddress) {

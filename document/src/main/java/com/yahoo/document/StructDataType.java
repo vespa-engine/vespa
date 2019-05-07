@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class StructDataType extends BaseStructDataType {
 

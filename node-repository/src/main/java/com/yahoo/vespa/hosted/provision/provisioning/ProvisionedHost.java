@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -15,18 +16,19 @@ import java.util.Set;
  * @author freva
  */
 public class ProvisionedHost {
+
     private final String id;
     private final String hostHostname;
     private final Flavor hostFlavor;
     private final String nodeHostname;
-    private final Flavor nodeFlavor;
+    private final NodeResources nodeResources;
 
-    public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, String nodeHostname, Flavor nodeFlavor) {
+    public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, String nodeHostname, NodeResources nodeResources) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.nodeHostname = Objects.requireNonNull(nodeHostname, "Node hostname must be set");
-        this.nodeFlavor = Objects.requireNonNull(nodeFlavor, "Node flavor must be set");
+        this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
     }
 
     /** Generate {@link Node} instance representing the provisioned physical host */
@@ -36,28 +38,26 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.createDockerNode(Set.of(), Set.of(), nodeHostname, Optional.of(hostHostname), nodeFlavor, NodeType.tenant);
+        return Node.createDockerNode(Set.of(), Set.of(), nodeHostname, Optional.of(hostHostname), nodeResources, NodeType.tenant);
     }
 
     public String getId() {
         return id;
     }
 
-    public String getHostHostname() {
+    public String hostHostname() {
         return hostHostname;
     }
 
-    public Flavor getHostFlavor() {
+    public Flavor hostFlavor() {
         return hostFlavor;
     }
 
-    public String getNodeHostname() {
+    public String nodeHostname() {
         return nodeHostname;
     }
 
-    public Flavor getNodeFlavor() {
-        return nodeFlavor;
-    }
+    public NodeResources nodeResources() { return nodeResources; }
 
     @Override
     public boolean equals(Object o) {
@@ -68,12 +68,12 @@ public class ProvisionedHost {
                 hostHostname.equals(that.hostHostname) &&
                 hostFlavor.equals(that.hostFlavor) &&
                 nodeHostname.equals(that.nodeHostname) &&
-                nodeFlavor.equals(that.nodeFlavor);
+                nodeResources.equals(that.nodeResources);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, nodeHostname, nodeFlavor);
+        return Objects.hash(id, hostHostname, hostFlavor, nodeHostname, nodeResources);
     }
 
     @Override
@@ -83,7 +83,8 @@ public class ProvisionedHost {
                 ", hostHostname='" + hostHostname + '\'' +
                 ", hostFlavor=" + hostFlavor +
                 ", nodeHostname='" + nodeHostname + '\'' +
-                ", nodeFlavor=" + nodeFlavor +
+                ", nodeResources=" + nodeResources +
                 '}';
     }
+
 }

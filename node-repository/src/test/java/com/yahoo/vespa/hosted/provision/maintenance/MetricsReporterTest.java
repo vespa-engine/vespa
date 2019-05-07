@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
@@ -118,16 +119,19 @@ public class MetricsReporterTest {
         // Allow 4 containers
         Set<String> ipAddressPool = ImmutableSet.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost",
+                                      Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
-        Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1", Optional.of("dockerHost"), nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);
+        Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1",
+                                                Optional.of("dockerHost"), new NodeResources(1, 3, 2), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
         nodeRepository.addDockerNodes(Collections.singletonList(container1), nodeRepository.lockAllocation());
 
-        Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2", Optional.of("dockerHost"), nodeFlavors.getFlavorOrThrow("docker2"), NodeType.tenant);
+        Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2",
+                                                Optional.of("dockerHost"), new NodeResources(2, 4, 4), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
         nodeRepository.addDockerNodes(Collections.singletonList(container2), nodeRepository.lockAllocation());
 

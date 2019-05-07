@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
 /**
@@ -16,14 +17,14 @@ public class ResourceCapacity {
 
     public static final ResourceCapacity NONE = new ResourceCapacity(0, 0, 0);
 
-    private final double memory;
-    private final double cpu;
-    private final double disk;
+    private final double memoryGb;
+    private final double vcpu;
+    private final double diskGb;
 
-    private ResourceCapacity(double memory, double cpu, double disk) {
-        this.memory = memory;
-        this.cpu = cpu;
-        this.disk = disk;
+    private ResourceCapacity(double memoryGb, double vcpu, double diskGb) {
+        this.memoryGb = memoryGb;
+        this.vcpu = vcpu;
+        this.diskGb = diskGb;
     }
 
     static ResourceCapacity of(Flavor flavor) {
@@ -31,64 +32,46 @@ public class ResourceCapacity {
                 flavor.getMinMainMemoryAvailableGb(), flavor.getMinCpuCores(), flavor.getMinDiskAvailableGb());
     }
 
+    static ResourceCapacity of(NodeResources resources) {
+        return new ResourceCapacity(resources.memoryGb(), resources.vcpu(), resources.diskGb());
+    }
+
     static ResourceCapacity of(Node node) {
         return ResourceCapacity.of(node.flavor());
     }
 
-    public double getMemory() {
-        return memory;
+    public double memoryGb() {
+        return memoryGb;
     }
 
-    public double getCpu() {
-        return cpu;
+    public double vcpu() {
+        return vcpu;
     }
 
-    public double getDisk() {
-        return disk;
+    public double diskGb() {
+        return diskGb;
     }
 
     public ResourceCapacity subtract(ResourceCapacity other) {
-        return new ResourceCapacity(memory - other.memory,
-                cpu - other.cpu,
-                disk - other.disk);
+        return new ResourceCapacity(memoryGb - other.memoryGb,
+                                    vcpu - other.vcpu,
+                                    diskGb - other.diskGb);
     }
 
     public ResourceCapacity add(ResourceCapacity other) {
-        return new ResourceCapacity(memory + other.memory,
-                cpu + other.cpu,
-                disk + other.disk);
+        return new ResourceCapacity(memoryGb + other.memoryGb,
+                                    vcpu + other.vcpu,
+                                    diskGb + other.diskGb);
     }
 
     boolean hasCapacityFor(ResourceCapacity capacity) {
-        return memory >= capacity.memory &&
-                cpu >= capacity.cpu &&
-                disk >= capacity.disk;
+        return memoryGb >= capacity.memoryGb &&
+               vcpu >= capacity.vcpu &&
+               diskGb >= capacity.diskGb;
     }
 
     boolean hasCapacityFor(Flavor flavor) {
         return hasCapacityFor(ResourceCapacity.of(flavor));
     }
 
-    int freeCapacityInFlavorEquivalence(Flavor flavor) {
-        if (!hasCapacityFor(ResourceCapacity.of(flavor))) return 0;
-
-        double memoryFactor = Math.floor(memory/flavor.getMinMainMemoryAvailableGb());
-        double cpuFactor = Math.floor(cpu/flavor.getMinCpuCores());
-        double diskFactor =  Math.floor(disk/flavor.getMinDiskAvailableGb());
-
-        return (int) Math.min(Math.min(memoryFactor, cpuFactor), diskFactor);
-    }
-
-    /**
-     * Normal compare implementation where -1 if this is less than that.
-     */
-    int compare(ResourceCapacity that) {
-        if (memory > that.memory) return 1;
-        if (memory < that.memory) return -1;
-        if (disk > that.disk) return 1;
-        if (disk < that.disk) return -1;
-        if (cpu > that.cpu) return 1;
-        if (cpu < that.cpu) return -1;
-        return 0;
-    }
 }

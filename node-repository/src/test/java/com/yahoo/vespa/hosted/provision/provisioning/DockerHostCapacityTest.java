@@ -97,17 +97,17 @@ public class DockerHostCapacityTest {
     @Test
     public void getCapacityTotal() {
         ResourceCapacity total = capacity.getCapacityTotal();
-        assertEquals(21.0, total.getCpu(), 0.1);
-        assertEquals(30.0, total.getMemory(), 0.1);
-        assertEquals(36.0, total.getDisk(), 0.1);
+        assertEquals(21.0, total.vcpu(), 0.1);
+        assertEquals(30.0, total.memoryGb(), 0.1);
+        assertEquals(36.0, total.diskGb(), 0.1);
     }
 
     @Test
     public void getFreeCapacityTotal() {
         ResourceCapacity totalFree = capacity.getFreeCapacityTotal();
-        assertEquals(15.0, totalFree.getCpu(), 0.1);
-        assertEquals(14.0, totalFree.getMemory(), 0.1);
-        assertEquals(24.0, totalFree.getDisk(), 0.1);
+        assertEquals(15.0, totalFree.vcpu(), 0.1);
+        assertEquals(14.0, totalFree.memoryGb(), 0.1);
+        assertEquals(24.0, totalFree.diskGb(), 0.1);
     }
 
     @Test

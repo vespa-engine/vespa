@@ -149,6 +149,8 @@ public class MultigroupProvisioningTest {
     private void deploy(ApplicationId application, int nodeCount, int groupCount, ProvisioningTester tester) {
         deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of("default"), false, true), groupCount, tester);
     }
+
+    @SuppressWarnings("deprecation") // TODO: Remove
     private void deploy(ApplicationId application, Capacity capacity, int wantedGroups, ProvisioningTester tester) {
         int nodeCount = capacity.nodeCount();
         String flavor = capacity.flavor().get();

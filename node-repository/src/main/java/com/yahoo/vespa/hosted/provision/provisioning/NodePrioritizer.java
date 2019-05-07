@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
@@ -44,20 +46,21 @@ class NodePrioritizer {
     private final ApplicationId appId;
     private final ClusterSpec clusterSpec;
     private final NameResolver nameResolver;
+    private final NodeFlavors flavors;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(NodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, NameResolver nameResolver) {
+                    int spares, NameResolver nameResolver, NodeFlavors flavors) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
         this.nameResolver = nameResolver;
+        this.flavors = flavors;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
-
 
         int nofFailedNodes = (int) allNodes.asList().stream()
                 .filter(node -> node.state().equals(Node.State.failed))
@@ -143,8 +146,8 @@ class NodePrioritizer {
     }
 
     void addNewDockerNodesOn(Mutex allocationLock, NodeList candidates) {
-        if (!isDocker) return;
-        ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(getFlavor(requestedNodes));
+        if ( ! isDocker) return;
+        ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(resources(requestedNodes));
 
         for (Node node : candidates) {
             if (node.type() != NodeType.host) continue;
@@ -171,10 +174,10 @@ class NodePrioritizer {
                                                  Collections.emptySet(),
                                                  allocation.get().hostname(),
                                                  Optional.of(node.hostname()),
-                                                 getFlavor(requestedNodes),
+                                                 resources(requestedNodes),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);
-            if (!nodePri.violatesSpares || isAllocatingForReplacement) {
+            if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
                 log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
             }
@@ -215,8 +218,7 @@ class NodePrioritizer {
         PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
                 .withSurplusNode(isSurplusNode)
                 .withNewNode(isNewNode)
-                .withPreferredOnFlavor(
-                        requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getFlavor(requestedNodes)));
+                .withPreferredOnFlavor(preferredOnLegacyFlavor(node));
 
         allNodes.parentOf(node).ifPresent(parent -> {
             builder.withParent(parent).withFreeParentCapacity(capacity.freeCapacityOf(parent, false));
@@ -227,6 +229,18 @@ class NodePrioritizer {
         });
 
         return builder.build();
+    }
+
+    /** Needed to handle requests for legacy non-docker nodes only */
+    private boolean preferredOnLegacyFlavor(Node node) {
+        if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
+            NodeResources requestedNodeResources = ((NodeSpec.CountNodeSpec)requestedNodes).resources();
+            if (requestedNodeResources.allocateByLegacyName()) {
+                Flavor requestedFlavor = flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get());
+                return ! requestedFlavor.isStock() && node.flavor().equals(requestedFlavor);
+            }
+        }
+        return false;
     }
 
     static boolean isPreferredNodeToBeRelocated(List<Node> nodes, Node node, Node parent) {
@@ -243,22 +257,23 @@ class NodePrioritizer {
         return requestedNodes.fulfilledBy(nofNodesInCluster - nodeFailedNodes);
     }
 
-    private static Flavor getFlavor(NodeSpec requestedNodes) {
+    private static NodeResources resources(NodeSpec requestedNodes) {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
             NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
-            return countSpec.getFlavor();
+            return countSpec.resources();
         }
         return null;
     }
 
     private boolean isDocker() {
-        Flavor flavor = getFlavor(requestedNodes);
-        return (flavor != null) && flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
+        NodeResources flavor = resources(requestedNodes);
+        return (flavor != null) && ! flavor.allocateByLegacyName();
     }
 
     private static int compareForRelocation(Node a, Node b) {
         // Choose smallest node
-        int capacity = ResourceCapacity.of(a).compare(ResourceCapacity.of(b));
+        int capacity = ResourceCapacityComparator.defaultOrder().compare(ResourceCapacity.of(a),
+                                                                         ResourceCapacity.of(b));
         if (capacity != 0) return capacity;
 
         // Choose unallocated over allocated (this case is when we have ready docker nodes)

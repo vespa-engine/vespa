@@ -57,11 +57,15 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                                                                               request.getHeader("X-Authorization")))
                                              .orElse(false);
 
-                if (verified)
+                if (verified) {
+                    Principal principal = () -> "buildService@" + id.tenant() + "." + id.application();
+                    request.setUserPrincipal(principal);
+                    request.setRemoteUser(principal.getName());
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME,
-                                         new SecurityContext(() -> "buildService@" + id.tenant() + "." + id.application(),
+                                         new SecurityContext(principal,
                                                              Set.of(Role.buildService(id.tenant(), id.application()),
                                                                     Role.applicationDeveloper(id.tenant(), id.application()))));
+                }
             }
             catch (Exception e) {
                 logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
