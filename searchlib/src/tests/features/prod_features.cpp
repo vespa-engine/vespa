@@ -1217,9 +1217,7 @@ Test::testDotProduct()
         vespalib::Stash stash;
         FeatureExecutor &exc = bp.createExecutor(ft.getQueryEnv(), stash);
         // check that we have the optimized enum version
-        dotproduct::wset::DotProductExecutorByCopy<dotproduct::wset::EnumVector, WeightedEnumContent> * myExc =
-            dynamic_cast<dotproduct::wset::DotProductExecutorByCopy<dotproduct::wset::EnumVector, WeightedEnumContent> *>(&exc);
-        EXPECT_TRUE(myExc != nullptr);
+        EXPECT_EQUAL("search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum", exc.getClassName());
         EXPECT_EQUAL(1u, deps.output.size());
     }
 }

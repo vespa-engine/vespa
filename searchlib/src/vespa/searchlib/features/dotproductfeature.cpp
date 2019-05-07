@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/multienumattribute.h>
 #include <type_traits>
 
 #include <vespa/log/log.h>
@@ -77,7 +78,6 @@ DotProductExecutorByCopy<Vector, Buffer>::execute(uint32_t docId)
 }
 
 StringVector::StringVector() = default;
-
 StringVector::~StringVector() = default;
 
 template <typename BaseType>
@@ -122,6 +122,48 @@ size_t
 DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 {
     return _attribute->getRawValues(docId, values);
+}
+
+namespace {
+
+class DotProductExecutorByEnum : public fef::FeatureExecutor {
+public:
+    using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
+private:
+    const IWeightedIndexVector * _attribute;
+    V _queryVector;
+    const typename V::HashMap::const_iterator _end;
+public:
+    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, V queryVector);
+    ~DotProductExecutorByEnum() override;
+    void execute(uint32_t docId) override;
+};
+
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, V queryVector)
+    : FeatureExecutor(),
+      _attribute(attribute),
+      _queryVector(std::move(queryVector)),
+      _end(_queryVector.syncMap().getDimMap().end())
+{
+}
+
+DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
+
+void DotProductExecutorByEnum::execute(uint32_t docId) {
+    feature_t val = 0;
+    if (!_queryVector.getDimMap().empty()) {
+        const IWeightedIndexVector::WeightedIndex *values(nullptr);
+        uint32_t sz = _attribute->getEnumHandles(docId, values);
+        for (size_t i = 0; i < sz; ++i) {
+            typename V::HashMap::const_iterator itr = _queryVector.getDimMap().find(values[i].value().ref());
+            if (itr != _end) {
+                val += values[i].weight() * itr->second;
+            }
+        }
+    }
+    outputs().set_number(0, val);
+}
+
 }
 
 }
@@ -431,6 +473,19 @@ bool supportsGetRawValues(const A & attr) noexcept {
     }
 }
 
+bool supportsGetEnumHandles(const IWeightedIndexVector * attr) noexcept {
+    if (attr == nullptr) return false;
+    try {
+        const IWeightedIndexVector::WeightedIndex * tmp = nullptr;
+        attr->getEnumHandles(0, tmp); // Throws if unsupported
+        return true;
+    } catch (const std::runtime_error & e) {
+        (void) e;
+        return false;
+    }
+}
+
+
 // Precondition: attribute->isImported() == false
 template <typename A>
 FeatureExecutor &
@@ -633,6 +688,10 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
     if (attribute->hasEnum()) {
         EnumVector vector(attribute);
         WeightedSetParser::parse(prop.get(), vector);
+        const IWeightedIndexVector * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
+        if (supportsGetEnumHandles(getEnumHandles)) {
+            return &stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
+        }
         return &stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));
     } else {
         if (attribute->isStringType()) {

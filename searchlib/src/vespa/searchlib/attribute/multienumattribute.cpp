@@ -2,8 +2,14 @@
 
 #include "multienumattribute.h"
 #include "multienumattribute.hpp"
+#include <stdexcept>
 
 namespace search {
+
+uint32_t
+IWeightedIndexVector::getEnumHandles(uint32_t, const WeightedIndex * &) const {
+    throw std::runtime_error("IWeightedIndexVector::getEnumHandles() not implmented");
+}
 
 } // namespace search
 
