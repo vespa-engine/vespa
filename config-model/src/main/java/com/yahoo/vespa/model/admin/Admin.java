@@ -207,7 +207,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
         int index = 0;
         for (var host : hosts) {
-            var container = new MetricsProxyContainer(metricsProxyCluster, index++);
+            var container = new MetricsProxyContainer(metricsProxyCluster, index++, deployState.isHosted());
             addAndInitializeService(deployState.getDeployLogger(), host, container);
             metricsProxyCluster.addContainer(container);
         }

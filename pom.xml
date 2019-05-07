@@ -96,6 +96,7 @@
         <module>messagebus-disc</module>
         <module>messagebus</module>
         <module>metrics</module>
+        <module>metrics-proxy</module>
         <module>model-evaluation</module>
         <module>model-integration</module>
         <module>node-repository</module>

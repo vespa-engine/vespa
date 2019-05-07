@@ -96,6 +96,12 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>metrics-proxy</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
