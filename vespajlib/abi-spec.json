@@ -1346,8 +1346,10 @@
     "methods": [
       "public static com.yahoo.tensor.TensorType$Value[] values()",
       "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)",
+      "public java.lang.String id()",
       "public static com.yahoo.tensor.TensorType$Value largestOf(java.util.List)",
-      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)"
+      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)",
+      "public static com.yahoo.tensor.TensorType$Value fromId(java.lang.String)"
     ],
     "fields": [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
@@ -1390,8 +1392,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
-      "public static com.yahoo.tensor.TensorType$Value toValueType(java.lang.String)"
+      "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)"
     ],
     "fields": []
   },

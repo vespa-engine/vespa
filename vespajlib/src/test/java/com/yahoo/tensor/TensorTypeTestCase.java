@@ -96,6 +96,8 @@ public class TensorTypeTestCase {
         assertValueType(TensorType.Value.DOUBLE, "tensor(x[])");
         assertValueType(TensorType.Value.DOUBLE, "tensor<double>(x[])");
         assertValueType(TensorType.Value.FLOAT, "tensor<float>(x[])");
+        assertEquals("tensor(x[])", TensorType.fromSpec("tensor<double>(x[])").toString());
+        assertEquals("tensor<float>(x[])", TensorType.fromSpec("tensor<float>(x[])").toString());
     }
 
     private static void assertTensorType(String typeSpec) {

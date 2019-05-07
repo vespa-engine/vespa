@@ -5,7 +5,7 @@ search tensor {
     field f1 type tensor(x[]) {
       indexing: summary
     }
-    field f2 type tensor(x[2],y[]) {
+    field f2 type tensor<float>(x[2],y[1]) {
       indexing: attribute
     }
     field f3 type tensor(x{}) {

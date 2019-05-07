@@ -617,7 +617,7 @@ TensorType.Value optionalTensorValueTypeParameter() :
 }
 {
     ( <LT> valueType = identifier() <GT> )?
-    { return TensorTypeParser.toValueType(valueType); }
+    { return TensorType.Value.fromId(valueType); }
 }
 
 // NOTE: Only indexed bound dimensions are parsed currently, as that is what we need
