@@ -27,10 +27,13 @@ public:
         RARE_WORD,
         NUM_WORDCLASSES,
     };
+
+private:
     std::vector<FakeWordVector> _words;
     Schema _schema;
     std::vector<PosOccFieldsParams> _fieldsParams;
 
+public:
     FakeWordSet();
 
     FakeWordSet(bool hasElements,
@@ -45,6 +48,8 @@ public:
                     unsigned int numDocs,
                     unsigned int commonDocFreq,
                     unsigned int numWordsPerWordClass);
+
+    const std::vector<FakeWordVector>& words() const { return _words; }
 
     int getNumWords() const;
 

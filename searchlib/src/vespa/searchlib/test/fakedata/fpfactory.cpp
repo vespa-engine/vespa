@@ -19,7 +19,7 @@ FPFactory::setup(const FakeWordSet &fws)
 {
     std::vector<const FakeWord *> v;
 
-    for (const auto& words : fws._words) {
+    for (const auto& words : fws.words()) {
         for (const auto& word : words) {
             v.push_back(word.get());
         }
