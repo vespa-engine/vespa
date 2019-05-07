@@ -722,14 +722,4 @@ public class NodeRepository extends AbstractComponent {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockAllocation();
     }
 
-    /**
-     * Require that given node is distinct from other node
-     *
-     * @throws IllegalArgumentException if a constraint is violated
-     */
-    private static void requireDistinct(Node node, Node other) {
-        if (node.equals(other))
-            throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
-    }
-
 }
