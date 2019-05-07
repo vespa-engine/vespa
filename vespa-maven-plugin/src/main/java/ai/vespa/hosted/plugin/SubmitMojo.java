@@ -19,34 +19,13 @@ import java.nio.file.Paths;
  * @author jonmv
  */
 @Mojo(name = "submit")
-public class SubmitMojo extends AbstractMojo {
-
-    @Parameter(defaultValue = "${project}", readonly = true)
-    private MavenProject project;
-
-    @Parameter(property = "endpoint", defaultValue = "https://api.vespa.corp.yahoo.com:4443") // TODO jvenstad: Change default
-    private String endpointUri;
-
-    @Parameter(property = "tenant")
-    private String tenant;
-
-    @Parameter(property = "application")
-    private String application;
-
-    @Parameter(property = "instance")
-    private String instance;
+public class SubmitMojo extends AbstractVespaMojo {
 
     @Parameter(property = "applicationZip")
     private String applicationZip;
 
     @Parameter(property = "applicationTestZip")
     private String applicationTestZip;
-
-    @Parameter(property = "privateKeyFile", required = true)
-    private String privateKeyFile;
-
-    @Parameter(property = "certificateFile")
-    private String certificateFile;
 
     @Parameter(property = "authorEmail", required = true)
     private String authorEmail;
@@ -61,38 +40,14 @@ public class SubmitMojo extends AbstractMojo {
     private String commit;
 
     @Override
-    public void execute() {
-        setup();
-        ApplicationId id = ApplicationId.from(tenant, application, instance);
-        ControllerHttpClient controller = certificateFile == null
-                ? ControllerHttpClient.withSignatureKey(URI.create(endpointUri), Paths.get(privateKeyFile), id)
-                : ControllerHttpClient.withKeyAndCertificate(URI.create(endpointUri), Paths.get(privateKeyFile), Paths.get(certificateFile));
-
-        Submission submission = new Submission(repository, branch, commit, authorEmail,
-                                               Paths.get(applicationZip), Paths.get(applicationTestZip));
-
-        System.out.println(controller.submit(submission, id.tenant(), id.application()));
-    }
-
-    private void setup() {
-        tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
-        application = firstNonBlank(application, project.getProperties().getProperty("application"));
-        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"));
+    public void doExecute() {
         applicationZip = firstNonBlank(applicationZip, projectPathOf("target", "application.zip"));
         applicationTestZip = firstNonBlank(applicationTestZip, projectPathOf("target", "application-test.zip"));
-    }
+        Submission submission = new Submission(repository, branch, commit, authorEmail,
+                                               Paths.get(applicationZip),
+                                               Paths.get(applicationTestZip));
 
-    private String projectPathOf(String first, String... rest) {
-        return project.getBasedir().toPath().resolve(Path.of(first, rest)).toString();
-    }
-
-    /** Returns the first of the given strings which is non-null and non-blank, or throws IllegalArgumentException. */
-    private static String firstNonBlank(String... values) {
-        for (String value : values)
-            if (value != null && ! value.isBlank())
-                return value;
-
-        throw new IllegalArgumentException("No valid value given");
+        System.out.println(controller.submit(submission, id.tenant(), id.application()));
     }
 
 }
