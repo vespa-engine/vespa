@@ -343,8 +343,7 @@ public class NodeRepository extends AbstractComponent {
                 if (getNode(node.hostname()).isPresent()) throw new IllegalArgumentException(message);
 
                 // Check for duplicates in given list
-                for (int j = 0; j < nodes.size(); j++) {
-                    if (i == j) continue;
+                for (int j = 0; j < i; j++) {
                     var other = nodes.get(j);
                     if (node.equals(other)) throw new IllegalArgumentException(message);
                 }
