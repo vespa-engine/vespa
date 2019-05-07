@@ -82,6 +82,7 @@ public abstract class ControllerHttpClient {
                                                toDataStream(deployment))));
     }
 
+    /** Deactivates the deployment of the given application in the given zone. */
     public String deactivate(ApplicationId id, ZoneId zone) {
         return asText(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
                                                  .timeout(Duration.ofSeconds(10)),
@@ -91,9 +92,17 @@ public abstract class ControllerHttpClient {
     /** Returns the default {@link Environment#dev} {@link ZoneId}, to use for development deployments. */
     public ZoneId devZone() {
         Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath())
-                                                   .timeout(Duration.ofSeconds(10)),
-                                                 GET)));
+                                                                   .timeout(Duration.ofSeconds(10)),
+                                                        GET)));
         return ZoneId.from("dev", rootObject.field("name").asString());
+    }
+
+    /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
+    public String compileVersion(ApplicationId id) {
+        return toInspector(send(request(HttpRequest.newBuilder(applicationPath(id.tenant(), id.application()))
+                                                   .timeout(Duration.ofSeconds(10)),
+                                        GET)))
+                .field("compileVersion").asString();
     }
 
     protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
