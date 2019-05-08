@@ -63,8 +63,7 @@ usage()
            "[-s <stride>] "
            "[-t <postingType>] "
            "[-u] "
-           "[-w <numWordsPerClass>] "
-           "[-q]\n");
+           "[-w <numWordsPerClass>]\n");
 }
 
 void
@@ -113,7 +112,6 @@ PostingListBM::Main()
     argi = 1;
     bool hasElements = false;
     bool hasElementWeights = false;
-    bool quick = false;
 
     while ((c = GetOpt("C:c:m:r:d:l:s:t:uw:T:q", optArg, argi)) != -1) {
         switch(c) {
@@ -174,12 +172,6 @@ PostingListBM::Main()
         case 'w':
             _numWordsPerClass = atoi(optArg);
             break;
-        case 'q':
-            quick = true;
-            _numDocs = 36000;
-            _commonDocFreq = 10000;
-            _numWordsPerClass = 5;
-            break;
         default:
             usage();
             return 1;
@@ -194,10 +186,7 @@ PostingListBM::Main()
     _wordSet.setupParams(hasElements, hasElementWeights);
 
     uint32_t numTasks = 40000;
-    if (quick) {
-        numTasks = 40;
-    }
-    
+
     if (_postingTypes.empty()) {
         _postingTypes = getPostingTypes();
     }
