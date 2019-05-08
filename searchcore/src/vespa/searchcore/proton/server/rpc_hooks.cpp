@@ -6,6 +6,8 @@
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.rtchooks");
@@ -194,8 +196,9 @@ RPCHooksBase::Params::~Params() = default;
 
 RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
-      _docsumByRPC(new DocsumByRPC(_proton.getDocsumBySlime())),
-      _orb(std::make_unique<FRT_Supervisor>()),
+      _docsumByRPC(std::make_unique<DocsumByRPC>(_proton.getDocsumBySlime())),
+      _transport(std::make_unique<FNET_Transport>(2)),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get(), &_proton.getThreadPool())),
       _proto_rpc_adapter(std::make_unique<ProtoRpcAdapter>(
                       _proton.get_search_server(),
                       _proton.get_docsum_server(),
