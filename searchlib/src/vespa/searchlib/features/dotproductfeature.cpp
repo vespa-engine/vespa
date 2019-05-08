@@ -65,13 +65,11 @@ void
 DotProductExecutorByCopy<Vector, Buffer>::execute(uint32_t docId)
 {
     feature_t val = 0;
-    if (!_queryVector.getDimMap().empty()) {
-        _buffer.fill(*_attribute, docId);
-        for (size_t i = 0; i < _buffer.size(); ++i) {
-            auto itr = _queryVector.getDimMap().find(_buffer[i].getValue());
-            if (itr != _end) {
-                val += _buffer[i].getWeight() * itr->second;
-            }
+    _buffer.fill(*_attribute, docId);
+    for (size_t i = 0; i < _buffer.size(); ++i) {
+        auto itr = _queryVector.getDimMap().find(_buffer[i].getValue());
+        if (itr != _end) {
+            val += _buffer[i].getWeight() * itr->second;
         }
     }
     outputs().set_number(0, val);
@@ -94,14 +92,12 @@ DotProductExecutorBase<BaseType>::~DotProductExecutorBase() = default;
 template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     feature_t val = 0;
-    if (!_queryVector.getDimMap().empty()) {
-        const AT * values(nullptr);
-        uint32_t sz = getAttributeValues(docId, values);
-        for (size_t i = 0; i < sz; ++i) {
-            auto itr = _queryVector.getDimMap().find(values[i].value());
-            if (itr != _end) {
-                val += values[i].weight() * itr->second;
-            }
+    const AT * values(nullptr);
+    uint32_t sz = getAttributeValues(docId, values);
+    for (size_t i = 0; i < sz; ++i) {
+        auto itr = _queryVector.getDimMap().find(values[i].value());
+        if (itr != _end) {
+            val += values[i].weight() * itr->second;
         }
     }
     outputs().set_number(0, val);
@@ -151,14 +147,12 @@ DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 
 void DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
-    if (!_queryVector.getDimMap().empty()) {
-        const IWeightedIndexVector::WeightedIndex *values(nullptr);
-        uint32_t sz = _attribute->getEnumHandles(docId, values);
-        for (size_t i = 0; i < sz; ++i) {
-            auto itr = _queryVector.getDimMap().find(values[i].value().ref());
-            if (itr != _end) {
-                val += values[i].weight() * itr->second;
-            }
+    const IWeightedIndexVector::WeightedIndex *values(nullptr);
+    uint32_t sz = _attribute->getEnumHandles(docId, values);
+    for (size_t i = 0; i < sz; ++i) {
+        auto itr = _queryVector.getDimMap().find(values[i].value().ref());
+        if (itr != _end) {
+            val += values[i].weight() * itr->second;
         }
     }
     outputs().set_number(0, val);
@@ -677,7 +671,9 @@ createForDirectIntegerWSet(const IAttributeVector * attribute, const Property & 
     using namespace dotproduct::wset;
     IntegerVectorT<T> vector;
     WeightedSetParser::parse(prop.get(), vector);
-    return createForDirectWSetImpl<IntegerAttributeTemplate<T>>(attribute, std::move(vector), stash);
+    return vector.empty()
+           ? nullptr
+           : createForDirectWSetImpl<IntegerAttributeTemplate<T>>(attribute, std::move(vector), stash);
 }
 
 
@@ -687,6 +683,7 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
     if (attribute->hasEnum()) {
         EnumVector vector(attribute);
         WeightedSetParser::parse(prop.get(), vector);
+        if (vector.empty()) return nullptr;
         const IWeightedIndexVector * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
         if (supportsGetEnumHandles(getEnumHandles)) {
             return &stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
@@ -696,6 +693,7 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
         if (attribute->isStringType()) {
             StringVector vector;
             WeightedSetParser::parse(prop.get(), vector);
+            if (vector.empty()) return nullptr;
             return &stash.create<DotProductExecutorByCopy<StringVector, WeightedConstCharContent>>(attribute, std::move(vector));
         } else if (attribute->isIntegerType()) {
             if (attribute->getBasicType() == BasicType::INT32) {
