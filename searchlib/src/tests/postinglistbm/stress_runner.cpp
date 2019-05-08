@@ -28,7 +28,8 @@ using namespace search::fakedata;
 
 namespace postinglistbm {
 
-class AndStressWorker;
+class StressWorker;
+using StressWorkerUP = std::unique_ptr<StressWorker>;
 
 class StressMaster {
 private:
@@ -37,16 +38,17 @@ private:
     StressMaster &operator=(const StressMaster &);
 
     search::Rand48 &_rnd;
-    unsigned int _numDocs;
+    uint32_t _numDocs;
     std::vector<std::string> _postingTypes;
-    unsigned int _loops;
-    unsigned int _skipCommonPairsRate;
+    StressRunner::OperatorType _operatorType;
+    uint32_t _loops;
+    uint32_t _skipCommonPairsRate;
     uint32_t _stride;
     bool _unpack;
 
     FastOS_ThreadPool *_threadPool;
-    std::vector<AndStressWorker *> _workers;
-    unsigned int _workersDone;
+    std::vector<StressWorkerUP> _workers;
+    uint32_t _workersDone;
 
     FakeWordSet &_wordSet;
 
@@ -54,7 +56,7 @@ private:
 
     std::mutex              _taskLock;
     std::condition_variable _taskCond;
-    unsigned int _taskIdx;
+    uint32_t _taskIdx;
     uint32_t _numTasks;
 
 public:
@@ -67,8 +69,9 @@ public:
     StressMaster(search::Rand48 &rnd,
                  FakeWordSet &wordSet,
                  const std::vector<std::string> &postingType,
-                 unsigned int loops,
-                 unsigned int skipCommonPairsRate,
+                 StressRunner::OperatorType operatorType,
+                 uint32_t loops,
+                 uint32_t skipCommonPairsRate,
                  uint32_t numTasks,
                  uint32_t stride,
                  bool unpack);
@@ -81,40 +84,68 @@ public:
     void dropPostings();
     void dropTasks();
     void resetTasks();  // Prepare for rerun
-    void setupTasks(unsigned int numTasks);
+    void setupTasks(uint32_t numTasks);
     Task *getTask();
-    unsigned int getNumDocs() const { return _numDocs; }
+    uint32_t getNumDocs() const { return _numDocs; }
     bool getUnpack() const { return _unpack; }
     double runWorkers(const std::string &postingFormat);
 };
 
-class AndStressWorker : public FastOS_Runnable {
-private:
-    AndStressWorker(const AndStressWorker &);
+class StressWorker : public FastOS_Runnable {
+protected:
+    StressMaster& _master;
+    uint32_t _id;
 
-    AndStressWorker &
-    operator=(const AndStressWorker &);
+    virtual void run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack) = 0;
 
-    StressMaster &_master;
-    unsigned int _id;
 public:
-    AndStressWorker(StressMaster &master, unsigned int id);
-    ~AndStressWorker();
-    virtual void Run(FastOS_ThreadInterface *thisThread, void *arg) override;
+    StressWorker(const StressWorker&) = delete;
+    StressWorker& operator=(const StressWorker&) = delete;
+
+    StressWorker(StressMaster& master, uint32_t id);
+    virtual ~StressWorker();
+
+    virtual void Run(FastOS_ThreadInterface* thisThread, void* arg) override;
+};
+
+class DirectStressWorker : public StressWorker {
+private:
+    void run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack) override;
+
+public:
+    DirectStressWorker(StressMaster& master, uint32_t id);
+};
+
+class AndStressWorker : public StressWorker {
+private:
+    void run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack) override;
+
+public:
+    AndStressWorker(StressMaster& master, uint32_t id);
+};
+
+class OrStressWorker : public StressWorker {
+private:
+    void run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack) override;
+
+public:
+    OrStressWorker(StressMaster& master, uint32_t id);
 };
 
 
 StressMaster::StressMaster(search::Rand48 &rnd,
                            FakeWordSet &wordSet,
                            const std::vector<std::string> &postingTypes,
-                           unsigned int loops,
-                           unsigned int skipCommonPairsRate,
+                           StressRunner::OperatorType operatorType,
+                           uint32_t loops,
+                           uint32_t skipCommonPairsRate,
                            uint32_t numTasks,
                            uint32_t stride,
                            bool unpack)
     : _rnd(rnd),
       _numDocs(wordSet.numDocs()),
       _postingTypes(postingTypes),
+      _operatorType(operatorType),
       _loops(loops),
       _skipCommonPairsRate(skipCommonPairsRate),
       _stride(stride),
@@ -135,16 +166,6 @@ StressMaster::StressMaster(search::Rand48 &rnd,
     _threadPool = new FastOS_ThreadPool(128 * 1024, 400);
 }
 
-template <class C>
-static void
-clearPtrVector(std::vector<C> &vector)
-{
-    for (auto& elem : vector) {
-        delete elem;
-    }
-    vector.clear();
-}
-
 StressMaster::~StressMaster()
 {
     LOG(info, "StressMaster::~StressMaster()");
@@ -152,7 +173,7 @@ StressMaster::~StressMaster()
     _threadPool->Close();
     delete _threadPool;
     _threadPool = nullptr;
-    clearPtrVector(_workers);
+    _workers.clear();
     dropPostings();
 }
 
@@ -235,14 +256,14 @@ StressMaster::makePostingsHelper(FPFactory *postingFactory,
 }
 
 void
-StressMaster::setupTasks(unsigned int numTasks)
+StressMaster::setupTasks(uint32_t numTasks)
 {
-    unsigned int wordclass1;
-    unsigned int wordclass2;
-    unsigned int word1idx;
-    unsigned int word2idx;
+    uint32_t wordclass1;
+    uint32_t wordclass2;
+    uint32_t word1idx;
+    uint32_t word2idx;
 
-    for (unsigned int i = 0; i < numTasks; ++i) {
+    for (uint32_t i = 0; i < numTasks; ++i) {
         wordclass1 = _rnd.lrand48() % _postings.size();
         wordclass2 = _rnd.lrand48() % _postings.size();
         while (wordclass1 == FakeWordSet::COMMON_WORD &&
@@ -286,7 +307,7 @@ StressMaster::run()
         makePostingsHelper(factory.get(), type, true, false);
         setupTasks(_numTasks);
         double totalTime = 0;
-        for (unsigned int loop = 0; loop < _loops; ++loop) {
+        for (uint32_t loop = 0; loop < _loops; ++loop) {
             totalTime += runWorkers(type);
             resetTasks();
         }
@@ -306,13 +327,19 @@ StressMaster::runWorkers(const std::string &postingFormat)
 
     tv.SetNow();
     before = tv.Secs();
-    unsigned int numWorkers = 8;
-    for (unsigned int i = 0; i < numWorkers; ++i) {
-        _workers.push_back(new AndStressWorker(*this, i));
+    uint32_t numWorkers = 8;
+    for (uint32_t i = 0; i < numWorkers; ++i) {
+        if (_operatorType == StressRunner::OperatorType::Direct) {
+            _workers.push_back(std::make_unique<DirectStressWorker>(*this, i));
+        } else if (_operatorType == StressRunner::OperatorType::And) {
+            _workers.push_back(std::make_unique<AndStressWorker>(*this, i));
+        } else if (_operatorType == StressRunner::OperatorType::Or) {
+            _workers.push_back(std::make_unique<OrStressWorker>(*this, i));
+        }
     }
 
     for (auto& worker : _workers) {
-        _threadPool->NewThread(worker);
+        _threadPool->NewThread(worker.get());
     }
 
     {
@@ -327,39 +354,25 @@ StressMaster::runWorkers(const std::string &postingFormat)
         "StressMaster::run() elapsed %10.6f s for workers %s format",
         after - before,
         postingFormat.c_str());
-    clearPtrVector(_workers);
+    _workers.clear();
     _workersDone = 0;
     return after - before;
 }
 
-AndStressWorker::AndStressWorker(StressMaster &master, unsigned int id)
+StressWorker::StressWorker(StressMaster& master, uint32_t id)
     : _master(master),
       _id(id)
 {
-    LOG(debug, "AndStressWorker::AndStressWorker(), id=%u", id);
 }
 
-AndStressWorker::~AndStressWorker()
-{
-    LOG(debug, "AndStressWorker::~AndStressWorker(), id=%u", _id);
-}
+StressWorker::~StressWorker() = default;
 
 void
-testFakePair(const FakePosting &f1, const FakePosting &f2, uint32_t doc_id_limit, bool unpack)
-{
-    uint64_t scan_unpack_time = 0;
-    int hits = unpack ?
-        FakeMatchLoop::and_pair_posting_scan_with_unpack(f1, f2, doc_id_limit, scan_unpack_time) :
-        FakeMatchLoop::and_pair_posting_scan(f1, f2, doc_id_limit, scan_unpack_time);
-    (void) hits;
-}
-
-void
-AndStressWorker::Run(FastOS_ThreadInterface *thisThread, void *arg)
+StressWorker::Run(FastOS_ThreadInterface* thisThread, void* arg)
 {
     (void) thisThread;
     (void) arg;
-    LOG(debug, "AndStressWorker::Run(), id=%u", _id);
+    LOG(debug, "StressWorker::Run(), id=%u", _id);
 
     bool unpack = _master.getUnpack();
     for (;;) {
@@ -367,8 +380,54 @@ AndStressWorker::Run(FastOS_ThreadInterface *thisThread, void *arg)
         if (task == nullptr) {
             break;
         }
-        testFakePair(*task->first, *task->second, _master.getNumDocs(),
-                     unpack);
+        run_task(*task->first, *task->second, _master.getNumDocs(), unpack);
+    }
+}
+
+DirectStressWorker::DirectStressWorker(StressMaster& master, uint32_t id)
+    : StressWorker(master, id)
+{
+}
+
+void
+DirectStressWorker::run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack)
+{
+    if (unpack) {
+        FakeMatchLoop::direct_posting_scan_with_unpack(f1, doc_id_limit);
+        FakeMatchLoop::direct_posting_scan_with_unpack(f2, doc_id_limit);
+    } else {
+        FakeMatchLoop::direct_posting_scan(f1, doc_id_limit);
+        FakeMatchLoop::direct_posting_scan(f2, doc_id_limit);
+    }
+}
+
+AndStressWorker::AndStressWorker(StressMaster& master, uint32_t id)
+    : StressWorker(master, id)
+{
+}
+
+void
+AndStressWorker::run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack)
+{
+    if (unpack) {
+        FakeMatchLoop::and_pair_posting_scan_with_unpack(f1, f2, doc_id_limit);
+    } else {
+        FakeMatchLoop::and_pair_posting_scan(f1, f2, doc_id_limit);
+    }
+}
+
+OrStressWorker::OrStressWorker(StressMaster& master, uint32_t id)
+    : StressWorker(master, id)
+{
+}
+
+void
+OrStressWorker::run_task(const FakePosting& f1, const FakePosting& f2, uint32_t doc_id_limit, bool unpack)
+{
+    if (unpack) {
+        FakeMatchLoop::or_pair_posting_scan_with_unpack(f1, f2, doc_id_limit);
+    } else {
+        FakeMatchLoop::or_pair_posting_scan(f1, f2, doc_id_limit);
     }
 }
 
@@ -376,19 +435,23 @@ void
 StressRunner::run(search::Rand48 &rnd,
                   FakeWordSet &wordSet,
                   const std::vector<std::string> &postingTypes,
-                  unsigned int loops,
-                  unsigned int skipCommonPairsRate,
+                  OperatorType operatorType,
+                  uint32_t loops,
+                  uint32_t skipCommonPairsRate,
                   uint32_t numTasks,
                   uint32_t stride,
                   bool unpack)
 {
     LOG(debug, "StressRunner::run()");
-    StressMaster master(rnd, wordSet,
-                           postingTypes, loops,
-                           skipCommonPairsRate,
-                           numTasks,
-                           stride,
-                           unpack);
+    StressMaster master(rnd,
+                        wordSet,
+                        postingTypes,
+                        operatorType,
+                        loops,
+                        skipCommonPairsRate,
+                        numTasks,
+                        stride,
+                        unpack);
     master.run();
 }
 

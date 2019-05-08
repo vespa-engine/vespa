@@ -34,6 +34,7 @@ private:
     uint32_t _rareDocFreq;
     uint32_t _numWordsPerClass;
     std::vector<std::string> _postingTypes;
+    StressRunner::OperatorType _operatorType;
     uint32_t _loops;
     uint32_t _skipCommonPairsRate;
     FakeWordSet _wordSet;
@@ -62,6 +63,7 @@ usage()
            "[-l <numLoops>] "
            "[-s <stride>] "
            "[-t <postingType>] "
+           "[-o {direct, and, or}] "
            "[-u] "
            "[-w <numWordsPerClass>]\n");
 }
@@ -69,7 +71,7 @@ usage()
 void
 badPostingType(const std::string &postingType)
 {
-    printf("Bad posting list type: %s\n", postingType.c_str());
+    printf("Bad posting list type: '%s'\n", postingType.c_str());
     printf("Supported types: ");
 
     bool first = true;
@@ -91,6 +93,7 @@ PostingListBM::PostingListBM()
       _rareDocFreq(10),
       _numWordsPerClass(100),
       _postingTypes(),
+      _operatorType(StressRunner::OperatorType::And),
       _loops(1),
       _skipCommonPairsRate(1),
       _wordSet(),
@@ -113,7 +116,7 @@ PostingListBM::Main()
     bool hasElements = false;
     bool hasElementWeights = false;
 
-    while ((c = GetOpt("C:c:m:r:d:l:s:t:uw:T:q", optArg, argi)) != -1) {
+    while ((c = GetOpt("C:c:m:r:d:l:s:t:o:uw:T:q", optArg, argi)) != -1) {
         switch(c) {
         case 'C':
             _skipCommonPairsRate = atoi(optArg);
@@ -129,7 +132,8 @@ PostingListBM::Main()
                 hasElements = true;
                 hasElementWeights = true;
             } else {
-                printf("Bad collection type: %s\n", optArg);
+                printf("Bad collection type: '%s'\n", optArg);
+                printf("Supported types: single, array, weightedSet\n");
                 return 1;
             }
             break;
@@ -166,6 +170,22 @@ PostingListBM::Main()
             } while (0);
             _postingTypes.push_back(optArg);
             break;
+        case 'o':
+        {
+           vespalib::string operatorType(optArg);
+           if (operatorType == "direct") {
+               _operatorType = StressRunner::OperatorType::Direct;
+           } else if (operatorType == "and") {
+               _operatorType = StressRunner::OperatorType::And;
+           } else if (operatorType == "or") {
+               _operatorType = StressRunner::OperatorType::Or;
+           } else {
+               printf("Bad operator type: '%s'\n", operatorType.c_str());
+               printf("Supported types: direct, and, or\n");
+               return 1;
+           }
+           break;
+        }
         case 'u':
             _unpack = true;
             break;
@@ -193,8 +213,11 @@ PostingListBM::Main()
 
     _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _mediumDocFreq, _rareDocFreq, _numWordsPerClass);
 
-    StressRunner::run(_rnd, _wordSet,
-                      _postingTypes, _loops,
+    StressRunner::run(_rnd,
+                      _wordSet,
+                      _postingTypes,
+                      _operatorType,
+                      _loops,
                       _skipCommonPairsRate,
                       numTasks,
                       _stride,

@@ -15,11 +15,18 @@ namespace postinglistbm {
 
 class StressRunner {
 public:
+    enum class OperatorType {
+        Direct,
+        And,
+        Or
+    };
+
     static void run(search::Rand48 &rnd,
                     search::fakedata::FakeWordSet &wordSet,
                     const std::vector<std::string> &postingTypes,
-                    unsigned int loops,
-                    unsigned int skipCommonPairsRate,
+                    OperatorType operatorType,
+                    uint32_t loops,
+                    uint32_t skipCommonPairsRate,
                     uint32_t numTasks,
                     uint32_t stride,
                     bool unpack);
