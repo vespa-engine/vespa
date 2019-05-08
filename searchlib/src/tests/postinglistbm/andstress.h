@@ -21,8 +21,6 @@ public:
 
     void run(search::Rand48 &rnd,
              search::fakedata::FakeWordSet &wordSet,
-             unsigned int numDocs,
-             unsigned int commonDocFreq,
              const std::vector<std::string> &postingTypes,
              unsigned int loops,
              unsigned int skipCommonPairsRate,

@@ -30,6 +30,8 @@ class PostingListBM : public FastOS_Application {
 private:
     uint32_t _numDocs;
     uint32_t _commonDocFreq;
+    uint32_t _mediumDocFreq;
+    uint32_t _rareDocFreq;
     uint32_t _numWordsPerClass;
     std::vector<std::string> _postingTypes;
     uint32_t _loops;
@@ -54,6 +56,8 @@ usage()
            "[-C <skipCommonPairsRate>] "
            "[-T {string, array, weightedSet}] "
            "[-c <commonDoqFreq>] "
+           "[-m <mediumDoqFreq>] "
+           "[-r <rareDoqFreq>] "
            "[-d <numDocs>] "
            "[-l <numLoops>] "
            "[-s <stride>] "
@@ -84,6 +88,8 @@ badPostingType(const std::string &postingType)
 PostingListBM::PostingListBM()
     : _numDocs(10000000),
       _commonDocFreq(50000),
+      _mediumDocFreq(1000),
+      _rareDocFreq(10),
       _numWordsPerClass(100),
       _postingTypes(),
       _loops(1),
@@ -109,7 +115,7 @@ PostingListBM::Main()
     bool hasElementWeights = false;
     bool quick = false;
 
-    while ((c = GetOpt("C:c:d:l:s:t:uw:T:q", optArg, argi)) != -1) {
+    while ((c = GetOpt("C:c:m:r:d:l:s:t:uw:T:q", optArg, argi)) != -1) {
         switch(c) {
         case 'C':
             _skipCommonPairsRate = atoi(optArg);
@@ -131,6 +137,12 @@ PostingListBM::Main()
             break;
         case 'c':
             _commonDocFreq = atoi(optArg);
+            break;
+        case 'm':
+            _mediumDocFreq = atoi(optArg);
+            break;
+        case 'r':
+            _rareDocFreq = atoi(optArg);
             break;
         case 'd':
             _numDocs = atoi(optArg);
@@ -190,11 +202,11 @@ PostingListBM::Main()
         _postingTypes = getPostingTypes();
     }
 
-    _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _numWordsPerClass);
+    _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _mediumDocFreq, _rareDocFreq, _numWordsPerClass);
 
     AndStress andstress;
     andstress.run(_rnd, _wordSet,
-                  _numDocs, _commonDocFreq, _postingTypes, _loops,
+                  _postingTypes, _loops,
                   _skipCommonPairsRate,
                   numTasks,
                   _stride,

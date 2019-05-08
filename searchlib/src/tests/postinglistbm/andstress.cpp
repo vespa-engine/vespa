@@ -39,7 +39,6 @@ private:
 
     search::Rand48 &_rnd;
     unsigned int _numDocs;
-    unsigned int _commonDocFreq;
     std::vector<std::string> _postingTypes;
     unsigned int _loops;
     unsigned int _skipCommonPairsRate;
@@ -68,8 +67,6 @@ private:
 public:
     AndStressMaster(search::Rand48 &rnd,
                     FakeWordSet &wordSet,
-                    unsigned int numDocs,
-                    unsigned int commonDocFreq,
                     const std::vector<std::string> &postingType,
                     unsigned int loops,
                     unsigned int skipCommonPairsRate,
@@ -117,8 +114,6 @@ makePosting(FakeWord &fw)
 
 AndStressMaster::AndStressMaster(search::Rand48 &rnd,
                                  FakeWordSet &wordSet,
-                                 unsigned int numDocs,
-                                 unsigned int commonDocFreq,
                                  const std::vector<std::string> &postingTypes,
                                  unsigned int loops,
                                  unsigned int skipCommonPairsRate,
@@ -126,8 +121,7 @@ AndStressMaster::AndStressMaster(search::Rand48 &rnd,
                                  uint32_t stride,
                                  bool unpack)
     : _rnd(rnd),
-      _numDocs(numDocs),
-      _commonDocFreq(commonDocFreq),
+      _numDocs(wordSet.numDocs()),
       _postingTypes(postingTypes),
       _loops(loops),
       _skipCommonPairsRate(skipCommonPairsRate),
@@ -399,8 +393,6 @@ AndStress::~AndStress()
 void
 AndStress::run(search::Rand48 &rnd,
                FakeWordSet &wordSet,
-               unsigned int numDocs,
-               unsigned int commonDocFreq,
                const std::vector<std::string> &postingTypes,
                unsigned int loops,
                unsigned int skipCommonPairsRate,
@@ -410,7 +402,7 @@ AndStress::run(search::Rand48 &rnd,
 {
     LOG(debug, "Andstress::run");
     AndStressMaster master(rnd, wordSet,
-                           numDocs, commonDocFreq, postingTypes, loops,
+                           postingTypes, loops,
                            skipCommonPairsRate,
                            numTasks,
                            stride,
