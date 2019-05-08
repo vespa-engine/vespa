@@ -52,7 +52,7 @@ public class RunId {
 
     @Override
     public String toString() {
-        return "run " + number + " of " + type + " for " + application;
+        return "run " + number + " of " + type.jobName() + " for " + application;
     }
 
 }
