@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "andstress.h"
+#include "stress_runner.h"
 
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/time.h>
@@ -19,7 +19,7 @@
 #include <vector>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".andstress");
+LOG_SETUP(".stress_runner");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -30,12 +30,11 @@ namespace postinglistbm {
 
 class AndStressWorker;
 
-class AndStressMaster {
+class StressMaster {
 private:
-    AndStressMaster(const AndStressMaster &);
+    StressMaster(const StressMaster &);
 
-    AndStressMaster &
-    operator=(const AndStressMaster &);
+    StressMaster &operator=(const StressMaster &);
 
     search::Rand48 &_rnd;
     unsigned int _numDocs;
@@ -65,16 +64,16 @@ private:
     std::vector<Task> _tasks;
 
 public:
-    AndStressMaster(search::Rand48 &rnd,
-                    FakeWordSet &wordSet,
-                    const std::vector<std::string> &postingType,
-                    unsigned int loops,
-                    unsigned int skipCommonPairsRate,
-                    uint32_t numTasks,
-                    uint32_t stride,
-                    bool unpack);
+    StressMaster(search::Rand48 &rnd,
+                 FakeWordSet &wordSet,
+                 const std::vector<std::string> &postingType,
+                 unsigned int loops,
+                 unsigned int skipCommonPairsRate,
+                 uint32_t numTasks,
+                 uint32_t stride,
+                 bool unpack);
 
-    ~AndStressMaster();
+    ~StressMaster();
     void run();
     void makePostingsHelper(FPFactory *postingFactory,
                             const std::string &postingFormat,
@@ -89,7 +88,6 @@ public:
     double runWorkers(const std::string &postingFormat);
 };
 
-
 class AndStressWorker : public FastOS_Runnable {
 private:
     AndStressWorker(const AndStressWorker &);
@@ -97,29 +95,23 @@ private:
     AndStressWorker &
     operator=(const AndStressWorker &);
 
-    AndStressMaster &_master;
+    StressMaster &_master;
     unsigned int _id;
 public:
-    AndStressWorker(AndStressMaster &master, unsigned int id);
+    AndStressWorker(StressMaster &master, unsigned int id);
     ~AndStressWorker();
     virtual void Run(FastOS_ThreadInterface *thisThread, void *arg) override;
 };
 
-template <class P>
-FakePosting *
-makePosting(FakeWord &fw)
-{
-    return new P(fw);
-}
 
-AndStressMaster::AndStressMaster(search::Rand48 &rnd,
-                                 FakeWordSet &wordSet,
-                                 const std::vector<std::string> &postingTypes,
-                                 unsigned int loops,
-                                 unsigned int skipCommonPairsRate,
-                                 uint32_t numTasks,
-                                 uint32_t stride,
-                                 bool unpack)
+StressMaster::StressMaster(search::Rand48 &rnd,
+                           FakeWordSet &wordSet,
+                           const std::vector<std::string> &postingTypes,
+                           unsigned int loops,
+                           unsigned int skipCommonPairsRate,
+                           uint32_t numTasks,
+                           uint32_t stride,
+                           bool unpack)
     : _rnd(rnd),
       _numDocs(wordSet.numDocs()),
       _postingTypes(postingTypes),
@@ -138,7 +130,7 @@ AndStressMaster::AndStressMaster(search::Rand48 &rnd,
       _numTasks(numTasks),
       _tasks()
 {
-    LOG(info, "AndStressMaster::AndStressMaster");
+    LOG(info, "StressMaster::StressMaster()");
 
     _threadPool = new FastOS_ThreadPool(128 * 1024, 400);
 }
@@ -153,9 +145,9 @@ clearPtrVector(std::vector<C> &vector)
     vector.clear();
 }
 
-AndStressMaster::~AndStressMaster()
+StressMaster::~StressMaster()
 {
-    LOG(info, "AndStressMaster::~AndStressMaster");
+    LOG(info, "StressMaster::~StressMaster()");
 
     _threadPool->Close();
     delete _threadPool;
@@ -165,7 +157,7 @@ AndStressMaster::~AndStressMaster()
 }
 
 void
-AndStressMaster::dropPostings()
+StressMaster::dropPostings()
 {
     for (auto& posting : _postings) {
         posting.clear();
@@ -174,14 +166,14 @@ AndStressMaster::dropPostings()
 }
 
 void
-AndStressMaster::dropTasks()
+StressMaster::dropTasks()
 {
     _tasks.clear();
     _taskIdx = 0;
 }
 
 void
-AndStressMaster::resetTasks()
+StressMaster::resetTasks()
 {
     _taskIdx = 0;
 }
@@ -217,9 +209,9 @@ makeSomePostings(FPFactory *postingFactory,
 }
 
 void
-AndStressMaster::makePostingsHelper(FPFactory *postingFactory,
-                                    const std::string &postingFormat,
-                                    bool validate, bool verbose)
+StressMaster::makePostingsHelper(FPFactory *postingFactory,
+                                 const std::string &postingFormat,
+                                 bool validate, bool verbose)
 {
     FastOS_Time tv;
     double before;
@@ -237,13 +229,13 @@ AndStressMaster::makePostingsHelper(FPFactory *postingFactory,
     tv.SetNow();
     after = tv.Secs();
     LOG(info,
-        "AndStressMaster::makePostingsHelper elapsed %10.6f s for %s format",
+        "StressMaster::makePostingsHelper() elapsed %10.6f s for %s format",
         after - before,
         postingFormat.c_str());
 }
 
 void
-AndStressMaster::setupTasks(unsigned int numTasks)
+StressMaster::setupTasks(unsigned int numTasks)
 {
     unsigned int wordclass1;
     unsigned int wordclass2;
@@ -267,8 +259,8 @@ AndStressMaster::setupTasks(unsigned int numTasks)
     }
 }
 
-AndStressMaster::Task *
-AndStressMaster::getTask()
+StressMaster::Task *
+StressMaster::getTask()
 {
     Task *result = nullptr;
     std::lock_guard<std::mutex> taskGuard(_taskLock);
@@ -285,9 +277,9 @@ AndStressMaster::getTask()
 }
 
 void
-AndStressMaster::run()
+StressMaster::run()
 {
-    LOG(info, "AndStressMaster::run");
+    LOG(info, "StressMaster::run()");
 
     for (const auto& type : _postingTypes) {
         std::unique_ptr<FPFactory> factory(getFPFactory(type, _wordSet.getSchema()));
@@ -298,7 +290,7 @@ AndStressMaster::run()
             totalTime += runWorkers(type);
             resetTasks();
         }
-        LOG(info, "AndStressMaster::average run elapsed %10.6f s for workers %s format",
+        LOG(info, "StressMaster::average run elapsed %10.6f s for workers %s format",
             totalTime / _loops, type.c_str());
         dropPostings();
     }
@@ -306,7 +298,7 @@ AndStressMaster::run()
 }
 
 double
-AndStressMaster::runWorkers(const std::string &postingFormat)
+StressMaster::runWorkers(const std::string &postingFormat)
 {
     FastOS_Time tv;
     double before;
@@ -332,7 +324,7 @@ AndStressMaster::runWorkers(const std::string &postingFormat)
     tv.SetNow();
     after = tv.Secs();
     LOG(info,
-        "AndStressMaster::run elapsed %10.6f s for workers %s format",
+        "StressMaster::run() elapsed %10.6f s for workers %s format",
         after - before,
         postingFormat.c_str());
     clearPtrVector(_workers);
@@ -340,16 +332,16 @@ AndStressMaster::runWorkers(const std::string &postingFormat)
     return after - before;
 }
 
-AndStressWorker::AndStressWorker(AndStressMaster &master, unsigned int id)
+AndStressWorker::AndStressWorker(StressMaster &master, unsigned int id)
     : _master(master),
       _id(id)
 {
-    LOG(debug, "AndStressWorker::AndStressWorker, id=%u", id);
+    LOG(debug, "AndStressWorker::AndStressWorker(), id=%u", id);
 }
 
 AndStressWorker::~AndStressWorker()
 {
-    LOG(debug, "AndStressWorker::~AndStressWorker, id=%u", _id);
+    LOG(debug, "AndStressWorker::~AndStressWorker(), id=%u", _id);
 }
 
 void
@@ -367,11 +359,11 @@ AndStressWorker::Run(FastOS_ThreadInterface *thisThread, void *arg)
 {
     (void) thisThread;
     (void) arg;
-    LOG(debug, "AndStressWorker::Run, id=%u", _id);
+    LOG(debug, "AndStressWorker::Run(), id=%u", _id);
 
     bool unpack = _master.getUnpack();
     for (;;) {
-        AndStressMaster::Task *task = _master.getTask();
+        StressMaster::Task *task = _master.getTask();
         if (task == nullptr) {
             break;
         }
@@ -380,28 +372,18 @@ AndStressWorker::Run(FastOS_ThreadInterface *thisThread, void *arg)
     }
 }
 
-AndStress::AndStress()
-{
-    LOG(debug, "Andstress::AndStress");
-}
-
-AndStress::~AndStress()
-{
-    LOG(debug, "Andstress::~AndStress");
-}
-
 void
-AndStress::run(search::Rand48 &rnd,
-               FakeWordSet &wordSet,
-               const std::vector<std::string> &postingTypes,
-               unsigned int loops,
-               unsigned int skipCommonPairsRate,
-               uint32_t numTasks,
-               uint32_t stride,
-               bool unpack)
+StressRunner::run(search::Rand48 &rnd,
+                  FakeWordSet &wordSet,
+                  const std::vector<std::string> &postingTypes,
+                  unsigned int loops,
+                  unsigned int skipCommonPairsRate,
+                  uint32_t numTasks,
+                  uint32_t stride,
+                  bool unpack)
 {
-    LOG(debug, "Andstress::run");
-    AndStressMaster master(rnd, wordSet,
+    LOG(debug, "StressRunner::run()");
+    StressMaster master(rnd, wordSet,
                            postingTypes, loops,
                            skipCommonPairsRate,
                            numTasks,

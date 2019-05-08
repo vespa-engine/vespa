@@ -12,7 +12,7 @@ vespa_add_test(NAME searchlib_posting_list_test_app NO_VALGRIND COMMAND searchli
 vespa_add_executable(searchlib_postinglistbm_app TEST
     SOURCES
     postinglistbm.cpp
-    andstress.cpp
+    stress_runner.cpp
     DEPENDS
     searchlib_test
     searchlib

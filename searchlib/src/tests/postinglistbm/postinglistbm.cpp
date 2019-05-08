@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "andstress.h"
+#include "stress_runner.h"
 #include <vespa/fastos/app.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
@@ -204,13 +204,12 @@ PostingListBM::Main()
 
     _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _mediumDocFreq, _rareDocFreq, _numWordsPerClass);
 
-    AndStress andstress;
-    andstress.run(_rnd, _wordSet,
-                  _postingTypes, _loops,
-                  _skipCommonPairsRate,
-                  numTasks,
-                  _stride,
-                  _unpack);
+    StressRunner::run(_rnd, _wordSet,
+                      _postingTypes, _loops,
+                      _skipCommonPairsRate,
+                      numTasks,
+                      _stride,
+                      _unpack);
     return 0;
 }
 
