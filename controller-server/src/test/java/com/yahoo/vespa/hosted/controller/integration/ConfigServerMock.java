@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -366,15 +365,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public Optional<Logs> getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
-        HashMap<String, String> logs = new HashMap<>();
-        logs.put("subfolder-log2.log", "VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl");
-        logs.put("log1.log", "VGhpcyBpcyBvbmUgbG9nIGZpbGU=");
-        return Optional.of(new Logs(logs));
-    }
-
-    @Override
-    public InputStream getLogStream(DeploymentId deployment, Map<String, String> queryParameters) {
+    public InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
         return IOUtils.toInputStream(log);
     }
 
