@@ -68,7 +68,7 @@ DotProductExecutorByCopy<Vector, Buffer>::execute(uint32_t docId)
     if (!_queryVector.getDimMap().empty()) {
         _buffer.fill(*_attribute, docId);
         for (size_t i = 0; i < _buffer.size(); ++i) {
-            typename Vector::HashMap::const_iterator itr = _queryVector.getDimMap().find(_buffer[i].getValue());
+            auto itr = _queryVector.getDimMap().find(_buffer[i].getValue());
             if (itr != _end) {
                 val += _buffer[i].getWeight() * itr->second;
             }
@@ -98,7 +98,7 @@ void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
         const AT * values(nullptr);
         uint32_t sz = getAttributeValues(docId, values);
         for (size_t i = 0; i < sz; ++i) {
-            typename V::HashMap::const_iterator itr = _queryVector.getDimMap().find(values[i].value());
+            auto itr = _queryVector.getDimMap().find(values[i].value());
             if (itr != _end) {
                 val += values[i].weight() * itr->second;
             }
@@ -155,7 +155,7 @@ void DotProductExecutorByEnum::execute(uint32_t docId) {
         const IWeightedIndexVector::WeightedIndex *values(nullptr);
         uint32_t sz = _attribute->getEnumHandles(docId, values);
         for (size_t i = 0; i < sz; ++i) {
-            typename V::HashMap::const_iterator itr = _queryVector.getDimMap().find(values[i].value().ref());
+            auto itr = _queryVector.getDimMap().find(values[i].value().ref());
             if (itr != _end) {
                 val += values[i].weight() * itr->second;
             }
