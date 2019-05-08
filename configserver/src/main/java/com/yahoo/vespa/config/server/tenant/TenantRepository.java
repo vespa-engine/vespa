@@ -62,6 +62,7 @@ public class TenantRepository {
     private static final TenantName DEFAULT_TENANT = TenantName.defaultName();
 
     private static final Path tenantsPath = Path.fromString("/config/v2/tenants/");
+    private static final Path locksPath = Path.fromString("/config/v2/locks/");
     private static final Path vespaPath = Path.fromString("/vespa");
     private static final Duration checkForRemovedApplicationsInterval = Duration.ofMinutes(1);
     private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
@@ -106,6 +107,7 @@ public class TenantRepository {
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
+        curator.create(locksPath);
         createSystemTenants(configserverConfig);
         curator.create(vespaPath);
 
@@ -261,8 +263,10 @@ public class TenantRepository {
      * @param name name of the tenant
      */
     private synchronized void writeTenantPath(TenantName name) {
-        Path tenantPath = getTenantPath(name);
-        curator.createAtomically(tenantPath, tenantPath.append(Tenant.SESSIONS), tenantPath.append(Tenant.APPLICATIONS));
+        curator.createAtomically(TenantRepository.getTenantPath(name),
+                                 TenantRepository.getSessionsPath(name),
+                                 TenantRepository.getApplicationsPath(name),
+                                 TenantRepository.getLocksPath(name));
     }
 
     /**
@@ -404,6 +408,13 @@ public class TenantRepository {
      */
     public static Path getApplicationsPath(TenantName tenantName) {
         return getTenantPath(tenantName).append(Tenant.APPLICATIONS);
+    }
+
+    /**
+     * Gets zookeeper path for locks for a tenant's applications. This is never cleaned, but shouldn't be a problem.
+     */
+    public static Path getLocksPath(TenantName tenantName) {
+        return locksPath.append(tenantName.value());
     }
 
 }
