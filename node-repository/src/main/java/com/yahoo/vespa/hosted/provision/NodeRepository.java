@@ -334,12 +334,20 @@ public class NodeRepository extends AbstractComponent {
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
     public List<Node> addNodes(List<Node> nodes) {
-        for (Node node : nodes) {
-            Optional<Node> existing = getNode(node.hostname());
-            if (existing.isPresent())
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
-        }
         try (Mutex lock = lockAllocation()) {
+            for (int i = 0; i < nodes.size(); i++) {
+                var node = nodes.get(i);
+                var message = "Cannot add " + node.hostname() + ": A node with this name already exists";
+
+                // Check for existing node
+                if (getNode(node.hostname()).isPresent()) throw new IllegalArgumentException(message);
+
+                // Check for duplicates in given list
+                for (int j = 0; j < i; j++) {
+                    var other = nodes.get(j);
+                    if (node.equals(other)) throw new IllegalArgumentException(message);
+                }
+            }
             return db.addNodes(nodes);
         }
     }
@@ -709,7 +717,7 @@ public class NodeRepository extends AbstractComponent {
     public Mutex lockAllocation() { return db.lockInactive(); }
 
     /** Acquires the appropriate lock for this node */
-    private Mutex lock(Node node) {
+    public Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockAllocation();
     }
 
