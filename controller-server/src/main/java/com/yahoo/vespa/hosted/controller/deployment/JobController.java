@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -279,6 +280,9 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
+        if (type.environment() != Environment.dev && versions.targetApplication().isUnknown())
+            throw new IllegalArgumentException("Target application must be a valid reference.");
+
         controller.applications().lockIfPresent(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally())
                 throw new IllegalArgumentException(id + " is not built here!");
