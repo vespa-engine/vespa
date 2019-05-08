@@ -45,11 +45,16 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     @Override
     public final void execute() {
         setup();
-        doExecute();
+        try {
+            doExecute();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Override this in subclasses, instead of {@link #execute()}. */
-    protected abstract void doExecute();
+    protected abstract void doExecute() throws Exception;
 
     protected void setup() {
         tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
