@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.curator.Lock;
@@ -298,7 +299,38 @@ public class JobController {
         });
     }
 
-    // TODO add deploy which aborts running, waits for it to stop, locks step, stores package, starts the job
+    /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
+    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
+        controller.applications().lockOrThrow(id, application -> {
+            if ( ! application.get().deploymentJobs().deployedInternally())
+                controller.applications().store(registered(application));
+        });
+        if (type.environment() != Environment.dev)
+            throw new IllegalArgumentException("Direct deployments are only allowed to the dev environment.");
+
+        last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+        locked(id, type, __ -> {
+            controller.applications().applicationStore().putDev(id, applicationPackage.zippedContent());
+            start(id, type, new Versions(platform.orElse(controller.systemVersion()),
+                                         ApplicationVersion.unknown,
+                                         Optional.empty(),
+                                         Optional.empty()));
+        });
+    }
+
+    /** Aborts a run and waits for it complete. */
+    private void abortAndWait(RunId id) {
+        abort(id);
+        while ( ! last(id.application(), id.type()).get().hasEnded()) {
+            try {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     /** Unregisters the given application and makes all associated data eligible for garbage collection. */
     public void unregister(ApplicationId id) {
