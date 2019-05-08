@@ -161,12 +161,6 @@ public class Flags {
             "Takes effect on deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundStringFlag SILLY_ROUTING = defineStringFlag(
-            "silly-routing", "silly-default",
-            "Enables \"silly routing\" for the named application (in tenant:application:instance form)",
-            "Takes effect on next update to routing config",
-            HOSTNAME);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
