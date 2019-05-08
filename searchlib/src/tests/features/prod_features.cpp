@@ -1044,6 +1044,27 @@ Test::setupForDocumentTest(FtFeatureTest &ft, const vespalib::string & attrName,
     type->commit();
 }
 
+
+namespace {
+
+void
+verifyCorrectDotProductExecutor(BlueprintFactory & factory, vespalib::stringref attrName, vespalib::stringref expected) {
+    ParameterList params = {{ParameterType::ATTRIBUTE, attrName}, {ParameterType::STRING, "vector"}};
+    FtFeatureTest ft(factory, "value(0)");
+    Test::setupForDotProductTest(ft);
+    ft.getQueryEnv().getProperties().add("dotProduct.vector", "(7:1)");
+    DotProductBlueprint bp;
+    DummyDependencyHandler deps(bp);
+    EXPECT_TRUE(bp.setup(ft.getIndexEnv(), params));
+    vespalib::Stash stash;
+    FeatureExecutor &exc = bp.createExecutor(ft.getQueryEnv(), stash);
+    // check that we have the optimized enum version
+    EXPECT_EQUAL(expected, exc.getClassName());
+    EXPECT_EQUAL(1u, deps.output.size());
+}
+
+}
+
 void
 Test::testDotProduct()
 {
@@ -1204,24 +1225,8 @@ Test::testDotProduct()
         assertDotProduct(17, "(0:1,3:4,50:97)", 1, "sint", "arrfloat"); // attribute override
         assertDotProduct(0, "(0:1,3:4,50:97)", 1, "sint", "arrfloat_non_existing"); // incorrect attribute override
     }
-    { // Test that correct executor is created
-        FtFeatureTest ft(_factory, "value(0)");
-        setupForDotProductTest(ft);
-        ft.getQueryEnv().getProperties().add("dotProduct.vector", "(a:1)");
-        ParameterList params;
-        params.push_back(Parameter(ParameterType::ATTRIBUTE, "wsstr"));
-        params.push_back(Parameter(ParameterType::STRING, "vector"));
-        DotProductBlueprint bp;
-        DummyDependencyHandler deps(bp);
-        EXPECT_TRUE(bp.setup(ft.getIndexEnv(), params));
-        vespalib::Stash stash;
-        FeatureExecutor &exc = bp.createExecutor(ft.getQueryEnv(), stash);
-        // check that we have the optimized enum version
-        dotproduct::wset::DotProductExecutorByCopy<dotproduct::wset::EnumVector, WeightedEnumContent> * myExc =
-            dynamic_cast<dotproduct::wset::DotProductExecutorByCopy<dotproduct::wset::EnumVector, WeightedEnumContent> *>(&exc);
-        EXPECT_TRUE(myExc != nullptr);
-        EXPECT_EQUAL(1u, deps.output.size());
-    }
+    verifyCorrectDotProductExecutor(_factory, "wsstr", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum");
+    verifyCorrectDotProductExecutor(_factory, "wsint", "search::features::dotproduct::wset::DotProductExecutor<search::MultiValueNumericAttribute<search::IntegerAttributeTemplate<int>, search::multivalue::WeightedValue<int> > >");
 }
 
 void

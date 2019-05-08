@@ -41,6 +41,9 @@ public:
     void testTermDistance();
     void testUtils();
 
+    static void setupForDotProductTest(FtFeatureTest & ft);
+    static void setupForDocumentTest(FtFeatureTest &ft, const vespalib::string & attrName, const vespalib::string & docType);
+
 private:
     void testFieldMatchBluePrint();
     void testFieldMatchExecutor();
@@ -88,10 +91,9 @@ private:
     void assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > pos, const vespalib::string &path,
                               feature_t distance = search::features::DistanceToPathExecutor::DEFAULT_DISTANCE,
                               feature_t traveled = 1, feature_t product = 0);
-    void setupForDocumentTest(FtFeatureTest &ft, const vespalib::string & attrName, const vespalib::string & docType);
     void assertDotProduct(feature_t exp, const vespalib::string & vector, uint32_t docId = 1,
                           const vespalib::string & attribute = "wsstr", const vespalib::string & attributeOverride="");
-    void setupForDotProductTest(FtFeatureTest & ft);
+
     void assertFieldMatch(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,
                           const search::features::fieldmatch::Params * params = NULL, uint32_t totalTermWeight = 0, feature_t totalSignificance = 0.0f);
     void assertFieldMatch(const vespalib::string & spec, const vespalib::string & query, const vespalib::string & field,

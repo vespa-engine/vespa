@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/multienumattribute.h>
 #include <type_traits>
 
 #include <vespa/log/log.h>
@@ -67,7 +68,7 @@ DotProductExecutorByCopy<Vector, Buffer>::execute(uint32_t docId)
     if (!_queryVector.getDimMap().empty()) {
         _buffer.fill(*_attribute, docId);
         for (size_t i = 0; i < _buffer.size(); ++i) {
-            typename Vector::HashMap::const_iterator itr = _queryVector.getDimMap().find(_buffer[i].getValue());
+            auto itr = _queryVector.getDimMap().find(_buffer[i].getValue());
             if (itr != _end) {
                 val += _buffer[i].getWeight() * itr->second;
             }
@@ -77,7 +78,6 @@ DotProductExecutorByCopy<Vector, Buffer>::execute(uint32_t docId)
 }
 
 StringVector::StringVector() = default;
-
 StringVector::~StringVector() = default;
 
 template <typename BaseType>
@@ -98,7 +98,7 @@ void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
         const AT * values(nullptr);
         uint32_t sz = getAttributeValues(docId, values);
         for (size_t i = 0; i < sz; ++i) {
-            typename V::HashMap::const_iterator itr = _queryVector.getDimMap().find(values[i].value());
+            auto itr = _queryVector.getDimMap().find(values[i].value());
             if (itr != _end) {
                 val += values[i].weight() * itr->second;
             }
@@ -122,6 +122,48 @@ size_t
 DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 {
     return _attribute->getRawValues(docId, values);
+}
+
+namespace {
+
+class DotProductExecutorByEnum : public fef::FeatureExecutor {
+public:
+    using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
+private:
+    const IWeightedIndexVector * _attribute;
+    V _queryVector;
+    const typename V::HashMap::const_iterator _end;
+public:
+    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, V queryVector);
+    ~DotProductExecutorByEnum() override;
+    void execute(uint32_t docId) override;
+};
+
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, V queryVector)
+    : FeatureExecutor(),
+      _attribute(attribute),
+      _queryVector(std::move(queryVector)),
+      _end(_queryVector.syncMap().getDimMap().end())
+{
+}
+
+DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
+
+void DotProductExecutorByEnum::execute(uint32_t docId) {
+    feature_t val = 0;
+    if (!_queryVector.getDimMap().empty()) {
+        const IWeightedIndexVector::WeightedIndex *values(nullptr);
+        uint32_t sz = _attribute->getEnumHandles(docId, values);
+        for (size_t i = 0; i < sz; ++i) {
+            auto itr = _queryVector.getDimMap().find(values[i].value().ref());
+            if (itr != _end) {
+                val += values[i].weight() * itr->second;
+            }
+        }
+    }
+    outputs().set_number(0, val);
+}
+
 }
 
 }
@@ -419,10 +461,10 @@ namespace {
 
 using dotproduct::ArrayParam;
 
-template <typename A>
+template <typename A, typename B>
 bool supportsGetRawValues(const A & attr) noexcept {
     try {
-        const multivalue::Value<typename A::BaseType> * tmp = nullptr;
+        const B * tmp = nullptr;
         attr.getRawValues(0, tmp); // Throws if unsupported
         return true;
     } catch (const std::runtime_error & e) {
@@ -430,6 +472,19 @@ bool supportsGetRawValues(const A & attr) noexcept {
         return false;
     }
 }
+
+bool supportsGetEnumHandles(const IWeightedIndexVector * attr) noexcept {
+    if (attr == nullptr) return false;
+    try {
+        const IWeightedIndexVector::WeightedIndex * tmp = nullptr;
+        attr->getEnumHandles(0, tmp); // Throws if unsupported
+        return true;
+    } catch (const std::runtime_error & e) {
+        (void) e;
+        return false;
+    }
+}
+
 
 // Precondition: attribute->isImported() == false
 template <typename A>
@@ -443,10 +498,10 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
         return stash.create<SingleZeroValueExecutor>();
     }
     const A * iattr = dynamic_cast<const A *>(attribute);
+    using T = typename A::BaseType;
+    using VT = multivalue::Value<T>;
     if (indexes.empty()) {
-        if (supportsGetRawValues(*iattr)) {
-            using T = typename A::BaseType;
-            using VT = multivalue::Value<T>;
+        if (supportsGetRawValues<A,VT>(*iattr)) {
             using ExactA = MultiValueNumericAttribute<A, VT>;
 
             const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
@@ -458,7 +513,7 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
             return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(iattr, values);
         }
     } else {
-        if (supportsGetRawValues(*iattr)) {
+        if (supportsGetRawValues<A, VT>(*iattr)) {
             return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(iattr, values, indexes);
         } else {
             return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(iattr, values, indexes);
@@ -603,10 +658,9 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V vector, vespalib::
     using namespace dotproduct::wset;
     using T = typename A::BaseType;
     const A * iattr = dynamic_cast<const A *>(attribute);
-    if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues(*iattr)) {
-        using VT = multivalue::WeightedValue<T>;
-        using ExactA = MultiValueNumericAttribute<A, VT>;
-
+    using VT = multivalue::WeightedValue<T>;
+    using ExactA = MultiValueNumericAttribute<A, VT>;
+    if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues<A, VT>(*iattr)) {
         const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
             return &stash.create<DotProductExecutor<ExactA>>(exactA, std::move(vector));
@@ -633,6 +687,10 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
     if (attribute->hasEnum()) {
         EnumVector vector(attribute);
         WeightedSetParser::parse(prop.get(), vector);
+        const IWeightedIndexVector * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
+        if (supportsGetEnumHandles(getEnumHandles)) {
+            return &stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
+        }
         return &stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));
     } else {
         if (attribute->isStringType()) {
@@ -668,7 +726,8 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
     return *executor;
 }
 
-fef::Anything::UP attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
+fef::Anything::UP
+attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
     if (!attribute.isImported()) {
         switch (attribute.getBasicType()) {
             case BasicType::INT32:
