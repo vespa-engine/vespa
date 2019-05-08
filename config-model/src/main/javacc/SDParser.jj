@@ -298,7 +298,6 @@ TOKEN :
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
 | < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
-| < TENSOR_TYPE_WITH_VALUE_TYPE: "tensor<" (["a"-"z","A"-"Z"])+ ">(" (~["(",")"])+ ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
 | < COMPRESSION: "compression" >
@@ -842,7 +841,6 @@ DataType dataType() :
       | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
       | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
       | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return DataType.getTensor(tensorType); } )
-      | LOOKAHEAD(<TENSOR_TYPE_WITH_VALUE_TYPE>)    ( tensorType = tensorType("Field type") { return DataType.getTensor(tensorType); } )
       | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ReferenceDataType.createWithInferredId(referenceType); } )
       | ( typeName = identifier() ["[]" { isArrayOldStyle = true; }] )
     )
@@ -2407,7 +2405,7 @@ TensorType tensorType(String errorMessage) :
     String tensorTypeString;
 }
 {
-    ( <TENSOR_TYPE> | <TENSOR_TYPE_WITH_VALUE_TYPE> ) { tensorTypeString = token.image; }
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
     {
         TensorType tensorType;
         try {

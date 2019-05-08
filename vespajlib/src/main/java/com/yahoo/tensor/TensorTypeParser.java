@@ -55,12 +55,21 @@ public class TensorTypeParser {
         return new TensorType.Builder(valueType, dimensions).build();
     }
 
+    public static TensorType.Value toValueType(String valueTypeString) {
+        switch (valueTypeString) {
+            case "double" : return TensorType.Value.DOUBLE;
+            case "float" : return TensorType.Value.FLOAT;
+            default : throw new IllegalArgumentException("Value type must be either 'double' or 'float'" +
+                                                         " but was '" + valueTypeString + "'");
+        }
+    }
+
     private static TensorType.Value parseValueTypeSpec(String valueTypeSpec, String fullSpecString) {
         if ( ! valueTypeSpec.startsWith("<") || ! valueTypeSpec.endsWith(">"))
             throw formatException(fullSpecString, Optional.of("Value type spec must be enclosed in <>"));
 
         try {
-            return TensorType.Value.fromId(valueTypeSpec.substring(1, valueTypeSpec.length() - 1));
+            return toValueType(valueTypeSpec.substring(1, valueTypeSpec.length() - 1));
         }
         catch (IllegalArgumentException e) {
             throw formatException(fullSpecString, e.getMessage());

@@ -2,7 +2,7 @@
 search test {
 
     document test {
-        field argument type tensor<float>(d0[],d1[784]) {
+        field argument type tensor(d0[],d1[784]) {
             indexing: attribute
         }
     }
