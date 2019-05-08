@@ -6,8 +6,7 @@
 #include "fieldinfo.h"
 #include "parameterdescriptions.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class represents a parameter with type and value.
@@ -35,7 +34,4 @@ public:
 
 typedef std::vector<Parameter> ParameterList;
 
-
-} // namespace fef
-} // namespace search
-
+}

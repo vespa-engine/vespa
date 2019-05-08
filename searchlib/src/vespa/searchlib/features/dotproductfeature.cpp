@@ -461,10 +461,10 @@ namespace {
 
 using dotproduct::ArrayParam;
 
-template <typename A>
+template <typename A, typename B>
 bool supportsGetRawValues(const A & attr) noexcept {
     try {
-        const multivalue::Value<typename A::BaseType> * tmp = nullptr;
+        const B * tmp = nullptr;
         attr.getRawValues(0, tmp); // Throws if unsupported
         return true;
     } catch (const std::runtime_error & e) {
@@ -498,10 +498,10 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
         return stash.create<SingleZeroValueExecutor>();
     }
     const A * iattr = dynamic_cast<const A *>(attribute);
+    using T = typename A::BaseType;
+    using VT = multivalue::Value<T>;
     if (indexes.empty()) {
-        if (supportsGetRawValues(*iattr)) {
-            using T = typename A::BaseType;
-            using VT = multivalue::Value<T>;
+        if (supportsGetRawValues<A,VT>(*iattr)) {
             using ExactA = MultiValueNumericAttribute<A, VT>;
 
             const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
@@ -513,7 +513,7 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
             return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(iattr, values);
         }
     } else {
-        if (supportsGetRawValues(*iattr)) {
+        if (supportsGetRawValues<A, VT>(*iattr)) {
             return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(iattr, values, indexes);
         } else {
             return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(iattr, values, indexes);
@@ -658,10 +658,9 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V vector, vespalib::
     using namespace dotproduct::wset;
     using T = typename A::BaseType;
     const A * iattr = dynamic_cast<const A *>(attribute);
-    if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues(*iattr)) {
-        using VT = multivalue::WeightedValue<T>;
-        using ExactA = MultiValueNumericAttribute<A, VT>;
-
+    using VT = multivalue::WeightedValue<T>;
+    using ExactA = MultiValueNumericAttribute<A, VT>;
+    if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues<A, VT>(*iattr)) {
         const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
             return &stash.create<DotProductExecutor<ExactA>>(exactA, std::move(vector));
@@ -727,7 +726,8 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
     return *executor;
 }
 
-fef::Anything::UP attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
+fef::Anything::UP
+attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
     if (!attribute.isImported()) {
         switch (attribute.getBasicType()) {
             case BasicType::INT32:
