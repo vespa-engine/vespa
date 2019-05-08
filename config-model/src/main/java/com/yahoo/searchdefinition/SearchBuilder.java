@@ -171,7 +171,6 @@ public class SearchBuilder {
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
-            pe.printStackTrace();
             throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
         }
         return importRawSearch(search);

@@ -63,7 +63,7 @@ public class RankingExpressionWithOnnxTestCase {
     public void testOnnxReferenceWithConstantFeature() {
         RankProfileSearchFixture search = fixtureWith("constant(mytensor)",
                 "onnx('mnist_softmax.onnx')",
-                "constant mytensor { file: ignored\ntype: tensor<float>(d0[7],d1[784]) }",
+                "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
                 null);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
@@ -73,7 +73,7 @@ public class RankingExpressionWithOnnxTestCase {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType =
                 "<query-profile-type id='root'>" +
-                "  <field name='query(mytensor)' type='tensor&lt;float&gt;(d0[3],d1[784])'/>" +
+                "  <field name='query(mytensor)' type='tensor(d0[3],d1[784])'/>" +
                 "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                 queryProfile,
@@ -93,7 +93,7 @@ public class RankingExpressionWithOnnxTestCase {
         RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
                 "onnx('mnist_softmax.onnx')",
                 null,
-                "field mytensor type tensor<float>(d0[],d1[784]) { indexing: attribute }",
+                "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
@@ -105,15 +105,15 @@ public class RankingExpressionWithOnnxTestCase {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType =
                 "<query-profile-type id='root'>" +
-                "  <field name='query(mytensor)' type='tensor&lt;float&gt;(d0[3],d1[784],d2[10])'/>" +
+                "  <field name='query(mytensor)' type='tensor(d0[3],d1[784],d2[10])'/>" +
                 "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                 queryProfile,
                 queryProfileType);
         RankProfileSearchFixture search = fixtureWith("sum(query(mytensor) * attribute(mytensor) * constant(mytensor),d2)",
                 "onnx('mnist_softmax.onnx')",
-                "constant mytensor { file: ignored\ntype: tensor<float>(d0[7],d1[784]) }",
-                "field mytensor type tensor<float>(d0[],d1[784]) { indexing: attribute }",
+                "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
+                "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
                 "Placeholder",
                 application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
@@ -122,7 +122,7 @@ public class RankingExpressionWithOnnxTestCase {
 
     @Test
     public void testNestedOnnxReference() {
-        RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                 "5 + sum(onnx('mnist_softmax.onnx'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
     }
@@ -145,7 +145,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers input 'Placeholder' of type tensor<float>(d0[],d1[784]) but this function is " +
+                            "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this function is " +
                             "not present in rank profile 'my_profile'",
                     Exceptions.toMessageString(expected));
         }
@@ -154,7 +154,7 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     public void testOnnxReferenceWithWrongFunctionType() {
         try {
-            RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[2],d5[10])(0.0)",
+            RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
                     "onnx('mnist_softmax.onnx')");
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
@@ -162,8 +162,8 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers input 'Placeholder'. The required type of this is tensor<float>(d0[],d1[784]), " +
-                            "but this function returns tensor<float>(d0[2],d5[10])",
+                            "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
+                            "but this function returns tensor(d0[2],d5[10])",
                     Exceptions.toMessageString(expected));
         }
     }
@@ -186,7 +186,7 @@ public class RankingExpressionWithOnnxTestCase {
 
     @Test
     public void testImportingFromStoredExpressions() throws IOException {
-        RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                 "onnx('mnist_softmax.onnx')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
 
@@ -197,7 +197,7 @@ public class RankingExpressionWithOnnxTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
+            RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                     "onnx('mnist_softmax.onnx')",
                     null,
                     null,
@@ -217,10 +217,10 @@ public class RankingExpressionWithOnnxTestCase {
         String rankProfile =
                 "  rank-profile my_profile {\n" +
                         "    function Placeholder() {\n" +
-                        "      expression: tensor<float>(d0[2],d1[784])(0.0)\n" +
+                        "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                         "    }\n" +
                         "    function " + name + "_Variable() {\n" +
-                        "      expression: tensor<float>(d1[10],d2[784])(0.0)\n" +
+                        "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                         "    }\n" +
                         "    first-phase {\n" +
                         "      expression: onnx('mnist_softmax.onnx')" +
