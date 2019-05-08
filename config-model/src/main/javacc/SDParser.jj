@@ -2405,7 +2405,7 @@ TensorType tensorType(String errorMessage) :
     String tensorTypeString;
 }
 {
-    <TENSOR_TYPE> { tensorTypeString = token.image; }
+    ( <TENSOR_TYPE> ) { tensorTypeString = token.image; }
     {
         TensorType tensorType;
         try {
