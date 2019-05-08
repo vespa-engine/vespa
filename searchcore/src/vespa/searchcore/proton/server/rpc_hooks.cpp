@@ -72,21 +72,21 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
     bool changed = numDocsChanged || delayedConfigsChanged;
 
     if (_proton.getMatchEngine().isOnline()) {
-        res.push_back(Pair("online", "true"));
-        res.push_back(Pair("onlineState", "online"));
+        res.emplace_back("online", "true");
+        res.emplace_back("onlineState", "online");
     } else {
-        res.push_back(Pair("online", "false"));
-        res.push_back(Pair("onlineState", "onlineSoon"));
+        res.emplace_back("online", "false");
+        res.emplace_back("onlineState", "onlineSoon");
     }
     if (session.getGen() < 0) {
         if (delayedConfigsChanged)
-            res.push_back(Pair("delayedConfigs", delayedConfigs));
-        res.push_back(Pair("onlineDocs", make_string("%" PRId64, numDocs)));
+            res.emplace_back("delayedConfigs", delayedConfigs);
+        res.emplace_back("onlineDocs", make_string("%" PRId64, numDocs));
         session.setGen(0);
     } else if (changed) {
         if (delayedConfigsChanged)
-            res.push_back(Pair("delayedConfigs", delayedConfigs));
-        res.push_back(Pair("onlineDocs", make_string("%" PRId64, numDocs)));
+            res.emplace_back("delayedConfigs", delayedConfigs);
+        res.emplace_back("onlineDocs", make_string("%" PRId64, numDocs));
         session.setGen(session.getGen() + 1);
     }
     if (numDocsChanged)
@@ -102,10 +102,8 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
         ret.SetString(&v[i], res[i].value.c_str());
     }
     LOG(debug, "gen=%" PRId64, session.getGen());
-    for (uint32_t i = 0; i < res.size(); ++i) {
-        LOG(debug,
-            "key=%s, value=%s",
-            res[i].key.c_str(), res[i].value.c_str());
+    for (const auto & r : res) {
+        LOG(debug, "key=%s, value=%s", r.key.c_str(), r.value.c_str());
     }
     ret.AddInt32(session.getGen());
 }
@@ -186,10 +184,10 @@ RPCHooksBase::initRPC()
 }
 
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident)
-        : proton(parent),
-          slobrok_config(config::ConfigUri("admin/slobrok.0")),
-          identity(ident),
-          rtcPort(port)
+    : proton(parent),
+      slobrok_config(config::ConfigUri("admin/slobrok.0")),
+      identity(ident),
+      rtcPort(port)
 { }
 
 RPCHooksBase::Params::~Params() = default;
@@ -274,7 +272,8 @@ RPCHooksBase::rpc_GetState(FRT_RPCRequest *req)
     uint32_t gen = arg[0]._intval32;
     uint32_t timeoutMS = arg[1]._intval32;
     const Session::SP & sharedSession = getSession(req);
-    LOG(debug, "RPCHooksBase::rpc_GetState(gen=%d, timeoutMS=%d) , but using gen=%" PRId64 " instead", gen, timeoutMS, sharedSession->getGen());
+    LOG(debug, "RPCHooksBase::rpc_GetState(gen=%d, timeoutMS=%d) , but using gen=%" PRId64 " instead",
+               gen, timeoutMS, sharedSession->getGen());
 
     int64_t numDocs(_proton.getNumDocs());
     if (sharedSession->getGen() < 0 || sharedSession->getNumDocs() != numDocs) {  // NB Should use something else to define generation.
@@ -309,8 +308,9 @@ RPCHooksBase::getProtonStatus(FRT_RPCRequest *req)
     FRT_StringValue *internalStates = ret.AddStringArray(reports.size());
     FRT_StringValue *v = ret.AddStringArray(reports.size());
     for (uint32_t i = 0; i < reports.size(); ++i) {
-        ret.SetString(&r[i], reports[i]->getComponent().c_str());
-        switch (reports[i]->getState()) {
+        const StatusReport & report = *reports[i];
+        ret.SetString(&r[i], report.getComponent().c_str());
+        switch (report.getState()) {
         case StatusReport::UPOK:
             ret.SetString(&k[i], "OK");
             break;
@@ -324,15 +324,10 @@ RPCHooksBase::getProtonStatus(FRT_RPCRequest *req)
             ret.SetString(&k[i], "UNKNOWN");
             break;
         }
-        ret.SetString(&internalStates[i],
-                      reports[i]->getInternalStatesStr().c_str());
-        ret.SetString(&v[i], reports[i]->getMessage().c_str());
-        LOG(debug,
-            "component(%s), status(%s), internalState(%s), message(%s)",
-            reports[i]->getComponent().c_str(),
-            k[i]._str,
-            internalStates[i]._str,
-            reports[i]->getMessage().c_str());
+        ret.SetString(&internalStates[i], report.getInternalStatesStr().c_str());
+        ret.SetString(&v[i], report.getMessage().c_str());
+        LOG(debug, "component(%s), status(%s), internalState(%s), message(%s)",
+                     report.getComponent().c_str(), k[i]._str, internalStates[i]._str, report.getMessage().c_str());
     }
     req->Return();
 }
@@ -411,7 +406,7 @@ RPCHooksBase::getSession(FRT_RPCRequest *req)
 {
     FNET_Connection *conn = req->GetConnection();
     void *vctx = conn->GetContext()._value.VOIDP;
-    Session::SP *sessionspp = static_cast<Session::SP *>(vctx);
+    auto *sessionspp = static_cast<Session::SP *>(vctx);
     return *sessionspp;
 }
 
@@ -423,12 +418,7 @@ RPCHooksBase::initSession(FRT_RPCRequest *req)
     const void * voidp(conn->GetContext()._value.VOIDP);
     req->GetConnection()->SetContext(new Session::SP(new Session()));
     void *vctx = conn->GetContext()._value.VOIDP;
-    LOG(debug,
-        "RPCHooksBase::iniSession req=%p connection=%p session=%p oldSession=%p",
-        req,
-        conn,
-        vctx,
-        voidp);
+    LOG(debug, "RPCHooksBase::iniSession req=%p connection=%p session=%p oldSession=%p", req, conn, vctx, voidp);
 }
 
 void
@@ -436,34 +426,25 @@ RPCHooksBase::finiSession(FRT_RPCRequest *req)
 {
     FNET_Connection *conn = req->GetConnection();
     void *vctx = conn->GetContext()._value.VOIDP;
-    conn->GetContextPT()->_value.VOIDP = NULL;
-    LOG(debug,
-        "RPCHooksBase::finiSession req=%p connection=%p session=%p",
-        req,
-        conn,
-        vctx);
+    conn->GetContextPT()->_value.VOIDP = nullptr;
+    LOG(debug, "RPCHooksBase::finiSession req=%p connection=%p session=%p", req, conn, vctx);
 
-    Session::SP *sessionspp = static_cast<Session::SP *>(vctx);
+    auto * sessionspp = static_cast<Session::SP *>(vctx);
     delete sessionspp;
 }
 
 void
 RPCHooksBase::downSession(FRT_RPCRequest *req)
 {
-    LOG(debug,
-        "RPCHooksBase::downSession req=%p connection=%p session=%p",
-        req,
-        req->GetConnection(),
-        req->GetConnection()->GetContext()._value.VOIDP);
+    LOG(debug, "RPCHooksBase::downSession req=%p connection=%p session=%p",
+               req, req->GetConnection(), req->GetConnection()->GetContext()._value.VOIDP);
     getSession(req)->setDown();
 }
 
 void
 RPCHooksBase::mismatch(FRT_RPCRequest *req)
 {
-    LOG(warning, "RPC Mismatch: %s, (%d): %s",
-        req->GetMethodName(),
-        req->GetErrorCode(), req->GetErrorMessage());
+    LOG(warning, "RPC Mismatch: %s, (%d): %s", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
 }
 
 RPCHooks::RPCHooks(Params &params) :
