@@ -99,6 +99,17 @@
       <artifactId>metrics-proxy</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <!-- Not needed to generate config and saves 1 MB. -->
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
