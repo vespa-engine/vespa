@@ -49,6 +49,9 @@ public:
     class DocWordCollapsedFeature
     {
     public:
+        uint32_t _field_len;
+        uint32_t _num_occs;
+
         DocWordCollapsedFeature();
         ~DocWordCollapsedFeature();
     };
@@ -201,6 +204,8 @@ public:
                                 p->_elementWeight, p->_elementLen);
             ++p;
         }
+        features.set_field_length(d._collapsedDocWordFeatures._field_len);
+        features.set_num_occs(d._collapsedDocWordFeatures._num_occs);
     }
 
 public:

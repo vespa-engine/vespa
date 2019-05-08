@@ -15,7 +15,7 @@ protected:
     uint32_t _doc_id;
     uint32_t _doc_id_pos;
     uint32_t _feature_pos;
-    using DocIdAndFeatureSize = std::pair<uint32_t, uint32_t>;
+    using DocIdAndFeatureSize = Zc4PostingWriterBase::DocIdAndFeatureSize;
 
 public:
     DocIdEncoder()
@@ -25,7 +25,7 @@ public:
     {
     }
 
-    void write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size);
+    void write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size, bool encode_cheap_features);
     void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
     uint32_t get_doc_id() const { return _doc_id; }
     uint32_t get_doc_id_pos() const { return _doc_id_pos; }
@@ -100,11 +100,17 @@ public:
 };
 
 void
-DocIdEncoder::write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size)
+DocIdEncoder::write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size, bool encode_cheap_features)
 {
-    _feature_pos += doc_id_and_feature_size.second;
-    zc_buf.encode(doc_id_and_feature_size.first - _doc_id - 1);
-    _doc_id = doc_id_and_feature_size.first;
+    _feature_pos += doc_id_and_feature_size._features_size;
+    zc_buf.encode(doc_id_and_feature_size._doc_id - _doc_id - 1);
+    _doc_id = doc_id_and_feature_size._doc_id;
+    if (encode_cheap_features) {
+        assert(doc_id_and_feature_size._field_length > 0);
+        zc_buf.encode(doc_id_and_feature_size._field_length - 1);
+        assert(doc_id_and_feature_size._num_occs > 0);
+        zc_buf.encode(doc_id_and_feature_size._num_occs - 1);
+    }
     _doc_id_pos = zc_buf.size();
 }
 
@@ -199,6 +205,7 @@ Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
       _featureOffset(0),
       _writePos(0),
       _dynamicK(false),
+      _encode_cheap_features(false),
       _zcDocIds(),
       _l1Skip(),
       _l2Skip(),
@@ -257,7 +264,7 @@ Zc4PostingWriterBase::calc_skip_info(bool encode_features)
                 }
             }
         }
-        doc_id_encoder.write(_zcDocIds, doc_id_and_feature_size);
+        doc_id_encoder.write(_zcDocIds, doc_id_and_feature_size, _encode_cheap_features);
     }
     // Extra partial entries for skip tables to simplify iterator during search
     l1_skip_encoder.write_partial_skip(_l1Skip, doc_id_encoder.get_doc_id());
@@ -282,6 +289,7 @@ Zc4PostingWriterBase::set_posting_list_params(const PostingListParams &params)
     params.get("docIdLimit", _docIdLimit);
     params.get("minChunkDocs", _minChunkDocs);
     params.get("minSkipDocs", _minSkipDocs);
+    params.get("cheap_features", _encode_cheap_features);
 }
 
 }

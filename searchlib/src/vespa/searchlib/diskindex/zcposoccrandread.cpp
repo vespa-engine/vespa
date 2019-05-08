@@ -25,6 +25,7 @@ namespace {
 
 vespalib::string myId4("Zc.4");
 vespalib::string myId5("Zc.5");
+vespalib::string cheap_features("cheap_features");
 
 }
 
@@ -42,7 +43,8 @@ ZcPosOccRandRead::ZcPosOccRandRead()
       _fileBitSize(0),
       _headerBitSize(0),
       _fieldsParams(),
-      _dynamicK(true)
+      _dynamicK(true),
+      _decode_cheap_features(false)
 { }
 
 
@@ -95,9 +97,9 @@ createIterator(const PostingListCounts &counts,
     uint32_t numDocs = static_cast<uint32_t>(val64) + 1;
 
     if (numDocs < _minSkipDocs) {
-        return new ZcRareWordPosOccIterator<true>(start, handle._bitLength, _docIdLimit, &_fieldsParams, matchData);
+        return new ZcRareWordPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features, &_fieldsParams, matchData);
     } else {
-        return new ZcPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _minChunkDocs, counts, &_fieldsParams, matchData);
+        return new ZcPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features,  _minChunkDocs, counts, &_fieldsParams, matchData);
     }
 }
 
@@ -231,6 +233,9 @@ ZcPosOccRandRead::readHeader()
     _minChunkDocs = header.getTag("minChunkDocs").asInteger();
     _docIdLimit = header.getTag("docIdLimit").asInteger();
     _minSkipDocs = header.getTag("minSkipDocs").asInteger();
+    if (header.hasTag(cheap_features) && (header.getTag(cheap_features).asInteger() != 0)) {
+        _decode_cheap_features = true;
+    }
     // Read feature decoding specific subheader
     d.readHeader(header, "features.");
     // Align on 64-bit unit
@@ -304,9 +309,9 @@ createIterator(const PostingListCounts &counts,
     uint32_t numDocs = static_cast<uint32_t>(val64) + 1;
 
     if (numDocs < _minSkipDocs) {
-        return new Zc4RareWordPosOccIterator<true>(start, handle._bitLength, _docIdLimit, &_fieldsParams, matchData);
+        return new Zc4RareWordPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features, &_fieldsParams, matchData);
     } else {
-        return new Zc4PosOccIterator<true>(start, handle._bitLength, _docIdLimit, _minChunkDocs, counts, &_fieldsParams, matchData);
+        return new Zc4PosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features, _minChunkDocs, counts, &_fieldsParams, matchData);
     }
 }
 

@@ -68,8 +68,11 @@ public:
     unsigned int       _residue;
     uint32_t           _prevDocId;  // Previous document id
     uint32_t           _numDocs;    // Documents in chunk or word
+    bool               _decode_cheap_features;
+    uint32_t           _field_length;
+    uint32_t           _num_occs;
 
-    Zc4RareWordPostingIterator(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit);
+    Zc4RareWordPostingIterator(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
@@ -89,12 +92,15 @@ private:
     using ParentClass::setDocId;
     using ParentClass::setAtEnd;
     using ParentClass::_numDocs;
+    using ParentClass::_decode_cheap_features;
+    using ParentClass::_field_length;
+    using ParentClass::_num_occs;
 
     uint32_t _docIdK;
 
 public:
     using ParentClass::_decodeContext;
-    ZcRareWordPostingIterator(const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit);
+    ZcRareWordPostingIterator(const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
 
     void doSeek(uint32_t docId) override;
     void readWordStart(uint32_t docIdLimit) override;
@@ -239,12 +245,19 @@ protected:
     ChunkSkip _chunk;
     uint64_t _featuresSize;
     bool     _hasMore;
+    bool     _decode_cheap_features;
     uint32_t _chunkNo;
+    uint32_t _field_length;
+    uint32_t _num_occs;
 
     void nextDocId(uint32_t prevDocId) {
         uint32_t docId = prevDocId + 1;
         ZCDECODE(_valI, docId +=);
         setDocId(docId);
+        if (_decode_cheap_features) {
+            ZCDECODE(_valI, _field_length =);
+            ZCDECODE(_valI, _num_occs =);
+        }
     }
     virtual void featureSeek(uint64_t offset) = 0;
     VESPA_DLL_LOCAL void doChunkSkipSeek(uint32_t docId);
@@ -254,7 +267,7 @@ protected:
     VESPA_DLL_LOCAL void doL1SkipSeek(uint32_t docId);
     void doSeek(uint32_t docId) override;
 public:
-    ZcPostingIteratorBase(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit);
+    ZcPostingIteratorBase(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
 };
 
 template <bool bigEndian>
@@ -281,7 +294,7 @@ public:
     const PostingListCounts &_counts;
 
     ZcPostingIterator(uint32_t minChunkDocs, bool dynamicK, const PostingListCounts &counts,
-                      const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit);
+                      const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
 
 
     void doUnpack(uint32_t docId) override;

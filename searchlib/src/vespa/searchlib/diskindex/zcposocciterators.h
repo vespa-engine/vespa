@@ -17,7 +17,7 @@ private:
     typedef bitcompression::EG2PosOccDecodeContextCooked<bigEndian> DecodeContextReal;
     DecodeContextReal _decodeContextReal;
 public:
-    Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+    Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                               const bitcompression::PosOccFieldsParams *fieldsParams,
                               const fef::TermFieldMatchDataArray &matchData);
 };
@@ -33,7 +33,7 @@ private:
     typedef bitcompression::EG2PosOccDecodeContextCooked<bigEndian> DecodeContext;
     DecodeContext _decodeContextReal;
 public:
-    Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+    Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                       uint32_t minChunkDocs, const index::PostingListCounts &counts,
                       const bitcompression::PosOccFieldsParams *fieldsParams,
                       const fef::TermFieldMatchDataArray &matchData);
@@ -50,7 +50,7 @@ private:
     typedef bitcompression::EGPosOccDecodeContextCooked<bigEndian> DecodeContextReal;
     DecodeContextReal _decodeContextReal;
 public:
-    ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit,
+    ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit, bool decode_cheap_features,
                              const bitcompression::PosOccFieldsParams *fieldsParams,
                              const fef::TermFieldMatchDataArray &matchData);
 };
@@ -66,7 +66,7 @@ private:
     typedef bitcompression::EGPosOccDecodeContextCooked<bigEndian> DecodeContext;
     DecodeContext _decodeContextReal;
 public:
-    ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit,
+    ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit, bool decode_cheap_features,
                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
                      const bitcompression::PosOccFieldsParams *fieldsParams,
                      const fef::TermFieldMatchDataArray &matchData);
