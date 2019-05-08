@@ -20,6 +20,7 @@ import static org.junit.Assert.assertFalse;
 public class ApplicationStoreMock implements ApplicationStore {
 
     private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, byte[]> devStore = new ConcurrentHashMap<>();
 
     @Override
     public byte[] get(ApplicationId application, ApplicationVersion applicationVersion) {
@@ -66,6 +67,16 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public void removeAll(TesterId tester) {
         store.remove(tester.id());
+    }
+
+    @Override
+    public void putDev(ApplicationId application, byte[] applicationPackage) {
+        devStore.put(application, applicationPackage);
+    }
+
+    @Override
+    public byte[] getDev(ApplicationId application) {
+        return requireNonNull(devStore.get(application));
     }
 
 }
