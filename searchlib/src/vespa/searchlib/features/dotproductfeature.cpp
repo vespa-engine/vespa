@@ -672,7 +672,7 @@ createForDirectIntegerWSet(const IAttributeVector * attribute, const Property & 
     IntegerVectorT<T> vector;
     WeightedSetParser::parse(prop.get(), vector);
     return vector.empty()
-           ? nullptr
+           ? &stash.create<SingleZeroValueExecutor>();
            : createForDirectWSetImpl<IntegerAttributeTemplate<T>>(attribute, std::move(vector), stash);
 }
 
@@ -683,7 +683,9 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
     if (attribute->hasEnum()) {
         EnumVector vector(attribute);
         WeightedSetParser::parse(prop.get(), vector);
-        if (vector.empty()) return nullptr;
+        if (vector.empty()) {
+            return &stash.create<SingleZeroValueExecutor>()
+        }
         const IWeightedIndexVector * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
         if (supportsGetEnumHandles(getEnumHandles)) {
             return &stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
@@ -693,8 +695,9 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
         if (attribute->isStringType()) {
             StringVector vector;
             WeightedSetParser::parse(prop.get(), vector);
-            if (vector.empty()) return nullptr;
-            return &stash.create<DotProductExecutorByCopy<StringVector, WeightedConstCharContent>>(attribute, std::move(vector));
+            return vector.empty()
+                       ? &stash.create<SingleZeroValueExecutor>()
+                       : &stash.create<DotProductExecutorByCopy<StringVector, WeightedConstCharContent>>(attribute, std::move(vector));
         } else if (attribute->isIntegerType()) {
             if (attribute->getBasicType() == BasicType::INT32) {
                 return createForDirectIntegerWSet<int32_t>(attribute, prop, stash);
