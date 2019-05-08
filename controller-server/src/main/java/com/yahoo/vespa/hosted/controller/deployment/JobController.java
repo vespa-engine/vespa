@@ -288,6 +288,8 @@ public class JobController {
         });
     }
 
+    // TODO add deploy which aborts running, waits for it to stop, locks step, stores package, starts the job
+
     /** Unregisters the given application and makes all associated data eligible for garbage collection. */
     public void unregister(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
