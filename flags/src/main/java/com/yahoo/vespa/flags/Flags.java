@@ -37,12 +37,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag USE_CONFIG_SERVER_CACHE = defineFeatureFlag(
-            "use-config-server-cache", true,
-            "Whether config server will use cache to answer config requests.",
-            "Takes effect immediately when changed.",
-            HOSTNAME, APPLICATION_ID);
-
     public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
             "config-server-bootstrap-in-separate-thread", false,
             "Whether to run config server/controller bootstrap in a separate thread.",

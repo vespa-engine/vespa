@@ -103,8 +103,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.version(),
                                applicationMetricUpdater,
-                               applicationId,
-                               flagSource);
+                               applicationId);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {
