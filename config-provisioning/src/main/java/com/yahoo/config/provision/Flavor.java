@@ -7,6 +7,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -18,10 +19,6 @@ import java.util.Optional;
 public class Flavor {
 
     private boolean configured;
-
-    /** The hardware resources of this flavor */
-    private NodeResources resources;
-
     private final String name;
     private final int cost;
     private final boolean isStock;
@@ -36,6 +33,9 @@ public class Flavor {
     private List<Flavor> replacesFlavors;
     private int idealHeadroom; // Note: Not used after Vespa 6.282
 
+    /** The hardware resources of this flavor */
+    private NodeResources resources;
+
     /**
      * Creates a Flavor, but does not set the replacesFlavors.
      *
@@ -44,7 +44,6 @@ public class Flavor {
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this.configured = true;
         this.name = flavorConfig.name();
-        this.replacesFlavors = new ArrayList<>();
         this.cost = flavorConfig.cost();
         this.isStock = flavorConfig.stock();
         this.type = Type.valueOf(flavorConfig.environment());
@@ -55,12 +54,14 @@ public class Flavor {
         this.bandwidth = flavorConfig.bandwidth();
         this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
+        this.replacesFlavors = new ArrayList<>();
         this.idealHeadroom = flavorConfig.idealHeadroom();
         this.resources = new NodeResources(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
     }
 
     /** Create a Flavor from a Flavor spec and all other fields set to Docker defaults */
     public Flavor(NodeResources resources) {
+        Objects.requireNonNull(resources, "Resources cannot be null");
         if (resources.allocateByLegacyName())
             throw new IllegalArgumentException("Can not create flavor '" + resources.legacyName() + "' from a flavor: " +
                                                "Non-docker flavors must be of a configured flavor");
@@ -77,6 +78,7 @@ public class Flavor {
         this.description = "";
         this.retired = false;
         this.replacesFlavors = Collections.emptyList();
+        this.idealHeadroom = 0;
         this.resources = resources;
     }
 

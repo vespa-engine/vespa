@@ -41,28 +41,28 @@ public class CapacityPolicies {
         }
     }
 
-    public NodeResources decideFlavor(Capacity requestedCapacity, ClusterSpec cluster) {
-        Optional<NodeResources> requestedFlavor = requestedCapacity.nodeResources();
-        if (requestedFlavor.isPresent() && ! requestedFlavor.get().allocateByLegacyName())
-            return requestedFlavor.get();
+    public NodeResources decideNodeResources(Capacity requestedCapacity, ClusterSpec cluster) {
+        Optional<NodeResources> requestedResources = requestedCapacity.nodeResources();
+        if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
+            return requestedResources.get();
 
-        NodeResources defaultFlavor = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
-        if (requestedFlavor.isEmpty())
-            return defaultFlavor;
+        NodeResources defaultResources = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
+        if (requestedResources.isEmpty())
+            return defaultResources;
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedFlavor.get().legacyName().get()) ? requestedFlavor.get() : defaultFlavor;
+            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultResources;
         else {
             switch (zone.environment()) {
-                case dev: case test: case staging: return defaultFlavor;
+                case dev: case test: case staging: return defaultResources;
                 default:
                     // Check existence of the legacy specified flavor
-                    flavors.getFlavorOrThrow(requestedFlavor.get().legacyName().get());
+                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get());
                     // Return this spec containing the legacy flavor name, not the flavor's capacity object
                     // which describes the flavors capacity, as the point of legacy allocation is to match
                     // by name, not by resources
-                    return requestedFlavor.get();
+                    return requestedResources.get();
             }
         }
     }
