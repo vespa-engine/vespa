@@ -174,11 +174,11 @@ public class NodesSpecification {
     }
 
     private static Optional<NodeResources> getFlavor(ModelElement nodesElement) {
-        ModelElement flavor = nodesElement.child("resources");
-        if (flavor != null) {
-            return Optional.of(new NodeResources(flavor.requiredDoubleAttribute("vcpu"),
-                                                 parseGbAmount(flavor.requiredStringAttribute("memory")),
-                                                 parseGbAmount(flavor.requiredStringAttribute("disk"))));
+        ModelElement resources = nodesElement.child("resources");
+        if (resources != null) {
+            return Optional.of(new NodeResources(resources.requiredDoubleAttribute("vcpu"),
+                                                 parseGbAmount(resources.requiredStringAttribute("memory")),
+                                                 parseGbAmount(resources.requiredStringAttribute("disk"))));
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
             return Optional.of(NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor")));

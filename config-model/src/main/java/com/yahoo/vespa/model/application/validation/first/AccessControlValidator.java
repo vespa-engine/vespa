@@ -58,4 +58,5 @@ public class AccessControlValidator extends Validator {
     private boolean hasNonMbusBinding(Handler<?> handler) {
         return handler.getServerBindings().stream().anyMatch(binding -> ! binding.startsWith("mbus"));
     }
+
 }

@@ -44,6 +44,13 @@ import java.util.function.UnaryOperator;
  */
 public class NodeSerializer {
 
+    // WARNING: Since there are multiple config servers in a cluster and they upgrade one by one
+    //          (and rewrite all nodes on startup),
+    //          changes to the serialized format must be made such that what is serialized on version N+1
+    //          can be read by version N:
+    //          - ADDING FIELDS: Always ok
+    //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
+
     /** The configured node flavors */
     private final NodeFlavors flavors;
 
