@@ -280,7 +280,7 @@ public class InternalStepRunnerTest {
     @Test
     public void deployToDev() {
         ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
-        tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(appId, JobType.perfUsEast3, Optional.empty(), applicationPackage);
         tester.runner().run();
         RunId id = tester.jobs().last(appId, JobType.devUsEast1).get().id();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));

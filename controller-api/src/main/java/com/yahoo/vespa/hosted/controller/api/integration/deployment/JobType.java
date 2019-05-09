@@ -82,7 +82,10 @@ public enum JobType {
                             Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
 
     devAwsUsEast1b         ("dev-aws-us-east-1b",
-                            Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b")));
+                            Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b"))),
+
+    perfUsEast3            ("perf-us-east-3",
+                            Map.of(main, ZoneId.from("perf"   , "us-east-3")));
 
     private final String jobName;
     private final Map<SystemName, ZoneId> zones;

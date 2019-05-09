@@ -68,6 +68,7 @@ public enum JobProfile {
             case test: return systemTest;
             case staging: return stagingTest;
             case prod: return production;
+            case perf:
             case dev: return development;
             default: throw new AssertionError("Unexpected environment '" + type.environment() + "'!");
         }
