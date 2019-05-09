@@ -200,7 +200,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addVipHandler();
     }
 
-    public final void addDefaultHandlersExceptStatus() {
+    public void addDefaultHandlersExceptStatus() {
         addDefaultRootHandler();
         addMetricStateHandler();
         addApplicationStatusHandler();
