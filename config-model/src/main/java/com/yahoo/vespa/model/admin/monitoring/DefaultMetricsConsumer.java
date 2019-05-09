@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
-import ai.vespa.metricsproxy.core.VespaMetrics;
 import com.google.common.collect.ImmutableList;
 
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
@@ -17,7 +16,7 @@ import static java.util.Collections.emptyList;
  */
 public class DefaultMetricsConsumer {
 
-    public static final String VESPA_CONSUMER_ID = VespaMetrics.VESPA_CONSUMER_ID.id;
+    public static final String VESPA_CONSUMER_ID = "Vespa";
 
     private static final MetricSet defaultConsumerMetrics = new MetricSet("default-consumer",
                                                                           emptyList(),
