@@ -83,6 +83,7 @@ public class JobRunner extends Maintainer {
         try {
             AtomicBoolean changed = new AtomicBoolean(false);
             jobs.locked(id.application(), id.type(), step, lockedStep -> {
+                jobs.locked(id, run -> run); // Memory visibility.
                 jobs.active(id).ifPresent(run -> { // The run may have become inactive, so we bail out.
                     if ( ! run.readySteps().contains(step))
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.

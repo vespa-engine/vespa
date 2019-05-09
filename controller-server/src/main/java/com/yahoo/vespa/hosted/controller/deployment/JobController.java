@@ -389,7 +389,7 @@ public class JobController {
     }
 
     /** Locks and modifies the run with the given id, provided it is still active. */
-    private void locked(RunId id, UnaryOperator<Run> modifications) {
+    public void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
                 run = modifications.apply(run);
