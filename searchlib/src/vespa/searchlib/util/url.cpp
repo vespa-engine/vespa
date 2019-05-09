@@ -144,13 +144,12 @@ URL::ParseURLPart(unsigned char *src,
     unsigned char *p = src;
     unsigned int len = 0;
 
-    while (IsPartChar(*p) && len<destsize-1) {
+    while (IsPartChar(*p) && len<(destsize-1)) {
         len++;
         p++;
     }
     if (len > 0) {
-        strncpy(reinterpret_cast<char *>(dest),
-                reinterpret_cast<char *>(src), len);
+        memcpy(dest, src, len);
         dest[len] = '\0';
     }
 
@@ -386,17 +385,15 @@ URL::SetURL(const unsigned char *url, size_t length)
             _startFragment = p;
             p = ParseURLPart<IsFragmentChar>(p, _fragment, sizeof(_fragment));
         }
-
-        // stuff the rest into address
-        _startAddress = p;
-        strncpy(reinterpret_cast<char *>(_address),
-                reinterpret_cast<char *>(p), sizeof(_address) - 1);
-        _address[sizeof(_address) - 1] = '\0';
-    } else {
-        _startAddress = p;
-        strncpy(reinterpret_cast<char *>(_address),
-                reinterpret_cast<char *>(p), sizeof(_address) - 1);
-        _address[sizeof(_address) - 1] = '\0';
+    }
+    // stuff the rest into address
+    _startAddress = p;
+    _address[0] = '\0';
+    ssize_t sz = length - (p - _url);
+    if (sz > 0) {
+        ssize_t toCopy = std::min(ssize_t(sizeof(_address) - 1), sz);
+        memcpy(_address, p, toCopy);
+        _address[toCopy] = '\0';
     }
 }
 
