@@ -17,6 +17,7 @@ import com.yahoo.search.federation.selection.FederationTarget;
 import com.yahoo.search.federation.selection.TargetSelector;
 import com.yahoo.search.federation.StrictContractsConfig;
 import com.yahoo.search.result.ErrorHit;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
@@ -122,9 +123,26 @@ public class FederationSearcherTest {
         tester.addOptionalSearchChain("chain2", blockingSearcher);
 
         Result result = tester.searchAndFill();
-        assertThat(getNonErrorHits(result).size(), is(1));
-        assertFilled(getFirstHit(getNonErrorHits(result).get(0)));
-        assertNotNull(result.hits().getError());
+        assertEquals(2, result.getHitCount());
+        assertTrue(result.hits().get(0) instanceof HitGroup);
+        assertTrue(result.hits().get(1) instanceof HitGroup);
+        HitGroup chain1Result = (HitGroup)result.hits().get(0);
+        HitGroup chain2Result = (HitGroup)result.hits().get(1);
+
+        // Verify chain1 result: One filled hit
+        assertEquals(1, chain1Result.size());
+        assertFilled(getFirstHit(chain1Result));
+
+        // Verify chain2 result: A timeout error
+        assertEquals(1, chain2Result.size());
+        assertNotNull(chain2Result.getErrorHit());
+        ErrorHit errorHit = chain2Result.getErrorHit();
+        assertEquals(1, errorHit.errors().size());
+        ErrorMessage error = errorHit.errors().iterator().next();
+        assertEquals("chain2", error.getSource());
+        assertEquals(ErrorMessage.timeoutCode, error.getCode());
+        assertEquals("Timed out", error.getMessage());
+        assertEquals("Error in execution of chain 'chain2': Chain timed out.", error.getDetailedMessage());
     }
 
     @Test
@@ -137,8 +155,17 @@ public class FederationSearcherTest {
         Query query = new Query();
         query.setTimeout(50); // make the test run faster
         Result result = tester.search(query);
-        assertThat(getNonErrorHits(result).size(), is(0));
-        assertNotNull(result.hits().getError());
+        assertEquals(1, result.hits().size());
+        assertTrue(result.hits().get(0) instanceof HitGroup);
+        HitGroup chain1Result = (HitGroup)result.hits().get(0);
+        assertEquals(1, chain1Result.size());
+        assertTrue(chain1Result.asList().get(0) instanceof ErrorHit);
+        ErrorHit errorHit = (ErrorHit)chain1Result.get(0);
+        assertEquals(1, errorHit.errors().size());
+        ErrorMessage error = errorHit.errors().iterator().next();
+        assertEquals("chain1", error.getSource());
+        assertEquals(ErrorMessage.timeoutCode, error.getCode());
+        assertEquals("Timed out", error.getMessage());
     }
 
     @Test
