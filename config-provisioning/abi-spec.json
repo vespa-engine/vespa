@@ -491,6 +491,20 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.InfraDeployer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.util.Optional getDeployment(com.yahoo.config.provision.ApplicationId)",
+      "public abstract java.util.List getSupportedInfraApplications()"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.InstanceName": {
     "superClass": "java.lang.Object",
     "interfaces": [

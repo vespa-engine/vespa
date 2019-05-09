@@ -15,6 +15,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -37,6 +38,7 @@ import com.yahoo.vespa.config.server.configchange.RefeedActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
+import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
@@ -93,6 +95,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
+    private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
     private final Clock clock;
@@ -105,11 +108,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
+                                 InfraDeployerProvider infraDeployerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
-                                 HttpProxy httpProxy, 
+                                 HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator) {
-        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(),
+        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(), infraDeployerProvider.getInfraDeployer(),
              configConvergenceChecker, httpProxy, configserverConfig, orchestrator,
              Clock.systemUTC(), new FileDistributionStatus());
     }
@@ -128,12 +132,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Orchestrator orchestrator,
                                  Clock clock,
                                  ConfigserverConfig configserverConfig) {
-        this(tenantRepository, Optional.of(hostProvisioner), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
+        this(tenantRepository, Optional.of(hostProvisioner), Optional.empty(), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
              configserverConfig, orchestrator, clock, new FileDistributionStatus());
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
                                   Optional<Provisioner> hostProvisioner,
+                                  Optional<InfraDeployer> infraDeployer,
                                   ConfigConvergenceChecker configConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
@@ -142,6 +147,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   FileDistributionStatus fileDistributionStatus) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
+        this.infraDeployer = infraDeployer;
         this.convergeChecker = configConvergenceChecker;
         this.httpProxy = httpProxy;
         this.clock = clock;
@@ -247,6 +253,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application,
                                                                                  Duration timeout,
                                                                                  boolean bootstrap) {
+        Optional<com.yahoo.config.provision.Deployment> infraDeployment = infraDeployer.flatMap(d -> d.getDeployment(application));
+        if (infraDeployment.isPresent()) return infraDeployment;
+
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         LocalSession activeSession = getActiveSession(tenant, application);
