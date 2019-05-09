@@ -11,7 +11,6 @@
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::AndSearch;
-using search::queryeval::MultiSearch;
 using search::queryeval::OrSearch;
 using search::queryeval::SearchIterator;
 
