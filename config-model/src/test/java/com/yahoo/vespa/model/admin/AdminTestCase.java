@@ -266,7 +266,7 @@ public class AdminTestCase {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node0' />" +
                 "    <logforwarding>" +
-                "      <splunk deployment-server='foo:123' client-name='foocli'/>" +
+                "      <splunk deployment-server='foo:123' client-name='foocli' phone-home-interval='900' />" +
                 "    </logforwarding>" +
                 "  </admin>" +
                 "</services>";

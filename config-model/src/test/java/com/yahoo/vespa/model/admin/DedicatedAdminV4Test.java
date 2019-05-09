@@ -147,7 +147,7 @@ public class DedicatedAdminV4Test {
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
                 "    <logforwarding>" +
-                "      <splunk deployment-server='foo:123' client-name='foocli'/>" +
+                "      <splunk deployment-server='foo:123' client-name='foocli' phone-home-interval='900'/>" +
                 "    </logforwarding>" +
                 "  </admin>" +
                 "</services>";
@@ -173,6 +173,7 @@ public class DedicatedAdminV4Test {
             assertEquals("foo:123", config.deploymentServer());
             assertEquals("foocli", config.clientName());
             assertEquals("/opt/splunkforwarder", config.splunkHome());
+            assertEquals(900, config.phoneHomeInterval());
         }
 
         // Other host's forwarder
@@ -183,6 +184,8 @@ public class DedicatedAdminV4Test {
 
             assertEquals("foo:123", config.deploymentServer());
             assertEquals("foocli", config.clientName());
+            assertEquals("/opt/splunkforwarder", config.splunkHome());
+            assertEquals(900, config.phoneHomeInterval());
         }
     }
 

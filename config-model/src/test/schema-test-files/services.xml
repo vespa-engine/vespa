@@ -26,7 +26,7 @@
       </consumer>
     </metrics>
     <logforwarding>
-      <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk"/>
+      <splunk deployment-server="foo:8989" client-name="foobar" splunk-home="/opt/splunk" phone-home-interval="900"/>
     </logforwarding>
   </admin>
 

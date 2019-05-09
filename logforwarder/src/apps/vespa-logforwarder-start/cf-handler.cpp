@@ -69,6 +69,7 @@ CfHandler::doConfigure()
 
     fprintf(fp, "[deployment-client]\n");
     fprintf(fp, "clientName = %s\n", config.clientName.c_str());
+    fprintf(fp, "phoneHomeIntervalInSecs = %s\n", config.phoneHomeInterval.c_str);
     fprintf(fp, "\n");
     fprintf(fp, "[target-broker:deploymentServer]\n");
     fprintf(fp, "targetUri = %s\n", config.deploymentServer.c_str());

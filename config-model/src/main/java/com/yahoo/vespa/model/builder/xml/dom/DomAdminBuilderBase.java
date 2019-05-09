@@ -117,7 +117,8 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             LogForwarder.Config cfg = LogForwarder.cfg()
 		    .withSplunkHome(e.stringAttribute("splunk-home"))
 		    .withDeploymentServer(e.stringAttribute("deployment-server"))
-		    .withClientName(e.stringAttribute("client-name"));
+		    .withClientName(e.stringAttribute("client-name"))
+            .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"));
             admin.setLogForwarderConfig(cfg);
         }
     }
