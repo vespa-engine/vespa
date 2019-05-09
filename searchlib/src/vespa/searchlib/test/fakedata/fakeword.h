@@ -253,6 +253,7 @@ public:
     validate(search::diskindex::FieldReader &fieldReader,
              uint32_t wordNum,
              const fef::TermFieldMatchDataArray &matchData,
+             bool decode_cheap_features,
              bool verbose) const;
 
     void validate(const std::vector<uint32_t> &docIds) const;

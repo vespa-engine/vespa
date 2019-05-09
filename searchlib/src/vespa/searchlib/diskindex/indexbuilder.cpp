@@ -97,7 +97,7 @@ FileHandle::open(vespalib::stringref dir,
 
     _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds);
 
-    if (!_fieldWriter->open(dir + "/", 64, 262144u, false,
+    if (!_fieldWriter->open(dir + "/", 64, 262144u, false, false,
                             index.getSchema(), index.getIndex(),
                             tuneFileWrite, fileHeaderContext)) {
         LOG(error, "Could not open term writer %s for write (%s)",

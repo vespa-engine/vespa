@@ -68,7 +68,9 @@ public:
     uint64_t getSparseWordNum() const { return _wordNum; }
 
     bool open(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
-              bool dynamicKPosOccFormat, const Schema &schema, uint32_t indexId,
+              bool dynamicKPosOccFormat,
+              bool encode_cheap_features,
+              const Schema &schema, uint32_t indexId,
               const TuneFileSeqWrite &tuneFileWrite,
               const search::common::FileHeaderContext &fileHeaderContext);
 
