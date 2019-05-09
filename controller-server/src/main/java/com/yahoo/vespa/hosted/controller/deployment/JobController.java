@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -25,7 +24,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -281,7 +279,7 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
-        if (type.environment() != Environment.dev && versions.targetApplication().isUnknown())
+        if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
             throw new IllegalArgumentException("Target application must be a valid reference.");
 
         controller.applications().lockIfPresent(id, application -> {
@@ -305,8 +303,8 @@ public class JobController {
             if ( ! application.get().deploymentJobs().deployedInternally())
                 controller.applications().store(registered(application));
         });
-        if (type.environment() != Environment.dev)
-            throw new IllegalArgumentException("Direct deployments are only allowed to the dev environment.");
+        if ( ! type.environment().isManuallyDeployed())
+            throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
 
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
         locked(id, type, __ -> {

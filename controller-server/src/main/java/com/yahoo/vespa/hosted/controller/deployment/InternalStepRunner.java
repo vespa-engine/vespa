@@ -11,8 +11,8 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
@@ -34,7 +34,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -158,10 +157,10 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, Versions versions, DualLogger logger) {
-        Optional<ApplicationPackage> applicationPackage = id.type().environment() == Environment.dev
+        Optional<ApplicationPackage> applicationPackage = id.type().environment().isManuallyDeployed()
                 ? Optional.of(new ApplicationPackage(controller.applications().applicationStore().getDev(id.application())))
                 : Optional.empty();
-        Optional<Version> vespaVersion = id.type().environment() == Environment.dev
+        Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
                 ? Optional.of(versions.targetPlatform())
                 : Optional.empty();
         return deploy(id.application(),
