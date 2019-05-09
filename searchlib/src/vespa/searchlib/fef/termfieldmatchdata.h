@@ -39,8 +39,12 @@ private:
     bool  empty() const { return _sz == 0; }
     void  clear() { _sz = 0; }
     bool  allocated() const { return isMultiPos(); }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+    // TODO Reconsider packing to avoid bad practice. gcc 9 does not like it.
     const TermFieldMatchDataPosition * getFixed() const { return reinterpret_cast<const TermFieldMatchDataPosition *>(_data._position); }
     TermFieldMatchDataPosition * getFixed() { return reinterpret_cast<TermFieldMatchDataPosition *>(_data._position); }
+#pragma GCC diagnostic pop
     const TermFieldMatchDataPosition * getMultiple() const { return _data._positions._positions; }
     TermFieldMatchDataPosition * getMultiple() { return _data._positions._positions; }
     int32_t  getElementWeight() const { return empty() ? 1 : allocated() ? getMultiple()->getElementWeight() : getFixed()->getElementWeight(); }

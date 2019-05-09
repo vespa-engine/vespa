@@ -88,11 +88,15 @@ void sswap(T * a, T * b) {
 void
 TermFieldMatchData::swap(TermFieldMatchData &rhs)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+    // TODO Reconsider packing to avoid bad practice. gcc 9 does not like it.
     sswap(&_docId, &rhs._docId);
     sswap(&_fieldId, &rhs._fieldId);
     sswap(&_sz, &rhs._sz);
     sswap(&_numOccs, &rhs._numOccs);
     sswap(&_fieldLength, &rhs._fieldLength);
+#pragma GCC diagnostic pop
     char tmp[sizeof(_data)];
     memcpy(tmp, &rhs._data, sizeof(_data));
     memcpy(&rhs._data, &_data, sizeof(_data));
