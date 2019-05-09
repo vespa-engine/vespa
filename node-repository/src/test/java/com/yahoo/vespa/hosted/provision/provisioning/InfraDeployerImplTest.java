@@ -36,6 +36,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author freva
+ */
 @RunWith(Parameterized.class)
 public class InfraDeployerImplTest {
 

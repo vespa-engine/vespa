@@ -96,11 +96,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                     return;
                 }
 
-                if (!candidateNodes.stream().allMatch(node ->
-                        node.state() == Node.State.active &&
-                                node.allocation()
-                                        .map(allocation -> allocation.membership().cluster().vespaVersion().equals(targetVersion.get()))
-                                        .orElse(false))) {
+                if (!allActiveNodesOn(targetVersion.get(), candidateNodes)) {
                     hostSpecs = provisioner.prepare(
                             application.getApplicationId(),
                             application.getClusterSpecWithVersion(targetVersion.get()),
@@ -129,7 +125,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                         application.getApplicationId(),
                         candidateNodes.stream().map(Node::hostname).map(HostName::from).collect(Collectors.toList()));
 
-                logger.log(LogLevel.DEBUG, this::generateActivationLogMessage);
+                logger.log(LogLevel.DEBUG, () -> generateActivationLogMessage(candidateNodes, application.getApplicationId()));
             }
         }
 
@@ -137,25 +133,34 @@ public class InfraDeployerImpl implements InfraDeployer {
         public void restart(HostFilter filter) {
             provisioner.restart(application.getApplicationId(), filter);
         }
+    }
 
-        private void removeApplication(ApplicationId applicationId) {
-            // Use the DuperModel as source-of-truth on whether it has also been activated (to avoid periodic removals)
-            if (duperModel.infraApplicationIsActive(applicationId)) {
-                NestedTransaction nestedTransaction = new NestedTransaction();
-                provisioner.remove(nestedTransaction, applicationId);
-                nestedTransaction.commit();
-                duperModel.infraApplicationRemoved(applicationId);
-            }
+    private void removeApplication(ApplicationId applicationId) {
+        // Use the DuperModel as source-of-truth on whether it has also been activated (to avoid periodic removals)
+        if (duperModel.infraApplicationIsActive(applicationId)) {
+            NestedTransaction nestedTransaction = new NestedTransaction();
+            provisioner.remove(nestedTransaction, applicationId);
+            nestedTransaction.commit();
+            duperModel.infraApplicationRemoved(applicationId);
         }
+    }
 
-        private String generateActivationLogMessage() {
-            String detail;
-            if (candidateNodes.size() < 10) {
-                detail = ": " + candidateNodes.stream().map(Node::hostname).collect(Collectors.joining(","));
-            } else {
-                detail = " with " + candidateNodes.size() + " hosts";
-            }
-            return "Infrastructure application " + application.getApplicationId() + " activated" + detail;
+    private static boolean allActiveNodesOn(Version version, List<Node> nodes) {
+        return nodes.stream()
+                .allMatch(node ->
+                        node.state() == Node.State.active &&
+                        node.allocation()
+                                .map(allocation -> allocation.membership().cluster().vespaVersion().equals(version))
+                                .orElse(false));
+    }
+
+    private static String generateActivationLogMessage(List<Node> nodes, ApplicationId applicationId) {
+        String detail;
+        if (nodes.size() < 10) {
+            detail = ": " + nodes.stream().map(Node::hostname).collect(Collectors.joining(","));
+        } else {
+            detail = " with " + nodes.size() + " hosts";
         }
+        return "Infrastructure application " + applicationId + " activated" + detail;
     }
 }
