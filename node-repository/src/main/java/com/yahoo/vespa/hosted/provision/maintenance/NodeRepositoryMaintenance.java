@@ -7,7 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
-import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
@@ -57,21 +56,20 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Optional<HostDeprovisionMaintainer> hostDeprovisionMaintainer;
 
     @Inject
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig,
-                                     DuperModelInfraApi duperModelInfraApi,
                                      ProvisionServiceProvider provisionServiceProvider,
                                      FlagSource flagSource) {
-        this(nodeRepository, deployer, provisioner, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, configserverConfig, duperModelInfraApi, provisionServiceProvider, flagSource);
+        this(nodeRepository, deployer, infraDeployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
+                orchestrator, metric, configserverConfig, provisionServiceProvider, flagSource);
     }
 
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Provisioner provisioner,
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
-                                     ConfigserverConfig configserverConfig, DuperModelInfraApi duperModelInfraApi,
+                                     ConfigserverConfig configserverConfig,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         DefaultTimes defaults = new DefaultTimes(zone);
 
@@ -86,7 +84,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry));
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval));
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
-        infrastructureProvisioner = new InfrastructureProvisioner(provisioner, nodeRepository, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval), duperModelInfraApi);
+        infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval));
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), lbService));
         hostProvisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
