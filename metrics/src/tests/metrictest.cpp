@@ -1,80 +1,48 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/metrics/valuemetric.h>
+
 #include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace metrics {
-
-struct MetricTest : public CppUnit::TestFixture
-{
-    template <typename MetricImpl>
-    void testMetricsGetDimensionsAsPartOfMangledNameImpl();
-    template <typename MetricImpl>
-    void testMangledNameMayContainMultipleDimensionsImpl();
-
-    void valueMetricsGetDimensionsAsPartOfMangledName();
-    void countMetricsGetDimensionsAsPartOfMangledName();
-    void valueMetricMangledNameMayContainMultipleDimensions();
-    void countMetricMangledNameMayContainMultipleDimensions();
-    void mangledNameListsDimensionsInLexicographicOrder();
-    void manglingDoesNotChangeOriginalMetricName();
-    void legacyTagsDoNotCreateMangledName();
-
-    CPPUNIT_TEST_SUITE(MetricTest);
-    CPPUNIT_TEST(valueMetricsGetDimensionsAsPartOfMangledName);
-    CPPUNIT_TEST(countMetricsGetDimensionsAsPartOfMangledName);
-    CPPUNIT_TEST(valueMetricMangledNameMayContainMultipleDimensions);
-    CPPUNIT_TEST(countMetricMangledNameMayContainMultipleDimensions);
-    CPPUNIT_TEST(mangledNameListsDimensionsInLexicographicOrder);
-    CPPUNIT_TEST(manglingDoesNotChangeOriginalMetricName);
-    CPPUNIT_TEST(legacyTagsDoNotCreateMangledName);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(MetricTest);
 
 // Metric subclasses have the same constructor parameters, so we template
 // our way from having to duplicate code. Templated GTest fixtures would be
 // a far more elegant solution.
 template <typename MetricImpl>
 void
-MetricTest::testMetricsGetDimensionsAsPartOfMangledNameImpl()
+testMetricsGetDimensionsAsPartOfMangledNameImpl()
 {
     MetricImpl m("test", {{"foo", "bar"}}, "description goes here");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test{foo:bar}"), m.getMangledName());
+    EXPECT_EQ(vespalib::string("test{foo:bar}"), m.getMangledName());
 }
 
 template <typename MetricImpl>
 void
-MetricTest::testMangledNameMayContainMultipleDimensionsImpl()
+testMangledNameMayContainMultipleDimensionsImpl()
 {
     MetricImpl m("test",
                 {{"flarn", "yarn"}, {"foo", "bar"}},
                 "description goes here");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test{flarn:yarn,foo:bar}"),
-                         m.getMangledName());
+    EXPECT_EQ(vespalib::string("test{flarn:yarn,foo:bar}"), m.getMangledName());
 }
 
-void
-MetricTest::valueMetricsGetDimensionsAsPartOfMangledName()
+TEST(MetricTest, value_metrics_get_dimensions_as_part_of_mangled_name)
 {
     testMetricsGetDimensionsAsPartOfMangledNameImpl<LongValueMetric>();
 }
 
-void
-MetricTest::countMetricsGetDimensionsAsPartOfMangledName()
+TEST(MetricTest, count_metrics_get_dimensions_as_part_of_mangled_name)
 {
     testMetricsGetDimensionsAsPartOfMangledNameImpl<LongCountMetric>();
 }
 
-void
-MetricTest::valueMetricMangledNameMayContainMultipleDimensions()
+TEST(MetricTest, value_metric_mangled_name_may_contain_multiple_dimensions)
 {
     testMangledNameMayContainMultipleDimensionsImpl<LongValueMetric>();
 }
 
-void
-MetricTest::countMetricMangledNameMayContainMultipleDimensions()
+TEST(MetricTest, count_metric_mangled_name_may_contain_multiple_dimensions)
 {
     testMangledNameMayContainMultipleDimensionsImpl<LongCountMetric>();
 }
@@ -82,30 +50,26 @@ MetricTest::countMetricMangledNameMayContainMultipleDimensions()
 // Assuming the above tests pass, we simplify by not requiring all subclasses
 // to be tested since propagation down to the base class has already been
 // verified.
-void
-MetricTest::mangledNameListsDimensionsInLexicographicOrder()
+TEST(MetricTest, mangled_name_lists_dimensions_in_lexicographic_order)
 {
     LongValueMetric m("test",
                       {{"xyz", "bar"}, {"abc", "foo"}, {"def", "baz"}},
                       "");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test{abc:foo,def:baz,xyz:bar}"),
-                         m.getMangledName());
+    EXPECT_EQ(vespalib::string("test{abc:foo,def:baz,xyz:bar}"), m.getMangledName());
 }
 
-void
-MetricTest::manglingDoesNotChangeOriginalMetricName()
+TEST(MetricTest, mangling_does_not_change_original_metric_name)
 {
     LongValueMetric m("test", {{"foo", "bar"}}, "");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getName());
+    EXPECT_EQ(vespalib::string("test"), m.getName());
 }
 
-void
-MetricTest::legacyTagsDoNotCreateMangledName()
+TEST(MetricTest, legacy_tags_do_not_create_mangled_name)
 {
     LongValueMetric m("test", {{"foo"},{"bar"}}, "");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getName());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getMangledName());
+    EXPECT_EQ(vespalib::string("test"), m.getName());
+    EXPECT_EQ(vespalib::string("test"), m.getMangledName());
 }
 
-} // metrics
+}
 
