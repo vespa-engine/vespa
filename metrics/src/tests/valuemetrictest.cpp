@@ -1,50 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vespalib/objects/floatingpointtype.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
+
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/valuemetric.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/floatingpointtype.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
+#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::Double;
 
 namespace metrics {
 
-struct ValueMetricTest : public CppUnit::TestFixture {
-    void testDoubleValueMetric();
-    void testDoubleValueMetricNotUpdatedOnNaN();
-    void testDoubleValueMetricNotUpdatedOnInfinity();
-    void testLongValueMetric();
-    void testSmallAverage();
-    void testAddValueBatch();
-    void testJson();
-
-    CPPUNIT_TEST_SUITE(ValueMetricTest);
-    CPPUNIT_TEST(testDoubleValueMetric);
-    CPPUNIT_TEST(testDoubleValueMetricNotUpdatedOnNaN);
-    CPPUNIT_TEST(testDoubleValueMetricNotUpdatedOnInfinity);
-    CPPUNIT_TEST(testLongValueMetric);
-    CPPUNIT_TEST(testSmallAverage);
-    CPPUNIT_TEST(testAddValueBatch);
-    CPPUNIT_TEST(testJson);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(ValueMetricTest);
-
 #define ASSERT_AVERAGE(metric, avg, min, max, count, last) \
-    CPPUNIT_ASSERT_EQUAL_MSG("avg", Double(avg), Double(metric.getAverage())); \
-    CPPUNIT_ASSERT_EQUAL_MSG("cnt", Double(count), Double(metric.getCount())); \
-    CPPUNIT_ASSERT_EQUAL_MSG("last", Double(last), Double(metric.getLast())); \
+    EXPECT_EQ(Double(avg), Double(metric.getAverage())); \
+    EXPECT_EQ(Double(count), Double(metric.getCount())); \
+    EXPECT_EQ(Double(last), Double(metric.getLast())); \
     if (metric.getCount() > 0) { \
-    CPPUNIT_ASSERT_EQUAL_MSG("min", Double(min), Double(metric.getMinimum())); \
-    CPPUNIT_ASSERT_EQUAL_MSG("max", Double(max), Double(metric.getMaximum())); \
+    EXPECT_EQ(Double(min), Double(metric.getMinimum())); \
+    EXPECT_EQ(Double(max), Double(metric.getMaximum())); \
     }
 
-void ValueMetricTest::testDoubleValueMetric()
+TEST(ValueMetricTest, test_double_value_metric)
 {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(100);
@@ -70,62 +48,60 @@ void ValueMetricTest::testDoubleValueMetric()
 
     std::string expected(
             "test average=80 last=40 min=40 max=100 count=3 total=240");
-    CPPUNIT_ASSERT_EQUAL(expected, m2.toString());
+    EXPECT_EQ(expected, m2.toString());
     expected = "m2 average=140 last=100";
-    CPPUNIT_ASSERT_EQUAL(expected, o.toString());
+    EXPECT_EQ(expected, o.toString());
 
-    CPPUNIT_ASSERT_EQUAL(Double(40), Double(m2.getDoubleValue("value")));
-    CPPUNIT_ASSERT_EQUAL(Double(80), Double(m2.getDoubleValue("average")));
-    CPPUNIT_ASSERT_EQUAL(Double(40), Double(m2.getDoubleValue("min")));
-    CPPUNIT_ASSERT_EQUAL(Double(100), Double(m2.getDoubleValue("max")));
-    CPPUNIT_ASSERT_EQUAL(Double(40), Double(m2.getDoubleValue("last")));
-    CPPUNIT_ASSERT_EQUAL(Double(3), Double(m2.getDoubleValue("count")));
-    CPPUNIT_ASSERT_EQUAL(Double(240), Double(m2.getDoubleValue("total")));
+    EXPECT_EQ(Double(40), Double(m2.getDoubleValue("value")));
+    EXPECT_EQ(Double(80), Double(m2.getDoubleValue("average")));
+    EXPECT_EQ(Double(40), Double(m2.getDoubleValue("min")));
+    EXPECT_EQ(Double(100), Double(m2.getDoubleValue("max")));
+    EXPECT_EQ(Double(40), Double(m2.getDoubleValue("last")));
+    EXPECT_EQ(Double(3), Double(m2.getDoubleValue("count")));
+    EXPECT_EQ(Double(240), Double(m2.getDoubleValue("total")));
 
-    CPPUNIT_ASSERT_EQUAL(int64_t(40), m2.getLongValue("value"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(80), m2.getLongValue("average"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(40), m2.getLongValue("min"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(100), m2.getLongValue("max"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(40), m2.getLongValue("last"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(3), m2.getLongValue("count"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(240), m2.getLongValue("total"));
+    EXPECT_EQ(int64_t(40), m2.getLongValue("value"));
+    EXPECT_EQ(int64_t(80), m2.getLongValue("average"));
+    EXPECT_EQ(int64_t(40), m2.getLongValue("min"));
+    EXPECT_EQ(int64_t(100), m2.getLongValue("max"));
+    EXPECT_EQ(int64_t(40), m2.getLongValue("last"));
+    EXPECT_EQ(int64_t(3), m2.getLongValue("count"));
+    EXPECT_EQ(int64_t(240), m2.getLongValue("total"));
 }
 
-void
-ValueMetricTest::testDoubleValueMetricNotUpdatedOnNaN()
+TEST(ValueMetricTest, test_double_value_metric_not_updated_on_nan)
 {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(std::numeric_limits<double>::quiet_NaN());
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 
     m.addAvgValueWithCount(std::numeric_limits<double>::quiet_NaN(), 123);
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 
     m.inc(std::numeric_limits<double>::quiet_NaN());
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 
     m.dec(std::numeric_limits<double>::quiet_NaN());
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 }
 
-void
-ValueMetricTest::testDoubleValueMetricNotUpdatedOnInfinity()
+TEST(ValueMetricTest, test_double_value_metric_not_updated_on_infinity)
 {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(std::numeric_limits<double>::infinity());
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 
     m.addAvgValueWithCount(std::numeric_limits<double>::quiet_NaN(), 123);
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 
     m.inc(std::numeric_limits<double>::infinity());
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 
     m.dec(std::numeric_limits<double>::infinity());
-    CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
+    EXPECT_EQ(std::string(), m.toString());
 }
 
-void ValueMetricTest::testLongValueMetric()
+TEST(ValueMetricTest, test_long_value_metric)
 {
     LongValueMetric m("test", {{"tag"}}, "description");
     m.addValue(100);
@@ -151,28 +127,28 @@ void ValueMetricTest::testLongValueMetric()
 
     std::string expected(
             "test average=80.3333 last=41 min=41 max=100 count=3 total=241");
-    CPPUNIT_ASSERT_EQUAL(expected, m2.toString());
+    EXPECT_EQ(expected, m2.toString());
     expected = "m2 average=140.25 last=101";
-    CPPUNIT_ASSERT_EQUAL(expected, o.toString());
+    EXPECT_EQ(expected, o.toString());
 
-    CPPUNIT_ASSERT_EQUAL(Double(41), Double(m2.getDoubleValue("value")));
-    CPPUNIT_ASSERT_EQUAL(Double(241.0/3), Double(m2.getDoubleValue("average")));
-    CPPUNIT_ASSERT_EQUAL(Double(41), Double(m2.getDoubleValue("min")));
-    CPPUNIT_ASSERT_EQUAL(Double(100), Double(m2.getDoubleValue("max")));
-    CPPUNIT_ASSERT_EQUAL(Double(41), Double(m2.getDoubleValue("last")));
-    CPPUNIT_ASSERT_EQUAL(Double(3), Double(m2.getDoubleValue("count")));
-    CPPUNIT_ASSERT_EQUAL(Double(241), Double(m2.getDoubleValue("total")));
+    EXPECT_EQ(Double(41), Double(m2.getDoubleValue("value")));
+    EXPECT_EQ(Double(241.0/3), Double(m2.getDoubleValue("average")));
+    EXPECT_EQ(Double(41), Double(m2.getDoubleValue("min")));
+    EXPECT_EQ(Double(100), Double(m2.getDoubleValue("max")));
+    EXPECT_EQ(Double(41), Double(m2.getDoubleValue("last")));
+    EXPECT_EQ(Double(3), Double(m2.getDoubleValue("count")));
+    EXPECT_EQ(Double(241), Double(m2.getDoubleValue("total")));
 
-    CPPUNIT_ASSERT_EQUAL(int64_t(41), m2.getLongValue("value"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(80), m2.getLongValue("average"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(41), m2.getLongValue("min"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(100), m2.getLongValue("max"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(41), m2.getLongValue("last"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(3), m2.getLongValue("count"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(241), m2.getLongValue("total"));
+    EXPECT_EQ(int64_t(41), m2.getLongValue("value"));
+    EXPECT_EQ(int64_t(80), m2.getLongValue("average"));
+    EXPECT_EQ(int64_t(41), m2.getLongValue("min"));
+    EXPECT_EQ(int64_t(100), m2.getLongValue("max"));
+    EXPECT_EQ(int64_t(41), m2.getLongValue("last"));
+    EXPECT_EQ(int64_t(3), m2.getLongValue("count"));
+    EXPECT_EQ(int64_t(241), m2.getLongValue("total"));
 }
 
-void ValueMetricTest::testSmallAverage()
+TEST(ValueMetricTest, test_small_average)
 {
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(0.0001);
@@ -181,11 +157,12 @@ void ValueMetricTest::testSmallAverage()
     std::vector<Metric::UP> ownerList;
     Metric::UP c(m.clone(ownerList, Metric::INACTIVE, 0, false));
     std::string expect("test average=0.0002 last=0.0003 min=0.0001 max=0.0003 count=3 total=0.0006");
-    CPPUNIT_ASSERT_EQUAL(expect, m.toString());
-    CPPUNIT_ASSERT_EQUAL(expect, c->toString());
+    EXPECT_EQ(expect, m.toString());
+    EXPECT_EQ(expect, c->toString());
 }
 
-void ValueMetricTest::testAddValueBatch() {
+TEST(ValueMetricTest, test_add_value_batch)
+{
     DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValueBatch(100, 3, 80, 120);
     ASSERT_AVERAGE(m, 100, 80, 120, 3, 100);
@@ -194,33 +171,37 @@ void ValueMetricTest::testAddValueBatch() {
 }
 
 namespace {
-    vespalib::string extractMetricJson(vespalib::stringref s) {
-        vespalib::StringTokenizer st(s, "\n", "");
-        for (uint32_t i = st.size() - 1; i < st.size(); --i) {
-            if (st[i].find("\"name\":\"") != std::string::npos) {
-                vespalib::asciistream as;
-                as << "'\n";
-                for (uint32_t j=i-1; j<st.size() - 2; ++j) {
-                    as << st[j].substr(4) << "\n";
-                }
-                as << "'";
-                return as.str();
+
+vespalib::string extractMetricJson(vespalib::stringref s) {
+    vespalib::StringTokenizer st(s, "\n", "");
+    for (uint32_t i = st.size() - 1; i < st.size(); --i) {
+        if (st[i].find("\"name\":\"") != std::string::npos) {
+            vespalib::asciistream as;
+            as << "'\n";
+            for (uint32_t j=i-1; j<st.size() - 2; ++j) {
+                as << st[j].substr(4) << "\n";
             }
+            as << "'";
+            return as.str();
         }
-        throw vespalib::IllegalArgumentException("Didn't find metric");
     }
-    vespalib::string getJson(MetricManager& mm) {
-        vespalib::asciistream as;
-        vespalib::JsonStream stream(as, true);
-        JsonWriter writer(stream);
-        MetricLockGuard guard(mm.getMetricLock());
-        mm.visit(guard, mm.getActiveMetrics(guard), writer, "");
-        stream.finalize();
-        return as.str();
-    }
+    throw vespalib::IllegalArgumentException("Didn't find metric");
 }
 
-void ValueMetricTest::testJson() {
+vespalib::string getJson(MetricManager& mm) {
+    vespalib::asciistream as;
+    vespalib::JsonStream stream(as, true);
+    JsonWriter writer(stream);
+    MetricLockGuard guard(mm.getMetricLock());
+    mm.visit(guard, mm.getActiveMetrics(guard), writer, "");
+    stream.finalize();
+    return as.str();
+}
+
+}
+
+TEST(ValueMetricTest, test_json)
+{
     MetricManager mm;
     DoubleValueMetric m("test", {{"tag"}}, "description");
     mm.registerMetric(mm.getMetricLock(), m);
@@ -243,7 +224,7 @@ void ValueMetricTest::testJson() {
         "  }\n"
         "}\n'"
     );
-    CPPUNIT_ASSERT_EQUAL(expected, extractMetricJson(getJson(mm)));
+    EXPECT_EQ(expected, extractMetricJson(getJson(mm)));
     m.addValue(100);
     expected = "'\n"
         "{\n"
@@ -262,7 +243,7 @@ void ValueMetricTest::testJson() {
         "  {\n"
         "  }\n"
         "}\n'";
-    CPPUNIT_ASSERT_EQUAL(expected, extractMetricJson(getJson(mm)));
+    EXPECT_EQ(expected, extractMetricJson(getJson(mm)));
     m.addValue(500);
     expected = "'\n"
         "{\n"
@@ -281,7 +262,7 @@ void ValueMetricTest::testJson() {
         "  {\n"
         "  }\n"
         "}\n'";
-    CPPUNIT_ASSERT_EQUAL(expected, extractMetricJson(getJson(mm)));
+    EXPECT_EQ(expected, extractMetricJson(getJson(mm)));
 }
 
-}  // namespace metrics
+}
