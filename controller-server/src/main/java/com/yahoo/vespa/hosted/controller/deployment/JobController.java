@@ -308,7 +308,7 @@ public class JobController {
 
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
         locked(id, type, __ -> {
-            controller.applications().applicationStore().putDev(id, applicationPackage.zippedContent());
+            controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
             start(id, type, new Versions(platform.orElse(controller.systemVersion()),
                                          ApplicationVersion.unknown,
                                          Optional.empty(),

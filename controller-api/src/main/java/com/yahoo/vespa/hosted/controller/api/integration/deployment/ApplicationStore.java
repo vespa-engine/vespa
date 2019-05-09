@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 /**
  * Store for the application and tester packages.
@@ -37,10 +38,10 @@ public interface ApplicationStore {
     /** Removes all tester packages for the given tester. */
     void removeAll(TesterId tester);
 
-    /** Stores the given application package as the development package for the given application. */
-    void putDev(ApplicationId application, byte[] applicationPackage);
+    /** Stores the given application package as the development package for the given application and zone. */
+    void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage);
 
-    /** Returns the development package for the given application. */
-    byte[] getDev(ApplicationId application);
+    /** Returns the development package for the given application and zone. */
+    byte[] getDev(ApplicationId application, ZoneId zone);
 
 }

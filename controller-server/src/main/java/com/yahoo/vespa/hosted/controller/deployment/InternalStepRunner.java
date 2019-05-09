@@ -158,7 +158,8 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, Versions versions, DualLogger logger) {
         Optional<ApplicationPackage> applicationPackage = id.type().environment().isManuallyDeployed()
-                ? Optional.of(new ApplicationPackage(controller.applications().applicationStore().getDev(id.application())))
+                ? Optional.of(new ApplicationPackage(controller.applications().applicationStore()
+                                                               .getDev(id.application(), id.type().zone(controller.system()))))
                 : Optional.empty();
         Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
                 ? Optional.of(versions.targetPlatform())

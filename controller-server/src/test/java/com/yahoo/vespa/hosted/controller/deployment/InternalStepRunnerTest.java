@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -280,7 +281,7 @@ public class InternalStepRunnerTest {
     @Test
     public void deployToDev() {
         ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
-        tester.jobs().deploy(appId, JobType.perfUsEast3, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
         tester.runner().run();
         RunId id = tester.jobs().last(appId, JobType.devUsEast1).get().id();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
@@ -293,13 +294,17 @@ public class InternalStepRunnerTest {
             tester.runner().run();
         assertEquals(id.number() + 1, tester.jobs().last(appId, JobType.devUsEast1).get().id().number());
 
-        tester.runner().run();
+        ApplicationPackage otherPackage = new ApplicationPackageBuilder().region("us-central-1").build();
+        tester.jobs().deploy(appId, JobType.perfUsEast3, Optional.empty(), otherPackage);
+
+        tester.runner().run(); // Job run order determined by JobType enum order per application.
         tester.configServer().convergeServices(appId, zone);
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
+        assertEquals(otherPackage.hash(), tester.configServer().application(appId).get().applicationPackage().hash());
         
         tester.configServer().setVersion(appId, zone, version);
         tester.runner().run();
-        assertTrue(tester.jobs().active().isEmpty());
+        assertEquals(1, tester.jobs().active().size());
         assertEquals(version, tester.tester().application(appId).deployments().get(zone).version());
 
         try {

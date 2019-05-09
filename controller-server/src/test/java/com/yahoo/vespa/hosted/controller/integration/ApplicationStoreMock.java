@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
@@ -20,7 +21,7 @@ import static org.junit.Assert.assertFalse;
 public class ApplicationStoreMock implements ApplicationStore {
 
     private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
-    private final Map<ApplicationId, byte[]> devStore = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, Map<ZoneId, byte[]>> devStore = new ConcurrentHashMap<>();
 
     @Override
     public byte[] get(ApplicationId application, ApplicationVersion applicationVersion) {
@@ -70,13 +71,14 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public void putDev(ApplicationId application, byte[] applicationPackage) {
-        devStore.put(application, applicationPackage);
+    public void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage) {
+        devStore.putIfAbsent(application, new ConcurrentHashMap<>());
+        devStore.get(application).put(zone, applicationPackage);
     }
 
     @Override
-    public byte[] getDev(ApplicationId application) {
-        return requireNonNull(devStore.get(application));
+    public byte[] getDev(ApplicationId application, ZoneId zone) {
+        return requireNonNull(devStore.get(application).get(zone));
     }
 
 }
