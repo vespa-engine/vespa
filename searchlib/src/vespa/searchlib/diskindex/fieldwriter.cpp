@@ -66,14 +66,12 @@ FieldWriter::open(const vespalib::string &prefix,
     _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
-    _posoccfile.reset(diskindex::makePosOccWrite(name,
-                                                 _dictFile.get(),
-                                                 dynamicKPosOccFormat,
-                                                 params,
-                                                 featureParams,
-                                                 schema,
-                                                 indexId,
-                                                 tuneFileWrite));
+    _posoccfile = diskindex::makePosOccWrite(_dictFile.get(),
+                                             dynamicKPosOccFormat,
+                                             params,
+                                             featureParams,
+                                             schema,
+                                             indexId);
     vespalib::string cname = _prefix + "dictionary";
 
     // Open output dictionary file
