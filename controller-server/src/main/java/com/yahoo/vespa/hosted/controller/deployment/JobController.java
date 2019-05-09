@@ -26,11 +26,11 @@ import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,6 +64,7 @@ import static java.util.stream.Collectors.toList;
 public class JobController {
 
     private static final int historyLength = 256;
+    private static final Duration maxHistoryAge = Duration.ofDays(60);
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -212,10 +213,13 @@ public class JobController {
             locked(id.application(), id.type(), runs -> {
                 runs.put(run.id(), finishedRun);
                 long last = id.number();
-                Iterator<RunId> ids = runs.keySet().iterator();
-                for (RunId old = ids.next(); old.number() <= last - historyLength; old = ids.next()) {
-                    logs.delete(old);
-                    ids.remove();
+                var oldEntries = runs.entrySet().iterator();
+                for (var old = oldEntries.next();
+                        old.getKey().number() <= last - historyLength
+                     || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
+                     old = oldEntries.next()) {
+                    logs.delete(old.getKey());
+                    oldEntries.remove();
                 }
             });
             logs.flush(id);
