@@ -16,37 +16,10 @@ import java.util.HashMap;
  **/
 public class Supervisor {
 
-    private class AddMethod implements Runnable {
-        private Method method;
-        AddMethod(Method method) {
-            this.method = method;
-        }
-        public void run() {
-            methodMap.put(method.name(), method);
-        }
-    }
-
-    private class RemoveMethod implements Runnable {
-        private String methodName;
-        private Method method = null;
-        RemoveMethod(String methodName) {
-            this.methodName = methodName;
-        }
-        RemoveMethod(Method method) {
-            this.methodName = method.name();
-            this.method = method;
-        }
-        public void run() {
-            Method m = methodMap.remove(methodName);
-            if (method != null && m != method) {
-                methodMap.put(method.name(), method);
-            }
-        }
-    }
-
     private Transport               transport;
     private SessionHandler          sessionHandler = null;
-    private HashMap<String, Method> methodMap      = new HashMap<>();
+    private final Object            methodMapLock = new Object();
+    private volatile HashMap<String, Method> methodMap = new HashMap<>();
     private int                     maxInputBufferSize  = 0;
     private int                     maxOutputBufferSize = 0;
 
@@ -122,7 +95,11 @@ public class Supervisor {
      * @param method the method to add
      **/
     public void addMethod(Method method) {
-        transport.perform(new AddMethod(method));
+        synchronized (methodMapLock) {
+            HashMap<String, Method> newMap = new HashMap<>(methodMap);
+            newMap.put(method.name(), method);
+            methodMap = newMap;
+        }
     }
 
     /**
@@ -131,7 +108,11 @@ public class Supervisor {
      * @param methodName name of the method to remove
      **/
     public void removeMethod(String methodName) {
-        transport.perform(new RemoveMethod(methodName));
+        synchronized (methodMapLock) {
+            HashMap<String, Method> newMap = new HashMap<>(methodMap);
+            newMap.remove(methodName);
+            methodMap = newMap;
+        }
     }
 
     /**
@@ -142,7 +123,12 @@ public class Supervisor {
      * @param method the method to remove
      **/
     public void removeMethod(Method method) {
-        transport.perform(new RemoveMethod(method));
+        synchronized (methodMapLock) {
+            HashMap<String, Method> newMap = new HashMap<>(methodMap);
+            if (newMap.remove(method.name()) == method) {
+                methodMap = newMap;
+            }
+        }
     }
 
     /**
@@ -154,20 +140,7 @@ public class Supervisor {
      * @see #connect(com.yahoo.jrt.Spec, java.lang.Object)
      **/
     public Target connect(Spec spec) {
-        return transport.connect(this, spec, null, false);
-    }
-
-    /**
-     * Connect to the given address. The new {@link Target} will be
-     * associated with this Supervisor. This method will perform a
-     * synchronous connect in the calling thread.
-     *
-     * @return Target representing our end of the connection
-     * @param spec where to connect
-     * @see #connectSync(com.yahoo.jrt.Spec, java.lang.Object)
-     **/
-    public Target connectSync(Spec spec) {
-        return transport.connect(this, spec, null, true);
+        return transport.connect(this, spec, null);
     }
 
     /**
@@ -181,22 +154,7 @@ public class Supervisor {
      * @see Target#getContext
      **/
     public Target connect(Spec spec, Object context) {
-        return transport.connect(this, spec, context, false);
-    }
-
-    /**
-     * Connect to the given address. The new {@link Target} will be
-     * associated with this Supervisor and will have 'context' as
-     * application context. This method will perform a synchronous
-     * connect in the calling thread.
-     *
-     * @return Target representing our end of the connection
-     * @param spec where to connect
-     * @param context application context for the Target
-     * @see Target#getContext
-     **/
-    public Target connectSync(Spec spec, Object context) {
-        return transport.connect(this, spec, context, true);
+        return transport.connect(this, spec, context);
     }
 
     /**
@@ -219,7 +177,7 @@ public class Supervisor {
      * @param timeout request timeout in seconds
      **/
     public void invokeBatch(Spec spec, Request req, double timeout) {
-        Target target = connectSync(spec);
+        Target target = connect(spec);
         try {
             target.invokeSync(req, timeout);
         } finally {
@@ -312,7 +270,7 @@ public class Supervisor {
         }
         RequestPacket rp = (RequestPacket) packet;
         Request req = new Request(rp.methodName(), rp.parameters());
-        Method method = methodMap.get(req.methodName());
+        Method method = methodMap().get(req.methodName());
         new InvocationServer(conn, req, method,
                              packet.requestId(),
                              packet.noReply()).invoke();

@@ -197,9 +197,7 @@ public class RPCNetwork implements Network, MethodHandler {
 
     @Override
     public void sync() {
-        SyncTask sh = new SyncTask();
-        orb.transport().perform(sh);
-        sh.await();
+        orb.transport().sync();
     }
 
     @Override
@@ -446,29 +444,6 @@ public class RPCNetwork implements Network, MethodHandler {
     }
 
     /**
-     * Implements a helper class for {@link RPCNetwork#sync()}. It provides a blocking method {@link #await()} that will
-     * wait until the internal state of this object is set to 'done'. By scheduling this task in the network thread and
-     * then calling this method, we achieve handshaking with the network thread.
-     */
-    private static class SyncTask implements Runnable {
-
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        @Override
-        public void run() {
-            latch.countDown();
-        }
-
-        public void await() {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                // ignore
-            }
-        }
-    }
-
-    /**
      * Implements a helper class for {@link RPCNetwork#send(com.yahoo.messagebus.Message, java.util.List)}. It works by
      * encapsulating all the data required for sending a message, but postponing the call to {@link
      * RPCNetwork#send(com.yahoo.messagebus.network.rpc.RPCNetwork.SendContext)} until the version of all targets have
@@ -523,7 +498,7 @@ public class RPCNetwork implements Network, MethodHandler {
 
         TargetPoolTask(RPCTargetPool pool, Supervisor orb) {
             this.pool = pool;
-            this.jrtTask = orb.transport().createTask(this);
+            this.jrtTask = orb.transport().selectThread().createTask(this);
             this.jrtTask.schedule(1.0);
         }
 

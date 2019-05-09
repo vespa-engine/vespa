@@ -41,7 +41,7 @@ class Connection extends Target {
     private int           activeReqs = 0;
     private int           writeWork  = 0;
     private boolean       pendingHandshakeWork = false;
-    private Transport     parent;
+    private final TransportThread parent;
     private Supervisor    owner;
     private Spec          spec;
     private CryptoSocket  socket;
@@ -88,17 +88,17 @@ class Connection extends Target {
         }
     }
 
-    public Connection(Transport parent, Supervisor owner,
+    public Connection(TransportThread parent, Supervisor owner,
                       SocketChannel channel) {
 
         this.parent = parent;
         this.owner = owner;
-        this.socket = parent.createCryptoSocket(channel, true);
+        this.socket = parent.transport().createCryptoSocket(channel, true);
         server = true;
         owner.sessionInit(this);
     }
 
-    public Connection(Transport parent, Supervisor owner, Spec spec, Object context) {
+    public Connection(TransportThread parent, Supervisor owner, Spec spec, Object context) {
         super(context);
         this.parent = parent;
         this.owner = owner;
@@ -115,7 +115,7 @@ class Connection extends Target {
         maxOutputSize = bytes;
     }
 
-    public Transport transport() {
+    public TransportThread transportThread() {
         return parent;
     }
 
@@ -170,7 +170,7 @@ class Connection extends Target {
             return this;
         }
         try {
-            socket = parent.createCryptoSocket(SocketChannel.open(spec.address()), false);
+            socket = parent.transport().createCryptoSocket(SocketChannel.open(spec.address()), false);
         } catch (Exception e) {
             setLostReason(e);
         }
@@ -242,7 +242,7 @@ class Connection extends Target {
             disableRead();
             disableWrite();
             pendingHandshakeWork = true;
-            parent.doHandshakeWork(this);
+            parent.transport().doHandshakeWork(this);
             break;
         }
     }

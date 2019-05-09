@@ -5,8 +5,8 @@ package com.yahoo.jrt;
 /**
  * A Task enables a Runnable to be scheduled for execution in the
  * transport thread some time in the future. Tasks are used internally
- * to handle RPC timeouts. Use the {@link Transport#createTask
- * Transport.createTask} method to create a task associated with a
+ * to handle RPC timeouts. Use the {@link TransportThread#createTask
+ * TransportThread.createTask} method to create a task associated with a
  * {@link Transport} object. Note that Task execution is designed to
  * be low-cost, so do not expect extreme accuracy. Also note that any
  * tasks that are pending execution when the owning {@link Transport}
@@ -66,7 +66,7 @@ public class Task {
      * loop inside the owning {@link Transport} object checks for
      * tasks to run. If you have something that is even more urgent,
      * or something you need to be executed even if the {@link
-     * Transport} is shut down, use the {@link Transport#perform}
+     * Transport} is shut down, use the {@link TransportThread#perform}
      * method instead.
      * @see #kill
      **/
