@@ -10,10 +10,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -158,22 +159,21 @@ public class NodeFailTester {
         return tester;
     }
 
-    public static NodeFailTester withProxyApplication() {
+    public static NodeFailTester withInfraApplication(NodeType nodeType, int count) {
         NodeFailTester tester = new NodeFailTester();
-
-        tester.createReadyNodes(16, NodeType.proxy);
+        tester.createReadyNodes(count, nodeType);
 
         // Create application
-        Capacity allProxies = Capacity.fromRequiredNodeType(NodeType.proxy);
+        Capacity allNodes = Capacity.fromRequiredNodeType(nodeType);
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container,
                                                       ClusterSpec.Id.from("test"),
                                                       Version.fromString("6.42"),
-                                                      false, Collections.emptySet());
-        tester.activate(app1, clusterApp1, allProxies);
-        assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+                                                      false, Set.of());
+        tester.activate(app1, clusterApp1, allNodes);
+        assertEquals(count, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
 
-        Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allProxies, 1));
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes, 1));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
