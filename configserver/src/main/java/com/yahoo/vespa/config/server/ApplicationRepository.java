@@ -43,6 +43,8 @@ import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.metrics.Metrics;
+import com.yahoo.vespa.config.server.metrics.MetricsAggregator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -67,10 +69,13 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -80,6 +85,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -579,6 +585,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
 
+    // ---------------- Metrics ------------------------------------------------------------------------
+
+    public HttpResponse getMetrics() {
+        MetricsAggregator metricsAggregator = new MetricsAggregator();
+        Map<ApplicationId, Map<String, List<URI>>> applicationHosts = getHostsPerApplication();
+        return metricsAggregator.aggregateAllMetrics(applicationHosts);
+    }
+
     // ---------------- Misc operations ----------------------------------------------------------------
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
@@ -717,18 +731,48 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                         .anyMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo for LogServer"));
 
-        ServiceInfo containerServiceInfo = logServerHostInfo.getServices().stream()
-                .filter(service -> List.of(LOGSERVER_CONTAINER.serviceName, CONTAINER.serviceName).contains(service.getServiceType()))
+        ServiceInfo serviceInfo = logServerHostInfo.getServices().stream().filter(service -> List.of(LOGSERVER_CONTAINER.serviceName, CONTAINER.serviceName).contains(service.getServiceType()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
-
-        int port = containerServiceInfo.getPorts().stream()
-                .filter(portInfo -> portInfo.getTags().stream().anyMatch(tag -> tag.equalsIgnoreCase("http")))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
-                .getPort();
-
+        int port = servicePort(serviceInfo);
         return "http://" + logServerHostInfo.getHostname() + ":" + port + "/logs";
     }
 
+    private int servicePort(ServiceInfo serviceInfo) {
+        int port = serviceInfo.getPorts().stream()
+                .filter(portInfo -> portInfo.getTags().stream().anyMatch(tag -> tag.equalsIgnoreCase("http")))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
+                .getPort();
+        return port;
+    }
+
+    /** Finds all hosts, grouping them by application ID and cluster name */
+    private  Map<ApplicationId, Map<String, List<URI>>> getHostsPerApplication() {
+        Map<ApplicationId, Map<String, List<URI>>> applicationHosts = new HashMap<>();
+        tenantRepository.getAllTenants().stream()
+                .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
+                .forEach(applicationId ->{
+                            applicationHosts.put(applicationId, getClustersOfApplication(applicationId));
+                        }
+                );
+        return applicationHosts;
+    }
+
+    /** Finds the hosts of an application, grouped by cluster name */
+    private Map<String, List<URI>> getClustersOfApplication(ApplicationId applicationId) {
+        Application application = getApplication(applicationId);
+        Map<String, List<URI>> clusterHosts = new HashMap<>();
+        application.getModel().getHosts().stream()
+                .forEach(hostInfo -> {
+                            ServiceInfo serviceInfo = hostInfo.getServices().stream().filter(service -> METRICS_PROXY_CONTAINER.serviceName.equals(service.getServiceType()))
+                                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unable to find services " + METRICS_PROXY_CONTAINER.serviceName.toString()));
+                            String clusterName = serviceInfo.getProperty("clusterinfo").orElse("");
+                            URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(serviceInfo) + "/metrics");
+                            clusterHosts.computeIfAbsent(clusterName, l -> new ArrayList<URI>()).add(host);
+                        }
+                );
+        return clusterHosts;
+
+    }
     /** Returns version to use when deploying application in given environment */
     static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
         if (     environment.isManuallyDeployed()

@@ -1,0 +1,23 @@
+[
+ {
+  "applicationId": "tenant:app:default",
+  "clusters": [
+   {
+    "clusterName": "cluster1",
+    "queriesPerSecond": 5.5,
+    "writesPerSecond": 11.0,
+    "documentCount": 18.0,
+    "queryLatencyMillis": 22.0,
+    "writeLatencyMillis": 27.5
+   },
+   {
+    "clusterName": "cluster2",
+    "queriesPerSecond": 1.0,
+    "writesPerSecond": 2.0,
+    "documentCount": 3.0,
+    "queryLatencyMillis": 4.0,
+    "writeLatencyMillis": 5.0
+   }
+  ]
+ }
+]

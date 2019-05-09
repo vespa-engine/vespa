@@ -97,6 +97,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        newMaintain();
     }
 
     /** Get global rotation status for application */
@@ -120,4 +121,14 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         }
     }
 
+    private void newMaintain() {
+        controller().zoneRegistry()
+                .zones()
+                .reachable()
+                .ids()
+                .stream()
+                .forEach(zoneId -> {
+
+                });
+    }
 }
