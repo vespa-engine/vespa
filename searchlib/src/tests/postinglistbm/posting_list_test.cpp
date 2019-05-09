@@ -53,32 +53,6 @@ test_fake(const std::string& posting_type,
            static_cast<int>(posting->l4SkipBitSize()));
 
     validate_posting_list_for_word(*posting, word);
-
-    uint64_t scan_time = 0;
-    uint64_t scan_unpack_time = 0;
-    int hits1 = FakeMatchLoop::single_posting_scan(*posting, word.getDocIdLimit(), scan_time);
-    int hits2 = FakeMatchLoop::single_posting_scan_with_unpack(*posting, word.getDocIdLimit(), scan_unpack_time);
-
-    printf("test_fake: '%s': hits1=%d, hits2=%d, scan_time=%" PRIu64 "(ns), scan_unpack_time=%" PRIu64 "(ns)\n",
-           posting->getName().c_str(), hits1, hits2, scan_time, scan_unpack_time);
-}
-
-void
-test_fake_pair(const std::string& posting_type, const Schema& schema,
-               const FakeWord& word1, const FakeWord& word2)
-{
-    std::unique_ptr<FPFactory> factory(getFPFactory(posting_type, schema));
-    std::vector<const FakeWord *> words;
-    words.push_back(&word1);
-    words.push_back(&word2);
-    factory->setup(words);
-    auto posting1 = factory->make(word1);
-    auto posting2 = factory->make(word2);
-
-    uint64_t scan_time = 0;
-    int hits = FakeMatchLoop::and_pair_posting_scan(*posting1, *posting2, word1.getDocIdLimit(), scan_time);
-    printf("test_fake_pair: '%s' AND '%s' => %d hits, scan_time=%" PRIu64 " (ns)\n",
-           posting1->getName().c_str(), posting2->getName().c_str(), hits, scan_time);
 }
 
 struct PostingListTest : public ::testing::Test {
@@ -138,15 +112,8 @@ struct PostingListTest : public ::testing::Test {
             test_fake(type, word_set.getSchema(), *word1);
             test_fake(type, word_set.getSchema(), *word2);
             test_fake(type, word_set.getSchema(), *word3);
-        }
-
-        for (const auto& type : posting_types) {
-            test_fake_pair(type, word_set.getSchema(), *word1, *word3);
-            test_fake_pair(type, word_set.getSchema(), *word2, *word3);
-        }
-
-        for (const auto& type : posting_types) {
-            test_fake_pair(type, word_set.getSchema(), *word4, *word5);
+            test_fake(type, word_set.getSchema(), *word4);
+            test_fake(type, word_set.getSchema(), *word5);
         }
     }
 

@@ -13,13 +13,14 @@ class FakePosting;
  */
 class FakeMatchLoop {
 public:
-    static int single_posting_scan(const FakePosting& posting, uint32_t doc_id_limit, uint64_t& elapsed_time_ns);
-    static int single_posting_scan_with_unpack(const FakePosting& posting, uint32_t doc_id_limit, uint64_t& elapsed_time_ns);
+    static int direct_posting_scan(const FakePosting& posting, uint32_t doc_id_limit);
+    static int direct_posting_scan_with_unpack(const FakePosting& posting, uint32_t doc_id_limit);
 
-    static int and_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2,
-                                     uint32_t doc_id_limit, uint64_t& elapsed_time_ns);
-    static int and_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2,
-                                                 uint32_t doc_id_limit, uint64_t& elapsed_time_ns);
+    static int and_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit);
+    static int and_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit);
+
+    static int or_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit);
+    static int or_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit);
 };
 
 }

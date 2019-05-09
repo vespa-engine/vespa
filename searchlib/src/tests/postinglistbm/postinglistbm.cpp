@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "andstress.h"
+#include "stress_runner.h"
 #include <vespa/fastos/app.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
@@ -30,8 +30,11 @@ class PostingListBM : public FastOS_Application {
 private:
     uint32_t _numDocs;
     uint32_t _commonDocFreq;
+    uint32_t _mediumDocFreq;
+    uint32_t _rareDocFreq;
     uint32_t _numWordsPerClass;
     std::vector<std::string> _postingTypes;
+    StressRunner::OperatorType _operatorType;
     uint32_t _loops;
     uint32_t _skipCommonPairsRate;
     FakeWordSet _wordSet;
@@ -54,19 +57,21 @@ usage()
            "[-C <skipCommonPairsRate>] "
            "[-T {string, array, weightedSet}] "
            "[-c <commonDoqFreq>] "
+           "[-m <mediumDoqFreq>] "
+           "[-r <rareDoqFreq>] "
            "[-d <numDocs>] "
            "[-l <numLoops>] "
            "[-s <stride>] "
            "[-t <postingType>] "
+           "[-o {direct, and, or}] "
            "[-u] "
-           "[-w <numWordsPerClass>] "
-           "[-q]\n");
+           "[-w <numWordsPerClass>]\n");
 }
 
 void
 badPostingType(const std::string &postingType)
 {
-    printf("Bad posting list type: %s\n", postingType.c_str());
+    printf("Bad posting list type: '%s'\n", postingType.c_str());
     printf("Supported types: ");
 
     bool first = true;
@@ -84,8 +89,11 @@ badPostingType(const std::string &postingType)
 PostingListBM::PostingListBM()
     : _numDocs(10000000),
       _commonDocFreq(50000),
+      _mediumDocFreq(1000),
+      _rareDocFreq(10),
       _numWordsPerClass(100),
       _postingTypes(),
+      _operatorType(StressRunner::OperatorType::And),
       _loops(1),
       _skipCommonPairsRate(1),
       _wordSet(),
@@ -107,9 +115,8 @@ PostingListBM::Main()
     argi = 1;
     bool hasElements = false;
     bool hasElementWeights = false;
-    bool quick = false;
 
-    while ((c = GetOpt("C:c:d:l:s:t:uw:T:q", optArg, argi)) != -1) {
+    while ((c = GetOpt("C:c:m:r:d:l:s:t:o:uw:T:q", optArg, argi)) != -1) {
         switch(c) {
         case 'C':
             _skipCommonPairsRate = atoi(optArg);
@@ -125,12 +132,19 @@ PostingListBM::Main()
                 hasElements = true;
                 hasElementWeights = true;
             } else {
-                printf("Bad collection type: %s\n", optArg);
+                printf("Bad collection type: '%s'\n", optArg);
+                printf("Supported types: single, array, weightedSet\n");
                 return 1;
             }
             break;
         case 'c':
             _commonDocFreq = atoi(optArg);
+            break;
+        case 'm':
+            _mediumDocFreq = atoi(optArg);
+            break;
+        case 'r':
+            _rareDocFreq = atoi(optArg);
             break;
         case 'd':
             _numDocs = atoi(optArg);
@@ -156,17 +170,27 @@ PostingListBM::Main()
             } while (0);
             _postingTypes.push_back(optArg);
             break;
+        case 'o':
+        {
+           vespalib::string operatorType(optArg);
+           if (operatorType == "direct") {
+               _operatorType = StressRunner::OperatorType::Direct;
+           } else if (operatorType == "and") {
+               _operatorType = StressRunner::OperatorType::And;
+           } else if (operatorType == "or") {
+               _operatorType = StressRunner::OperatorType::Or;
+           } else {
+               printf("Bad operator type: '%s'\n", operatorType.c_str());
+               printf("Supported types: direct, and, or\n");
+               return 1;
+           }
+           break;
+        }
         case 'u':
             _unpack = true;
             break;
         case 'w':
             _numWordsPerClass = atoi(optArg);
-            break;
-        case 'q':
-            quick = true;
-            _numDocs = 36000;
-            _commonDocFreq = 10000;
-            _numWordsPerClass = 5;
             break;
         default:
             usage();
@@ -182,23 +206,22 @@ PostingListBM::Main()
     _wordSet.setupParams(hasElements, hasElementWeights);
 
     uint32_t numTasks = 40000;
-    if (quick) {
-        numTasks = 40;
-    }
-    
+
     if (_postingTypes.empty()) {
         _postingTypes = getPostingTypes();
     }
 
-    _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _numWordsPerClass);
+    _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _mediumDocFreq, _rareDocFreq, _numWordsPerClass);
 
-    AndStress andstress;
-    andstress.run(_rnd, _wordSet,
-                  _numDocs, _commonDocFreq, _postingTypes, _loops,
-                  _skipCommonPairsRate,
-                  numTasks,
-                  _stride,
-                  _unpack);
+    StressRunner::run(_rnd,
+                      _wordSet,
+                      _postingTypes,
+                      _operatorType,
+                      _loops,
+                      _skipCommonPairsRate,
+                      numTasks,
+                      _stride,
+                      _unpack);
     return 0;
 }
 

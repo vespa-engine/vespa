@@ -31,7 +31,8 @@ applyDocIdBiasToVector(FakeWordVector& words, uint32_t docIdBias)
 FakeWordSet::FakeWordSet()
     : _words(NUM_WORDCLASSES),
       _schema(),
-      _fieldsParams()
+      _fieldsParams(),
+      _numDocs(0)
 {
     setupParams(false, false);
 }
@@ -40,7 +41,8 @@ FakeWordSet::FakeWordSet(bool hasElements,
                          bool hasElementWeights)
     : _words(NUM_WORDCLASSES),
       _schema(),
-      _fieldsParams()
+      _fieldsParams(),
+      _numDocs(0)
 {
     setupParams(hasElements, hasElementWeights);
 }
@@ -75,9 +77,20 @@ FakeWordSet::setupParams(bool hasElements,
 
 void
 FakeWordSet::setupWords(search::Rand48 &rnd,
-                        unsigned int numDocs,
-                        unsigned int commonDocFreq,
-                        unsigned int numWordsPerWordClass)
+                        uint32_t numDocs,
+                        uint32_t commonDocFreq,
+                        uint32_t numWordsPerWordClass)
+{
+    setupWords(rnd, numDocs, commonDocFreq, 1000, 10, numWordsPerWordClass);
+}
+
+void
+FakeWordSet::setupWords(search::Rand48 &rnd,
+                        uint32_t numDocs,
+                        uint32_t commonDocFreq,
+                        uint32_t mediumDocFreq,
+                        uint32_t rareDocFreq,
+                        uint32_t numWordsPerWordClass)
 {
     std::string common = "common";
     std::string medium = "medium";
@@ -86,11 +99,13 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
     double before;
     double after;
 
+    _numDocs = numDocs;
+
     LOG(info, "enter setupWords");
     tv.SetNow();
     before = tv.Secs();
     uint32_t packedIndex = _fieldsParams.size() - 1;
-    for (unsigned int i = 0; i < numWordsPerWordClass; ++i) {
+    for (uint32_t i = 0; i < numWordsPerWordClass; ++i) {
         std::ostringstream vi;
 
         vi << (i + 1);
@@ -99,12 +114,12 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
                                                                  _fieldsParams[packedIndex],
                                                                  packedIndex));
 
-        _words[MEDIUM_WORD].push_back(std::make_unique<FakeWord>(numDocs, 1000, 500,
+        _words[MEDIUM_WORD].push_back(std::make_unique<FakeWord>(numDocs, mediumDocFreq, mediumDocFreq / 2,
                                                                  medium + vi.str(), rnd,
                                                                  _fieldsParams[packedIndex],
                                                                  packedIndex));
 
-        _words[RARE_WORD].push_back(std::make_unique<FakeWord>(numDocs, 10, 5,
+        _words[RARE_WORD].push_back(std::make_unique<FakeWord>(numDocs, rareDocFreq, rareDocFreq / 2,
                                                                rare + vi.str(), rnd,
                                                                _fieldsParams[packedIndex],
                                                                packedIndex));

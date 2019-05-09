@@ -32,6 +32,7 @@ private:
     std::vector<FakeWordVector> _words;
     Schema _schema;
     std::vector<PosOccFieldsParams> _fieldsParams;
+    uint32_t _numDocs;
 
 public:
     FakeWordSet();
@@ -45,9 +46,16 @@ public:
                      bool hasElementWeights);
 
     void setupWords(search::Rand48 &rnd,
-                    unsigned int numDocs,
-                    unsigned int commonDocFreq,
-                    unsigned int numWordsPerWordClass);
+                    uint32_t numDocs,
+                    uint32_t commonDocFreq,
+                    uint32_t numWordsPerWordClass);
+
+    void setupWords(search::Rand48 &rnd,
+                    uint32_t numDocs,
+                    uint32_t commonDocFreq,
+                    uint32_t mediumDocFreq,
+                    uint32_t rareDocFreq,
+                    uint32_t numWordsPerWordClass);
 
     const std::vector<FakeWordVector>& words() const { return _words; }
 
@@ -68,6 +76,8 @@ public:
     const Schema& getSchema() const {
         return _schema;
     }
+
+    uint32_t numDocs() const { return _numDocs; }
 
     void addDocIdBias(uint32_t docIdBias);
 };
