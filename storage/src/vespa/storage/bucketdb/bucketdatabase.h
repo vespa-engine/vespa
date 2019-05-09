@@ -13,42 +13,48 @@ namespace storage {
 class BucketDatabase : public vespalib::Printable
 {
 public:
-    class Entry {
+    template <typename BucketInfoType>
+    class EntryBase {
         document::BucketId _bucketId;
-        BucketInfo _info;
+        BucketInfoType _info;
 
     public:
-        Entry() : _bucketId(0) {} // Invalid entry
-        Entry(const document::BucketId& bId, BucketInfo bucketInfo)
+        EntryBase() : _bucketId(0) {} // Invalid entry
+        EntryBase(const document::BucketId& bId, const BucketInfoType& bucketInfo)
+                : _bucketId(bId), _info(bucketInfo) {}
+        EntryBase(const document::BucketId& bId, BucketInfoType&& bucketInfo)
             : _bucketId(bId), _info(std::move(bucketInfo)) {}
-        explicit Entry(const document::BucketId& bId) : _bucketId(bId) {}
+        explicit EntryBase(const document::BucketId& bId) : _bucketId(bId) {}
 
-        bool operator==(const Entry& other) const {
+        bool operator==(const EntryBase& other) const {
             return (_bucketId == other._bucketId && _info == other._info);
         }
         bool valid() const { return (_bucketId.getRawId() != 0); }
         std::string toString() const;
 
         const document::BucketId& getBucketId() const { return _bucketId; }
-        const BucketInfo& getBucketInfo() const { return _info; }
-        BucketInfo& getBucketInfo() { return _info; }
-        BucketInfo* operator->() { return &_info; }
-        const BucketInfo* operator->() const { return &_info; }
+        const BucketInfoType& getBucketInfo() const { return _info; }
+        BucketInfoType& getBucketInfo() { return _info; }
+        BucketInfoType* operator->() { return &_info; }
+        const BucketInfoType* operator->() const { return &_info; }
 
-        static Entry createInvalid() {
-            return Entry();
+        static EntryBase createInvalid() {
+            return EntryBase();
         }
     };
 
-    template<typename T> struct Processor {
-        virtual ~Processor() {}
-        /** Return false to stop iterating. */
-        virtual bool process(T& e) = 0;
-    };
-    typedef Processor<const Entry> EntryProcessor;
-    typedef Processor<Entry> MutableEntryProcessor;
+    using Entry = EntryBase<BucketInfo>;
+    // TODO avoid needing to touch memory just to get to the const entry ref
+    // TODO  -> lazy ID to ConstArrayRef resolve
+    using ConstEntryRef = EntryBase<ConstBucketInfoRef>;
 
-    virtual ~BucketDatabase() {}
+    struct EntryProcessor {
+        virtual ~EntryProcessor() = default;
+        /** Return false to stop iterating. */
+        virtual bool process(const ConstEntryRef& e) = 0;
+    };
+
+    ~BucketDatabase() override = default;
 
     virtual Entry get(const document::BucketId& bucket) const = 0;
     virtual void remove(const document::BucketId& bucket) = 0;
@@ -76,9 +82,37 @@ public:
     virtual void forEach(
             EntryProcessor&,
             const document::BucketId& after = document::BucketId()) const = 0;
-    virtual void forEach(
-            MutableEntryProcessor&,
-            const document::BucketId& after = document::BucketId()) = 0;
+
+    struct TrailingInserter {
+        virtual ~TrailingInserter() = default;
+        virtual void insert_at_end(const Entry&) = 0;
+    };
+
+    struct Merger {
+        virtual ~Merger() = default;
+        // Visibility of changes to this object when MergingProcessor::Result::Update
+        // is _not_ returned is undefined.
+        // TODO this should ideally be separated into read/write functions, but this
+        // will suffice for now to avoid too many changes.
+        virtual uint64_t bucket_key() const noexcept = 0;
+        virtual document::BucketId bucket_id() const noexcept = 0;
+        virtual Entry& current_entry() = 0;
+        virtual void insert_before_current(const Entry&) = 0;
+    };
+
+    struct MergingProcessor {
+        enum class Result {
+            Update,
+            KeepUnchanged,
+            Skip
+        };
+
+        virtual ~MergingProcessor() = default;
+        virtual Result merge(Merger&) = 0;
+        virtual void insert_remaining_at_end(TrailingInserter&) {}
+    };
+
+    virtual void merge(MergingProcessor&) = 0;
 
     /**
      * Get the first bucket that does _not_ compare less than or equal to
@@ -114,6 +148,7 @@ public:
     virtual uint32_t childCount(const document::BucketId&) const = 0;
 };
 
-std::ostream& operator<<(std::ostream& o, const BucketDatabase::Entry& e);
+template <typename BucketInfoType>
+std::ostream& operator<<(std::ostream& o, const BucketDatabase::EntryBase<BucketInfoType>& e);
 
 } // storage

@@ -46,14 +46,13 @@ public:
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
             DistributorBucketSpaceRepo& bucketSpaceRepo,
-            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucketSpaceRepo, readOnlyBucketSpaceRepo,
+                clock, clusterInfo, sender, bucketSpaceRepo,
                 newStateCmd, outdatedNodesMap, creationTimestamp));
     }
 
@@ -66,13 +65,11 @@ public:
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
             DistributorBucketSpaceRepo& bucketSpaceRepo,
-            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             api::Timestamp creationTimestamp)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucketSpaceRepo,
-                readOnlyBucketSpaceRepo, creationTimestamp));
+                clock, clusterInfo, sender, bucketSpaceRepo, creationTimestamp));
     }
 
     PendingClusterState(const PendingClusterState &) = delete;
@@ -167,7 +164,6 @@ private:
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
             DistributorBucketSpaceRepo& bucketSpaceRepo,
-            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
             const OutdatedNodesMap &outdatedNodesMap,
             api::Timestamp creationTimestamp);
@@ -181,7 +177,6 @@ private:
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
             DistributorBucketSpaceRepo& bucketSpaceRepo,
-            DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
             api::Timestamp creationTimestamp);
 
     struct BucketSpaceAndNode {
@@ -232,7 +227,6 @@ private:
 
     DistributorMessageSender& _sender;
     DistributorBucketSpaceRepo& _bucketSpaceRepo;
-    DistributorBucketSpaceRepo& _readOnlyBucketSpaceRepo;
     uint32_t _clusterStateVersion;
     bool _isVersionedTransition;
     bool _bucketOwnershipTransfer;

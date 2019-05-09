@@ -35,6 +35,7 @@
 namespace storage {
 
 using Entry = BucketDatabase::Entry;
+using ConstEntryRef = BucketDatabase::ConstEntryRef;
 using search::datastore::EntryRef;
 using vespalib::ConstArrayRef;
 using document::BucketId;
@@ -53,6 +54,12 @@ namespace {
 
 Entry entry_from_replica_array_ref(const BucketId& id, uint32_t gc_timestamp, ConstArrayRef<BucketCopy> replicas) {
     return Entry(id, BucketInfo(gc_timestamp, std::vector<BucketCopy>(replicas.begin(), replicas.end())));
+}
+
+ConstEntryRef const_entry_ref_from_replica_array_ref(const BucketId& id, uint32_t gc_timestamp,
+                                                     ConstArrayRef<BucketCopy> replicas)
+{
+    return ConstEntryRef(id, ConstBucketInfoRef(gc_timestamp, replicas));
 }
 
 EntryRef entry_ref_from_value(uint64_t value) {
@@ -127,14 +134,27 @@ void BTreeBucketDatabase::commit_tree_changes() {
     _tree.getAllocator().trimHoldLists(used_gen);
 }
 
+Entry BTreeBucketDatabase::entry_from_value(uint64_t bucket_key, uint64_t value) const {
+    const auto replicas_ref = _store.get(entry_ref_from_value(value));
+    const auto bucket = BucketId(BucketId::keyToBucketId(bucket_key));
+    return entry_from_replica_array_ref(bucket, gc_timestamp_from_value(value), replicas_ref);
+}
+
 Entry BTreeBucketDatabase::entry_from_iterator(const BTree::ConstIterator& iter) const {
     if (!iter.valid()) {
         return Entry::createInvalid();
     }
+    return entry_from_value(iter.getKey(), iter.getData());
+}
+
+ConstEntryRef BTreeBucketDatabase::const_entry_ref_from_iterator(const BTree::ConstIterator& iter) const {
+    if (!iter.valid()) {
+        return ConstEntryRef::createInvalid();
+    }
     const auto value = iter.getData();
     const auto replicas_ref = _store.get(entry_ref_from_value(value));
     const auto bucket = BucketId(BucketId::keyToBucketId(iter.getKey()));
-    return entry_from_replica_array_ref(bucket, gc_timestamp_from_value(value), replicas_ref);
+    return const_entry_ref_from_replica_array_ref(bucket, gc_timestamp_from_value(value), replicas_ref);
 }
 
 BucketId BTreeBucketDatabase::bucket_from_valid_iterator(const BTree::ConstIterator& iter) const {
@@ -216,8 +236,8 @@ BTreeBucketDatabase::find_parents_internal(const document::BucketId& bucket,
                                            std::vector<Entry>& entries) const
 {
     const uint64_t bucket_key = bucket.toKey();
-    uint64_t parent_key = 0;
-    auto iter = _tree.begin();
+    const auto frozen_view = _tree.getFrozenView();
+    auto iter = frozen_view.begin();
     // Start at the root level, descending towards the bucket itself.
     // Try skipping as many levels of the tree as possible as we go.
     uint32_t bits = 1;
@@ -228,11 +248,11 @@ BTreeBucketDatabase::find_parents_internal(const document::BucketId& bucket,
             entries.emplace_back(entry_from_iterator(iter));
         }
         bits = next_parent_bit_seek_level(bits, candidate, bucket);
-        parent_key = BucketId(bits, bucket.getRawId()).toKey();
+        const auto parent_key = BucketId(bits, bucket.getRawId()).toKey();
         assert(parent_key > iter.getKey());
         iter.seek(parent_key);
     }
-    return iter; // FIXME clang warns here due to copying...
+    return iter;
 }
 
 /*
@@ -286,30 +306,118 @@ void BTreeBucketDatabase::update(const Entry& newEntry) {
 // FIXME but bit-tree code says "lowerBound" in impl and "after" in declaration???
 void BTreeBucketDatabase::forEach(EntryProcessor& proc, const BucketId& after) const {
     for (auto iter = _tree.upperBound(after.toKey()); iter.valid(); ++iter) {
-        if (!proc.process(entry_from_iterator(iter))) {
+        if (!proc.process(const_entry_ref_from_iterator(iter))) {
             break;
         }
     }
 }
 
-void BTreeBucketDatabase::forEach(MutableEntryProcessor& proc, const BucketId& after) {
-    for (auto iter = _tree.upperBound(after.toKey()); iter.valid(); ++iter) {
-        // FIXME this is a horrible API which currently has to update every time since we don't
-        // know from the function call itself whether something was in fact updated behind the scenes..!
-        auto entry = entry_from_iterator(iter);
-        bool should_continue = proc.process(entry);
-        // TODO optimize this joyful mess :D
-        update(entry);
-        if (!should_continue) {
-            break;
+struct BTreeBuilderMerger final : BucketDatabase::Merger {
+    BTreeBucketDatabase& _db;
+    BTreeBucketDatabase::BTree::Builder& _builder;
+    uint64_t _current_key;
+    uint64_t _current_value;
+    Entry _cached_entry;
+    bool _valid_cached_entry;
+
+    BTreeBuilderMerger(BTreeBucketDatabase& db,
+                       BTreeBucketDatabase::BTree::Builder& builder)
+        : _db(db),
+          _builder(builder),
+          _current_key(0),
+          _current_value(0),
+          _cached_entry(),
+          _valid_cached_entry(false)
+    {}
+    ~BTreeBuilderMerger() override = default;
+
+    uint64_t bucket_key() const noexcept override {
+        return _current_key;
+    }
+    BucketId bucket_id() const noexcept override {
+        return BucketId(BucketId::keyToBucketId(_current_key));
+    }
+    Entry& current_entry() override {
+        if (!_valid_cached_entry) {
+            _cached_entry = _db.entry_from_value(_current_key, _current_value);
+            _valid_cached_entry = true;
+        }
+        return _cached_entry;
+    }
+    void insert_before_current(const Entry& e) override {
+        const uint64_t bucket_key = e.getBucketId().toKey();
+        assert(bucket_key < _current_key);
+
+        auto replicas_ref = _db._store.add(e.getBucketInfo().getRawNodes());
+        const auto new_value = value_from(e.getBucketInfo().getLastGarbageCollectionTime(), replicas_ref);
+
+        _builder.insert(bucket_key, new_value);
+    }
+
+    void update_iteration_state(uint64_t key, uint64_t value) {
+        _current_key = key;
+        _current_value = value;
+        _valid_cached_entry = false;
+    }
+};
+
+struct BTreeTrailingInserter final : BucketDatabase::TrailingInserter {
+    BTreeBucketDatabase& _db;
+    BTreeBucketDatabase::BTree::Builder& _builder;
+
+    BTreeTrailingInserter(BTreeBucketDatabase& db,
+                          BTreeBucketDatabase::BTree::Builder& builder)
+        : _db(db),
+          _builder(builder)
+    {}
+
+    ~BTreeTrailingInserter() override = default;
+
+    void insert_at_end(const Entry& e) override {
+        const uint64_t bucket_key = e.getBucketId().toKey();
+        const auto replicas_ref = _db._store.add(e.getBucketInfo().getRawNodes());
+        const auto new_value = value_from(e.getBucketInfo().getLastGarbageCollectionTime(), replicas_ref);
+        _builder.insert(bucket_key, new_value);
+    }
+};
+
+// TODO lbound arg?
+void BTreeBucketDatabase::merge(MergingProcessor& proc) {
+    BTreeBucketDatabase::BTree::Builder builder(_tree.getAllocator());
+    BTreeBuilderMerger merger(*this, builder);
+
+    // TODO for_each instead?
+    for (auto iter = _tree.begin(); iter.valid(); ++iter) {
+        const uint64_t key = iter.getKey();
+        const uint64_t value = iter.getData();
+        merger.update_iteration_state(key, value);
+
+        auto result = proc.merge(merger);
+
+        if (result == MergingProcessor::Result::KeepUnchanged) {
+            builder.insert(key, value); // Reuse array store ref with no changes
+        } else if (result == MergingProcessor::Result::Update) {
+            assert(merger._valid_cached_entry); // Must actually have been touched
+            assert(merger._cached_entry.valid());
+            _store.remove(entry_ref_from_value(value));
+            auto new_replicas_ref = _store.add(merger._cached_entry.getBucketInfo().getRawNodes());
+            const auto new_value = value_from(merger._cached_entry.getBucketInfo().getLastGarbageCollectionTime(), new_replicas_ref);
+            builder.insert(key, new_value);
+        } else if (result == MergingProcessor::Result::Skip) {
+            _store.remove(entry_ref_from_value(value));
+        } else {
+            abort();
         }
     }
-    //commit_tree_changes(); TODO should be done as bulk op!
+    BTreeTrailingInserter inserter(*this, builder);
+    proc.insert_remaining_at_end(inserter);
+
+    _tree.assign(builder);
+    commit_tree_changes();
 }
 
 Entry BTreeBucketDatabase::upperBound(const BucketId& bucket) const {
     return entry_from_iterator(_tree.upperBound(bucket.toKey()));
-
 }
 
 uint64_t BTreeBucketDatabase::size() const {

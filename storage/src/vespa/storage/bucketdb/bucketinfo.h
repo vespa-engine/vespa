@@ -2,6 +2,7 @@
 #pragma once
 
 #include "bucketcopy.h"
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace storage {
 
@@ -14,44 +15,36 @@ enum class TrustedUpdate {
     DEFER
 };
 
-class BucketInfo
+template <typename NodeSeq>
+class BucketInfoBase
 {
-private:
+protected:
     uint32_t _lastGarbageCollection;
-    std::vector<BucketCopy> _nodes;
-
+    NodeSeq _nodes;
 public:
-    BucketInfo();
-    BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes);
-    ~BucketInfo();
+    BucketInfoBase()
+        : _lastGarbageCollection(0),
+          _nodes()
+    {}
+    BucketInfoBase(uint32_t lastGarbageCollection, const NodeSeq& nodes)
+        : _lastGarbageCollection(lastGarbageCollection),
+          _nodes(nodes)
+    {}
+    BucketInfoBase(uint32_t lastGarbageCollection, NodeSeq&& nodes)
+        : _lastGarbageCollection(lastGarbageCollection),
+          _nodes(std::move(nodes))
+    {}
+    ~BucketInfoBase() = default;
 
-    BucketInfo(const BucketInfo&);
-    BucketInfo& operator=(const BucketInfo&);
-    BucketInfo(BucketInfo&&) noexcept;
-    BucketInfo& operator=(BucketInfo&&) noexcept;
+    BucketInfoBase(const BucketInfoBase&) = default;
+    BucketInfoBase& operator=(const BucketInfoBase&) = default;
+    BucketInfoBase(BucketInfoBase&&) noexcept = default;
+    BucketInfoBase& operator=(BucketInfoBase&&) noexcept = default;
 
     /**
      * @return Returns the last time when this bucket was "garbage collected".
      */
     uint32_t getLastGarbageCollectionTime() const { return _lastGarbageCollection; }
-
-    /**
-     * Sets the last time the bucket was "garbage collected".
-     */
-    void setLastGarbageCollectionTime(uint32_t timestamp) {
-        _lastGarbageCollection = timestamp;
-    }
-
-    /**
-       Update trusted flags if bucket is now complete and consistent.
-    */
-    void updateTrusted();
-
-    /**
-       Removes any historical information on trustedness, and sets the bucket copies to
-       trusted if they are now complete and consistent.
-    */
-    void resetTrusted();
 
     /** True if the bucket contains no documents and is consistent. */
     bool emptyAndConsistent() const;
@@ -84,8 +77,87 @@ public:
      */
     bool consistentNodes(bool countInvalidAsConsistent = false) const;
 
-    static bool mayContain(const BucketInfo&) { return true; }
     void print(std::ostream&, bool verbose, const std::string& indent) const;
+
+    /**
+     * Returns the bucket copy struct for the given node, null if nonexisting
+     */
+    const BucketCopy* getNode(uint16_t node) const;
+
+    /**
+     * Returns the number of nodes this entry has.
+     */
+    uint32_t getNodeCount() const noexcept { return static_cast<uint32_t>(_nodes.size()); }
+
+    /**
+     * Returns a list of the nodes this entry has.
+     */
+    std::vector<uint16_t> getNodes() const;
+
+    /**
+       Returns a reference to the node with the given index in the node
+       array. This operation has undefined behaviour if the index given
+       is not within the node count.
+    */
+    const BucketCopy& getNodeRef(uint16_t idx) const {
+        return _nodes[idx];
+    }
+
+    const NodeSeq& getRawNodes() const noexcept {
+        return _nodes;
+    }
+
+    std::string toString() const;
+
+    uint32_t getHighestDocumentCount() const;
+    uint32_t getHighestTotalDocumentSize() const;
+    uint32_t getHighestMetaCount() const;
+    uint32_t getHighestUsedFileSize() const;
+
+    bool hasRecentlyCreatedEmptyCopy() const;
+
+    bool operator==(const BucketInfoBase& other) const;
+};
+
+template <typename NodeSeq>
+std::ostream& operator<<(std::ostream& out, const BucketInfoBase<NodeSeq>& info) {
+    info.print(out, false, "");
+    return out;
+}
+
+class ConstBucketInfoRef : public BucketInfoBase<vespalib::ConstArrayRef<BucketCopy>> {
+public:
+    using BucketInfoBase::BucketInfoBase;
+};
+
+class BucketInfo : public BucketInfoBase<std::vector<BucketCopy>> {
+public:
+    BucketInfo();
+    BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes);
+    ~BucketInfo();
+
+    BucketInfo(const BucketInfo&);
+    BucketInfo& operator=(const BucketInfo&);
+    BucketInfo(BucketInfo&&) noexcept;
+    BucketInfo& operator=(BucketInfo&&) noexcept;
+
+    /**
+     * Sets the last time the bucket was "garbage collected".
+     */
+    void setLastGarbageCollectionTime(uint32_t timestamp) {
+        _lastGarbageCollection = timestamp;
+    }
+
+    /**
+       Update trusted flags if bucket is now complete and consistent.
+    */
+    void updateTrusted();
+
+    /**
+       Removes any historical information on trustedness, and sets the bucket copies to
+       trusted if they are now complete and consistent.
+    */
+    void resetTrusted();
 
     /**
        Adds the given node.
@@ -118,34 +190,6 @@ public:
     */
     bool removeNode(uint16_t node, TrustedUpdate update = TrustedUpdate::UPDATE);
 
-    /**
-     * Returns the bucket copy struct for the given node, null if nonexisting
-     */
-    const BucketCopy* getNode(uint16_t node) const;
-
-    /**
-     * Returns the number of nodes this entry has.
-     */
-    uint32_t getNodeCount() const noexcept { return static_cast<uint32_t>(_nodes.size()); }
-
-    /**
-     * Returns a list of the nodes this entry has.
-     */
-    std::vector<uint16_t> getNodes() const;
-
-    /**
-       Returns a reference to the node with the given index in the node
-       array. This operation has undefined behaviour if the index given
-       is not within the node count.
-    */
-    const BucketCopy& getNodeRef(uint16_t idx) const {
-        return _nodes[idx];
-    }
-
-    const std::vector<BucketCopy>& getRawNodes() const noexcept {
-        return _nodes;
-    }
-
     void clearTrusted(uint16_t nodeIdx) {
         getNodeInternal(nodeIdx)->clearTrusted();
     }
@@ -154,19 +198,6 @@ public:
        Clears all nodes from the bucket information.
     */
     void clear() { _nodes.clear(); }
-
-    std::string toString() const;
-
-    bool verifyLegal() const { return true; }
-
-    uint32_t getHighestDocumentCount() const;
-    uint32_t getHighestTotalDocumentSize() const;
-    uint32_t getHighestMetaCount() const;
-    uint32_t getHighestUsedFileSize() const;
-
-    bool hasRecentlyCreatedEmptyCopy() const;
-
-    bool operator==(const BucketInfo& other) const;
 
 private:
     friend class distributor::DistributorTestUtil;
@@ -183,7 +214,8 @@ private:
     void addNodeManual(const BucketCopy& newCopy) { _nodes.push_back(newCopy); }
 };
 
-std::ostream& operator<<(std::ostream& out, const BucketInfo& info);
+extern template class BucketInfoBase<std::vector<BucketCopy>>;
+extern template class BucketInfoBase<vespalib::ConstArrayRef<BucketCopy>>;
 
 }
 

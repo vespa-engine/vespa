@@ -152,21 +152,21 @@ void __attribute__((noinline)) log_empty_bucket_insertion(const document::Bucket
 
 }
 
+template <typename EntryType>
+void MapBucketDatabase::update_internal(EntryType&& new_entry) {
+    assert(new_entry.valid());
+    if (new_entry->getNodeCount() == 0) {
+        log_empty_bucket_insertion(new_entry.getBucketId());
+    }
+    Entry* found = find(0, 0, new_entry.getBucketId(), true);
+    assert(found);
+    *found = std::forward<EntryType>(new_entry);
+}
+
 void
 MapBucketDatabase::update(const Entry& newEntry)
 {
-    assert(newEntry.valid());
-    if (newEntry->getNodeCount() == 0) {
-        log_empty_bucket_insertion(newEntry.getBucketId());
-    }
-    LOG_BUCKET_OPERATION_NO_LOCK(
-            newEntry.getBucketId(),
-            vespalib::make_string(
-                    "bucketdb insert of %s", newEntry.toString().c_str()));
-
-    Entry* found = find(0, 0, newEntry.getBucketId(), true);
-    assert(found);
-    *found = newEntry;
+    update_internal(newEntry);
 }
 
 void
@@ -334,20 +334,32 @@ MapBucketDatabase::upperBound(const document::BucketId& value) const
     return Entry::createInvalid();
 }
 
-template <typename EntryProcessorType>
+namespace {
+
+inline BucketDatabase::ConstEntryRef
+to_entry_ref(const BucketDatabase::Entry& e) {
+    return BucketDatabase::ConstEntryRef(
+            e.getBucketId(),
+            ConstBucketInfoRef(e->getLastGarbageCollectionTime(), e->getRawNodes()));
+}
+
+}
+
 bool
 MapBucketDatabase::forEach(int index,
-                           EntryProcessorType& processor,
+                           EntryProcessor& processor,
                            uint8_t bitCount,
                            const document::BucketId& lowerBound,
-                           bool& process)
+                           bool& process) const
 {
     if (index == -1) {
         return true;
     }
 
-    E& e = _db[index];
-    if (e.value != -1 && process && !processor.process(_values[e.value])) {
+    const E& e = _db[index];
+    if (e.value != -1 && process
+        && !processor.process(to_entry_ref(_values[e.value])))
+    {
         return false;
     }
 
@@ -377,16 +389,82 @@ MapBucketDatabase::forEach(EntryProcessor& processor,
                            const document::BucketId& after) const
 {
     bool process = false;
-    MapBucketDatabase& mutableSelf(const_cast<MapBucketDatabase&>(*this));
-    mutableSelf.forEach(0, processor, 0, after, process);
+    forEach(0, processor, 0, after, process);
 }
 
-void
-MapBucketDatabase::forEach(MutableEntryProcessor& processor,
-                           const document::BucketId& after)
+struct MapDbMerger final : BucketDatabase::Merger {
+    MapBucketDatabase& _db;
+    BucketDatabase::Entry& _current_entry;
+    std::vector<BucketDatabase::Entry>& _to_insert;
+
+    MapDbMerger(MapBucketDatabase& db,
+                BucketDatabase::Entry& current_entry,
+                std::vector<BucketDatabase::Entry>& to_insert)
+        : _db(db),
+          _current_entry(current_entry),
+          _to_insert(to_insert)
+    {}
+
+    uint64_t bucket_key() const noexcept override {
+        return _current_entry.getBucketId().toKey();
+    }
+    document::BucketId bucket_id() const noexcept override {
+        return _current_entry.getBucketId();
+    }
+    BucketDatabase::Entry& current_entry() override {
+        return _current_entry;
+    }
+    void insert_before_current(const BucketDatabase::Entry& e) override {
+        _to_insert.emplace_back(e); // TODO movable
+    }
+};
+
+struct MapDbTrailingInserter final : BucketDatabase::TrailingInserter {
+    MapBucketDatabase& _db;
+    explicit MapDbTrailingInserter(MapBucketDatabase& db) : _db(db) {}
+
+    void insert_at_end(const BucketDatabase::Entry& e) override {
+        _db.update(e);
+    }
+};
+
+void MapBucketDatabase::merge_internal(int index,
+                                       MergingProcessor& processor,
+                                       std::vector<Entry>& to_insert,
+                                       std::vector<document::BucketId>& to_remove)
 {
-    bool process = false;
-    forEach(0, processor, 0, after, process);
+    if (index == -1) {
+        return;
+    }
+    E& e = _db[index];
+    if (e.value != -1) {
+        Entry& entry = _values[e.value];
+        MapDbMerger merger(*this, entry, to_insert);
+        auto result = processor.merge(merger);
+        if (result == MergingProcessor::Result::KeepUnchanged) {
+            // No-op
+        } else if (result == MergingProcessor::Result::Update) {
+            // Also no-op since it's all in-place
+        } else if (result == MergingProcessor::Result::Skip) {
+            to_remove.emplace_back(entry.getBucketId());
+        }
+    }
+    merge_internal(e.e_0, processor, to_insert, to_remove);
+    merge_internal(e.e_1, processor, to_insert, to_remove);
+}
+
+void MapBucketDatabase::merge(MergingProcessor& processor) {
+    std::vector<document::BucketId> to_remove;
+    std::vector<Entry> to_insert;
+    merge_internal(0, processor, to_insert, to_remove);
+    for (const auto& bucket : to_remove) {
+        remove(bucket);
+    }
+    for (auto& e : to_insert) {
+        update_internal(std::move(e));
+    }
+    MapDbTrailingInserter inserter(*this);
+    processor.insert_remaining_at_end(inserter);
 }
 
 void
@@ -482,8 +560,8 @@ MapBucketDatabase::childCount(const document::BucketId& b) const
 namespace {
     struct Writer : public BucketDatabase::EntryProcessor {
         std::ostream& _ost;
-        Writer(std::ostream& ost) : _ost(ost) {}
-        bool process(const BucketDatabase::Entry& e) override {
+        explicit Writer(std::ostream& ost) : _ost(ost) {}
+        bool process(const BucketDatabase::ConstEntryRef& e) override {
             _ost << e.toString() << "\n";
             return true;
         }
@@ -494,37 +572,16 @@ void
 MapBucketDatabase::print(std::ostream& out, bool verbose,
                          const std::string& indent) const
 {
+    out << "MapBucketDatabase(";
     (void) indent;
     if (verbose) {
         Writer writer(out);
         forEach(writer);
-        /* Write out all the gory details to debug
-        out << "Entries {";
-        for (uint32_t i=0, n=_db.size(); i<n; ++i) {
-            out << "\n" << indent << "  " << _db[i].e_0 << "," << _db[i].e_1
-                << "," << _db[i].value;
-        }
-        out << "\n" << indent << "}";
-        out << "Free {";
-        for (uint32_t i=0, n=_free.size(); i<n; ++i) {
-            out << "\n" << indent << "  " << _free[i];
-        }
-        out << "\n" << indent << "}";
-        out << "Entries {";
-        for (uint32_t i=0, n=_values.size(); i<n; ++i) {
-            out << "\n" << indent << "  " << _values[i];
-        }
-        out << "\n" << indent << "}";
-        out << "Free {";
-        for (uint32_t i=0, n=_freeValues.size(); i<n; ++i) {
-            out << "\n" << indent << "  " << _freeValues[i];
-        }
-        out << "\n" << indent << "}";
-        */
     } else {
         out << "Size(" << size() << ") Nodes("
             << (_db.size() - _free.size() - 1) << ")";
     }
+    out << ')';
 }
 
 } // storage

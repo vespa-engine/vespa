@@ -128,14 +128,14 @@ private:
         StatusBucketVisitor(const IdealStateManager& ism, document::BucketSpace bucketSpace, std::ostream& out)
             : _statsTracker(), _ism(ism), _bucketSpace(bucketSpace), _out(out) {}
 
-        bool process(const BucketDatabase::Entry& e) override {
+        bool process(const BucketDatabase::ConstEntryRef& e) override {
             _ism.getBucketStatus(_bucketSpace, e, _statsTracker, _out);
             return true;
         }
     };
     friend class StatusBucketVisitor;
 
-    void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::Entry& entry,
+    void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::ConstEntryRef& entry,
                          NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
     void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 };

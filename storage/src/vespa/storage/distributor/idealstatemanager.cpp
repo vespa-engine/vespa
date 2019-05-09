@@ -244,7 +244,7 @@ IdealStateManager::generateAll(const document::Bucket &bucket,
 void
 IdealStateManager::getBucketStatus(
         BucketSpace bucketSpace,
-        const BucketDatabase::Entry& entry,
+        const BucketDatabase::ConstEntryRef& entry,
         NodeMaintenanceStatsTracker& statsTracker,
         std::ostream& out) const
 {

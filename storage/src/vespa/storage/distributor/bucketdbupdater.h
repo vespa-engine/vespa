@@ -182,54 +182,43 @@ private:
     friend class BucketDBUpdater_Test;
     friend class MergeOperation_Test;
 
-    class BucketListGenerator
-    {
-    public:
-        BucketListGenerator(uint16_t node, BucketListMerger::BucketList& entries)
-            : _node(node), _entries(entries) {};
-
-        bool process(BucketDatabase::Entry&);
-
-    private:
-        uint16_t _node;
-        BucketListMerger::BucketList& _entries;
-    };
-
     /**
        Removes all copies of buckets that are on nodes that are down.
     */
-    class NodeRemover : public BucketDatabase::MutableEntryProcessor
-    {
+    class MergingNodeRemover : public BucketDatabase::MergingProcessor {
     public:
-        NodeRemover(const lib::ClusterState& oldState,
-                    const lib::ClusterState& s,
-                    uint16_t localIndex,
-                    const lib::Distribution& distribution,
-                    const char* upStates);
-        ~NodeRemover() override;
+        MergingNodeRemover(const lib::ClusterState& oldState,
+                           const lib::ClusterState& s,
+                           uint16_t localIndex,
+                           const lib::Distribution& distribution,
+                           const char* upStates,
+                           bool track_non_owned_entries);
+        ~MergingNodeRemover() override;
 
-        bool process(BucketDatabase::Entry& e) override;
+        Result merge(BucketDatabase::Merger&) override;
         void logRemove(const document::BucketId& bucketId, const char* msg) const;
         bool distributorOwnsBucket(const document::BucketId&) const;
 
-        const std::vector<document::BucketId>& getBucketsToRemove() const noexcept {
-            return _removedBuckets;
-        }
-        const std::vector<document::BucketId>& getNonOwnedBuckets() const noexcept {
+        // TODO this is temporary until explicit DB snapshotting replaces read-only DB usage
+        const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept {
             return _nonOwnedBuckets;
         }
     private:
         void setCopiesInEntry(BucketDatabase::Entry& e, const std::vector<BucketCopy>& copies) const;
-        void removeEmptyBucket(const document::BucketId& bucketId);
+
+        bool has_unavailable_nodes(const BucketDatabase::Entry&) const;
+        bool storage_node_is_available(uint16_t index) const noexcept;
 
         const lib::ClusterState _oldState;
         const lib::ClusterState _state;
-        std::vector<document::BucketId> _nonOwnedBuckets;
-        std::vector<document::BucketId> _removedBuckets;
+        std::vector<bool> _available_nodes;
+        std::vector<BucketDatabase::Entry> _nonOwnedBuckets;
+        size_t _removed_buckets;
 
         uint16_t _localIndex;
         const lib::Distribution& _distribution;
         const char* _upStates;
+        bool _track_non_owned_entries;
 
         mutable uint64_t _cachedDecisionSuperbucket;
         mutable bool _cachedOwned;

@@ -31,6 +31,11 @@ ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
 {
 }
 
+ClusterStateBundle::ClusterStateBundle(const ClusterStateBundle&) = default;
+ClusterStateBundle& ClusterStateBundle::operator=(const ClusterStateBundle&) = default;
+ClusterStateBundle::ClusterStateBundle(ClusterStateBundle&&) = default;
+ClusterStateBundle& ClusterStateBundle::operator=(ClusterStateBundle&&) = default;
+
 ClusterStateBundle::~ClusterStateBundle() = default;
 
 const std::shared_ptr<const lib::ClusterState> &

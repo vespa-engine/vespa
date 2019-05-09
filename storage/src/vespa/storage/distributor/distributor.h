@@ -114,7 +114,9 @@ public:
      * Checks whether a bucket needs to be split, and sends a split
      * if so.
      */
-    void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority) override;
+    void checkBucketForSplit(document::BucketSpace bucketSpace,
+                             const BucketDatabase::Entry& e,
+                             uint8_t priority) override;
 
     const lib::ClusterStateBundle& getClusterStateBundle() const override;
 
