@@ -329,7 +329,7 @@ std::vector<vespalib::string> suffixes = {
 };
 
 void
-check_fusion(const vespalib::string file_name_prefix)
+check_fusion(const vespalib::string &file_name_prefix)
 {
     for (const auto &file_name_suffix : suffixes) {
         compare_files(file_name_prefix, file_name_suffix);
