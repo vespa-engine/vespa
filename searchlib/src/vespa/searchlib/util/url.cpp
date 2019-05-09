@@ -149,8 +149,11 @@ URL::ParseURLPart(unsigned char *src,
         p++;
     }
     if (len > 0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
         strncpy(reinterpret_cast<char *>(dest),
                 reinterpret_cast<char *>(src), len);
+#pragma GCC diagnostic pop
         dest[len] = '\0';
     }
 
@@ -389,13 +392,19 @@ URL::SetURL(const unsigned char *url, size_t length)
 
         // stuff the rest into address
         _startAddress = p;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
         strncpy(reinterpret_cast<char *>(_address),
                 reinterpret_cast<char *>(p), sizeof(_address) - 1);
+#pragma GCC diagnostic pop
         _address[sizeof(_address) - 1] = '\0';
     } else {
         _startAddress = p;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
         strncpy(reinterpret_cast<char *>(_address),
                 reinterpret_cast<char *>(p), sizeof(_address) - 1);
+#pragma GCC diagnostic pop
         _address[sizeof(_address) - 1] = '\0';
     }
 }
