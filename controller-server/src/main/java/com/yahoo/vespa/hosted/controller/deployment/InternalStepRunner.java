@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
@@ -33,7 +34,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -146,24 +146,31 @@ public class InternalStepRunner implements StepRunner {
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
                    " and application version " +
                    versions.sourceApplication().orElse(versions.targetApplication()).id() + " ...");
-        return deployReal(id, true, logger);
+        return deployReal(id, true, versions, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
                          " and application version " + versions.targetApplication().id() + " ...");
-        return deployReal(id, false, logger);
+        return deployReal(id, false, versions, logger);
     }
 
-    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
+    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, Versions versions, DualLogger logger) {
+        Optional<ApplicationPackage> applicationPackage = id.type().environment().isManuallyDeployed()
+                ? Optional.of(new ApplicationPackage(controller.applications().applicationStore()
+                                                               .getDev(id.application(), id.type().zone(controller.system()))))
+                : Optional.empty();
+        Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
+                ? Optional.of(versions.targetPlatform())
+                : Optional.empty();
         return deploy(id.application(),
                       id.type(),
                       () -> controller.applications().deploy(id.application(),
                                                              id.type().zone(controller.system()),
-                                                             Optional.empty(),
+                                                             applicationPackage,
                                                              new DeployOptions(false,
-                                                                               Optional.empty(),
+                                                                               vespaVersion,
                                                                                false,
                                                                                setTheStage)),
                       logger);

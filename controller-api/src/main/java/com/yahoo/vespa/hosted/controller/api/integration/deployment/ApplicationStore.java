@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 
 /**
  * Store for the application and tester packages.
@@ -22,7 +23,7 @@ public interface ApplicationStore {
     /** Removes applications older than the given version, for the given application, and returns whether something was removed. */
     boolean prune(ApplicationId application, ApplicationVersion olderThanVersion);
 
-    /** Removes all application packages for the given application. */
+    /** Removes all application packages for the given application, including any development package. */
     void removeAll(ApplicationId application);
 
     /** Returns the tester application package of the given version. Does NOT contain the services.xml. */
@@ -36,5 +37,11 @@ public interface ApplicationStore {
 
     /** Removes all tester packages for the given tester. */
     void removeAll(TesterId tester);
+
+    /** Stores the given application package as the development package for the given application and zone. */
+    void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage);
+
+    /** Returns the development package for the given application and zone. */
+    byte[] getDev(ApplicationId application, ZoneId zone);
 
 }

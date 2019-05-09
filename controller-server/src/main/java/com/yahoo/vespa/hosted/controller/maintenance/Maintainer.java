@@ -61,7 +61,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            if (!permittedSystems.contains(controller.system())) {
+            if ( ! permittedSystems.contains(controller.system())) {
                 return;
             }
             if (jobControl.isActive(name())) {
