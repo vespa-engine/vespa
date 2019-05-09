@@ -6,7 +6,6 @@ import com.yahoo.document.restapi.Response;
 import com.yahoo.document.restapi.RestApiException;
 import com.yahoo.document.restapi.RestUri;
 import com.yahoo.vespaxmlparser.FeedOperation;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.util.Optional;
 

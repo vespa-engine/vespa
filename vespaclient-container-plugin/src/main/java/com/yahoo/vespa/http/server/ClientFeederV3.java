@@ -18,7 +18,6 @@ import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 import com.yahoo.vespaxmlparser.FeedOperation;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;

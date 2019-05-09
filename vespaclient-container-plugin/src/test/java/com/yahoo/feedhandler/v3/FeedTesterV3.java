@@ -103,7 +103,7 @@ public class FeedTesterV3 {
                 new FeedHandlerV3.Context(threadPool, AccessLog.voidAccessLog(), new NullFeedMetric(true)),
                 docMan,
                 null /* session cache */,
-                null /* thread pool config */, 
+                null /* thread pool config */,
                 new DocumentApiMetrics(MetricReceiver.nullImplementation, "test")) {
             @Override
             protected ReferencedResource<SharedSourceSession> retainSource(
@@ -111,7 +111,7 @@ public class FeedTesterV3 {
                 SharedSourceSession sharedSourceSession = mock(SharedSourceSession.class);
 
                 try {
-                    Mockito.stub(sharedSourceSession.sendMessageBlocking(anyObject())).toAnswer((Answer) invocation -> {
+                    Mockito.stub(sharedSourceSession.sendMessageBlocking(anyObject())).toAnswer((Answer<?>) invocation -> {
                         Object[] args = invocation.getArguments();
                         PutDocumentMessage putDocumentMessage = (PutDocumentMessage) args[0];
                         ReplyContext replyContext = (ReplyContext)putDocumentMessage.getContext();
