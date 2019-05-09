@@ -4,7 +4,9 @@
 
 // Disable warnings emitted by protoc generated files
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 
 #include "feed.pb.h"
 #include "visiting.pb.h"
