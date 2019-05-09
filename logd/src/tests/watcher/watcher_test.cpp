@@ -57,18 +57,15 @@ ConfigFixture::~ConfigFixture() = default;
 struct DummyForwarder : public Forwarder {
     std::mutex lock;
     std::condition_variable cond;
-    std::atomic<int> sendModeCount;
     std::vector<std::string> lines;
     DummyForwarder()
         : Forwarder(),
           lock(),
           cond(),
-          sendModeCount(0),
           lines()
     {
     }
     ~DummyForwarder() override = default;
-    void sendMode() override { ++sendModeCount; }
     void forwardLine(std::string_view log_line) override {
         std::lock_guard guard(lock);
         lines.emplace_back(log_line);

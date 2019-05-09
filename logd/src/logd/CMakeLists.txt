@@ -14,8 +14,7 @@ endif()
 vespa_add_library(logd STATIC
     SOURCES
     config_subscriber.cpp
-    conn.cpp
-    legacy_forwarder.cpp
+    empty_forwarder.cpp
     metrics.cpp
     proto_converter.cpp
     rpc_forwarder.cpp

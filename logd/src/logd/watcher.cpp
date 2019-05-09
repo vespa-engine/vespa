@@ -161,8 +161,6 @@ Watcher::watchfile()
         already.valid = true;
     }
 
-    _forwarder.sendMode();
-
     vespalib::SigCatch catcher;
     int sleepcount = 0;
     time_t created = 0;

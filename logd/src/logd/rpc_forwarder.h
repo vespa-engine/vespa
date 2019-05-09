@@ -35,7 +35,6 @@ public:
     ~RpcForwarder() override;
 
     // Implements Forwarder
-    void sendMode() override {}
     void forwardLine(std::string_view line) override;
     void flush() override;
     int badLines() const override;
