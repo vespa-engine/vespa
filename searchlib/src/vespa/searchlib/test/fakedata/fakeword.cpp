@@ -562,6 +562,7 @@ bool
 FakeWord::validate(FieldReader &fieldReader,
                    uint32_t wordNum,
                    const fef::TermFieldMatchDataArray &matchData,
+                   bool decode_cheap_features,
                    bool verbose) const
 {
     uint32_t docId = 0;
@@ -593,6 +594,10 @@ FakeWord::validate(FieldReader &fieldReader,
         docId = features.doc_id();
         assert(d != de);
         assert(d->_docId == docId);
+        if (decode_cheap_features) {
+            assert(d->_collapsedDocWordFeatures._field_len == features.field_length());
+            assert(d->_collapsedDocWordFeatures._num_occs == features.num_occs());
+        }
         if (matchData.valid()) {
 #ifdef notyet
             unpres = features.unpack(matchData);
