@@ -21,14 +21,13 @@ class GetConfig : public FastOS_Application
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Supervisor *_supervisor;
     FRT_Target     *_target;
 
     GetConfig(const GetConfig &);
     GetConfig &operator=(const GetConfig &);
 
 public:
-    GetConfig() : _server(), _supervisor(nullptr), _target(nullptr) {}
+    GetConfig() : _server(), _target(nullptr) {}
     virtual ~GetConfig();
     int usage();
     void initRPC(const char *spec);
@@ -39,7 +38,7 @@ public:
 
 GetConfig::~GetConfig()
 {
-    LOG_ASSERT(_supervisor == nullptr);
+    LOG_ASSERT( ! _server);
     LOG_ASSERT(_target == nullptr);
 }
 
@@ -73,8 +72,7 @@ void
 GetConfig::initRPC(const char *spec)
 {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
-    _supervisor = &_server->supervisor();
-    _target     = _supervisor->GetTarget(spec);
+    _target     = _server->supervisor().GetTarget(spec);
 }
 
 
@@ -85,10 +83,7 @@ GetConfig::finiRPC()
         _target->SubRef();
         _target = nullptr;
     }
-    if (_server) {
-        _server.reset();
-        _supervisor = nullptr;
-    }
+    _server.reset();
 }
 
 
@@ -223,7 +218,7 @@ GetConfig::Main()
 
     int protocolVersion = config::protocol::readProtocolVersion();
     FRTConfigRequestFactory requestFactory(protocolVersion, traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
-    FRTConnection connection(spec, *_supervisor, TimingValues());
+    FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
     ConfigState state(configMD5, generation, false);
     FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout * 1000);
