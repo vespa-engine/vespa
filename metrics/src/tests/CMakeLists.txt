@@ -1,15 +1,16 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Runner for unit tests written in gtest.
-# NOTE: All new test classes should be added here.
 vespa_add_executable(metrics_gtest_runner_app TEST
     SOURCES
     countmetrictest.cpp
     loadmetrictest.cpp
     metric_timer_test.cpp
+    metricmanagertest.cpp
     metricsettest.cpp
     metrictest.cpp
     snapshottest.cpp
+    stresstest.cpp
     summetrictest.cpp
     valuemetrictest.cpp
     gtest_runner.cpp
@@ -24,19 +25,3 @@ vespa_add_test(
     COMMAND metrics_gtest_runner_app
 )
 
-# Runner for unit tests written in CppUnit (DEPRECATED).
-vespa_add_executable(metrics_testrunner_app TEST
-    SOURCES
-    testrunner.cpp
-    metricmanagertest.cpp
-    stresstest.cpp
-    DEPENDS
-    metrics
-    vdstestlib
-)
-
-# TODO: Test with a larger chunk size to parallelize test suite runs 
-vespa_add_test(
-    NAME metrics_testrunner_app
-    COMMAND metrics_testrunner_app
-)
