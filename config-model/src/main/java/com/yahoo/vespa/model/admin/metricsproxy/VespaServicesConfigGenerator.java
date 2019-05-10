@@ -30,8 +30,7 @@ public class VespaServicesConfigGenerator {
         VespaServicesConfig.Service.Builder builder = new VespaServicesConfig.Service.Builder()
                 .configId(service.getConfigId())
                 .name(service.getServiceName())
-                .port(service.getHealthPort())
-                .healthport(service.getHealthPort());
+                .port(service.getHealthPort());
 
         service.getDefaultMetricDimensions().forEach((name, value) -> builder.dimension(toServiceDimensionBuilder(name, value)));
         return builder;

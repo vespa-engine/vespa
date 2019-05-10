@@ -123,7 +123,6 @@ public class IntegrationTester implements  AutoCloseable {
                 .name(serviceId.id)
                 .configId(configId)
                 .port(port)
-                .healthport(port)
                 .dimension(new Service.Dimension.Builder().key("serviceDim").value("serviceDimValue"));
     }
 

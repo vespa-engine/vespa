@@ -5,6 +5,5 @@ package=ai.vespa.metricsproxy.service
 service[].configId string
 service[].name string default=""
 service[].port int default=-1
-service[].healthport int default=-1
 service[].dimension[].key string
 service[].dimension[].value string

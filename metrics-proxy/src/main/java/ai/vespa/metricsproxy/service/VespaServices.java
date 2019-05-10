@@ -50,7 +50,7 @@ public class VespaServices {
         List<VespaService> services = new ArrayList<>();
         for (Service s : servicesConfig.service()) {
             log.log(DEBUG, "Re-configuring service " + s.name());
-            VespaService vespaService = VespaService.create(s.name(), s.configId(), s.healthport(), monitoringSystemName,
+            VespaService vespaService = VespaService.create(s.name(), s.configId(), s.port(), monitoringSystemName,
                                                             createServiceDimensions(s));
             services.add(vespaService);
         }
