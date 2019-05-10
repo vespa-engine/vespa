@@ -36,15 +36,11 @@ using vespalib::getLastErrorString;
 ZcPosOccRandRead::ZcPosOccRandRead()
     : _file(std::make_unique<FastOS_File>()),
       _fileSize(0),
-      _minChunkDocs(1 << 30),
-      _minSkipDocs(64),
-      _docIdLimit(10000000),
+      _posting_params(64, 1 << 30, 10000000, true, true, false),
       _numWords(0),
       _fileBitSize(0),
       _headerBitSize(0),
-      _fieldsParams(),
-      _dynamicK(true),
-      _decode_cheap_features(false)
+      _fieldsParams()
 { }
 
 
@@ -65,8 +61,6 @@ createIterator(const PostingListCounts &counts,
 {
     (void) usebitVector;
 
-    typedef EGPosOccEncodeContext<true> EC;
-
     assert((handle._bitLength != 0) == (counts._bitLength != 0));
     assert((counts._numDocs != 0) == (counts._bitLength != 0));
     assert(handle._bitOffsetMem <= handle._bitOffset);
@@ -85,22 +79,7 @@ createIterator(const PostingListCounts &counts,
                      handle._bitOffsetMem) & 63;
 
     Position start(mem, bitOffset);
-
-    EGPosOccDecodeContext<true> d(mem, bitOffset, &_fieldsParams);
-
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-    uint32_t length;
-    uint64_t val64;
-
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
-
-    uint32_t numDocs = static_cast<uint32_t>(val64) + 1;
-
-    if (numDocs < _minSkipDocs) {
-        return new ZcRareWordPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features, &_fieldsParams, matchData);
-    } else {
-        return new ZcPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features,  _minChunkDocs, counts, &_fieldsParams, matchData);
-    }
+    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData).release();
 }
 
 
@@ -200,10 +179,11 @@ ZcPosOccRandRead::close()
 }
 
 
+template <typename DecodeContext>
 void
-ZcPosOccRandRead::readHeader()
+ZcPosOccRandRead::readHeader(const vespalib::string &identifier)
 {
-    EGPosOccDecodeContext<true> d(&_fieldsParams);
+    DecodeContext d(&_fieldsParams);
     ComprFileReadContext drc(d);
 
     drc.setFile(_file.get());
@@ -227,14 +207,14 @@ ZcPosOccRandRead::readHeader()
     assert(header.hasTag("minSkipDocs"));
     assert(header.getTag("frozen").asInteger() != 0);
     _fileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == myId5);
+    assert(header.getTag("format.0").asString() == identifier);
     assert(header.getTag("format.1").asString() == d.getIdentifier());
     _numWords = header.getTag("numWords").asInteger();
-    _minChunkDocs = header.getTag("minChunkDocs").asInteger();
-    _docIdLimit = header.getTag("docIdLimit").asInteger();
-    _minSkipDocs = header.getTag("minSkipDocs").asInteger();
+    _posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
+    _posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
+    _posting_params._min_skip_docs = header.getTag("minSkipDocs").asInteger();
     if (header.hasTag(cheap_features) && (header.getTag(cheap_features).asInteger() != 0)) {
-        _decode_cheap_features = true;
+        _posting_params._encode_cheap_features = true;
     }
     // Read feature decoding specific subheader
     d.readHeader(header, "features.");
@@ -245,6 +225,11 @@ ZcPosOccRandRead::readHeader()
     _headerBitSize = d.getReadOffset();
 }
 
+void
+ZcPosOccRandRead::readHeader()
+{
+    readHeader<EGPosOccDecodeContext<true>>(myId5);
+}
 
 const vespalib::string &
 ZcPosOccRandRead::getIdentifier()
@@ -266,95 +251,14 @@ Zc4PosOccRandRead::
 Zc4PosOccRandRead()
     : ZcPosOccRandRead()
 {
-    _dynamicK = false;
+    _posting_params._dynamic_k = false;
 }
 
-
-search::queryeval::SearchIterator *
-Zc4PosOccRandRead::
-createIterator(const PostingListCounts &counts,
-               const PostingListHandle &handle,
-               const search::fef::TermFieldMatchDataArray &matchData,
-               bool usebitVector) const
-{
-    (void) usebitVector;
-    typedef EGPosOccEncodeContext<true> EC;
-
-    assert((handle._bitLength != 0) == (counts._bitLength != 0));
-    assert((counts._numDocs != 0) == (counts._bitLength != 0));
-    assert(handle._bitOffsetMem <= handle._bitOffset);
-
-    if (handle._bitLength == 0) {
-        return new search::queryeval::EmptySearch;
-    }
-
-    const char *cmem = static_cast<const char *>(handle._mem);
-    uint64_t memOffset = reinterpret_cast<unsigned long>(cmem) & 7;
-    const uint64_t *mem = reinterpret_cast<const uint64_t *>
-                          (cmem - memOffset) +
-                          (memOffset * 8 + handle._bitOffset -
-                           handle._bitOffsetMem) / 64;
-    int bitOffset = (memOffset * 8 + handle._bitOffset -
-                     handle._bitOffsetMem) & 63;
-
-    Position start(mem, bitOffset);
-    EG2PosOccDecodeContext<true> d(mem, bitOffset, &_fieldsParams);
-
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
-    uint32_t length;
-    uint64_t val64;
-
-    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
-
-    uint32_t numDocs = static_cast<uint32_t>(val64) + 1;
-
-    if (numDocs < _minSkipDocs) {
-        return new Zc4RareWordPosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features, &_fieldsParams, matchData);
-    } else {
-        return new Zc4PosOccIterator<true>(start, handle._bitLength, _docIdLimit, _decode_cheap_features, _minChunkDocs, counts, &_fieldsParams, matchData);
-    }
-}
 
 void
 Zc4PosOccRandRead::readHeader()
 {
-    EG2PosOccDecodeContext<true> d(&_fieldsParams);
-    ComprFileReadContext drc(d);
-
-    drc.setFile(_file.get());
-    drc.setFileSize(_file->GetSize());
-    drc.allocComprBuf(512, 32768u);
-    d.emptyBuffer(0);
-    drc.readComprBuffer();
-    d.setReadContext(&drc);
-
-    vespalib::FileHeader header;
-    d.readHeader(header, _file->getSize());
-    uint32_t headerLen = header.getSize();
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(header.hasTag("format.1"));
-    assert(!header.hasTag("format.2"));
-    assert(header.hasTag("numWords"));
-    assert(header.hasTag("minChunkDocs"));
-    assert(header.hasTag("docIdLimit"));
-    assert(header.hasTag("minSkipDocs"));
-    assert(header.getTag("frozen").asInteger() != 0);
-    _fileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == myId4);
-    assert(header.getTag("format.1").asString() == d.getIdentifier());
-    _numWords = header.getTag("numWords").asInteger();
-    _minChunkDocs = header.getTag("minChunkDocs").asInteger();
-    _docIdLimit = header.getTag("docIdLimit").asInteger();
-    _minSkipDocs = header.getTag("minSkipDocs").asInteger();
-    // Read feature decoding specific subheader
-    d.readHeader(header, "features.");
-    // Align on 64-bit unit
-    d.smallAlign(64);
-    headerLen += (-headerLen & 7);
-    assert(d.getReadOffset() == headerLen * 8);
-    _headerBitSize = d.getReadOffset();
+    readHeader<EG2PosOccDecodeContext<true> >(myId4);
 }
 
 const vespalib::string &

@@ -7,6 +7,8 @@
 
 namespace search::diskindex {
 
+struct Zc4PostingParams;
+
 template <bool bigEndian>
 class Zc4RareWordPosOccIterator : public Zc4RareWordPostingIterator<bigEndian>
 {
@@ -72,6 +74,9 @@ public:
                      const fef::TermFieldMatchDataArray &matchData);
 };
 
+
+std::unique_ptr<search::queryeval::SearchIterator>
+create_zc_posocc_iterator(bool bigEndian, const index::PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data);
 
 extern template class Zc4RareWordPosOccIterator<true>;
 extern template class Zc4RareWordPosOccIterator<false>;
