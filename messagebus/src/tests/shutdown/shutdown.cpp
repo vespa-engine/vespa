@@ -37,21 +37,18 @@ TEST_APPHOOK(Test);
 void
 Test::requireThatListenFailedIsExceptionSafe()
 {
-    FRT_Supervisor orb;
-    ASSERT_TRUE(orb.Listen(0));
-    ASSERT_TRUE(orb.Start());
+    fnet::frt::StandaloneFRT orb;
+    ASSERT_TRUE(orb.supervisor().Listen(0));
 
     Slobrok slobrok;
     try {
         TestServer bar(MessageBusParams(),
                        RPCNetworkParams(slobrok.config())
-                       .setListenPort(orb.GetListenPort()));
+                       .setListenPort(orb.supervisor().GetListenPort()));
         EXPECT_TRUE(false);
     } catch (vespalib::Exception &e) {
-        EXPECT_EQUAL("Failed to start network.",
-                   e.getMessage());
+        EXPECT_EQUAL("Failed to start network.", e.getMessage());
     }
-    orb.ShutDown(true);
 }
 
 void

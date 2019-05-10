@@ -91,12 +91,12 @@ RPCServer::Main(int argc, char **argv)
         return 1;
     }
 
-    _supervisor = new FRT_Supervisor();
+    fnet::frt::StandaloneFRT server;
+    _supervisor = &server.supervisor();
     InitRPC(_supervisor);
     _supervisor->Listen(argv[1]);
     FNET_SignalShutDown ssd(*_supervisor->GetTransport());
-    _supervisor->Main();
-    delete _supervisor;
+    server.wait_finished();
     return 0;
 }
 

@@ -12,9 +12,9 @@ public:
       printf("usage  : echo_client <connectspec>\n");
       return 1;
     }
-    FRT_Supervisor supervisor;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & supervisor = server.supervisor();
 
-    supervisor.Start();
     FRT_Target *target = supervisor.GetTarget(_argv[1]);
     FRT_RPCRequest *req = supervisor.AllocRPCRequest();
     FRT_Values *args = req->GetParams();
@@ -77,7 +77,6 @@ public:
       printf("Return values != parameters.\n");
     }
     req->SubRef();
-    supervisor.ShutDown(true);
     return 0;
   }
 };

@@ -112,7 +112,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _ident(params.getIdentity()),
     _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
     _transport(std::make_unique<FNET_Transport>()),
-    _orb(std::make_unique<FRT_Supervisor>(_transport.get(), nullptr)),
+    _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
     _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
     _targetPoolTask(_scheduler, *_targetPool),

@@ -20,6 +20,7 @@ using namespace config;
 class GetConfig : public FastOS_Application
 {
 private:
+    std::unique_ptr<fnet::frt::StandaloneFRT> _server;
     FRT_Supervisor *_supervisor;
     FRT_Target     *_target;
 
@@ -27,7 +28,7 @@ private:
     GetConfig &operator=(const GetConfig &);
 
 public:
-    GetConfig() : _supervisor(NULL), _target(NULL) {}
+    GetConfig() : _server(), _supervisor(nullptr), _target(nullptr) {}
     virtual ~GetConfig();
     int usage();
     void initRPC(const char *spec);
@@ -38,8 +39,8 @@ public:
 
 GetConfig::~GetConfig()
 {
-    LOG_ASSERT(_supervisor == NULL);
-    LOG_ASSERT(_target == NULL);
+    LOG_ASSERT(_supervisor == nullptr);
+    LOG_ASSERT(_target == nullptr);
 }
 
 
@@ -71,23 +72,22 @@ GetConfig::usage()
 void
 GetConfig::initRPC(const char *spec)
 {
-    _supervisor = new FRT_Supervisor();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _supervisor = &_server->supervisor();
     _target     = _supervisor->GetTarget(spec);
-    _supervisor->Start();
 }
 
 
 void
 GetConfig::finiRPC()
 {
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
-        _target = NULL;
+        _target = nullptr;
     }
-    if (_supervisor != NULL) {
-        _supervisor->ShutDown(true);
-        delete _supervisor;
-        _supervisor = NULL;
+    if (_server) {
+        _server.reset();
+        _supervisor = nullptr;
     }
 }
 
@@ -99,8 +99,8 @@ GetConfig::Main()
     char c = -1;
 
     std::vector<vespalib::string> defSchema;
-    const char *schema = NULL;
-    const char *defName = NULL;
+    const char *schema = nullptr;
+    const char *defName = nullptr;
     const char *defMD5 = "";
     std::string defNamespace("config");
     const char *serverHost = "localhost";
@@ -110,7 +110,7 @@ GetConfig::Main()
     const char *vespaVersionString = nullptr;
     int64_t generation = 0;
 
-    if (configId == NULL) {
+    if (configId == nullptr) {
         configId = "";
     }
     const char *configMD5 = "";
@@ -119,7 +119,7 @@ GetConfig::Main()
 
     int serverPort = 19090;
 
-    const char *optArg = NULL;
+    const char *optArg = nullptr;
     int optInd = 0;
     while ((c = GetOpt("a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh", optArg, optInd)) != -1) {
         int retval = 1;
@@ -181,19 +181,19 @@ GetConfig::Main()
         }
     }
 
-    if (defName == NULL || serverPort == 0) {
+    if (defName == nullptr || serverPort == 0) {
         usage();
         return 1;
     }
 
-    if (strchr(defName, '.') != NULL) {
+    if (strchr(defName, '.') != nullptr) {
         const char *tmp = defName;
         defName = strrchr(defName, '.');
         defName++;
         defNamespace = std::string(tmp, defName - tmp - 1);
     }
 
-    if (schema != NULL) {
+    if (schema != nullptr) {
         std::ifstream is;
         is.open(schema);
         std::string item;

@@ -9,6 +9,8 @@
 #include <vespa/config/subscription/sourcespec.h>
 
 class FRT_Supervisor;
+class FNET_Transport;
+class FastOS_ThreadPool;
 
 namespace documentapi {
 
@@ -22,6 +24,8 @@ protected:
     bool   _firstTry;
     config::ServerSpec::HostSpecList          _configSources;
     vespalib::Lock                            _lock;
+    std::unique_ptr<FastOS_ThreadPool>        _threadPool;
+    std::unique_ptr<FNET_Transport>           _transport;
     std::unique_ptr<FRT_Supervisor>           _orb;
     std::unique_ptr<slobrok::api::IMirrorAPI> _mirror;
     std::vector<std::string>                  _slobroks;

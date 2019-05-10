@@ -16,41 +16,41 @@ Flags::Flags()
       targethost("localhost"),
       portnumber(19090)
 { }
-Flags::~Flags() { }
+Flags::~Flags() = default;
 
 ProxyCmd::ProxyCmd(const Flags& flags)
-    : _supervisor(NULL),
-      _target(NULL),
-      _req(NULL),
+    : _server(),
+      _supervisor(nullptr),
+      _target(nullptr),
+      _req(nullptr),
       _flags(flags)
 { }
 
-ProxyCmd::~ProxyCmd() { }
+ProxyCmd::~ProxyCmd() = default;
 
 void ProxyCmd::initRPC() {
-    _supervisor = new FRT_Supervisor();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _supervisor = &_server->supervisor();
     _req = _supervisor->AllocRPCRequest();
-    _supervisor->Start();
 }
 
 void ProxyCmd::invokeRPC() {
-    if (_req == NULL) return;
+    if (_req == nullptr) return;
     _target->InvokeSync(_req, 65.0);
 }
 
 void ProxyCmd::finiRPC() {
-    if (_req != NULL) {
+    if (_req != nullptr) {
         _req->SubRef();
-        _req = NULL;
+        _req = nullptr;
     }
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
         _target = NULL;
     }
-    if (_supervisor != NULL) {
-        _supervisor->ShutDown(true);
-        delete _supervisor;
-        _supervisor = NULL;
+    if (_server) {
+        _server.reset();
+        _supervisor = nullptr;
     }
 }
 

@@ -132,7 +132,7 @@ RPCHooks::rpc_stop(FRT_RPCRequest *req)
 
 TstEnv::TstEnv(int sbp, int myp, const char *n)
     : _transport(new FNET_Transport()),
-      _supervisor(new FRT_Supervisor(_transport, NULL)),
+      _supervisor(new FRT_Supervisor(_transport)),
       _myport(myp),
       _sbport(sbp),
       _rpcHooks(NULL),

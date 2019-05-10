@@ -9,7 +9,6 @@
 #include <vespa/fnet/ipackethandler.h>
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/simplepacketstreamer.h>
-#include <vespa/vespalib/net/crypto_engine.h>
 
 class FNET_Transport;
 class FRT_Target;
@@ -17,6 +16,9 @@ class FastOS_ThreadPool;
 class FNET_Scheduler;
 class FRT_RPCInvoker;
 class FRT_IRequestWait;
+
+namespace vespalib { class CryptoEngine; }
+
 
 class FRT_Supervisor : public FNET_IServerAdapter,
                        public FNET_IPacketHandler
@@ -26,12 +28,10 @@ public:
     {
     private:
         FRT_ReflectionManager *_reflectionManager;
-
-        RPCHooks(const RPCHooks &);
-        RPCHooks &operator=(const RPCHooks &);
-
     public:
-        RPCHooks(FRT_ReflectionManager *reflect)
+        RPCHooks(const RPCHooks &) = delete;
+        RPCHooks &operator=(const RPCHooks &) = delete;
+        explicit RPCHooks(FRT_ReflectionManager *reflect)
             : _reflectionManager(reflect) {}
 
         void InitRPC(FRT_Supervisor *supervisor);
@@ -45,17 +45,15 @@ public:
                       public FNET_IPacketHandler
     {
     private:
-        FRT_Supervisor &_parent;
-        FRT_Method     *_sessionInitHook;
-        FRT_Method     *_sessionDownHook;
-        FRT_Method     *_sessionFiniHook;
-
-        ConnHooks(const ConnHooks &);
-        ConnHooks &operator=(const ConnHooks &);
-
+        FRT_Supervisor               &_parent;
+        std::unique_ptr<FRT_Method>   _sessionInitHook;
+        std::unique_ptr<FRT_Method>   _sessionDownHook;
+        std::unique_ptr<FRT_Method>   _sessionFiniHook;
     public:
-        ConnHooks(FRT_Supervisor &parent);
-        ~ConnHooks();
+        ConnHooks(const ConnHooks &) = delete;
+        ConnHooks &operator=(const ConnHooks &) = delete;
+        explicit ConnHooks(FRT_Supervisor &parent);
+        ~ConnHooks() override;
 
         void SetSessionInitHook(FRT_METHOD_PT  method, FRT_Invokable *handler);
         void SetSessionDownHook(FRT_METHOD_PT  method, FRT_Invokable *handler);
@@ -67,32 +65,23 @@ public:
     };
 
 private:
-    FNET_Transport            *_transport;
-    FastOS_ThreadPool         *_threadPool;
-    bool                       _standAlone;
-
-    FRT_PacketFactory          _packetFactory;
-    FNET_SimplePacketStreamer  _packetStreamer;
-    FNET_Connector            *_connector;
-    FRT_ReflectionManager      _reflectionManager;
-    RPCHooks                   _rpcHooks;
-    ConnHooks                  _connHooks;
-    FRT_Method                *_methodMismatchHook;
-
-    FRT_Supervisor(const FRT_Supervisor &);
-    FRT_Supervisor &operator=(const FRT_Supervisor &);
+    FNET_Transport               *_transport;
+    FRT_PacketFactory             _packetFactory;
+    FNET_SimplePacketStreamer     _packetStreamer;
+    FNET_Connector               *_connector;
+    FRT_ReflectionManager         _reflectionManager;
+    RPCHooks                      _rpcHooks;
+    ConnHooks                     _connHooks;
+    std::unique_ptr<FRT_Method>   _methodMismatchHook;
 
 public:
-    FRT_Supervisor(FNET_Transport *transport, FastOS_ThreadPool *threadPool);
-    FRT_Supervisor(vespalib::CryptoEngine::SP crypto, uint32_t threadStackSize = 65000, uint32_t maxThreads = 0);
-    FRT_Supervisor(uint32_t threadStackSize = 65000, uint32_t maxThreads = 0)
-        : FRT_Supervisor(vespalib::CryptoEngine::get_default(), threadStackSize, maxThreads) {}
-    virtual ~FRT_Supervisor();
+    explicit FRT_Supervisor(FNET_Transport *transport);
+    FRT_Supervisor(const FRT_Supervisor &) = delete;
+    FRT_Supervisor &operator=(const FRT_Supervisor &) = delete;
+    ~FRT_Supervisor() override;
 
-    bool StandAlone() { return _standAlone; }
     FNET_Transport *GetTransport() { return _transport; }
     FNET_Scheduler *GetScheduler();
-    FastOS_ThreadPool *GetThreadPool() { return _threadPool; }
     FRT_ReflectionManager *GetReflectionManager() { return &_reflectionManager; }
 
     bool Listen(const char *spec);
@@ -100,8 +89,7 @@ public:
     uint32_t GetListenPort() const;
 
     FRT_Target *GetTarget(const char *spec);
-    FRT_Target *Get2WayTarget(const char *spec,
-                              FNET_Context connContext = FNET_Context());
+    FRT_Target *Get2WayTarget(const char *spec, FNET_Context connContext = FNET_Context());
     FRT_Target *GetTarget(int port);
     FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = nullptr);
 
@@ -120,17 +108,10 @@ public:
     };
 
     // methods for performing rpc invocations
-    static void InvokeVoid(FNET_Connection *conn,
-                           FRT_RPCRequest *req);
-    static void InvokeAsync(SchedulerPtr scheduler,
-                            FNET_Connection *conn,
-                            FRT_RPCRequest *req,
-                            double timeout,
-                            FRT_IRequestWait *waiter);
-    static void InvokeSync(SchedulerPtr scheduler,
-                           FNET_Connection *conn,
-                           FRT_RPCRequest *req,
-                           double timeout);
+    static void InvokeVoid(FNET_Connection *conn, FRT_RPCRequest *req);
+    static void InvokeSync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_RPCRequest *req, double timeout);
+    static void InvokeAsync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_RPCRequest *req, double timeout, FRT_IRequestWait *waiter);
+
 
     // FNET ServerAdapter Interface
     bool InitAdminChannel(FNET_Channel *channel) override;
@@ -138,11 +119,26 @@ public:
 
     // Packet Handling
     HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
-
-    // Methods for controlling transport object in standalone mode
-    bool Start();
-    void Main();
-    void ShutDown(bool waitFinished);
-    void WaitFinished();
 };
 
+namespace fnet::frt {
+
+/**
+ * This is a simple class that makes it easy to test RPC.
+ * Normally you do not want use it in production code as it hides your possibilites and responsibilities.
+ */
+class StandaloneFRT {
+public:
+    StandaloneFRT();
+    explicit StandaloneFRT(std::shared_ptr<vespalib::CryptoEngine> crypto);
+    ~StandaloneFRT();
+    FRT_Supervisor & supervisor() { return *_supervisor; }
+    // TODO Remove this method as it is a relic from the ancient non-threaded world.
+    void wait_finished() const;
+private:
+    std::unique_ptr<FastOS_ThreadPool> _threadPool;
+    std::unique_ptr<FNET_Transport> _transport;
+    std::unique_ptr<FRT_Supervisor> _supervisor;
+};
+
+}

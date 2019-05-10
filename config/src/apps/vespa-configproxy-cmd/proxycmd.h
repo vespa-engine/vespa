@@ -9,6 +9,8 @@ class FRT_Target;
 class FRT_RPCRequest;
 class FRT_Values;
 
+namespace fnet::frt { class StandaloneFRT; }
+
 struct Flags {
     vespalib::string method;
     std::vector<vespalib::string> args;
@@ -23,6 +25,7 @@ struct Flags {
 class ProxyCmd
 {
 private:
+    std::unique_ptr<fnet::frt::StandaloneFRT> _server;
     FRT_Supervisor *_supervisor;
     FRT_Target     *_target;
     FRT_RPCRequest *_req;

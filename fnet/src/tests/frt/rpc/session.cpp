@@ -86,14 +86,13 @@ struct RPC : public FRT_Invokable
   }
 };
 
-TEST("session") {
-    RPC rpc;
-    FRT_Supervisor orb(crypto);
+void testSession(RPC & rpc) {
+    fnet::frt::StandaloneFRT frt(crypto);
+    FRT_Supervisor & orb = frt.supervisor();
     char spec[64];
     rpc.Init(&orb);
     ASSERT_TRUE(orb.Listen("tcp/0"));
     sprintf(spec, "tcp/localhost:%d", orb.GetListenPort());
-    ASSERT_TRUE(orb.Start());
 
     FRT_Target     *target = orb.GetTarget(spec);
     FRT_RPCRequest *req    = orb.AllocRPCRequest();
@@ -122,7 +121,10 @@ TEST("session") {
 
     req->SubRef();
     target->SubRef();
-    orb.ShutDown(true);
+}
+TEST("session") {
+    RPC rpc;
+    testSession(rpc);
     EXPECT_TRUE(Session::GetCnt() == 0);
     EXPECT_TRUE(!rpc.bogusFini);
 };

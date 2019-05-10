@@ -47,9 +47,9 @@ MyApp::Main()
     }
     bool ok = true;
     RPC rpc;
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & orb = server.supervisor();
     rpc.Init(&orb);
-    orb.Start();
 
     FRT_Target *target = orb.Get2WayTarget(_argv[1]);
     FRT_RPCRequest *req = orb.AllocRPCRequest();
@@ -102,7 +102,6 @@ MyApp::Main()
 
     req->SubRef();
     target->SubRef();
-    orb.ShutDown(true);
     return ok ? 0 : 1;
 }
 

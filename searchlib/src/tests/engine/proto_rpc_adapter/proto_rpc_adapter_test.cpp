@@ -62,23 +62,20 @@ struct MyMonitorServer : MonitorServer {
 };
 
 struct ProtoRpcAdapterTest : ::testing::Test {
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT server;
     MySearchServer search;
     MyDocsumServer docsum;
     MyMonitorServer monitor;
     ProtoRpcAdapter adapter;
     ProtoRpcAdapterTest()
-        : orb(), adapter(search, docsum, monitor, orb)
+        : server(), adapter(search, docsum, monitor, server.supervisor())
     {
-        orb.Listen(0);
-        orb.Start();
+        server.supervisor().Listen(0);
     }
     FRT_Target *connect() {
-        return orb.GetTarget(orb.GetListenPort());
+        return server.supervisor().GetTarget(server.supervisor().GetListenPort());
     }
-    ~ProtoRpcAdapterTest() {
-        orb.ShutDown(true);
-    }
+    ~ProtoRpcAdapterTest() = default;
 };
 
 //-----------------------------------------------------------------------------

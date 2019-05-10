@@ -38,8 +38,7 @@ public:
 
     void rpc_inc(FRT_RPCRequest *req)
     {
-        req->GetReturn()->AddInt32(req->GetParams()->GetValue(0)._intval32
-                                   + 1);
+        req->GetReturn()->AddInt32(req->GetParams()->GetValue(0)._intval32 + 1);
     }
 
     void rpc_blob(FRT_RPCRequest *req)
@@ -79,10 +78,10 @@ App::Main()
         printf("usage: %s <listenspec>\n", _argv[0]);
         return 1;
     }
-    FRT_Supervisor orb;
-    Server server(&orb);
-    orb.Listen(_argv[1]);
-    orb.Main();
+    fnet::frt::StandaloneFRT frtServer;
+    Server server(&frtServer.supervisor());
+    frtServer.supervisor().Listen(_argv[1]);
+    frtServer.wait_finished();
     return 0;
 }
 

@@ -14,7 +14,8 @@ LOG_SETUP("vespa-sentinel-cmd");
 class Cmd
 {
 private:
-    std::unique_ptr<FRT_Supervisor> _supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT> _server;
+    FRT_Supervisor *_supervisor;
     FRT_Target *_target;
 
 public:
@@ -44,9 +45,9 @@ void usage()
 void
 Cmd::initRPC(const char *spec)
 {
-    _supervisor = std::make_unique<FRT_Supervisor>();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _supervisor = & _server->supervisor();
     _target     = _supervisor->GetTarget(spec);
-    _supervisor->Start();
 }
 
 
@@ -57,9 +58,9 @@ Cmd::finiRPC()
         _target->SubRef();
         _target = nullptr;
     }
-    if (_supervisor) {
-        _supervisor->ShutDown(true);
-        _supervisor.reset();
+    if (_server) {
+        _server.reset();
+        _supervisor = nullptr;
     }
 }
 

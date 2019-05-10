@@ -20,7 +20,9 @@ namespace documentapi {
 
 ExternPolicy::ExternPolicy(const string &param) :
     _lock(),
-    _orb(std::make_unique<FRT_Supervisor>()),
+    _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    _transport(std::make_unique<FNET_Transport>()),
+    _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _mirror(),
     _pattern(),
     _session(),
@@ -56,7 +58,7 @@ ExternPolicy::ExternPolicy(const string &param) :
 
     slobrok::ConfiguratorFactory config(spec);
     _mirror.reset(new MirrorAPI(*_orb, config));
-    _started = _orb->Start();
+    _started = _transport->Start(_threadPool.get());
     if (!_started) {
         _error = "Failed to start FNET supervisor.";
         return;
@@ -81,7 +83,7 @@ ExternPolicy::~ExternPolicy()
 {
     _mirror.reset();
     if (_started) {
-        _orb->ShutDown(true);
+        _transport->ShutDown(true);
     }
 }
 
@@ -133,10 +135,9 @@ ExternPolicy::update()
 
         IMirrorAPI::SpecList entries = _mirror->lookup(_pattern);
         if (!entries.empty()) {
-            for (IMirrorAPI::SpecList::iterator it = entries.begin();
-                 it != entries.end(); ++it)
+            for (const auto & spec : entries)
             {
-                _recipients.push_back(mbus::Hop::parse(it->second + _session));
+                _recipients.push_back(mbus::Hop::parse(spec.second + _session));
             }
         }
     }

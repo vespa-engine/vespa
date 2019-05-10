@@ -39,13 +39,13 @@ struct Server : public FRT_Invokable
 
 TEST("detach return invoke") {
     Receptor receptor;
-    FRT_Supervisor orb;
-    Server server(orb, receptor);
-    ASSERT_TRUE(orb.Listen(0));
-    ASSERT_TRUE(orb.Start());
-    std::string spec =  vespalib::make_string("tcp/localhost:%d", orb.GetListenPort());
-    FRT_Target *target = orb.Get2WayTarget(spec.c_str());
-    FRT_RPCRequest *req = orb.AllocRPCRequest();
+    fnet::frt::StandaloneFRT frtServer;
+    FRT_Supervisor & supervisor = frtServer.supervisor();
+    Server server(supervisor, receptor);
+    ASSERT_TRUE(supervisor.Listen(0));
+    std::string spec =  vespalib::make_string("tcp/localhost:%d", supervisor.GetListenPort());
+    FRT_Target *target = supervisor.Get2WayTarget(spec.c_str());
+    FRT_RPCRequest *req = supervisor.AllocRPCRequest();
 
     req->SetMethodName("hook");
     target->InvokeSync(req, 5.0);
@@ -58,7 +58,6 @@ TEST("detach return invoke") {
     }
     req->SubRef();
     target->SubRef();
-    orb.ShutDown(true);
     if (receptor.req != 0) {
         EXPECT_TRUE(!receptor.req->IsError());
         receptor.req->SubRef();

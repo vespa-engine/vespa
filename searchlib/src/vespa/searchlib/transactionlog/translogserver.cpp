@@ -6,6 +6,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/task.h>
+#include <vespa/fnet/transport.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
@@ -90,8 +91,9 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
       _defaultCrcType(defaultCrcType),
       _commitExecutor(maxThreads, 128*1024),
       _sessionExecutor(maxThreads, 128*1024),
-      _threadPool(8192, 1),
-      _supervisor(std::make_unique<FRT_Supervisor>()),
+      _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+      _transport(std::make_unique<FNET_Transport>()),
+      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _domains(),
       _reqQ(),
       _fileHeaderContext(fileHeaderContext)
@@ -119,7 +121,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
             bool listenOk(false);
             for (int i(600); !listenOk && i; i--) {
                 if (_supervisor->Listen(listenSpec)) {
-                    _supervisor->Start();
+                    _transport->Start(_threadPool.get());
                     listenOk = true;
                 } else {
                     LOG(warning, "Failed listening at port %s trying for %d seconds more.", listenSpec, i);
@@ -135,7 +137,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
     } else {
         throw std::runtime_error(make_string("Failed creating tls base dir %s r(%d), e(%d). Requires manual intervention.", _baseDir.c_str(), retval, errno));
     }
-    start(_threadPool);
+    start(*_threadPool);
 }
 
 TransLogServer::~TransLogServer()
@@ -146,7 +148,7 @@ TransLogServer::~TransLogServer()
     _commitExecutor.sync();
     _sessionExecutor.shutdown();
     _sessionExecutor.sync();
-    _supervisor->ShutDown(true);
+    _transport->ShutDown(true);
 }
 
 bool
