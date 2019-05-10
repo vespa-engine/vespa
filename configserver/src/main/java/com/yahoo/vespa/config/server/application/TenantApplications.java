@@ -101,9 +101,11 @@ public class TenantApplications {
      * @param sessionId Id of the session containing the application package for this id.
      */
     public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
-        return new CuratorTransaction(curator)
-                .add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)))
-                .add(CuratorOperations.delete(preparingPath(applicationId).getAbsolute()));
+        CuratorTransaction transaction = new CuratorTransaction(curator);
+        transaction.add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+        if (curator.exists(preparingPath(applicationId)))
+            transaction.add(CuratorOperations.delete(preparingPath(applicationId).getAbsolute()));
+        return transaction;
     }
 
     /**
