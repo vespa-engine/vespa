@@ -7,8 +7,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -49,7 +49,7 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor);
+        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), flavor, application1);
 
         // Total of 8 nodes should now be in node-repo, 4 hosts in state provisioned, and 4 reserved nodes
         assertEquals(8, tester.nodeRepository().list().size());
@@ -69,7 +69,7 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101), flavor);
+        verify(hostProvisioner).provisionHosts(List.of(100, 101), flavor, application);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class DynamicDockerProvisionTest {
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("large"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
-        verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor);
+        verify(hostProvisioner).provisionHosts(expectedProvisionIndexes, flavor, application);
 
         // Ready the provisioned hosts, add an IP addreses to pool and activate them
         for (Integer i : expectedProvisionIndexes) {
@@ -95,7 +95,7 @@ public class DynamicDockerProvisionTest {
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("another-id"), 2, 1, flavor);
         // Verify there was only 1 call to provision hosts (during the first prepare)
-        verify(hostProvisioner).provisionHosts(any(), any());
+        verify(hostProvisioner).provisionHosts(any(), any(), any());
 
         // Node-repo should now consist of 2 active hosts with 2 reserved nodes on each
         assertEquals(6, tester.nodeRepository().list().size());
@@ -129,6 +129,6 @@ public class DynamicDockerProvisionTest {
             return provisionIndexes.stream()
                     .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor, "host-" + i + "-1", nodeResources))
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any());
+        }).when(hostProvisioner).provisionHosts(any(), any(), any());
     }
 }
