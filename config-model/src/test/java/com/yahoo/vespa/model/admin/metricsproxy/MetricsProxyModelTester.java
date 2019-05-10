@@ -28,8 +28,10 @@ class MetricsProxyModelTester {
     static final String MY_INSTANCE = "myinstance";
     static final String MY_FLAVOR = "myflavor";
 
+    static final String CLUSTER_CONFIG_ID = "admin/metrics";
+
     // Used for all configs that are produced by the container, not the cluster.
-    static final String CONTAINER_CONFIG_ID = "admin/metrics/0";
+    static final String CONTAINER_CONFIG_ID = CLUSTER_CONFIG_ID + "/0";
 
     static VespaModel getModel(String servicesXml) {
         var numberOfHosts = 1;
@@ -59,7 +61,7 @@ class MetricsProxyModelTester {
     }
 
     static ConsumersConfig.Consumer getCustomConsumer(String servicesXml) {
-        ConsumersConfig config = getConsumersConfig(servicesXml);
+        ConsumersConfig config = consumersConfigFromXml(servicesXml);
         assertEquals(2, config.consumer().size());
         for (ConsumersConfig.Consumer consumer : config.consumer()) {
             if (! consumer.name().equals(VESPA_CONSUMER_ID))
@@ -68,18 +70,16 @@ class MetricsProxyModelTester {
         throw new RuntimeException("Two consumers with the reserved id - this cannot happen.");
     }
 
-    static ConsumersConfig getConsumersConfig(String servicesXml) {
-        return getConsumersConfig(getModel(servicesXml));
+    static ConsumersConfig consumersConfigFromXml(String servicesXml) {
+        return consumersConfigFromModel(getModel(servicesXml));
     }
 
-    private static ConsumersConfig getConsumersConfig(VespaModel model) {
-        String configId = "admin/metrics";
-        return new ConsumersConfig((ConsumersConfig.Builder) model.getConfig(new ConsumersConfig.Builder(), configId));
+    static ConsumersConfig consumersConfigFromModel(VespaModel model) {
+        return new ConsumersConfig((ConsumersConfig.Builder) model.getConfig(new ConsumersConfig.Builder(), CLUSTER_CONFIG_ID));
     }
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {
-        String configId = "admin/metrics";
-        return new ApplicationDimensionsConfig((ApplicationDimensionsConfig.Builder) model.getConfig(new ApplicationDimensionsConfig.Builder(), configId));
+        return new ApplicationDimensionsConfig((ApplicationDimensionsConfig.Builder) model.getConfig(new ApplicationDimensionsConfig.Builder(), CLUSTER_CONFIG_ID));
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model) {

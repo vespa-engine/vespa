@@ -30,10 +30,11 @@ class ConsumersConfigGenerator {
      * @param userConsumers The consumers set up by the user in services.xml
      * @return A list of consumer builders (a mapping from consumer to its metrics)
      */
-    static List<Consumer.Builder> generate(Map<String, MetricsConsumer> userConsumers) {
+    static List<Consumer.Builder> generateConsumers(MetricsConsumer defaultConsumer,
+                                                    Map<String, MetricsConsumer> userConsumers) {
         // Normally, the user given consumers should not contain VESPA_CONSUMER_ID, but it's allowed for some internally used applications.
         var allConsumers = new LinkedHashMap<>(userConsumers);
-        allConsumers.put(VESPA_CONSUMER_ID, combineConsumers(getDefaultMetricsConsumer(), allConsumers.get(VESPA_CONSUMER_ID)));
+        allConsumers.put(VESPA_CONSUMER_ID, combineConsumers(defaultConsumer, allConsumers.get(VESPA_CONSUMER_ID)));
 
         return allConsumers.values().stream()
                 .map(ConsumersConfigGenerator::toConsumerBuilder)
@@ -52,7 +53,9 @@ class ConsumersConfigGenerator {
         return addMetrics(original, overriding.getMetrics());
     }
 
-    private static MetricsConsumer addMetrics(MetricsConsumer original, Map<String, Metric> metrics) {
+    static MetricsConsumer addMetrics(MetricsConsumer original, Map<String, Metric> metrics) {
+        if (metrics == null) return original;
+
         Map<String, Metric> combinedMetrics = new LinkedHashMap<>(original.getMetrics());
         metrics.forEach((name, newMetric) ->
                                 combinedMetrics.put(name, combineMetrics(original.getMetrics().get(name), newMetric)));

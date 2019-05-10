@@ -22,6 +22,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
@@ -34,12 +35,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.addMetrics;
+import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.generateConsumers;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.APPLICATION_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.INSTANCE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.LEGACY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.ZONE;
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.getDefaultMetricsConsumer;
+import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.JarSuffix.JAR_WITH_DEPS;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.bundlePathFromName;
 
@@ -74,6 +79,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private final AbstractConfigProducer<?> parent;
     private final ApplicationId applicationId;
 
+    private MetricSet additionalDefaultMetrics = emptyMetricSet();
+
     public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState);
         this.parent = parent;
@@ -97,6 +104,12 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(VespaMetrics.class);
     }
 
+    @SuppressWarnings("WeakerAccess") // Used by amenders
+    public void setAdditionalDefaultMetrics(MetricSet additionalDefaultMetrics) {
+        if (additionalDefaultMetrics == null) return;
+        this.additionalDefaultMetrics = additionalDefaultMetrics;
+    }
+
     @Override
     protected void doPrepare(DeployState deployState) { }
 
@@ -108,7 +121,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     public void getConfig(ConsumersConfig.Builder builder) {
-        builder.consumer.addAll(ConsumersConfigGenerator.generate(getUserMetricsConsumers()));
+        var amendedDefaultConsumer = addMetrics(getDefaultMetricsConsumer(), additionalDefaultMetrics.getMetrics());
+        builder.consumer.addAll(generateConsumers(amendedDefaultConsumer, getUserMetricsConsumers()));
     }
 
     @Override

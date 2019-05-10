@@ -10,24 +10,29 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
+import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_INSTANCE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_TENANT;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.checkMetric;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getConsumersConfig;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromXml;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,9 +53,23 @@ public class MetricsProxyContainerClusterTest {
 
     @Test
     public void default_consumer_is_always_present_and_has_all_vespa_metrics_and_all_system_metrics() {
-        ConsumersConfig consumersConfig = getConsumersConfig(servicesWithAdminOnly());
-        assertEquals(consumersConfig.consumer(0).name(), VESPA_CONSUMER_ID);
-        assertEquals(numMetricsForDefaultConsumer, consumersConfig.consumer(0).metric().size());
+        ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly());
+        assertEquals(config.consumer(0).name(), VESPA_CONSUMER_ID);
+        assertEquals(numMetricsForDefaultConsumer, config.consumer(0).metric().size());
+    }
+
+    @Test
+    public void default_consumer_can_be_amended() {
+        VespaModel model = getModel(servicesWithAdminOnly());
+        var cluster = model.getAdmin().getMetricsProxyContainerCluster();
+        var additionalMetric = new Metric("additional-metric");
+        cluster.setAdditionalDefaultMetrics(new MetricSet("amender-metrics", singleton(additionalMetric)));
+
+        ConsumersConfig config = consumersConfigFromModel(model);
+        assertEquals(numMetricsForDefaultConsumer + 1, config.consumer(0).metric().size());
+
+        ConsumersConfig.Consumer vespaConsumer = config.consumer(0);
+        assertTrue("Did not contain additional metric", checkMetric(vespaConsumer, additionalMetric));
     }
 
     @Test
@@ -67,7 +86,7 @@ public class MetricsProxyContainerClusterTest {
         );
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("'Vespa' is not allowed as metrics consumer id");
-        getConsumersConfig(services);
+        consumersConfigFromXml(services);
     }
 
     @Test
@@ -84,7 +103,7 @@ public class MetricsProxyContainerClusterTest {
                 "    </admin>",
                 "</services>"
         );
-        ConsumersConfig config = getConsumersConfig(services);
+        ConsumersConfig config = consumersConfigFromXml(services);
         assertEquals(1, config.consumer().size());
 
         // All default metrics are retained
@@ -110,7 +129,7 @@ public class MetricsProxyContainerClusterTest {
         );
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("'a' is used as id for two metrics consumers");
-        getConsumersConfig(services);
+        consumersConfigFromXml(services);
     }
 
     @Test

@@ -25,7 +25,6 @@ public class DefaultMetricsConsumer {
                                                                                            systemMetricSet,
                                                                                            networkMetricSet));
 
-    @SuppressWarnings("UnusedDeclaration")
     public static MetricsConsumer getDefaultMetricsConsumer() {
         return new MetricsConsumer(VESPA_CONSUMER_ID, defaultConsumerMetrics);
     }

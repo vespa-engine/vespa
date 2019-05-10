@@ -68,7 +68,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
      // Cluster of logserver containers. If enabled, exactly one container is running on each logserver host.
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
-    // Cluster of metricsproxy containers. Exactly one container is set up on all hosts.
+    // Cluster of metrics-proxy containers. Exactly one container is set up on all hosts.
     private MetricsProxyContainerCluster metricsProxyContainerCluster;
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
@@ -97,6 +97,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     public Metrics getUserMetrics() { return metrics; }
+
+    public MetricsProxyContainerCluster getMetricsProxyContainerCluster() {return metricsProxyContainerCluster;}
 
     /** Returns a list of all config servers */
     public List<Configserver> getConfigservers() {
@@ -204,6 +206,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     private void addMetricsProxyCluster(List<HostResource> hosts, DeployState deployState) {
+        if (metricsProxyContainerCluster != null) throw new RuntimeException("Metrics proxy cluster is already added.");
+
         var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
         int index = 0;
         for (var host : hosts) {
@@ -211,6 +215,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
             addAndInitializeService(deployState.getDeployLogger(), host, container);
             metricsProxyCluster.addContainer(container);
         }
+        metricsProxyContainerCluster = metricsProxyCluster;
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {
