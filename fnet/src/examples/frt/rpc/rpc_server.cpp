@@ -96,7 +96,7 @@ RPCServer::Main(int argc, char **argv)
     InitRPC(_supervisor);
     _supervisor->Listen(argv[1]);
     FNET_SignalShutDown ssd(*_supervisor->GetTransport());
-    server.wait_finished();
+    server.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 

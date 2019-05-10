@@ -65,7 +65,7 @@ MyApp::Main()
     rpc.Init(&supervisor);
     supervisor.Listen(_argv[1]);
     FNET_SignalShutDown ssd(*supervisor.GetTransport());
-    server.wait_finished();
+    server.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 

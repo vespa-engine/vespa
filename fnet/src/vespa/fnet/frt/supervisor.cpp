@@ -429,9 +429,4 @@ StandaloneFRT::~StandaloneFRT()
     _transport->ShutDown(true);
 }
 
-void
-StandaloneFRT::wait_finished() const {
-    _transport->WaitFinished();
-}
-
 }

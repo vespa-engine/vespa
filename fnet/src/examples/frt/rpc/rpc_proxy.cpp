@@ -235,7 +235,7 @@ App::Main()
     supervisor.SetMethodMismatchHook(FRT_METHOD(RPCProxy::HOOK_Mismatch), &proxy);
     supervisor.Listen(_argv[1]);
     FNET_SignalShutDown ssd(*supervisor.GetTransport());
-    server.wait_finished();
+    server.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 
