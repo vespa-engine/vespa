@@ -11,8 +11,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A host flavor (type). This is a value object where the identity is the name.
- * Use {@link NodeFlavors} to create a flavor.
+ * A host or node flavor.
+ * *Host* flavors come from a configured set which corresponds to the actual flavors available in a zone.
+ * *Node* flavors are simply a wrapper of a NodeResources object (for now (May 2019) with the exception of some
+ *        legacy behavior where nodes are allocated by specifying a physical host flavor directly).
  *
  * @author bratseth
  */
@@ -36,11 +38,7 @@ public class Flavor {
     /** The hardware resources of this flavor */
     private NodeResources resources;
 
-    /**
-     * Creates a Flavor, but does not set the replacesFlavors.
-     *
-     * @param flavorConfig config to be used for Flavor.
-     */
+    /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this.configured = true;
         this.name = flavorConfig.name();
@@ -59,7 +57,7 @@ public class Flavor {
         this.resources = new NodeResources(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
     }
 
-    /** Create a Flavor from a Flavor spec and all other fields set to Docker defaults */
+    /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
         Objects.requireNonNull(resources, "Resources cannot be null");
         if (resources.allocateByLegacyName())
