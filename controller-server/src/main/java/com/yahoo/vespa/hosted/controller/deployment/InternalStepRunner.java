@@ -451,20 +451,33 @@ public class InternalStepRunner implements StepRunner {
             }
             catch (Exception e) {
                 logger.log(INFO, "Failure getting vespa logs for " + id, e);
+                return Optional.of(error);
             }
-        return Optional.of(running); // Don't let failure here stop cleanup.
+        return Optional.of(running);
     }
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
-        logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-        return Optional.of(running);
+        try {
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            return Optional.of(running);
+        }
+        catch (RuntimeException e) {
+            logger.log(WARNING, "Failed deleting application " + id.application(), e);
+            return Optional.of(error);
+        }
     }
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
-        logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.jobController().deactivateTester(id.tester(), id.type());
-        return Optional.of(running);
+        try {
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.jobController().deactivateTester(id.tester(), id.type());
+            return Optional.of(running);
+        }
+        catch (RuntimeException e) {
+            logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
+            return Optional.of(error);
+        }
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
@@ -482,6 +495,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (IllegalStateException e) {
             logger.log(INFO, "Job '" + id.type() + "'no longer supposed to run?:", e);
+            return Optional.of(error);
         }
         return Optional.of(running);
     }
