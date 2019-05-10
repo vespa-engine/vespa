@@ -11,7 +11,6 @@ import java.util.List;
  * The actions are split into restart and re-feed actions.
  *
  * @author geirst
- * @since 5.44
  */
 public class ConfigChangeActions {
 
