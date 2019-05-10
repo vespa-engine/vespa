@@ -187,6 +187,8 @@ class ClientFeederV3 {
                 if (log.isLoggable(LogLevel.DEBUG)) {
                     log.log(LogLevel.DEBUG, Exceptions.toMessageString(e), e);
                 }
+                metric.add(MetricNames.PARSE_ERROR, 1, null);
+
                 repliesFromOldMessages.add(new OperationStatus(
                         Exceptions.toMessageString(e), operationId.get(), ErrorCode.ERROR, false, ""));
 

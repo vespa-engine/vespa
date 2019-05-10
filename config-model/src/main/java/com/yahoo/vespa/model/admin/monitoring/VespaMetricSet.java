@@ -137,6 +137,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("httpapi_num_puts.rate"));
         metrics.add(new Metric("httpapi_succeeded.rate"));
         metrics.add(new Metric("httpapi_failed.rate"));
+        metrics.add(new Metric("httpapi_parse_error.rate"));
 
         metrics.add(new Metric("mem.heap.total.average"));
         metrics.add(new Metric("mem.heap.free.average"));
