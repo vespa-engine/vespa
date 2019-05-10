@@ -143,7 +143,9 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
 
         builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree()));
-        builder.setGeoLocation(ranking.getLocation().toString());
+        if (ranking.getLocation() != null) {
+            builder.setGeoLocation(ranking.getLocation().toString());
+        }
         MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
         MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
