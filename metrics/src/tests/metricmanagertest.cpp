@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/metrics/metrics.h>
-#include <vespa/metrics/xmlwriter.h>
 #include <vespa/metrics/jsonwriter.h>
-#include <vespa/metrics/textwriter.h>
+#include <vespa/metrics/metrics.h>
 #include <vespa/metrics/printutils.h>
 #include <vespa/metrics/state_api_adapter.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/metrics/textwriter.h>
+#include <vespa/metrics/xmlwriter.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/log/log.h>
 
@@ -16,34 +16,8 @@ LOG_SETUP(".test.metricmanager");
 
 namespace metrics {
 
-struct MetricManagerTest : public CppUnit::TestFixture {
-    void testConsumerVisitor();
-    void testSnapshots();
-    void testPrintUtils();
-    void testXmlOutput();
-    void testJsonOutput();
-    void jsonOutputSupportsMultipleDimensions();
-    void jsonOutputCanNestDimensionsFromMultipleMetricSets();
-    void jsonOutputCanHaveMultipleSetsWithSameName();
-    void testTextOutput();
-    void textOutputSupportsDimensions();
-    void testUpdateHooks();
+struct MetricManagerTest : public ::testing::Test {
 
-    CPPUNIT_TEST_SUITE(MetricManagerTest);
-    CPPUNIT_TEST(testConsumerVisitor);
-    CPPUNIT_TEST(testSnapshots);
-    CPPUNIT_TEST(testPrintUtils);
-    CPPUNIT_TEST(testXmlOutput);
-    CPPUNIT_TEST(testJsonOutput);
-    CPPUNIT_TEST(jsonOutputSupportsMultipleDimensions);
-    CPPUNIT_TEST(jsonOutputCanNestDimensionsFromMultipleMetricSets);
-    CPPUNIT_TEST(jsonOutputCanHaveMultipleSetsWithSameName);
-    CPPUNIT_TEST(testTextOutput);
-    CPPUNIT_TEST(textOutputSupportsDimensions);
-    CPPUNIT_TEST(testUpdateHooks);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
     // Ugly indirection hack caused by some tests using friended internals of
     // MetricManager that aren't accessible to "freestanding" fixtures. So we
     // get the test to do the necessary poking and prodding for us instead.
@@ -51,8 +25,6 @@ public:
         mm.takeSnapshots(mm.getMetricLock(), timeToProcess);
     }
 };
-
-CPPUNIT_TEST_SUITE_REGISTRATION(MetricManagerTest);
 
 namespace {
 
@@ -167,45 +139,46 @@ struct MetricNameVisitor : public MetricVisitor {
 }
 
 namespace {
-    std::pair<std::string, std::string> getMatchedMetrics(
-                                            const vespalib::string& config)
-    {
-        FastOS_ThreadPool pool(256 * 1024);
-        TestMetricSet mySet;
-        MetricManager mm;
-        mm.registerMetric(mm.getMetricLock(), mySet.set);
-        mm.init(config, pool);
-        MetricNameVisitor visitor;
 
-        /** Take a copy to verify clone works.
-        std::list<Metric::SP> ownerList;
-        MetricSet::UP copy(dynamic_cast<MetricSet*>(
-                    mm.getMetrics().clone(ownerList)));
-        mm.visit(*copy, visitor, "consumer");
-        */
+std::pair<std::string, std::string>
+getMatchedMetrics(const vespalib::string& config)
+{
+    FastOS_ThreadPool pool(256 * 1024);
+    TestMetricSet mySet;
+    MetricManager mm;
+    mm.registerMetric(mm.getMetricLock(), mySet.set);
+    mm.init(config, pool);
+    MetricNameVisitor visitor;
 
-        MetricLockGuard g(mm.getMetricLock());
-        mm.visit(g, mm.getActiveMetrics(g), visitor, "consumer");
-        MetricManager::ConsumerSpec::SP consumerSpec(
-                mm.getConsumerSpec(g, "consumer"));
-        return std::pair<std::string, std::string>(
-                visitor.toString(),
-                consumerSpec.get() ? consumerSpec->toString()
-                                   : "Non-existing consumer");
-    }
+    /** Take a copy to verify clone works.
+    std::list<Metric::SP> ownerList;
+    MetricSet::UP copy(dynamic_cast<MetricSet*>(
+                mm.getMetrics().clone(ownerList)));
+    mm.visit(*copy, visitor, "consumer");
+    */
+
+    MetricLockGuard g(mm.getMetricLock());
+    mm.visit(g, mm.getActiveMetrics(g), visitor, "consumer");
+    MetricManager::ConsumerSpec::SP consumerSpec(
+            mm.getConsumerSpec(g, "consumer"));
+    return std::pair<std::string, std::string>(
+            visitor.toString(),
+            consumerSpec.get() ? consumerSpec->toString()
+                               : "Non-existing consumer");
+}
+
 }
 
 #define ASSERT_CONSUMER_MATCH(name, expected, config) \
 { \
     std::pair<std::string, std::string> consumerMatch( \
                                             getMatchedMetrics(config)); \
-    CPPUNIT_ASSERT_EQUAL_MSG(name + std::string(": ") + consumerMatch.second, \
-                             "\n" + expected, "\n" + consumerMatch.first); \
+    EXPECT_EQ("\n" + expected, "\n" + consumerMatch.first) << (name + std::string(": ") + consumerMatch.second); \
 }
 
-void MetricManagerTest::testConsumerVisitor()
+TEST_F(MetricManagerTest, test_consumer_visitor)
 {
-        // Add one tag and a name, check that we get all three.
+    // Add one tag and a name, check that we get all three.
     ASSERT_CONSUMER_MATCH("testAddTagAndName", std::string(
             "temp.val1\n"
             "temp.val2\n"
@@ -221,7 +194,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].addedmetrics[0] temp.val4\n"
             "consumer[0].addedmetrics[1] temp.multisub.sum.val1\n"
     );
-        // Add two tags, remove one
+    // Add two tags, remove one
     ASSERT_CONSUMER_MATCH("testAddAndRemoveTag", std::string(
             "temp.val1\n"
             "temp.val4\n"
@@ -235,7 +208,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].removedtags[1]\n"
             "consumer[0].removedtags[0] tag2\n"
     );
-        // Test simple wildcards
+    // Test simple wildcards
     ASSERT_CONSUMER_MATCH("testWildCards", std::string(
             "temp.val1\n"
             "temp.val2\n"
@@ -255,7 +228,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].removedmetrics[0] temp.sub.*\n"
             "consumer[0].removedmetrics[1] temp.multisub.*\n"
     );
-        // Test more wildcards
+    // Test more wildcards
     ASSERT_CONSUMER_MATCH("testWildCards2", std::string(
             "temp.sub.val1\n"
         ),
@@ -265,7 +238,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].addedmetrics[1]\n"
             "consumer[0].addedmetrics[0] temp.*.val1\n"
     );
-        // test adding all
+    // test adding all
     ASSERT_CONSUMER_MATCH("testAddAll", std::string(
             "metricmanager.periodichooklatency\n"
             "metricmanager.snapshothooklatency\n"
@@ -300,7 +273,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].addedmetrics[1]\n"
             "consumer[0].addedmetrics[0] *\n"
     );
-        // test adding all using tags
+    // test adding all using tags
     ASSERT_CONSUMER_MATCH("testAddAll2", std::string(
             "temp.val1\n"
             "temp.val2\n"
@@ -330,7 +303,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].tags[1]\n"
             "consumer[0].tags[0] *\n"
     );
-        // Test that all metrics are added when a metricsset is added by name
+    // Test that all metrics are added when a metricsset is added by name
     ASSERT_CONSUMER_MATCH("testSpecifiedSetName", std::string(
             "temp.sub.val1\n"
             "temp.sub.val2\n"
@@ -342,7 +315,7 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].addedmetrics[1]\n"
             "consumer[0].addedmetrics[0] temp.sub\n"
     );
-        // Test that all metrics are added when a metricsset is added by tag
+    // Test that all metrics are added when a metricsset is added by tag
     ASSERT_CONSUMER_MATCH("testSpecifiedSetTag", std::string(
             "temp.sub.val1\n"
             "temp.sub.val2\n"
@@ -360,8 +333,8 @@ void MetricManagerTest::testConsumerVisitor()
             "consumer[0].tags[1]\n"
             "consumer[0].tags[0] sub\n"
     );
-        // Test that all metrics are added from the set except those with a
-        // certain tag.
+    // Test that all metrics are added from the set except those with a
+    // certain tag.
     ASSERT_CONSUMER_MATCH("testSpecifiedSetTagWithExceptionTags", std::string(
             "temp.val1\n"
             "temp.val4\n"
@@ -385,79 +358,80 @@ void MetricManagerTest::testConsumerVisitor()
 };
 
 namespace {
-    struct FakeTimer : public MetricManager::Timer {
-        time_t _time;
-        FakeTimer(time_t startTime = 0) : _time(startTime) {}
-        time_t getTime() const override { return _time; }
-    };
 
-    struct BriefValuePrinter : public MetricVisitor {
-        uint32_t count;
-        std::ostringstream ost;
+struct FakeTimer : public MetricManager::Timer {
+    time_t _time;
+    FakeTimer(time_t startTime = 0) : _time(startTime) {}
+    time_t getTime() const override { return _time; }
+};
 
-        BriefValuePrinter() : count(0), ost() {}
+struct BriefValuePrinter : public MetricVisitor {
+    uint32_t count;
+    std::ostringstream ost;
 
-        bool visitMetric(const Metric& metric, bool) override {
-            if (++count > 1) ost << ",";
-            //ost << metric.getPath() << ":";
-            ost << metric.getDoubleValue("value");
-            return true;
-        }
-    };
+    BriefValuePrinter() : count(0), ost() {}
 
-    bool waitForTimeProcessed(const MetricManager& mm,
-                              time_t processtime, uint32_t timeout = 120)
-    {
-        uint32_t lastchance = time(0) + timeout;
-        while (time(0) < lastchance) {
-            if (mm.getLastProcessedTime() >= processtime) return true;
-            mm.timeChangedNotification();
-            FastOS_Thread::Sleep(10);
-        }
-        return false;
+    bool visitMetric(const Metric& metric, bool) override {
+        if (++count > 1) ost << ",";
+        //ost << metric.getPath() << ":";
+        ost << metric.getDoubleValue("value");
+        return true;
     }
+};
 
-    std::string dumpAllSnapshots(const MetricManager& mm,
-                                 const std::string& consumer)
+bool waitForTimeProcessed(const MetricManager& mm,
+                          time_t processtime, uint32_t timeout = 120)
+{
+    uint32_t lastchance = time(0) + timeout;
+    while (time(0) < lastchance) {
+        if (mm.getLastProcessedTime() >= processtime) return true;
+        mm.timeChangedNotification();
+        FastOS_Thread::Sleep(10);
+    }
+    return false;
+}
+
+std::string dumpAllSnapshots(const MetricManager& mm,
+                             const std::string& consumer)
+{
+    std::ostringstream ost;
+    ost << "\n";
     {
-        std::ostringstream ost;
-        ost << "\n";
-        {
-            MetricLockGuard metricLock(mm.getMetricLock());
+        MetricLockGuard metricLock(mm.getMetricLock());
+        BriefValuePrinter briefValuePrinter;
+        mm.visit(metricLock, mm.getActiveMetrics(metricLock),
+                 briefValuePrinter, consumer);
+        ost << "Current: " << briefValuePrinter.ost.str() << "\n";
+    }
+    {
+        MetricLockGuard metricLock(mm.getMetricLock());
+        BriefValuePrinter briefValuePrinter;
+        mm.visit(metricLock, mm.getTotalMetricSnapshot(metricLock),
+                 briefValuePrinter, consumer);
+        ost << "Total: " << briefValuePrinter.ost.str() << "\n";
+    }
+    std::vector<uint32_t> periods;
+    {
+        MetricLockGuard metricLock(mm.getMetricLock());
+        periods = mm.getSnapshotPeriods(metricLock);
+    }
+    for (uint32_t i=0; i<periods.size(); ++i) {
+        MetricLockGuard metricLock(mm.getMetricLock());
+        const MetricSnapshotSet& set(mm.getMetricSnapshotSet(
+                metricLock, periods[i]));
+        ost << set.getName() << "\n";
+        uint32_t count = 0;
+        for (uint32_t j=0; j<2; ++j) {
+            if (set.getCount() == 1 && j == 1) continue;
+            const MetricSnapshot& snap(set.getSnapshot(j == 1));
             BriefValuePrinter briefValuePrinter;
-            mm.visit(metricLock, mm.getActiveMetrics(metricLock),
-                     briefValuePrinter, consumer);
-            ost << "Current: " << briefValuePrinter.ost.str() << "\n";
-        }
-        {
-            MetricLockGuard metricLock(mm.getMetricLock());
-            BriefValuePrinter briefValuePrinter;
-            mm.visit(metricLock, mm.getTotalMetricSnapshot(metricLock),
-                     briefValuePrinter, consumer);
-            ost << "Total: " << briefValuePrinter.ost.str() << "\n";
-        }
-        std::vector<uint32_t> periods;
-        {
-            MetricLockGuard metricLock(mm.getMetricLock());
-            periods = mm.getSnapshotPeriods(metricLock);
-        }
-        for (uint32_t i=0; i<periods.size(); ++i) {
-            MetricLockGuard metricLock(mm.getMetricLock());
-            const MetricSnapshotSet& set(mm.getMetricSnapshotSet(
-                    metricLock, periods[i]));
-            ost << set.getName() << "\n";
-            uint32_t count = 0;
-            for (uint32_t j=0; j<2; ++j) {
-                if (set.getCount() == 1 && j == 1) continue;
-                const MetricSnapshot& snap(set.getSnapshot(j == 1));
-                BriefValuePrinter briefValuePrinter;
-                mm.visit(metricLock, snap, briefValuePrinter, consumer);
-                ost << "  " << count++ << " " << &snap.getMetrics() << ": "
+            mm.visit(metricLock, snap, briefValuePrinter, consumer);
+            ost << "  " << count++ << " " << &snap.getMetrics() << ": "
                     << briefValuePrinter.ost.str() << "\n";
-            }
         }
-        return ost.str();
     }
+    return ost.str();
+}
 
 }
 
@@ -475,8 +449,7 @@ namespace {
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, period), \
                  briefValuePrinter, "snapper"); \
     } \
-    CPPUNIT_ASSERT_EQUAL_MSG(dumpAllSnapshots(mm, "snapper"), \
-            std::string(expected), briefValuePrinter.ost.str()); \
+    EXPECT_EQ(std::string(expected), briefValuePrinter.ost.str()) << dumpAllSnapshots(mm, "snapper"); \
 }
 
 #define ASSERT_PROCESS_TIME(mm, time) \
@@ -484,10 +457,10 @@ namespace {
     LOG(info, "Waiting for processed time %u.", time); \
     bool gotToCorrectProgress = waitForTimeProcessed(mm, time); \
     if (!gotToCorrectProgress) \
-        CPPUNIT_FAIL("Failed to get to processed time within timeout"); \
+        FAIL() << "Failed to get to processed time within timeout"; \
 }
 
-void MetricManagerTest::testSnapshots()
+TEST_F(MetricManagerTest, test_snapshots)
 {
     FastOS_ThreadPool pool(256 * 1024);
     FakeTimer* timer = new FakeTimer(1000);
@@ -512,29 +485,27 @@ void MetricManagerTest::testSnapshots()
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), visitor, "snapper");
         MetricManager::ConsumerSpec::SP consumerSpec(
-            mm.getConsumerSpec(lockGuard, "snapper"));
-        CPPUNIT_ASSERT_EQUAL_MSG(consumerSpec.get() ? consumerSpec->toString()
-                                                    : "Non-existing consumer",
-                                 std::string("\n"
-                                     "temp.val6\n"
-                                     "temp.sub.val1\n"
-                                     "*temp.sub.valsum\n"
-                                     "temp.multisub.count\n"
-                                     "temp.multisub.a.val1\n"
-                                     "*temp.multisub.a.valsum\n"
-                                     "temp.multisub.b.val1\n"
-                                     "*temp.multisub.b.valsum\n"
-                                     "*temp.multisub.sum.val1\n"
-                                     "*temp.multisub.sum.val2\n"
-                                     "*temp.multisub.sum.valsum\n"
-                                 ),
-                                 "\n" + visitor.toString());
+                mm.getConsumerSpec(lockGuard, "snapper"));
+        EXPECT_EQ(std::string("\n"
+                              "temp.val6\n"
+                              "temp.sub.val1\n"
+                              "*temp.sub.valsum\n"
+                              "temp.multisub.count\n"
+                              "temp.multisub.a.val1\n"
+                              "*temp.multisub.a.valsum\n"
+                              "temp.multisub.b.val1\n"
+                              "*temp.multisub.b.valsum\n"
+                              "*temp.multisub.sum.val1\n"
+                              "*temp.multisub.sum.val2\n"
+                              "*temp.multisub.sum.valsum\n"),
+                  "\n" + visitor.toString()) << (consumerSpec.get() ? consumerSpec->toString()
+                                                                    : "Non-existing consumer");
     }
-        // Initially, there should be no metrics logged
+    // Initially, there should be no metrics logged
     ASSERT_PROCESS_TIME(mm, 1000);
     ASSERT_VALUES(mm, 5 * 60, "");
 
-        // Adding metrics done in first five minutes.
+    // Adding metrics done in first five minutes.
     mySet.val6.addValue(2);
     mySet.val9.val1.addValue(4);
     mySet.val10.count.inc();
@@ -547,8 +518,8 @@ void MetricManagerTest::testSnapshots()
     ASSERT_VALUES(mm, 60 * 60, "");
     ASSERT_VALUES(mm,  0 * 60, "2,4,4,1,7,9,1,1,8,2,10");
 
-        // Adding metrics done in second five minute period. Total should
-        // be updated to account for both
+    // Adding metrics done in second five minute period. Total should
+    // be updated to account for both
     mySet.val6.addValue(4);
     mySet.val9.val1.addValue(5);
     mySet.val10.count.inc();
@@ -563,16 +534,16 @@ void MetricManagerTest::testSnapshots()
 
     //std::cerr << dumpAllSnapshots(mm, "snapper") << "\n";
 
-        // Adding another five minute period where nothing have happened.
-        // Metric for last 5 minutes should be 0.
+    // Adding another five minute period where nothing have happened.
+    // Metric for last 5 minutes should be 0.
     timer->_time += 5 * 60;
     ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 3);
     ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
     ASSERT_VALUES(mm, 60 * 60, "");
     ASSERT_VALUES(mm,  0 * 60, "4,5,5,2,8,11,2,2,10,3,13");
 
-        // Advancing time to 60 minute period, we should create a proper
-        // 60 minute period timer.
+    // Advancing time to 60 minute period, we should create a proper
+    // 60 minute period timer.
     mySet.val6.addValue(6);
     for (uint32_t i=0; i<9; ++i) { // 9 x 5 minutes. Avoid snapshot bumping
                                    // due to taking snapshots in the past
@@ -583,7 +554,7 @@ void MetricManagerTest::testSnapshots()
     ASSERT_VALUES(mm, 60 * 60, "6,5,5,2,8,11,2,2,10,3,13");
     ASSERT_VALUES(mm,  0 * 60, "6,5,5,2,8,11,2,2,10,3,13");
 
-        // Test that reset works
+    // Test that reset works
     mm.reset(1000);
     ASSERT_VALUES(mm,      -1, "0,0,0,0,0,0,0,0,0,0,0");
     ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
@@ -591,7 +562,7 @@ void MetricManagerTest::testSnapshots()
     ASSERT_VALUES(mm,  0 * 60, "0,0,0,0,0,0,0,0,0,0,0");
 }
 
-void MetricManagerTest::testPrintUtils()
+TEST_F(MetricManagerTest, test_print_utils)
 {
     FastOS_ThreadPool pool(256 * 1024);
     FakeTimer* timer = new FakeTimer(1000);
@@ -623,11 +594,11 @@ void MetricManagerTest::testPrintUtils()
     MetricLockGuard lockGuard(mm.getMetricLock());
     MetricSource source(mm.getActiveMetrics(lockGuard),
                         "temp.multisub");
-    CPPUNIT_ASSERT(source.getMetric("count") != 0);
-    CPPUNIT_ASSERT(source.getMetric("a.val1") != 0);
-    CPPUNIT_ASSERT(source.getMetric("a.valsum") != 0);
-    CPPUNIT_ASSERT(source.getMetric("sum.val1") != 0);
-    CPPUNIT_ASSERT(source.getMetric("sum.valsum") != 0);
+    ASSERT_TRUE(source.getMetric("count") != nullptr);
+    ASSERT_TRUE(source.getMetric("a.val1") != nullptr);
+    ASSERT_TRUE(source.getMetric("a.valsum") != nullptr);
+    ASSERT_TRUE(source.getMetric("sum.val1") != nullptr);
+    ASSERT_TRUE(source.getMetric("sum.valsum") != nullptr);
 
     std::vector<Metric::String> metrics(
             source.getPathsMatchingPrefix("a.val"));
@@ -635,7 +606,7 @@ void MetricManagerTest::testPrintUtils()
     expected.push_back("val1");
     expected.push_back("val2");
     expected.push_back("valsum");
-    CPPUNIT_ASSERT_EQUAL(expected, metrics);
+    EXPECT_EQ(expected, metrics);
 
     HttpTable table("mytable", "stuff");
     table.colNames.push_back("values");
@@ -645,16 +616,16 @@ void MetricManagerTest::testPrintUtils()
             + getLongMetric("a.val2.value", source));
     std::ostringstream ost;
     table.print(ost);
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                "<h3>mytable</h3>\n"
-                "<table border=\"1\">\n"
-                "<tr><th>stuff</th><th>values</th></tr>\n"
-                "<tr><td>valsum</td><td align=\"right\">9</td></tr>\n"
-                "</table>\n"
-            ), ost.str());
+    EXPECT_EQ(std::string(
+                      "<h3>mytable</h3>\n"
+                      "<table border=\"1\">\n"
+                      "<tr><th>stuff</th><th>values</th></tr>\n"
+                      "<tr><td>valsum</td><td align=\"right\">9</td></tr>\n"
+                      "</table>\n"
+              ), ost.str());
 }
 
-void MetricManagerTest::testXmlOutput()
+TEST_F(MetricManagerTest, test_xml_output)
 {
     FastOS_ThreadPool pool(256 * 1024);
     FakeTimer* timer = new FakeTimer(1000);
@@ -677,7 +648,7 @@ void MetricManagerTest::testXmlOutput()
             "consumer[1].tags[0] snaptest\n",
             pool);
 
-    mm.takeSnapshots(mm.getMetricLock(), 1000);
+    takeSnapshots(mm, 1000);
 
     // Adding metrics to have some values in them
     mySet.val6.addValue(2);
@@ -688,7 +659,7 @@ void MetricManagerTest::testXmlOutput()
     mySet.val10.b.val1.addValue(1);
 
     timer->_time = 1300;
-    mm.takeSnapshots(mm.getMetricLock(), 1300);
+    takeSnapshots(mm, 1300);
 
     std::string expected(
             "'<snapshot name=\"5 minute\" from=\"1000\" to=\"1300\" period=\"300\">\n"
@@ -729,10 +700,10 @@ void MetricManagerTest::testXmlOutput()
     // Not bothering to match all the nitty gritty details as it will test
     // more than it needs to. Just be here in order to check on XML output
     // easily if needed.
-    CPPUNIT_ASSERT_EQUAL(expected, "'" + actual + "'");
+    EXPECT_EQ(expected, "'" + actual + "'");
 }
 
-void MetricManagerTest::testJsonOutput()
+TEST_F(MetricManagerTest, test_json_output)
 {
     FastOS_ThreadPool pool(256 * 1024);
     FakeTimer* timer = new FakeTimer(1000);
@@ -752,7 +723,7 @@ void MetricManagerTest::testJsonOutput()
             "consumer[0].tags[0] snaptest\n",
             pool);
 
-    mm.takeSnapshots(mm.getMetricLock(), 1000);
+    takeSnapshots(mm, 1000);
 
     // Adding metrics to have some values in them
     mySet.val6.addValue(2);
@@ -763,9 +734,9 @@ void MetricManagerTest::testJsonOutput()
     mySet.val10.b.val1.addValue(1);
 
     timer->_time = 1300;
-    mm.takeSnapshots(mm.getMetricLock(), 1300);
+    takeSnapshots(mm, 1300);
 
-        // Create json output
+    // Create json output
     vespalib::asciistream as;
     vespalib::JsonStream jsonStream(as);
     JsonWriter writer(jsonStream);
@@ -776,7 +747,7 @@ void MetricManagerTest::testJsonOutput()
     }
     jsonStream.finalize();
     std::string jsonData = as.str();
-        // Parse it back
+    // Parse it back
     using namespace vespalib::slime;
     vespalib::Slime slime;
     size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime);
@@ -786,51 +757,37 @@ void MetricManagerTest::testJsonOutput()
         std::ostringstream ost;
         ost << "Failed to parse JSON: '\n"
             << jsonData << "'\n:" << buffer.get().make_string() << "\n";
-        CPPUNIT_ASSERT_EQUAL_MSG(ost.str(), jsonData.size(), parsed);
+        EXPECT_EQ(jsonData.size(), parsed) << ost.str();
     }
-        // Verify some content
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 1000.0,
-            slime.get()["snapshot"]["from"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 1300.0,
-            slime.get()["snapshot"]["to"].asDouble());
+    // Verify some content
+    EXPECT_EQ(1000.0, slime.get()["snapshot"]["from"].asDouble()) << jsonData;
+    EXPECT_EQ(1300.0, slime.get()["snapshot"]["to"].asDouble()) << jsonData;
+    EXPECT_EQ(vespalib::string("temp.val6"),
+              slime.get()["values"][0]["name"].asString().make_string()) << jsonData;
+    EXPECT_EQ(vespalib::string("val6 desc"),
+              slime.get()["values"][0]["description"].asString().make_string()) << jsonData;
+    EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["average"].asDouble()) << jsonData;
+    EXPECT_EQ(1.0, slime.get()["values"][0]["values"]["count"].asDouble()) << jsonData;
+    EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["min"].asDouble()) << jsonData;
+    EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["max"].asDouble()) << jsonData;
+    EXPECT_EQ(2.0, slime.get()["values"][0]["values"]["last"].asDouble()) << jsonData;
 
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, vespalib::string("temp.val6"),
-            slime.get()["values"][0]["name"].asString().make_string());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, vespalib::string("val6 desc"),
-            slime.get()["values"][0]["description"].asString().make_string());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 2.0,
-            slime.get()["values"][0]["values"]["average"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 1.0,
-            slime.get()["values"][0]["values"]["count"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 2.0,
-            slime.get()["values"][0]["values"]["min"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 2.0,
-            slime.get()["values"][0]["values"]["max"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 2.0,
-            slime.get()["values"][0]["values"]["last"].asDouble());
-
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, vespalib::string("temp.multisub.sum.valsum"),
-            slime.get()["values"][10]["name"].asString().make_string());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, vespalib::string("valsum desc"),
-            slime.get()["values"][10]["description"].asString().make_string());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 10.0,
-            slime.get()["values"][10]["values"]["average"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 3.0,
-            slime.get()["values"][10]["values"]["count"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 1.0,
-            slime.get()["values"][10]["values"]["min"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 7.0,
-            slime.get()["values"][10]["values"]["max"].asDouble());
-    CPPUNIT_ASSERT_EQUAL_MSG(jsonData, 10.0,
-            slime.get()["values"][10]["values"]["last"].asDouble());
-
+    EXPECT_EQ(vespalib::string("temp.multisub.sum.valsum"),
+              slime.get()["values"][10]["name"].asString().make_string()) << jsonData;
+    EXPECT_EQ(vespalib::string("valsum desc"),
+              slime.get()["values"][10]["description"].asString().make_string()) << jsonData;
+    EXPECT_EQ(10.0, slime.get()["values"][10]["values"]["average"].asDouble()) << jsonData;
+    EXPECT_EQ(3.0, slime.get()["values"][10]["values"]["count"].asDouble()) << jsonData;
+    EXPECT_EQ(1.0, slime.get()["values"][10]["values"]["min"].asDouble()) << jsonData;
+    EXPECT_EQ(7.0, slime.get()["values"][10]["values"]["max"].asDouble()) << jsonData;
+    EXPECT_EQ(10.0, slime.get()["values"][10]["values"]["last"].asDouble()) << jsonData;
 
     metrics::StateApiAdapter adapter(mm);
     vespalib::string normal = adapter.getMetrics("snapper");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string(jsonData), normal);
+    EXPECT_EQ(vespalib::string(jsonData), normal);
     vespalib::string total = adapter.getTotalMetrics("snapper");
-    CPPUNIT_ASSERT(total.size() > 0);
-    CPPUNIT_ASSERT(total != normal);
+    EXPECT_GT(total.size(), 0);
+    EXPECT_NE(total, normal);
 }
 
 namespace {
@@ -940,12 +897,10 @@ public:
                           const Metric::Tags& dimensions) {
         // Works to do this outside of main test body because cppunit uses
         // exceptions for its failures.
-        CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, name, nthMetricName(metricIndex));
-        CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, dimensions.size(),
-                                 nthMetricDimensionCount(metricIndex));
+        EXPECT_EQ(name, nthMetricName(metricIndex)) << _jsonText;
+        EXPECT_EQ(dimensions.size(), nthMetricDimensionCount(metricIndex)) << _jsonText;
         for (auto& dim : dimensions) {
-            CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, std::string(dim.value()),
-                                     nthMetricDimension(metricIndex, dim.key()));
+            EXPECT_EQ(std::string(dim.value()), nthMetricDimension(metricIndex, dim.key())) << _jsonText;
         }
     }
 };
@@ -973,10 +928,9 @@ DimensionTestMetricSet::DimensionTestMetricSet(MetricSet* owner)
 { }
 DimensionTestMetricSet::~DimensionTestMetricSet() { }
 
-} // anon ns
+}
 
-void
-MetricManagerTest::jsonOutputSupportsMultipleDimensions()
+TEST_F(MetricManagerTest, json_output_supports_multiple_dimensions)
 {
     DimensionTestMetricSet mset;
     MetricSnapshotTestFixture fixture(*this, mset);
@@ -1008,10 +962,9 @@ struct NestedDimensionTestMetricSet : MetricSet
     }
 };
 
-} // anon ns
+}
 
-void
-MetricManagerTest::jsonOutputCanNestDimensionsFromMultipleMetricSets()
+TEST_F(MetricManagerTest, json_output_can_nest_dimensions_from_multiple_metric_sets)
 {
     NestedDimensionTestMetricSet mset;
     MetricSnapshotTestFixture fixture(*this, mset);
@@ -1060,10 +1013,9 @@ SameNamesTestMetricSet::SameNamesTestMetricSet()
 { }
 SameNamesTestMetricSet::~SameNamesTestMetricSet() { }
 
-} // anon ns
+}
 
-void
-MetricManagerTest::jsonOutputCanHaveMultipleSetsWithSameName()
+TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name)
 {
     SameNamesTestMetricSet mset;
     MetricSnapshotTestFixture fixture(*this, mset);
@@ -1082,7 +1034,7 @@ MetricManagerTest::jsonOutputCanHaveMultipleSetsWithSameName()
                           {{"foo", "baz"}, {"fancy", "stuff"}});
 }
 
-void MetricManagerTest::testTextOutput()
+TEST_F(MetricManagerTest, test_text_output)
 {
     FastOS_ThreadPool pool(256 * 1024);
     FakeTimer* timer = new FakeTimer(1000);
@@ -1133,11 +1085,10 @@ void MetricManagerTest::testTextOutput()
     // Not bothering to match all the nitty gritty details as it will test
     // more than it needs to. Just be here in order to check on XML output
     // easily if needed.
-    CPPUNIT_ASSERT_EQUAL(expected, actual);
+    EXPECT_EQ(expected, actual);
 }
 
-void
-MetricManagerTest::textOutputSupportsDimensions()
+TEST_F(MetricManagerTest, text_output_supports_dimensions)
 {
     NestedDimensionTestMetricSet mset;
     MetricSnapshotTestFixture fixture(*this, mset);
@@ -1153,7 +1104,7 @@ MetricManagerTest::textOutputSupportsDimensions()
                 "average=2 last=2 min=2 max=2 count=1 total=2\n"
             "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val2"
                 "{baz:superbaz} count=1");
-    CPPUNIT_ASSERT_EQUAL(expected, actual);
+    EXPECT_EQ(expected, actual);
 }
 
 namespace {
@@ -1171,7 +1122,7 @@ namespace {
     };
 }
 
-void MetricManagerTest::testUpdateHooks()
+TEST_F(MetricManagerTest, test_update_hooks)
 {
     std::ostringstream output;
     FastOS_ThreadPool pool(256 * 1024);
@@ -1194,7 +1145,7 @@ void MetricManagerTest::testUpdateHooks()
 
     // All hooks should get called during initialization
 
-        // Initialize metric manager to get snapshots created.
+    // Initialize metric manager to get snapshots created.
     output << "Running init\n";
     mm.init("raw:"
             "consumer[2]\n"
@@ -1290,7 +1241,7 @@ void MetricManagerTest::testUpdateHooks()
         "1450: AIL called\n"
     );
     std::string actual(output.str());
-    CPPUNIT_ASSERT_EQUAL(expected, actual);
+    EXPECT_EQ(expected, actual);
 }
 
-} // metrics
+}
