@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * All the available node flavors.
+ * All the flavors *configured* in this zone (i.e this should be called HostFlavors).
  *
  * @author bratseth
  */

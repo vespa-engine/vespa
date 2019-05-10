@@ -10,7 +10,6 @@ import java.util.*;
  * Represents all actions to restart services in order to handle a config change.
  *
  * @author geirst
- * @since 5.44
  */
 public class RestartActions {
 
