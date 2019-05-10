@@ -1223,6 +1223,7 @@ FakeZcSkipPosOcc<bigEndian>::FakeZcSkipPosOcc(const FakeWord &fw)
 {
     setup(fw);
     _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 
@@ -1284,6 +1285,7 @@ FakeZc4SkipPosOcc<bigEndian>::FakeZc4SkipPosOcc(const FakeWord &fw, const Zc4Pos
 {
     setup(fw);
     _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 template <bool bigEndian>
@@ -1318,26 +1320,7 @@ SearchIterator *
 FakeZc4SkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    if (_hitDocs >= _posting_params._min_skip_docs) {
-        if (_posting_params._dynamic_k) {
-            return new ZcPosOccIterator<bigEndian>(Position(_compressed.first, 0), _compressedBits, _posting_params._doc_id_limit, _posting_params._encode_cheap_features,
-                                                   static_cast<uint32_t>(-1),
-                                                   _counts,
-                                                   &_fieldsParams,
-                                                   matchData);
-        } else {
-            return new Zc4PosOccIterator<bigEndian>(Position(_compressed.first, 0), _compressedBits, _posting_params._doc_id_limit, _posting_params._encode_cheap_features,
-                                                    static_cast<uint32_t>(-1), _counts, &_fieldsParams, matchData);
-        }
-    } else {
-        if (_posting_params._dynamic_k) {
-            return new ZcRareWordPosOccIterator<bigEndian>(Position(_compressed.first, 0),
-                                                           _compressedBits, _posting_params._doc_id_limit, _posting_params._encode_cheap_features, &_fieldsParams, matchData);
-        } else {
-            return new Zc4RareWordPosOccIterator<bigEndian>(Position(_compressed.first, 0),
-                                                            _compressedBits, _posting_params._doc_id_limit, _posting_params._encode_cheap_features, &_fieldsParams, matchData);
-        }
-    }
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 template <bool bigEndian>
