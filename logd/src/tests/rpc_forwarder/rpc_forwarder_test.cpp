@@ -45,10 +45,10 @@ public:
           reply_with_error(false),
           reply_with_proto_response(true)
     {
-        server.supervisor().Listen(0);
         FRT_ReflectionBuilder builder(&server.supervisor());
         builder.DefineMethod("vespa.logserver.archiveLogMessages", "bix", "bix",
                              FRT_METHOD(RpcServer::rpc_archive_log_messages), this);
+        server.supervisor().Listen(0);
     }
     ~RpcServer() = default;
     int get_listen_port() {
