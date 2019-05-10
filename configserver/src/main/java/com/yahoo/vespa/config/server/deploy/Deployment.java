@@ -11,6 +11,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -21,7 +22,9 @@ import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ConcurrentModificationException;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.logging.Logger;
 
 /**
@@ -97,6 +100,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     @Override
     public void prepare() {
         if (prepared) return;
+
+        // If redeployment, and something else is preparing, bail out; otherwise, mark this as currently preparing.
+        try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
+            OptionalLong preparing = tenant.getApplicationRepo().preparing(session.getApplicationId());
+            if (preparing.isPresent() && session.getMetaData().isInternalRedeploy())
+            throw new ActivationConflictException("Session " + preparing.getAsLong() + " is already being prepared for '"
+                                                  + session.getApplicationId() + "'");
+            tenant.getApplicationRepo().prepare(session.getApplicationId(), session.getSessionId());
+        }
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
         session.prepare(logger,
@@ -112,17 +124,29 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.prepared = true;
     }
 
-    /** Activates this. If it is not already prepared, this will call prepare first. */
+    /**
+     * Activates this. If it is not already prepared, this will call prepare first.
+     *
+     * If the session is no longer supposed to be activated by the time prepare is done, throws a
+     *
+     */
     @Override
     public void activate() {
         if ( ! prepared)
             prepare();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-
         try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
             if ( ! tenant.getApplicationRepo().exists(session.getApplicationId()))
                 return; // Application was deleted.
+
+            // Verify that this is still the currently preparing session, or bail out.
+            OptionalLong preparing = tenant.getApplicationRepo().preparing(session.getApplicationId());
+            if (preparing.isEmpty())
+                throw new IllegalStateException("No session is currently being prepared for '" + session.getApplicationId() + "'");
+            if (preparing.getAsLong() != session.getSessionId())
+                throw new ActivationConflictException("Session " + session.getSessionId() + " is no longer supposed to be activated " +
+                                                      "for '" + session.getApplicationId() + "'; " + + preparing.getAsLong() + " is");
 
             validateSessionStatus(session);
             NestedTransaction transaction = new NestedTransaction();
