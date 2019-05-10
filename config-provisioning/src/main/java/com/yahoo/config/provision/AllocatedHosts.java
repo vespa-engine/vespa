@@ -9,8 +9,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -26,16 +28,24 @@ public class AllocatedHosts {
 
     private static final String mappingKey = "mapping";
     private static final String hostSpecKey = "hostSpec";
-    private static final String hostSpecHostName = "hostName";
-    private static final String hostSpecMembership = "membership";
-    private static final String hostSpecFlavor = "flavor";
+    private static final String hostSpecHostNameKey = "hostName";
+    private static final String aliasesKey = "aliases";
+    private static final String hostSpecMembershipKey = "membership";
+
+    // Flavor can be removed when all allocated nodes are docker nodes
+    private static final String flavorKey = "flavor";
+
+    private static final String resourcesKey = "resources";
+    private static final String vcpuKey = "vcpu";
+    private static final String memoryKey = "memory";
+    private static final String diskKey = "disk";
 
     /** Wanted version */
-    private static final String hostSpecVespaVersion = "vespaVersion";
+    private static final String hostSpecVespaVersionKey = "vespaVersion";
 
     /** Current version */
-    private static final String hostSpecCurrentVespaVersion = "currentVespaVersion";
-    private static final String hostSpecNetworkPorts = "ports";
+    private static final String hostSpecCurrentVespaVersionKey = "currentVespaVersion";
+    private static final String hostSpecNetworkPortsKey = "ports";
 
     private final ImmutableSet<HostSpec> hosts;
 
@@ -54,14 +64,35 @@ public class AllocatedHosts {
     }
 
     private void toSlime(HostSpec host, Cursor cursor) {
-        cursor.setString(hostSpecHostName, host.hostname());
+        cursor.setString(hostSpecHostNameKey, host.hostname());
+        aliasesToSlime(host, cursor);
         host.membership().ifPresent(membership -> {
-            cursor.setString(hostSpecMembership, membership.stringValue());
-            cursor.setString(hostSpecVespaVersion, membership.cluster().vespaVersion().toFullString());
+            cursor.setString(hostSpecMembershipKey, membership.stringValue());
+            cursor.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
         });
-        host.flavor().ifPresent(flavor -> cursor.setString(hostSpecFlavor, flavor.name()));
-        host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersion, version.toFullString()));
-        host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, cursor.setArray(hostSpecNetworkPorts)));
+        host.flavor().ifPresent(flavor -> toSlime(flavor, cursor));
+        host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
+        host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, cursor.setArray(hostSpecNetworkPortsKey)));
+    }
+
+    private void aliasesToSlime(HostSpec spec, Cursor cursor) {
+        if (spec.aliases().isEmpty()) return;
+        Cursor aliases = cursor.setArray(aliasesKey);
+        for (String alias : spec.aliases())
+            aliases.addString(alias);
+    }
+
+    private void toSlime(Flavor flavor, Cursor object) {
+        if (flavor.isConfigured()) {
+            object.setString(flavorKey, flavor.name());
+        }
+        else {
+            NodeResources resources = flavor.resources();
+            Cursor resourcesObject = object.setObject(resourcesKey);
+            resourcesObject.setDouble(vcpuKey, resources.vcpu());
+            resourcesObject.setDouble(memoryKey, resources.memoryGb());
+            resourcesObject.setDouble(diskKey, resources.diskGb());
+        }
     }
 
     /** Returns the hosts of this allocation */
@@ -70,34 +101,46 @@ public class AllocatedHosts {
     private static AllocatedHosts fromSlime(Inspector inspector, Optional<NodeFlavors> nodeFlavors) {
         Inspector array = inspector.field(mappingKey);
         Set<HostSpec> hosts = new LinkedHashSet<>();
-        array.traverse(new ArrayTraverser() {
-            @Override
-            public void entry(int i, Inspector inspector) {
-                hosts.add(hostFromSlime(inspector.field(hostSpecKey), nodeFlavors));
-            }
-        });
+        array.traverse((ArrayTraverser)(i, host) -> hosts.add(hostFromSlime(host.field(hostSpecKey), nodeFlavors)));
         return new AllocatedHosts(hosts);
     }
 
     static HostSpec hostFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
         Optional<ClusterMembership> membership =
-                object.field(hostSpecMembership).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty();
-        Optional<Flavor> flavor =
-                object.field(hostSpecFlavor).valid() ? flavorFromSlime(object, nodeFlavors) : Optional.empty();
+                object.field(hostSpecMembershipKey).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty();
+        Optional<Flavor> flavor = flavorFromSlime(object, nodeFlavors);
         Optional<com.yahoo.component.Version> version =
-                optionalString(object.field(hostSpecCurrentVespaVersion)).map(com.yahoo.component.Version::new);
+                optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new);
         Optional<NetworkPorts> networkPorts =
-                NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPorts));
-        return new HostSpec(object.field(hostSpecHostName).asString(), Collections.emptyList(), flavor, membership, version, networkPorts);
+                NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey));
+        return new HostSpec(object.field(hostSpecHostNameKey).asString(), aliasesFromSlime(object), flavor, membership, version, networkPorts);
     }
 
-    private static ClusterMembership membershipFromSlime(Inspector object) {
-        return ClusterMembership.from(object.field(hostSpecMembership).asString(),
-                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersion).asString()));
+    private static List<String> aliasesFromSlime(Inspector object) {
+        if ( ! object.field(aliasesKey).valid()) return Collections.emptyList();
+        List<String> aliases = new ArrayList<>();
+        object.field(aliasesKey).traverse((ArrayTraverser)(index, alias) -> aliases.add(alias.asString()));
+        return aliases;
     }
 
     private static Optional<Flavor> flavorFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
-        return nodeFlavors.flatMap(flavorMapper -> flavorMapper.getFlavor(object.field(hostSpecFlavor).asString()));
+        if (object.field(flavorKey).valid() && nodeFlavors.isPresent() && nodeFlavors.get().exists(object.field(flavorKey).asString())) {
+            return nodeFlavors.get().getFlavor(object.field(flavorKey).asString());
+        }
+        else if (object.field(resourcesKey).valid()) {
+            Inspector resources = object.field(resourcesKey);
+            return Optional.of(new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
+                                                            resources.field(memoryKey).asDouble(),
+                                                            resources.field(diskKey).asDouble())));
+        }
+        else {
+            return Optional.empty();
+        }
+    }
+
+    private static ClusterMembership membershipFromSlime(Inspector object) {
+        return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
+                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersionKey).asString()));
     }
 
     private static Optional<String> optionalString(Inspector inspector) {

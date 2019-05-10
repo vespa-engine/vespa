@@ -80,7 +80,7 @@ public class Flavor {
         this.resources = resources;
     }
 
-    /** Returns the unique identity of this flavor */
+    /** Returns the unique identity of this flavor if it is configured, or the resource spec string otherwise */
     public String name() { return name; }
 
     /**
@@ -207,7 +207,12 @@ public class Flavor {
     }
 
     @Override
-    public String toString() { return "flavor '" + name + "'"; }
+    public String toString() {
+        if (isConfigured())
+            return "flavor '" + name + "'";
+        else
+            return name;
+    }
 
     public enum Type {
         undefined, // Default value in config (flavors.def)

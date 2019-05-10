@@ -76,8 +76,7 @@ public final class Lowercase {
      * lowercasing. Vespa code should <i>never</i> do lowercasing with implicit
      * locale.
      *
-     * @param in
-     *            a string to lowercase
+     * @param in a string to lowercase
      * @return a string containing only lowercase character
      */
     public static String toLowerCase(String in) {
@@ -116,4 +115,5 @@ public final class Lowercase {
         }
         return builder.toString();
     }
+
 }
