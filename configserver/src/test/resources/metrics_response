@@ -1,23 +1,25 @@
-[
- {
-  "applicationId": "tenant:app:default",
-  "clusters": [
-   {
-    "clusterName": "cluster1",
-    "queriesPerSecond": 5.5,
-    "writesPerSecond": 11.0,
-    "documentCount": 18.0,
-    "queryLatencyMillis": 22.0,
-    "writeLatencyMillis": 27.5
-   },
-   {
-    "clusterName": "cluster2",
-    "queriesPerSecond": 1.0,
-    "writesPerSecond": 2.0,
-    "documentCount": 3.0,
-    "queryLatencyMillis": 4.0,
-    "writeLatencyMillis": 5.0
-   }
+{
+  "services": [
+      {
+        "name":"searchnode",
+        "timestamp": 1557306075,
+        "metrics": [
+            {
+              "values": {
+                  "queries.count": 23.0,
+                  "query_latency.sum": 2000,
+                  "document.count": 300000,
+                  "write.count": 23.0,
+                  "write_latency.sum": 2000
+              }
+            },
+            {
+             "values": {
+                  "queries.count": 43.0,
+                  "query_latency.sum": 3000
+              }
+            }
+          ]
+      }
   ]
- }
-]
+}

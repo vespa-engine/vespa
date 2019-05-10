@@ -16,11 +16,11 @@ import java.util.Map;
 /**
  * @author olaa
  */
-public class MetricsRespone extends HttpResponse {
+public class MetricsResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
 
-    public MetricsRespone(int status, Map<ApplicationId, Map<String, Metrics>> aggregatedMetrics) {
+    public MetricsResponse(int status, Map<ApplicationId, Map<String, Metrics>> aggregatedMetrics) {
         super(status);
 
         Cursor array = slime.setArray();
@@ -37,6 +37,7 @@ public class MetricsRespone extends HttpResponse {
                 clusterCursor.setDouble("documentCount", metrics.getDocumentCount());
                 clusterCursor.setDouble("queryLatencyMillis", metrics.getQueryLatencyMillis());
                 clusterCursor.setDouble("writeLatencyMillis", metrics.getWriteLatencyMills());
+                clusterCursor.setLong("timestamp", metrics.getTimestamp().getEpochSecond());
             }
         }
     }
