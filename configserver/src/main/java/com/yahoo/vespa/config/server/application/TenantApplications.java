@@ -20,6 +20,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,10 +86,10 @@ public class TenantApplications {
     }
 
     /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
-    private OptionalLong activeSessionOf(ApplicationId id) {
+    public Optional<Long> activeSessionOf(ApplicationId id) {
         String data = curator.getData(applicationPath(id)).map(Utf8::toString)
                              .orElseThrow(() -> new IllegalArgumentException("Unknown application '" + id + "'."));
-        return data.isEmpty() ? OptionalLong.empty() : OptionalLong.of(Long.parseLong(data));
+        return data.isEmpty() ? Optional.empty() : Optional.of(Long.parseLong(data));
     }
 
     /**
