@@ -18,9 +18,11 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -219,7 +221,7 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
-        DockerHostCapacity capacity = new DockerHostCapacity(tester.nodeRepository().getNodes(Node.State.values()));
+        DockerHostCapacity capacity = new DockerHostCapacity(new LockedNodeList(tester.nodeRepository().getNodes(Node.State.values()), () -> {}));
         assertThat(capacity.freeCapacityInFlavorEquivalence(new Flavor(flavor)), greaterThan(0));
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
@@ -274,8 +276,8 @@ public class DynamicDockerAllocationTest {
         tester.activate(application, hosts);
 
         List<Node> activeNodes = tester.nodeRepository().getNodes(application);
-        assertEquals(ImmutableSet.of("127.0.127.12", "::12"), activeNodes.get(0).ipAddresses());
-        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipAddresses());
+        assertEquals(Set.of("127.0.127.12", "::12"), activeNodes.get(0).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.get(1).ipConfig().primary());
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {
@@ -288,7 +290,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
+        Node node1a = Node.create("open1", new IP.Config(Set.of("127.0.0.100"), Set.of()), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());

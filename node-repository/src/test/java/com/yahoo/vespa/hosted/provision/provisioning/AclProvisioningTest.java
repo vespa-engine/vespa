@@ -6,8 +6,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -183,9 +182,9 @@ public class AclProvisioningTest {
 
         assertEquals(3, nodeAcls.get(0).trustedNodes().size());
         Iterator<Node> trustedNodes = nodeAcls.get(0).trustedNodes().iterator();
-        assertEquals(singleton("127.0.1.1"), trustedNodes.next().ipAddresses());
-        assertEquals(singleton("127.0.1.2"), trustedNodes.next().ipAddresses());
-        assertEquals(singleton("127.0.1.3"), trustedNodes.next().ipAddresses());
+        assertEquals(Set.of("127.0.1.1"), trustedNodes.next().ipConfig().primary());
+        assertEquals(Set.of("127.0.1.2"), trustedNodes.next().ipConfig().primary());
+        assertEquals(Set.of("127.0.1.3"), trustedNodes.next().ipConfig().primary());
     }
 
     private List<Node> deploy(int nodeCount) {

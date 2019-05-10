@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
@@ -22,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -184,6 +184,11 @@ public class NodeRepository extends AbstractComponent {
         return new NodeList(getNodes());
     }
 
+    /** Returns a locked node list */
+    public LockedNodeList list(Mutex lock) {
+        return new LockedNodeList(getNodes(), lock);
+    }
+
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
         return new LoadBalancerList(database().readLoadBalancers().values());
@@ -293,34 +298,23 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Set<String> ipAddressPool, Optional<String> parentHostname,
+    public Node createNode(String openStackId, String hostname, IP.Config config, Optional<String> parentHostname,
                            Optional<String> modelName, Flavor flavor, NodeType type) {
-        if (ipAddresses.isEmpty()) {
-            ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
-        }
-
-        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), ipAddressPool, hostname, parentHostname, modelName, flavor, type);
+        return Node.create(openStackId, config, hostname, parentHostname, modelName, flavor, type);
     }
 
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Optional<String> parentHostname,
+    public Node createNode(String openStackId, String hostname, IP.Config config, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, ipAddresses, Collections.emptySet(), parentHostname, Optional.empty(), flavor, type);
-    }
-
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, Collections.emptySet(), parentHostname, flavor, type);
+        return createNode(openStackId, hostname, config, parentHostname, Optional.empty(), flavor, type);
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
-    // NOTE: This can only be called while holding the allocation lock, and that lock must have been held since
-    //       the nodes list was computed
-    public List<Node> addDockerNodes(List<Node> nodes, Mutex allocationLock) {
+    public List<Node> addDockerNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
             if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
             }
-            if (!node.allocation().isPresent()) {
+            if (node.allocation().isEmpty()) {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": Docker containers needs to be allocated");
             }
             Optional<Node> existing = getNode(node.hostname());
@@ -329,7 +323,7 @@ public class NodeRepository extends AbstractComponent {
                                                    existing.get() + ", " + existing.get().history() + "). Node to be added: " +
                                                    node + ", " + node.history());
         }
-        return db.addNodesInState(nodes, Node.State.reserved);
+        return db.addNodesInState(nodes.asList(), Node.State.reserved);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */

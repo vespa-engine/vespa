@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import org.junit.Before;
@@ -37,23 +38,22 @@ public class AuthorizerTest {
         MockNodeRepository nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
         authorizer = new Authorizer(nodeRepository, SECURITY_CONFIG);
 
-        Set<String> ipAddresses = Set.of("127.0.0.1", "::1");
         Flavor flavor = flavors.getFlavorOrThrow("default");
         List<Node> nodes = List.of(
                 nodeRepository.createNode(
-                        "host1", "host1", ipAddresses, Optional.empty(), flavor, NodeType.host),
+                        "host1", "host1", new IP.Config(Set.of("127.0.1.1", "::1:1"), Set.of()), Optional.empty(), flavor, NodeType.host),
                 nodeRepository.createNode(
-                        "child1-1", "child1-1", ipAddresses, Optional.of("host1"), flavor, NodeType.tenant),
+                        "child1-1", "child1-1", new IP.Config(Set.of("127.0.1.2", "::1:2"), Set.of()), Optional.of("host1"), flavor, NodeType.tenant),
                 nodeRepository.createNode(
-                        "child1-2", "child1-2", ipAddresses, Optional.of("host1"), flavor, NodeType.tenant),
+                        "child1-2", "child1-2", new IP.Config(Set.of("127.0.1.3", "::1:3"), Set.of()), Optional.of("host1"), flavor, NodeType.tenant),
                 nodeRepository.createNode(
-                        "host2", "host2", ipAddresses, Optional.empty(), flavor, NodeType.host),
+                        "host2", "host2", new IP.Config(Set.of("127.0.1.4", "::1:4"), Set.of()), Optional.empty(), flavor, NodeType.host),
                 nodeRepository.createNode(
-                        "child2-1", "child2-1", ipAddresses, Optional.of("host1.tld"), flavor, NodeType.tenant),
+                        "child2-1", "child2-1", new IP.Config(Set.of("127.0.1.5", "::1:5"), Set.of()), Optional.of("host1.tld"), flavor, NodeType.tenant),
                 nodeRepository.createNode(
-                        "proxy1", "proxy1", ipAddresses, Optional.of("proxyhost1"), flavor, NodeType.proxy),
+                        "proxy1", "proxy1", new IP.Config(Set.of("127.0.2.2", "::2:2"), Set.of()), Optional.of("proxyhost1"), flavor, NodeType.proxy),
                 nodeRepository.createNode(
-                        "proxyhost1", "proxyhost1", ipAddresses, Optional.empty(), flavor, NodeType.proxyhost)
+                        "proxyhost1", "proxyhost1", new IP.Config(Set.of("127.0.2.1", "::2:1"), Set.of()), Optional.empty(), flavor, NodeType.proxyhost)
         );
         nodeRepository.addNodes(nodes);
     }

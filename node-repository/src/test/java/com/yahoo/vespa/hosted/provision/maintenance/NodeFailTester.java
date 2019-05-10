@@ -28,6 +28,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -241,9 +243,17 @@ public class NodeFailTester {
 
     private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
-        for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, parentHostname, flavor, nodeType));
-
+        int thirdOctet = 1;
+        int fourthOctet = 0;
+        for (int i = startIndex; i < startIndex + count; i++) {
+            if (fourthOctet == 255) {
+                thirdOctet += 1;
+                fourthOctet = 0;
+            }
+            fourthOctet += 1;
+            var addresses = new IP.Config(Set.of("127.0." + thirdOctet + "." + fourthOctet), Set.of());
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, addresses, parentHostname, flavor, nodeType));
+        }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
@@ -251,8 +261,10 @@ public class NodeFailTester {
 
     private List<Node> createHostNodes(int count) {
         List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
+        for (int i = 0; i < count; i++) {
+            var addresses = new IP.Config(Set.of("127.0.0." + i), Set.of());
+            nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, addresses, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
+        }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());

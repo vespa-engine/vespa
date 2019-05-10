@@ -55,7 +55,7 @@ public class NodeAclResponse extends HttpResponse {
     }
 
     private void toSlime(NodeAcl nodeAcl, Cursor array) {
-        nodeAcl.trustedNodes().forEach(node -> node.ipAddresses().forEach(ipAddress -> {
+        nodeAcl.trustedNodes().forEach(node -> node.ipConfig().primary().forEach(ipAddress -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
             object.setString("type", node.type().name());

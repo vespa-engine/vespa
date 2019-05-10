@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -15,10 +14,12 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -54,16 +55,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
-    private final NodeFlavors nodeFlavors;
     private final NodeSerializer serializer = new NodeSerializer();
 
     @Inject
     public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                           NodeRepository nodeRepository, NodeFlavors flavors) {
+                           NodeRepository nodeRepository) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
-        this.nodeFlavors = flavors;
     }
 
     @Override
@@ -137,7 +136,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/node/")) {
             Node node = nodeFromRequest(request);
             try (var lock = nodeRepository.lock(node)) {
-                nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository).apply());
+                nodeRepository.write(new NodePatcher(lock, request.getData(), node, nodeRepository).apply());
             }
             return new MessageResponse("Updated " + node.hostname());
         }
@@ -188,8 +187,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     public int addNodes(InputStream jsonStream) {
-        List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get());
-        return nodeRepository.addNodes(nodes).size();
+        try (var lock = nodeRepository.lockAllocation()) {
+            List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get(), nodeRepository.list(lock));
+            return nodeRepository.addNodes(nodes).size();
+        }
     }
 
     private Slime toSlime(InputStream jsonStream) {
@@ -201,13 +202,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private List<Node> createNodesFromSlime(Inspector object) {
+    private List<Node> createNodesFromSlime(Inspector object, LockedNodeList lockedNodes) {
         List<Node> nodes = new ArrayList<>();
-        object.traverse((ArrayTraverser) (int i, Inspector item) -> nodes.add(createNode(item)));
+        object.traverse((ArrayTraverser) (int i, Inspector item) -> nodes.add(createNode(item, lockedNodes)));
         return nodes;
     }
 
-    private Node createNode(Inspector inspector) {
+    private Node createNode(Inspector inspector, LockedNodeList lockedNodes) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
         Optional<String> modelName = optionalString(inspector.field("modelName"));
         Set<String> ipAddresses = new HashSet<>();
@@ -215,15 +216,20 @@ public class NodesApiHandler extends LoggingRequestHandler {
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
+        var hostname = inspector.field("hostname").asString();
+        var nodeType = nodeTypeFromSlime(inspector.field("type"));
+        var ipConfig = IP.Config.builder()
+                                .primary(ipAddresses)
+                                .pool(ipAddressPool)
+                                .assignTo(hostname, nodeType);
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
-                ipAddresses,
-                ipAddressPool,
+                ipConfig,
                 parentHostname,
                 modelName,
-                nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
-                nodeTypeFromSlime(inspector.field("type")));
+                nodeRepository.getAvailableFlavors().getFlavorOrThrow(inspector.field("flavor").asString()),
+                nodeType);
     }
 
     private NodeType nodeTypeFromSlime(Inspector object) {

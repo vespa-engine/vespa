@@ -1,21 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance.retire;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.IP;
 
-import java.net.Inet4Address;
 import java.util.Optional;
 
 /**
  * @author freva
  */
 public class RetireIPv4OnlyNodes implements RetirementPolicy {
+
     private final Zone zone;
 
     public RetireIPv4OnlyNodes(Zone zone) {
@@ -24,7 +24,7 @@ public class RetireIPv4OnlyNodes implements RetirementPolicy {
 
     @Override
     public boolean isActive() {
-        if(zone.system() == SystemName.cd) {
+        if (zone.system() == SystemName.cd) {
             return zone.environment() == Environment.dev || zone.environment() == Environment.prod;
         }
 
@@ -52,10 +52,8 @@ public class RetireIPv4OnlyNodes implements RetirementPolicy {
     @Override
     public Optional<String> shouldRetire(Node node) {
         if (node.flavor().getType() == Flavor.Type.VIRTUAL_MACHINE) return Optional.empty();
-        boolean shouldRetire = node.ipAddresses().stream()
-                .map(InetAddresses::forString)
-                .allMatch(address -> address instanceof Inet4Address);
-
+        boolean shouldRetire = node.ipConfig().primary().stream().allMatch(IP::isV4);
         return shouldRetire ? Optional.of("Node is IPv4-only") : Optional.empty();
     }
+
 }

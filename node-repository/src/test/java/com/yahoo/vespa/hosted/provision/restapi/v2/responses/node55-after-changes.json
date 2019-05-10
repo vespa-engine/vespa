@@ -12,7 +12,7 @@
   "description": "Flavor-name-is-default",
   "minCpuCores": 2.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 0.0,
   "environment": "BARE_METAL",
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,
@@ -33,8 +33,8 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "127.0.55.1",
+    "::55:1"
   ],
   "additionalIpAddresses": []
 }

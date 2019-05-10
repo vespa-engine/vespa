@@ -12,7 +12,7 @@
   "description": "Flavor-name-is-large",
   "minCpuCores": 4.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 0.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",
@@ -33,6 +33,7 @@
   "allowedToBeDown": false,
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
+  "currentOsVersion": "7.5.2",
   "wantedOsVersion": "7.5.2",
   "failCount": 0,
   "hardwareFailure": false,
@@ -61,12 +62,12 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "127.0.100.1",
+    "::100:1"
   ],
   "additionalIpAddresses": [
-    "::2",
-    "::3",
-    "::4"
+    "::100:2",
+    "::100:3",
+    "::100:4"
   ]
 }

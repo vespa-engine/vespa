@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -33,13 +34,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -232,10 +232,11 @@ public class SerializationTest {
 
     @Test
     public void serialize_parentHostname() {
-        final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        var parentHostname = "parent.yahoo.com";
+        var ipAddresses = new IP.Config(Set.of("127.0.0.1"), Set.of());
+        var node = Node.create("myId", ipAddresses, "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
-        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
+        var deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
     }
 
@@ -244,7 +245,7 @@ public class SerializationTest {
     public void serializes_multiple_ip_addresses() {
         byte[] nodeWithMultipleIps = createNodeJson("node4.yahoo.tld", "127.0.0.4", "::4");
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithMultipleIps);
-        assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipAddresses());
+        assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipConfig().primary());
     }
 
     @Test
@@ -252,14 +253,14 @@ public class SerializationTest {
         Node node = createNode();
 
         // Test round-trip with IP address pool
-        node = node.withIpAddressPool(ImmutableSet.of("::1", "::2", "::3"));
+        node = node.withIpAddresses(new IP.Config(node.ipConfig().primary(), ImmutableSet.of("::1", "::2", "::3")));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipAddressPool(), copy.ipAddressPool());
+        assertEquals(node.ipConfig().pool(), copy.ipConfig().pool());
 
         // Test round-trip without IP address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipAddressPool(), copy.ipAddressPool());
+        assertEquals(node.ipConfig().pool(), copy.ipConfig().pool());
     }
 
     @Test
@@ -418,7 +419,7 @@ public class SerializationTest {
     }
 
     private Node createNode() {
-        return Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }

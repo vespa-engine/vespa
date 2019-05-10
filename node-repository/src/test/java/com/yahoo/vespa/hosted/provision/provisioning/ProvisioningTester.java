@@ -8,11 +8,11 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.TenantName;
@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -41,7 +42,6 @@ import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -282,8 +282,7 @@ public class ProvisioningTester {
 
             nodes.add(nodeRepository.createNode(hostname,
                                                 hostname,
-                                                hostIps,
-                                                ipAddressPool,
+                                                new IP.Config(hostIps, ipAddressPool),
                                                 Optional.empty(),
                                                 Optional.empty(),
                                                 flavor.get(),
@@ -304,7 +303,7 @@ public class ProvisioningTester {
             nameResolver.addRecord(hostname, ipv4);
             Node node = nodeRepository.createNode(hostname,
                     hostname,
-                    Collections.singleton(ipv4),
+                    new IP.Config(Set.of(ipv4), Set.of()),
                     Optional.empty(),
                     nodeFlavors.getFlavorOrThrow(flavor),
                     NodeType.config);
@@ -365,7 +364,8 @@ public class ProvisioningTester {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
-            nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
+            var addresses = new IP.Config(Set.of("127.0.0." + i), Set.of());
+            nodes.add(nodeRepository.createNode("openstack-id", hostname, addresses, parentHostId,
                                                 new Flavor(flavor), nodeType));
         }
         nodes = nodeRepository.addNodes(nodes);

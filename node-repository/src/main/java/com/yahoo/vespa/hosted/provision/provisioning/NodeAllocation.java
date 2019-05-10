@@ -4,14 +4,14 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.MutableInteger;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
  */
 class NodeAllocation {
 
-    /** List of all nodes in node-repository */
-    private final NodeList allNodes;
+    /** Locked list of all nodes in node-repository */
+    private final LockedNodeList allNodes;
 
     /** The application this list is for */
     private final ApplicationId application;
@@ -72,7 +72,7 @@ class NodeAllocation {
     private final Zone zone;
     private final Clock clock;
 
-    NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+    NodeAllocation(LockedNodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                    MutableInteger highestIndex, NodeFlavors flavors, Zone zone, Clock clock) {
         this.allNodes = allNodes;
         this.application = application;

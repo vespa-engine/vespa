@@ -6,11 +6,11 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,7 +40,8 @@ public class NodeRetirerTest {
     @Before
     public void setup() {
         doAnswer(invoke -> {
-            boolean shouldRetire = ((Node) invoke.getArguments()[0]).ipAddresses().equals(Collections.singleton("::1"));
+            var node = (Node) invoke.getArguments()[0];
+            boolean shouldRetire = node.ipConfig().primary().equals(Set.of("::1"));
             return shouldRetire ? Optional.of("Some reason") : Optional.empty();
         }).when(policy).shouldRetire(any(Node.class));
         when(policy.isActive()).thenReturn(true);
@@ -78,7 +79,7 @@ public class NodeRetirerTest {
     public void testRetireAllocated() {
         // Update IP addresses on ready nodes so that when they are deployed to, we wont retire them
         tester.nodeRepository.getNodes(Node.State.ready)
-                .forEach(node -> tester.nodeRepository.write(node.withIpAddresses(Collections.singleton("::2"))));
+                .forEach(node -> tester.nodeRepository.write(node.withIpAddresses(new IP.Config(Set.of("::2"), Set.of()))));
 
         tester.assertCountsForStateByFlavor(Node.State.active, 9, 4, 8, 11, -1);
 
@@ -136,7 +137,7 @@ public class NodeRetirerTest {
         Node nodeToFail = tester.nodeRepository.getNode("host5.test.yahoo.com").orElseThrow(RuntimeException::new);
         tester.nodeRepository.fail(nodeToFail.hostname(), Agent.system, "Failed for unit testing");
         Node nodeToUpdate = tester.nodeRepository.getNode("host8.test.yahoo.com").orElseThrow(RuntimeException::new);
-        tester.nodeRepository.write(nodeToUpdate.withIpAddresses(Collections.singleton("::2")));
+        tester.nodeRepository.write(nodeToUpdate.withIpAddresses(new IP.Config(Set.of("::2"), Set.of())));
 
         nodes = tester.nodeRepository.getNodes(app);
         Set<String> excluded = Stream.of(nodeWantToRetire, nodeToFail, nodeToUpdate).map(Node::hostname).collect(Collectors.toSet());

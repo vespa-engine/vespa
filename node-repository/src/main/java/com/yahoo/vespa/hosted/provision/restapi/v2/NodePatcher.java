@@ -9,11 +9,13 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 
@@ -23,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -43,14 +46,16 @@ public class NodePatcher {
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
     private final NodeRepository nodeRepository;
+    private final Mutex lock;
 
     private Node node;
     private List<Node> children;
     private boolean childrenModified = false;
 
-    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, NodeRepository nodeRepository) {
+    public NodePatcher(Mutex lock, InputStream json, Node node, NodeRepository nodeRepository) {
         try {
-            this.nodeFlavors = nodeFlavors;
+            this.lock = Objects.requireNonNull(lock, "lock must be non-null");
+            this.nodeFlavors = nodeRepository.getAvailableFlavors();
             inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
             this.node = node;
             this.nodeRepository = nodeRepository;
@@ -130,9 +135,17 @@ public class NodePatcher {
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
-                return node.withIpAddresses(asStringSet(value));
+                var addresses = IP.Config.builder()
+                                         .primary(asStringSet(value))
+                                         .pool(node.ipConfig().pool().asSet())
+                                         .assignTo(node.hostname(), node.type());
+                return node.withIpAddresses(addresses);
             case "additionalIpAddresses" :
-                return node.withIpAddressPool(asStringSet(value));
+                var pool = IP.Config.builder()
+                                    .primary(node.ipConfig().primary())
+                                    .pool(asStringSet(value))
+                                    .assignTo(node.hostname(), node.type());
+                return node.withIpAddresses(pool);
             case WANT_TO_RETIRE :
                 return node.withWantToRetire(asBoolean(value), Agent.operator, nodeRepository.clock().instant());
             case WANT_TO_DEPROVISION :

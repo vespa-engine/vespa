@@ -10,6 +10,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -17,6 +18,7 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author bratseth
@@ -48,14 +50,15 @@ public class NodeRepositoryTester {
     }
     
     public Node addNode(String id, String hostname, String flavor, NodeType type) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
+        Node node = nodeRepository.createNode(id, hostname, new IP.Config(Set.of("127.0.0.1"), Set.of()),
+                                              Optional.empty(),
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
     }
 
     public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
-        Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
-                nodeFlavors.getFlavorOrThrow(flavor), type);
+        Node node = nodeRepository.createNode(id, hostname, new IP.Config(Set.of("127.0.0.1"), Set.of()),
+                                              Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow(flavor), type);
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
     }
 

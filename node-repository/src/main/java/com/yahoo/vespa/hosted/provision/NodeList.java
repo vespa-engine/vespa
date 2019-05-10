@@ -126,4 +126,5 @@ public class NodeList implements Iterable<Node> {
     private static NodeList wrap(List<Node> nodes) {
         return new NodeList(nodes, false);
     }
+
 }

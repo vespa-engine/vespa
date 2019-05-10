@@ -163,23 +163,23 @@ public class RestApiTest {
                        "{\"message\":\"Removed host8.yahoo.com\"}");
 
         // or, PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-101-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-container-1 to failed\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-container-1"),
+                       "{\"message\":\"Moved test-node-pool-101-2 to failed\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2"),
                                            "\"state\":\"failed\"");
         // ... and deallocate it such that it moves to dirty and is recycled
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-node-pool-101-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-container-1 to dirty\"}");
+                       "{\"message\":\"Moved test-node-pool-101-2 to dirty\"}");
 
         // ... and set it back to ready as if this was from the node-admin with the temporary state rest api
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-node-pool-101-2",
                         new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved test-container-1 to ready\"}");
+                "{\"message\":\"Moved test-node-pool-101-2 to ready\"}");
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-container-1",  new byte[0], Request.Method.GET),
-                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-container-1'\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",  new byte[0], Request.Method.GET),
+                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-node-pool-101-2'\"}");
 
         // Put a host in failed and make sure it's children are also failed
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),

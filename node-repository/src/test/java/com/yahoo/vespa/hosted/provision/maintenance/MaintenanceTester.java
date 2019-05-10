@@ -13,6 +13,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -42,8 +44,12 @@ public class MaintenanceTester {
     
     public void createReadyTenantNodes(int count) {
         List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
+        for (int i = 0; i < count; i++) {
+            var addresses = new IP.Config(Set.of("127.0.0." + i), Set.of());
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, addresses,
+                                                Optional.empty(), nodeFlavors.getFlavorOrThrow("default"),
+                                                NodeType.tenant));
+        }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodes = simulateInitialReboot(nodes);
@@ -52,8 +58,12 @@ public class MaintenanceTester {
 
     public void createReadyHostNodes(int count) {
         List<Node> nodes = new ArrayList<>(count);
-        for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
+        for (int i = 0; i < count; i++) {
+            var addresses = new IP.Config(Set.of("127.0.0." + i), Set.of());
+            nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, addresses,
+                                                Optional.empty(), nodeFlavors.getFlavorOrThrow("default"),
+                                                NodeType.host));
+        }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodes = simulateInitialReboot(nodes);

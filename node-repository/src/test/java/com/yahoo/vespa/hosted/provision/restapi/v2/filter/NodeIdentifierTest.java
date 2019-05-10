@@ -17,10 +17,12 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -31,13 +33,13 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.NODE;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -184,7 +186,7 @@ public class NodeIdentifierTest {
         String environment = ZONE.environment().value();
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         Node node = createNode(clusterId, clusterIndex, tenant, application);
-        nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node), nodeRepositoryDummy.nodeRepository().lockAllocation());
+        nodeRepositoryDummy.nodeRepository().addDockerNodes(new LockedNodeList(List.of(node), nodeRepositoryDummy.nodeRepository().lockAllocation()));
         Pkcs10Csr csr = Pkcs10CsrBuilder
                 .fromKeypair(new X500Principal("CN=" + TENANT_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
@@ -237,8 +239,7 @@ public class NodeIdentifierTest {
     private static Node createNode(String clusterId, int clusterIndex, String tenant, String application) {
         return Node
                 .createDockerNode(
-                        singleton("1.2.3.4"),
-                        emptySet(),
+                        new IP.Config(Set.of("1.2.3.4"), Set.of()),
                         HOSTNAME,
                         Optional.of("parenthost"),
                         new NodeResources(1, 2, 50),

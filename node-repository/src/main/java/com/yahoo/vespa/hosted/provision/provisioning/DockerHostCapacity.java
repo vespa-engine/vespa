@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
-
-import java.util.List;
 
 /**
  * Capacity calculation for docker hosts.
@@ -18,16 +16,9 @@ import java.util.List;
  */
 public class DockerHostCapacity {
 
-    /**
-     * An immutable list of nodes
-     */
-    private final NodeList allNodes;
+    private final LockedNodeList allNodes;
 
-    public DockerHostCapacity(List<Node> allNodes) {
-        this(new NodeList(allNodes));
-    }
-
-    public DockerHostCapacity(NodeList allNodes) {
+    public DockerHostCapacity(LockedNodeList allNodes) {
         this.allNodes = allNodes;
     }
 
@@ -79,7 +70,7 @@ public class DockerHostCapacity {
      * Number of free (not allocated) IP addresses assigned to the dockerhost.
      */
     int freeIPs(Node dockerHost) {
-        return dockerHost.ipAddressPool().findUnused(allNodes).size();
+        return dockerHost.ipConfig().pool().findUnused(allNodes).size();
     }
 
     public ResourceCapacity getFreeCapacityTotal() {

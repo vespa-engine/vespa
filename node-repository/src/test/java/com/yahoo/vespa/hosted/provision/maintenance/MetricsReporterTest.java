@@ -13,11 +13,13 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -54,9 +56,9 @@ public class MetricsReporterTest {
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true);
-        Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node = nodeRepository.createNode("openStackId", "hostname", new IP.Config(Set.of("127.0.0.1"), Set.of()), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
-        Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
+        Node hostNode = nodeRepository.createNode("openStackId2", "parent", new IP.Config(Set.of("127.0.1.1"), Set.of()), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
         nodeRepository.addNodes(Collections.singletonList(hostNode));
 
         Map<String, Number> expectedMetrics = new HashMap<>();
@@ -117,23 +119,23 @@ public class MetricsReporterTest {
                                                            true);
 
         // Allow 4 containers
-        Set<String> ipAddressPool = ImmutableSet.of("::2", "::3", "::4", "::5");
+        var addresses = new IP.Config(Set.of("::1"), ImmutableSet.of("::2", "::3", "::4", "::5"));
 
-        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost",
+        Node dockerHost = Node.create("openStackId1", addresses, "dockerHost",
                                       Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
-        Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1",
+        Node container1 = Node.createDockerNode(new IP.Config(Set.of("::2"), Set.of()), "container1",
                                                 Optional.of("dockerHost"), new NodeResources(1, 3, 2), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
-        nodeRepository.addDockerNodes(Collections.singletonList(container1), nodeRepository.lockAllocation());
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
 
-        Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2",
+        Node container2 = Node.createDockerNode(new IP.Config(Set.of("::3"), Set.of()), "container2",
                                                 Optional.of("dockerHost"), new NodeResources(2, 4, 4), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
-        nodeRepository.addDockerNodes(Collections.singletonList(container2), nodeRepository.lockAllocation());
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
