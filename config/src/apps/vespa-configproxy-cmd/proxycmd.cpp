@@ -20,7 +20,6 @@ Flags::~Flags() = default;
 
 ProxyCmd::ProxyCmd(const Flags& flags)
     : _server(),
-      _supervisor(nullptr),
       _target(nullptr),
       _req(nullptr),
       _flags(flags)
@@ -30,8 +29,7 @@ ProxyCmd::~ProxyCmd() = default;
 
 void ProxyCmd::initRPC() {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
-    _supervisor = &_server->supervisor();
-    _req = _supervisor->AllocRPCRequest();
+    _req = _server->supervisor().AllocRPCRequest();
 }
 
 void ProxyCmd::invokeRPC() {
@@ -48,10 +46,7 @@ void ProxyCmd::finiRPC() {
         _target->SubRef();
         _target = NULL;
     }
-    if (_server) {
-        _server.reset();
-        _supervisor = nullptr;
-    }
+    _server.reset();
 }
 
 void ProxyCmd::printArray(FRT_Values *rvals) {
@@ -87,7 +82,7 @@ int ProxyCmd::action() {
     int errors = 0;
     initRPC();
     vespalib::string spec = makeSpec();
-    _target = _supervisor->GetTarget(spec.c_str());
+    _target = _server->supervisor().GetTarget(spec.c_str());
     _req->SetMethodName(_flags.method.c_str());
     FRT_Values &params = *_req->GetParams();
     for (size_t i = 0; i < _flags.args.size(); ++i) {
