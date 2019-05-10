@@ -3,8 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.defaults.Defaults;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -66,7 +64,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
-            "disabled-host-admin-tasks", Collections.emptyList(),
+            "disabled-host-admin-tasks", List.of(),
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
@@ -118,6 +116,11 @@ public class Flags {
             "Provision a new docker host when we otherwise can't allocate a docker node",
             "Takes effect on next deployment",
             APPLICATION_ID);
+
+    public static final UnboundListFlag<String> DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
+            "dynamic-provisioning-flavors", List.of(),
+            "List of additional Vespa flavor names that can be used for dynamic provisioning",
+            "Takes effect on next provisioning");
 
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
             "enable-disk-write-test", false,
@@ -237,7 +240,7 @@ public class Flags {
     }
 
     public static List<FlagDefinition> getAllFlags() {
-        return new ArrayList<>(flags.values());
+        return List.copyOf(flags.values());
     }
 
     public static Optional<FlagDefinition> getFlag(FlagId flagId) {
