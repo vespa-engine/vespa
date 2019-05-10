@@ -13,14 +13,13 @@ class PingProxy : public FastOS_Application
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Supervisor *_supervisor;
     FRT_Target     *_target;
 
     PingProxy(const PingProxy &);
     PingProxy &operator=(const PingProxy &);
 
 public:
-    PingProxy() : _server(), _supervisor(nullptr), _target(nullptr) {}
+    PingProxy() : _server(), _target(nullptr) {}
     virtual ~PingProxy();
     int usage();
     void initRPC(const char *spec);
@@ -31,7 +30,7 @@ public:
 
 PingProxy::~PingProxy()
 {
-    LOG_ASSERT(_supervisor == nullptr);
+    LOG_ASSERT(!_server);
     LOG_ASSERT(_target == nullptr);
 }
 
@@ -50,8 +49,7 @@ void
 PingProxy::initRPC(const char *spec)
 {
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
-    _supervisor = &_server->supervisor();
-    _target     = _supervisor->GetTarget(spec);
+    _target     = _server->supervisor().GetTarget(spec);
 }
 
 
@@ -62,10 +60,7 @@ PingProxy::finiRPC()
         _target->SubRef();
         _target = nullptr;
     }
-    if (_server) {
-        _server.reset();
-        _supervisor = nullptr;
-    }
+    _server.reset();
 }
 
 
@@ -123,7 +118,7 @@ PingProxy::Main()
     }
     initRPC(spec);
 
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
 
     req->SetMethodName("ping");
 
