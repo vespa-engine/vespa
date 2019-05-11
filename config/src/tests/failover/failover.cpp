@@ -30,11 +30,10 @@ const vespalib::string requestTypes = "s";
 const vespalib::string responseTypes = "sx";
 
 struct RPCServer : public FRT_Invokable {
-    FRT_Supervisor * supervisor;
     vespalib::Barrier barrier;
     int64_t gen;
 
-    RPCServer() : supervisor(nullptr), barrier(2), gen(1) { }
+    RPCServer() : barrier(2), gen(1) { }
 
     void init(FRT_Supervisor * s) {
         FRT_ReflectionBuilder rb(s);
@@ -87,14 +86,12 @@ void verifyConfig(std::unique_ptr<MyConfig> config)
 
 struct ServerFixture {
     using UP = std::unique_ptr<ServerFixture>;
-    std::unique_ptr<fnet::frt::StandaloneFRT> frtServer;
-    FRT_Supervisor * supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT> frt;
     RPCServer server;
     Barrier b;
     const vespalib::string listenSpec;
     ServerFixture(const vespalib::string & ls)
-        : frtServer(),
-          supervisor(nullptr),
+        : frt(),
           server(),
           b(2),
           listenSpec(ls)
@@ -108,10 +105,9 @@ struct ServerFixture {
 
     void start()
     {
-        frtServer = std::make_unique<fnet::frt::StandaloneFRT>();
-        supervisor = & frtServer->supervisor();
-        server.init(supervisor);
-        supervisor->Listen(get_port(listenSpec));
+        frt = std::make_unique<fnet::frt::StandaloneFRT>();
+        server.init(&frt->supervisor());
+        frt->supervisor().Listen(get_port(listenSpec));
         wait(); // Wait until test runner signals we can start
         wait(); // Signalling that we have shut down
         wait(); // Wait for signal saying that supervisor is deleted
@@ -119,10 +115,9 @@ struct ServerFixture {
 
     void stop()
     {
-        if (frtServer) {
+        if (frt) {
+            frt.reset();
             wait(); // Wait for supervisor to shut down
-            frtServer.reset();
-            supervisor = nullptr;
             wait(); // Signal that we are done and start can return.
         }
     }
