@@ -7,6 +7,9 @@
 #include <vector>
 #include <map>
 
+class FNET_Transport;
+class FastOS_ThreadPool;
+
 namespace config {
 
 class FRTConnectionPool : public ConnectionFactory {
@@ -29,6 +32,8 @@ private:
         int operator==(const FRTConnectionKey& right) const;
     };
 
+    std::unique_ptr<FastOS_ThreadPool> _threadPool;
+    std::unique_ptr<FNET_Transport> _transport;
     std::unique_ptr<FRT_Supervisor> _supervisor;
     int _selectIdx;
     vespalib::string _hostname;

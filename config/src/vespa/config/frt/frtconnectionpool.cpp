@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 
 namespace config {
 
@@ -26,7 +27,9 @@ FRTConnectionPool::FRTConnectionKey::operator==(const FRTConnectionKey& right) c
 }
 
 FRTConnectionPool::FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues)
-    : _supervisor(std::make_unique<FRT_Supervisor>()),
+    :  _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+       _transport(std::make_unique<FNET_Transport>()),
+       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _selectIdx(0),
       _hostname("")
 {
@@ -35,12 +38,12 @@ FRTConnectionPool::FRTConnectionPool(const ServerSpec & spec, const TimingValues
         _connections[key] = std::make_shared<FRTConnection>(spec.getHost(i), *_supervisor, timingValues);
     }
     setHostname();
-    _supervisor->Start();
+    _transport->Start(_threadPool.get());
 }
 
 FRTConnectionPool::~FRTConnectionPool()
 {
-    _supervisor->ShutDown(true);
+    _transport->ShutDown(true);
 }
 
 void

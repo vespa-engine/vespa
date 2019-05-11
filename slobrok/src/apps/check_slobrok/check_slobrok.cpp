@@ -13,14 +13,14 @@ LOG_SETUP("check_slobrok");
 class Slobrok_Checker : public FastOS_Application
 {
 private:
-    std::unique_ptr<FRT_Supervisor>  _supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT>  _server;
     FRT_Target                      *_target;
 
     Slobrok_Checker(const Slobrok_Checker &);
     Slobrok_Checker &operator=(const Slobrok_Checker &);
 
 public:
-    Slobrok_Checker() : _supervisor(), _target(nullptr) {}
+    Slobrok_Checker() : _server(), _target(nullptr) {}
     virtual ~Slobrok_Checker();
     int usage();
     void initRPC(const char *spec);
@@ -30,7 +30,7 @@ public:
 
 Slobrok_Checker::~Slobrok_Checker()
 {
-    LOG_ASSERT( !_supervisor);
+    LOG_ASSERT( !_server);
     LOG_ASSERT(_target == nullptr);
 }
 
@@ -46,9 +46,8 @@ Slobrok_Checker::usage()
 void
 Slobrok_Checker::initRPC(const char *spec)
 {
-    _supervisor = std::make_unique<FRT_Supervisor>();
-    _target     = _supervisor->GetTarget(spec);
-    _supervisor->Start();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _target     = _server->supervisor().GetTarget(spec);
 }
 
 
@@ -59,9 +58,8 @@ Slobrok_Checker::finiRPC()
         _target->SubRef();
         _target = nullptr;
     }
-    if (_supervisor) {
-        _supervisor->ShutDown(true);
-        _supervisor.reset();
+    if (_server) {
+        _server.reset();
     }
 }
 
@@ -82,7 +80,7 @@ Slobrok_Checker::Main()
         initRPC(tmp.str().c_str());
     }
 
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
 
     req->SetMethodName("slobrok.system.version");
     _target->InvokeSync(req, 5.0);

@@ -33,51 +33,50 @@ using document::test::makeDocumentBucket;
 namespace storage {
 
 namespace {
-    uint64_t getTimeInMillis() {
-        struct timeval t;
-        gettimeofday(&t, 0);
-        return (t.tv_sec * uint64_t(1000)) + (t.tv_usec / uint64_t(1000));
+
+uint64_t getTimeInMillis() {
+    struct timeval t;
+    gettimeofday(&t, 0);
+    return (t.tv_sec * uint64_t(1000)) + (t.tv_usec / uint64_t(1000));
+}
+
+class SlobrokMirror {
+    config::ConfigUri config;
+    fnet::frt::StandaloneFRT visor;
+    std::unique_ptr<slobrok::api::MirrorAPI> mirror;
+
+public:
+    SlobrokMirror(const config::ConfigUri &cfg) : config(cfg) {}
+
+    void init(uint32_t timeoutms) {
+        uint64_t timeout = getTimeInMillis() + timeoutms;
+        mirror.reset(new slobrok::api::MirrorAPI(visor.supervisor(), config));
+        while (!mirror->ready()) {
+            if (getTimeInMillis() > timeout)
+                throw vespalib::IllegalStateException(
+                        "Failed to initialize slobrok mirror within "
+                        "timeout.", VESPA_STRLOC);
+            FastOS_Thread::Sleep(1);
+        }
     }
 
-    class SlobrokMirror {
-        config::ConfigUri config;
-        FRT_Supervisor visor;
-        std::unique_ptr<slobrok::api::MirrorAPI> mirror;
-
-    public:
-        SlobrokMirror(const config::ConfigUri & cfg) : config(cfg) {}
-
-        void init(uint32_t timeoutms) {
-            uint64_t timeout = getTimeInMillis() + timeoutms;
-            visor.Start();
-            mirror.reset(new slobrok::api::MirrorAPI(visor, config));
-            while (!mirror->ready()) {
-                if (getTimeInMillis() > timeout)
-                    throw vespalib::IllegalStateException(
-                            "Failed to initialize slobrok mirror within "
-                            "timeout.", VESPA_STRLOC);
-                FastOS_Thread::Sleep(1);
-            }
-        }
-
-        slobrok::api::MirrorAPI& getMirror() {
-            if (mirror.get() == 0) throw vespalib::IllegalStateException(
+    slobrok::api::MirrorAPI &getMirror() {
+        if (mirror.get() == 0)
+            throw vespalib::IllegalStateException(
                     "You need to call init() before you can fetch mirror");
-            return *mirror;
-        }
-        FRT_Supervisor& getSupervisor() {
-            if (mirror.get() == 0) throw vespalib::IllegalStateException(
-                    "You need to call init() before you can fetch supervisor");
-            return visor;
-        }
+        return *mirror;
+    }
 
-        ~SlobrokMirror() {
-            if (mirror) {
-                mirror.reset();
-                visor.ShutDown(true);
-            }
-        }
-    };
+    FRT_Supervisor &getSupervisor() {
+        if (mirror.get() == 0)
+            throw vespalib::IllegalStateException(
+                    "You need to call init() before you can fetch supervisor");
+        return visor.supervisor();
+    }
+
+    ~SlobrokMirror() = default;
+};
+
 }
 
 struct StorageServerTest : public CppUnit::TestFixture {

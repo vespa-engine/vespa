@@ -18,22 +18,22 @@ private:
         const char *value = param + 2;
         switch (param[0]) {
         case 'b':
-            req->GetParams()->AddInt8(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt8(strtoll(value, nullptr, 0));
             break;
         case 'h':
-            req->GetParams()->AddInt16(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt16(strtoll(value, nullptr, 0));
             break;
         case 'i':
-            req->GetParams()->AddInt32(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt32(strtoll(value, nullptr, 0));
             break;
         case 'l':
-            req->GetParams()->AddInt64(strtoll(value, NULL, 0));
+            req->GetParams()->AddInt64(strtoll(value, nullptr, 0));
             break;
         case 'f':
-            req->GetParams()->AddFloat(vespalib::locale::c::strtod(value, NULL));
+            req->GetParams()->AddFloat(vespalib::locale::c::strtod(value, nullptr));
             break;
         case 'd':
-            req->GetParams()->AddDouble(vespalib::locale::c::strtod(value, NULL));
+            req->GetParams()->AddDouble(vespalib::locale::c::strtod(value, nullptr));
             break;
         case 's':
             req->GetParams()->AddString(value);
@@ -55,11 +55,10 @@ public:
             return 1;
         }
         int retCode = 0;
-        FRT_Supervisor supervisor;
-        supervisor.Start();
+        fnet::frt::StandaloneFRT supervisor;
 
         slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-        slobrok::api::MirrorAPI mirror(supervisor, sbcfg);
+        slobrok::api::MirrorAPI mirror(supervisor.supervisor(), sbcfg);
 
         while (!mirror.ready()) {
             FastOS_Thread::Sleep(10);
@@ -72,11 +71,11 @@ public:
         }
 
         for (size_t j = 0; j < list.size(); j++) {
-            FRT_Target *target = supervisor.GetTarget(list[j].second.c_str());
+            FRT_Target *target = supervisor.supervisor().GetTarget(list[j].second.c_str());
 
             // If not fleet controller, need to connect first.
-            if (strstr(_argv[1], "fleetcontroller") == NULL) {
-                FRT_RPCRequest *req = supervisor.AllocRPCRequest();
+            if (strstr(_argv[1], "fleetcontroller") == nullptr) {
+                FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
                 req->SetMethodName("vespa.storage.connect");
                 req->GetParams()->AddString(_argv[1]);
                 target->InvokeSync(req, 10.0);
@@ -90,7 +89,7 @@ public:
                 req->SubRef();
             }
 
-            FRT_RPCRequest *req = supervisor.AllocRPCRequest();
+            FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
             req->SetMethodName(_argv[2]);
 
             for (int i = 3; i < _argc; ++i) {
@@ -115,7 +114,6 @@ public:
             req->SubRef();
             target->SubRef();
         }
-        supervisor.ShutDown(true);
         return retCode;
     }
 };

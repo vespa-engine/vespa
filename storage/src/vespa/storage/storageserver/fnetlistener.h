@@ -4,6 +4,8 @@
 #include <vespa/slobrok/sbregister.h>
 #include <atomic>
 
+class FNET_Transport;
+
 namespace storage {
 
 namespace api { class StorageMessage; }
@@ -33,11 +35,13 @@ public:
     int getListenPort() const;
 
 private:
-    MessageEnqueuer&                _messageEnqueuer;
-    std::unique_ptr<FRT_Supervisor> _orb;
-    std::atomic<bool>               _closed;
-    slobrok::api::RegisterAPI       _slobrokRegister;
-    vespalib::string                _handle;
+    MessageEnqueuer&                   _messageEnqueuer;
+    std::unique_ptr<FastOS_ThreadPool> _threadPool;
+    std::unique_ptr<FNET_Transport>    _transport;
+    std::unique_ptr<FRT_Supervisor>    _orb;
+    std::atomic<bool>                  _closed;
+    slobrok::api::RegisterAPI          _slobrokRegister;
+    vespalib::string                   _handle;
 
     void detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd, FRT_RPCRequest *req);
 };

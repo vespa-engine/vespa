@@ -5,22 +5,20 @@
 class TestErrors : public vespalib::TestApp
 {
 private:
+    fnet::frt::StandaloneFRT server;
     FRT_Supervisor *client;
     FRT_Target     *target;
 
 public:
     void init(const char *spec) {
-	client = new FRT_Supervisor;
+	    client = & server.supervisor();
         target = client->GetTarget(spec);
-        client->Start();
     }
 
     void fini() {
-	target->SubRef();
-        target = NULL;
-        client->ShutDown(true);
-        delete client;
-        client = NULL;
+	    target->SubRef();
+        target = nullptr;
+        client = nullptr;
     }
 
     void testNoError();

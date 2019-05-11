@@ -460,8 +460,7 @@ Application::printServices() const
 void
 Application::getServices(slobrok::api::IMirrorAPI::SpecList &ret, uint32_t depth) const
 {
-    FRT_Supervisor frt;
-    frt.Start();
+    fnet::frt::StandaloneFRT frt;
 
     std::string pattern = "*";
     for (uint32_t i = 0; i < depth; ++i) {
@@ -469,14 +468,13 @@ Application::getServices(slobrok::api::IMirrorAPI::SpecList &ret, uint32_t depth
         for (slobrok::api::IMirrorAPI::SpecList::iterator it = lst.begin();
              it != lst.end(); ++it)
         {
-            if (isService(frt, it->second)) {
+            if (isService(frt.supervisor(), it->second)) {
                 ret.push_back(*it);
             }
         }
         pattern.append("/*");
     }
 
-    frt.ShutDown(true);
 }
 
 bool

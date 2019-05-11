@@ -9,7 +9,7 @@
 class Server : public FRT_Invokable
 {
 private:
-    FRT_Supervisor _orb;
+    fnet::frt::StandaloneFRT _server;
     std::string    _name;
 
 public:
@@ -20,11 +20,11 @@ public:
 
 
 Server::Server(std::string name, int port)
-    : _orb(),
+    : _server(),
       _name(name)
 {
     {
-        FRT_ReflectionBuilder rb(&_orb);
+        FRT_ReflectionBuilder rb(&_server.supervisor());
         //---------------------------------------------------------------------
         rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                         FRT_METHOD(Server::rpc_listNamesServed), this);
@@ -32,8 +32,7 @@ Server::Server(std::string name, int port)
         rb.ReturnDesc("names", "The rpcserver names on this server");
         //---------------------------------------------------------------------
     }
-    _orb.Listen(port);
-    _orb.Start();
+    _server.supervisor().Listen(port);
 }
 
 
@@ -46,16 +45,13 @@ Server::rpc_listNamesServed(FRT_RPCRequest *req)
 }
 
 
-Server::~Server()
-{
-    _orb.ShutDown(true);
-}
+Server::~Server() = default;
 
 namespace {
 
 bool checkOk(FRT_RPCRequest *req)
 {
-    if (req == NULL) {
+    if (req == nullptr) {
         fprintf(stderr, "req is null pointer, this is bad\n");
         return false;
     }
@@ -80,7 +76,7 @@ private:
 public:
     SubReferer(T* &t) : _t(t) {}
     ~SubReferer() {
-        if (_t != NULL) _t->SubRef();
+        if (_t != nullptr) _t->SubRef();
     }
 };
 
@@ -118,14 +114,13 @@ TEST("standalone") {
     slobrok::SlobrokServer slobrokServer(18541);
     Stopper<slobrok::SlobrokServer> ssCleaner(slobrokServer);
 
-    FRT_Supervisor orb;
-    orb.Start();
-    ShutDowner<FRT_Supervisor> orbCleaner(orb);
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & orb = server.supervisor();
 
     FRT_Target     *sb  = orb.GetTarget(18541);
     SubReferer<FRT_Target> sbCleaner(sb);
 
-    FRT_RPCRequest *req = NULL;
+    FRT_RPCRequest *req = nullptr;
     SubReferer<FRT_RPCRequest> reqCleaner(req);
 
     for (int retry=0; retry < 5*61; retry++) {

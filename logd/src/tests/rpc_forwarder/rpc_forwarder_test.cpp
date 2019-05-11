@@ -31,7 +31,7 @@ decode_log_request(FRT_Values& src, ProtoConverter::ProtoLogRequest& dst)
 std::string garbage("garbage");
 
 struct RpcServer : public FRT_Invokable {
-    FRT_Supervisor supervisor;
+    fnet::frt::StandaloneFRT server;
     int request_count;
     std::vector<std::string> messages;
     bool reply_with_error;
@@ -39,23 +39,20 @@ struct RpcServer : public FRT_Invokable {
 
 public:
     RpcServer()
-        : supervisor(),
+        : server(),
           request_count(0),
           messages(),
           reply_with_error(false),
           reply_with_proto_response(true)
     {
-        supervisor.Listen(0);
-        FRT_ReflectionBuilder builder(&supervisor);
+        FRT_ReflectionBuilder builder(&server.supervisor());
         builder.DefineMethod("vespa.logserver.archiveLogMessages", "bix", "bix",
                              FRT_METHOD(RpcServer::rpc_archive_log_messages), this);
-        supervisor.Start();
+        server.supervisor().Listen(0);
     }
-    ~RpcServer() {
-        supervisor.ShutDown(true);
-    }
+    ~RpcServer() = default;
     int get_listen_port() {
-        return supervisor.GetListenPort();
+        return server.supervisor().GetListenPort();
     }
     void rpc_archive_log_messages(FRT_RPCRequest* request) {
         ProtoConverter::ProtoLogRequest proto_request;
@@ -96,17 +93,14 @@ struct MockMetricsManager : public DummyMetricsManager {
 
 class ClientSupervisor {
 private:
-    FRT_Supervisor _supervisor;
+    fnet::frt::StandaloneFRT _client;
 public:
     ClientSupervisor()
-        : _supervisor()
+        : _client()
     {
-        _supervisor.Start();
     }
-    ~ClientSupervisor() {
-        _supervisor.ShutDown(true);
-    }
-    FRT_Supervisor& get() { return _supervisor; }
+    ~ClientSupervisor() = default;
+    FRT_Supervisor& get() { return _client.supervisor(); }
 
 };
 

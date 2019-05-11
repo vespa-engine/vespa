@@ -79,11 +79,12 @@ RPCInfo::Main()
     }
 
     bool verbose = (_argc > 2 && strcmp(_argv[2], "verbose") == 0);
-    FRT_Supervisor supervisor;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & supervisor = server.supervisor();
+
     FRT_Target     *target = supervisor.GetTarget(_argv[1]);
     FRT_RPCRequest *m_list = nullptr;
     FRT_RPCRequest *info   = nullptr;
-    supervisor.Start();
 
     GetReq(&info, &supervisor);
     info->SetMethodName("frt.rpc.ping");
@@ -91,7 +92,6 @@ RPCInfo::Main()
     if (info->IsError()) {
         fprintf(stderr, "Error talking to %s\n", _argv[1]);
         FreeReqs(m_list, info);
-        supervisor.ShutDown(true);
         return 1;
     }
 
@@ -129,7 +129,6 @@ RPCInfo::Main()
     }
     FreeReqs(m_list, info);
     target->SubRef();
-    supervisor.ShutDown(true);
     return 0;
 }
 

@@ -86,7 +86,7 @@ ConfigTask::PerformTask()
 
 SBEnv::SBEnv(const ConfigShim &shim)
     : _transport(std::make_unique<FNET_Transport>()),
-      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get(), nullptr)),
+      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _configShim(shim),
       _configurator(shim.factory().create(*this)),
       _shuttingDown(false),

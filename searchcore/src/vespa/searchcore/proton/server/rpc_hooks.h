@@ -12,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 
+class FNET_Transport;
+
 namespace proton {
 
 class Proton;
@@ -64,6 +66,7 @@ private:
 
     Proton                         & _proton;
     std::unique_ptr<DocsumByRPC>     _docsumByRPC;
+    std::unique_ptr<FNET_Transport>  _transport;
     std::unique_ptr<FRT_Supervisor>  _orb;
     std::unique_ptr<ProtoRpcAdapter> _proto_rpc_adapter;
     slobrok::api::RegisterAPI        _regAPI;

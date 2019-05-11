@@ -119,17 +119,18 @@ namespace {
         int errorCode;
         int timeout;
         FRT_RPCRequest * ans;
-        FRT_Supervisor supervisor;
+        fnet::frt::StandaloneFRT server;
+        FRT_Supervisor & supervisor;
         FNET_Scheduler scheduler;
         vespalib::string address;
-        ConnectionMock(FRT_RPCRequest * answer = NULL);
+        ConnectionMock(FRT_RPCRequest * answer = nullptr);
         ~ConnectionMock();
         FRT_RPCRequest * allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
         void setError(int ec) override { errorCode = ec; }
         void invoke(FRT_RPCRequest * req, double t, FRT_IRequestWait * waiter) override
         {
             timeout = static_cast<int>(t);
-            if (ans != NULL)
+            if (ans != nullptr)
                 waiter->RequestDone(ans);
             else
                 waiter->RequestDone(req);
@@ -142,10 +143,11 @@ namespace {
         : errorCode(0),
           timeout(0),
           ans(answer),
-          supervisor(),
+          server(),
+          supervisor(server.supervisor()),
           address()
     { }
-    ConnectionMock::~ConnectionMock() { }
+    ConnectionMock::~ConnectionMock() = default;
 
     struct FactoryMock : public ConnectionFactory {
         ConnectionMock * current;
@@ -284,7 +286,7 @@ TEST("require that v3 request is correctly initialized") {
     ConfigDefinition origDef(MyConfig::CONFIG_DEF_SCHEMA);
 
     FRT_RPCRequest * req = v3req.getRequest();
-    ASSERT_TRUE(req != NULL);
+    ASSERT_TRUE(req != nullptr);
     FRT_Values & params(*req->GetParams());
     std::string json(params[0]._string._str);
     Slime slime;

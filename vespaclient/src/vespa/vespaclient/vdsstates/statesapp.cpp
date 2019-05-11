@@ -247,17 +247,16 @@ struct StateApp : public FastOS_Application {
     }
 
     int run() {
-        FRT_Supervisor supervisor;
-        supervisor.Start();
+        fnet::frt::StandaloneFRT supervisor;
 
         std::unique_ptr<slobrok::api::MirrorAPI> slobrok;
         if (_options._slobrokConnectionSpec == "") {
             config::ConfigUri config(_options._slobrokConfigId);
-            slobrok.reset(new slobrok::api::MirrorAPI(supervisor, config));
+            slobrok.reset(new slobrok::api::MirrorAPI(supervisor.supervisor(), config));
         } else {
             std::vector<std::string> specList;
             specList.push_back(_options._slobrokConnectionSpec);
-            slobrok.reset(new slobrok::api::MirrorAPI(supervisor, specList));
+            slobrok.reset(new slobrok::api::MirrorAPI(supervisor.supervisor(), specList));
         }
         LOG(debug, "Waiting for slobrok data to be available.");
         uint64_t startTime = getTimeInMillis();
@@ -287,7 +286,6 @@ struct StateApp : public FastOS_Application {
         }
         if (!slobrok->ready()) {
             std::cerr << "Slobrok not ready.\n";
-            supervisor.ShutDown(true);
             return 1;
         }
 
@@ -300,13 +298,12 @@ struct StateApp : public FastOS_Application {
         if (specs.size() == 0) {
             std::cerr << "No fleet controller could be found for '"
                       << mask << ".\n";
-            supervisor.ShutDown(true);
             return 1;
         }
         std::sort(specs.begin(), specs.end(), Sorter());
         LOG(debug, "Found fleet controller %s - %s\n",
             specs.front().first.c_str(), specs.front().second.c_str());
-        FRT_Target *target = supervisor.GetTarget(specs.front().second.c_str());
+        FRT_Target *target = supervisor.supervisor().GetTarget(specs.front().second.c_str());
         if (!_options._nonfriendlyOutput && _options._mode == GETNODESTATE)
         {
             std::cerr <<
@@ -341,7 +338,7 @@ struct StateApp : public FastOS_Application {
                 indexes.push_back(_options._nodeIndex);
             } else {
                 std::string hostname(vespa::Defaults::vespaHostname());
-                FRT_RPCRequest* req = supervisor.AllocRPCRequest();
+                FRT_RPCRequest* req = supervisor.supervisor().AllocRPCRequest();
                 req->SetMethodName("getNodeList");
                 target->InvokeSync(req, 10.0);
                 std::string prefix = _options._cluster.getConfigId() + "/" + nodeType + "/";
@@ -380,7 +377,7 @@ struct StateApp : public FastOS_Application {
                 break;
             }
             for (uint32_t j=0; j<indexes.size(); ++j) {
-                FRT_RPCRequest* req = supervisor.AllocRPCRequest();
+                FRT_RPCRequest* req = supervisor.supervisor().AllocRPCRequest();
                 if (_options._mode == GETNODESTATE) {
                     req->SetMethodName("getNodeState");
                     req->GetParams()->AddString(nodeType.c_str());
@@ -448,7 +445,6 @@ struct StateApp : public FastOS_Application {
             }
         }
         target->SubRef();
-        supervisor.ShutDown(true);
         return (failed ? 1 : 0);
     }
 };

@@ -37,12 +37,12 @@ struct RPC : public FRT_Invokable
 
 TEST("info") {
     RPC rpc;
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & orb = server.supervisor();
     char spec[64];
     rpc.Init(&orb);
     ASSERT_TRUE(orb.Listen("tcp/0"));
     sprintf(spec, "tcp/localhost:%d", orb.GetListenPort());
-    ASSERT_TRUE(orb.Start());
 
     FRT_Target     *target      = orb.GetTarget(spec);
     FRT_RPCRequest *local_info  = orb.AllocRPCRequest();
@@ -65,7 +65,6 @@ TEST("info") {
     target->SubRef();
     local_info->SubRef();
     remote_info->SubRef();
-    orb.ShutDown(true);
 };
 
 TEST("size of important objects")
