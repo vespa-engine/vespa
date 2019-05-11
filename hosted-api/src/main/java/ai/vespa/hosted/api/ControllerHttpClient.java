@@ -76,7 +76,7 @@ public abstract class ControllerHttpClient {
 
     /** Sends the given deployment to the given application in the given zone, or throws if this fails. */
     public DeploymentResult deploy(Deployment deployment, ApplicationId id, ZoneId zone) {
-        return toDeploymentResult(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
+        return toDeploymentResult(send(request(HttpRequest.newBuilder(deploymentJobPath(id, zone))
                                                           .timeout(Duration.ofMinutes(60)),
                                                POST,
                                                toDataStream(deployment))));
@@ -142,6 +142,11 @@ public abstract class ControllerHttpClient {
                             "environment", zone.environment().value(),
                             "region", zone.region().value(),
                             "instance", id.instance().value());
+    }
+
+    private URI deploymentJobPath(ApplicationId id, ZoneId zone) {
+        return concatenated(instancePath(id),
+                            "deploy", zone.environment().value() + "-" + zone.region().value());
     }
 
     private URI defaultRegionPath() {
@@ -228,15 +233,9 @@ public abstract class ControllerHttpClient {
     }
 
     private static DeploymentResult toDeploymentResult(HttpResponse<byte[]> response) {
-        try {
-            Inspector responseObject = toInspector(response);
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            new JsonFormat(false).encode(buffer, responseObject); // Pretty-print until done properly.
-            return new DeploymentResult(buffer.toString(UTF_8));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        Inspector rootObject = toInspector(response);
+        return new DeploymentResult(rootObject.field("message").asString(),
+                                    URI.create(rootObject.field("location").asString()));
     }
 
     private static Slime toSlime(byte[] data) {

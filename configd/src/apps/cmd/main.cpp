@@ -14,11 +14,11 @@ LOG_SETUP("vespa-sentinel-cmd");
 class Cmd
 {
 private:
-    std::unique_ptr<FRT_Supervisor> _supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT> _server;
     FRT_Target *_target;
 
 public:
-    Cmd() : _supervisor(), _target(nullptr) {}
+    Cmd() : _server(), _target(nullptr) {}
     ~Cmd();
     int run(const char *cmd, const char *arg);
     void initRPC(const char *spec);
@@ -27,7 +27,7 @@ public:
 
 Cmd::~Cmd()
 {
-    LOG_ASSERT(! _supervisor);
+    LOG_ASSERT(! _server);
     LOG_ASSERT(_target == nullptr);
 }
 
@@ -44,9 +44,8 @@ void usage()
 void
 Cmd::initRPC(const char *spec)
 {
-    _supervisor = std::make_unique<FRT_Supervisor>();
-    _target     = _supervisor->GetTarget(spec);
-    _supervisor->Start();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _target     = _server->supervisor().GetTarget(spec);
 }
 
 
@@ -57,10 +56,7 @@ Cmd::finiRPC()
         _target->SubRef();
         _target = nullptr;
     }
-    if (_supervisor) {
-        _supervisor->ShutDown(true);
-        _supervisor.reset();
-    }
+    _server.reset();
 }
 
 
@@ -70,7 +66,7 @@ Cmd::run(const char *cmd, const char *arg)
     int retval = 0;
     initRPC("tcp/localhost:19097");
 
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
     req->SetMethodName(cmd);
 
     if (arg) {

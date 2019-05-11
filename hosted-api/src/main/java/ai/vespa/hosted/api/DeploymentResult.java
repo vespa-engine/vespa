@@ -1,6 +1,8 @@
 package ai.vespa.hosted.api;
 
 
+import java.net.URI;
+
 /**
  * Contains information about the result of a {@link Deployment} against a {@link ControllerHttpClient}.
  *
@@ -8,14 +10,20 @@ package ai.vespa.hosted.api;
  */
 public class DeploymentResult {
 
-    private final String json; // TODO probably do this properly.
+    private final String message;
+    private final URI location;
 
-    public DeploymentResult(String json) {
-        this.json = json;
+    public DeploymentResult(String message, URI location) {
+        this.message = message;
+        this.location = location;
     }
 
-    public String json() {
-        return json;
+    public String message() {
+        return message;
+    }
+
+    public URI location() {
+        return location;
     }
 
 }

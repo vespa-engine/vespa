@@ -19,6 +19,7 @@
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/time.h>
+#include <openssl/sha.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
@@ -46,6 +47,7 @@ using search::index::SchemaUtil;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using search::queryeval::SearchIterator;
+using vespalib::alloc::Alloc;
 
 using namespace search::index;
 
@@ -77,6 +79,7 @@ void enableSkipChunks()
     minChunkDocs = 9000;    // Unrealistic low for testing
 }
 
+const char *bool_to_str(bool val) { return (val ? "true" : "false"); }
 
 vespalib::string
 makeWordString(uint64_t wordNum)
@@ -144,6 +147,7 @@ public:
     std::unique_ptr<FieldWriter> _fieldWriter;
 private:
     bool _dynamicK;
+    bool _encode_cheap_features;
     uint32_t _numWordIds;
     uint32_t _docIdLimit;
     vespalib::string _namepref;
@@ -153,9 +157,10 @@ private:
 public:
 
     WrappedFieldWriter(const vespalib::string &namepref,
-                      bool dynamicK,
-                      uint32_t numWordIds,
-                      uint32_t docIdLimit);
+                       bool dynamicK,
+                       bool encoce_cheap_fatures,
+                       uint32_t numWordIds,
+                       uint32_t docIdLimit);
     ~WrappedFieldWriter();
 
     void open();
@@ -166,10 +171,12 @@ WrappedFieldWriter::~WrappedFieldWriter() {}
 
 WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
                                        bool dynamicK,
+                                       bool encode_cheap_features,
                                        uint32_t numWordIds,
                                        uint32_t docIdLimit)
     : _fieldWriter(),
       _dynamicK(dynamicK),
+      _encode_cheap_features(encode_cheap_features),
       _numWordIds(numWordIds),
       _docIdLimit(docIdLimit),
       _namepref(dirprefix + namepref),
@@ -190,8 +197,9 @@ WrappedFieldWriter::open()
     fileHeaderContext.disableFileName();
     _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds);
     _fieldWriter->open(_namepref,
-                       minSkipDocs, minChunkDocs, _dynamicK, _schema,
-                       _indexId,
+                       minSkipDocs, minChunkDocs,
+                       _dynamicK, _encode_cheap_features,
+                       _schema, _indexId,
                        tuneFileWrite, fileHeaderContext);
 }
 
@@ -273,11 +281,81 @@ WrappedFieldReader::close()
 }
 
 
+class FileChecksum
+{
+    unsigned char _digest[SHA256_DIGEST_LENGTH];
+
+public:
+    FileChecksum(const vespalib::string &file_name);
+    bool operator==(const FileChecksum &rhs) const {
+        return (memcmp(_digest, rhs._digest, SHA256_DIGEST_LENGTH) == 0);
+    }
+};
+
+
+FileChecksum::FileChecksum(const vespalib::string &file_name)
+{
+    SHA256_CTX c; 
+    FastOS_File f;
+    Alloc buf = Alloc::alloc(65536);
+    vespalib::string full_file_name(dirprefix + file_name);
+    bool openres = f.OpenReadOnly(full_file_name.c_str());
+    if (!openres) {
+        LOG(error, "Could not open %s for sha256 checksum", full_file_name.c_str());
+        LOG_ABORT("should not be reached");
+    }
+    int64_t flen = f.GetSize();
+    int64_t remainder = flen;
+    SHA256_Init(&c);
+    while (remainder > 0) {
+        int64_t thistime =
+            std::min(remainder, static_cast<int64_t>(buf.size()));
+        f.ReadBuf(buf.get(), thistime);
+        SHA256_Update(&c, buf.get(), thistime);
+        remainder -= thistime;
+    }
+    f.Close();
+    SHA256_Final(_digest, &c);
+}
+
+void
+compare_files(const vespalib::string &file_name_prefix, const vespalib::string &file_name_suffix)
+{
+    FileChecksum baseline_checksum(file_name_prefix + file_name_suffix);
+    FileChecksum cooked_fusion_checksum(file_name_prefix + "x" + file_name_suffix);
+    FileChecksum raw_fusion_checksum(file_name_prefix + "xx" + file_name_suffix);
+    assert(baseline_checksum == cooked_fusion_checksum);
+    assert(baseline_checksum == raw_fusion_checksum);
+}
+
+std::vector<vespalib::string> suffixes = {
+    "boolocc.bdat", "boolocc.idx",
+    "posocc.dat.compressed",
+    "dictionary.pdat", "dictionary.spdat", "dictionary.ssdat"
+};
+
+void
+check_fusion(const vespalib::string &file_name_prefix)
+{
+    for (const auto &file_name_suffix : suffixes) {
+        compare_files(file_name_prefix, file_name_suffix);
+    }
+}
+
+void
+remove_field(const vespalib::string &file_name_prefix)
+{
+    vespalib::string remove_prefix(dirprefix + file_name_prefix);
+    FieldWriter::remove(remove_prefix);
+    FieldWriter::remove(remove_prefix + "x");
+    FieldWriter::remove(remove_prefix + "xx");
+}
+
 void
 writeField(FakeWordSet &wordSet,
            uint32_t docIdLimit,
            const std::string &namepref,
-           bool dynamicK)
+           bool dynamicK, bool encode_cheap_features)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
@@ -287,15 +365,16 @@ writeField(FakeWordSet &wordSet,
 
     LOG(info,
         "enter writeField, "
-        "namepref=%s, dynamicK=%s",
+        "namepref=%s, dynamicK=%s, encode_cheap_features=%s",
         namepref.c_str(),
-        dynamicKStr);
+        dynamicKStr,
+        bool_to_str(encode_cheap_features));
     tv.SetNow();
     before = tv.Secs();
     WrappedFieldWriter ostate(namepref,
-                             dynamicK,
-                             wordSet.getNumWords(), docIdLimit);
-    FieldWriter::remove(namepref);
+                              dynamicK, encode_cheap_features,
+                              wordSet.getNumWords(), docIdLimit);
+    FieldWriter::remove(dirprefix + namepref);
     ostate.open();
 
     unsigned int wordNum = 1;
@@ -312,10 +391,11 @@ writeField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave writeField, "
-        "namepref=%s, dynamicK=%s"
+        "namepref=%s, dynamicK=%s, encode_cheap_features=%s"
         " elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
+        bool_to_str(encode_cheap_features),
         after - before);
 }
 
@@ -325,6 +405,7 @@ readField(FakeWordSet &wordSet,
           uint32_t docIdLimit,
           const std::string &namepref,
           bool dynamicK,
+          bool decode_cheap_features,
           bool verbose)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
@@ -336,9 +417,10 @@ readField(FakeWordSet &wordSet,
                              docIdLimit);
     LOG(info,
         "enter readField, "
-        "namepref=%s, dynamicK=%s",
+        "namepref=%s, dynamicK=%s, decode_cheap_features=%s",
         namepref.c_str(),
-        dynamicKStr);
+        dynamicKStr,
+        bool_to_str(decode_cheap_features));
     tv.SetNow();
     before = tv.Secs();
     istate.open();
@@ -353,7 +435,7 @@ readField(FakeWordSet &wordSet,
             TermFieldMatchDataArray tfmda;
             tfmda.add(&mdfield1);
 
-            word->validate(*istate._fieldReader, wordNum, tfmda, verbose);
+            word->validate(*istate._fieldReader, wordNum, tfmda, decode_cheap_features, verbose);
             ++wordNum;
         }
     }
@@ -363,10 +445,11 @@ readField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave readField, "
-        "namepref=%s, dynamicK=%s"
+        "namepref=%s, dynamicK=%s, decode_cheap_features=%s"
         " elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
+        bool_to_str(decode_cheap_features),
         after - before);
 }
 
@@ -483,7 +566,8 @@ fusionField(uint32_t numWordIds,
             const vespalib::string &ipref,
             const vespalib::string &opref,
             bool doRaw,
-            bool dynamicK)
+            bool dynamicK,
+            bool encode_cheap_features)
 {
     const char *rawStr = doRaw ? "true" : "false";
     const char *dynamicKStr = dynamicK ? "true" : "false";
@@ -492,18 +576,18 @@ fusionField(uint32_t numWordIds,
     LOG(info,
         "enter fusionField, ipref=%s, opref=%s,"
         " raw=%s,"
-        " dynamicK=%s",
+        " dynamicK=%s, encode_cheap_features=%s",
         ipref.c_str(),
         opref.c_str(),
         rawStr,
-        dynamicKStr);
+        dynamicKStr, bool_to_str(encode_cheap_features));
 
     FastOS_Time tv;
     double before;
     double after;
     WrappedFieldWriter ostate(opref,
-                             dynamicK,
-                             numWordIds, docIdLimit);
+                              dynamicK, encode_cheap_features,
+                              numWordIds, docIdLimit);
     WrappedFieldReader istate(ipref, numWordIds, docIdLimit);
 
     tv.SetNow();
@@ -531,94 +615,52 @@ fusionField(uint32_t numWordIds,
     after = tv.Secs();
     LOG(info,
         "leave fusionField, ipref=%s, opref=%s,"
-        " raw=%s dynamicK=%s, "
+        " raw=%s dynamicK=%s, encode_cheap_features=%s,"
         " elapsed=%10.6f",
         ipref.c_str(),
         opref.c_str(),
         rawStr,
-        dynamicKStr,
+        dynamicKStr, bool_to_str(encode_cheap_features),
         after - before);
 }
 
+
+void
+testFieldWriterVariant(FakeWordSet &wordSet, uint32_t doc_id_limit,
+                       const vespalib::string &file_name_prefix,
+                       bool dynamic_k,
+                       bool encode_cheap_features,
+                       bool verbose)
+{
+    writeField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_cheap_features);
+    readField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_cheap_features, verbose);
+    randReadField(wordSet, file_name_prefix, dynamic_k, verbose);
+    fusionField(wordSet.getNumWords(),
+                doc_id_limit,
+                file_name_prefix, file_name_prefix + "x",
+                false, dynamic_k, encode_cheap_features);
+    fusionField(wordSet.getNumWords(),
+                doc_id_limit,
+                file_name_prefix, file_name_prefix + "xx",
+                true, dynamic_k, encode_cheap_features);
+    check_fusion(file_name_prefix);
+    remove_field(file_name_prefix);
+}
 
 void
 testFieldWriterVariants(FakeWordSet &wordSet,
                         uint32_t docIdLimit, bool verbose)
 {
     disableSkip();
-    writeField(wordSet, docIdLimit, "new4", true);
-    readField(wordSet, docIdLimit, "new4", true, verbose);
-    readField(wordSet, docIdLimit, "new4", true, verbose);
-    writeField(wordSet, docIdLimit, "new5", false);
-    readField(wordSet, docIdLimit, "new5", false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "new4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "new5", false, false, verbose);
     enableSkip();
-    writeField(wordSet, docIdLimit, "newskip4", true);
-    readField(wordSet, docIdLimit, "newskip4", true, verbose);
-    writeField(wordSet, docIdLimit, "newskip5", false);
-    readField(wordSet, docIdLimit, "newskip5", false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newskip4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newskip5", false, false, verbose);
     enableSkipChunks();
-    writeField(wordSet, docIdLimit, "newchunk4", true);
-    readField(wordSet, docIdLimit, "newchunk4", true, verbose);
-    writeField(wordSet, docIdLimit, "newchunk5", false);
-    readField(wordSet, docIdLimit,
-                "newchunk5",false, verbose);
-    disableSkip();
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "new4", "new4x",
-                false, true);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "new4", "new4xx",
-                true, true);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "new5", "new5x",
-                false, false);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "new5", "new5xx",
-                true, false);
-    randReadField(wordSet, "new4", true, verbose);
-    randReadField(wordSet, "new5", false, verbose);
-    enableSkip();
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newskip4", "newskip4x",
-                false, true);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newskip4", "newskip4xx",
-                true, true);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newskip5", "newskip5x",
-                false, false);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newskip5", "newskip5xx",
-                true, false);
-    randReadField(wordSet, "newskip4", true,  verbose);
-    randReadField(wordSet, "newskip5", false, verbose);
-    enableSkipChunks();
-    fusionField(wordSet.getNumWords(),
-                           docIdLimit,
-                           "newchunk4", "newchunk4x",
-                           false, true);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newchunk4", "newchunk4xx",
-                true, true);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newchunk5", "newchunk5x",
-                false, false);
-    fusionField(wordSet.getNumWords(),
-                docIdLimit,
-                "newchunk5", "newchunk5xx",
-                true, false);
-    randReadField(wordSet, "newchunk4", true, verbose);
-    randReadField(wordSet, "newchunk5", false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newchunk4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newchunk5", false, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newchunkcf4", true, true, verbose);
 }
 
 
@@ -627,26 +669,14 @@ testFieldWriterVariantsWithHighLids(FakeWordSet &wordSet, uint32_t docIdLimit,
                              bool verbose)
 {
     disableSkip();
-    writeField(wordSet, docIdLimit, "hlid4", true);
-    readField(wordSet, docIdLimit, "hlid4", true, verbose);
-    writeField(wordSet, docIdLimit, "hlid5", false);
-    readField(wordSet, docIdLimit, "hlid5", false, verbose);
-    randReadField(wordSet, "hlid4", true, verbose);
-    randReadField(wordSet, "hlid5", false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "hlid4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "hlid5", false, false, verbose);
     enableSkip();
-    writeField(wordSet, docIdLimit, "hlidskip4", true);
-    readField(wordSet, docIdLimit, "hlidskip4", true, verbose);
-    writeField(wordSet, docIdLimit, "hlidskip5", false);
-    readField(wordSet, docIdLimit, "hlidskip5", false, verbose);
-    randReadField(wordSet, "hlidskip4", true, verbose);
-    randReadField(wordSet, "hlidskip5", false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "hlidskip4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "hlidskip5", false, false, verbose);
     enableSkipChunks();
-    writeField(wordSet, docIdLimit, "hlidchunk4", true);
-    readField(wordSet, docIdLimit, "hlidchunk4", true, verbose);
-    writeField(wordSet, docIdLimit, "hlidchunk5", false);
-    readField(wordSet, docIdLimit, "hlidchunk5", false, verbose);
-    randReadField(wordSet, "hlidchunk4", true, verbose);
-    randReadField(wordSet, "hlidchunk5", false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "hlidchunk4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "hlidchunk5", false, false, verbose);
 }
 
 int
@@ -700,6 +730,7 @@ FieldWriterTest::Main()
     _wordSet2.addDocIdBias(docIdBias);  // Large skip numbers
     testFieldWriterVariantsWithHighLids(_wordSet2, _numDocs + docIdBias,
                                         _verbose);
+    vespalib::rmdir("index", true);
     return 0;
 }
 

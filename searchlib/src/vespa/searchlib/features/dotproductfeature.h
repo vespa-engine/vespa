@@ -61,6 +61,7 @@ public:
     const Vector & getVector() const { return _vector; }
     VectorBase & syncMap();
     const HashMap & getDimMap() const { return _dimMap; }
+    bool empty() const { return _vector.empty(); }
 };
 
 /**

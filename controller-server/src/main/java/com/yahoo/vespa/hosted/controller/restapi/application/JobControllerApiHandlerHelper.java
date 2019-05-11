@@ -351,6 +351,9 @@ class JobControllerApiHandlerHelper {
 
     private static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {
         versionObject.setString("hash", version.id());
+        if (version.isUnknown())
+            return;
+
         versionObject.setLong("build", version.buildNumber().getAsLong());
         Cursor sourceObject = versionObject.setObject("source");
         sourceObject.setString("gitRepository", version.source().get().repository());

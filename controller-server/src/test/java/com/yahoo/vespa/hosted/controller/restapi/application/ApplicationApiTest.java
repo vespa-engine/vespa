@@ -535,6 +535,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default");
 
+        // POST an application package to start a deployment to dev
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/deploy/dev-us-east-1", POST)
+                             .userIdentity(USER_ID)
+                             .data(createApplicationDeployData(applicationPackage, false)),
+                              new File("deployment-job-accepted.json"));
+
         // POST an application package and a test jar, submitting a new application for internal pipeline deployment.
         // First attempt does not have an Athenz service definition in deployment spec, and is accepted.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
@@ -611,7 +617,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE a running job to have it aborted.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/staging-test", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Aborting run 1 of stagingTest for tenant1.application1\"}");
+                              "{\"message\":\"Aborting run 1 of staging-test for tenant1.application1\"}");
 
         // DELETE submission to unsubscribe from continuous deployment.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", DELETE)

@@ -209,6 +209,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -898,6 +899,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  "instance", instanceName));
     }
 
+    private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
+        Map<String, byte[]> dataParts = parseDataParts(request);
+        if ( ! dataParts.containsKey("applicationZip"))
+            throw new IllegalArgumentException("Missing required form part 'applicationZip'");
+
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
+        controller.applications().verifyApplicationIdentityConfiguration(id.tenant(),
+                                                                         applicationPackage,
+                                                                         Optional.of(requireUserPrincipal(request)));
+
+        Optional<Version> version = Optional.ofNullable(dataParts.get("deployOptions"))
+                                            .map(json -> SlimeUtils.jsonToSlime(json).get())
+                                            .flatMap(options -> optional("vespaVersion", options))
+                                            .map(Version::fromString);
+
+        controller.jobController().deploy(id, type, version, applicationPackage);
+        RunId runId = controller.jobController().last(id, type).get().id();
+        Slime slime = new Slime();
+        Cursor rootObject = slime.setObject();
+        rootObject.setString("message", "Deployment started in " + runId);
+        rootObject.setString("location", controller.zoneRegistry().dashboardUrl(runId).toString());
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
@@ -960,11 +985,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         boolean deployDirectly = deployOptions.field("deployDirectly").asBool();
         Optional<Version> vespaVersion = optional("vespaVersion", deployOptions).map(Version::new);
 
-        /*
-         * Deploy direct is when we want to redeploy the current application - retrieve version
-         * info from the application package before deploying
-         */
-        if(deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
+        if (deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
 
             // Redeploy the existing deployment with the same versions.
             Optional<Deployment> deployment = controller.applications().get(applicationId)

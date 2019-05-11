@@ -5,7 +5,6 @@ package com.yahoo.vespa.config.server.configchange;
  * Class used to format restart actions for human readability.
  *
  * @author geirst
- * @since 5.44
  */
 public class RestartActionsFormatter {
 

@@ -27,20 +27,17 @@ setupDefaultPosOccParameters(index::PostingListParams *countParams,
                              uint64_t numWordIds,
                              uint32_t docIdLimit);
 
-index::PostingListFileSeqWrite *
-makePosOccWrite(const vespalib::string &name,
-                index::PostingListCountFileSeqWrite *const posOccCountWrite,
+std::unique_ptr<index::PostingListFileSeqWrite>
+makePosOccWrite(index::PostingListCountFileSeqWrite *const posOccCountWrite,
                 bool dynamicK,
                 const index::PostingListParams &params,
                 const index::PostingListParams &featureParams,
                 const index::Schema &schema,
-                uint32_t indexId,
-                const TuneFileSeqWrite &tuneFileWrite);
+                uint32_t indexId);
 
-index::PostingListFileSeqRead *
+std::unique_ptr<index::PostingListFileSeqRead>
 makePosOccRead(const vespalib::string &name,
                index::PostingListCountFileSeqRead *const posOccCountRead,
-               bool dynamicK,
                const index::PostingListParams &featureParams,
                const TuneFileSeqRead &tuneFileRead);
 

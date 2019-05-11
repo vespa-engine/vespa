@@ -4,6 +4,8 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -47,19 +49,21 @@ TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
     _executor(1, 128 * 1024, translogclient_rpc_callback),
     _rpcTarget(rpcTarget),
     _sessions(),
-    _supervisor(std::make_unique<FRT_Supervisor>()),
+    _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    _transport(std::make_unique<FNET_Transport>()),
+    _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
     _target(NULL)
 {
     reconnect();
     exportRPC(*_supervisor);
-    _supervisor->Start();
+    _transport->Start(_threadPool.get());
 }
 
 TransLogClient::~TransLogClient()
 {
     disconnect();
     _executor.shutdown().sync();
-    _supervisor->ShutDown(true);
+    _transport->ShutDown(true);
 }
 
 bool TransLogClient::reconnect()

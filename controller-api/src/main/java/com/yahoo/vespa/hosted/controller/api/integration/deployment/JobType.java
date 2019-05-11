@@ -7,40 +7,95 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import static com.yahoo.config.provision.SystemName.cd;
+import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.config.provision.SystemName.vaas;
 
 /** Job types that exist in the build system */
 public enum JobType {
 //     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
-    component              ("component"                   , null                                                       , null                                                          ),
-    systemTest             ("system-test"                 , ZoneId.from("test"   , "us-east-1")      , ZoneId.from("test"   , "cd-us-central-1")  ),
-    stagingTest            ("staging-test"                , ZoneId.from("staging", "us-east-3")      , ZoneId.from("staging", "cd-us-central-1")  ),
-    productionUsEast3      ("production-us-east-3"        , ZoneId.from("prod"   , "us-east-3")      , null                                                          ),
-    productionUsWest1      ("production-us-west-1"        , ZoneId.from("prod"   , "us-west-1")      , null                                                          ),
-    productionUsCentral1   ("production-us-central-1"     , ZoneId.from("prod"   , "us-central-1")   , null                                                          ),
-    productionApNortheast1 ("production-ap-northeast-1"   , ZoneId.from("prod"   , "ap-northeast-1") , null                                                          ),
-    productionApNortheast2 ("production-ap-northeast-2"   , ZoneId.from("prod"   , "ap-northeast-2") , null                                                          ),
-    productionApSoutheast1 ("production-ap-southeast-1"   , ZoneId.from("prod"   , "ap-southeast-1") , null                                                          ),
-    productionEuWest1      ("production-eu-west-1"        , ZoneId.from("prod"   , "eu-west-1")      , null                                                          ),
-    productionAwsUsEast1a  ("production-aws-us-east-1a"   , ZoneId.from("prod"   , "aws-us-east-1a") , null                                                          ),
-    productionAwsUsWest2a  ("production-aws-us-west-2a"   , ZoneId.from("prod"   , "aws-us-west-2a") , null                                                          ),
-    productionAwsUsEast1b  ("production-aws-us-east-1b"   , ZoneId.from("prod"   , "aws-us-east-1b") , null                                                          ),
-    productionCdAwsUsEast1a("production-cd-aws-us-east-1a", null                                                       , ZoneId.from("prod"    , "cd-aws-us-east-1a")),
-    productionCdUsCentral1 ("production-cd-us-central-1"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-1")  ),
+    component              ("component",
+                            Map.of()),
+
+    systemTest             ("system-test",
+                            Map.of(main, ZoneId.from("test"   , "us-east-1"),
+                                   cd  , ZoneId.from("test"   , "cd-us-central-1"))),
+
+    stagingTest            ("staging-test",
+                            Map.of(main, ZoneId.from("staging", "us-east-3"),
+                                   cd  , ZoneId.from("staging", "cd-us-central-1"))),
+
+    productionUsEast3      ("production-us-east-3",
+                            Map.of(main, ZoneId.from("prod"   , "us-east-3"))),
+
+    productionUsWest1      ("production-us-west-1",
+                            Map.of(main, ZoneId.from("prod"   , "us-west-1"))),
+
+    productionUsCentral1   ("production-us-central-1",
+                            Map.of(main, ZoneId.from("prod"   , "us-central-1"))),
+
+    productionApNortheast1 ("production-ap-northeast-1",
+                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-1"))),
+
+    productionApNortheast2 ("production-ap-northeast-2",
+                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-2"))),
+
+    productionApSoutheast1 ("production-ap-southeast-1",
+                            Map.of(main, ZoneId.from("prod"   , "ap-southeast-1"))),
+
+    productionEuWest1      ("production-eu-west-1",
+                            Map.of(main, ZoneId.from("prod"   , "eu-west-1"))),
+
+    productionAwsUsEast1a  ("production-aws-us-east-1a",
+                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a"))),
+
+    productionAwsUsWest2a  ("production-aws-us-west-2a",
+                            Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a"))),
+
+    productionAwsUsEast1b  ("production-aws-us-east-1b",
+                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b"))),
+
+    devUsEast1             ("dev-us-east-1",
+                            Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
+
+    devAwsUsEast2a         ("dev-aws-us-east-2a",
+                            Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
+
+    productionCdAwsUsEast1a("production-cd-aws-us-east-1a",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a"))),
+
+    productionCdUsCentral1 ("production-cd-us-central-1",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-1"))),
+
     // TODO: Cannot remove production-cd-us-central-2 until we know there are no serialized data in controller referencing it
-    productionCdUsCentral2 ("production-cd-us-central-2"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-2")  ),
-    productionCdUsWest1    ("production-cd-us-west-1"     , null                                                       , ZoneId.from("prod"    , "cd-us-west-1")     );
+    productionCdUsCentral2 ("production-cd-us-central-2",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2"))),
+
+    productionCdUsWest1    ("production-cd-us-west-1",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1"))),
+
+    devCdUsCentral1        ("dev-cd-us-central-1",
+                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
+
+    devAwsUsEast1b         ("dev-aws-us-east-1b",
+                            Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b"))),
+
+    perfUsEast3            ("perf-us-east-3",
+                            Map.of(main, ZoneId.from("perf"   , "us-east-3")));
 
     private final String jobName;
-    private final ImmutableMap<SystemName, ZoneId> zones;
+    private final Map<SystemName, ZoneId> zones;
 
-    JobType(String jobName, ZoneId mainZone, ZoneId cdZone) {
+    JobType(String jobName, Map<SystemName, ZoneId> zones) {
+        if (zones.values().stream().map(ZoneId::environment).distinct().count() > 1)
+            throw new IllegalArgumentException("All zones of a job must be in the same environment");
+
         this.jobName = jobName;
-        ImmutableMap.Builder<SystemName, ZoneId> builder = ImmutableMap.builder();
-        if (mainZone != null) builder.put(SystemName.main, mainZone);
-        if (cdZone != null) builder.put(SystemName.cd, cdZone);
-        this.zones = builder.build();
+        this.zones = zones;
     }
 
     public String jobName() { return jobName; }
@@ -61,12 +116,8 @@ public enum JobType {
 
     /** Returns the environment of this job type, or null if it does not have an environment */
     public Environment environment() {
-        switch (this) {
-            case component: return null;
-            case systemTest: return Environment.test;
-            case stagingTest: return Environment.staging;
-            default: return Environment.prod;
-        }
+        if (this == component) return null;
+        return zones.values().iterator().next().environment();
     }
 
     public static Optional<JobType> fromOptionalJobName(String jobName) {
@@ -82,10 +133,9 @@ public enum JobType {
 
     /** Returns the job type for the given zone */
     public static Optional<JobType> from(SystemName system, ZoneId zone) {
-        for (JobType job : values())
-            if (zone.equals(job.zones.get(system)))
-                return Optional.of(job);
-        return Optional.empty();
+        return Stream.of(values())
+                     .filter(job -> zone.equals(job.zones.get(system)))
+                     .findAny();
     }
 
     /** Returns the job job type for the given environment and region or null if none */

@@ -1,25 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/metrics/metrics.h>
 #include <vespa/metrics/loadmetric.hpp>
-#include <vespa/metrics/summetric.hpp>
 #include <vespa/metrics/metricmanager.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/summetric.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".metrics.test.stress");
 
 namespace metrics {
-
-struct StressTest : public CppUnit::TestFixture {
-    void testStress();
-
-    CPPUNIT_TEST_SUITE(StressTest);
-    CPPUNIT_TEST(testStress);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(StressTest);
 
 namespace {
 struct InnerMetricSet : public MetricSet {
@@ -88,49 +78,49 @@ OuterMetricSet::OuterMetricSet(const LoadTypeSet& lt, MetricSet* owner)
 
 OuterMetricSet::~OuterMetricSet() { }
 
-    struct Hammer : public document::Runnable {
-        using UP = std::unique_ptr<Hammer>;
+struct Hammer : public document::Runnable {
+    using UP = std::unique_ptr<Hammer>;
 
-        OuterMetricSet& _metrics;
-        const LoadTypeSet& _loadTypes;
-        LoadType _nonexistingLoadType;
+    OuterMetricSet& _metrics;
+    const LoadTypeSet& _loadTypes;
+    LoadType _nonexistingLoadType;
 
-        Hammer(OuterMetricSet& metrics, const LoadTypeSet& lt,
-               FastOS_ThreadPool& threadPool)
-            : _metrics(metrics), _loadTypes(lt),
-              _nonexistingLoadType(123, "nonexisting")
-        {
-            start(threadPool);
-        }
-        ~Hammer() {
-            stop();
-            join();
-            //std::cerr << "Loadgiver thread joined\n";
-        }
+    Hammer(OuterMetricSet& metrics, const LoadTypeSet& lt,
+           FastOS_ThreadPool& threadPool)
+        : _metrics(metrics), _loadTypes(lt),
+          _nonexistingLoadType(123, "nonexisting")
+    {
+        start(threadPool);
+    }
+    ~Hammer() {
+        stop();
+        join();
+        //std::cerr << "Loadgiver thread joined\n";
+    }
 
-        void run() override {
-            uint64_t i = 0;
-            while (running()) {
-                ++i;
-                setMetrics(i, _metrics._inner1);
-                setMetrics(i + 3, _metrics._inner2);
-                const LoadType& loadType(_loadTypes[i % _loadTypes.size()]);
-                setMetrics(i + 5, _metrics._load[loadType]);
-            }
+    void run() override {
+        uint64_t i = 0;
+        while (running()) {
+            ++i;
+            setMetrics(i, _metrics._inner1);
+            setMetrics(i + 3, _metrics._inner2);
+            const LoadType& loadType(_loadTypes[i % _loadTypes.size()]);
+            setMetrics(i + 5, _metrics._load[loadType]);
         }
+    }
 
-        void setMetrics(uint64_t val, InnerMetricSet& set) {
-            set._count.inc(val);
-            set._value1.addValue(val);
-            set._value2.addValue(val + 10);
-            set._load[_loadTypes[val % _loadTypes.size()]].addValue(val);
-        }
-    };
+    void setMetrics(uint64_t val, InnerMetricSet& set) {
+        set._count.inc(val);
+        set._value1.addValue(val);
+        set._value2.addValue(val + 10);
+        set._load[_loadTypes[val % _loadTypes.size()]].addValue(val);
+    }
+};
+
 }
 
 
-void
-StressTest::testStress()
+TEST(StressTest, test_stress)
 {
     LoadTypeSet loadTypes;
     loadTypes.push_back(LoadType(0, "default"));
@@ -158,4 +148,4 @@ StressTest::testStress()
     // std::cerr << ost.str() << "\n";
 }
 
-} // metrics
+}

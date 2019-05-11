@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -18,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,12 +33,15 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -45,6 +49,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinishe
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author jonmv
@@ -271,6 +276,42 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId + 3, 12345, info, "Success!"),
                              new LogEntry(lastId + 4, tester.clock().millis(), debug, "Tests completed successfully."));
         assertEquals(succeeded, tester.jobs().run(id).get().steps().get(Step.endTests));
+    }
+
+    @Test
+    public void deployToDev() {
+        ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
+        tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.runner().run();
+        RunId id = tester.jobs().last(appId, JobType.devUsEast1).get().id();
+        assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
+
+        Version version = new Version("7.8.9");
+        Future<?> concurrentDeployment = Executors.newSingleThreadExecutor().submit(() -> {
+            tester.jobs().deploy(appId, JobType.devUsEast1, Optional.of(version), applicationPackage);
+        });
+        while ( ! concurrentDeployment.isDone())
+            tester.runner().run();
+        assertEquals(id.number() + 1, tester.jobs().last(appId, JobType.devUsEast1).get().id().number());
+
+        ApplicationPackage otherPackage = new ApplicationPackageBuilder().region("us-central-1").build();
+        tester.jobs().deploy(appId, JobType.perfUsEast3, Optional.empty(), otherPackage);
+
+        tester.runner().run(); // Job run order determined by JobType enum order per application.
+        tester.configServer().convergeServices(appId, zone);
+        assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
+        assertEquals(otherPackage.hash(), tester.configServer().application(appId).get().applicationPackage().hash());
+        
+        tester.configServer().setVersion(appId, zone, version);
+        tester.runner().run();
+        assertEquals(1, tester.jobs().active().size());
+        assertEquals(version, tester.tester().application(appId).deployments().get(zone).version());
+
+        try {
+            tester.jobs().deploy(appId, JobType.productionApNortheast1, Optional.empty(), applicationPackage);
+            fail("Deployments outside dev should not be allowed.");
+        }
+        catch (IllegalArgumentException expected) { }
     }
 
     @Test

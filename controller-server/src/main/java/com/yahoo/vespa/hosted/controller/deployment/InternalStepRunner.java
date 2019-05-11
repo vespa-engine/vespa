@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
@@ -33,7 +34,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -146,24 +146,31 @@ public class InternalStepRunner implements StepRunner {
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
                    " and application version " +
                    versions.sourceApplication().orElse(versions.targetApplication()).id() + " ...");
-        return deployReal(id, true, logger);
+        return deployReal(id, true, versions, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
                          " and application version " + versions.targetApplication().id() + " ...");
-        return deployReal(id, false, logger);
+        return deployReal(id, false, versions, logger);
     }
 
-    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
+    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, Versions versions, DualLogger logger) {
+        Optional<ApplicationPackage> applicationPackage = id.type().environment().isManuallyDeployed()
+                ? Optional.of(new ApplicationPackage(controller.applications().applicationStore()
+                                                               .getDev(id.application(), id.type().zone(controller.system()))))
+                : Optional.empty();
+        Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
+                ? Optional.of(versions.targetPlatform())
+                : Optional.empty();
         return deploy(id.application(),
                       id.type(),
                       () -> controller.applications().deploy(id.application(),
                                                              id.type().zone(controller.system()),
-                                                             Optional.empty(),
+                                                             applicationPackage,
                                                              new DeployOptions(false,
-                                                                               Optional.empty(),
+                                                                               vespaVersion,
                                                                                false,
                                                                                setTheStage)),
                       logger);
@@ -444,20 +451,33 @@ public class InternalStepRunner implements StepRunner {
             }
             catch (Exception e) {
                 logger.log(INFO, "Failure getting vespa logs for " + id, e);
+                return Optional.of(error);
             }
-        return Optional.of(running); // Don't let failure here stop cleanup.
+        return Optional.of(running);
     }
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
-        logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-        return Optional.of(running);
+        try {
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            return Optional.of(running);
+        }
+        catch (RuntimeException e) {
+            logger.log(WARNING, "Failed deleting application " + id.application(), e);
+            return Optional.of(error);
+        }
     }
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
-        logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.jobController().deactivateTester(id.tester(), id.type());
-        return Optional.of(running);
+        try {
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.jobController().deactivateTester(id.tester(), id.type());
+            return Optional.of(running);
+        }
+        catch (RuntimeException e) {
+            logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
+            return Optional.of(error);
+        }
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
@@ -475,6 +495,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (IllegalStateException e) {
             logger.log(INFO, "Job '" + id.type() + "'no longer supposed to run?:", e);
+            return Optional.of(error);
         }
         return Optional.of(running);
     }

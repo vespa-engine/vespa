@@ -122,6 +122,9 @@ class RunSerializer {
     }
 
     private ApplicationVersion applicationVersionFrom(Inspector versionObject) {
+        if ( ! versionObject.field(buildField).valid())
+            return ApplicationVersion.unknown;
+
         SourceRevision revision = new SourceRevision(versionObject.field(repositoryField).asString(),
                                                      versionObject.field(branchField).asString(),
                                                      versionObject.field(commitField).asString());
@@ -175,13 +178,12 @@ class RunSerializer {
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
-        SourceRevision revision = applicationVersion.source()
-                                                    .orElseThrow(() -> new IllegalArgumentException("Source revision must be present in application version."));
-        versionsObject.setString(repositoryField, revision.repository());
-        versionsObject.setString(branchField, revision.branch());
-        versionsObject.setString(commitField, revision.commit());
-        versionsObject.setLong(buildField, applicationVersion.buildNumber()
-                                                             .orElseThrow(() -> new IllegalArgumentException("Build number must be present in application version.")));
+        if ( ! applicationVersion.isUnknown()) {
+            versionsObject.setString(repositoryField, applicationVersion.source().get().repository());
+            versionsObject.setString(branchField, applicationVersion.source().get().branch());
+            versionsObject.setString(commitField, applicationVersion.source().get().commit());
+            versionsObject.setLong(buildField, applicationVersion.buildNumber().getAsLong());
+        }
         applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
         applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
         applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));

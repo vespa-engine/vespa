@@ -4,6 +4,8 @@
 #include <vespa/vespalib/stllike/string.h>
 
 class FRT_Supervisor;
+class FNET_Transport;
+class FastOS_ThreadPool;
 
 namespace config {
 
@@ -23,12 +25,14 @@ struct FileAcquirer {
 class RpcFileAcquirer : public FileAcquirer
 {
 private:
+    std::unique_ptr<FastOS_ThreadPool> _threadPool;
+    std::unique_ptr<FNET_Transport> _transport;
     std::unique_ptr<FRT_Supervisor> _orb;
     vespalib::string _spec;
 public:
     RpcFileAcquirer(const vespalib::string &spec);
     vespalib::string wait_for(const vespalib::string &file_ref, double timeout_s) override;
-    ~RpcFileAcquirer();
+    ~RpcFileAcquirer() override;
 };
 
 } // namespace config

@@ -3,8 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.defaults.Defaults;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -37,12 +35,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag USE_CONFIG_SERVER_CACHE = defineFeatureFlag(
-            "use-config-server-cache", true,
-            "Whether config server will use cache to answer config requests.",
-            "Takes effect immediately when changed.",
-            HOSTNAME, APPLICATION_ID);
-
     public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
             "config-server-bootstrap-in-separate-thread", false,
             "Whether to run config server/controller bootstrap in a separate thread.",
@@ -72,7 +64,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
-            "disabled-host-admin-tasks", Collections.emptyList(),
+            "disabled-host-admin-tasks", List.of(),
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
@@ -125,6 +117,11 @@ public class Flags {
             "Takes effect on next deployment",
             APPLICATION_ID);
 
+    public static final UnboundListFlag<String> DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
+            "dynamic-provisioning-flavors", List.of(),
+            "List of additional Vespa flavor names that can be used for dynamic provisioning",
+            "Takes effect on next provisioning");
+
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
             "enable-disk-write-test", false,
             "Regularly issue a small write to disk and fail the host if it is not successful",
@@ -160,12 +157,6 @@ public class Flags {
             "Redirect legacy DNS names to the main DNS name",
             "Takes effect on deployment through controller",
             APPLICATION_ID);
-
-    public static final UnboundStringFlag SILLY_ROUTING = defineStringFlag(
-            "silly-routing", "silly-default",
-            "Enables \"silly routing\" for the named application (in tenant:application:instance form)",
-            "Takes effect on next update to routing config",
-            HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
@@ -249,7 +240,7 @@ public class Flags {
     }
 
     public static List<FlagDefinition> getAllFlags() {
-        return new ArrayList<>(flags.values());
+        return List.copyOf(flags.values());
     }
 
     public static Optional<FlagDefinition> getFlag(FlagId flagId) {

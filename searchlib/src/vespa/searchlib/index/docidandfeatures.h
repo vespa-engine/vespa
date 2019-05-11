@@ -95,6 +95,8 @@ public:
 
 protected:
     uint32_t _doc_id; // Current document id
+    uint32_t _field_length;
+    uint32_t _num_occs;
     std::vector<WordDocElementFeatures> _elements;
     std::vector<WordDocElementWordPosFeatures> _word_positions;
 
@@ -140,7 +142,11 @@ public:
     }
 
     uint32_t doc_id() const { return _doc_id; }
+    uint32_t field_length() const { return _field_length; }
+    uint32_t num_occs() const { return _num_occs; }
     void set_doc_id(uint32_t val) { _doc_id = val; }
+    void set_field_length(uint32_t val) { _field_length = val; }
+    void set_num_occs(uint32_t val) { _num_occs = val; }
 
     const std::vector<WordDocElementFeatures>& elements() const { return _elements; }
     std::vector<WordDocElementFeatures>& elements() { return _elements; }

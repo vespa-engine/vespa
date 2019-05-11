@@ -133,7 +133,7 @@ public class AclProvisioningTest {
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
         List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 1, 1),
-                                                             dockerHostNodeUnderTest.hostname());
+                                                                    dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);
 

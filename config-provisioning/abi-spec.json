@@ -491,6 +491,20 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.InfraDeployer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.util.Optional getDeployment(com.yahoo.config.provision.ApplicationId)",
+      "public abstract java.util.List getSupportedInfraApplications()"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.InstanceName": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -522,7 +536,9 @@
     "methods": [
       "public void <init>(int, java.lang.String, java.lang.String, java.lang.String)",
       "public java.lang.String key()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
     ],
     "fields": [
       "public final int port",
@@ -540,7 +556,9 @@
     "methods": [
       "public void <init>(java.util.Collection)",
       "public java.util.Collection allocations()",
-      "public int size()"
+      "public int size()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
     ],
     "fields": []
   },

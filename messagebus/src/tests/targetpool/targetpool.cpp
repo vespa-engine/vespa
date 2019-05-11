@@ -38,8 +38,8 @@ Test::Main()
     TestServer srv3(Identity("srv3"), RoutingSpec(), slobrok);
     RPCServiceAddress adr3("", srv3.mb.getConnectionSpec());
 
-    FRT_Supervisor orb(1024u, 1);
-    ASSERT_TRUE(orb.Start());
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & orb = server.supervisor();
     std::unique_ptr<PoolTimer> ptr(new PoolTimer());
     PoolTimer &timer = *ptr;
     RPCTargetPool pool(std::move(ptr), 0.666);
@@ -91,8 +91,6 @@ Test::Main()
     timer.millis += 999;
     pool.flushTargets(false);
     EXPECT_EQUAL(0u, pool.size());
-
-    orb.ShutDown(true);
 
     TEST_DONE();
 }

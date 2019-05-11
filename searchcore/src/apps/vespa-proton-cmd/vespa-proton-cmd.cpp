@@ -20,19 +20,19 @@ private:
     App(const App &);
     App& operator=(const App &);
 
-    FRT_Supervisor *_supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT> _frt;
     FRT_Target     *_target;
     FRT_RPCRequest *_req;
 
 public:
-    App() : _supervisor(NULL),
-            _target(NULL),
-            _req(NULL) {}
+    App() : _frt(),
+            _target(nullptr),
+            _req(nullptr) {}
     virtual ~App()
     {
-        assert(_supervisor == NULL);
-        assert(_target == NULL);
-        assert(_req == NULL);
+        assert(!_frt);
+        assert(_target == nullptr);
+        assert(_req == nullptr);
     }
 
     int usage()
@@ -49,14 +49,13 @@ public:
 
     void initRPC()
     {
-        _supervisor = new FRT_Supervisor();
-        _req = _supervisor->AllocRPCRequest();
-        _supervisor->Start();
+        _frt = std::make_unique<fnet::frt::StandaloneFRT>();
+        _req = _frt->supervisor().AllocRPCRequest();
     }
 
     void invokeRPC(bool print, double timeout=5.0)
     {
-        if (_req == NULL)
+        if (_req == nullptr)
             return;
 
         _target->InvokeSync(_req, timeout);
@@ -66,18 +65,16 @@ public:
 
     void finiRPC()
     {
-        if (_req != NULL) {
+        if (_req != nullptr) {
             _req->SubRef();
-            _req = NULL;
+            _req = nullptr;
         }
-        if (_target != NULL) {
+        if (_target != nullptr) {
             _target->SubRef();
-            _target = NULL;
+            _target = nullptr;
         }
-        if (_supervisor != NULL) {
-            _supervisor->ShutDown(true);
-            delete _supervisor;
-            _supervisor = NULL;
+        if (_frt) {
+            _frt.reset();
         }
     }
 
@@ -115,7 +112,7 @@ public:
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
+            slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
                     FastOS_Thread::Sleep(50*timeout);
@@ -167,7 +164,7 @@ public:
 
         try {
             slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
-            slobrok::api::MirrorAPI sbmirror(*_supervisor, sbcfg);
+            slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
                     FastOS_Thread::Sleep(50*timeout);
@@ -249,9 +246,9 @@ public:
         }
 
         if (port != 0) {
-            _target = _supervisor->GetTarget(port);
+            _target = _frt->supervisor().GetTarget(port);
         } else {
-            _target = _supervisor->GetTarget(spec.c_str());
+            _target = _frt->supervisor().GetTarget(spec.c_str());
         }
 
         bool invoked = false;
@@ -350,7 +347,7 @@ void
 App::monitorLoop()
 {
     for (;;) {
-        FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+        FRT_RPCRequest *req = _frt->supervisor().AllocRPCRequest();
         req->SetMethodName("pandora.rtc.getIncrementalState");
         FRT_Values &params = *req->GetParams();
         params.AddInt32(2000);
@@ -365,7 +362,7 @@ App::monitorLoop()
         FRT_Value &names = rvals.GetValue(0);
         FRT_Value &values = rvals.GetValue(1);
         struct timeval tnow;
-        gettimeofday(&tnow, NULL);
+        gettimeofday(&tnow, nullptr);
 
         for (unsigned int i = 0;
              i < names._string_array._len &&

@@ -37,6 +37,7 @@ FieldWriter::open(const vespalib::string &prefix,
                   uint32_t minSkipDocs,
                   uint32_t minChunkDocs,
                   bool dynamicKPosOccFormat,
+                  bool encode_cheap_features,
                   const Schema &schema,
                   const uint32_t indexId,
                   const TuneFileSeqWrite &tuneFileWrite,
@@ -62,18 +63,19 @@ FieldWriter::open(const vespalib::string &prefix,
         countParams.set("minChunkDocs", minChunkDocs);
         params.set("minChunkDocs", minChunkDocs);
     }
-
+    if (encode_cheap_features) {
+        params.set("cheap_features", encode_cheap_features);
+    }
+    
     _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
-    _posoccfile.reset(diskindex::makePosOccWrite(name,
-                                                 _dictFile.get(),
-                                                 dynamicKPosOccFormat,
-                                                 params,
-                                                 featureParams,
-                                                 schema,
-                                                 indexId,
-                                                 tuneFileWrite));
+    _posoccfile = diskindex::makePosOccWrite(_dictFile.get(),
+                                             dynamicKPosOccFormat,
+                                             params,
+                                             featureParams,
+                                             schema,
+                                             indexId);
     vespalib::string cname = _prefix + "dictionary";
 
     // Open output dictionary file

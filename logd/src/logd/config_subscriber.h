@@ -16,9 +16,7 @@ class Metrics;
 class ConfigSubscriber {
 private:
     std::string _logserver_host;
-    int _logserver_port;
     int _logserver_rpc_port;
-    bool _logserver_use_rpc;
     int _state_port;
     ForwardMap _forward_filter;
     int _rotate_size;
@@ -30,8 +28,7 @@ private:
     config::ConfigHandle<cloud::config::log::LogdConfig>::UP _handle;
     bool _has_available;
     bool _need_new_forwarder;
-    FRT_Supervisor _supervisor;
-
+    fnet::frt::StandaloneFRT _server;
 public:
     bool checkAvailable();
     void latch();

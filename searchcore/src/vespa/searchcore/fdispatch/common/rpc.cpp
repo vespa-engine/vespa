@@ -10,7 +10,7 @@ extern char FastS_VersionTag[];
 FastS_RPC::FastS_RPC(FastS_AppContext *appCtx) :
    _appCtx(appCtx),
    _transport(),
-   _supervisor(&_transport, _appCtx->GetThreadPool()),
+   _supervisor(&_transport),
    _sbregister(_supervisor, slobrok::ConfiguratorFactory("admin/slobrok.0"))
 {
 }

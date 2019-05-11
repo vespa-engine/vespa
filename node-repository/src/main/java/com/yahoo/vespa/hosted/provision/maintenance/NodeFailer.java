@@ -209,7 +209,7 @@ public class NodeFailer extends Maintainer {
                     nodesByFailureReason.put(node, "Node has hardware failure: " + node.status().hardwareFailureDescription().get());
                 } else {
                     Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                    if (hostNode.type() == NodeType.host) {
+                    if (hostNode.type().isDockerHost()) {
                         List<String> failureReports = reasonsToFailParentHost(hostNode);
                         if (failureReports.size() > 0) {
                             if (hostNode.equals(node)) {
@@ -291,12 +291,20 @@ public class NodeFailer extends Maintainer {
     /**
      * We can attempt to fail any number of *tenant* and *host* nodes because the operation will not be effected
      * unless the node is replaced.
-     * However, nodes of other types are not replaced (because all of the type are used by a single application),
-     * so we only allow one to be in failed at any point in time to protect against runaway failing.
+     * We can also attempt to fail a single proxy(host) as there should be enough redudancy to handle that.
+     * But we refuse to fail out config(host)/controller(host)
      */
     private boolean failAllowedFor(NodeType nodeType) {
-        if (nodeType == NodeType.tenant || nodeType == NodeType.host) return true;
-        return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
+        switch (nodeType) {
+            case tenant:
+            case host:
+                return true;
+            case proxy:
+            case proxyhost:
+                return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
+            default:
+                return false;
+        }
     }
 
     /**

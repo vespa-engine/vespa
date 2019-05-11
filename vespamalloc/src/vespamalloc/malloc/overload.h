@@ -99,7 +99,7 @@ void* memalign(size_t align, size_t sz)
     return ptr;
 }
 
-int posix_memalign(void** ptr, size_t align, size_t sz) __THROW __attribute__((visibility ("default")));
+int posix_memalign(void** ptr, size_t align, size_t sz) __THROW __nonnull((1)) __attribute__((visibility ("default")));
 
 int posix_memalign(void** ptr, size_t align, size_t sz) __THROW
 {
@@ -131,14 +131,14 @@ void free(void * ptr) {
 }
 
 #define ALIAS(x) __attribute__ ((weak, alias (x), visibility ("default")))
-void cfree(void *)                                   ALIAS("free");
-void* __libc_malloc(size_t sz)                       ALIAS("malloc");
-void  __libc_free(void* ptr)                         ALIAS("free");
-void* __libc_realloc(void* ptr, size_t sz)           ALIAS("realloc");
-void* __libc_calloc(size_t n, size_t sz)             ALIAS("calloc");
-void  __libc_cfree(void* ptr)                        ALIAS("cfree");
+void* __libc_malloc(size_t sz)                       __THROW __attribute__((leaf, malloc, alloc_size(1))) ALIAS("malloc");
+void* __libc_realloc(void* ptr, size_t sz)           __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("realloc");
+void* __libc_calloc(size_t n, size_t sz)             __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("calloc");
+void cfree(void *)                                   __THROW __attribute__((leaf)) ALIAS("free");
+void  __libc_free(void* ptr)                         __THROW __attribute__((leaf)) ALIAS("free");
+void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
 void* __libc_memalign(size_t align, size_t s)        ALIAS("memalign");
-int   __posix_memalign(void** r, size_t a, size_t s) ALIAS("posix_memalign");
+int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign");
 #undef ALIAS
 
 #if 0

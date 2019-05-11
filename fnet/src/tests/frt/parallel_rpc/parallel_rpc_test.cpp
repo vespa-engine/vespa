@@ -15,7 +15,7 @@ struct Rpc : FRT_Invokable {
     FNET_Transport    transport;
     FRT_Supervisor    orb;
     Rpc(CryptoEngine::SP crypto, size_t num_threads)
-        : thread_pool(128 * 1024), transport(crypto, num_threads), orb(&transport, &thread_pool) {}
+        : thread_pool(128 * 1024), transport(crypto, num_threads), orb(&transport) {}
     void start() {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }

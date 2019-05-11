@@ -51,47 +51,20 @@ setupDefaultPosOccParameters(PostingListParams *countParams,
 }
 
 
-PostingListFileSeqWrite *
-makePosOccWrite(const vespalib::string &name,
-                PostingListCountFileSeqWrite *const posOccCountWrite,
+std::unique_ptr<PostingListFileSeqWrite>
+makePosOccWrite(PostingListCountFileSeqWrite *const posOccCountWrite,
                 bool dynamicK,
                 const PostingListParams &params,
                 const PostingListParams &featureParams,
                 const Schema &schema,
-                uint32_t indexId,
-                const TuneFileSeqWrite &tuneFileWrite)
+                uint32_t indexId)
 {
-    PostingListFileSeqWrite *posOccWrite = nullptr;
+    std::unique_ptr<PostingListFileSeqWrite> posOccWrite;
 
-    FileHeader fileHeader;
-    if (fileHeader.taste(name, tuneFileWrite)) {
-        if (fileHeader.getVersion() == 1 &&
-            fileHeader.getBigEndian() &&
-            fileHeader.getFormats().size() == 2 &&
-            fileHeader.getFormats()[0] ==
-            Zc4PosOccSeqRead::getIdentifier(true) &&
-            fileHeader.getFormats()[1] ==
-            ZcPosOccSeqRead::getSubIdentifier()) {
-            dynamicK = true;
-        } else if (fileHeader.getVersion() == 1 &&
-                   fileHeader.getBigEndian() &&
-                   fileHeader.getFormats().size() == 2 &&
-                   fileHeader.getFormats()[0] ==
-                   Zc4PosOccSeqRead::getIdentifier(false) &&
-                   fileHeader.getFormats()[1] ==
-                   Zc4PosOccSeqRead::getSubIdentifier()) {
-            dynamicK = false;
-        } else {
-            LOG(warning,
-                "Could not detect format for posocc file write %s",
-                name.c_str());
-        }
-    }
     if (dynamicK) {
-        posOccWrite =  new ZcPosOccSeqWrite(schema, indexId, posOccCountWrite);
+        posOccWrite = std::make_unique<ZcPosOccSeqWrite>(schema, indexId, posOccCountWrite);
     } else {
-        posOccWrite =
-            new Zc4PosOccSeqWrite(schema, indexId, posOccCountWrite);
+        posOccWrite = std::make_unique<Zc4PosOccSeqWrite>(schema, indexId, posOccCountWrite);
     }
 
     posOccWrite->setFeatureParams(featureParams);
@@ -100,14 +73,13 @@ makePosOccWrite(const vespalib::string &name,
 }
 
 
-PostingListFileSeqRead *
+std::unique_ptr<PostingListFileSeqRead>
 makePosOccRead(const vespalib::string &name,
                PostingListCountFileSeqRead *const posOccCountRead,
-               bool dynamicK,
                const PostingListParams &featureParams,
                const TuneFileSeqRead &tuneFileRead)
 {
-    PostingListFileSeqRead *posOccRead = nullptr;
+    std::unique_ptr<PostingListFileSeqRead> posOccRead;
 
     FileHeader fileHeader;
     if (fileHeader.taste(name, tuneFileRead)) {
@@ -118,7 +90,7 @@ makePosOccRead(const vespalib::string &name,
             Zc4PosOccSeqRead::getIdentifier(true) &&
             fileHeader.getFormats()[1] ==
             ZcPosOccSeqRead::getSubIdentifier()) {
-            dynamicK = true;
+            posOccRead = std::make_unique<ZcPosOccSeqRead>(posOccCountRead);
         } else if (fileHeader.getVersion() == 1 &&
                    fileHeader.getBigEndian() &&
                    fileHeader.getFormats().size() == 2 &&
@@ -126,20 +98,16 @@ makePosOccRead(const vespalib::string &name,
                    Zc4PosOccSeqRead::getIdentifier(false) &&
                    fileHeader.getFormats()[1] ==
                    Zc4PosOccSeqRead::getSubIdentifier()) {
-            dynamicK = false;
+            posOccRead = std::make_unique<Zc4PosOccSeqRead>(posOccCountRead);
         } else {
             LOG(warning,
                 "Could not detect format for posocc file read %s",
                 name.c_str());
         }
     }
-    if (dynamicK) {
-        posOccRead =  new ZcPosOccSeqRead(posOccCountRead);
-    } else {
-        posOccRead =  new Zc4PosOccSeqRead(posOccCountRead);
+    if (posOccRead) {
+        posOccRead->setFeatureParams(featureParams);
     }
-
-    posOccRead->setFeatureParams(featureParams);
     return posOccRead;
 }
 

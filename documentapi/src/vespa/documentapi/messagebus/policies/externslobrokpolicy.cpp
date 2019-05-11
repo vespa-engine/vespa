@@ -5,6 +5,8 @@
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 
 using slobrok::api::IMirrorAPI;
 using slobrok::api::MirrorAPI;
@@ -14,7 +16,9 @@ namespace documentapi {
 ExternSlobrokPolicy::ExternSlobrokPolicy(const std::map<string, string>& param)
     : AsyncInitializationPolicy(param),
       _firstTry(true),
-      _orb(std::make_unique<FRT_Supervisor>()),
+      _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+      _transport(std::make_unique<FNET_Transport>()),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _slobrokConfigId("admin/slobrok.0")
 {
     if (param.find("config") != param.end()) {
@@ -42,10 +46,10 @@ ExternSlobrokPolicy::ExternSlobrokPolicy(const std::map<string, string>& param)
 
 ExternSlobrokPolicy::~ExternSlobrokPolicy()
 {
-    bool started = _mirror.get() != NULL;
+    bool started = (bool)_mirror;
     _mirror.reset();
     if (started) {
-        _orb->ShutDown(true);
+        _transport->ShutDown(true);
     }
 }
 
@@ -56,13 +60,12 @@ string ExternSlobrokPolicy::init() {
     } else if (_configSources.size() != 0) {
         slobrok::ConfiguratorFactory config(
             config::ConfigUri(_slobrokConfigId,
-                              config::IConfigContext::SP(
-                                  new config::ConfigContext(config::ServerSpec(_configSources)))));
+                             std::make_unique<config::ConfigContext>(config::ServerSpec(_configSources))));
         _mirror.reset(new MirrorAPI(*_orb, config));
     }
 
     if (_mirror.get()) {
-        _orb->Start();
+        _transport->Start(_threadPool.get());
     }
 
     return "";

@@ -117,8 +117,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 throw e;
             }
             catch (RuntimeException e) {
-                boolean isOldestMajor = i == majorVersions.size() - 1;
-                if (isOldestMajor) {
+                if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion)) {
+                    log.log(LogLevel.INFO, applicationId + ": Skipping major version " + majorVersion, e);
+                } else  {
                     if (e instanceof NullPointerException || e instanceof NoSuchElementException | e instanceof UncheckedTimeoutException) {
                         log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
                         throw new InternalServerException(applicationId + ": Error loading model", e);
@@ -126,13 +127,19 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                         log.log(LogLevel.WARNING, "Input error when building model ", e);
                         throw new IllegalArgumentException(applicationId + ": Error loading model", e);
                     }
-                } else {
-                    log.log(LogLevel.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
                 }
             }
         }
         log.log(LogLevel.DEBUG, "Done building models for " + applicationId);
         return allApplicationModels;
+    }
+
+    private boolean shouldSkipCreatingMajorVersionOnError(List<Integer> majorVersions, Integer majorVersion) {
+        if (majorVersion.equals(Collections.min(majorVersions))) return false;
+        // Note: This needs to be updated when we no longer want to support successfully deploying
+        // applications that are not working on version 8, but are working on a lower major version (unless
+        // apps have explicitly defined major version to deploy to in application package)
+        return majorVersion >= 8;
     }
 
     // versions is the set of versions for one particular major version

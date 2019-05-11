@@ -139,7 +139,7 @@ main(int argc, char **argv)
 
     char buf[PATH_MAX];
     if (!dir && !file) {
-        snprintf(buf, sizeof buf, "%s/var/db/vespa/logcontrol", root);
+        snprintf(buf, sizeof(buf), "%s/var/db/vespa/logcontrol", root);
         dir = buf;
     }
 
@@ -201,16 +201,11 @@ main(int argc, char **argv)
     bool hadFailure = false;
     bool hadSuccess = false;
 
-    for (strlist_t::iterator it = services.begin();
-         it != services.end();
-         ++it)
-    {
-        const char *service = (*it).c_str();
-
-        char serviceFile[PATH_MAX];
+    for (const auto & service : services) {
+        std::string serviceFile(dir);
         if (! doOnlyFile) {
-            snprintf(serviceFile, sizeof serviceFile, "%s/%s.logcontrol", dir, service);
-            file = serviceFile;
+            serviceFile.append("/").append(service).append(".logcontrol");
+            file = serviceFile.c_str();
         }
         // fprintf(stderr, "Log control file %s:\n", file);
 

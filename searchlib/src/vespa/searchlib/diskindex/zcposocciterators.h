@@ -7,6 +7,8 @@
 
 namespace search::diskindex {
 
+struct Zc4PostingParams;
+
 template <bool bigEndian>
 class Zc4RareWordPosOccIterator : public Zc4RareWordPostingIterator<bigEndian>
 {
@@ -17,7 +19,7 @@ private:
     typedef bitcompression::EG2PosOccDecodeContextCooked<bigEndian> DecodeContextReal;
     DecodeContextReal _decodeContextReal;
 public:
-    Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+    Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                               const bitcompression::PosOccFieldsParams *fieldsParams,
                               const fef::TermFieldMatchDataArray &matchData);
 };
@@ -33,7 +35,7 @@ private:
     typedef bitcompression::EG2PosOccDecodeContextCooked<bigEndian> DecodeContext;
     DecodeContext _decodeContextReal;
 public:
-    Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+    Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                       uint32_t minChunkDocs, const index::PostingListCounts &counts,
                       const bitcompression::PosOccFieldsParams *fieldsParams,
                       const fef::TermFieldMatchDataArray &matchData);
@@ -50,7 +52,7 @@ private:
     typedef bitcompression::EGPosOccDecodeContextCooked<bigEndian> DecodeContextReal;
     DecodeContextReal _decodeContextReal;
 public:
-    ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit,
+    ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit, bool decode_cheap_features,
                              const bitcompression::PosOccFieldsParams *fieldsParams,
                              const fef::TermFieldMatchDataArray &matchData);
 };
@@ -66,12 +68,15 @@ private:
     typedef bitcompression::EGPosOccDecodeContextCooked<bigEndian> DecodeContext;
     DecodeContext _decodeContextReal;
 public:
-    ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit,
+    ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit, bool decode_cheap_features,
                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
                      const bitcompression::PosOccFieldsParams *fieldsParams,
                      const fef::TermFieldMatchDataArray &matchData);
 };
 
+
+std::unique_ptr<search::queryeval::SearchIterator>
+create_zc_posocc_iterator(bool bigEndian, const index::PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data);
 
 extern template class Zc4RareWordPosOccIterator<true>;
 extern template class Zc4RareWordPosOccIterator<false>;

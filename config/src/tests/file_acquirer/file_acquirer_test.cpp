@@ -7,8 +7,10 @@
 using namespace config;
 
 struct ServerFixture : FRT_Invokable {
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor &orb;
     vespalib::string spec;
+
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
         rb.DefineMethod("waitFor", "s", "s", FRT_METHOD(ServerFixture::RPC_waitFor), this);
@@ -16,24 +18,24 @@ struct ServerFixture : FRT_Invokable {
         rb.ParamDesc("file_ref", "file reference to wait for and resolve");
         rb.ReturnDesc("file_path", "actual path to the requested file");
     }
-    ServerFixture() : orb() {
+
+    ServerFixture() : server(), orb(server.supervisor()) {
         init_rpc();
         orb.Listen(0);
         spec = vespalib::make_string("tcp/localhost:%d", orb.GetListenPort());
-        orb.Start();
     }
+
     void RPC_waitFor(FRT_RPCRequest *req) {
         FRT_Values &params = *req->GetParams();
-        FRT_Values &ret    = *req->GetReturn();
+        FRT_Values &ret = *req->GetReturn();
         if (strcmp(params[0]._string._str, "my_ref") == 0) {
             ret.AddString("my_path");
         } else {
             req->SetError(FRTE_RPC_METHOD_FAILED, "invalid file reference");
         }
     }
-    ~ServerFixture() {
-        orb.ShutDown(true);
-    }
+
+    ~ServerFixture() = default;
 };
 
 TEST_FF("require that files can be acquired over rpc", ServerFixture(), RpcFileAcquirer(f1.spec)) {

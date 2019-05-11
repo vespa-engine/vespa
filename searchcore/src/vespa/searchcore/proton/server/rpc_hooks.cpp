@@ -8,7 +8,6 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 
-
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.rtchooks");
 
@@ -196,7 +195,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
       _docsumByRPC(std::make_unique<DocsumByRPC>(_proton.getDocsumBySlime())),
       _transport(std::make_unique<FNET_Transport>(2)),
-      _orb(std::make_unique<FRT_Supervisor>(_transport.get(), &_proton.getThreadPool())),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _proto_rpc_adapter(std::make_unique<ProtoRpcAdapter>(
                       _proton.get_search_server(),
                       _proton.get_docsum_server(),
@@ -213,7 +212,7 @@ RPCHooksBase::open(Params & params)
     initRPC();
     _regAPI.registerName((params.identity + "/realtimecontroller").c_str());
     _orb->Listen(params.rtcPort);
-    _orb->Start();
+    _transport->Start(&_proton.getThreadPool());
     LOG(debug, "started monitoring interface");
 }
 
@@ -223,7 +222,7 @@ void
 RPCHooksBase::close()
 {
     LOG(info, "shutting down monitoring interface");
-    _orb->ShutDown(true);
+    _transport->ShutDown(true);
     _executor.shutdown();
     {
         std::lock_guard<std::mutex> guard(_stateLock);

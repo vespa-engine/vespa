@@ -19,7 +19,6 @@ class Forwarder {
 public:
     using UP = std::unique_ptr<Forwarder>;
     virtual ~Forwarder() {}
-    virtual void sendMode() = 0;
     virtual void forwardLine(std::string_view log_line) = 0;
     virtual void flush() = 0;
     virtual int badLines() const = 0;

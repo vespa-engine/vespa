@@ -112,7 +112,6 @@ FieldReader::open(const vespalib::string &prefix,
     FastOS_StatInfo statInfo;
     bool statres;
 
-    bool dynamicKPosOccFormat = false;  // Will autodetect anyway
     statres = FastOS_File::Stat(name.c_str(), &statInfo);
     if (!statres) {
         LOG(error,
@@ -123,11 +122,10 @@ FieldReader::open(const vespalib::string &prefix,
 
     _dictFile = std::make_unique<PageDict4FileSeqRead>();
     PostingListParams featureParams;
-    _oldposoccfile.reset(makePosOccRead(name,
-                                        _dictFile.get(),
-                                        dynamicKPosOccFormat,
-                                        featureParams,
-                                        tuneFileRead));
+    _oldposoccfile = makePosOccRead(name,
+                                    _dictFile.get(),
+                                    featureParams,
+                                    tuneFileRead);
     vespalib::string cname = prefix + "dictionary";
 
     if (!_dictFile->open(cname, tuneFileRead)) {
@@ -138,7 +136,7 @@ FieldReader::open(const vespalib::string &prefix,
     }
 
     // open posocc.dat
-    if (!_oldposoccfile->open(name, tuneFileRead)) {
+    if (!_oldposoccfile || !_oldposoccfile->open(name, tuneFileRead)) {
         LOG(error,
             "Could not open posocc file %s for read",
             name.c_str());

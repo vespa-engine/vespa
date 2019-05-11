@@ -71,8 +71,8 @@ int
 RPCClient::run()
 {
     int retCode = 0;
-    FRT_Supervisor supervisor;
-    supervisor.Start();
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & supervisor = server.supervisor();
     int targetArg = 1;
     int methNameArg = 2;
     int startOfArgs = 3;
@@ -109,7 +109,6 @@ RPCClient::run()
     }
     req->SubRef();
     target->SubRef();
-    supervisor.ShutDown(true);
     return retCode;
 }
 

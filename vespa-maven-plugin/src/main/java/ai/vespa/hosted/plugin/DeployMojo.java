@@ -1,6 +1,7 @@
 package ai.vespa.hosted.plugin;
 
 import ai.vespa.hosted.api.Deployment;
+import ai.vespa.hosted.api.DeploymentResult;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -52,7 +53,9 @@ public class DeployMojo extends AbstractVespaMojo {
 
         ZoneId zone = environment == null || region == null ? controller.devZone() : ZoneId.from(environment, region);
 
-        System.out.println(controller.deploy(deployment, id, zone).json());
+        DeploymentResult result = controller.deploy(deployment, id, zone);
+        System.out.println("Success: " + result.message());
+        System.out.println("Follow the deployment at " + result.location());
     }
 
 }

@@ -258,197 +258,28 @@ template <>
 void
 EnumStoreT<StringEntryType>::printValue(vespalib::asciistream & os, Type value) const;
 
-extern template
-class btree::BTreeNodeDataWrap<btree::BTreeNoLeafData,
-                               EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeDataWrap<datastore::EntryRef,
-                               EnumTreeTraits::LEAF_SLOTS>;
 
 #if 0
 extern template
-class btree::BTreeKeyData<EnumStoreBase::Index,
-                          btree::BTreeNoLeafData>;
+class btree::BTreeKeyData<EnumStoreBase::Index, btree::BTreeNoLeafData>;
 
 extern template
-class btree::BTreeKeyData<EnumStoreBase::Index,
-                          datastore::EntryRef>;
+class btree::BTreeKeyData<EnumStoreBase::Index, datastore::EntryRef>;
+
+extern template
+class btree::BTreeNodeT<EnumStoreBase::Index, EnumTreeTraits::LEAF_SLOTS>;
+
+extern template
+class btree::BTreeNodeTT<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
 #endif
 
-extern template
-class btree::BTreeNodeT<EnumStoreBase::Index,
-                        EnumTreeTraits::INTERNAL_SLOTS>;
-
-#if 0
-extern template
-class btree::BTreeNodeT<EnumStoreBase::Index,
-                        EnumTreeTraits::LEAF_SLOTS>;
-#endif
 
 extern template
-class btree::BTreeNodeTT<EnumStoreBase::Index,
-                         datastore::EntryRef,
-                         btree::NoAggregated,
-                         EnumTreeTraits::INTERNAL_SLOTS>;
-
+class btree::BTreeBuilder<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
+                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 extern template
-class btree::BTreeNodeTT<EnumStoreBase::Index,
-                         btree::BTreeNoLeafData,
-                         btree::NoAggregated,
-                         EnumTreeTraits::LEAF_SLOTS>;
-
-#if 0
-extern template
-class btree::BTreeNodeTT<EnumStoreBase::Index,
-                         datastore::EntryRef,
-                         btree::NoAggregated,
-                         EnumTreeTraits::LEAF_SLOTS>;
-#endif
-
-extern template
-class btree::BTreeInternalNode<EnumStoreBase::Index,
-                               btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS>;
-
-extern template
-class btree::BTreeLeafNode<EnumStoreBase::Index,
-                           btree::BTreeNoLeafData,
-                           btree::NoAggregated,
-                           EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeLeafNode<EnumStoreBase::Index,
-                           datastore::EntryRef,
-                           btree::NoAggregated,
-                           EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeLeafNodeTemp<EnumStoreBase::Index,
-                               btree::BTreeNoLeafData,
-                               btree::NoAggregated,
-                               EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeLeafNodeTemp<EnumStoreBase::Index,
-                               datastore::EntryRef,
-                               btree::NoAggregated,
-                               EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeStore<EnumStoreBase::Index,
-                            btree::BTreeNoLeafData,
-                            btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS,
-                            EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeStore<EnumStoreBase::Index,
-                            datastore::EntryRef,
-                            btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS,
-                            EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeIteratorBase<EnumStoreBase::Index,
-                               btree::BTreeNoLeafData,
-                               btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS,
-                               EnumTreeTraits::LEAF_SLOTS,
-                               EnumTreeTraits::PATH_SIZE>;
-extern template
-class btree::BTreeIteratorBase<EnumStoreBase::Index,
-                               datastore::EntryRef,
-                               btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS,
-                               EnumTreeTraits::LEAF_SLOTS,
-                               EnumTreeTraits::PATH_SIZE>;
-extern template
-class btree::BTreeIterator<EnumStoreBase::Index,
-                           btree::BTreeNoLeafData,
-                           btree::NoAggregated,
-                           const EnumStoreComparatorWrapper,
-                           EnumTreeTraits>;
-extern template
-class btree::BTreeIterator<EnumStoreBase::Index,
-                           datastore::EntryRef,
-                           btree::NoAggregated,
-                           const EnumStoreComparatorWrapper,
-                           EnumTreeTraits>;
-extern template
-class btree::BTree<EnumStoreBase::Index,
-                   btree::BTreeNoLeafData,
-                   btree::NoAggregated,
-                   const EnumStoreComparatorWrapper,
-                   EnumTreeTraits>;
-extern template
-class btree::BTree<EnumStoreBase::Index,
-                   datastore::EntryRef,
-                   btree::NoAggregated,
-                   const EnumStoreComparatorWrapper,
-                   EnumTreeTraits>;
-extern template
-class btree::BTreeRoot<EnumStoreBase::Index,
-                       btree::BTreeNoLeafData,
-                       btree::NoAggregated,
-                       const EnumStoreComparatorWrapper,
-                       EnumTreeTraits>;
-extern template
-class btree::BTreeRoot<EnumStoreBase::Index,
-                      datastore::EntryRef,
-                       btree::NoAggregated,
-                      const EnumStoreComparatorWrapper,
-                      EnumTreeTraits>;
-extern template
-class btree::BTreeRootT<EnumStoreBase::Index,
-                        btree::BTreeNoLeafData,
-                        btree::NoAggregated,
-                        const EnumStoreComparatorWrapper,
-                        EnumTreeTraits>;
-extern template
-class btree::BTreeRootT<EnumStoreBase::Index,
-                        datastore::EntryRef,
-                        btree::NoAggregated,
-                        const EnumStoreComparatorWrapper,
-                        EnumTreeTraits>;
-extern template
-class btree::BTreeRootBase<EnumStoreBase::Index,
-                           btree::BTreeNoLeafData,
-                           btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS,
-                           EnumTreeTraits::LEAF_SLOTS>;
-extern template
-class btree::BTreeRootBase<EnumStoreBase::Index,
-                           datastore::EntryRef,
-                           btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS,
-                           EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeAllocator<EnumStoreBase::Index,
-                                btree::BTreeNoLeafData,
-                                btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS,
-                                EnumTreeTraits::LEAF_SLOTS>;
-extern template
-class btree::BTreeNodeAllocator<EnumStoreBase::Index,
-                                datastore::EntryRef,
-                                btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS,
-                                EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeBuilder<EnumStoreBase::Index,
-                          btree::BTreeNoLeafData,
-                          btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS,
-                          EnumTreeTraits::LEAF_SLOTS>;
-extern template
-class btree::BTreeBuilder<EnumStoreBase::Index,
-                          datastore::EntryRef,
-                          btree::NoAggregated,
-                          EnumTreeTraits::INTERNAL_SLOTS,
-                          EnumTreeTraits::LEAF_SLOTS>;
+class btree::BTreeBuilder<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
+                          EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 extern template class EnumStoreT< StringEntryType >;
 extern template class EnumStoreT<NumericEntryType<int8_t> >;

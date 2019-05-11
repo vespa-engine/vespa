@@ -23,11 +23,6 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.util.Objects;
 import java.util.Set;
@@ -49,15 +44,9 @@ public class Application implements ModelResult {
     private final ServerCache cache;
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
-    private final BooleanFlag useConfigServerCache;
 
     public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
-        this(model, cache, appGeneration, internalRedeploy, vespaVersion, metricUpdater, app, new InMemoryFlagSource());
-    }
-
-    public Application(Model model, ServerCache cache, long appGeneration, boolean internalRedeploy,
-                       Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app, FlagSource flagSource) {
         Objects.requireNonNull(model, "The model cannot be null");
         this.model = model;
         this.cache = cache;
@@ -66,9 +55,6 @@ public class Application implements ModelResult {
         this.vespaVersion = vespaVersion;
         this.metricUpdater = metricUpdater;
         this.app = app;
-        this.useConfigServerCache = Flags.USE_CONFIG_SERVER_CACHE
-                .with(FetchVector.Dimension.APPLICATION_ID, app.serializedForm())
-                .bindTo(flagSource);
     }
 
     /**
@@ -159,10 +145,7 @@ public class Application implements ModelResult {
     }
 
     private boolean useCache(GetConfigRequest request) {
-        if (request.noCache())
-            return false;
-        else
-            return useConfigServerCache.value();
+        return !request.noCache();
     }
 
     private boolean logDebug() {

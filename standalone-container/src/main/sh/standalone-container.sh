@@ -154,7 +154,6 @@ StartCommand() {
     FixDataDirectory "$bundlecachedir"
 
     java \
-	"${jvm_arguments[@]}" \
         -Xms128m -Xmx2048m \
         -XX:+PreserveFramePointer \
         -XX:+HeapDumpOnOutOfMemoryError \
@@ -181,6 +180,7 @@ StartCommand() {
         -Djdisc.logger.tag="jdisc/$service" \
         -Dfile.encoding=UTF-8 \
         -cp "$CP" \
+        "${jvm_arguments[@]}" \
         com.yahoo.jdisc.core.StandaloneMain standalone-container-jar-with-dependencies.jar &
 
     local pid="$!"

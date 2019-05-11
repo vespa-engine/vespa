@@ -16,42 +16,37 @@ Flags::Flags()
       targethost("localhost"),
       portnumber(19090)
 { }
-Flags::~Flags() { }
+Flags::~Flags() = default;
 
 ProxyCmd::ProxyCmd(const Flags& flags)
-    : _supervisor(NULL),
-      _target(NULL),
-      _req(NULL),
+    : _server(),
+      _target(nullptr),
+      _req(nullptr),
       _flags(flags)
 { }
 
-ProxyCmd::~ProxyCmd() { }
+ProxyCmd::~ProxyCmd() = default;
 
 void ProxyCmd::initRPC() {
-    _supervisor = new FRT_Supervisor();
-    _req = _supervisor->AllocRPCRequest();
-    _supervisor->Start();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _req = _server->supervisor().AllocRPCRequest();
 }
 
 void ProxyCmd::invokeRPC() {
-    if (_req == NULL) return;
+    if (_req == nullptr) return;
     _target->InvokeSync(_req, 65.0);
 }
 
 void ProxyCmd::finiRPC() {
-    if (_req != NULL) {
+    if (_req != nullptr) {
         _req->SubRef();
-        _req = NULL;
+        _req = nullptr;
     }
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
         _target = NULL;
     }
-    if (_supervisor != NULL) {
-        _supervisor->ShutDown(true);
-        delete _supervisor;
-        _supervisor = NULL;
-    }
+    _server.reset();
 }
 
 void ProxyCmd::printArray(FRT_Values *rvals) {
@@ -87,7 +82,7 @@ int ProxyCmd::action() {
     int errors = 0;
     initRPC();
     vespalib::string spec = makeSpec();
-    _target = _supervisor->GetTarget(spec.c_str());
+    _target = _server->supervisor().GetTarget(spec.c_str());
     _req->SetMethodName(_flags.method.c_str());
     FRT_Values &params = *_req->GetParams();
     for (size_t i = 0; i < _flags.args.size(); ++i) {

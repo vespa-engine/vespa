@@ -15,7 +15,7 @@ import java.util.List;
  *      only the prerequisites of a step which are included in a run's profile will be considered.
  *      Under normal circumstances, a step will run only after each of its prerequisites have succeeded.
  *      When a run has failed, however, each of the always-run steps of the run's profile will be run,
- *      again in a topological order, and again requiring success of all their always-run prerequisites.
+ *      again in a topological order, and requiring all their always-run prerequisites to have run.
  *
  *   2. A step will never run concurrently with its prerequisites. This is to ensure, e.g., that relevant
  *      information from a failed run is stored, and that deployment does not occur after deactivation.

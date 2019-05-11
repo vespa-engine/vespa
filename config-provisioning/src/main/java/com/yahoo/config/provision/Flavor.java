@@ -7,21 +7,20 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A host flavor (type). This is a value object where the identity is the name.
- * Use {@link NodeFlavors} to create a flavor.
+ * A host or node flavor.
+ * *Host* flavors come from a configured set which corresponds to the actual flavors available in a zone.
+ * *Node* flavors are simply a wrapper of a NodeResources object (for now (May 2019) with the exception of some
+ *        legacy behavior where nodes are allocated by specifying a physical host flavor directly).
  *
  * @author bratseth
  */
 public class Flavor {
 
     private boolean configured;
-
-    /** The hardware resources of this flavor */
-    private NodeResources resources;
-
     private final String name;
     private final int cost;
     private final boolean isStock;
@@ -36,15 +35,13 @@ public class Flavor {
     private List<Flavor> replacesFlavors;
     private int idealHeadroom; // Note: Not used after Vespa 6.282
 
-    /**
-     * Creates a Flavor, but does not set the replacesFlavors.
-     *
-     * @param flavorConfig config to be used for Flavor.
-     */
+    /** The hardware resources of this flavor */
+    private NodeResources resources;
+
+    /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this.configured = true;
         this.name = flavorConfig.name();
-        this.replacesFlavors = new ArrayList<>();
         this.cost = flavorConfig.cost();
         this.isStock = flavorConfig.stock();
         this.type = Type.valueOf(flavorConfig.environment());
@@ -55,12 +52,14 @@ public class Flavor {
         this.bandwidth = flavorConfig.bandwidth();
         this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
+        this.replacesFlavors = new ArrayList<>();
         this.idealHeadroom = flavorConfig.idealHeadroom();
         this.resources = new NodeResources(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
     }
 
-    /** Create a Flavor from a Flavor spec and all other fields set to Docker defaults */
+    /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
+        Objects.requireNonNull(resources, "Resources cannot be null");
         if (resources.allocateByLegacyName())
             throw new IllegalArgumentException("Can not create flavor '" + resources.legacyName() + "' from a flavor: " +
                                                "Non-docker flavors must be of a configured flavor");
@@ -77,10 +76,11 @@ public class Flavor {
         this.description = "";
         this.retired = false;
         this.replacesFlavors = Collections.emptyList();
+        this.idealHeadroom = 0;
         this.resources = resources;
     }
 
-    /** Returns the unique identity of this flavor */
+    /** Returns the unique identity of this flavor if it is configured, or the resource spec string otherwise */
     public String name() { return name; }
 
     /**
@@ -207,7 +207,12 @@ public class Flavor {
     }
 
     @Override
-    public String toString() { return "flavor '" + name + "'"; }
+    public String toString() {
+        if (isConfigured())
+            return "flavor '" + name + "'";
+        else
+            return name;
+    }
 
     public enum Type {
         undefined, // Default value in config (flavors.def)

@@ -7,6 +7,7 @@
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/transport.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("mirrorapi_test");
@@ -21,7 +22,7 @@ TEST_SETUP(Test);
 class Server : public FRT_Invokable
 {
 private:
-    FRT_Supervisor _orb;
+    fnet::frt::StandaloneFRT _server;
     std::string    _name;
     std::string    _slobrokSpec;
 
@@ -34,12 +35,12 @@ public:
 
 
 Server::Server(std::string name, int port, std::string slobrokSpec)
-    : _orb(),
+    : _server(),
       _name(name),
       _slobrokSpec(slobrokSpec)
 {
     {
-        FRT_ReflectionBuilder rb(&_orb);
+        FRT_ReflectionBuilder rb(&_server.supervisor());
         //---------------------------------------------------------------------
         rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                         FRT_METHOD(Server::rpc_listNamesServed), this);
@@ -47,8 +48,7 @@ Server::Server(std::string name, int port, std::string slobrokSpec)
         rb.ReturnDesc("names", "The rpcserver names on this server");
         //---------------------------------------------------------------------
     }
-    _orb.Listen(port);
-    _orb.Start();
+    _server.supervisor().Listen(port);
 }
 
 
@@ -56,14 +56,14 @@ void
 Server::reg()
 {
     char spec[64];
-    sprintf(spec, "tcp/localhost:%d", _orb.GetListenPort());
+    sprintf(spec, "tcp/localhost:%d", _server.supervisor().GetListenPort());
 
-    FRT_RPCRequest *req = _orb.AllocRPCRequest();
+    FRT_RPCRequest *req = _server.supervisor().AllocRPCRequest();
     req->SetMethodName("slobrok.registerRpcServer");
     req->GetParams()->AddString(_name.c_str());
     req->GetParams()->AddString(spec);
 
-    FRT_Target *sb = _orb.GetTarget(_slobrokSpec.c_str());
+    FRT_Target *sb = _server.supervisor().GetTarget(_slobrokSpec.c_str());
     sb->InvokeSync(req, 5.0);
     sb->SubRef();
     req->SubRef();
@@ -79,10 +79,7 @@ Server::rpc_listNamesServed(FRT_RPCRequest *req)
 }
 
 
-Server::~Server()
-{
-    _orb.ShutDown(true);
-}
+Server::~Server() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -140,10 +137,12 @@ Test::Main()
     cloud::config::SlobroksConfig::Slobrok slobrok;
     slobrok.connectionspec = "tcp/localhost:18501";
     specBuilder.slobrok.push_back(slobrok);
-    FRT_Supervisor orb;
-    MirrorAPI mirror(orb, config::ConfigUri::createFromInstance(specBuilder));
+    FastOS_ThreadPool threadPool(0x10000);
+    FNET_Transport transport;
+    FRT_Supervisor supervisor(&transport);
+    MirrorAPI mirror(supervisor, config::ConfigUri::createFromInstance(specBuilder));
     EXPECT_TRUE(!mirror.ready());
-    orb.Start();
+    transport.Start(&threadPool);
     FastOS_Thread::Sleep(1000);
 
     a.reg();
@@ -224,6 +223,5 @@ Test::Main()
                        .add("A/x/w", "tcp/localhost:18502")));
 
     mock.stop();
-    orb.ShutDown(true);
     TEST_DONE();
 }

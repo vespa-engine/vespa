@@ -83,12 +83,12 @@ Test::Main()
     slobrokSpecs.slobrok.push_back(sb);
     slobrok::ConfiguratorFactory config(config::ConfigUri::createFromInstance(slobrokSpecs));
 
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & orb = server.supervisor();
     RegisterAPI reg(orb, config);
     MirrorAPI mirror(orb, config);
     orb.Listen(18549);
     std::string myspec = createSpec(orb);
-    orb.Start();
 
     reg.registerName("A/x/w");
     EXPECT_TRUE(reg.busy());
@@ -216,6 +216,5 @@ Test::Main()
                        .add("F/y/w", myspec.c_str())));
 
     mock.stop();
-    orb.ShutDown(true);
     TEST_DONE();
 }

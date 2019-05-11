@@ -206,12 +206,8 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void search(Query query, Execution execution, Target target, Result mergedResults) {
-        Optional<Result> result = search(query, execution, target);
-        if (result.isPresent()) {
-            mergeResult(query, target, mergedResults, result.get());
-        } else {
-            addSearchChainTimedOutError(query, target.getId());
-        }
+        mergeResult(query, target, mergedResults, search(query, execution, target).orElse(createSearchChainTimedOutResult(query, target)));
+
     }
 
     private void search(Query query, Execution execution, Collection<Target> targets, Result mergedResults) {
@@ -220,22 +216,16 @@ public class FederationSearcher extends ForkingSearcher {
 
         HitOrderer s = null;
         for (FederationResult.TargetResult targetResult : results.all()) {
-            if ( ! targetResult.successfullyCompleted()) {
-                addSearchChainTimedOutError(query, targetResult.target.getId());
-            } else {
-                if (s == null) {
-                    s = dirtyCopyIfModifiedOrderer(mergedResults.hits(), targetResult.getOrTimeoutError().hits().getOrderer());
-                }
-                mergeResult(query, targetResult.target, mergedResults, targetResult.getOrTimeoutError());
-            }
+            if (s == null)
+                s = dirtyCopyIfModifiedOrderer(mergedResults.hits(), targetResult.getOrTimeoutError().hits().getOrderer());
+            mergeResult(query, targetResult.target, mergedResults, targetResult.getOrTimeoutError());
         }
     }
 
     private Optional<Result> search(Query query, Execution execution, Target target) {
         long timeout = target.federationOptions().getSearchChainExecutionTimeoutInMilliseconds(query.getTimeLeft());
-        if (timeout <= 0) {
-            return Optional.empty();
-        }
+        if (timeout <= 0) return Optional.empty();
+
         Execution newExecution = new Execution(target.getChain(), execution.context());
         if (strictSearchchain) {
             query.resetTimeout();
@@ -559,10 +549,11 @@ public class FederationSearcher extends ForkingSearcher {
         return target.federationOptions().getRequestTimeoutInMilliseconds() > query.getTimeout();
     }
 
-    private static void addSearchChainTimedOutError(Query query, ComponentId searchChainId) {
-        ErrorMessage timeoutMessage = ErrorMessage.createTimeout("The search chain '" + searchChainId + "' timed out.");
-        timeoutMessage.setSource(searchChainId.stringValue());
-        query.errors().add(timeoutMessage);
+    private static Result createSearchChainTimedOutResult(Query query, Target target) {
+        ErrorMessage timeoutMessage = ErrorMessage.createTimeout("Error in execution of chain '" + target.getId() +
+                                                                 "': " + "Chain timed out.");
+        timeoutMessage.setSource(target.getId().stringValue());
+        return new Result(query, timeoutMessage);
     }
 
     private void mergeResult(Query query, Target target, Result mergedResults, Result result) {

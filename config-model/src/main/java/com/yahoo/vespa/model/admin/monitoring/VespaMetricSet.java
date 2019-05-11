@@ -445,19 +445,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.deletebuckets.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.setbucketstates.count.rate"));
 
-        metrics.add(new Metric("vds.filestor.spi.put.success.average"));
-        metrics.add(new Metric("vds.filestor.spi.remove.success.average"));
-        metrics.add(new Metric("vds.filestor.spi.update.success.average"));
-        metrics.add(new Metric("vds.filestor.spi.deleteBucket.success.average"));
-        metrics.add(new Metric("vds.filestor.spi.get.success.average"));
-        metrics.add(new Metric("vds.filestor.spi.iterate.success.average"));
-        metrics.add(new Metric("vds.filestor.spi.put.success.rate"));
-        metrics.add(new Metric("vds.filestor.spi.remove.success.rate"));
-        metrics.add(new Metric("vds.filestor.spi.update.success.rate"));
-        metrics.add(new Metric("vds.filestor.spi.deleteBucket.success.rate"));
-        metrics.add(new Metric("vds.filestor.spi.get.success.rate"));
-        metrics.add(new Metric("vds.filestor.spi.iterate.success.rate"));
-
 
         //Distributor
         metrics.add(new Metric("vds.idealstate.buckets_rechecking.average"));

@@ -250,19 +250,17 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
         return Optional.empty();
     }
 
-    /**
-     * Returns the name that identifies this service for the config-sentinel.
-     *
-     * @return the name that identifies this service for the config-sentinel.
-     */
+    /** Returns the name that identifies this service for the config-sentinel, never null */
+    @Override
     public String getServiceName() {
         return getServiceType() + ((id == 1) ? "" : Integer.toString(id));
     }
 
     /**
      * Returns the type of service. This is the class name without the
-     * package prefix by default.
+     * package prefix by default, never null
      */
+    @Override
     public String getServiceType() {
         return toLowerCase(getShortClassName());
     }
