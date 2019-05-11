@@ -78,10 +78,10 @@ App::Main()
         printf("usage: %s <listenspec>\n", _argv[0]);
         return 1;
     }
-    fnet::frt::StandaloneFRT frtServer;
-    Server server(&frtServer.supervisor());
-    frtServer.supervisor().Listen(_argv[1]);
-    frtServer.wait_finished();
+    fnet::frt::StandaloneFRT frt;
+    Server server(&frt.supervisor());
+    frt.supervisor().Listen(_argv[1]);
+    frt.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 

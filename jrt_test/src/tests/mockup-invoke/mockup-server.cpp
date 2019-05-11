@@ -51,10 +51,10 @@ App::Main()
         printf("usage: %s <listenspec>\n", _argv[0]);
         return 1;
     }
-    fnet::frt::StandaloneFRT orb;
-    MockupServer server(&orb.supervisor());
-    orb.supervisor().Listen(_argv[1]);
-    orb.wait_finished();
+    fnet::frt::StandaloneFRT frt;
+    MockupServer server(&frt.supervisor());
+    frt.supervisor().Listen(_argv[1]);
+    frt.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 
