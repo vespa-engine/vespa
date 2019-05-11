@@ -45,7 +45,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
     public static final String JVMARGS_ATTRIB_NAME = "jvmargs";
     public static final String JVM_OPTIONS = "jvm-options";
+    public static final String OPTIONS = "options";
     public static final String JVM_GC_OPTIONS = "jvm-gc-options";
+    public static final String GC_OPTIONS = "gc-options";
     public static final String PRELOAD_ATTRIB_NAME = "preload";        // Intended for vespa engineers
     public static final String MMAP_NOCORE_LIMIT = "mmap-core-limit";  // Intended for vespa engineers
     public static final String CORE_ON_OOM = "core-on-oom";            // Intended for vespa engineers

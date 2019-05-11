@@ -456,6 +456,31 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         return jvmOptions;
     }
+
+    void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                      Element nodesElement, ConfigModelContext context)
+    {
+        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
+
+        if (!cluster.getJvmGCOptions().isPresent()) {
+            String jvmGCOptions = nodesElement.hasAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
+                    ? nodesElement.getAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
+                    : null;
+            cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
+        }
+
+        applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
+    }
+    void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                       Element jvmElement, ConfigModelContext context)
+    {
+        applyNodesTagJvmArgs(nodes, jvmElement.getAttribute(VespaDomBuilder.OPTIONS));
+        applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
+        String jvmGCOptions = jvmElement.hasAttribute(VespaDomBuilder.GC_OPTIONS)
+                ? jvmElement.getAttribute(VespaDomBuilder.GC_OPTIONS)
+                : null;
+        cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
+    }
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         Element rotationsElement = XML.getChild(containerElement, "rotations");
@@ -467,22 +492,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addContainers(Collections.singleton(node));
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, rotationsElement, context);
-            applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
 
-            if ( !cluster.getJvmGCOptions().isPresent()) {
-                String jvmGCOptions = nodesElement.hasAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
-                        ? nodesElement.getAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
-                        : null;
-                cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
+            Element jvmElement = XML.getChild(nodesElement, "jvm");
+            if (jvmElement == null) {
+                extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
+            } else {
+                extractJvmTag(nodes, cluster, jvmElement, context);
             }
-
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
             if (environmentVars != null && !environmentVars.isEmpty()) {
                 cluster.setEnvironmentVars(environmentVars);
             }
-            applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
 
@@ -511,7 +533,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
 
-    private void applyRoutingAliasProperties(List<ApplicationContainer> result, ApplicationContainerCluster cluster) {
+    private static void applyRoutingAliasProperties(List<ApplicationContainer> result, ApplicationContainerCluster cluster) {
         if (!cluster.serviceAliases().isEmpty()) {
             result.forEach(container -> {
                 container.setProp("servicealiases", cluster.serviceAliases().stream().collect(Collectors.joining(",")));
@@ -524,7 +546,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
     
-    private void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
+    private static void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
         if (memoryPercentage == null || memoryPercentage.isEmpty()) return;
         memoryPercentage = memoryPercentage.trim();
 
@@ -688,21 +710,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return Optional.empty();
     }
 
-    private boolean useCpuSocketAffinity(Element nodesElement) {
+    private static boolean useCpuSocketAffinity(Element nodesElement) {
         if (nodesElement.hasAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME))
             return Boolean.parseBoolean(nodesElement.getAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME));
         else
             return false;
     }
 
-    private void applyNodesTagJvmArgs(List<ApplicationContainer> containers, String jvmArgs) {
+    private static void applyNodesTagJvmArgs(List<ApplicationContainer> containers, String jvmArgs) {
         for (Container container: containers) {
             if (container.getAssignedJvmOptions().isEmpty())
                 container.prependJvmOptions(jvmArgs);
         }
     }
 
-    private void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement) {
+    private static void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement) {
         if (! nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) return;
         for (Container container: containers)
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
