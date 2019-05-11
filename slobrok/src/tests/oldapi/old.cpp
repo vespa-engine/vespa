@@ -216,5 +216,6 @@ Test::Main()
                        .add("A/x/w", "tcp/localhost:18532")));
 
     mock.stop();
+    transport.ShutDown(true);
     TEST_DONE();
 }
