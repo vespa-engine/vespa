@@ -176,6 +176,8 @@ public class TenantRequestHandlerTest {
     public void testReloadConfig() throws IOException {
         ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build();
 
+        server.applications().createApplication(applicationId);
+        server.applications().createPutTransaction(applicationId, 1).commit();
         server.reloadConfig(reloadConfig(1));
         assertThat(listener.reloaded.get(), is(1));
         // Using only payload list for this simple test
@@ -195,6 +197,7 @@ public class TenantRequestHandlerTest {
 
         listener.reloaded.set(0);
         feedApp(app2, 2, defaultApp(), true);
+        server.applications().createPutTransaction(applicationId, 2).commit();
         server.reloadConfig(reloadConfig(2L));
         configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertTrue(configResponse.isInternalRedeploy());
@@ -206,19 +209,34 @@ public class TenantRequestHandlerTest {
 
     @Test
     public void testRemoveApplication() {
+        ApplicationId appId = ApplicationId.from(tenant.value(), "default", "default");
         server.reloadConfig(reloadConfig(1));
+        assertThat(listener.reloaded.get(), is(0));
+
+        server.applications().createApplication(appId);
+        server.applications().createPutTransaction(appId, 1).commit();
+        server.reloadConfig(reloadConfig(1));
+        assertThat(listener.reloaded.get(), is(1));
+
         assertThat(listener.removed.get(), is(0));
-        server.removeApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build());
+
+        server.removeApplication(appId);
+        assertThat(listener.removed.get(), is(0));
+
+        server.applications().createDeleteTransaction(appId).commit();
+        server.removeApplication(appId);
         assertThat(listener.removed.get(), is(1));
     }
 
     @Test
     public void testResolveForAppId() {
         long id = 1L;
-        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)));
         ApplicationId appId = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("myapp").instanceName("myinst").build();
+        server.applications().createApplication(appId);
+        server.applications().createPutTransaction(appId, 1).commit();
+        SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(id)));
         zkc.writeApplicationId(appId);
         RemoteSession session = new RemoteSession(appId.tenant(), id, componentRegistry, zkc);
         server.reloadConfig(session.ensureApplicationLoaded());
@@ -256,6 +274,8 @@ public class TenantRequestHandlerTest {
     }
 
     private void feedAndReloadApp(File appDir, long sessionId, ApplicationId appId) throws IOException {
+        server.applications().createApplication(appId);
+        server.applications().createPutTransaction(appId, sessionId).commit();
         feedApp(appDir, sessionId, appId, false);
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator, TenantRepository.getSessionsPath(tenant).append(String.valueOf(sessionId)));
         zkc.writeApplicationId(appId);
@@ -291,9 +311,11 @@ public class TenantRequestHandlerTest {
     @Test
     public void testHasApplication() {
         assertdefaultAppNotFound();
+        ApplicationId appId = ApplicationId.from(tenant.value(), "default", "default");
+        server.applications().createApplication(appId);
+        server.applications().createPutTransaction(appId, 1).commit();
         server.reloadConfig(reloadConfig(1));
-        assertTrue(server.hasApplication(new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(tenant).build(),
-                                         Optional.of(vespaVersion)));
+        assertTrue(server.hasApplication(appId, Optional.of(vespaVersion)));
     }
 
     private void assertdefaultAppNotFound() {
@@ -302,10 +324,13 @@ public class TenantRequestHandlerTest {
 
     @Test
     public void testMultipleApplicationsReload() {
+        ApplicationId appId = ApplicationId.from(tenant.value(), "foo", "default");
         assertdefaultAppNotFound();
+        server.applications().createApplication(appId);
+        server.applications().createPutTransaction(appId, 1).commit();
         server.reloadConfig(reloadConfig(1, "foo"));
         assertdefaultAppNotFound();
-        assertTrue(server.hasApplication(new ApplicationId.Builder().tenant(tenant).applicationName("foo").build(),
+        assertTrue(server.hasApplication(appId,
                                          Optional.of(vespaVersion)));
         assertThat(server.resolveApplicationId("doesnotexist"), is(ApplicationId.defaultId()));
         assertThat(server.resolveApplicationId("mytesthost"), is(new ApplicationId.Builder()
@@ -318,6 +343,8 @@ public class TenantRequestHandlerTest {
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
+        server.applications().createApplication(ApplicationId.defaultId());
+        server.applications().createPutTransaction(ApplicationId.defaultId(), 1).commit();
         server.reloadConfig(ApplicationSet.fromSingle(new Application(model,
                                                                       new ServerCache(),
                                                                       1,

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include "zc4_posting_params.h"
 
 namespace search::diskindex {
 
@@ -14,17 +15,11 @@ class ZcPosOccRandRead : public index::PostingListFileRandRead
 protected:
     std::unique_ptr<FastOS_FileInterface> _file;
     uint64_t         _fileSize;
-
-    uint32_t _minChunkDocs; // # of documents needed for chunking
-    uint32_t _minSkipDocs;  // # of documents needed for skipping
-    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
-
+    Zc4PostingParams _posting_params;
     uint64_t _numWords;     // Number of words in file
     uint64_t _fileBitSize;
     uint64_t _headerBitSize;
     bitcompression::PosOccFieldsParams _fieldsParams;
-    bool _dynamicK;
-
 
 public:
     ZcPosOccRandRead();
@@ -49,6 +44,8 @@ public:
 
     bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
+    template <typename DecodeContext>
+    void readHeader(const vespalib::string &identifier);
     virtual void readHeader();
     static const vespalib::string &getIdentifier();
     static const vespalib::string &getSubIdentifier();
@@ -56,16 +53,9 @@ public:
 
 class Zc4PosOccRandRead : public ZcPosOccRandRead
 {
+    using ZcPosOccRandRead::readHeader;
 public:
     Zc4PosOccRandRead();
-
-    /**
-     * Create iterator for single word.  Semantic lifetime of counts and
-     * handle must exceed lifetime of iterator.
-     */
-    queryeval::SearchIterator *
-    createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
-                   const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
 
     void readHeader() override;
 

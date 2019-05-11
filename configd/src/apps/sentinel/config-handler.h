@@ -29,6 +29,7 @@ private:
     ConfigSubscriber _subscriber;
     ConfigHandle<SentinelConfig>::UP _sentinelHandle;
     ServiceMap _services;
+    ServiceMap _orphans;
     std::list<OutputConnection *> _outputConnections;
     CommandQueue _cmdQ;
     std::unique_ptr<RpcServer> _rpcServer;
@@ -46,6 +47,7 @@ private:
     void handleCmd(const Cmd& cmd);
     void handleOutputs();
     void handleChildDeaths();
+    void handleRestarts();
 
     static int listen(int port);
     void configure_port(int port);

@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  */
 public class DnsNameResolver implements NameResolver {
 
-    private static Logger logger = Logger.getLogger(DnsNameResolver.class.getName());
+    private static final Logger logger = Logger.getLogger(DnsNameResolver.class.getName());
 
     @Override
     public Set<String> getAllByNameOrThrow(String hostname) {

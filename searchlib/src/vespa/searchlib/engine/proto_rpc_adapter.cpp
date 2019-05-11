@@ -46,6 +46,23 @@ void encode_message(const MSG &src, FRT_Values &dst) {
     dst.AddData(compressed.getData(), compressed.getDataLen());
 }
 
+void encode_search_reply(const ProtoSearchReply &src, FRT_Values &dst) {
+    using vespalib::compression::compress;
+    auto output = src.SerializeAsString();
+    if (src.grouping_blob().empty()) {
+        dst.AddInt8(CompressionConfig::Type::NONE);
+        dst.AddInt32(output.size());
+        dst.AddData(output.data(), output.size());
+    } else {
+        ConstBufferRef buf(output.data(), output.size());
+        DataBuffer compressed(output.data(), output.size());
+        CompressionConfig::Type type = compress(get_compression_config(), buf, compressed, true);
+        dst.AddInt8(type);
+        dst.AddInt32(buf.size());
+        dst.AddData(compressed.getData(), compressed.getDataLen());
+    }
+}
+
 template <typename MSG>
 bool decode_message(const FRT_Values &src, MSG &dst) {
     using vespalib::compression::decompress;
@@ -88,7 +105,7 @@ struct SearchCompletionHandler : SearchClient {
     void searchDone(SearchReply::UP reply) override {
         ProtoSearchReply msg;
         ProtoConverter::search_reply_to_proto(*reply, msg);
-        encode_message(msg, *req.GetReturn());
+        encode_search_reply(msg, *req.GetReturn());
         req.Return();
     }
 };

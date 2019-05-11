@@ -6,13 +6,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.ConfigServerSecurityConfig;
-import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
@@ -22,7 +21,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -243,7 +241,7 @@ public class NodeIdentifierTest {
                         emptySet(),
                         HOSTNAME,
                         Optional.of("parenthost"),
-                        new Flavor(createFlavourConfig().flavor(0)),
+                        new NodeResources(1, 2, 50),
                         NodeType.tenant)
                 .with(
                         new Allocation(
@@ -269,12 +267,6 @@ public class NodeIdentifierTest {
                 .setBasicConstraints(true, true)
                 .build();
 
-    }
-
-    private static FlavorsConfig createFlavourConfig() {
-        FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("docker", 1., 2., 50, Flavor.Type.DOCKER_CONTAINER).cost(1);
-        return b.build();
     }
 
 }

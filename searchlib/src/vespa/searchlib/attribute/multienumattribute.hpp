@@ -132,6 +132,30 @@ MultiValueEnumAttribute(const vespalib::string &baseFileName,
 {
 }
 
+namespace {
+
+template<typename T>
+const IWeightedIndexVector::WeightedIndex *
+extract(const T *) {
+    throw std::runtime_error("IWeightedIndexVector::getEnumHandles not implemented");
+}
+
+template <>
+inline const IWeightedIndexVector::WeightedIndex *
+extract(const IWeightedIndexVector::WeightedIndex * values) {
+    return values;
+}
+
+}
+
+template <typename B, typename M>
+uint32_t
+MultiValueEnumAttribute<B, M>::getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const  {
+    WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+    values = extract(&indices[0]);
+    return indices.size();
+}
+
 template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::onCommit()

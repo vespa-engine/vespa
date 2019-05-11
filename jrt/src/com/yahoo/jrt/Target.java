@@ -2,6 +2,8 @@
 package com.yahoo.jrt;
 
 
+import java.util.Optional;
+
 /**
  * A Target represents a connection endpoint with RPC
  * capabilities. Each such connection has a client and a server
@@ -66,6 +68,11 @@ public abstract class Target {
      * @return exception causing connection loss or null
      **/
     public Exception getConnectionLostReason() { return null; }
+
+    /**
+     * @return the security context associated with this target, or empty if no connection or is insecure.
+     */
+    public abstract Optional<SecurityContext> getSecurityContext();
 
     /**
      * Check if this target represents the client side of a

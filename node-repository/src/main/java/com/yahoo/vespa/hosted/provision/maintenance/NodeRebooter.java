@@ -27,8 +27,8 @@ public class NodeRebooter extends Maintainer {
     private final Clock clock;
     private final Random random;
 
-    public NodeRebooter(NodeRepository nodeRepository, Clock clock, Duration rebootInterval, JobControl jobControl) {
-        super(nodeRepository, min(Duration.ofMinutes(25), rebootInterval), jobControl);
+    NodeRebooter(NodeRepository nodeRepository, Clock clock, Duration rebootInterval) {
+        super(nodeRepository, min(Duration.ofMinutes(25), rebootInterval));
         this.rebootInterval = rebootInterval;
         this.clock = clock;
         this.random = new Random(clock.millis()); // seed with clock for test determinism   

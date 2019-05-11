@@ -13,14 +13,14 @@ public class DomResourceLimitsBuilder {
 
     public static ResourceLimits build(ModelElement contentXml) {
         ResourceLimits.Builder builder = new ResourceLimits.Builder();
-        ModelElement resourceLimits = contentXml.getChild("resource-limits");
+        ModelElement resourceLimits = contentXml.child("resource-limits");
         if (resourceLimits == null) {
             return builder.build();
         }
-        if (resourceLimits.getChild("disk") != null) {
+        if (resourceLimits.child("disk") != null) {
             builder.setDiskLimit(resourceLimits.childAsDouble("disk"));
         }
-        if (resourceLimits.getChild("memory") != null) {
+        if (resourceLimits.child("memory") != null) {
             builder.setMemoryLimit(resourceLimits.childAsDouble("memory"));
         }
         return builder.build();

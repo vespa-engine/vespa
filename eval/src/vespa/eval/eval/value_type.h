@@ -16,6 +16,7 @@ class ValueType
 {
 public:
     enum class Type { ERROR, DOUBLE, TENSOR };
+    enum class CellType { FLOAT, DOUBLE };
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
@@ -35,14 +36,15 @@ public:
     };
 
 private:
-    Type     _type;
+    Type                   _type;
+    CellType               _cell_type;
     std::vector<Dimension> _dimensions;
 
     ValueType(Type type_in)
-        : _type(type_in), _dimensions() {}
+        : _type(type_in), _cell_type(CellType::DOUBLE), _dimensions() {}
 
-    ValueType(Type type_in, std::vector<Dimension> &&dimensions_in)
-        : _type(type_in), _dimensions(std::move(dimensions_in)) {}
+    ValueType(Type type_in, CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
+        : _type(type_in), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
     ValueType(ValueType &&) = default;
@@ -51,6 +53,7 @@ public:
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     Type type() const { return _type; }
+    CellType cell_type() const { return _cell_type; }
     bool is_error() const { return (_type == Type::ERROR); }
     bool is_double() const { return (_type == Type::DOUBLE); }
     bool is_tensor() const { return (_type == Type::TENSOR); }
@@ -60,7 +63,9 @@ public:
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
     bool operator==(const ValueType &rhs) const {
-        return ((_type == rhs._type) && (_dimensions == rhs._dimensions));
+        return ((_type == rhs._type) &&
+                (_cell_type == rhs._cell_type) &&
+                (_dimensions == rhs._dimensions));
     }
     bool operator!=(const ValueType &rhs) const { return !(*this == rhs); }
 
@@ -70,7 +75,7 @@ public:
 
     static ValueType error_type() { return ValueType(Type::ERROR); }
     static ValueType double_type() { return ValueType(Type::DOUBLE); }
-    static ValueType tensor_type(std::vector<Dimension> dimensions_in);
+    static ValueType tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type = CellType::DOUBLE);
     static ValueType from_spec(const vespalib::string &spec);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);

@@ -33,9 +33,9 @@ public class HostProvisionMaintainer extends Maintainer {
     private final HostProvisioner hostProvisioner;
     private final BooleanFlag dynamicProvisioningEnabled;
 
-    public HostProvisionMaintainer(NodeRepository nodeRepository, Duration interval, JobControl jobControl,
-                                   HostProvisioner hostProvisioner, FlagSource flagSource) {
-        super(nodeRepository, interval, jobControl);
+    HostProvisionMaintainer(NodeRepository nodeRepository, Duration interval,
+                            HostProvisioner hostProvisioner, FlagSource flagSource) {
+        super(nodeRepository, interval);
         this.hostProvisioner = hostProvisioner;
         this.dynamicProvisioningEnabled = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
     }

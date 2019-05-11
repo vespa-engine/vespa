@@ -17,7 +17,7 @@ namespace search {
 namespace fakedata {
 
 
-/*
+/**
  * General representation of a faked word, containing all features used
  * by any of the candidate posting list formats.
  */
@@ -49,6 +49,9 @@ public:
     class DocWordCollapsedFeature
     {
     public:
+        uint32_t _field_len;
+        uint32_t _num_occs;
+
         DocWordCollapsedFeature();
         ~DocWordCollapsedFeature();
     };
@@ -201,6 +204,8 @@ public:
                                 p->_elementWeight, p->_elementLen);
             ++p;
         }
+        features.set_field_length(d._collapsedDocWordFeatures._field_len);
+        features.set_num_occs(d._collapsedDocWordFeatures._num_occs);
     }
 
 public:
@@ -248,6 +253,7 @@ public:
     validate(search::diskindex::FieldReader &fieldReader,
              uint32_t wordNum,
              const fef::TermFieldMatchDataArray &matchData,
+             bool decode_cheap_features,
              bool verbose) const;
 
     void validate(const std::vector<uint32_t> &docIds) const;

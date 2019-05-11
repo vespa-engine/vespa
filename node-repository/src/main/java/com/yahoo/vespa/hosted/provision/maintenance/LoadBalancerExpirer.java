@@ -29,9 +29,8 @@ public class LoadBalancerExpirer extends Maintainer {
     private final LoadBalancerService service;
     private final CuratorDatabaseClient db;
 
-    public LoadBalancerExpirer(NodeRepository nodeRepository, Duration interval, JobControl jobControl,
-                               LoadBalancerService service) {
-        super(nodeRepository, interval, jobControl);
+    LoadBalancerExpirer(NodeRepository nodeRepository, Duration interval, LoadBalancerService service) {
+        super(nodeRepository, interval);
         this.service = Objects.requireNonNull(service, "service must be non-null");
         this.db = nodeRepository.database();
     }

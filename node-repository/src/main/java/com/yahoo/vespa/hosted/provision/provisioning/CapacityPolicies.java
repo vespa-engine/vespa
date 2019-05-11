@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 
 import java.util.Arrays;
@@ -41,19 +41,29 @@ public class CapacityPolicies {
         }
     }
 
-    public Flavor decideFlavor(Capacity requestedCapacity, ClusterSpec cluster) {
-        // for now, always use the requested flavor if a docker flavor is requested
-        Optional<String> requestedFlavor = requestedCapacity.flavor();
-        if (requestedFlavor.isPresent() &&
-            flavors.getFlavorOrThrow(requestedFlavor.get()).getType() == Flavor.Type.DOCKER_CONTAINER)
-            return flavors.getFlavorOrThrow(requestedFlavor.get());
+    public NodeResources decideNodeResources(Capacity requestedCapacity, ClusterSpec cluster) {
+        Optional<NodeResources> requestedResources = requestedCapacity.nodeResources();
+        if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
+            return requestedResources.get();
 
-        String defaultFlavorName = zone.defaultFlavor(cluster.type());
+        NodeResources defaultResources = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
+        if (requestedResources.isEmpty())
+            return defaultResources;
+
+        // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
-        switch(zone.environment()) {
-            case dev : case test : case staging : return flavors.getFlavorOrThrow(defaultFlavorName);
-            default : return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
+            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultResources;
+        else {
+            switch (zone.environment()) {
+                case dev: case test: case staging: return defaultResources;
+                default:
+                    // Check existence of the legacy specified flavor
+                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get());
+                    // Return this spec containing the legacy flavor name, not the flavor's capacity object
+                    // which describes the flavors capacity, as the point of legacy allocation is to match
+                    // by name, not by resources
+                    return requestedResources.get();
+            }
         }
     }
 

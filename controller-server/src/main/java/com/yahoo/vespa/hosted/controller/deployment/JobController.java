@@ -2,10 +2,12 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
@@ -22,14 +24,13 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +64,7 @@ import static java.util.stream.Collectors.toList;
 public class JobController {
 
     private static final int historyLength = 256;
+    private static final Duration maxHistoryAge = Duration.ofDays(60);
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -211,10 +213,13 @@ public class JobController {
             locked(id.application(), id.type(), runs -> {
                 runs.put(run.id(), finishedRun);
                 long last = id.number();
-                Iterator<RunId> ids = runs.keySet().iterator();
-                for (RunId old = ids.next(); old.number() <= last - historyLength; old = ids.next()) {
-                    logs.delete(old);
-                    ids.remove();
+                var oldEntries = runs.entrySet().iterator();
+                for (var old = oldEntries.next();
+                        old.getKey().number() <= last - historyLength
+                     || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
+                     old = oldEntries.next()) {
+                    logs.delete(old.getKey());
+                    oldEntries.remove();
                 }
             });
             logs.flush(id);
@@ -234,19 +239,8 @@ public class JobController {
                                      ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            if ( ! application.get().deploymentJobs().deployedInternally()) {
-                // TODO jvenstad: Remove when there are no more SDv3 pipelines.
-                // Copy all current packages to the new application store
-                application.get().productionDeployments().values().stream()
-                           .map(Deployment::applicationVersion)
-                           .distinct()
-                           .forEach(appVersion -> {
-                               byte[] content = controller.applications().artifacts().getApplicationPackage(id, appVersion.id());
-                               controller.applications().applicationStore().put(id, appVersion, content);
-                           });
-                // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
-                application = application.withChange(application.get().change().withoutPlatform().withoutApplication());
-            }
+            if ( ! application.get().deploymentJobs().deployedInternally())
+                application = registered(application);
 
             long run = nextBuild(id);
             if (applicationPackage.compileVersion().isPresent() && applicationPackage.buildTime().isPresent())
@@ -264,15 +258,34 @@ public class JobController {
                                                              testPackageBytes);
 
             prunePackages(id);
-            controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), applicationPackage);
+            controller.applications().storeWithUpdatedConfig(application, applicationPackage);
 
             controller.applications().deploymentTrigger().notifyOfCompletion(DeploymentJobs.JobReport.ofSubmission(id, projectId, version.get()));
         });
         return version.get();
     }
 
+    /** Registers the given application, copying necessary application packages, and returns the modified version. */
+    private LockedApplication registered(LockedApplication application) {
+                // TODO jvenstad: Remove when there are no more SDv3 pipelines.
+                // Copy all current packages to the new application store
+                application.get().productionDeployments().values().stream()
+                           .map(Deployment::applicationVersion)
+                           .distinct()
+                           .forEach(appVersion -> {
+                               byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
+                               controller.applications().applicationStore().put(application.get().id(), appVersion, content);
+                           });
+                // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
+        return application.withChange(application.get().change().withoutPlatform().withoutApplication())
+                          .withBuiltInternally(true);
+    }
+
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
+        if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
+            throw new IllegalArgumentException("Target application must be a valid reference.");
+
         controller.applications().lockIfPresent(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally())
                 throw new IllegalArgumentException(id + " is not built here!");
@@ -286,6 +299,39 @@ public class JobController {
                 curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
             });
         });
+    }
+
+    /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
+    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
+        controller.applications().lockOrThrow(id, application -> {
+            if ( ! application.get().deploymentJobs().deployedInternally())
+                controller.applications().store(registered(application));
+        });
+        if ( ! type.environment().isManuallyDeployed())
+            throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
+
+        last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+        locked(id, type, __ -> {
+            controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
+            start(id, type, new Versions(platform.orElse(controller.systemVersion()),
+                                         ApplicationVersion.unknown,
+                                         Optional.empty(),
+                                         Optional.empty()));
+        });
+    }
+
+    /** Aborts a run and waits for it complete. */
+    private void abortAndWait(RunId id) {
+        abort(id);
+        while ( ! last(id.application(), id.type()).get().hasEnded()) {
+            try {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /** Unregisters the given application and makes all associated data eligible for garbage collection. */
@@ -379,7 +425,7 @@ public class JobController {
         });
     }
 
-    /** Locks and modifies the list of historic runs for the given application and job type. */
+    /** Locks all runs and modifies the list of historic runs for the given application and job type. */
     private void locked(ApplicationId id, JobType type, Consumer<SortedMap<RunId, Run>> modifications) {
         try (Lock __ = curator.lock(id, type)) {
             SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
@@ -389,7 +435,7 @@ public class JobController {
     }
 
     /** Locks and modifies the run with the given id, provided it is still active. */
-    private void locked(RunId id, UnaryOperator<Run> modifications) {
+    public void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
                 run = modifications.apply(run);

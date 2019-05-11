@@ -16,8 +16,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,10 +88,9 @@ public class NodeFailerTest {
         tester.failer.run();
 
         // The first (and the only) ready node and the 1st active node that was allowed to fail should be failed
-        Map<Node.State, List<String>> expectedHostnamesByState1Iter = new HashMap<>();
-        expectedHostnamesByState1Iter.put(Node.State.failed,
-                Arrays.asList(hostnamesByState.get(Node.State.active).get(0), hostnamesByState.get(Node.State.ready).get(0)));
-        expectedHostnamesByState1Iter.put(Node.State.active, hostnamesByState.get(Node.State.active).subList(1, 2));
+        Map<Node.State, List<String>> expectedHostnamesByState1Iter = Map.of(
+                Node.State.failed, List.of(hostnamesByState.get(Node.State.active).get(0), hostnamesByState.get(Node.State.ready).get(0)),
+                Node.State.active, hostnamesByState.get(Node.State.active).subList(1, 2));
         Map<Node.State, List<String>> hostnamesByState1Iter = tester.nodeRepository.list().childrenOf(hostWithHwFailure).asList().stream()
                 .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
         assertEquals(expectedHostnamesByState1Iter, hostnamesByState1Iter);
@@ -108,7 +105,7 @@ public class NodeFailerTest {
         // All of the children should be failed now
         Set<Node.State> childStates2Iter = tester.nodeRepository.list().childrenOf(hostWithHwFailure).asList().stream()
                 .map(Node::state).collect(Collectors.toSet());
-        assertEquals(Collections.singleton(Node.State.failed), childStates2Iter);
+        assertEquals(Set.of(Node.State.failed), childStates2Iter);
         // The host itself is still active as it too must be allowed to suspend
         assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithHwFailure).get().state());
 
@@ -483,7 +480,16 @@ public class NodeFailerTest {
 
     @Test
     public void failing_proxy_nodes() {
-        NodeFailTester tester = NodeFailTester.withProxyApplication();
+        test_infra_application_fail(NodeType.proxy, 10, 1);
+    }
+
+    @Test
+    public void failing_config_hosts() {
+        test_infra_application_fail(NodeType.confighost, 3, 0);
+    }
+
+    private void test_infra_application_fail(NodeType nodeType, int count, int expectedFailCount) {
+        NodeFailTester tester = NodeFailTester.withInfraApplication(nodeType, count);
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
@@ -491,12 +497,10 @@ public class NodeFailerTest {
             tester.clock.advance(Duration.ofMinutes(5));
             tester.allNodesMakeAConfigRequestExcept();
 
-            assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+            assertEquals(count, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
         }
 
-        Set<String> downHosts = new HashSet<>();
-        downHosts.add("host4");
-        downHosts.add("host5");
+        Set<String> downHosts = Set.of("host2", "host3");
 
         for (String downHost : downHosts)
             tester.serviceMonitor.setHostDown(downHost);
@@ -506,34 +510,23 @@ public class NodeFailerTest {
             tester.clock.advance(Duration.ofMinutes(5));
             tester.allNodesMakeAConfigRequestExcept();
             assertEquals( 0, tester.deployer.redeployments);
-            assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
-            assertEquals( 0, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).size());
+            assertEquals(count, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
         }
 
         tester.clock.advance(Duration.ofMinutes(60));
         tester.failer.run();
 
         // one down host should now be failed, but not two as we are only allowed to fail one proxy
-        assertEquals( 1, tester.deployer.redeployments);
-        assertEquals(15, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
-        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).size());
-        String failedHost1 = tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).get(0).hostname();
-        assertTrue(downHosts.contains(failedHost1));
+        assertEquals(expectedFailCount, tester.deployer.redeployments);
+        assertEquals(count - expectedFailCount, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
+        assertEquals(expectedFailCount, tester.nodeRepository.getNodes(nodeType, Node.State.failed).size());
+        tester.nodeRepository.getNodes(nodeType, Node.State.failed)
+                .forEach(node -> assertTrue(downHosts.contains(node.hostname())));
 
         // trying to fail again will still not fail the other down host
         tester.clock.advance(Duration.ofMinutes(60));
         tester.failer.run();
-        assertEquals(15, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
-
-        // The first down host is removed, which causes the second one to be moved to failed
-        tester.nodeRepository.removeRecursively(failedHost1);
-        tester.failer.run();
-        assertEquals( 2, tester.deployer.redeployments);
-        assertEquals(14, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
-        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).size());
-        String failedHost2 = tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).get(0).hostname();
-        assertFalse(failedHost1.equals(failedHost2));
-        assertTrue(downHosts.contains(failedHost2));
+        assertEquals(count - expectedFailCount, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
     }
 
     @Test

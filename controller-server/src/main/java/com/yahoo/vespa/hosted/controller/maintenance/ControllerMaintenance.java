@@ -88,7 +88,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
         routingPolicyMaintainer = new RoutingPolicyMaintainer(controller, Duration.ofMinutes(5), jobControl, curator);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepositoryClient, Clock.systemUTC(), metric, resourceSnapshotConsumer);
-        nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(2), jobControl, nameService);
+        nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
     }
 
     public Upgrader upgrader() { return upgrader; }

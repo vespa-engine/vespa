@@ -68,7 +68,7 @@ public class OperatorChangeApplicationMaintainerTest {
 
         // Create applications
         fixture.activate();
-        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer, nodeRepository, clock, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
+        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer, nodeRepository, clock, Duration.ofMinutes(1));
         
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();

@@ -558,7 +558,7 @@ void parse_tensor_rename(ParseContext &ctx) {
 }
 
 void parse_tensor_lambda(ParseContext &ctx) {
-    vespalib::string type_spec("tensor(");
+    vespalib::string type_spec("tensor");
     while(!ctx.eos() && (ctx.get() != ')')) {
         type_spec.push_back(ctx.get());
         ctx.next();
@@ -576,6 +576,7 @@ void parse_tensor_lambda(ParseContext &ctx) {
     ctx.skip_spaces();
     ctx.eat('(');
     parse_expression(ctx);
+    ctx.eat(')');
     ctx.pop_resolve_context();
     Function lambda(ctx.pop_expression(), std::move(param_names));
     ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
@@ -611,8 +612,6 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_reduce(ctx);
             } else if (name == "rename") {
                 parse_tensor_rename(ctx);
-            } else if (name == "tensor") {
-                parse_tensor_lambda(ctx);
             } else if (name == "concat") {
                 parse_tensor_concat(ctx);
             } else {
@@ -634,7 +633,9 @@ size_t parse_symbol(ParseContext &ctx, vespalib::string &name, ParseContext::Inp
 void parse_symbol_or_call(ParseContext &ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
     vespalib::string name = get_ident(ctx, true);
-    if (!try_parse_call(ctx, name)) {
+    if (name == "tensor") {
+        parse_tensor_lambda(ctx);
+    } else if (!try_parse_call(ctx, name)) {
         size_t id = parse_symbol(ctx, name, before_name);
         if (name.empty()) {
             ctx.fail("missing value");

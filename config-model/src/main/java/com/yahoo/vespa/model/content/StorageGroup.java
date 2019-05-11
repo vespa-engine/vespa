@@ -204,12 +204,12 @@ public class StorageGroup {
         }
 
         public StorageGroup buildRootGroup(DeployState deployState) {
-            Optional<ModelElement> group = Optional.ofNullable(clusterElement.getChild("group"));
+            Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
-            if (group.isPresent() && (group.get().getStringAttribute("name") != null || group.get().getIntegerAttribute("distribution-key") != null))
+            if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
                     deployState.getDeployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
@@ -409,7 +409,7 @@ public class StorageGroup {
                 throw new IllegalArgumentException("A group can contain either explicit subgroups or a nodes specification, but not both.");
 
             Optional<NodesSpecification> nodeRequirement;
-            if (nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ) // request these nodes
+            if (nodesElement.isPresent() && nodesElement.get().stringAttribute("count") != null ) // request these nodes
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (! nodesElement.isPresent() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
@@ -434,12 +434,12 @@ public class StorageGroup {
 
         private boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {
             if ( ! element.isPresent()) return defaultValue;
-            return element.get().getBooleanAttribute(attributeName, defaultValue);
+            return element.get().booleanAttribute(attributeName, defaultValue);
         }
 
         private Optional<ModelElement> getNodes(ModelElement groupOrNodesElement) {
             if (groupOrNodesElement.getXml().getTagName().equals("nodes")) return Optional.of(groupOrNodesElement);
-            return Optional.ofNullable(groupOrNodesElement.getChild("nodes"));
+            return Optional.ofNullable(groupOrNodesElement.child("nodes"));
         }
 
         private List<XmlNodeBuilder> collectExplicitNodes(Optional<ModelElement> groupOrNodesElement) {
@@ -461,8 +461,8 @@ public class StorageGroup {
                 indexPrefix = parentGroup.index + ".";
             }
             for (ModelElement g : subGroupElements) {
-                subGroups.add(collectGroup(Optional.of(g), Optional.ofNullable(g.getChild("nodes")), g.getStringAttribute("name"),
-                                           indexPrefix + g.getIntegerAttribute("distribution-key")));
+                subGroups.add(collectGroup(Optional.of(g), Optional.ofNullable(g.child("nodes")), g.stringAttribute("name"),
+                                           indexPrefix + g.integerAttribute("distribution-key")));
             }
             return subGroups;
         }

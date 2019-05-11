@@ -8,13 +8,19 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
+import static java.util.stream.Collectors.toList;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import static javax.net.ssl.SSLEngineResult.Status;
 
@@ -209,6 +215,22 @@ public class TlsCryptoSocket implements CryptoSocket {
         verifyHandshakeCompleted();
         channelWrite();
         return wrapBuffer.bytes() > 0 ? FlushResult.NEED_WRITE : FlushResult.DONE;
+    }
+
+    @Override
+    public Optional<SecurityContext> getSecurityContext() {
+        try {
+            if (handshakeState != HandshakeState.COMPLETED) {
+                return Optional.empty();
+            }
+            List<X509Certificate> peerCertificateChain =
+                    Arrays.stream(sslEngine.getSession().getPeerCertificates())
+                            .map(X509Certificate.class::cast)
+                            .collect(toList());
+            return Optional.of(new SecurityContext(peerCertificateChain));
+        } catch (SSLPeerUnverifiedException e) { // unverified peer: non-certificate based ciphers or peer did not provide a certificate
+            return Optional.of(new SecurityContext(List.of())); // secure connection, but peer does not have a certificate chain.
+        }
     }
 
     private boolean handshakeWrap() throws IOException {

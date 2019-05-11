@@ -12,7 +12,6 @@ import java.util.List;
  * Represents an action to restart services in order to handle a config change.
  *
  * @author geirst
- * @since 5.43
  */
 public class VespaRestartAction extends VespaConfigChangeAction implements ConfigChangeRestartAction {
 

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import ai.vespa.hosted.api.Signatures;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -43,7 +44,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -88,10 +88,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.DigestInputStream;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -206,6 +209,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -395,24 +399,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-
-        if (queryParameters.containsKey("streaming")) {
-            InputStream logStream = controller.configServer().getLogStream(deployment, queryParameters);
-            return new HttpResponse(200) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    logStream.transferTo(outputStream);
-                }
-            };
-        }
-
-        Optional<Logs> response = controller.configServer().getLogs(deployment, queryParameters);
-        Slime slime = new Slime();
-        Cursor object = slime.setObject();
-        if (response.isPresent()) {
-            response.get().logs().entrySet().stream().forEach(entry -> object.setString(entry.getKey(), entry.getValue()));
-        }
-        return new SlimeJsonResponse(slime);
+        InputStream logStream = controller.configServer().getLogs(deployment, queryParameters);
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                logStream.transferTo(outputStream);
+            }
+        };
     }
 
     private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {
@@ -906,12 +899,36 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  "instance", instanceName));
     }
 
+    private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
+        Map<String, byte[]> dataParts = parseDataParts(request);
+        if ( ! dataParts.containsKey("applicationZip"))
+            throw new IllegalArgumentException("Missing required form part 'applicationZip'");
+
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
+        controller.applications().verifyApplicationIdentityConfiguration(id.tenant(),
+                                                                         applicationPackage,
+                                                                         Optional.of(requireUserPrincipal(request)));
+
+        Optional<Version> version = Optional.ofNullable(dataParts.get("deployOptions"))
+                                            .map(json -> SlimeUtils.jsonToSlime(json).get())
+                                            .flatMap(options -> optional("vespaVersion", options))
+                                            .map(Version::fromString);
+
+        controller.jobController().deploy(id, type, version, applicationPackage);
+        RunId runId = controller.jobController().last(id, type).get().id();
+        Slime slime = new Slime();
+        Cursor rootObject = slime.setObject();
+        rootObject.setString("message", "Deployment started in " + runId);
+        rootObject.setString("location", controller.zoneRegistry().dashboardUrl(runId).toString());
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
 
         // Get deployOptions
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("deployOptions"))
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
@@ -968,18 +985,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         boolean deployDirectly = deployOptions.field("deployDirectly").asBool();
         Optional<Version> vespaVersion = optional("vespaVersion", deployOptions).map(Version::new);
 
-        /*
-         * Deploy direct is when we want to redeploy the current application - retrieve version
-         * info from the application package before deploying
-         */
-        if(deployDirectly && !applicationPackage.isPresent() && !applicationVersion.isPresent() && !vespaVersion.isPresent()) {
+        if (deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
 
             // Redeploy the existing deployment with the same versions.
             Optional<Deployment> deployment = controller.applications().get(applicationId)
                     .map(Application::deployments)
                     .flatMap(deployments -> Optional.ofNullable(deployments.get(zone)));
 
-            if(!deployment.isPresent())
+            if(deployment.isEmpty())
                 throw new IllegalArgumentException("Can't redeploy application, no deployment currently exist");
 
             ApplicationVersion version = deployment.get().applicationVersion();
@@ -1399,7 +1412,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
-        Map<String, byte[]> dataParts = new MultipartParser().parse(request);
+        Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions);
         String authorEmail = submitOptions.field("authorEmail").asString();
@@ -1418,6 +1431,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+    }
+
+    private static Map<String, byte[]> parseDataParts(HttpRequest request) {
+        String contentHash = request.getHeader("x-Content-Hash");
+        if (contentHash == null)
+            return new MultipartParser().parse(request);
+
+        DigestInputStream digester = Signatures.sha256Digester(request.getData());
+        var dataParts = new MultipartParser().parse(request.getHeader("Content-Type"), digester, request.getUri());
+        if ( ! Arrays.equals(digester.getMessageDigest().digest(), Base64.getDecoder().decode(contentHash)))
+            throw new IllegalArgumentException("Value of X-Content-Hash header does not match computed content hash");
+
+        return dataParts;
     }
 
 }

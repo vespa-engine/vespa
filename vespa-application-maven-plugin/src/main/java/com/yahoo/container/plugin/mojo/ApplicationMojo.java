@@ -24,8 +24,11 @@ import java.util.List;
 @Mojo(name = "packageApplication", defaultPhase = LifecyclePhase.PACKAGE, threadSafe = true)
 public class ApplicationMojo extends AbstractMojo {
 
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
+
+    @Parameter(property = "vespaversion")
+    private String vespaversion;
 
     @Parameter(defaultValue = "src/main/application")
     private String sourceDir;
@@ -51,14 +54,16 @@ public class ApplicationMojo extends AbstractMojo {
         }
     }
 
-    /** Writes meta data about this package if the destination directory exists, and the "vespaversion" property is set. */
+    /** Writes meta data about this package if the destination directory exists. */
     private void addBuildMetaData(File applicationDestination) throws MojoExecutionException {
-        String compileVersion = project.getProperties().getProperty("vespaversion");
-        if ( ! applicationDestination.exists() || compileVersion == null)
+        if ( ! applicationDestination.exists())
             return;
 
+        if (vespaversion == null) // Get the build version of the parent project unless specifically set.
+            vespaversion = project.getProperties().getProperty("vespaversion");
+
         String metaData = String.format("{\"compileVersion\": \"%s\",\n \"buildTime\": %d}",
-                                        compileVersion,
+                                        vespaversion,
                                         System.currentTimeMillis());
         try {
             Files.write(applicationDestination.toPath().resolve("build-meta.json"),

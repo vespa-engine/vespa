@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-namespace search {
-
-namespace multivalue {
+namespace search::multivalue {
 
 template <typename T>
 class Value {
@@ -29,7 +27,7 @@ public:
     bool operator >(const Value<T> & rhs) const { return _v > rhs._v; }
     static bool hasWeight() { return false; }
 
-    static const bool _hasWeight = false;
+    static constexpr bool _hasWeight = false;
 private:
     T _v;
 };
@@ -52,12 +50,10 @@ public:
     bool operator >(const WeightedValue<T> & rhs) const { return _v > rhs._v; }
     static bool hasWeight() { return true; }
 
-    static const bool _hasWeight = true;
+    static constexpr bool _hasWeight = true;
 private:
     T       _v;
     int32_t _w;
 };
 
 }
-}
-

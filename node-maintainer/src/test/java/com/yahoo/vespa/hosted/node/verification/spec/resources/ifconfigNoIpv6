@@ -1,7 +1,0 @@
-eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:03
-          inet addr:172.17.0.3  Bcast:0.0.0.0  Mask:255.255.0.0
-          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-          RX packets:52908 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:29527 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:0
-          RX bytes:75003406 (71.5 MiB)  TX bytes:1839045 (1.7 MiB)

@@ -7,7 +7,9 @@
   </admin>
 
   <jdisc id="container1" version="1.0">
-    <nodes count="5" flavor="medium" required="true"/>
+    <nodes count="5" required="true">
+      <resources vcpu="1.2" memory="10Gb" disk="0.3 TB"/>
+    </nodes>
   </jdisc>
 
   <jdisc id="container1" version="1.0">
@@ -28,7 +30,9 @@
 
   <content id="search" version="1.0">
     <redundancy>2</redundancy>
-    <nodes count="7" flavor="large" groups="12"/>
+    <nodes count="7" flavor="large" groups="12">
+      <resources vcpu="3.0" memory="32000.0Mb" disk="300 Gb"/>
+    </nodes>
   </content>
 
 </services>

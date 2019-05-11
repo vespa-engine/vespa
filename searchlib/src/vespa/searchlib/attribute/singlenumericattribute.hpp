@@ -160,9 +160,9 @@ SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
     if (res.isEqual()) {
-        return AttributeVector::SearchContext::UP(new SingleSearchContext< NumericAttribute::Equal<T> >(std::move(qTerm), *this));
+        return std::make_unique<SingleSearchContext<NumericAttribute::Equal<T>>>(std::move(qTerm), *this);
     } else {
-        return AttributeVector::SearchContext::UP(new SingleSearchContext< NumericAttribute::Range<T> >(std::move(qTerm), *this));
+        return std::make_unique<SingleSearchContext<NumericAttribute::Range<T>>>(std::move(qTerm), *this);
     }
 }
 
@@ -228,18 +228,16 @@ SingleValueNumericAttribute<B>::SingleSearchContext<M>::
 createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<SingleSearchContext<M> >(*this, matchData)
-                 : new FilterAttributeIteratorT<SingleSearchContext<M> >(*this, matchData));
+        return strict
+                 ? std::make_unique<FilterAttributeIteratorStrict<SingleSearchContext<M>>>(*this, matchData)
+                 : std::make_unique<FilterAttributeIteratorT<SingleSearchContext<M>>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<SingleSearchContext<M> >(*this, matchData)
-             : new AttributeIteratorT<SingleSearchContext<M> >(*this, matchData));
+    return strict
+             ? std::make_unique<AttributeIteratorStrict<SingleSearchContext<M>>>(*this, matchData)
+             : std::make_unique<AttributeIteratorT<SingleSearchContext<M>>>(*this, matchData);
 }
 }
 

@@ -112,6 +112,13 @@ public:
      **/
     FeatureExecutor();
 
+    /**
+    * Obtain the fully qualified name of the concrete class for this object.
+    *
+    * @return fully qualified class name
+    **/
+    vespalib::string getClassName() const;
+
     // bind order per executor: inputs, outputs, match_data
     void bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs);
     void bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);

@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import com.yahoo.component.Version;
@@ -31,6 +32,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 
 /**
  * A per tenant request handler, for handling reload (activate application) and getConfig requests for
@@ -99,18 +101,31 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
      */
     @Override
     public void reloadConfig(ApplicationSet applicationSet) {
-        setLiveApp(applicationSet);
-        notifyReloadListeners(applicationSet);
+        ApplicationId id = applicationSet.getId();
+        try (Lock lock = applications.lock(id)) {
+            if ( ! applications.exists(id))
+                return; // Application was deleted before activation.
+            if (applicationSet.getApplicationGeneration() != applications.requireActiveSessionOf(id))
+                return; // Application activated a new session before we got here.
+
+            setLiveApp(applicationSet);
+            notifyReloadListeners(applicationSet);
+        }
     }
 
     @Override
     public void removeApplication(ApplicationId applicationId) {
-        if (applicationMapper.hasApplication(applicationId, clock.instant())) {
-            applicationMapper.remove(applicationId);
-            hostRegistry.removeHostsForKey(applicationId);
-            reloadListenersOnRemove(applicationId);
-            tenantMetricUpdater.setApplications(applicationMapper.numApplications());
-            metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
+        try (Lock lock = applications.lock(applicationId)) {
+            if (applications.exists(applicationId))
+                return; // Application was deployed again.
+
+            if (applicationMapper.hasApplication(applicationId, clock.instant())) {
+                applicationMapper.remove(applicationId);
+                hostRegistry.removeHostsForKey(applicationId);
+                reloadListenersOnRemove(applicationId);
+                tenantMetricUpdater.setApplications(applicationMapper.numApplications());
+                metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
+            }
         }
     }
 

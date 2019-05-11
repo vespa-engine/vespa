@@ -33,13 +33,14 @@ public class DockerHostCapacity {
 
     /**
      * Compare hosts on free capacity.
-     * <p>
      * Used in prioritizing hosts for allocation in <b>descending</b> order.
      */
     int compare(Node hostA, Node hostB) {
-        int comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
+        int comp = compare(freeCapacityOf(hostB, false),
+                           freeCapacityOf(hostA, false));
         if (comp == 0) {
-            comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
+            comp = compare(freeCapacityOf(hostB, false),
+                           freeCapacityOf(hostA, false));
             if (comp == 0) {
                 // If resources are equal - we want to assign to the one with the most IPaddresses free
                 comp = freeIPs(hostB) - freeIPs(hostA);
@@ -49,15 +50,21 @@ public class DockerHostCapacity {
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
-        int comp = freeCapacityOf(hostB,  true).compare(freeCapacityOf(hostA, true));
+        int comp = compare(freeCapacityOf(hostB,  true),
+                           freeCapacityOf(hostA, true));
         if (comp == 0) {
-            comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
+            comp = compare(freeCapacityOf(hostB, true),
+                           freeCapacityOf(hostA, true));
             if (comp == 0) {
                 // If resources are equal - we want to assign to the one with the most IPaddresses free
                 comp = freeIPs(hostB) - freeIPs(hostA);
             }
         }
         return comp;
+    }
+
+    private int compare(ResourceCapacity a, ResourceCapacity b) {
+        return ResourceCapacityComparator.defaultOrder().compare(a, b);
     }
 
     /**
@@ -105,9 +112,20 @@ public class DockerHostCapacity {
     }
 
     private int canFitNumberOf(Node node, Flavor flavor) {
-        int capacityFactor = freeCapacityOf(node, false).freeCapacityInFlavorEquivalence(flavor);
+        ResourceCapacity freeCapacity = freeCapacityOf(node, false);
+        int capacityFactor = freeCapacityInFlavorEquivalence(freeCapacity, flavor);
         int ips = freeIPs(node);
         return Math.min(capacityFactor, ips);
+    }
+
+    int freeCapacityInFlavorEquivalence(ResourceCapacity freeCapacity, Flavor flavor) {
+        if ( ! freeCapacity.hasCapacityFor(ResourceCapacity.of(flavor))) return 0;
+
+        double cpuFactor = Math.floor(freeCapacity.vcpu() / flavor.getMinCpuCores());
+        double memoryFactor = Math.floor(freeCapacity.memoryGb() / flavor.getMinMainMemoryAvailableGb());
+        double diskFactor =  Math.floor(freeCapacity.diskGb() / flavor.getMinDiskAvailableGb());
+
+        return (int) Math.min(Math.min(memoryFactor, cpuFactor), diskFactor);
     }
 
     /**

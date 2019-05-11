@@ -7,7 +7,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
-import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;

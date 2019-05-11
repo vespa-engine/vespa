@@ -22,6 +22,7 @@ import com.yahoo.vespa.curator.Lock;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.logging.Logger;
 
 /**
@@ -97,6 +98,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     @Override
     public void prepare() {
         if (prepared) return;
+
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
         session.prepare(logger,
@@ -112,16 +114,23 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.prepared = true;
     }
 
-    /** Activates this. If it is not already prepared, this will call prepare first. */
+    /**
+     * Activates this. If it is not already prepared, this will call prepare first.
+     *
+     * If the session is no longer supposed to be activated by the time prepare is done, throws a
+     *
+     */
     @Override
     public void activate() {
         if ( ! prepared)
             prepare();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
-        long sessionId = session.getSessionId();
-        validateSessionStatus(session);
-        try (Lock lock = tenant.getSessionLock(timeout)) {
+        try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
+            if ( ! tenant.getApplicationRepo().exists(session.getApplicationId()))
+                return; // Application was deleted.
+
+            validateSessionStatus(session, tenant.getApplicationRepo().preparing(session.getApplicationId()));
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
@@ -129,13 +138,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getAllocatedHosts().getHosts());
             }
             transaction.commit();
-            session.waitUntilActivated(timeoutBudget);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new InternalServerException("Error activating application", e);
         }
-        log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
+
+        session.waitUntilActivated(timeoutBudget);
+
+        log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
                                " activated successfully using " +
                                ( hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner" ) +
                                ". Config generation " + session.getMetaData().getGeneration());
@@ -153,15 +164,20 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }
-    
-    private long validateSessionStatus(LocalSession localSession) {
-        long sessionId = localSession.getSessionId();
-        if (Session.Status.NEW.equals(localSession.getStatus())) {
-            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is not prepared");
-        } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
-            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
-        }
-        return sessionId;
+
+    private void validateSessionStatus(LocalSession localSession, OptionalLong preparing) {
+        if (Session.Status.ACTIVATE.equals(localSession.getStatus()))
+            throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is already active");
+
+        if (Session.Status.NEW.equals(localSession.getStatus()))
+            throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is not prepared");
+
+        if (preparing.isEmpty())
+            throw new IllegalStateException("No session is currently being prepared for '" + session.getApplicationId() + "'");
+
+        if (preparing.getAsLong() != session.getSessionId())
+            throw new ActivationConflictException("Session " + session.getSessionId() + " is no longer supposed to be activated " +
+                                                  "for '" + session.getApplicationId() + "'; " + + preparing.getAsLong() + " is");
     }
 
     private Transaction deactivateCurrentActivateNew(LocalSession active, LocalSession prepared, boolean ignoreStaleSessionFailure) {

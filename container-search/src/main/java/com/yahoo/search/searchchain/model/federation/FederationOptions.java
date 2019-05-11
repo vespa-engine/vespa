@@ -30,7 +30,7 @@ public class FederationOptions implements Cloneable {
      * Creates a fully specified set of options
      *
      * @param optional whether this should be optional
-     * @param timeoutInMilliseconds the max time to wait for a result from this source, or null to not specify a limit
+     * @param timeoutInMilliseconds the max time to wait for a result from this source, or null to use the timeout of the query
      * @param requestTimeoutInMilliseconds the max time to allow this request to live, or null to make this the same as
      *                                     timeoutInMilliseconds. Setting this higher than timeoutInMilliseconds is
      *                                     useful to use queries to populate the cache of slow sources

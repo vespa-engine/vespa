@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import org.w3c.dom.Element;
 
 import java.io.Serializable;
 import java.util.List;
@@ -17,9 +16,9 @@ public class SearchDefinitionXMLHandler implements Serializable {
     private String sdName;
 
     public SearchDefinitionXMLHandler(ModelElement elem) {
-        sdName = elem.getStringAttribute("name");
+        sdName = elem.stringAttribute("name");
         if (sdName == null) {
-            sdName = elem.getStringAttribute("type");
+            sdName = elem.stringAttribute("type");
         }
     }
 

@@ -2,12 +2,10 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
-import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
+import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Action;
@@ -24,26 +22,19 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
+public class ControllerAuthorizationFilter extends JsonSecurityRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
     private final Enforcer enforcer;
 
     @Inject
-    public ControllerAuthorizationFilter(Controller controller,
-                                         CorsFilterConfig corsConfig) {
-        this(controller.system(), Set.copyOf(corsConfig.allowedUrls()));
-    }
-
-    ControllerAuthorizationFilter(SystemName system,
-                                  Set<String> allowedUrls) {
-        super(allowedUrls);
-        this.enforcer = new Enforcer(system);
+    public ControllerAuthorizationFilter(Controller controller) {
+        this.enforcer = new Enforcer(controller.system());
     }
 
     @Override
-    public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
+    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
             Optional<SecurityContext> securityContext = Optional.ofNullable((SecurityContext)request.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 

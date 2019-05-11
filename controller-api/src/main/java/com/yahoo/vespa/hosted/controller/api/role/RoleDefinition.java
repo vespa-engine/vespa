@@ -20,10 +20,6 @@ public enum RoleDefinition {
     /** Deus ex machina. */
     hostedOperator(Policy.operator),
 
-    /** Build service which may submit new applications for continuous deployment. */
-    buildService(Policy.submission,
-                 Policy.applicationRead),
-
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
              Policy.publicRead,
@@ -35,6 +31,10 @@ public enum RoleDefinition {
                       Policy.tenantRead,
                       Policy.applicationRead,
                       Policy.deploymentRead),
+
+    /** Build service which may submit new applications for continuous deployment. */
+    buildService(applicationReader,
+                 Policy.submission),
 
     /** Application developer with access to deploy to development zones. */
     applicationDeveloper(applicationReader,

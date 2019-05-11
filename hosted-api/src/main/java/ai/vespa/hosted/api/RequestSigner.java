@@ -1,12 +1,12 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.http.HttpRequest;
-import java.security.Key;
-import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Clock;
@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.util.function.Supplier;
 
 import static ai.vespa.hosted.api.Signatures.sha256Digest;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 
 /**
  * Signs HTTP request headers using a private key, for verification by the indicated public key.
@@ -26,14 +27,14 @@ public class RequestSigner {
     private final String keyId;
     private final Clock clock;
 
-    /** Creates a new request signer from the PEM encoded RSA key at the specified path, owned by the given application. */
+    /** Creates a new request signer from the given PEM encoded ECDSA key, with a public key with the given ID. */
     public RequestSigner(String pemPrivateKey, String keyId) {
         this(pemPrivateKey, keyId, Clock.systemUTC());
     }
 
     /** Creates a new request signer with a custom clock. */
-    RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
-        this.signer = KeyUtils.createSigner(KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey));
+    public RequestSigner(String pemPrivateKey, String keyId, Clock clock) {
+        this.signer = SignatureUtils.createSigner(KeyUtils.fromPemEncodedPrivateKey(pemPrivateKey), SHA256_WITH_ECDSA);
         this.keyId = keyId;
         this.clock = clock;
     }
@@ -67,37 +68,6 @@ public class RequestSigner {
         catch (SignatureException e) {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    /**
-     * Completes, signs and returns the given request builder and data.
-     *
-     * This sets the Content-Type header from the given streamer, and returns
-     * {@code signed(request, method, streamer::data)}.
-     */
-    public HttpRequest signed(HttpRequest.Builder request, Method method, MultiPartStreamer streamer) {
-        request.setHeader("Content-Type", streamer.contentType());
-        return signed(request, method, streamer::data);
-    }
-
-    /**
-     * Completes, signs and returns the given request builder.<br>
-     * <br>
-     * This is simply a convenience for<br>
-     * {@code signed(request, method, () -> new ByteArrayInputStream(data))}.
-     */
-    public HttpRequest signed(HttpRequest.Builder request, Method method, byte[] data) {
-        return signed(request, method, () -> new ByteArrayInputStream(data));
-    }
-
-    /**
-     * Completes, signs and returns the given request builder.<br>
-     * <br>
-     * This sets the data of the request to be empty, and returns <br>
-     * {@code signed(request, method, InputStream::nullInputStream)}.
-     */
-    public HttpRequest signed(HttpRequest.Builder request, Method method) {
-        return signed(request, method, InputStream::nullInputStream);
     }
 
 }

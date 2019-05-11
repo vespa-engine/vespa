@@ -32,15 +32,15 @@ protected:
     IntegerVector _queryVector;
 
 public:
-    RawExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector);
+    RawExecutor(const IAttributeVector *attribute, IntegerVector queryVector);
     void execute(uint32_t docId) override;
 };
 
 template <typename BaseType>
-RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector) :
+RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute, IntegerVector queryVector) :
         FeatureExecutor(),
         _attribute(attribute),
-        _queryVector(queryVector)
+        _queryVector(std::move(queryVector))
 {
     _queryVector.syncMap();
 }
@@ -81,13 +81,13 @@ private:
     WeightedIntegerContent _buffer;
 
 public:
-    BufferedExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector);
+    BufferedExecutor(const IAttributeVector *attribute, IntegerVector queryVector);
     void execute(uint32_t docId) override;
 };
 
 template <typename BaseType>
-BufferedExecutor<BaseType>::BufferedExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector) :
-    RawExecutor<BaseType>(attribute, queryVector),
+BufferedExecutor<BaseType>::BufferedExecutor(const IAttributeVector *attribute, IntegerVector queryVector) :
+    RawExecutor<BaseType>(attribute, std::move(queryVector)),
     _buffer()
 {
 }
@@ -109,20 +109,17 @@ InternalMaxReduceProdJoinBlueprint::InternalMaxReduceProdJoinBlueprint() :
 {
 }
 
-InternalMaxReduceProdJoinBlueprint::~InternalMaxReduceProdJoinBlueprint()
-{
-}
+InternalMaxReduceProdJoinBlueprint::~InternalMaxReduceProdJoinBlueprint() = default;
 
 void
-InternalMaxReduceProdJoinBlueprint::visitDumpFeatures(const IIndexEnvironment &,
-                                                           IDumpFeatureVisitor &) const
+InternalMaxReduceProdJoinBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
 }
 
 Blueprint::UP
 InternalMaxReduceProdJoinBlueprint::createInstance() const
 {
-    return Blueprint::UP(new InternalMaxReduceProdJoinBlueprint());
+    return std::make_unique<InternalMaxReduceProdJoinBlueprint>();
 }
 
 ParameterDescriptions
@@ -155,7 +152,7 @@ bool supportsGetRawValues(const A &attr) noexcept {
 
 template <typename BaseType>
 FeatureExecutor &
-selectTypedExecutor(const IAttributeVector *attribute, const IntegerVector &vector, vespalib::Stash &stash)
+selectTypedExecutor(const IAttributeVector *attribute, IntegerVector vector, vespalib::Stash &stash)
 {
     if (!attribute->isImported()) {
         using A = IntegerAttributeTemplate<BaseType>;
@@ -166,22 +163,22 @@ selectTypedExecutor(const IAttributeVector *attribute, const IntegerVector &vect
         if (supportsGetRawValues(*iattr)) {
             const ExactA *exactA = dynamic_cast<const ExactA *>(iattr);
             if (exactA != nullptr) {
-                return stash.create<RawExecutor<BaseType>>(attribute, vector);
+                return stash.create<RawExecutor<BaseType>>(attribute, std::move(vector));
             }
         }
     }
-    return stash.create<BufferedExecutor<BaseType>>(attribute, vector);
+    return stash.create<BufferedExecutor<BaseType>>(attribute, std::move(vector));
 }
 
 FeatureExecutor &
-selectExecutor(const IAttributeVector *attribute, const IntegerVector &vector, vespalib::Stash &stash)
+selectExecutor(const IAttributeVector *attribute, IntegerVector vector, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
-                return selectTypedExecutor<int32_t>(attribute, vector, stash);
+                return selectTypedExecutor<int32_t>(attribute, std::move(vector), stash);
             case BasicType::INT64:
-                return selectTypedExecutor<int64_t>(attribute, vector, stash);
+                return selectTypedExecutor<int64_t>(attribute, std::move(vector), stash);
             default:
                 break;
         }
@@ -207,7 +204,7 @@ InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env,
         IntegerVector vector;
         WeightedSetParser::parse(prop.get(), vector);
         if (!vector.getVector().empty()) {
-            return selectExecutor(attribute, vector, stash);
+            return selectExecutor(attribute, std::move(vector), stash);
         }
     }
     return stash.create<SingleZeroValueExecutor>();

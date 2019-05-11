@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -98,7 +97,7 @@ public class NodeTypeProvisioningTest {
                 Collections.singletonMap(
                         application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
-                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database()));
+                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10));
 
         { // Deploy
             List<HostSpec> hosts = deployProxies(application, tester);
@@ -163,7 +162,7 @@ public class NodeTypeProvisioningTest {
                 Collections.singletonMap(
                         application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
-                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database()));
+                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10));
         final int numNodesToRetire = 5;
 
         { // Deploy

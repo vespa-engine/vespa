@@ -14,6 +14,7 @@ import java.util.Optional;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static java.util.Objects.requireNonNull;
@@ -173,15 +174,14 @@ public class Run {
                                          .iterator());
     }
 
-    /** Returns the list of not-yet-succeeded run-always steps whose run-always prerequisites have all succeeded. */
+    /** Returns the list of not-yet-run run-always steps whose run-always prerequisites have all run. */
     private List<Step> forcedSteps() {
         return ImmutableList.copyOf(steps.entrySet().stream()
-                                         .filter(entry ->    entry.getValue() != succeeded
+                                         .filter(entry ->    entry.getValue() == unfinished
                                                           && JobProfile.of(id.type()).alwaysRun().contains(entry.getKey())
                                                           && entry.getKey().prerequisites().stream()
                                                                   .filter(JobProfile.of(id.type()).alwaysRun()::contains)
-                                                                  .allMatch(step ->    steps.get(step) == null
-                                                                                    || steps.get(step) == succeeded))
+                                                                  .allMatch(step -> steps.get(step) != unfinished))
                                          .map(Map.Entry::getKey)
                                          .iterator());
     }

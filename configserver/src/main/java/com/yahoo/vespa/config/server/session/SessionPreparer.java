@@ -294,10 +294,9 @@ public class SessionPreparer {
          * (once for the upgrading case and once for a potential restart action).
          */
          public ConfigChangeActions getConfigChangeActions() {
-            return new ConfigChangeActions(results.stream().
-                map(result -> result.actions).
-                flatMap(actions -> actions.stream()).
-                collect(Collectors.toList()));
+            return new ConfigChangeActions(results.stream().map(result -> result.actions)
+                                                           .flatMap(actions -> actions.stream())
+                                                           .collect(Collectors.toList()));
          }
 
     }

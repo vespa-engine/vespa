@@ -13,7 +13,6 @@ public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServer
 
     private final String hostName;
     private final int configServerPort;
-    private final int httpPort;
     private final int zooKeeperPort;
 
     public String getHostName() {
@@ -22,10 +21,6 @@ public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServer
 
     public int getConfigServerPort() {
         return configServerPort;
-    }
-
-    public int getHttpPort() {
-        return httpPort;
     }
 
     public int getZooKeeperPort() {
@@ -39,7 +34,6 @@ public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServer
 
             return hostName.equals(other.hostName) &&
                     configServerPort == other.configServerPort &&
-                    httpPort == other.httpPort &&
                     zooKeeperPort == other.zooKeeperPort;
         } else {
             return false;
@@ -51,25 +45,23 @@ public class ConfigServerSpec implements com.yahoo.config.model.api.ConfigServer
         return hostName.hashCode();
     }
 
-    public ConfigServerSpec(String hostName, int configServerPort, int httpPort, int zooKeeperPort) {
+    public ConfigServerSpec(String hostName, int configServerPort, int zooKeeperPort) {
         this.hostName = hostName;
         this.configServerPort = configServerPort;
-        this.httpPort = httpPort;
         this.zooKeeperPort = zooKeeperPort;
     }
 
     public static List<com.yahoo.config.model.api.ConfigServerSpec> fromConfig(ConfigserverConfig configserverConfig) {
         List<com.yahoo.config.model.api.ConfigServerSpec> specs = new ArrayList<>();
         for (ConfigserverConfig.Zookeeperserver server : configserverConfig.zookeeperserver()) {
-            // TODO We cannot be sure that http port always is rpcport + 1
-            specs.add(new ConfigServerSpec(server.hostname(), configserverConfig.rpcport(), configserverConfig.rpcport() + 1, server.port()));
+            specs.add(new ConfigServerSpec(server.hostname(), configserverConfig.rpcport(), server.port()));
         }
         return specs;
     }
 
     @Override
     public String toString() {
-        return "hostname=" + hostName + ", rpc port=" + configServerPort + ", http port=" + httpPort + ", zookeeper port=" + zooKeeperPort;
+        return "hostname=" + hostName + ", rpc port=" + configServerPort + ", zookeeper port=" + zooKeeperPort;
     }
 
 }

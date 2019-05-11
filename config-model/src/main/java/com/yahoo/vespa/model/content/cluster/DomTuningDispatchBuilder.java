@@ -11,11 +11,11 @@ public class DomTuningDispatchBuilder {
 
     public static TuningDispatch build(ModelElement contentXml) {
         TuningDispatch.Builder builder = new TuningDispatch.Builder();
-        ModelElement tuningElement = contentXml.getChild("tuning");
+        ModelElement tuningElement = contentXml.child("tuning");
         if (tuningElement == null) {
             return builder.build();
         }
-        ModelElement dispatchElement = tuningElement.getChild("dispatch");
+        ModelElement dispatchElement = tuningElement.child("dispatch");
         if (dispatchElement == null) {
             return builder.build();
         }

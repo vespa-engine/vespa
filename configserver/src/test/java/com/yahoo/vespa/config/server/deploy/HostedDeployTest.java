@@ -165,29 +165,52 @@ public class HostedDeployTest {
     }
 
     /**
+     * Tests that we create the minimal set of models and that version 7.x is created
+     * if creating version 8.x fails (to support upgrades to new major version for applications
+     * that are still using features that do not work on version 8.x)
+     **/
+    @Test
+    public void testCreateLatestMajorOnPreviousMajorIfItFailsOnMajorVersion8() {
+        deployWithModelForLatestMajorVersionFailing(8);
+    }
+
+    /**
+     * Tests that we fail deployment for version 7.x if creating version 7.x fails (i.e. that we do not skip
+     * building 7.x and only build version 6.x). Skipping creation of models for a major version is only supported
+     * for major version >= 8 (see test above) or when major-version=6 is set in application package.
+     **/
+    @Test(expected = InvalidApplicationException.class)
+    public void testFailingToCreateModelVersion7FailsDeployment() {
+        deployWithModelForLatestMajorVersionFailing(7);
+    }
+
+    /**
      * Tests that we create the minimal set of models, but latest model version is created for
      * previous major if creating latest model version on latest major version fails
      **/
-    @Test
-    public void testCreateLatestMajorOnPreviousMajorIfItFailsOnNewestMajor() {
-        List<Host> hosts = Arrays.asList(createHost("host1", "6.0.0"),
-                                         createHost("host2", "6.1.0"),
-                                         createHost("host3", "6.1.0"));
+    private void deployWithModelForLatestMajorVersionFailing(int newestMajorVersion) {
+        int oldestMajorVersion = newestMajorVersion - 1;
+        String oldestVersion = oldestMajorVersion + ".0.0";
+        String newestOnOldMajorVersion = oldestMajorVersion + ".1.0";
+        String newestOnNewMajorVersion = newestMajorVersion + ".2.0";
+        List<Host> hosts = Arrays.asList(createHost("host1", oldestVersion),
+                                         createHost("host2", newestOnOldMajorVersion),
+                                         createHost("host3", newestOnOldMajorVersion));
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
 
-        CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
-        CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"));
-        ModelFactory factory720 = DeployTester.createFailingModelFactory(Version.fromString("7.2.0"));
-        List<ModelFactory> modelFactories = Arrays.asList(factory600, factory610, factory720);
+        CountingModelFactory factory1 = DeployTester.createModelFactory(Version.fromString(oldestVersion));
+        CountingModelFactory factory2 = DeployTester.createModelFactory(Version.fromString(newestOnOldMajorVersion));
+        ModelFactory factory3 = DeployTester.createFailingModelFactory(Version.fromString(newestOnNewMajorVersion));
+        List<ModelFactory> modelFactories = Arrays.asList(factory1, factory2, factory3);
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
-        tester.deployApp("src/test/apps/hosted/", "6.0.0", Instant.now());
+        tester.deployApp("src/test/apps/hosted/", oldestVersion, Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
-        assertTrue(factory600.creationCount() > 0);
+        assertTrue(factory1.creationCount() > 0);
         assertTrue("Latest model for previous major version is included if latest model for latest major version fails to build",
-                   factory610.creationCount() > 0);
+                   factory2.creationCount() > 0);
     }
 
     /**

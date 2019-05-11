@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
-import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 
 import java.util.List;
@@ -51,9 +50,9 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE));
 
         ModelElement adminElement = new ModelElement(adminE);
-        addLogForwarders(adminElement.getChild("logforwarding"), admin);
+        addLogForwarders(adminElement.child("logforwarding"), admin);
 
-        if (adminElement.getChild("filedistribution") != null) {
+        if (adminElement.child("filedistribution") != null) {
             deployState.getDeployLogger().log(LogLevel.WARNING, "'filedistribution' element is deprecated and ignored");
         }
     }

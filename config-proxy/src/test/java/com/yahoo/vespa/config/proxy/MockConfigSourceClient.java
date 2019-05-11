@@ -25,7 +25,7 @@ public class MockConfigSourceClient implements ConfigSourceClient{
     @Override
     public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
         final RawConfig config = getConfig(input.getKey());
-        memoryCache.put(config);
+        memoryCache.update(config);
         return config;
     }
 

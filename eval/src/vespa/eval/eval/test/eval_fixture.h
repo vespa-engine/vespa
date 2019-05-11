@@ -29,6 +29,7 @@ public:
         std::map<vespalib::string,Param> map;
         ParamRepo() : map() {}
         ParamRepo &add(const vespalib::string &name, TensorSpec value_in, const vespalib::string &type_in, bool is_mutable_in) {
+            value_in.override_type(type_in);
             map.insert_or_assign(name, Param(std::move(value_in), type_in, is_mutable_in));
             return *this;
         }

@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_attributes_state_explorer_test_app TEST
     DEPENDS
     searchcore_attribute
     searchcore_pcommon
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_attributes_state_explorer_test_app COMMAND searchcore_attributes_state_explorer_test_app)

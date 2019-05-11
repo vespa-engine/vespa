@@ -91,18 +91,18 @@ public class FutureResult extends FutureTask<Result> {
     }
 
     private ErrorMessage createInterruptedError(Exception e) {
-        return ErrorMessage.createUnspecifiedError("'" + execution + "' was interrupted while executing: " + 
+        return ErrorMessage.createUnspecifiedError(execution + " was interrupted while executing: " +
                                                    Exceptions.toMessageString(e));
     }
     
     private ErrorMessage createExecutionError(Exception e) {
-        log.log(Level.WARNING,"Exception on executing " + execution + " for " + query,e);
+        log.log(Level.WARNING,"Exception in " + execution + " for " + query,e);
         return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " + Exceptions.toMessageString(e),
                                                         e.getCause());
     }
 
     public ErrorMessage createTimeoutError() {
-        return ErrorMessage.createTimeout("Error executing '" + execution + "': " + " Chain timed out.");
+        return ErrorMessage.createTimeout("Error in " + execution + ": Chain timed out.");
     }
 
 }

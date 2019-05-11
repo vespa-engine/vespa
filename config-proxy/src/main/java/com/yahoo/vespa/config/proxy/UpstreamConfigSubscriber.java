@@ -69,7 +69,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
         log.log(LogLevel.DEBUG, () -> "config to be returned for '" + newConfig.getKey() +
                 "', generation=" + newConfig.getGeneration() +
                 ", payload=" + newConfig.getPayload());
-        memoryCache.put(newConfig);
+        memoryCache.update(newConfig);
         clientUpdater.updateSubscribers(newConfig);
     }
 

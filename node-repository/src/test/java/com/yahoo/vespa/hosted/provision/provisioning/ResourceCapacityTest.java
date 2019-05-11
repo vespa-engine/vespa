@@ -51,29 +51,34 @@ public class ResourceCapacityTest {
         assertFalse(capacityOfHostSmall.hasCapacityFor(d3CPUFlavor));
 
         // Compare it to various flavors
-        assertEquals(1, capacityOfHostSmall.compare(nodeCapacity(d1Flavor)));
-        assertEquals(1, capacityOfHostSmall.compare(nodeCapacity(d2Flavor)));
-        assertEquals(0, capacityOfHostSmall.compare(nodeCapacity(d3Flavor)));
-        assertEquals(-1, capacityOfHostSmall.compare(nodeCapacity(d3DiskFlavor)));
-        assertEquals(-1, capacityOfHostSmall.compare(nodeCapacity(d3CPUFlavor)));
-        assertEquals(-1, capacityOfHostSmall.compare(nodeCapacity(d3MemFlavor)));
+        assertEquals(1, compare(capacityOfHostSmall, nodeCapacity(d1Flavor)));
+        assertEquals(1, compare(capacityOfHostSmall, nodeCapacity(d2Flavor)));
+        assertEquals(0, compare(capacityOfHostSmall, nodeCapacity(d3Flavor)));
+        assertEquals(-1, compare(capacityOfHostSmall, nodeCapacity(d3DiskFlavor)));
+        assertEquals(-1, compare(capacityOfHostSmall, nodeCapacity(d3CPUFlavor)));
+        assertEquals(-1, compare(capacityOfHostSmall, nodeCapacity(d3MemFlavor)));
 
         // Change free capacity and assert on rest capacity
         capacityOfHostSmall = capacityOfHostSmall.subtract(ResourceCapacity.of(d1Flavor));
-        assertEquals(0, capacityOfHostSmall.compare(nodeCapacity(d2Flavor)));
+        assertEquals(0, compare(capacityOfHostSmall, nodeCapacity(d2Flavor)));
 
         // Assert on rest capacity
         assertTrue(capacityOfHostSmall.hasCapacityFor(d1Flavor));
         assertFalse(capacityOfHostSmall.hasCapacityFor(d3Flavor));
 
         // At last compare the disk and cpu and mem variations
-        assertEquals(-1, nodeCapacity(d3Flavor).compare(nodeCapacity(d3DiskFlavor)));
-        assertEquals(1, nodeCapacity(d3DiskFlavor).compare(nodeCapacity(d3CPUFlavor)));
-        assertEquals(-1, nodeCapacity(d3CPUFlavor).compare(nodeCapacity(d3MemFlavor)));
-        assertEquals(1, nodeCapacity(d3MemFlavor).compare(nodeCapacity(d3DiskFlavor)));
+        assertEquals(-1, compare(nodeCapacity(d3Flavor), nodeCapacity(d3DiskFlavor)));
+        assertEquals(1, compare(nodeCapacity(d3DiskFlavor), nodeCapacity(d3CPUFlavor)));
+        assertEquals(-1, compare(nodeCapacity(d3CPUFlavor), nodeCapacity(d3MemFlavor)));
+        assertEquals(1, compare(nodeCapacity(d3MemFlavor), nodeCapacity(d3DiskFlavor)));
     }
 
     private ResourceCapacity nodeCapacity(Flavor flavor) {
         return ResourceCapacity.of(flavor);
     }
+
+    private int compare(ResourceCapacity a, ResourceCapacity b) {
+        return ResourceCapacityComparator.defaultOrder().compare(a, b);
+    }
+
 }

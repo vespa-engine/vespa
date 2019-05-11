@@ -29,10 +29,10 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     private final ScheduledExecutorService service;
 
-    public Maintainer(NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
+    public Maintainer(NodeRepository nodeRepository, Duration interval) {
         this.nodeRepository = nodeRepository;
         this.interval = interval;
-        this.jobControl = jobControl;
+        this.jobControl = nodeRepository.jobControl();
 
         HostName hostname = HostName.from(com.yahoo.net.HostName.getLocalhost());
         long delay = staggeredDelay(nodeRepository.database().cluster(), hostname, nodeRepository.clock().instant(), interval);

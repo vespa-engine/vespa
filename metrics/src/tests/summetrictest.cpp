@@ -1,29 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/metrics/metrics.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace metrics {
 
-struct SumMetricTest : public CppUnit::TestFixture {
-    void testLongCountMetric();
-    void testAverageMetric();
-    void testMetricSet();
-    void testRemove();
-    void testStartValue();
-
-    CPPUNIT_TEST_SUITE(SumMetricTest);
-    CPPUNIT_TEST(testLongCountMetric);
-    CPPUNIT_TEST(testAverageMetric);
-    CPPUNIT_TEST(testMetricSet);
-    CPPUNIT_TEST(testRemove);
-    CPPUNIT_TEST(testStartValue);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(SumMetricTest);
-
-void
-SumMetricTest::testLongCountMetric()
+TEST(SumMetricTest, test_long_count_metric)
 {
     MetricSet parent("parent", {}, "");
     SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
@@ -40,12 +21,12 @@ SumMetricTest::testLongCountMetric()
 
         // Verify XML output. Should be in register order.
     std::string expected("foo count=10");
-    CPPUNIT_ASSERT_EQUAL(expected, sum.toString());
-    CPPUNIT_ASSERT_EQUAL(int64_t(10), sum.getLongValue("value"));
+    EXPECT_EQ(expected, sum.toString());
+    EXPECT_EQ(int64_t(10), sum.getLongValue("value"));
 }
 
-void
-SumMetricTest::testAverageMetric() {
+TEST(SumMetricTest, test_average_metric)
+{
     MetricSet parent("parent", {}, "");
     SumMetric<LongAverageMetric> sum("foo", {}, "foodesc", &parent);
 
@@ -61,14 +42,14 @@ SumMetricTest::testAverageMetric() {
 
         // Verify XML output. Should be in register order.
     std::string expected("foo average=5 last=7 min=3 max=7 count=2 total=10");
-    CPPUNIT_ASSERT_EQUAL(expected, sum.toString());
-    CPPUNIT_ASSERT_EQUAL(int64_t(5), sum.getLongValue("value"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(3), sum.getLongValue("min"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(7), sum.getLongValue("max"));
+    EXPECT_EQ(expected, sum.toString());
+    EXPECT_EQ(int64_t(5), sum.getLongValue("value"));
+    EXPECT_EQ(int64_t(3), sum.getLongValue("min"));
+    EXPECT_EQ(int64_t(7), sum.getLongValue("max"));
 }
 
-void
-SumMetricTest::testMetricSet() {
+TEST(SumMetricTest, test_metric_set)
+{
     MetricSet parent("parent", {}, "");
     SumMetric<MetricSet> sum("foo", {}, "bar", &parent);
 
@@ -82,23 +63,22 @@ SumMetricTest::testMetricSet() {
     sum.addMetricToSum(set1);
     sum.addMetricToSum(set2);
 
-        // Give them some values
+    // Give them some values
     v1.addValue(3);
     v2.addValue(7);
     v3.inc(2);
     v4.inc();
 
-        // Verify XML output. Should be in register order.
+    // Verify XML output. Should be in register order.
     std::string expected("'\n"
             "foo:\n"
             "  c average=3 last=3 min=3 max=3 count=1 total=3\n"
             "  e count=2'"
     );
-    CPPUNIT_ASSERT_EQUAL(expected, "'\n" + sum.toString() + "'");
+    EXPECT_EQ(expected, "'\n" + sum.toString() + "'");
 }
 
-void
-SumMetricTest::testRemove()
+TEST(SumMetricTest, test_remove)
 {
     MetricSet parent("parent", {}, "");
     SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
@@ -116,13 +96,12 @@ SumMetricTest::testRemove()
     v2.inc(7);
     v3.inc(10);
 
-    CPPUNIT_ASSERT_EQUAL(int64_t(20), sum.getLongValue("value"));
+    EXPECT_EQ(int64_t(20), sum.getLongValue("value"));
     sum.removeMetricFromSum(v2);
-    CPPUNIT_ASSERT_EQUAL(int64_t(13), sum.getLongValue("value"));
+    EXPECT_EQ(int64_t(13), sum.getLongValue("value"));
 }
 
-void
-SumMetricTest::testStartValue()
+TEST(SumMetricTest, test_start_value)
 {
     MetricSnapshot snapshot("active");
     SumMetric<LongValueMetric> sum("foo", {}, "foodesc",
@@ -132,7 +111,7 @@ SumMetricTest::testStartValue()
     sum.setStartValue(start);
 
     // without children
-    CPPUNIT_ASSERT_EQUAL(int64_t(50), sum.getLongValue("value"));
+    EXPECT_EQ(int64_t(50), sum.getLongValue("value"));
 
     MetricSnapshot copy("copy");
     copy.recreateSnapshot(snapshot.getMetrics(), true);
@@ -143,7 +122,7 @@ SumMetricTest::testStartValue()
     value.set(10);
 
     // with children
-    CPPUNIT_ASSERT_EQUAL(int64_t(60), sum.getLongValue("value"));
+    EXPECT_EQ(int64_t(60), sum.getLongValue("value"));
 }
 
-} // metrics
+}

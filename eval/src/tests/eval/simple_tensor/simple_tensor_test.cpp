@@ -149,15 +149,55 @@ TEST("require that simple tensors support dimension reduction") {
 
 //-----------------------------------------------------------------------------
 
-struct SparseTensorExample {
-    TensorSpec make_spec() const {
-        return TensorSpec("tensor(x{},y{})")
+vespalib::string make_type_spec(bool use_float, const vespalib::string &dims) {
+    vespalib::string type_spec = "tensor";
+    if (use_float) {
+        type_spec.append("<float>");
+    }
+    type_spec.append(dims);
+    return type_spec;
+}
+
+struct TensorExample {
+    virtual ~TensorExample();
+    virtual TensorSpec make_spec(bool use_float) const = 0;
+    virtual std::unique_ptr<SimpleTensor> make_tensor(bool use_float) const = 0;
+    virtual void encode_default(nbostream &dst) const = 0;
+    virtual void encode_with_double(nbostream &dst) const = 0;
+    virtual void encode_with_float(nbostream &dst) const = 0;
+    void verify_encode_decode() const {
+        nbostream expect_default;
+        nbostream expect_double;
+        nbostream expect_float;
+        encode_default(expect_default);
+        encode_with_double(expect_double);
+        encode_with_float(expect_float);
+        nbostream data_double;
+        nbostream data_float;
+        SimpleTensor::encode(*make_tensor(false), data_double);
+        SimpleTensor::encode(*make_tensor(true), data_float);
+        EXPECT_EQUAL(Memory(data_double.peek(), data_double.size()),
+                     Memory(expect_default.peek(), expect_default.size()));
+        EXPECT_EQUAL(Memory(data_float.peek(), data_float.size()),
+                     Memory(expect_float.peek(), expect_float.size()));
+        EXPECT_EQUAL(to_spec(*SimpleTensor::decode(expect_default)), make_spec(false));
+        EXPECT_EQUAL(to_spec(*SimpleTensor::decode(expect_double)), make_spec(false));
+        EXPECT_EQUAL(to_spec(*SimpleTensor::decode(expect_float)), make_spec(true));
+    }
+};
+TensorExample::~TensorExample() = default;
+
+//-----------------------------------------------------------------------------
+
+struct SparseTensorExample : TensorExample {
+    TensorSpec make_spec(bool use_float) const override {
+        return TensorSpec(make_type_spec(use_float, "(x{},y{})"))
             .add({{"x","a"},{"y","a"}}, 1)
             .add({{"x","a"},{"y","b"}}, 2)
             .add({{"x","b"},{"y","a"}}, 3);
     }
-    std::unique_ptr<SimpleTensor> make_tensor() const {
-        return SimpleTensor::create(make_spec());
+    std::unique_ptr<SimpleTensor> make_tensor(bool use_float) const override {
+        return SimpleTensor::create(make_spec(use_float));
     }
     template <typename T>
     void encode_inner(nbostream &dst) const {
@@ -175,47 +215,31 @@ struct SparseTensorExample {
         dst.writeSmallString("a");
         dst << (T) 3;
     }
-    void encode_default(nbostream &dst) const {
+    void encode_default(nbostream &dst) const override {
         dst.putInt1_4Bytes(1);
         encode_inner<double>(dst);
     }
-    void encode_with_double(nbostream &dst) const {
+    void encode_with_double(nbostream &dst) const override {
         dst.putInt1_4Bytes(5);
         dst.putInt1_4Bytes(0);
         encode_inner<double>(dst);
     }
-    void encode_with_float(nbostream &dst) const {
+    void encode_with_float(nbostream &dst) const override {
         dst.putInt1_4Bytes(5);
         dst.putInt1_4Bytes(1);
         encode_inner<float>(dst);
     }
 };
 
-TEST_F("require that sparse tensors can be decoded", SparseTensorExample()) {
-    nbostream data1;
-    nbostream data2;
-    nbostream data3;
-    f1.encode_default(data1);
-    f1.encode_with_double(data2);
-    f1.encode_with_float(data3);
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data1)), f1.make_spec());
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data2)), f1.make_spec());
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data3)), f1.make_spec());
-}
-
-TEST_F("require that sparse tensors can be encoded", SparseTensorExample()) {
-    nbostream data;
-    nbostream expect;
-    SimpleTensor::encode(*f1.make_tensor(), data);
-    f1.encode_default(expect);
-    EXPECT_EQUAL(Memory(data.peek(), data.size()), Memory(expect.peek(), expect.size()));
+TEST_F("require that sparse tensors can be encoded and decoded", SparseTensorExample()) {
+    TEST_DO(f1.verify_encode_decode());
 }
 
 //-----------------------------------------------------------------------------
 
-struct DenseTensorExample {
-    TensorSpec make_spec() const {
-        return TensorSpec("tensor(x[3],y[2])")
+struct DenseTensorExample : TensorExample {
+    TensorSpec make_spec(bool use_float) const override {
+        return TensorSpec(make_type_spec(use_float, "(x[3],y[2])"))
             .add({{"x",0},{"y",0}}, 1)
             .add({{"x",0},{"y",1}}, 2)
             .add({{"x",1},{"y",0}}, 3)
@@ -223,8 +247,8 @@ struct DenseTensorExample {
             .add({{"x",2},{"y",0}}, 5)
             .add({{"x",2},{"y",1}}, 6);
     }
-    std::unique_ptr<SimpleTensor> make_tensor() const {
-        return SimpleTensor::create(make_spec());
+    std::unique_ptr<SimpleTensor> make_tensor(bool use_float) const override {
+        return SimpleTensor::create(make_spec(use_float));
     }
     template <typename T>
     void encode_inner(nbostream &dst) const {
@@ -240,47 +264,31 @@ struct DenseTensorExample {
         dst << (T) 5;
         dst << (T) 6;
     }
-    void encode_default(nbostream &dst) const {
+    void encode_default(nbostream &dst) const override {
         dst.putInt1_4Bytes(2);
         encode_inner<double>(dst);
     }
-    void encode_with_double(nbostream &dst) const {
+    void encode_with_double(nbostream &dst) const override {
         dst.putInt1_4Bytes(6);
         dst.putInt1_4Bytes(0);
         encode_inner<double>(dst);
     }
-    void encode_with_float(nbostream &dst) const {
+    void encode_with_float(nbostream &dst) const override {
         dst.putInt1_4Bytes(6);
         dst.putInt1_4Bytes(1);
         encode_inner<float>(dst);
     }
 };
 
-TEST_F("require that dense tensors can be decoded", DenseTensorExample()) {
-    nbostream data1;
-    nbostream data2;
-    nbostream data3;
-    f1.encode_default(data1);
-    f1.encode_with_double(data2);
-    f1.encode_with_float(data3);
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data1)), f1.make_spec());
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data2)), f1.make_spec());
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data3)), f1.make_spec());
-}
-
-TEST_F("require that dense tensors can be encoded", DenseTensorExample()) {
-    nbostream data;
-    nbostream expect;
-    SimpleTensor::encode(*f1.make_tensor(), data);
-    f1.encode_default(expect);
-    EXPECT_EQUAL(Memory(data.peek(), data.size()), Memory(expect.peek(), expect.size()));
+TEST_F("require that dense tensors can be encoded and decoded", DenseTensorExample()) {
+    TEST_DO(f1.verify_encode_decode());
 }
 
 //-----------------------------------------------------------------------------
 
-struct MixedTensorExample {
-    TensorSpec make_spec() const {
-        return TensorSpec("tensor(x{},y{},z[2])")
+struct MixedTensorExample : TensorExample {
+    TensorSpec make_spec(bool use_float) const override {
+        return TensorSpec(make_type_spec(use_float, "(x{},y{},z[2])"))
             .add({{"x","a"},{"y","a"},{"z",0}}, 1)
             .add({{"x","a"},{"y","a"},{"z",1}}, 2)
             .add({{"x","a"},{"y","b"},{"z",0}}, 3)
@@ -288,8 +296,8 @@ struct MixedTensorExample {
             .add({{"x","b"},{"y","a"},{"z",0}}, 5)
             .add({{"x","b"},{"y","a"},{"z",1}}, 6);
     }
-    std::unique_ptr<SimpleTensor> make_tensor() const {
-        return SimpleTensor::create(make_spec());
+    std::unique_ptr<SimpleTensor> make_tensor(bool use_float) const override {
+        return SimpleTensor::create(make_spec(use_float));
     }
     template <typename T>
     void encode_inner(nbostream &dst) const {
@@ -313,40 +321,24 @@ struct MixedTensorExample {
         dst << (T) 5;
         dst << (T) 6;
     }
-    void encode_default(nbostream &dst) const {
+    void encode_default(nbostream &dst) const override {
         dst.putInt1_4Bytes(3);
         encode_inner<double>(dst);
     }
-    void encode_with_double(nbostream &dst) const {
+    void encode_with_double(nbostream &dst) const override {
         dst.putInt1_4Bytes(7);
         dst.putInt1_4Bytes(0);
         encode_inner<double>(dst);
     }
-    void encode_with_float(nbostream &dst) const {
+    void encode_with_float(nbostream &dst) const override {
         dst.putInt1_4Bytes(7);
         dst.putInt1_4Bytes(1);
         encode_inner<float>(dst);
     }
 };
 
-TEST_F("require that mixed tensors can be decoded", MixedTensorExample()) {
-    nbostream data1;
-    nbostream data2;
-    nbostream data3;
-    f1.encode_default(data1);
-    f1.encode_with_double(data2);
-    f1.encode_with_float(data3);
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data1)), f1.make_spec());
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data2)), f1.make_spec());
-    EXPECT_EQUAL(to_spec(*SimpleTensor::decode(data3)), f1.make_spec());
-}
-
-TEST_F("require that mixed tensors can be encoded", MixedTensorExample()) {
-    nbostream data;
-    nbostream expect;
-    SimpleTensor::encode(*f1.make_tensor(), data);
-    f1.encode_default(expect);
-    EXPECT_EQUAL(Memory(data.peek(), data.size()), Memory(expect.peek(), expect.size()));
+TEST_F("require that mixed tensors can be encoded and decoded", MixedTensorExample()) {
+    TEST_DO(f1.verify_encode_decode());
 }
 
 //-----------------------------------------------------------------------------

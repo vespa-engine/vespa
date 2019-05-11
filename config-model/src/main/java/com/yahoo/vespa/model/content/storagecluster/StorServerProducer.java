@@ -11,20 +11,20 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 public class StorServerProducer implements StorServerConfig.Producer {
     public static class Builder {
         StorServerProducer build(ModelElement element) {
-            ModelElement tuning = element.getChild("tuning");
+            ModelElement tuning = element.child("tuning");
 
             if (tuning == null) {
                 return new StorServerProducer(ContentCluster.getClusterName(element), null, null);
             }
 
-            ModelElement merges = tuning.getChild("merges");
+            ModelElement merges = tuning.child("merges");
             if (merges == null) {
                 return new StorServerProducer(ContentCluster.getClusterName(element), null, null);
             }
 
             return new StorServerProducer(ContentCluster.getClusterName(element),
-                    merges.getIntegerAttribute("max-per-node"),
-                    merges.getIntegerAttribute("max-queue-size"));
+                    merges.integerAttribute("max-per-node"),
+                    merges.integerAttribute("max-queue-size"));
         }
     }
 

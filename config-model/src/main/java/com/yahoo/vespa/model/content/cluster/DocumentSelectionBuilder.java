@@ -54,9 +54,9 @@ public class DocumentSelectionBuilder {
                     sb.append(" OR ");
                 }
                 sb.append('(');
-                String type = e.getStringAttribute("type");
+                String type = e.stringAttribute("type");
                 sb.append(type);
-                String selection = e.getStringAttribute("selection");
+                String selection = e.stringAttribute("selection");
                 if (selection != null) {
                     validateSelectionExpression(selection, type);
                     sb.append(" AND (");
@@ -66,7 +66,7 @@ public class DocumentSelectionBuilder {
                 sb.append(')');
             }
 
-            String globalSelection = elem.getStringAttribute("selection");
+            String globalSelection = elem.stringAttribute("selection");
             if (globalSelection != null) {
                 validateSelectionExpression(globalSelection, null);
                 StringBuilder global = new StringBuilder();

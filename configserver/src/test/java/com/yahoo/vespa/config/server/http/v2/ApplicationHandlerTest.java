@@ -17,10 +17,11 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
-import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -163,6 +164,7 @@ public class ApplicationHandlerTest {
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
         ApplicationRepository applicationRepository = new ApplicationRepository(tenantRepository,
                                                                                 HostProvisionerProvider.withProvisioner(provisioner),
+                                                                                InfraDeployerProvider.empty(),
                                                                                 new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
                                                                                 new ConfigserverConfig(new ConfigserverConfig.Builder()),

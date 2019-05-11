@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collection;
@@ -43,6 +44,9 @@ public class NodeList implements Iterable<Node> {
     public NodeList nonretired() {
         return filter(node -> ! node.allocation().get().membership().retired());
     }
+
+    /** Returns the subset of nodes having exactly the given resources */
+    public NodeList resources(NodeResources resources) { return filter(node -> node.flavor().resources().equals(resources)); }
 
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {

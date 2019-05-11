@@ -37,9 +37,10 @@ import static org.junit.Assert.fail;
  * @author dybdahl
  */
 public class RealNodeRepositoryTest {
+
+    private static final double delta = 0.00000001;
     private JDisc container;
     private NodeRepository nodeRepositoryApi;
-
 
     private int findRandomOpenPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
@@ -63,7 +64,7 @@ public class RealNodeRepositoryTest {
         // a few times before giving up
         for (int i = 0; i < 3; i++) {
             try {
-                final int port = findRandomOpenPort();
+                int port = findRandomOpenPort();
                 container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
                 ConfigServerApi configServerApi = ConfigServerApiImpl.createForTesting(
                         Collections.singletonList(URI.create("http://127.0.0.1:" + port)));
@@ -101,25 +102,25 @@ public class RealNodeRepositoryTest {
     public void testGetContainersToRunApi() {
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
-        final List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
+        List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
         assertThat(containersToRun.size(), is(1));
-        final NodeSpec node = containersToRun.get(0);
+        NodeSpec node = containersToRun.get(0);
         assertThat(node.getHostname(), is("host4.yahoo.com"));
         assertThat(node.getWantedDockerImage().get(), is(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
         assertThat(node.getState(), is(NodeState.active));
         assertThat(node.getWantedRestartGeneration().get(), is(0L));
         assertThat(node.getCurrentRestartGeneration().get(), is(0L));
-        assertThat(node.getMinCpuCores(), is(0.2));
-        assertThat(node.getMinMainMemoryAvailableGb(), is(0.5));
-        assertThat(node.getMinDiskAvailableGb(), is(100.0));
+        assertEquals(1, node.getMinCpuCores(), delta);
+        assertEquals(1, node.getMinMainMemoryAvailableGb(), delta);
+        assertEquals(100, node.getMinDiskAvailableGb(), delta);
     }
 
     @Test
     public void testGetContainer() {
         String hostname = "host4.yahoo.com";
         Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
-        assertThat(node.isPresent(), is(true));
-        assertThat(node.get().getHostname(), is(hostname));
+        assertTrue(node.isPresent());
+        assertEquals(hostname, node.get().getHostname());
     }
 
     @Test

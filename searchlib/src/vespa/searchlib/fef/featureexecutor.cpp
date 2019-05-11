@@ -1,14 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "featureexecutor.h"
+#include <vespa/vespalib/util/classname.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
-FeatureExecutor::FeatureExecutor()
-    : _inputs(),
-      _outputs()
+FeatureExecutor::FeatureExecutor() = default;
+
+
+vespalib::string
+FeatureExecutor::getClassName() const
 {
+    return vespalib::getClassName(*this);
 }
 
 bool
@@ -52,5 +55,4 @@ FeatureExecutor::bind_match_data(const MatchData &md)
     handle_bind_match_data(md);
 }
 
-} // namespace fef
-} // namespace search
+}

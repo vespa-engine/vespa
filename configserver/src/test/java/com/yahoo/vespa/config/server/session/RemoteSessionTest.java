@@ -100,39 +100,6 @@ public class RemoteSessionTest {
     }
 
     @Test
-    public void require_that_application_incompatible_with_latestmajor_is_loaded_on_earlier_major() {
-        MockModelFactory okFactory1 = new MockModelFactory();
-        okFactory1.vespaVersion = new Version(1, 1, 0);
-        okFactory1.throwOnLoad = false;
-
-        MockModelFactory okFactory2 = new MockModelFactory();
-        okFactory2.vespaVersion = new Version(1, 2, 0);
-        okFactory2.throwOnLoad = false;
-
-        MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(2, 0, 0);
-        failingFactory.throwOnLoad = true;
-
-        RemoteSession session = createSession(3, Arrays.asList(okFactory1, failingFactory, okFactory2));
-        session.loadPrepared();
-    }
-
-    @Test
-    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped() {
-        MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(1, 1, 0);
-        failingFactory.throwOnLoad = true;
-
-        MockModelFactory okFactory =
-            new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        okFactory.vespaVersion = new Version(1, 2, 0);
-        okFactory.throwOnLoad = false;
-
-        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
-        session.loadPrepared();
-    }
-
-    @Test
     public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_across_major_versions() {
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = new Version(1, 0, 0);
@@ -144,26 +111,6 @@ public class RemoteSessionTest {
         okFactory.throwOnLoad = false;
 
         RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
-        session.loadPrepared();
-    }
-
-    @Test
-    public void require_that_old_invalid_application_does_not_throw_exception_if_skipped_also_when_new_major_is_incompatible() {
-        MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(1, 0, 0);
-        failingFactory.throwOnLoad = true;
-
-        MockModelFactory okFactory =
-                new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        okFactory.vespaVersion = new Version(1, 1, 0);
-        okFactory.throwOnLoad = false;
-
-        MockModelFactory tooNewFactory =
-                new MockModelFactory("<validation-overrides><allow until='2000-01-30'>skip-old-config-models</allow></validation-overrides>");
-        tooNewFactory.vespaVersion = new Version(2, 0, 0);
-        tooNewFactory.throwOnLoad = true;
-
-        RemoteSession session = createSession(3, Arrays.asList(tooNewFactory, okFactory, failingFactory));
         session.loadPrepared();
     }
 
@@ -239,10 +186,6 @@ public class RemoteSessionTest {
         }
         assertNotNull(mockModelFactory.modelContext);
         assertTrue(mockModelFactory.modelContext.permanentApplicationPackage().isPresent());
-    }
-
-    private RemoteSession createSession(long sessionId) {
-        return createSession(sessionId, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), Clock.systemUTC());
     }
 
     private RemoteSession createSession(long sessionId, Clock clock) {

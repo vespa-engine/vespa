@@ -1,23 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/metrics/metrics.h>
 #include <vespa/metrics/loadmetric.hpp>
-#include <vespa/metrics/summetric.hpp>
 #include <vespa/metrics/metricmanager.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/summetric.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace metrics {
-
-struct SnapshotTest : public CppUnit::TestFixture {
-    void testSnapshotTwoDays();
-
-    CPPUNIT_TEST_SUITE(SnapshotTest);
-    CPPUNIT_TEST(testSnapshotTwoDays);
-    CPPUNIT_TEST_SUITE_END();
-
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(SnapshotTest);
 
 namespace {
 
@@ -200,16 +189,22 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
 {
     const Metric* _metricValue_((snapshot).getMetrics().getMetric(name));
     if (_metricValue_ == 0) {
-        CPPUNIT_FAIL("Metric value '" + std::string(name) + "' not found in snapshot");
+        FAIL() << ("Metric value '" + std::string(name) + "' not found in snapshot");
     }
-    CPPUNIT_ASSERT_EQUAL(value, int32_t(_metricValue_->getLongValue("value")));
+    EXPECT_EQ(value, int32_t(_metricValue_->getLongValue("value")));
 }
 
-} // End of anonymous namespace
+}
 
-void SnapshotTest::testSnapshotTwoDays()
+struct SnapshotTest : public ::testing::Test {
+    time_t tick(MetricManager& mgr, time_t currentTime) {
+        return mgr.tick(mgr.getMetricLock(), currentTime);
+    }
+};
+
+TEST_F(SnapshotTest, test_snapshot_two_days)
 {
-        // Create load types
+    // Create load types
     LoadTypeSet loadTypes;
     loadTypes.push_back(LoadType(1, "foo"));
     loadTypes.push_back(LoadType(2, "bar"));
@@ -226,14 +221,14 @@ void SnapshotTest::testSnapshotTwoDays()
     }
     mm.init("raw:consumer[1]\n"
             "consumer[0].name \"log\"", threadPool, false);
-    mm.tick(mm.getMetricLock(), timer->_timeInSecs * 1000);
+    tick(mm, timer->_timeInSecs * 1000);
 
     for (uint32_t days=0; days<2; ++days) {
         for (uint32_t hour=0; hour<24; ++hour) {
             for (uint32_t fiveMin=0; fiveMin<12; ++fiveMin) {
                 set.incValues();
                 timer->_timeInSecs += 5 * 60;
-                mm.tick(mm.getMetricLock(), timer->_timeInSecs * 1000);
+                tick(mm, timer->_timeInSecs * 1000);
             }
         }
     }
@@ -257,7 +252,7 @@ void SnapshotTest::testSnapshotTwoDays()
     */
 
     const MetricSnapshot* snap = 0;
-        // active snapshot
+    // active snapshot
     MetricLockGuard lockGuard(mm.getMetricLock());
     snap = &mm.getActiveMetrics(lockGuard);
     ASSERT_VALUE(0, *snap, "test.set1.set1.count1");
@@ -273,7 +268,7 @@ void SnapshotTest::testSnapshotTwoDays()
     ASSERT_VALUE(0, *snap, "test.set1.loadSet.sum.countSum");
 */
 
-        // 5 minute snapshot
+    // 5 minute snapshot
     snap = &mm.getMetricSnapshot(lockGuard, 5 * 60);
     ASSERT_VALUE(1, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(1, *snap, "test.set1.set1.loadCount.foo");
@@ -297,7 +292,7 @@ void SnapshotTest::testSnapshotTwoDays()
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.loadAverage.sum");
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.averageSum");
 
-        // 1 hour snapshot
+    // 1 hour snapshot
     snap = &mm.getMetricSnapshot(lockGuard, 60 * 60);
     ASSERT_VALUE(12, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(12, *snap, "test.set1.set1.loadCount.foo");
@@ -321,7 +316,7 @@ void SnapshotTest::testSnapshotTwoDays()
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.loadAverage.sum");
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.averageSum");
 
-        // 1 day snapshot
+    // 1 day snapshot
     snap = &mm.getMetricSnapshot(lockGuard, 24 * 60 * 60);
     ASSERT_VALUE(288, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(288, *snap, "test.set1.set1.loadCount.foo");
@@ -345,7 +340,7 @@ void SnapshotTest::testSnapshotTwoDays()
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.loadAverage.sum");
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.averageSum");
 
-        // total snapshot (2 days currently, not testing weeks)
+    // total snapshot (2 days currently, not testing weeks)
     snap = &mm.getTotalMetricSnapshot(lockGuard);
     ASSERT_VALUE(576, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(576, *snap, "test.set1.set1.loadCount.foo");
@@ -370,4 +365,4 @@ void SnapshotTest::testSnapshotTwoDays()
     ASSERT_VALUE(1, *snap, "test.set1.loadSet.sum.averageSum");
 }
 
-} // metrics
+}

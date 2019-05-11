@@ -7,8 +7,8 @@
     },
     "application": {
       "application": {
-        "hash": "1.0.44-d00d",
-        "build": 44,
+        "hash": "1.0.45-d00d",
+        "build": 45,
         "source": {
           "gitRepository": "repo",
           "gitBranch": "master",
@@ -21,8 +21,8 @@
   },
   "deploying": {
     "application": {
-      "hash": "1.0.44-d00d",
-      "build": 44,
+      "hash": "1.0.45-d00d",
+      "build": 45,
       "source": {
         "gitRepository": "repo",
         "gitBranch": "master",
@@ -42,8 +42,8 @@
           "start": (ignore),
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.44-d00d",
-            "build": 44,
+            "hash": "1.0.45-d00d",
+            "build": 45,
             "source": {
               "gitRepository": "repo",
               "gitBranch": "master",
@@ -78,8 +78,8 @@
           "start": (ignore),
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.44-d00d",
-            "build": 44,
+            "hash": "1.0.45-d00d",
+            "build": 45,
             "source": {
               "gitRepository": "repo",
               "gitBranch": "master",
@@ -112,8 +112,8 @@
           "status": "pending",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.44-d00d",
-            "build": 44,
+            "hash": "1.0.45-d00d",
+            "build": 45,
             "source": {
               "gitRepository": "repo",
               "gitBranch": "master",

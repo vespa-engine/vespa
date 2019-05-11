@@ -68,6 +68,8 @@ private:
 #define K_VALUE_ZCPOSTING_L4SKIPSIZE 6
 #define K_VALUE_ZCPOSTING_FEATURESSIZE 25
 #define K_VALUE_ZCPOSTING_DELTA_DOCID 22
+#define K_VALUE_ZCPOSTING_FIELD_LENGTH 9
+#define K_VALUE_ZCPOSTING_NUM_OCCS 0
 
 /**
  * Lookup tables used for compression / decompression.

@@ -17,7 +17,7 @@ public class MemoryCacheConfigClientTest {
     @Test
     public void basic() {
         MemoryCache cache = new MemoryCache();
-        cache.put(ConfigTester.fooConfig);
+        cache.update(ConfigTester.fooConfig);
         MemoryCacheConfigClient client = new MemoryCacheConfigClient(cache);
         assertThat(client.getConfig(ConfigTester.fooConfig, null), is(ConfigTester.fooConfig));
         assertNull(client.getConfig(ConfigTester.barConfig, null));

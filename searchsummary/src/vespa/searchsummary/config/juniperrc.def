@@ -3,9 +3,10 @@ namespace=vespa.config.search.summary
 
 ## Set the length (in #characters) of the dynamically generated 
 ## summaries. This is a hint to the module that generates the 
-## dynamic summary. The result may be slightly longer or shorter 
-## depending on the structure of the available document text and 
-## the submitted query.
+## dynamic summary - the actual size will depend on the available text
+## and the query. You may find that you need to set this length
+## substantially longer than your actual desired average length -
+## setting this about twice as long is often appropriate.
 length                      int default=256
 
 ## The number of (possibly partial) set of keywords

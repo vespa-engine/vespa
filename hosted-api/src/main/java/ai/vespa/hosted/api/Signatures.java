@@ -1,3 +1,4 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
 import com.yahoo.security.KeyUtils;
@@ -18,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Signatures {
 
-    /** Returns the SHA-256 hash of the content in the implied input stream, consuming it in the process. */
+    /** Returns the SHA-256 hash of the content in the implied input stream. */
     public static byte[] sha256Digest(Callable<InputStream> in) {
         try (DigestInputStream digester = sha256Digester(in.call())) {
             byte[] buffer = new byte[1 << 10];

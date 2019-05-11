@@ -15,6 +15,9 @@ using namespace eval::tensor_function;
 namespace {
 
 bool is_concrete_dense_tensor(const ValueType &type) {
+    if (type.cell_type() != ValueType::CellType::DOUBLE) {
+        return false; // non-double cell types not supported
+    }
     return type.is_dense();
 }
 

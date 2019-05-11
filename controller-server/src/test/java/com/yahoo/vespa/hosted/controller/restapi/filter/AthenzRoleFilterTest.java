@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -50,8 +49,7 @@ public class AthenzRoleFilterTest {
     @Before
     public void setup() {
         tester = new ControllerTester();
-        filter = new AthenzRoleFilter(new CorsFilterConfig.Builder().build(),
-                                      new AthenzClientFactoryMock(tester.athenzDb()),
+        filter = new AthenzRoleFilter(new AthenzClientFactoryMock(tester.athenzDb()),
                                       tester.controller());
 
         tester.athenzDb().hostedOperators.add(HOSTED_OPERATOR.getIdentity());

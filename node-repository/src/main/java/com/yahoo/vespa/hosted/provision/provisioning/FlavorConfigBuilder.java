@@ -31,19 +31,6 @@ public class FlavorConfigBuilder {
         return flavor;
     }
 
-    public FlavorsConfig.Flavor.Builder addNonStockFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
-        FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
-        flavor.name(flavorName);
-        flavor.description("Flavor-name-is-" + flavorName);
-        flavor.minDiskAvailableGb(disk);
-        flavor.minCpuCores(cpu);
-        flavor.minMainMemoryAvailableGb(mem);
-        flavor.stock(false);
-        flavor.environment(type.name());
-        builder.flavor(flavor);
-        return flavor;
-    }
-
     public void addReplaces(String replaces, FlavorsConfig.Flavor.Builder flavor) {
         FlavorsConfig.Flavor.Replaces.Builder flavorReplaces = new FlavorsConfig.Flavor.Replaces.Builder();
         flavorReplaces.name(replaces);

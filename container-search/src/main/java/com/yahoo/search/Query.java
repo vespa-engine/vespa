@@ -544,7 +544,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Sets the number of milliseconds to wait for a response from a search backend
-     * before time out. Default is 500.
+     * before time out. Default is 500 ms.
      */
     public void setTimeout(long timeout) {
         if (timeout > 1000000000 || timeout < 0)

@@ -552,6 +552,7 @@ public:
     virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
+
 private:
     /**
      * This is called before adding docs will commence.

@@ -220,6 +220,7 @@ NodesOfContainerCluster = element nodes {
         attribute gc-options { text }? &
         attribute allocated-memory { text }?
     } ? &
+    Resources? &
     element environment-variables {
       anyElement +
     } ? &

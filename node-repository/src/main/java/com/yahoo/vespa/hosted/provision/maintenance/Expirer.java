@@ -31,9 +31,9 @@ public abstract class Expirer extends Maintainer {
 
     private final Duration expiryTime;
 
-    public Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository, 
-                   Clock clock, Duration expiryTime, JobControl jobControl) {
-        super(nodeRepository, min(Duration.ofMinutes(25), expiryTime), jobControl);
+    Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository,
+            Clock clock, Duration expiryTime) {
+        super(nodeRepository, min(Duration.ofMinutes(25), expiryTime));
         this.fromState = fromState;
         this.eventType = eventType;
         this.clock = clock;

@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -437,6 +438,12 @@ class Connection extends Target {
 
     public Exception getConnectionLostReason() {
         return lostReason;
+    }
+
+    @Override
+    public Optional<SecurityContext> getSecurityContext() {
+        return Optional.ofNullable(socket)
+                .flatMap(CryptoSocket::getSecurityContext);
     }
 
     public boolean isClient() {

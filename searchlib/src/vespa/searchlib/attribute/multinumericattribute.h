@@ -60,7 +60,7 @@ public:
     /*
      * Specialization of SearchContext for weighted set type
      */
-    class SetSearchContext : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
+    class SetSearchContext final : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
     {
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
@@ -113,11 +113,11 @@ public:
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
 
-        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
+        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override final {
             return find(docId, elemId, weight);
         }
 
-        int32_t onFind(DocId docId, int32_t elemId) const override {
+        int32_t onFind(DocId docId, int32_t elemId) const override final {
             return find(docId, elemId);
         }
 

@@ -20,13 +20,14 @@ private:
 
     pid_t _pid;
     enum ServiceState { READY, STARTING, RUNNING, TERMINATING, KILLING,
+                        RESTARTING, REMOVING,
                         FINISHED, TERMINATED, KILLED, FAILED } _rawState;
     const enum ServiceState& _state;
     int _exitStatus;
     SentinelConfig::Service *_config;
     bool _isAutomatic;
 
-    static const int MAX_RESTART_PENALTY = 1800;
+    static const unsigned int MAX_RESTART_PENALTY = 1800;
     unsigned int _restartPenalty;
     time_t _last_start;
 
@@ -55,11 +56,13 @@ public:
     int terminate() {
         return terminate(true, false);
     }
-    int start();
+    void start();
+    void remove();
     void youExited(int status); // Call this if waitpid says it exited
     const vespalib::string & name() const;
     const char *stateName() const { return stateName(_state); }
     bool isRunning() const;
+    bool wantsRestart() const;
     int exitStatus() const { return _exitStatus; }
     const SentinelConfig::Service& serviceConfig() const { return *_config; }
     void setAutomatic(bool autoStatus);

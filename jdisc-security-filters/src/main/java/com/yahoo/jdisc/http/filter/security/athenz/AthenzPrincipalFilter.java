@@ -4,8 +4,7 @@ package com.yahoo.jdisc.http.filter.security.athenz;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
-import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
+import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
@@ -13,10 +12,8 @@ import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
 
 import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 
 /**
@@ -29,7 +26,7 @@ import java.util.Set;
  *
  * @author bjorncs
  */
-public class AthenzPrincipalFilter extends CorsRequestFilterBase {
+public class AthenzPrincipalFilter extends JsonSecurityRequestFilterBase {
 
     private static final String RESULT_ATTRIBUTE_PREFIX = "jdisc-security-filters.athenz-principal-filter.result";
     public static final String RESULT_ERROR_CODE_ATTRIBUTE = RESULT_ATTRIBUTE_PREFIX + ".error.code";
@@ -41,25 +38,22 @@ public class AthenzPrincipalFilter extends CorsRequestFilterBase {
     private final boolean passthroughMode;
 
     @Inject
-    public AthenzPrincipalFilter(AthenzPrincipalFilterConfig athenzPrincipalFilterConfig, CorsFilterConfig corsConfig) {
+    public AthenzPrincipalFilter(AthenzPrincipalFilterConfig athenzPrincipalFilterConfig) {
         this(new NTokenValidator(Paths.get(athenzPrincipalFilterConfig.athenzConfFile())),
              athenzPrincipalFilterConfig.principalHeaderName(),
-             new HashSet<>(corsConfig.allowedUrls()),
              athenzPrincipalFilterConfig.passthroughMode());
     }
 
     AthenzPrincipalFilter(NTokenValidator validator,
                           String principalTokenHeader,
-                          Set<String> corsAllowedUrls,
                           boolean passthroughMode) {
-        super(corsAllowedUrls);
         this.validator = validator;
         this.principalTokenHeader = principalTokenHeader;
         this.passthroughMode = passthroughMode;
     }
 
     @Override
-    public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
+    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
             Optional<AthenzPrincipal> certificatePrincipal = getClientCertificate(request)
                     .map(AthenzIdentities::from)
@@ -67,7 +61,7 @@ public class AthenzPrincipalFilter extends CorsRequestFilterBase {
             Optional<AthenzPrincipal> nTokenPrincipal = getPrincipalToken(request, principalTokenHeader)
                     .map(validator::validate);
 
-            if (!certificatePrincipal.isPresent() && !nTokenPrincipal.isPresent()) {
+            if (certificatePrincipal.isEmpty() && nTokenPrincipal.isEmpty()) {
                 String errorMessage = "Unable to authenticate Athenz identity. " +
                                       "Either client certificate or principal token is required.";
                 return createResponse(request, Response.Status.UNAUTHORIZED, errorMessage);

@@ -77,7 +77,7 @@ public class ControllerAuthorizationFilterTest {
     }
 
     private static ControllerAuthorizationFilter createFilter(ControllerTester tester) {
-        return new ControllerAuthorizationFilter(tester.controller().system(), Set.of("http://localhost"));
+        return new ControllerAuthorizationFilter(tester.controller());
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,

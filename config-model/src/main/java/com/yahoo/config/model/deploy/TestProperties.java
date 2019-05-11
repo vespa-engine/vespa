@@ -96,7 +96,6 @@ public class TestProperties implements ModelContext.Properties {
 
         private final String hostName;
         private final int configServerPort;
-        private final int httpPort;
         private final int zooKeeperPort;
 
         public String getHostName() {
@@ -105,10 +104,6 @@ public class TestProperties implements ModelContext.Properties {
 
         public int getConfigServerPort() {
             return configServerPort;
-        }
-
-        public int getHttpPort() {
-            return httpPort;
         }
 
         public int getZooKeeperPort() {
@@ -122,7 +117,6 @@ public class TestProperties implements ModelContext.Properties {
 
                 return hostName.equals(other.getHostName()) &&
                         configServerPort == other.getConfigServerPort() &&
-                        httpPort == other.getHttpPort() &&
                         zooKeeperPort == other.getZooKeeperPort();
             } else {
                 return false;
@@ -134,10 +128,9 @@ public class TestProperties implements ModelContext.Properties {
             return hostName.hashCode();
         }
 
-        public Spec(String hostName, int configServerPort, int httpPort, int zooKeeperPort) {
+        public Spec(String hostName, int configServerPort, int zooKeeperPort) {
             this.hostName = hostName;
             this.configServerPort = configServerPort;
-            this.httpPort = httpPort;
             this.zooKeeperPort = zooKeeperPort;
         }
     }

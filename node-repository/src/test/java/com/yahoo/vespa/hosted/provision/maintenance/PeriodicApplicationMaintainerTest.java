@@ -308,7 +308,7 @@ public class PeriodicApplicationMaintainerTest {
 
         TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
                                               Duration minTimeBetweenRedeployments) {
-            super(deployer, nodeRepository, interval, minTimeBetweenRedeployments, new JobControl(nodeRepository.database()));
+            super(deployer, nodeRepository, interval, minTimeBetweenRedeployments);
         }
 
         @Override

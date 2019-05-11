@@ -16,9 +16,7 @@ class Metrics;
 class ConfigSubscriber {
 private:
     std::string _logserver_host;
-    int _logserver_port;
     int _logserver_rpc_port;
-    bool _logserver_use_rpc;
     int _state_port;
     ForwardMap _forward_filter;
     int _rotate_size;

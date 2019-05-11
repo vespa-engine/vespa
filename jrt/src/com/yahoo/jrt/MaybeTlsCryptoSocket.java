@@ -4,6 +4,7 @@ package com.yahoo.jrt;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Optional;
 
 /**
  * A crypto socket for the server side of a connection that
@@ -128,4 +129,5 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
     @Override public int drain(ByteBuffer dst) throws IOException { return socket.drain(dst); }
     @Override public int write(ByteBuffer src) throws IOException { return socket.write(src); }
     @Override public FlushResult flush() throws IOException { return socket.flush(); }
+    @Override public Optional<SecurityContext> getSecurityContext() { return Optional.ofNullable(socket).flatMap(CryptoSocket::getSecurityContext); }
 }

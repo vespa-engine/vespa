@@ -30,16 +30,15 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     private final Clock clock;
     private final Instant start;
 
-    public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, 
-                                         Duration interval, Duration minTimeBetweenRedeployments, JobControl jobControl) {
-        super(deployer, nodeRepository, interval, jobControl);
+    PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository,
+                                  Duration interval, Duration minTimeBetweenRedeployments) {
+        super(deployer, nodeRepository, interval);
         this.minTimeBetweenRedeployments = minTimeBetweenRedeployments;
         this.clock = nodeRepository.clock();
         this.start = clock.instant();
     }
 
-    @Override
-    protected boolean canDeployNow(ApplicationId application) {
+    private boolean canDeployNow(ApplicationId application) {
         // Don't deploy if a regular deploy just happened
         return getLastDeployTime(application).isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments));
     }

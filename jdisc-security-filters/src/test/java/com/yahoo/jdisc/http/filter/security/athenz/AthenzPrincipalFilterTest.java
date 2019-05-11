@@ -56,8 +56,6 @@ public class AthenzPrincipalFilterTest {
     private static final String ATHENZ_PRINCIPAL_HEADER = "Athenz-Principal-Auth";
     private static final AthenzIdentity IDENTITY = AthenzUser.fromUserId("bob");
     private static final X509Certificate CERTIFICATE = createSelfSignedCertificate(IDENTITY);
-    private static final String ORIGIN = "http://localhost";
-    private static final Set<String> CORS_ALLOWED_URLS = singleton(ORIGIN);
 
     private NTokenValidator validator;
 
@@ -81,9 +79,7 @@ public class AthenzPrincipalFilterTest {
     }
 
     private DiscFilterRequest createRequestMock() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
-        when(request.getHeader("Origin")).thenReturn(ORIGIN);
-        return request;
+        return mock(DiscFilterRequest.class);
     }
 
     @Test
@@ -184,7 +180,7 @@ public class AthenzPrincipalFilterTest {
     }
 
     private AthenzPrincipalFilter createFilter(boolean passthroughModeEnabled) {
-        return new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS, passthroughModeEnabled);
+        return new AthenzPrincipalFilter(validator, ATHENZ_PRINCIPAL_HEADER, passthroughModeEnabled);
     }
 
     private static void assertUnauthorized(DiscFilterRequest request, ResponseHandlerMock responseHandler, String expectedMessageSubstring) {

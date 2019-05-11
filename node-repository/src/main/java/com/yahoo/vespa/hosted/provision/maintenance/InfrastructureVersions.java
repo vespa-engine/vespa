@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class InfrastructureVersions {
 
-    private static Logger logger = Logger.getLogger(InfrastructureVersions.class.getName());
+    private static final Logger logger = Logger.getLogger(InfrastructureVersions.class.getName());
 
     private final CuratorDatabaseClient db;
 

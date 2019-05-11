@@ -12,10 +12,10 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -38,6 +38,7 @@ import com.yahoo.vespa.config.server.configchange.RefeedActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
+import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
@@ -94,6 +95,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
+    private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
     private final Clock clock;
@@ -106,11 +108,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
+                                 InfraDeployerProvider infraDeployerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
-                                 HttpProxy httpProxy, 
+                                 HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator) {
-        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(),
+        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(), infraDeployerProvider.getInfraDeployer(),
              configConvergenceChecker, httpProxy, configserverConfig, orchestrator,
              Clock.systemUTC(), new FileDistributionStatus());
     }
@@ -129,12 +132,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Orchestrator orchestrator,
                                  Clock clock,
                                  ConfigserverConfig configserverConfig) {
-        this(tenantRepository, Optional.of(hostProvisioner), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
+        this(tenantRepository, Optional.of(hostProvisioner), Optional.empty(), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
              configserverConfig, orchestrator, clock, new FileDistributionStatus());
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
                                   Optional<Provisioner> hostProvisioner,
+                                  Optional<InfraDeployer> infraDeployer,
                                   ConfigConvergenceChecker configConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
@@ -143,6 +147,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   FileDistributionStatus fileDistributionStatus) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
+        this.infraDeployer = infraDeployer;
         this.convergeChecker = configConvergenceChecker;
         this.httpProxy = httpProxy;
         this.clock = clock;
@@ -160,6 +165,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
         Slime deployLog = createDeployLog();
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
+
         ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
@@ -248,6 +254,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application,
                                                                                  Duration timeout,
                                                                                  boolean bootstrap) {
+        Optional<com.yahoo.config.provision.Deployment> infraDeployment = infraDeployer.flatMap(d -> d.getDeployment(application));
+        if (infraDeployment.isPresent()) return infraDeployment;
+
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         LocalSession activeSession = getActiveSession(tenant, application);
@@ -302,36 +311,38 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
-        if (!tenantApplications.activeApplications().contains(applicationId)) return false;
+        try (Lock lock = tenantApplications.lock(applicationId)) {
+            if ( ! tenantApplications.exists(applicationId)) return false;
 
-        // Deleting an application is done by deleting the remote session and waiting
-        // until the config server where the deployment happened picks it up and deletes
-        // the local session
-        long sessionId = tenantApplications.requireActiveSessionOf(applicationId);
-        RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
-        remoteSession.createDeleteTransaction().commit();
+            // Deleting an application is done by deleting the remote session and waiting
+            // until the config server where the deployment happened picks it up and deletes
+            // the local session
+            boolean sessionDeleted = tenantApplications.activeSessionOf(applicationId).map(sessionId -> {
+                RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
+                remoteSession.createDeleteTransaction().commit();
+                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
+                // TODO: Add support for timeout in request
+                Duration waitTime = Duration.ofSeconds(60);
+                if (localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
+                    log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+                    return true;
+                } else {
+                    log.log(LogLevel.ERROR, TenantRepository.logPre(applicationId) + "Session " + sessionId + " was not deleted (waited " + waitTime + ")");
+                    return false;
+                }
+            }).orElse(true);
 
-        log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
-        // TODO: Add support for timeout in request
-        Duration waitTime = Duration.ofSeconds(60);
-        if (localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
-        } else {
-            log.log(LogLevel.ERROR, TenantRepository.logPre(applicationId) + "Session " + sessionId + " was not deleted (waited " + waitTime + ")");
-            return false;
+            NestedTransaction transaction = new NestedTransaction();
+            transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
+            // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
+            // this is done asynchronously in application maintenance by the node repository)
+            transaction.add(tenantApplications.createDeleteTransaction(applicationId));
+
+            hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
+            transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
+            transaction.commit();
+            return sessionDeleted;
         }
-
-        NestedTransaction transaction = new NestedTransaction();
-        transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
-        // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
-        // this is done asynchronously in application maintenance by the node repository)
-        transaction.add(tenantApplications.createDeleteTransaction(applicationId));
-
-        hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
-        transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
-        transaction.commit();
-
-        return true;
     }
 
     public HttpResponse clusterControllerStatusPage(ApplicationId applicationId, String hostName, String pathSuffix) {
@@ -526,7 +537,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-        tenant.getApplicationRepo().createApplication(applicationId);
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
         LocalSession session = sessionFactory.createSession(applicationDirectory, applicationId, timeoutBudget);

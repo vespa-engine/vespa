@@ -119,7 +119,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
-            ModelElement documentsElement = contentElement.getChild("documents");
+            ModelElement documentsElement = contentElement.child("documents");
             Map<String, NewDocumentType> documentDefinitions =
                     new SearchDefinitionBuilder().build(deployState.getDocumentModel().getDocumentManager(), documentsElement);
 
@@ -150,7 +150,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
 
             if (documentsElement != null) {
-                ModelElement e = documentsElement.getChild("document-processing");
+                ModelElement e = documentsElement.child("document-processing");
                 if (e != null) {
                     setupDocumentProcessing(c, e);
                 }
@@ -158,11 +158,11 @@ public class ContentCluster extends AbstractConfigProducer implements
                 throw new IllegalArgumentException("The specified content engine requires the <documents> element to be specified.");
             }
 
-            ModelElement tuning = contentElement.getChild("tuning");
+            ModelElement tuning = contentElement.child("tuning");
             if (tuning != null) {
                 setupTuning(c, tuning);
             }
-            ModelElement experimental = contentElement.getChild("experimental");
+            ModelElement experimental = contentElement.child("experimental");
             if (experimental != null) {
                 setupExperimental(c, experimental);
             }
@@ -217,7 +217,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
-            String docprocCluster = e.getStringAttribute("cluster");
+            String docprocCluster = e.stringAttribute("cluster");
             if (docprocCluster != null) {
                 docprocCluster = docprocCluster.trim();
             }
@@ -227,7 +227,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 }
             }
 
-            String docprocChain = e.getStringAttribute("chain");
+            String docprocChain = e.stringAttribute("chain");
             if (docprocChain != null) {
                 docprocChain = docprocChain.trim();
             }
@@ -239,9 +239,9 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private void setupTuning(ContentCluster c, ModelElement tuning) {
-            ModelElement distribution = tuning.getChild("distribution");
+            ModelElement distribution = tuning.child("distribution");
             if (distribution != null) {
-                String attr = distribution.getStringAttribute("type");
+                String attr = distribution.stringAttribute("type");
                 if (attr != null) {
                     if (attr.toLowerCase().equals("strict")) {
                         c.distributionMode = DistributionMode.STRICT;
@@ -254,9 +254,9 @@ public class ContentCluster extends AbstractConfigProducer implements
                     }
                 }
             }
-            ModelElement merges = tuning.getChild("merges");
+            ModelElement merges = tuning.child("merges");
             if (merges != null) {
-                Integer attr = merges.getIntegerAttribute("max-nodes-per-merge");
+                Integer attr = merges.integerAttribute("max-nodes-per-merge");
                 if (attr != null) {
                     c.maxNodesPerMerge = attr;
                 }
@@ -307,7 +307,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             else if (admin.multitenant()) {
                 String clusterName = contentClusterName + "-controllers";
                 NodesSpecification nodesSpecification =
-                    NodesSpecification.optionalDedicatedFromParent(contentElement.getChild("controllers"), context)
+                    NodesSpecification.optionalDedicatedFromParent(contentElement.child("controllers"), context)
                                       .orElse(NodesSpecification.nonDedicated(3, context));
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
@@ -520,7 +520,7 @@ public class ContentCluster extends AbstractConfigProducer implements
     }
 
     public static String getClusterName(ModelElement clusterElem) {
-        String clusterName = clusterElem.getStringAttribute("id");
+        String clusterName = clusterElem.stringAttribute("id");
         if (clusterName == null) {
             clusterName = "content";
         }

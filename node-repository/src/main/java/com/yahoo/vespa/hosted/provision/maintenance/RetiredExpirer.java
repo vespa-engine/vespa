@@ -37,9 +37,8 @@ public class RetiredExpirer extends Maintainer {
                           Deployer deployer,
                           Clock clock,
                           Duration maintenanceInterval,
-                          Duration retiredExpiry,
-                          JobControl jobControl) {
-        super(nodeRepository, maintenanceInterval, jobControl);
+                          Duration retiredExpiry) {
+        super(nodeRepository, maintenanceInterval);
         this.deployer = deployer;
         this.orchestrator = orchestrator;
         this.retiredExpiry = retiredExpiry;

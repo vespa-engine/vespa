@@ -1,8 +1,10 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.security.DigestInputStream;
@@ -32,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class SignaturesTest {
 
-    private static final String emPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+    private static final String ecPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
                                                  "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
                                                  "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
                                                  "-----END PUBLIC KEY-----\n";
@@ -74,10 +76,10 @@ public class SignaturesTest {
 
         URI requestUri = URI.create("https://host:123/path//./../more%2fpath/?yes=no");
         HttpRequest.Builder builder = HttpRequest.newBuilder(requestUri);
-        HttpRequest request = signer.signed(builder, Method.GET);
+        HttpRequest request = signer.signed(builder, Method.GET, InputStream::nullInputStream);
 
         // GET request with correct signature and URI as-is.
-        RequestVerifier verifier = new RequestVerifier(emPemPublicKey, clock);
+        RequestVerifier verifier = new RequestVerifier(ecPemPublicKey, clock);
         assertTrue(verifier.verify(Method.valueOf(request.method()),
                                    request.uri(),
                                    request.headers().firstValue("X-Timestamp").get(),
@@ -87,7 +89,7 @@ public class SignaturesTest {
         // POST request with correct signature and URI normalized.
         MultiPartStreamer streamer = new MultiPartStreamer().addText("message", new String(message, UTF_8))
                                                             .addBytes("copy", message);
-        request = signer.signed(builder, Method.POST, streamer);
+        request = signer.signed(builder.setHeader("Content-Type", streamer.contentType()), Method.POST, streamer::data);
         assertTrue(verifier.verify(Method.valueOf(request.method()),
                                    request.uri().normalize(),
                                    request.headers().firstValue("X-Timestamp").get(),
@@ -138,7 +140,7 @@ public class SignaturesTest {
                                     request.headers().firstValue("X-Authorization").get()));
 
         // Too old request.
-        verifier = new RequestVerifier(emPemPublicKey, Clock.fixed(Instant.EPOCH.plusSeconds(301), ZoneOffset.UTC));
+        verifier = new RequestVerifier(ecPemPublicKey, Clock.fixed(Instant.EPOCH.plusSeconds(301), ZoneOffset.UTC));
         assertFalse(verifier.verify(Method.valueOf(request.method()),
                                     request.uri().normalize(),
                                     request.headers().firstValue("X-Timestamp").get(),
@@ -146,7 +148,7 @@ public class SignaturesTest {
                                     request.headers().firstValue("X-Authorization").get()));
 
         // Too new request.
-        verifier = new RequestVerifier(emPemPublicKey, Clock.fixed(Instant.EPOCH.minusSeconds(301), ZoneOffset.UTC));
+        verifier = new RequestVerifier(ecPemPublicKey, Clock.fixed(Instant.EPOCH.minusSeconds(301), ZoneOffset.UTC));
         assertFalse(verifier.verify(Method.valueOf(request.method()),
                                     request.uri().normalize(),
                                     request.headers().firstValue("X-Timestamp").get(),

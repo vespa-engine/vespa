@@ -6,8 +6,8 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Duration;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -22,9 +22,8 @@ public class ReservationExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod, 
-                              JobControl jobControl) {
-        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod, jobControl);
+    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod) {
+        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod);
         this.nodeRepository = nodeRepository;
     }
 

@@ -57,7 +57,7 @@ public class HostProvisionMaintainerTest {
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
     private final FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true);
     private final HostProvisionMaintainer maintainer = new HostProvisionMaintainer(
-            tester.nodeRepository(), Duration.ofDays(1), tester.jobControl(), hostProvisioner, flagSource);
+            tester.nodeRepository(), Duration.ofDays(1), hostProvisioner, flagSource);
 
     @Test
     public void delegates_to_host_provisioner_and_writes_back_result() {
@@ -153,10 +153,6 @@ public class HostProvisionMaintainerTest {
 
         NodeRepository nodeRepository() {
             return nodeRepository;
-        }
-
-        JobControl jobControl() {
-            return new JobControl(nodeRepository.database());
         }
     }
 }

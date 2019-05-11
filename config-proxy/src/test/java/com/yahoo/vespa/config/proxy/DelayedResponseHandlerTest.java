@@ -32,7 +32,7 @@ public class DelayedResponseHandlerTest {
         DelayedResponses delayedResponses = new DelayedResponses(statistics);
         final MockRpcServer mockRpcServer = new MockRpcServer();
         final MemoryCache memoryCache = new MemoryCache();
-        memoryCache.put(ConfigTester.fooConfig);
+        memoryCache.update(ConfigTester.fooConfig);
         final DelayedResponseHandler delayedResponseHandler = new DelayedResponseHandler(delayedResponses, memoryCache, mockRpcServer);
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.fooConfig, 0)));
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.fooConfig, 1200000))); // should not be returned yet

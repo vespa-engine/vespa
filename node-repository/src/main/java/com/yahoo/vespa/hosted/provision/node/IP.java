@@ -155,7 +155,7 @@ public class IP {
             }
             Optional<String> ipv4Address = ipv4Addresses.stream().findFirst();
             ipv4Address.ifPresent(addr -> {
-                String hostname4 = resolver.getHostname(addr).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipv4Address));
+                String hostname4 = resolver.getHostname(addr).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + addr));
                 if (!hostname6.equals(hostname4)) {
                     throw new IllegalArgumentException(String.format("Hostnames resolved from each IP address do not " +
                                                                      "point to the same hostname [%s -> %s, %s -> %s]",

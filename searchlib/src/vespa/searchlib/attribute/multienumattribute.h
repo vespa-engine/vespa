@@ -5,8 +5,24 @@
 #include "multivalueattribute.h"
 #include "enumstorebase.h"
 #include "loadedenumvalue.h"
+#include "multivalue.h"
 
 namespace search {
+
+class IWeightedIndexVector {
+public:
+    virtual ~IWeightedIndexVector() = default;
+    using WeightedIndex = multivalue::WeightedValue<EnumStoreBase::Index>;
+    /**
+     * Provides a reference to the underlying enum/weight pairs.
+     * This method should only be invoked if @ref getCollectionType(docId) returns CollectionType::WEIGHTED_SET.
+     *
+     * @param doc document identifier
+     * @param values Reference to values and weights
+     * @return the number of values for this document
+     **/
+    virtual uint32_t getEnumHandles(uint32_t doc, const WeightedIndex * & values) const;
+};
 
 class ReaderBase;
 
@@ -18,7 +34,8 @@ class ReaderBase;
  * M: MultiValueType
  */
 template <typename B, typename M>
-class MultiValueEnumAttribute : public MultiValueAttribute<B, M>
+class MultiValueEnumAttribute : public MultiValueAttribute<B, M>,
+                                public IWeightedIndexVector
 {
 protected:
     typedef typename B::UniqueSet UniqueSet;
@@ -67,6 +84,8 @@ protected:
 public:
     MultiValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
+    uint32_t getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const override final;
+
     void onCommit() override;
     void onUpdateStat() override;
 
@@ -84,6 +103,7 @@ public:
             return indices[0].value().ref();
         }
     }
+
     uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();

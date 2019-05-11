@@ -7,13 +7,14 @@ find_package(Protobuf REQUIRED)
 protobuf_generate_cpp(logd_PROTOBUF_SRCS logd_PROTOBUF_HDRS ../../../logserver/src/protobuf/log_protocol.proto)
 
 # protoc-generated files emit compiler warnings that we normally treat as errors.
-set_source_files_properties(${logd_PROTOBUF_SRCS} PROPERTIES COMPILE_FLAGS "-Wno-suggest-override")
+if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set_source_files_properties(${logd_PROTOBUF_SRCS} PROPERTIES COMPILE_FLAGS "-Wno-suggest-override")
+endif()
 
 vespa_add_library(logd STATIC
     SOURCES
     config_subscriber.cpp
-    conn.cpp
-    legacy_forwarder.cpp
+    empty_forwarder.cpp
     metrics.cpp
     proto_converter.cpp
     rpc_forwarder.cpp

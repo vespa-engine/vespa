@@ -125,19 +125,9 @@ Value::UP
 DefaultTensorEngine::from_spec(const TensorSpec &spec) const
 {
     ValueType type = ValueType::from_spec(spec.type());
-    bool is_dense = false;
-    bool is_sparse = false;
-    for (const auto &dimension: type.dimensions()) {
-        if (dimension.is_mapped()) {
-            is_sparse = true;
-        }
-        if (dimension.is_indexed()) {
-            is_dense = true;
-        }
-    }
-    if (is_dense && is_sparse) {
+    if (!tensor::Tensor::supported({type})) {
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
-    } else if (is_dense) {
+    } else if (type.is_dense()) {
         DenseTensorBuilder builder;
         std::map<vespalib::string,DenseTensorBuilder::Dimension> dimension_map;
         for (const auto &dimension: type.dimensions()) {
@@ -151,7 +141,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
             builder.addCell(cell.second);
         }
         return builder.build();
-    } else if (is_sparse) {
+    } else if (type.is_sparse()) {
         DefaultTensor::builder builder;
         std::map<vespalib::string,DefaultTensor::builder::Dimension> dimension_map;
         for (const auto &dimension: type.dimensions()) {
@@ -339,7 +329,8 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
 size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
     if (type.is_double()) {
         return 1;
-    } else if ((type.dimensions().size() == 1) &&
+    } else if ((type.cell_type() == ValueType::CellType::DOUBLE) &&
+               (type.dimensions().size() == 1) &&
                (type.dimensions()[0].is_indexed()) &&
                (type.dimensions()[0].name == dimension))
     {

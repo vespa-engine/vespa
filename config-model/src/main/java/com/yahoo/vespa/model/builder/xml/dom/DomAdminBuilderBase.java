@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.LogForwarder;
 import com.yahoo.vespa.model.admin.ModelConfigProvider;
-import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
@@ -26,10 +25,8 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
-import static java.util.logging.Level.WARNING;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -116,11 +113,11 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     void addLogForwarders(ModelElement logForwardingElement, Admin admin) {
         if (logForwardingElement == null) return;
 
-        for (ModelElement e : logForwardingElement.getChildren("splunk")) {
+        for (ModelElement e : logForwardingElement.children("splunk")) {
             LogForwarder.Config cfg = LogForwarder.cfg()
-		    .withSplunkHome(e.getStringAttribute("splunk-home"))
-		    .withDeploymentServer(e.getStringAttribute("deployment-server"))
-		    .withClientName(e.getStringAttribute("client-name"));
+		    .withSplunkHome(e.stringAttribute("splunk-home"))
+		    .withDeploymentServer(e.stringAttribute("deployment-server"))
+		    .withClientName(e.stringAttribute("client-name"));
             admin.setLogForwarderConfig(cfg);
         }
     }

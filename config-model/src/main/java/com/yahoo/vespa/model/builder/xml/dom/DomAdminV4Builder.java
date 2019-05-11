@@ -54,14 +54,14 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         // Note: These two elements only exists in admin version 4.0
         // This build handles admin version 3.0 by ignoring its content (as the content is not useful)
         Optional<NodesSpecification> requestedSlobroks = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"), context);
+                NodesSpecification.optionalDedicatedFromParent(adminElement.child("slobroks"), context);
         Optional<NodesSpecification> requestedLogservers = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
+                NodesSpecification.optionalDedicatedFromParent(adminElement.child("logservers"), context);
 
         assignSlobroks(deployState.getDeployLogger(), requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
-        addLogForwarders(adminElement.getChild("logforwarding"), admin);
+        addLogForwarders(adminElement.child("logforwarding"), admin);
     }
 
     private void assignSlobroks(DeployLogger deployLogger, NodesSpecification nodesSpecification, Admin admin) {
@@ -76,7 +76,6 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.count() > 1) throw new IllegalArgumentException("You can only request a single log server");
         if (deployState.getProperties().applicationId().instance().isTester()) return; // No logserver is needed on tester applications
-        if (deployState.getVespaVersion().getMajor() == 6) return; // Logserver is not supported on Vespa 6
         if (nodesSpecification.isDedicated()) {
             Collection<HostResource> hosts = allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)

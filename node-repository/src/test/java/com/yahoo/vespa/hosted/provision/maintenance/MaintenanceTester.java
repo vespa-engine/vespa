@@ -66,9 +66,4 @@ public class MaintenanceTester {
                 .map(n -> n.withCurrentRebootGeneration(n.status().reboot().wanted(), Instant.now(clock)))
                 .collect(Collectors.toList());
     }
-
-    public JobControl jobControl() {
-        return new JobControl(nodeRepository.database());
-    }
-
 }

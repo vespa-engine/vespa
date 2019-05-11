@@ -208,6 +208,7 @@ ContentNode = element node {
 }
 
 ContentNodes = element nodes {
+    Resources? &
     attribute cpu-socket-affinity { xsd:string }? &
     attribute mmap-core-limit { xsd:nonNegativeInteger }? &
     attribute core-on-oom { xsd:boolean }? &

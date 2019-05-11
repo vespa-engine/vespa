@@ -10,5 +10,6 @@ vespa_add_executable(searchcore_attribute_manager_test_app TEST
     searchcore_initializer
     searchcore_flushengine
     searchcore_pcommon
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_attribute_manager_test_app COMMAND searchcore_attribute_manager_test_app)

@@ -1,17 +1,18 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureUtils;
 
 import java.net.URI;
-import java.security.Key;
-import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Base64;
+
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 
 /**
  * Verifies that signed HTTP requests match the indicated public key.
@@ -23,12 +24,13 @@ public class RequestVerifier {
     private final Signature verifier;
     private final Clock clock;
 
+    /** Creates a new request verifier from the given PEM encoded ECDSA public key. */
     public RequestVerifier(String pemPublicKey) {
         this(pemPublicKey, Clock.systemUTC());
     }
 
-    RequestVerifier(String pemPublicKey, Clock clock) {
-        this.verifier = KeyUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey));
+    public RequestVerifier(String pemPublicKey, Clock clock) {
+        this.verifier = SignatureUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey), SHA256_WITH_ECDSA);
         this.clock = clock;
     }
 

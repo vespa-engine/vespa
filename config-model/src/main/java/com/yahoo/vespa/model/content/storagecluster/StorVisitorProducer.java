@@ -10,18 +10,18 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 public class StorVisitorProducer implements StorVisitorConfig.Producer {
     public static class Builder {
         public StorVisitorProducer build(ModelElement element) {
-            ModelElement tuning = element.getChild("tuning");
+            ModelElement tuning = element.child("tuning");
             if (tuning == null) {
                 return new StorVisitorProducer();
             }
 
-            ModelElement visitors = tuning.getChild("visitors");
+            ModelElement visitors = tuning.child("visitors");
             if (visitors == null) {
                 return new StorVisitorProducer();
             }
 
-            return new StorVisitorProducer(visitors.getIntegerAttribute("thread-count"),
-                                           visitors.getIntegerAttribute("max-queue-size"),
+            return new StorVisitorProducer(visitors.integerAttribute("thread-count"),
+                                           visitors.integerAttribute("max-queue-size"),
                                            visitors.childAsInteger("max-concurrent.fixed"),
                                            visitors.childAsInteger("max-concurrent.variable"));
         }

@@ -10,7 +10,7 @@
 namespace search {
 
 template <typename B>
-class SingleValueNumericAttribute : public B
+class SingleValueNumericAttribute final : public B
 {
 private:
     typedef typename B::BaseType      T;
@@ -36,7 +36,7 @@ private:
      * Specialization of SearchContext
      */
     template <typename M>
-    class SingleSearchContext : public M, public AttributeVector::SearchContext
+    class SingleSearchContext final : public M, public AttributeVector::SearchContext
     {
     private:
         const T * _data;
