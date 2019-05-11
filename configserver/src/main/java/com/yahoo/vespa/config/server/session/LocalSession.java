@@ -18,15 +18,12 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 
 import java.io.File;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.OptionalLong;
 
 /**
  * A LocalSession is a session that has been created locally on this configserver. A local session can be edited and
@@ -67,18 +64,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
                                        Optional<ApplicationSet> currentActiveApplicationSet, 
                                        Path tenantPath,
                                        Instant now) {
-        ApplicationId newOwner = params.getApplicationId();
-
-        // If redeployment, and something else is preparing, bail out; otherwise, mark this as currently preparing.
-        try (Lock lock = applicationRepo.lock(newOwner)) {
-            applicationRepo.createApplication(newOwner);
-            OptionalLong preparing = applicationRepo.preparing(newOwner);
-            if (preparing.isPresent() && getMetaData().isInternalRedeploy())
-                throw new ActivationConflictException("Session " + preparing.getAsLong() + " is already being prepared for '"
-                                                      + newOwner + "'");
-            applicationRepo.prepare(newOwner, getSessionId());
-        }
-
+        applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
         ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params,
                                                               currentActiveApplicationSet, tenantPath, now);
