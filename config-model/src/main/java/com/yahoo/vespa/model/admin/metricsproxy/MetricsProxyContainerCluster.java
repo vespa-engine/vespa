@@ -79,7 +79,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private final AbstractConfigProducer<?> parent;
     private final ApplicationId applicationId;
 
-    private MetricSet additionalDefaultMetrics = emptyMetricSet();
 
     public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState);
@@ -104,12 +103,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(VespaMetrics.class);
     }
 
-    @SuppressWarnings("WeakerAccess") // Used by amenders
-    public void setAdditionalDefaultMetrics(MetricSet additionalDefaultMetrics) {
-        if (additionalDefaultMetrics == null) return;
-        this.additionalDefaultMetrics = additionalDefaultMetrics;
-    }
-
     @Override
     protected void doPrepare(DeployState deployState) { }
 
@@ -121,7 +114,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     public void getConfig(ConsumersConfig.Builder builder) {
-        var amendedDefaultConsumer = addMetrics(getDefaultMetricsConsumer(), additionalDefaultMetrics.getMetrics());
+        var amendedDefaultConsumer = addMetrics(getDefaultMetricsConsumer(), getAdditionalDefaultMetrics().getMetrics());
         builder.consumer.addAll(generateConsumers(amendedDefaultConsumer, getUserMetricsConsumers()));
     }
 
@@ -130,6 +123,12 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         if (isHostedVespa()) {
             builder.dimensions(applicationDimensions());
         }
+    }
+
+    private MetricSet getAdditionalDefaultMetrics() {
+        return getAdmin()
+                .map(Admin::getAdditionalDefaultMetrics)
+                .orElse(emptyMetricSet());
     }
 
     // Returns the metricConsumers from services.xml

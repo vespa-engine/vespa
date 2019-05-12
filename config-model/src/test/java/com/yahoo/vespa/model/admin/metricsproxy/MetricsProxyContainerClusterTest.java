@@ -16,7 +16,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_INSTANCE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_TENANT;
@@ -59,11 +58,10 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    public void default_consumer_can_be_amended() {
+    public void default_consumer_can_be_amended_via_admin_object() {
         VespaModel model = getModel(servicesWithAdminOnly());
-        var cluster = model.getAdmin().getMetricsProxyContainerCluster();
         var additionalMetric = new Metric("additional-metric");
-        cluster.setAdditionalDefaultMetrics(new MetricSet("amender-metrics", singleton(additionalMetric)));
+        model.getAdmin().setAdditionalDefaultMetrics(new MetricSet("amender-metrics", singleton(additionalMetric)));
 
         ConsumersConfig config = consumersConfigFromModel(model);
         assertEquals(numMetricsForDefaultConsumer + 1, config.consumer(0).metric().size());
