@@ -323,9 +323,11 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                                             Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
             session = createRemoteSession(sessionId, initialStatus, zkClient);
             addLocalSession(sessionId, deployData, zkClient);
-            tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(ApplicationId.from(tenantName.value(),
-                                                                                                             deployData.getApplicationName(),
-                                                                                                             InstanceName.defaultName().value()));
+            TenantApplications tenantApplications = tenantRepository.getTenant(tenantName).getApplicationRepo();
+            ApplicationId id = ApplicationId.from(tenantName.value(), deployData.getApplicationName(), InstanceName.defaultName().value());
+            tenantApplications.createApplication(id);
+            tenantApplications.prepare(id, sessionId);
+
             metaData = localRepo.getSession(sessionId).getMetaData();
             actResponse = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             return this;
