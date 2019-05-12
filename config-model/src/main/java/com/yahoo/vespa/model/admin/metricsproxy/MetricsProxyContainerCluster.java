@@ -134,13 +134,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     // Returns the metricConsumers from services.xml
     private Map<String, MetricsConsumer> getUserMetricsConsumers() {
         return getAdmin()
-                .map(this::consumersInAdmin)
+                .map(admin -> admin.getUserMetrics().getConsumers())
                 .orElse(Collections.emptyMap());
-    }
-
-    private Map<String, MetricsConsumer> consumersInAdmin(Admin admin) {
-        Metrics metrics = admin.getUserMetrics();
-        return metrics.getConsumers();
     }
 
     private Optional<Admin> getAdmin() {
