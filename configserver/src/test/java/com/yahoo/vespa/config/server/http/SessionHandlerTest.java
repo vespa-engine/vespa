@@ -35,6 +35,7 @@ import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionTest;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.io.ByteArrayOutputStream;
