@@ -170,7 +170,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is already active");
 
         if (Session.Status.NEW.equals(localSession.getStatus()))
-            throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is not 
+            throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is not prepared");
 
         if ( ! localSession.getMetaData().isInternalRedeploy())
             return;
