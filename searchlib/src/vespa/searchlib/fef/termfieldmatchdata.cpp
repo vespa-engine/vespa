@@ -9,7 +9,9 @@ namespace search::fef {
 TermFieldMatchData::TermFieldMatchData() :
     _docId(invalidId()),
     _fieldId(FIELDID_MASK),
-    _sz(0)
+    _sz(0),
+    _numOccs(0),
+    _fieldLength(0)
 {
     memset(&_data, 0, sizeof(_data));
 }
@@ -17,7 +19,9 @@ TermFieldMatchData::TermFieldMatchData() :
 TermFieldMatchData::TermFieldMatchData(const TermFieldMatchData & rhs) :
     _docId(rhs._docId),
     _fieldId(rhs._fieldId),
-    _sz(0)
+    _sz(0),
+    _numOccs(0),
+    _fieldLength(0)
 {
     memset(&_data, 0, sizeof(_data));
     if (isRawScore()) {
@@ -87,6 +91,8 @@ TermFieldMatchData::swap(TermFieldMatchData &rhs)
     sswap(&_docId, &rhs._docId);
     sswap(&_fieldId, &rhs._fieldId);
     sswap(&_sz, &rhs._sz);
+    sswap(&_numOccs, &rhs._numOccs);
+    sswap(&_fieldLength, &rhs._fieldLength);
     char tmp[sizeof(_data)];
     memcpy(tmp, &rhs._data, sizeof(_data));
     memcpy(&rhs._data, &_data, sizeof(_data));
