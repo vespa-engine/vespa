@@ -3,7 +3,7 @@ package com.yahoo.jrt;
 
 
 import java.util.HashMap;
-
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A Supervisor keeps a method repository and handles dispatching of
@@ -16,10 +16,10 @@ import java.util.HashMap;
  **/
 public class Supervisor {
 
-    private Transport               transport;
+    private final Transport         transport;
     private SessionHandler          sessionHandler = null;
     private final Object            methodMapLock = new Object();
-    private volatile HashMap<String, Method> methodMap = new HashMap<>();
+    private final AtomicReference<HashMap<String, Method>> methodMap = new AtomicReference<>(new HashMap<>());
     private int                     maxInputBufferSize  = 0;
     private int                     maxOutputBufferSize = 0;
 
@@ -68,7 +68,7 @@ public class Supervisor {
      * @return the method map
      **/
     HashMap<String, Method> methodMap() {
-        return methodMap;
+        return methodMap.getAcquire();
     }
 
     /**
@@ -96,9 +96,9 @@ public class Supervisor {
      **/
     public void addMethod(Method method) {
         synchronized (methodMapLock) {
-            HashMap<String, Method> newMap = new HashMap<>(methodMap);
+            HashMap<String, Method> newMap = new HashMap<>(methodMap());
             newMap.put(method.name(), method);
-            methodMap = newMap;
+            methodMap.setRelease(newMap);
         }
     }
 
@@ -109,9 +109,9 @@ public class Supervisor {
      **/
     public void removeMethod(String methodName) {
         synchronized (methodMapLock) {
-            HashMap<String, Method> newMap = new HashMap<>(methodMap);
+            HashMap<String, Method> newMap = new HashMap<>(methodMap());
             newMap.remove(methodName);
-            methodMap = newMap;
+            methodMap.setRelease(newMap);
         }
     }
 
@@ -124,9 +124,9 @@ public class Supervisor {
      **/
     public void removeMethod(Method method) {
         synchronized (methodMapLock) {
-            HashMap<String, Method> newMap = new HashMap<>(methodMap);
+            HashMap<String, Method> newMap = new HashMap<>(methodMap());
             if (newMap.remove(method.name()) == method) {
-                methodMap = newMap;
+                methodMap.setRelease(newMap);
             }
         }
     }
