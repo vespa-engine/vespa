@@ -919,7 +919,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
         rootObject.setString("message", "Deployment started in " + runId);
-        rootObject.setString("location", controller.zoneRegistry().dashboardUrl(runId).toString());
+        rootObject.setLong("run", runId.number());
         return new SlimeJsonResponse(slime);
     }
 
