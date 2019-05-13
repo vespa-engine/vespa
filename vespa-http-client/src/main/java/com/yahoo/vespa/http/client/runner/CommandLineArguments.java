@@ -52,6 +52,10 @@ public class CommandLineArguments {
             return null;
         }
         if (cmdArgs.endpointArg != null) {
+            if (cmdArgs.hostArg != null) {
+                System.err.println("Cannot set both '--host' and '--endpoint' ");
+                return null;
+            }
             try {
                 URL url = new URL(cmdArgs.endpointArg);
             } catch (MalformedURLException e) {

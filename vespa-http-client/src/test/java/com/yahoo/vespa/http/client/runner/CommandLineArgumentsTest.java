@@ -182,34 +182,29 @@ public class CommandLineArgumentsTest {
     }
 
     @Test
-    public void testEndpointAndHost() {
-        args.clear();
+    public void testEndpoint() {
         add("endpoint", "http://myendpoint:1234");
         CommandLineArguments arguments = CommandLineArguments.build(asArray());
         SessionParams params = arguments.createSessionParams(true);
-
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getHostname(), is("myendpoint"));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(1234));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(false));
+    }
 
-        add("host", "myhost");  // endpoint dominates host and port
-        add("port", "2345");
-        arguments = CommandLineArguments.build(asArray());
-        params = arguments.createSessionParams(true);
-        assertThat(params.getClusters().get(0).getEndpoints().get(0).getHostname(), is("myendpoint"));
-        assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(1234));
-
-        args.clear();
+    @Test
+    public void testEndpointHttps() {
         add("endpoint", "https://myendpoint:1234");
-        arguments = CommandLineArguments.build(asArray());
-        params = arguments.createSessionParams(true);
+        CommandLineArguments arguments = CommandLineArguments.build(asArray());
+        SessionParams params = arguments.createSessionParams(true);
         assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(true));
+    }
 
-        args.clear();
-        add("endpoint", "https://myendpoint::1234");
-        arguments = CommandLineArguments.build(asArray());
-        params = arguments.createSessionParams(true);
-        assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(true));
-
+    @Test
+    public void testEndpointAndHost() {
+        add("host", "myhost");
+        add("port", "2345");
+        add("endpoint", "http://myendpoint:1234");
+        CommandLineArguments arguments = CommandLineArguments.build(asArray());
+        assertThat(arguments, is(nullValue())); // cannot have both endpoint and host
     }
 }
