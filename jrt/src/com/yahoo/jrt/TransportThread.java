@@ -331,13 +331,14 @@ public class TransportThread {
         parent.notifyDone(this);
     }
 
-    TransportThread shutdown() {
-        synchronized (this) {
-            if (state == OPEN) {
-                state = CLOSING;
-                selector.wakeup();
-            }
+    private synchronized void handleShutdown() {
+        if (state == OPEN) {
+            state = CLOSING;
         }
+    }
+
+    TransportThread shutdown() {
+        postCommand(this::handleShutdown);
         return this;
     }
 
