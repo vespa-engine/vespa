@@ -24,7 +24,8 @@ public class Slobrok {
 
 
     public Slobrok(int port) throws ListenFailedException {
-        orb = new Supervisor(new Transport());
+        // NB: rpc must be single-threaded
+        orb = new Supervisor(new Transport(1));
         registerMethods();
         try {
             listener = orb.listen(new Spec(port));
@@ -245,7 +246,7 @@ public class Slobrok {
         public FetchMirror(Request req, int timeout) {
             req.detach();
             this.req = req;
-            task = orb.transport().createTask(this);
+            task = orb.transport().selectThread().createTask(this);
             task.schedule(((double)timeout)/1000.0);
         }
         public void run() { // timeout

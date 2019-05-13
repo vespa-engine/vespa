@@ -33,7 +33,7 @@ class Worker {
         }
         public void run() {
             connection.doHandshakeWork();
-            connection.transport().handshakeWorkDone(connection);
+            connection.transportThread().handshakeWorkDone(connection);
         }
     }
 

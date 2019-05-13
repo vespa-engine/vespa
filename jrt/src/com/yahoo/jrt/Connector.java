@@ -28,7 +28,7 @@ class Connector {
 
     public void connectLater(Connection c) {
         if ( ! connectQueue.enqueue(c)) {
-            parent.addConnection(c);
+            c.transportThread().addConnection(c);
         }
     }
 
@@ -36,7 +36,7 @@ class Connector {
         try {
             while (true) {
                 Connection conn = (Connection) connectQueue.dequeue();
-                parent.addConnection(conn.connect());
+                conn.transportThread().addConnection(conn.connect());
             }
         } catch (EndOfQueueException e) {}
         synchronized (this) {

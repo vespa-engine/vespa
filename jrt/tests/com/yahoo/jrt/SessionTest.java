@@ -122,9 +122,9 @@ public class SessionTest implements SessionHandler {
     @Before
     public void setUp() throws ListenFailedException {
         Session.reset();
-        server   = new Test.Orb(new Transport(crypto));
+        server   = new Test.Orb(new Transport(crypto, 1));
         server.setSessionHandler(this);
-        client   = new Test.Orb(new Transport(crypto));
+        client   = new Test.Orb(new Transport(crypto, 1));
         client.setSessionHandler(this);
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()),

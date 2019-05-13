@@ -1,3 +1,7 @@
+METHOD frt.rpc.ping
+  DESCRIPTION:
+    Method that may be used to check if the server is online
+
 METHOD frt.rpc.getMethodInfo
   DESCRIPTION:
     Obtain detailed information about a single method
@@ -19,8 +23,4 @@ METHOD frt.rpc.getMethodList
     [S][names] Method names
     [S][params] Method parameter types
     [S][return] Method return types
-
-METHOD frt.rpc.ping
-  DESCRIPTION:
-    Method that may be used to check if the server is online
 

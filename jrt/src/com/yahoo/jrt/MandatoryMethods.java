@@ -2,6 +2,7 @@
 package com.yahoo.jrt;
 
 
+import java.util.Collection;
 import java.util.Iterator;
 
 
@@ -47,15 +48,14 @@ class MandatoryMethods {
     }
 
     public void getMethodList(Request req) {
-        int cnt = parent.methodMap().size();
+        Collection<Method> methods = parent.methodMap().values();
+        int cnt = methods.size();
         String[] ret0_names  = new String[cnt];
         String[] ret1_params = new String[cnt];
         String[] ret2_return = new String[cnt];
 
         int i = 0;
-        Iterator<Method> itr = parent.methodMap().values().iterator();
-        while (itr.hasNext()) {
-            Method m = itr.next();
+        for (Method m: methods) {
             ret0_names[i]  = m.name();
             ret1_params[i] = m.paramTypes();
             ret2_return[i] = m.returnTypes();

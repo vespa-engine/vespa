@@ -10,6 +10,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Task;
+import com.yahoo.jrt.TransportThread;
 import com.yahoo.jrt.Values;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class Mirror implements IMirror {
     private boolean requestDone = false;
     private AtomicReference<Entry[]>  specs = new AtomicReference<>(new Entry[0]);
     private int specsGeneration = 0;
+    private final TransportThread transportThread;
     private final Task updateTask;
     private final RequestWaiter reqWait;
     private Target target = null;
@@ -57,7 +59,8 @@ public class Mirror implements IMirror {
         this.orb = orb;
         this.slobroks = slobroks;
         this.backOff = bop;
-        updateTask = orb.transport().createTask(this::checkForUpdate);
+        transportThread = orb.transport().selectThread();
+        updateTask = transportThread.createTask(this::checkForUpdate);
         reqWait = new RequestWaiter() {
                 public void handleRequestDone(Request req) {
                     requestDone = true;
@@ -84,7 +87,7 @@ public class Mirror implements IMirror {
      */
     public void shutdown() {
         updateTask.kill();
-        orb.transport().perform(this::handleShutdown);
+        transportThread.perform(this::handleShutdown);
     }
 
     @Override

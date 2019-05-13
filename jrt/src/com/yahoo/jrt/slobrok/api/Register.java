@@ -12,6 +12,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Task;
+import com.yahoo.jrt.TransportThread;
 import com.yahoo.jrt.Values;
 
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class Register {
     private List<String>  names      = new ArrayList<>();
     private List<String>  pending    = new ArrayList<>();
     private List<String>  unreg      = new ArrayList<>();
+    private final TransportThread transportThread;
     private Task          updateTask = null;
     private RequestWaiter reqWait    = null;
     private Target        target     = null;
@@ -79,9 +81,8 @@ public class Register {
         this.slobroks = slobroks;
         this.backOff = bop;
         mySpec = spec.toString();
-        updateTask = orb.transport().createTask(new Runnable() {
-                public void run() { handleUpdate(); }
-            });
+        transportThread = orb.transport().selectThread();
+        updateTask = transportThread.createTask(this::handleUpdate);
         reqWait = new RequestWaiter() {
                 public void handleRequestDone(Request req) {
                     reqDone = true;
@@ -142,9 +143,7 @@ public class Register {
      */
     public void shutdown() {
         updateTask.kill();
-        orb.transport().perform(new Runnable() {
-                public void run() { handleShutdown(); }
-            });
+        transportThread.perform(this::handleShutdown);
     }
 
     /**

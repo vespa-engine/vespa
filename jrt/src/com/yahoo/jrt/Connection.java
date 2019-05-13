@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 class Connection extends Target {
 
-    private static Logger log = Logger.getLogger(Connection.class.getName());
+    private static final Logger log = Logger.getLogger(Connection.class.getName());
 
     private static final int READ_SIZE  = 32768;
     private static final int READ_REDO  = 10;
@@ -29,27 +29,27 @@ class Connection extends Target {
     private static final int CONNECTED  = 2;
     private static final int CLOSED     = 3;
 
-    private int           state      = INITIAL;
-    private Queue         queue      = new Queue();
-    private Queue         myQueue    = new Queue();
-    private Buffer        input      = new Buffer(READ_SIZE * 2);
-    private Buffer        output     = new Buffer(WRITE_SIZE * 2);
-    private int           maxInputSize  = 64*1024;
-    private int           maxOutputSize = 64*1024;
-    private Map<Integer, ReplyHandler> replyMap = new HashMap<>();
-    private Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
-    private int           activeReqs = 0;
-    private int           writeWork  = 0;
-    private boolean       pendingHandshakeWork = false;
-    private Transport     parent;
-    private Supervisor    owner;
-    private Spec          spec;
-    private CryptoSocket  socket;
-    private int           readSize = READ_SIZE;
-    private boolean       server;
-    private AtomicLong    requestId = new AtomicLong(0);
-    private SelectionKey  selectionKey;
-    private Exception     lostReason = null;
+    private int state = INITIAL;
+    private final Queue  queue   = new Queue();
+    private final Queue  myQueue = new Queue();
+    private final Buffer input   = new Buffer(READ_SIZE * 2);
+    private final Buffer output  = new Buffer(WRITE_SIZE * 2);
+    private int maxInputSize  = 64*1024;
+    private int maxOutputSize = 64*1024;
+    private final Map<Integer, ReplyHandler> replyMap = new HashMap<>();
+    private final Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
+    private int activeReqs = 0;
+    private int writeWork  = 0;
+    private boolean pendingHandshakeWork = false;
+    private final TransportThread parent;
+    private final Supervisor owner;
+    private final Spec spec;
+    private CryptoSocket socket;
+    private int readSize = READ_SIZE;
+    private final boolean server;
+    private final AtomicLong requestId = new AtomicLong(0);
+    private SelectionKey selectionKey;
+    private Exception lostReason = null;
 
     private void setState(int state) {
         if (state <= this.state) {
@@ -88,17 +88,18 @@ class Connection extends Target {
         }
     }
 
-    public Connection(Transport parent, Supervisor owner,
+    public Connection(TransportThread parent, Supervisor owner,
                       SocketChannel channel) {
 
         this.parent = parent;
         this.owner = owner;
-        this.socket = parent.createCryptoSocket(channel, true);
+        this.socket = parent.transport().createCryptoSocket(channel, true);
+        this.spec = null;
         server = true;
         owner.sessionInit(this);
     }
 
-    public Connection(Transport parent, Supervisor owner, Spec spec, Object context) {
+    public Connection(TransportThread parent, Supervisor owner, Spec spec, Object context) {
         super(context);
         this.parent = parent;
         this.owner = owner;
@@ -115,7 +116,7 @@ class Connection extends Target {
         maxOutputSize = bytes;
     }
 
-    public Transport transport() {
+    public TransportThread transportThread() {
         return parent;
     }
 
@@ -170,7 +171,7 @@ class Connection extends Target {
             return this;
         }
         try {
-            socket = parent.createCryptoSocket(SocketChannel.open(spec.address()), false);
+            socket = parent.transport().createCryptoSocket(SocketChannel.open(spec.address()), false);
         } catch (Exception e) {
             setLostReason(e);
         }
@@ -242,7 +243,7 @@ class Connection extends Target {
             disableRead();
             disableWrite();
             pendingHandshakeWork = true;
-            parent.doHandshakeWork(this);
+            parent.transport().doHandshakeWork(this);
             break;
         }
     }
