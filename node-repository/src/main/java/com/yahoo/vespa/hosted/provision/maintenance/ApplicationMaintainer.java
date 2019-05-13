@@ -51,6 +51,11 @@ public abstract class ApplicationMaintainer extends Maintainer {
         return pendingDeployments.size();
     }
 
+    /** Returns whether given application should be deployed at this moment in time */
+    protected boolean canDeployNow(ApplicationId application) {
+        return true;
+    }
+
     /**
      * Redeploy this application.
      *
@@ -70,18 +75,19 @@ public abstract class ApplicationMaintainer extends Maintainer {
     /** Returns the applications that should be maintained by this now. */
     protected abstract Set<ApplicationId> applicationsNeedingMaintenance();
 
-    /** Redeploy this application. */
+    /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
     protected final void deployWithLock(ApplicationId application) {
         // An application might change its state between the time the set of applications is retrieved and the
         // time deployment happens. Lock the application and check if it's still active.
-        try {
-            try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(10))) {
-                if ( ! isActive(application)) return; // became inactive since deployment was requested
-            }
-            deployer.deployFromLocalActive(application).ifPresent(deployment -> { // if deployed on this config server
-                log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
-                deployment.activate();
-            });
+        //
+        // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
+        try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
+            if ( ! isActive(application)) return; // became inactive since deployment was requested
+            if ( ! canDeployNow(application)) return; // redeployment is no longer needed
+            Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
+            if ( ! deployment.isPresent()) return; // this will be done at another config server
+            log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
+            deployment.get().activate();
         } catch (RuntimeException e) {
             log.log(LogLevel.WARNING, "Exception on maintenance redeploy", e);
         } finally {
