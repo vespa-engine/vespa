@@ -2,74 +2,89 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Optional;
 
 /**
  * @author olaa
  */
 public class Metrics {
 
-    private final double queriesPerSecond;
-    private final double writesPerSecond;
-    private final double documentCount;
-    private final double queryLatencyMillis;
-    private final double writeLatencyMills;
-    private final Instant timestamp;
+    double feedLatencySum;
+    double feedLatencyCount;
+    double qrQueryLatencySum;
+    double qrQueryLatencyCount;
+    double containerQueryLatencySum;
+    double containerQueryLatencyCount;
+    double documentCount;
+    Instant timestamp;
 
-    public Metrics(double queriesPerSecond, double writesPerSecond, double documentCount,
-                             double queryLatencyMillis, double writeLatencyMills, Instant timestamp) {
-        this.queriesPerSecond = queriesPerSecond;
-        this.writesPerSecond = writesPerSecond;
-        this.documentCount = documentCount;
-        this.queryLatencyMillis = queryLatencyMillis;
-        this.writeLatencyMills = writeLatencyMills;
+    public void addFeedLatencySum(double feedLatencySum) {
+        this.feedLatencySum += feedLatencySum;
+    }
+
+    public void addFeedLatencyCount(double feedLatencyCount) {
+        this.feedLatencyCount += feedLatencyCount;
+    }
+
+    public void addQrQueryLatencyCount(double qrQueryLatencyCount) {
+        this.qrQueryLatencyCount += qrQueryLatencyCount;
+    }
+
+    public void addQrQueryLatencySum(double qrQueryLatencySum) {
+        this.qrQueryLatencySum += qrQueryLatencySum;
+    }
+
+    public void addContainerQueryLatencyCount(double containerQueryLatencyCount) {
+        this.containerQueryLatencyCount += containerQueryLatencyCount;
+    }
+
+    public void addContainerQueryLatencySum(double containerQueryLatencySum) {
+        this.containerQueryLatencySum += containerQueryLatencySum;
+    }
+
+    public void addDocumentCount(double documentCount) {
+        this.documentCount += documentCount;
+    }
+
+    public Optional<Double> aggregateFeedLatency() {
+        if (isZero(feedLatencySum) || isZero(feedLatencyCount)) return Optional.empty();
+        return Optional.of(feedLatencySum / feedLatencyCount);
+    }
+
+    public Optional<Double> aggregateFeedRate() {
+        if (isZero(feedLatencyCount)) return Optional.empty();
+        return Optional.of(feedLatencyCount / 60);
+    }
+
+    public Optional<Double> aggregateQueryLatency() {
+        if (isZero(containerQueryLatencyCount, containerQueryLatencySum) && isZero(qrQueryLatencyCount, qrQueryLatencySum)) return Optional.empty();
+        return Optional.of((containerQueryLatencySum + qrQueryLatencySum) / (containerQueryLatencyCount + qrQueryLatencyCount));
+    }
+
+    public Optional<Double> aggregateQueryRate() {
+        if (isZero(containerQueryLatencyCount) && isZero(qrQueryLatencyCount)) return Optional.empty();
+        return Optional.of((containerQueryLatencyCount + qrQueryLatencyCount) / 60);
+    }
+
+    public Optional<Double> aggregateDocumentCount() {
+        if (isZero(documentCount)) return Optional.empty();
+        return Optional.of(documentCount);
+    }
+
+    public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
-    }
-
-
-    public double getQueriesPerSecond() {
-        return queriesPerSecond;
-    }
-
-    public double getWritesPerSecond() {
-        return writesPerSecond;
-    }
-
-    public double getDocumentCount() {
-        return documentCount;
-    }
-
-    public double getQueryLatencyMillis() {
-        return queryLatencyMillis;
-    }
-
-    public double getWriteLatencyMills() {
-        return writeLatencyMills;
     }
 
     public Instant getTimestamp() {
         return timestamp;
     }
 
-    public static Metrics averagedMetrics(List<Metrics> metrics) {
-        return new Metrics(
-                metrics.stream().mapToDouble(Metrics::getQueriesPerSecond).sum() / metrics.size(),
-                metrics.stream().mapToDouble(Metrics::getWritesPerSecond).sum() / metrics.size(),
-                metrics.stream().mapToDouble(Metrics::getDocumentCount).sum() / metrics.size(),
-                metrics.stream().mapToDouble(Metrics::getQueryLatencyMillis).sum() / metrics.size(),
-                metrics.stream().mapToDouble(Metrics::getWriteLatencyMills).sum() / metrics.size(),
-                metrics.stream().findAny().get().timestamp
-        );
+    private boolean isZero(double... values) {
+        boolean isZero = false;
+        for (double value : values) {
+            isZero |= Math.abs(value) < 0.001;
+        }
+        return isZero;
     }
 
-    public static Metrics accumulatedMetrics(List<Metrics> metrics) {
-        return new Metrics(
-                metrics.stream().mapToDouble(Metrics::getQueriesPerSecond).sum(),
-                metrics.stream().mapToDouble(Metrics::getWritesPerSecond).sum() ,
-                metrics.stream().mapToDouble(Metrics::getDocumentCount).sum(),
-                metrics.stream().mapToDouble(Metrics::getQueryLatencyMillis).sum(),
-                metrics.stream().mapToDouble(Metrics::getWriteLatencyMills).sum(),
-                metrics.stream().findAny().get().timestamp
-        );
-    }
 }

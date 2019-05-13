@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.metrics;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
@@ -18,11 +17,8 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -39,7 +35,7 @@ public class MetricsAggregator {
         Map<ApplicationId, Map<String, Metrics>> aggregatedMetrics = applicationHosts.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        e-> aggregateMetricsByCluster(e.getValue())));
+                        e -> aggregateMetricsByCluster(e.getValue())));
         return new MetricsResponse(200, aggregatedMetrics);
     }
 
@@ -53,48 +49,59 @@ public class MetricsAggregator {
     }
 
     private Metrics aggregateMetrics(List<URI> hosts) {
-        List<Metrics> metrics= hosts.stream()
-                .map(host -> getMetrics(host))
-                .collect(Collectors.toList());
-        Metrics.averagedMetrics(metrics);
-        return Metrics.accumulatedMetrics(metrics);
+        Metrics clusterMetrics = new Metrics();
+        hosts.stream()
+            .forEach(host -> accumulateMetrics(host, clusterMetrics));
+        return clusterMetrics;
     }
 
-    private Metrics getMetrics(URI hostURI) {
+    private void accumulateMetrics(URI hostURI, Metrics metrics) {
+            Slime responseBody = doMetricsRequest(hostURI);
+            Inspector services = responseBody.get().field("services");
+            services.traverse((ArrayTraverser) (i, servicesInspector) -> {
+                parseService(servicesInspector, metrics);
+
+            });
+
+    }
+
+    private Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try {
             HttpResponse response = httpClient.execute(get);
-
             InputStream is = response.getEntity().getContent();
             Slime slime = SlimeUtils.jsonToSlime(is.readAllBytes());
             is.close();
-
-            Inspector nodeMetrics = slime.get().field("node");
-
-            List<Metrics> metricsList = new ArrayList<>();
-            Inspector services = slime.get().field("services");
-            services.traverse((ArrayTraverser) (i, servicesInspector) -> {
-                String serviceName = servicesInspector.field("name").asString();
-
-                Instant timestamp = Instant.ofEpochSecond(servicesInspector.field("timestamp").asLong());
-                Inspector serviceMetrics = servicesInspector.field("metrics");
-                serviceMetrics.traverse((ArrayTraverser) (j, metrics) -> {
-                    Inspector values = metrics.field("values");
-                    double queryCount = values.field("queries.count").asDouble();
-                    double queryLatency = values.field("query_latency.sum").asDouble();
-                    double documentCount = values.field("document.count").asDouble();
-                    double writeCount = values.field("write.count").asDouble();
-                    double writeLatency = values.field("write_latency.sum").asDouble();
-                    logger.log(Level.WARNING, writeLatency + " write latency");
-                    Map<String, Double> map = new HashMap<>();
-                    values.traverse((ObjectTraverser) (key, value) -> map.put(key, value.asDouble()));
-                    metricsList.add(new Metrics(queryCount, writeCount, documentCount, queryLatency, writeLatency, timestamp));
-                });
-
-            });
-            return Metrics.accumulatedMetrics(metricsList);
+            return slime;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
+
+    private void parseService(Inspector service, Metrics metrics) {
+        String serviceName = service.field("name").asString();
+        Instant timestamp = Instant.ofEpochSecond(service.field("timestamp").asLong());
+        metrics.setTimestamp(timestamp);
+        service.field("metrics").traverse((ArrayTraverser) (i, m) -> {
+            Inspector values = m.field("values");
+            switch (serviceName) {
+                case "container":
+                    metrics.addContainerQueryLatencyCount(values.field("query_latency.count").asDouble());
+                    metrics.addContainerQueryLatencySum(values.field("query_latency.sum").asDouble());
+                    metrics.addFeedLatencyCount(values.field("feed_latency.count").asDouble());
+                    metrics.addFeedLatencySum(values.field("feed_latency.sum").asDouble());
+                case "qrserver":
+                    metrics.addQrQueryLatencyCount(values.field("query_latency.count").asDouble());
+                    metrics.addQrQueryLatencySum(values.field("query_latency.sum").asDouble());
+                case "distributor":
+                    metrics.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
+            }
+        });
+
+    }
+
+    private void parseContainerMetrics(Inspector containerInspector, Metrics metrics) {
+
+    }
+
 }

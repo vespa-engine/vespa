@@ -1,22 +1,50 @@
 {
   "services": [
       {
-        "name":"searchnode",
+        "name":"container",
         "timestamp": 1557306075,
         "metrics": [
             {
               "values": {
-                  "queries.count": 23.0,
+                  "queries.rate": 23.0,
                   "query_latency.sum": 2000,
                   "document.count": 300000,
-                  "write.count": 23.0,
+                  "feed.rate": 23.0,
                   "write_latency.sum": 2000
               }
             },
             {
              "values": {
-                  "queries.count": 43.0,
-                  "query_latency.sum": 3000
+                  "query_latency.count": 43.0,
+                  "query_latency.sum": 3000,
+                  "feed_latency.count": 43.0,
+                  "feed_latency.sum": 3000
+
+              }
+            }
+          ]
+      },
+
+      {
+              "name":"qrs",
+              "timestamp": 1557306075,
+              "metrics": [
+                  {
+                   "values": {
+                        "query_latency.count": 43.0,
+                        "query_latency.sum": 3000
+                    }
+                  }
+                ]
+            },
+        {
+        "name":"distributor",
+        "timestamp": 1557306075,
+        "metrics": [
+            {
+             "values": {
+                  "vds.distributor.docsstored.average": 3000
+
               }
             }
           ]

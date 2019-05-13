@@ -32,11 +32,11 @@ public class MetricsResponse extends HttpResponse {
                 Cursor clusterCursor = clusterArray.addObject();
                 Metrics metrics = clusterMetrics.getValue();
                 clusterCursor.setString("clusterName", clusterMetrics.getKey());
-                clusterCursor.setDouble("queriesPerSecond", metrics.getQueriesPerSecond());
-                clusterCursor.setDouble("writesPerSecond", metrics.getWritesPerSecond());
-                clusterCursor.setDouble("documentCount", metrics.getDocumentCount());
-                clusterCursor.setDouble("queryLatencyMillis", metrics.getQueryLatencyMillis());
-                clusterCursor.setDouble("writeLatencyMillis", metrics.getWriteLatencyMills());
+                metrics.aggregateQueryRate().ifPresent(queryrate -> clusterCursor.setDouble("queriesPerSecond", queryrate));
+                metrics.aggregateFeedRate().ifPresent(feedRate -> clusterCursor.setDouble("writesPerSecond", feedRate));
+                metrics.aggregateDocumentCount().ifPresent(documentCount -> clusterCursor.setDouble("documentCount", documentCount));
+                metrics.aggregateQueryLatency().ifPresent(queryLatency -> clusterCursor.setDouble("queryLatencyMillis",queryLatency));
+                metrics.aggregateFeedLatency().ifPresent(feedLatency -> clusterCursor.setDouble("feedLatency", feedLatency));
                 clusterCursor.setLong("timestamp", metrics.getTimestamp().getEpochSecond());
             }
         }

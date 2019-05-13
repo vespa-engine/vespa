@@ -65,20 +65,20 @@ public class MetricsAggregatorTest {
                 "  \"clusters\": [\n" +
                 "   {\n" +
                 "    \"clusterName\": \"cluster1\",\n" +
-                "    \"queriesPerSecond\": 132.0,\n" +
-                "    \"writesPerSecond\": 46.0,\n" +
-                "    \"documentCount\": 600000.0,\n" +
-                "    \"queryLatencyMillis\": 10000.0,\n" +
-                "    \"writeLatencyMillis\": 4000.0,\n" +
+                "    \"queriesPerSecond\": 2.8666666666666667,\n" +
+                "    \"writesPerSecond\": 1.4333333333333333,\n" +
+                "    \"documentCount\": 6000.0,\n" +
+                "    \"queryLatencyMillis\": 116.27906976744185,\n" +
+                "    \"feedLatency\": 69.76744186046511,\n" +
                 "    \"timestamp\": 1557306075\n" +
                 "   },\n" +
                 "   {\n" +
                 "    \"clusterName\": \"cluster2\",\n" +
-                "    \"queriesPerSecond\": 66.0,\n" +
-                "    \"writesPerSecond\": 23.0,\n" +
-                "    \"documentCount\": 300000.0,\n" +
-                "    \"queryLatencyMillis\": 5000.0,\n" +
-                "    \"writeLatencyMillis\": 2000.0,\n" +
+                "    \"queriesPerSecond\": 1.4333333333333333,\n" +
+                "    \"writesPerSecond\": 0.7166666666666667,\n" +
+                "    \"documentCount\": 3000.0,\n" +
+                "    \"queryLatencyMillis\": 116.27906976744185,\n" +
+                "    \"feedLatency\": 69.76744186046511,\n" +
                 "    \"timestamp\": 1557306075\n" +
                 "   }\n" +
                 "  ]\n" +
