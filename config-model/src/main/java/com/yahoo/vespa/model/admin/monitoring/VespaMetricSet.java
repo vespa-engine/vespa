@@ -117,14 +117,15 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverThreadPoolSize.max"));
         metrics.add(new Metric("serverThreadPoolSize.rate")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("serverThreadPoolSize.count")); // TODO: Remove in Vespa 8
-        metrics.add(new Metric("serverThreadPoolSize.last")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverThreadPoolSize.last"));
 
         metrics.add(new Metric("serverActiveThreads.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("serverActiveThreads.min"));
         metrics.add(new Metric("serverActiveThreads.max"));
         metrics.add(new Metric("serverActiveThreads.rate")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverActiveThreads.sum"));
         metrics.add(new Metric("serverActiveThreads.count"));
-        metrics.add(new Metric("serverActiveThreads.last")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("serverActiveThreads.last"));
 
         metrics.add(new Metric("httpapi_latency.max"));
         metrics.add(new Metric("httpapi_latency.sum"));
