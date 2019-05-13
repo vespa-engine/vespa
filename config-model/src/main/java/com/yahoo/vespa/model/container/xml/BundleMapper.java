@@ -15,7 +15,20 @@ import java.util.Optional;
  */
 public class BundleMapper {
 
+    public enum JarSuffix {
+        JAR_WITH_DEPS("-jar-with-dependencies.jar"),
+        DEPLOY("-deploy.jar");
+
+        private final String suffix;
+
+        JarSuffix(String suffix) {
+            this.suffix = suffix;
+        }
+    }
+
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
+
+
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
 
     private static final Map<String, String> bundleFromClass;
@@ -32,6 +45,10 @@ public class BundleMapper {
     public static Path absoluteBundlePath(Path fileName) {
         if (fileName == null) return null;
         return LIBRARY_PATH.resolve(fileName);
+    }
+
+    public static Path bundlePathFromName(String name, JarSuffix suffix) {
+        return Paths.get(Defaults.getDefaults().underVespaHome(LIBRARY_PATH + name + suffix.suffix));
     }
 
     /**

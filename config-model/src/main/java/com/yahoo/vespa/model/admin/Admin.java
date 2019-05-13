@@ -18,6 +18,7 @@ import com.yahoo.vespa.model.Logd;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
+import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
@@ -29,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 
 /**
  * This is the admin pseudo-plugin of the Vespa model, responsible for
@@ -43,6 +46,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private final boolean isHostedVespa;
     private final Monitoring monitoring;
     private final Metrics metrics;
+    private MetricSet additionalDefaultMetrics = emptyMetricSet();
     private final List<Configserver> configservers = new ArrayList<>();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
@@ -67,9 +71,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
      // Cluster of logserver containers. If enabled, exactly one container is running on each logserver host.
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
-
-    // Cluster of metricsproxy containers. Exactly one container is set up on all hosts.
-    private MetricsProxyContainerCluster metricsProxyContainerCluster;
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private FileDistributionConfigProducer fileDistribution;
@@ -97,6 +98,15 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     public Metrics getUserMetrics() { return metrics; }
+
+    public void setAdditionalDefaultMetrics(MetricSet additionalDefaultMetrics) {
+        if (additionalDefaultMetrics == null) return;
+        this.additionalDefaultMetrics = additionalDefaultMetrics;
+    }
+
+    public MetricSet getAdditionalDefaultMetrics() {
+        return additionalDefaultMetrics;
+    }
 
     /** Returns a list of all config servers */
     public List<Configserver> getConfigservers() {
@@ -207,7 +217,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
         int index = 0;
         for (var host : hosts) {
-            var container = new MetricsProxyContainer(metricsProxyCluster, index++);
+            var container = new MetricsProxyContainer(metricsProxyCluster, index++, deployState.isHosted());
             addAndInitializeService(deployState.getDeployLogger(), host, container);
             metricsProxyCluster.addContainer(container);
         }

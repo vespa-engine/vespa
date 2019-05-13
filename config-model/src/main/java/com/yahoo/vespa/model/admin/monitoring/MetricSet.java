@@ -37,6 +37,10 @@ public class MetricSet {
         this(id, metrics, Collections.emptySet());
     }
 
+    public static MetricSet emptyMetricSet() {
+        return new MetricSet("empty", Collections.emptySet());
+    }
+
     public final String getId() { return id; }
 
     /**

@@ -1,0 +1,8 @@
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.metricsproxy.core
+
+# The rate at which metrics are passed to the monitoring system. Currently (Apr 2019) only used by SystemPoller.
+intervalMinutes int default=5
+
+# The name used for this application in the monitoring system
+systemName string default=vespa

@@ -3,11 +3,13 @@ package com.yahoo.vespa.model.admin.monitoring;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents an arbitrary metric consumer
  *
  * @author trygve
+ * @author gjoranv
  */
 @Immutable
 public class MetricsConsumer {
@@ -19,8 +21,8 @@ public class MetricsConsumer {
      * @param metricSet  The metrics for this consumer
      */
     public MetricsConsumer(String id, MetricSet metricSet) {
-        this.id = id;
-        this.metricSet = metricSet;
+        this.id = Objects.requireNonNull(id, "A consumer must have a non-null id.");;
+        this.metricSet = Objects.requireNonNull(metricSet, "A consumer must have a non-null metric set.");
     }
 
     public String getId() {
