@@ -11,19 +11,19 @@ import java.net.URI;
 public class DeploymentResult {
 
     private final String message;
-    private final URI location;
+    private final long run;
 
-    public DeploymentResult(String message, URI location) {
+    public DeploymentResult(String message, long run) {
         this.message = message;
-        this.location = location;
+        this.run = run;
     }
 
     public String message() {
         return message;
     }
 
-    public URI location() {
-        return location;
+    public long run() {
+        return run;
     }
 
 }

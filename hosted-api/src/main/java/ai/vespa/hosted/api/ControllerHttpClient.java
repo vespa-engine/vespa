@@ -235,7 +235,7 @@ public abstract class ControllerHttpClient {
     private static DeploymentResult toDeploymentResult(HttpResponse<byte[]> response) {
         Inspector rootObject = toInspector(response);
         return new DeploymentResult(rootObject.field("message").asString(),
-                                    URI.create(rootObject.field("location").asString()));
+                                    rootObject.field("run").asLong());
     }
 
     private static Slime toSlime(byte[] data) {
