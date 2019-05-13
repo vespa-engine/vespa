@@ -1,12 +1,15 @@
 package ai.vespa.hosted.plugin;
 
 import ai.vespa.hosted.api.Deployment;
+import ai.vespa.hosted.api.DeploymentLog;
 import ai.vespa.hosted.api.DeploymentResult;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.nio.file.Paths;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Deploys a Vespa application package to the hosted Vespa API.
@@ -43,6 +46,9 @@ public class DeployMojo extends AbstractVespaMojo {
     @Parameter(property = "build")
     private Long build;
 
+    @Parameter(property = "follow", defaultValue = "true")
+    private boolean follow;
+
     @Override
     protected void doExecute() {
         Deployment deployment = build == null
@@ -54,7 +60,21 @@ public class DeployMojo extends AbstractVespaMojo {
         ZoneId zone = environment == null || region == null ? controller.devZone() : ZoneId.from(environment, region);
 
         DeploymentResult result = controller.deploy(deployment, id, zone);
-        System.out.println("Success: " + result.message());
+        System.out.println(result.message());
+
+        if (follow) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
+            DeploymentLog log = controller.deploymentLog(id, zone, result.run());
+            do {
+                for (DeploymentLog.Entry entry : log.entries())
+                    System.out.printf("[%10s%10s]   %s\n",
+                                      entry.level().toUpperCase(),
+                                      formatter.format(entry.at()),
+                                      entry.message());
+                log = controller.deploymentLog(id, zone, result.run(), log.last());
+            }
+            while (log.isActive());
+        }
     }
 
 }
