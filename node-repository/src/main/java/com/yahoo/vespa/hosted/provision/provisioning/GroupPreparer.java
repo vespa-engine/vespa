@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -82,7 +81,8 @@ public class GroupPreparer {
                 if (dynamicProvisioningEnabled) {
                     List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
                             .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
-                                                                                 deficit.getFlavor()))
+                                                                                 deficit.getFlavor(),
+                                                                                 application))
                             .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
