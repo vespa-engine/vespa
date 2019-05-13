@@ -146,7 +146,7 @@ public abstract class ControllerHttpClient {
 
     private URI deploymentJobPath(ApplicationId id, ZoneId zone) {
         return concatenated(instancePath(id),
-                            "deploy", zone.environment().value() + "-" + zone.region().value());
+                            "deploy", zone.environment().value() + "-" + zone.region().value().replaceAll("vaas-", ""));
     }
 
     private URI defaultRegionPath() {
