@@ -48,7 +48,7 @@ public class DeployMojo extends AbstractVespaMojo {
         Deployment deployment = build == null
                 ? Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip, projectPathOf("target", "application.zip"))))
                 : Deployment.ofReference(repository, branch, commit, build);
-        if ("true".equalsIgnoreCase(ignoreValidationErrors)) deployment = deployment.ignoringValidationErrors();
+        if ("true".equalsIgnoreCase(ignoreValidationErrors)) deployment = deployment.ignoringValidationErrors(); // TODO unused, GC or fix.
         if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
 
         ZoneId zone = environment == null || region == null ? controller.devZone() : ZoneId.from(environment, region);
