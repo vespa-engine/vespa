@@ -55,7 +55,6 @@ public class DeployMojo extends AbstractVespaMojo {
 
         DeploymentResult result = controller.deploy(deployment, id, zone);
         System.out.println("Success: " + result.message());
-        System.out.println("Follow the deployment at " + result.location());
     }
 
 }
