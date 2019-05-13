@@ -38,8 +38,6 @@ FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::C
 
 FNET_Transport::~FNET_Transport()
 {
-    _async_resolver->wait_for_pending_resolves();
-    _work_pool.shutdown().sync();
 }
 
 void
@@ -157,6 +155,10 @@ FNET_Transport::ShutDown(bool waitFinished)
     for (const auto &thread: _threads) {
         thread->ShutDown(waitFinished);
     }
+    if (waitFinished) {
+        _async_resolver->wait_for_pending_resolves();
+        _work_pool.shutdown().sync();
+    }
 }
 
 void
@@ -165,6 +167,8 @@ FNET_Transport::WaitFinished()
     for (const auto &thread: _threads) {
         thread->WaitFinished();
     }
+    _async_resolver->wait_for_pending_resolves();
+    _work_pool.shutdown().sync();
 }
 
 bool
