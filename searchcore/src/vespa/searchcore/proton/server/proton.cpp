@@ -674,7 +674,7 @@ Proton::ping(MonitorRequest::UP request, MonitorClient & client)
     ret.partid = protonConfig.partition;
     ret.distribution_key = protonConfig.distributionkey;
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
-    ret.activeDocs = getNumActiveDocs();
+    ret.activeDocs = (_matchEngine->isOnline()) ? getNumActiveDocs() : 0;
     ret.activeDocsRequested = request->reportActiveDocs;
     return reply;
 }

@@ -305,7 +305,8 @@ SearchableDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum
 size_t
 SearchableDocSubDB::getNumActiveDocs() const
 {
-    return _metaStoreCtx->getReadGuard()->get().getNumActiveLids();
+    IDocumentMetaStoreContext::SP metaStoreCtx = _metaStoreCtx;
+    return (metaStoreCtx) ? metaStoreCtx->getReadGuard()->get().getNumActiveLids() : 0;
 }
 
 search::SearchableStats
