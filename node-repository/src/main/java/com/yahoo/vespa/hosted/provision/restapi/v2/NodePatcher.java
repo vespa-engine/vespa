@@ -138,12 +138,14 @@ public class NodePatcher {
                 var addresses = IP.Config.builder()
                                          .primary(asStringSet(value))
                                          .pool(node.ipConfig().pool().asSet())
+                                         .lockedNodes(nodeRepository.list(lock))
                                          .assignTo(node.hostname(), node.type());
                 return node.withIpAddresses(addresses);
             case "additionalIpAddresses" :
                 var pool = IP.Config.builder()
                                     .primary(node.ipConfig().primary())
                                     .pool(asStringSet(value))
+                                    .lockedNodes(nodeRepository.list(lock))
                                     .assignTo(node.hostname(), node.type());
                 return node.withIpAddresses(pool);
             case WANT_TO_RETIRE :

@@ -172,6 +172,7 @@ class NodePrioritizer {
             var nodeType = NodeType.tenant;
             var ipConfig = IP.Config.builder()
                                     .primary(allocation.get().addresses())
+                                    .lockedNodes(allNodes)
                                     .assignTo(node.hostname(), nodeType);
             Node newNode = Node.createDockerNode(ipConfig,
                                                  allocation.get().hostname(),

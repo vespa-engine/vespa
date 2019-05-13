@@ -204,11 +204,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private List<Node> createNodesFromSlime(Inspector object, LockedNodeList lockedNodes) {
         List<Node> nodes = new ArrayList<>();
-        object.traverse((ArrayTraverser) (int i, Inspector item) -> nodes.add(createNode(item, lockedNodes)));
+        object.traverse((ArrayTraverser) (int i, Inspector item) -> nodes.add(createNode(item, lockedNodes, nodes)));
         return nodes;
     }
 
-    private Node createNode(Inspector inspector, LockedNodeList lockedNodes) {
+    private Node createNode(Inspector inspector, LockedNodeList nodes, List<Node> transientNodes) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
         Optional<String> modelName = optionalString(inspector.field("modelName"));
         Set<String> ipAddresses = new HashSet<>();
@@ -221,6 +221,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         var ipConfig = IP.Config.builder()
                                 .primary(ipAddresses)
                                 .pool(ipAddressPool)
+                                .lockedNodes(nodes)
+                                .transientNodes(transientNodes)
                                 .assignTo(hostname, nodeType);
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),

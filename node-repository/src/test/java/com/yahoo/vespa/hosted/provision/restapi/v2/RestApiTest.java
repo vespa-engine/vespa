@@ -103,9 +103,9 @@ public class RestApiTest {
 
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "," + // test with only 1 ip address
-                                    asNodeJson("host9.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
-                                    asHostJson("parent2.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
+                                    asNodeJson("host9.yahoo.com", "large-variant", "127.0.9.1", "::9:1") + "," +
+                                    asHostJson("parent2.yahoo.com", "large-variant", "127.0.127.1", "::127:1") + "," +
                                     asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "::11") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
@@ -117,7 +117,7 @@ public class RestApiTest {
 
         // POST duplicate node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "]").getBytes(StandardCharsets.UTF_8),
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.8") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
 
@@ -258,7 +258,7 @@ public class RestApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.0.1", "::1") + "]").
+                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.254.254", "::254:254") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
@@ -271,6 +271,30 @@ public class RestApiTest {
                         getBytes(StandardCharsets.UTF_8),
                 Request.Method.POST);
         assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"A node must have at least one valid IP address: 'foo' is not an IP string literal.\"}");
+
+        // Attempt to POST tenant node with already assigned IP
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asNodeJson("tenant-node-foo.yahoo.com", "default", "127.0.1.1") + "]",
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.1.1] to tenant-node-foo.yahoo.com: [127.0.1.1] already assigned to host1.yahoo.com\"}");
+
+        // Attempt to PATCH existing tenant node with already assigned IP
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+                                   "{\"ipAddresses\": [\"127.0.2.1\"]}",
+                                   Request.Method.PATCH), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [127.0.2.1] to test-node-pool-101-2: [127.0.2.1] already assigned to host2.yahoo.com\"}");
+
+        // Attempt to POST host node with already assigned IP
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asHostJson("host200.yahoo.com", "default", "127.0.2.1") + "]",
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.2.1] to host200.yahoo.com: [127.0.2.1] already assigned to host2.yahoo.com\"}");
+
+        // Attempt to PATCH host node with IP in the pool of another node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   "{\"ipAddresses\": [\"::104:3\"]}",
+                                   Request.Method.PATCH), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [::100:4, ::100:3, ::100:2, ::104:3] to dockerhost1.yahoo.com: [::104:3] already assigned to dockerhost5.yahoo.com\"}");
     }
 
     @Test
@@ -433,8 +457,8 @@ public class RestApiTest {
 
         // Attempt to POST duplicate nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1", "::1") + "," +
-                                    asNodeJson("host8.yahoo.com", "large-variant", "127.0.0.1", "::1") + "]").getBytes(StandardCharsets.UTF_8),
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.1", "::254:1") + "," +
+                                    asNodeJson("host8.yahoo.com", "large-variant", "127.0.253.1", "::253:1") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
     }

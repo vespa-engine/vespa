@@ -6,12 +6,15 @@ import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -112,6 +115,8 @@ public class IP {
 
             private Set<String> primary;
             private Set<String> pool = Set.of();
+            private LockedNodeList nodes;
+            private List<Node> transientNodes = List.of();
 
             private Builder() {}
 
@@ -127,12 +132,45 @@ public class IP {
                 return this;
             }
 
+            /** Set the locked node list to consider when creating this config */
+            public Builder lockedNodes(LockedNodeList nodes) {
+                this.nodes = nodes;
+                return this;
+            }
+
+            /** Set transient nodes to consider when creating this config */
+            public Builder transientNodes(List<Node> transientNodes) {
+                this.transientNodes = transientNodes;
+                return this;
+            }
+
             /** Build config assigned to given host and node type */
             public IP.Config assignTo(String hostname, NodeType nodeType) {
                 Objects.requireNonNull(hostname, "hostname must be non-null");
                 Objects.requireNonNull(nodeType, "nodeType must be non-null");
                 Objects.requireNonNull(primary, "primary must be non-null");
                 Objects.requireNonNull(pool, "pool must be non-null");
+                Objects.requireNonNull(nodes, "nodes must be non-null");
+                Objects.requireNonNull(transientNodes, "transientNodes must be non-null");
+
+                List<Node> allNodes = new ArrayList<>(nodes.asList());
+                allNodes.addAll(transientNodes);
+                for (Node other : allNodes) {
+                    Set<String> addresses = new HashSet<>(primary);
+                    Set<String> otherAddresses = new HashSet<>(other.ipConfig().primary());
+
+                    if (nodeType.isDockerHost()) { // Addresses of a host can never overlap with any other nodes
+                        addresses.addAll(pool);
+                        otherAddresses.addAll(other.ipConfig().pool().asSet());
+                    }
+
+                    otherAddresses.retainAll(addresses);
+
+                    if (!otherAddresses.isEmpty())
+                        throw new IllegalArgumentException("Cannot assign " + addresses + " to " + hostname + ": " +
+                                                           otherAddresses + " already assigned to " +
+                                                           other.hostname());
+                }
                 return new Config(primary, pool);
             }
         }
