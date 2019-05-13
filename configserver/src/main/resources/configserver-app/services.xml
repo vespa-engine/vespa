@@ -38,6 +38,7 @@
     <component id="com.yahoo.vespa.config.server.application.HttpProxy" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance" bundle="configserver" />
+    <component id="com.yahoo.config.provision.security.DummyNodeIdentifierProvider" bundle="config-provisioning" />
 
     <component id="com.yahoo.vespa.serviceview.ConfigServerLocation" bundle="configserver" />
 
