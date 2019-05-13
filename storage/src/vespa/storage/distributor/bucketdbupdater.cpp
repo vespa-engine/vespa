@@ -822,7 +822,7 @@ BucketDBUpdater::NodeRemover::setCopiesInEntry(
 
     e->addNodes(copies, order);
 
-    LOG(debug, "Changed %s", e->toString().c_str());
+    LOG(spam, "Changed %s", e->toString().c_str());
     LOG_BUCKET_OPERATION_NO_LOCK(
             e.getBucketId(),
             vespalib::make_string("updated bucketdb entry to %s",
@@ -834,7 +834,7 @@ BucketDBUpdater::NodeRemover::removeEmptyBucket(const document::BucketId& bucket
 {
     _removedBuckets.push_back(bucketId);
 
-    LOG(debug,
+    LOG(spam,
         "After system state change %s, bucket %s now has no copies.",
         _oldState.getTextualDifference(_state).c_str(),
         bucketId.toString().c_str());

@@ -2,7 +2,6 @@
 vespa_add_library(storage_testdistributor TEST
     SOURCES
     blockingoperationstartertest.cpp
-    bucketdatabasetest.cpp
     bucketdbmetricupdatertest.cpp
     bucketgctimecalculatortest.cpp
     bucketstateoperationtest.cpp
@@ -15,7 +14,6 @@ vespa_add_library(storage_testdistributor TEST
     idealstatemanagertest.cpp
     joinbuckettest.cpp
     maintenanceschedulertest.cpp
-    mapbucketdatabasetest.cpp
     mergelimitertest.cpp
     mergeoperationtest.cpp
     messagesenderstub.cpp
@@ -48,7 +46,10 @@ vespa_add_library(storage_testdistributor TEST
 
 vespa_add_library(storage_gtestdistributor TEST
     SOURCES
+    btree_bucket_database_test.cpp
+    bucketdatabasetest.cpp
     bucketdbupdatertest.cpp
+    mapbucketdatabasetest.cpp
     # Fixture etc. dupes with non-gtest runner :
     distributortestutil.cpp
     bucket_db_prune_elision_test.cpp

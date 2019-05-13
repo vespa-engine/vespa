@@ -16,6 +16,7 @@ vespa_define_module(
     vdslib
     persistence
     storageframework
+    searchlib
 
     EXTERNAL_DEPENDS
     Judy

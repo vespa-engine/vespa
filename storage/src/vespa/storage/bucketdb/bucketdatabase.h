@@ -19,8 +19,8 @@ public:
 
     public:
         Entry() : _bucketId(0) {} // Invalid entry
-        Entry(const document::BucketId& bId, const BucketInfo& bucketInfo)
-            : _bucketId(bId), _info(bucketInfo) {}
+        Entry(const document::BucketId& bId, BucketInfo bucketInfo)
+            : _bucketId(bId), _info(std::move(bucketInfo)) {}
         explicit Entry(const document::BucketId& bId) : _bucketId(bId) {}
 
         bool operator==(const Entry& other) const {
@@ -54,7 +54,7 @@ public:
     virtual void remove(const document::BucketId& bucket) = 0;
 
     /**
-     * Puts all entries that are can contain the given bucket id
+     * Puts all entries that may contain the given bucket id
      * into the given entry vector, including itself if found.
      */
     virtual void getParents(const document::BucketId& childBucket,

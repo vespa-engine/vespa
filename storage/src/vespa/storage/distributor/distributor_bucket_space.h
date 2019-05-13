@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <memory>
+
+namespace storage {
+class BucketDatabase;
+}
 
 namespace storage::lib {
     class ClusterState;
@@ -23,7 +26,7 @@ namespace storage::distributor {
  *   bucket spaces.
  */
 class DistributorBucketSpace {
-    MapBucketDatabase _bucketDatabase;
+    std::unique_ptr<BucketDatabase>  _bucketDatabase;
     std::shared_ptr<const lib::ClusterState> _clusterState;
     std::shared_ptr<const lib::Distribution> _distribution;
 public:
@@ -36,10 +39,10 @@ public:
     DistributorBucketSpace& operator=(DistributorBucketSpace&&) = delete;
 
     BucketDatabase& getBucketDatabase() noexcept {
-        return _bucketDatabase;
+        return *_bucketDatabase;
     }
     const BucketDatabase& getBucketDatabase() const noexcept {
-        return _bucketDatabase;
+        return *_bucketDatabase;
     }
 
     void setClusterState(std::shared_ptr<const lib::ClusterState> clusterState);
