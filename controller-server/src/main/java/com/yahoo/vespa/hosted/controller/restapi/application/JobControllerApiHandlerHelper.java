@@ -327,9 +327,10 @@ class JobControllerApiHandlerHelper {
 
     /** Returns the status of the task represented by the given step, if it has started. */
     private static Optional<String> taskStatus(Step step, Run run) {
-        return   run.readySteps().contains(step) ? Optional.of("running")
-               : run.steps().get(step) != unfinished ? Optional.of(run.steps().get(step).name())
-               : Optional.empty();
+        return run.readySteps().contains(step) ? Optional.of("running")
+                                               : Optional.ofNullable(run.steps().get(step))
+                                                         .filter(status -> status != unfinished)
+                                                         .map(Step.Status::name);
     }
 
     /** Returns a response with the runs for the given job type. */
