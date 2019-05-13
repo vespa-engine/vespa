@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import org.junit.Before;
@@ -156,6 +157,10 @@ public class InternalStepRunnerTest {
     public void waitsForEndpointsAndTimesOut() {
         tester.newRun(JobType.systemTest);
 
+        // Tester fails to show up for staging tests, and the real deployment for system tests.
+        tester.setEndpoints(testerId.id(), JobType.systemTest.zone(tester.tester().controller().system()));
+        tester.setEndpoints(appId, JobType.stagingTest.zone(tester.tester().controller().system()));
+
         tester.runner().run();
         tester.configServer().convergeServices(appId, JobType.stagingTest.zone(tester.tester().controller().system()));
         tester.runner().run();
@@ -165,14 +170,10 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(testerId.id(), JobType.stagingTest.zone(tester.tester().controller().system()));
         tester.runner().run();
 
-        // Tester fails to show up for system tests, and the real deployment for staging tests.
-        tester.setEndpoints(appId, JobType.systemTest.zone(tester.tester().controller().system()));
-        tester.setEndpoints(testerId.id(), JobType.stagingTest.zone(tester.tester().controller().system()));
-
         tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(failed, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.startTests));
-        assertEquals(failed, tester.jobs().last(appId, JobType.stagingTest).get().steps().get(Step.startTests));
+        assertEquals(failed, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(failed, tester.jobs().last(appId, JobType.stagingTest).get().steps().get(Step.installTester));
     }
 
     @Test
@@ -180,6 +181,7 @@ public class InternalStepRunnerTest {
         tester.newRun(JobType.systemTest);
         tester.runner().run();
         tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.tester().controller().system()));
+        tester.setEndpoints(appId, JobType.systemTest.zone(tester.tester().controller().system()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
 
@@ -299,6 +301,7 @@ public class InternalStepRunnerTest {
 
         tester.runner().run(); // Job run order determined by JobType enum order per application.
         tester.configServer().convergeServices(appId, zone);
+        tester.setEndpoints(appId, zone);
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
         assertEquals(otherPackage.hash(), tester.configServer().application(appId).get().applicationPackage().hash());
         

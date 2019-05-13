@@ -269,8 +269,14 @@ public class InternalStepRunner implements StepRunner {
 
         if (   nodesConverged(id.application(), id.type(), platform, logger)
             && servicesConverged(id.application(), id.type(), logger)) {
-            logger.log("Installation succeeded!");
-            return Optional.of(running);
+            if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
+                logger.log("Installation succeeded!");
+                return Optional.of(running);
+            }
+            else if (timedOut(deployment.get(), endpointTimeout)) {
+                logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
+                return Optional.of(error);
+            }
         }
 
         if (timedOut(deployment.get(), installationTimeout)) {
@@ -293,8 +299,14 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Checking installation of tester container ...");
         if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
             && servicesConverged(id.tester().id(), id.type(), logger)) {
-            logger.log("Tester container successfully installed!");
-            return Optional.of(running);
+            if (endpointsAvailable(id.tester().id(), id.type().zone(controller.system()), logger)) {
+                logger.log("Tester container successfully installed!");
+                return Optional.of(running);
+            }
+            else if (timedOut(deployment.get(), endpointTimeout)) {
+                logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
+                return Optional.of(error);
+            }
         }
 
         if (timedOut(deployment.get(), installationTimeout)) {
@@ -304,6 +316,19 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Installation of tester not yet complete.");
         return Optional.empty();
+    }
+
+    private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
+        logger.log("Attempting to find deployment endpoints ...");
+        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id, Set.of(zoneId));
+        List<String> messages = new ArrayList<>();
+        messages.add("Found endpoints");
+        endpoints.forEach((zone, uris) -> {
+            messages.add("- " + zone);
+            uris.forEach(uri -> messages.add(" |-- " + uri));
+        });
+        logger.log(messages);
+        return endpoints.containsKey(zoneId);
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
