@@ -7,10 +7,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 
 import java.io.ByteArrayInputStream;
@@ -19,22 +21,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static ai.vespa.hosted.api.Method.DELETE;
 import static ai.vespa.hosted.api.Method.GET;
 import static ai.vespa.hosted.api.Method.POST;
-import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 import static java.net.http.HttpRequest.BodyPublishers.ofInputStream;
 import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Talks to a remote controller over HTTP. Subclasses are responsible for adding authentication to the requests.
@@ -105,6 +112,18 @@ public abstract class ControllerHttpClient {
                 .field("compileVersion").asString();
     }
 
+    /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
+    public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run, long after) {
+        return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
+                                                       .timeout(Duration.ofSeconds(10)),
+                                            GET)));
+    }
+
+    /** Returns the sorted list of log entries from the deployment job of the given ids. */
+    public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run) {
+        return deploymentLog(id, zone, run, -1);
+    }
+
     protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
         return request.method(method.name(), ofInputStream(data)).build();
     }
@@ -146,7 +165,14 @@ public abstract class ControllerHttpClient {
 
     private URI deploymentJobPath(ApplicationId id, ZoneId zone) {
         return concatenated(instancePath(id),
-                            "deploy", zone.environment().value() + "-" + zone.region().value().replaceAll("vaas-", ""));
+                            "deploy", jobNameOf(zone));
+    }
+
+    private URI runPath(ApplicationId id, ZoneId zone, long run, long after) {
+        return withQuery(concatenated(instancePath(id),
+                                      "job", jobNameOf(zone),
+                                      "run", Long.toString(run)),
+                         "after", Long.toString(after));
     }
 
     private URI defaultRegionPath() {
@@ -154,7 +180,17 @@ public abstract class ControllerHttpClient {
     }
 
     private static URI concatenated(URI base, String... parts) {
-        return base.resolve(String.join("/", parts) + "/");
+        return base.resolve(Stream.of(parts).map(part -> URLEncoder.encode(part, UTF_8)).collect(joining("/")) + "/");
+    }
+
+    private static URI withQuery(URI base, String name, String value) {
+        return base.resolve(  "?" + (base.getRawQuery() != null ? base.getRawQuery() + "&" : "")
+                            + URLEncoder.encode(name, UTF_8) + "=" + URLEncoder.encode(value, UTF_8));
+    }
+
+    // TODO jvenstad: remove when vaas is no longer part of region names.
+    private static String jobNameOf(ZoneId zone) {
+        return zone.environment().value() + "-" + zone.region().value().replaceAll("vaas-", "");
     }
 
     private HttpResponse<byte[]> send(HttpRequest request) {
@@ -236,6 +272,20 @@ public abstract class ControllerHttpClient {
         Inspector rootObject = toInspector(response);
         return new DeploymentResult(rootObject.field("message").asString(),
                                     rootObject.field("run").asLong());
+    }
+
+    private static DeploymentLog toDeploymentLog(HttpResponse<byte[]> response) {
+        Inspector rootObject = toInspector(response);
+        List<DeploymentLog.Entry> entries = new ArrayList<>();
+        rootObject.field("log").traverse((ObjectTraverser) (__, entryArray) ->
+                entryArray.traverse((ArrayTraverser) (___, entryObject) -> {
+                    entries.add(new DeploymentLog.Entry(Instant.ofEpochMilli(entryObject.field("at").asLong()),
+                                                        entryObject.field("type").asString(),
+                                                        entryObject.field("message").asString()));
+                }));
+        return new DeploymentLog(entries,
+                                 rootObject.field("active").asBool(),
+                                 rootObject.field("lastId").asLong());
     }
 
     private static Slime toSlime(byte[] data) {
