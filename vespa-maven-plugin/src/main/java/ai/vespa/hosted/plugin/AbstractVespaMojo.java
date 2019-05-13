@@ -21,7 +21,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected MavenProject project;
 
     @Parameter(property = "endpoint", defaultValue = "https://api.vespa.corp.yahoo.com:4443") // TODO jvenstad: Change default
-    protected String endpointUri;
+    protected String endpoint;
 
     @Parameter(property = "tenant")
     protected String tenant;
@@ -58,8 +58,8 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         id = ApplicationId.from(tenant, application, instance);
 
         controller = certificateFile == null
-                ? ControllerHttpClient.withSignatureKey(URI.create(endpointUri), Paths.get(privateKeyFile), id)
-                : ControllerHttpClient.withKeyAndCertificate(URI.create(endpointUri), Paths.get(privateKeyFile), Paths.get(certificateFile));
+                ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(privateKeyFile), id)
+                : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(privateKeyFile), Paths.get(certificateFile));
     }
 
     protected String projectPathOf(String first, String... rest) {
