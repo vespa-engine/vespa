@@ -55,6 +55,12 @@ private:
     // 3 upper bits used to tell if it is use for RawScore, SinglePos or multiPos.
     uint16_t  _fieldId;
     uint16_t  _sz;
+
+    // Number of occurrences and field length used when unpacking "cheap" features.
+    // This can exist in addition to full position features.
+    uint16_t _numOccs;
+    uint16_t _fieldLength;
+
     Features  _data;
 
     friend class ::MatchDataHeapTest;
@@ -120,6 +126,8 @@ public:
     TermFieldMatchData &reset(uint32_t docId) {
         _docId = docId;
         _sz = 0;
+        _numOccs = 0;
+        _fieldLength = 0;
         if (isRawScore()) {
             _data._rawScore = 0.0;
         } else if (isMultiPos()) {
@@ -235,6 +243,12 @@ public:
         const uint32_t len(getMaxElementLength());
         return FieldPositionsIterator(len != 0 ? len : FieldPositionsIterator::UNKNOWN_LENGTH, begin(), end());
     }
+
+    uint16_t getNumOccs() const { return _numOccs; }
+    uint16_t getFieldLength() const { return _fieldLength; }
+
+    void setNumOccs(uint16_t value) { _numOccs = value; }
+    void setFieldLength(uint16_t value) { _fieldLength = value; }
 
     /**
      * This indicates if this instance is actually used for ranking or not.
