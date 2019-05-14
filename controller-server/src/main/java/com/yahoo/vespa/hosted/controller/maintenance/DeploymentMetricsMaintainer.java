@@ -1,10 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -97,6 +99,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        getClusterMetrics();
     }
 
     /** Get global rotation status for application */
@@ -119,5 +122,16 @@ public class DeploymentMetricsMaintainer extends Maintainer {
             default: throw new IllegalArgumentException("Unknown API value for rotation status: " + status);
         }
     }
+
+    private void getClusterMetrics() {
+        controller().zoneRegistry().zones()
+                .reachable().ids()
+                .stream().forEach(zoneId -> {
+                    Map<ApplicationId, List<ClusterMetrics>> allMetrics = controller().configServer().getMetrics(zoneId);
+
+                }
+        );
+    }
+
 
 }

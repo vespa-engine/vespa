@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
@@ -42,6 +44,8 @@ public interface ConfigServer {
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
+
+    Map<ApplicationId, List<ClusterMetrics>> getMetrics(ZoneId zoneId);
 
     List<String> getContentClusters(DeploymentId deployment);
 

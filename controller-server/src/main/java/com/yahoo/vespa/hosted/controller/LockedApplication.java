@@ -156,7 +156,8 @@ public class LockedApplication {
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics().with(warnings),
-                                                  previousDeployment.activity());
+                                                  previousDeployment.activity(),
+                                                  previousDeployment.clusterMetrics());
         return with(newDeployment);
     }
 

@@ -4,12 +4,14 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,16 +31,18 @@ public class Deployment {
     private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
+    private final List<ClusterMetrics> clusterMetrics;
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
         this(zone, applicationVersion, version, deployTime, Collections.emptyMap(), Collections.emptyMap(),
-             DeploymentMetrics.none, DeploymentActivity.none);
+             DeploymentMetrics.none, DeploymentActivity.none, Collections.emptyList());
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
                       Map<Id, ClusterUtilization> clusterUtilization, Map<Id, ClusterInfo> clusterInfo,
                       DeploymentMetrics metrics,
-                      DeploymentActivity activity) {
+                      DeploymentActivity activity,
+                      List<ClusterMetrics> clusterMetrics) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
@@ -47,6 +51,7 @@ public class Deployment {
         this.clusterInfo = ImmutableMap.copyOf(Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null"));
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
+        this.clusterMetrics = Objects.requireNonNull(clusterMetrics, "cluster metrics cannot be null");
     }
 
     /** Returns the zone this was deployed to */
@@ -79,24 +84,28 @@ public class Deployment {
         return clusterUtilization;
     }
 
+    public List<ClusterMetrics> clusterMetrics() {
+        return clusterMetrics;
+    }
+
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity.recordAt(instant, metrics));
+                              activity.recordAt(instant, metrics), clusterMetrics);
     }
 
     public Deployment withClusterUtils(Map<Id, ClusterUtilization> clusterUtilization) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity);
+                              activity, clusterMetrics);
     }
 
     public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, newClusterInfo, metrics,
-                              activity);
+                              activity, clusterMetrics);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity);
+                              activity, clusterMetrics);
     }
 
     /**

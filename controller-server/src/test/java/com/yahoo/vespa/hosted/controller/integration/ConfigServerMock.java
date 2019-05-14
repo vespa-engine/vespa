@@ -10,6 +10,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
@@ -338,6 +339,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         applicationView.clusters = new ArrayList<>();
         applicationView.clusters.add(cluster);
         return applicationView;
+    }
+
+    @Override
+    public Map<ApplicationId, List<ClusterMetrics>> getMetrics(ZoneId zoneId) {
+        return null;
     }
 
     // Returns a canned example response

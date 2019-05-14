@@ -14,6 +14,7 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -91,6 +92,7 @@ public class ApplicationSerializer {
     private final String lastWrittenField = "lastWritten";
     private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
     private final String lastWritesPerSecondField = "lastWritesPerSecond";
+    private final String clusterMetricsField = "clusterMetrics";
 
     // DeploymentJobs fields
     private final String projectIdField = "projectId";
@@ -184,6 +186,7 @@ public class ApplicationSerializer {
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
         deployment.activity().lastQueriesPerSecond().ifPresent(value -> object.setDouble(lastQueriesPerSecondField, value));
         deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
+        clusterMetricsToSlime(object.setObject(clusterMetricsField), deployment.clusterMetrics());
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -310,6 +313,29 @@ public class ApplicationSerializer {
         });
     }
 
+    private void clusterMetricsToSlime(Cursor parent, List<ClusterMetrics> clusterMetricsList) {
+        Cursor metricsArray = parent.setArray("clusterMetrics");
+        for (ClusterMetrics clusterMetrics : clusterMetricsList) {
+            Cursor cluster = metricsArray.addObject();
+            cluster.setString("clusterId", clusterMetrics.getClusterId());
+            cluster.setString("clusterType", clusterMetrics.getClusterType().name());
+            Cursor metrics = cluster.setObject("metrics");
+            clusterMetrics.getMetrics().entrySet().stream().forEach(entry -> metrics.setDouble(entry.getKey(), entry.getValue()));
+        }
+    }
+
+    private List<ClusterMetrics> clusterMetricsFromSlime(Inspector inspector) {
+        List<ClusterMetrics> clusterMetricsList = new ArrayList<>();
+        inspector.traverse((ArrayTraverser) (i, cluster) -> {
+            String clusterId = cluster.field("clusterId").asString();
+            ClusterMetrics.ClusterType clusterType = ClusterMetrics.ClusterType.valueOf(cluster.field("clusterType").asString());
+            ClusterMetrics clusterMetrics = new ClusterMetrics(clusterId, clusterType);
+            cluster.field("metrics").traverse((ObjectTraverser) (name, value) -> clusterMetrics.addMetric(name, value.asDouble()));
+            clusterMetricsList.add(clusterMetrics);
+        });
+        return clusterMetricsList;
+    }
+
     // ------------------ Deserialization
 
     public Application fromSlime(Slime slime) {
@@ -354,7 +380,8 @@ public class ApplicationSerializer {
                               DeploymentActivity.create(optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         optionalInstant(deploymentObject.field(lastWrittenField)),
                                                         optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
-                                                        optionalDouble(deploymentObject.field(lastWritesPerSecondField))));
+                                                        optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
+                              clusterMetricsFromSlime(deploymentObject.field(clusterMetricsField)));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {

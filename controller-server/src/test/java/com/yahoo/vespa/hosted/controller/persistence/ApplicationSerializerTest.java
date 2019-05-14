@@ -35,6 +35,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class ApplicationSerializerTest {
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                                                                 OptionalDouble.of(200), OptionalDouble.of(10))));
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10)), Collections.emptyList()));
 
         OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
