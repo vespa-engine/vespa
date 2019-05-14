@@ -44,10 +44,10 @@ import com.yahoo.vespa.model.builder.xml.dom.chains.docproc.DomDocprocChainsBuil
 import com.yahoo.vespa.model.builder.xml.dom.chains.processing.DomProcessingBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.search.DomSearchChainsBuilder;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
+import com.yahoo.vespa.model.container.ApplicationContainer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.IdentityProvider;
@@ -92,7 +92,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     /**
      * Default path to vip status file for container in Hosted Vespa.
      */
-    static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/mediasearch/oor/status.html");
+    static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
     /**
      * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
      */
