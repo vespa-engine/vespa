@@ -12,53 +12,25 @@ using search::index::PostingListCounts;
 #define DEBUG_ZCFILTEROCC_PRINTF 0
 #define DEBUG_ZCFILTEROCC_ASSERT 0
 
-template <bool bigEndian>
-Zc4RareWordPosOccIterator<bigEndian>::
-Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
+template <bool bigEndian, bool dynamic_k>
+ZcRareWordPosOccIterator<bigEndian, dynamic_k>::
+ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                           const PosOccFieldsParams *fieldsParams,
                           const TermFieldMatchDataArray &matchData)
-    : Zc4RareWordPostingIterator<bigEndian>(matchData, start, docIdLimit, decode_cheap_features),
+    : ZcRareWordPostingIterator<bigEndian, dynamic_k>(matchData, start, docIdLimit, decode_cheap_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
     assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
-
-template <bool bigEndian>
-Zc4PosOccIterator<bigEndian>::
-Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
-                  uint32_t minChunkDocs, const PostingListCounts &counts,
-                  const PosOccFieldsParams *fieldsParams,
-                  const TermFieldMatchDataArray &matchData)
-    : ZcPostingIterator<bigEndian>(minChunkDocs, false, counts, matchData, start, docIdLimit, decode_cheap_features),
-      _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
-{
-    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
-    _decodeContext = &_decodeContextReal;
-}
-
-
-template <bool bigEndian>
-ZcRareWordPosOccIterator<bigEndian>::
-ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
-                         const PosOccFieldsParams *fieldsParams,
-                         const TermFieldMatchDataArray &matchData)
-    : ZcRareWordPostingIterator<bigEndian>(matchData, start, docIdLimit, decode_cheap_features),
-      _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
-{
-    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
-    _decodeContext = &_decodeContextReal;
-}
-
-
-template <bool bigEndian>
-ZcPosOccIterator<bigEndian>::
+template <bool bigEndian, bool dynamic_k>
+ZcPosOccIterator<bigEndian, dynamic_k>::
 ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
                  uint32_t minChunkDocs, const PostingListCounts &counts,
                  const PosOccFieldsParams *fieldsParams,
                  const TermFieldMatchDataArray &matchData)
-    : ZcPostingIterator<bigEndian>(minChunkDocs, true, counts, matchData, start, docIdLimit, decode_cheap_features),
+    : ZcPostingIterator<bigEndian>(minChunkDocs, dynamic_k, counts, matchData, start, docIdLimit, decode_cheap_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
     assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
@@ -79,15 +51,15 @@ create_zc_posocc_iterator(const PostingListCounts &counts, bitcompression::Posit
     assert((num_docs == counts._numDocs) || ((num_docs == posting_params._min_chunk_docs) && (num_docs < counts._numDocs)));
     if (num_docs < posting_params._min_skip_docs) {
         if (posting_params._dynamic_k) {
-            return std::make_unique<ZcRareWordPosOccIterator<bigEndian>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, &fields_params, match_data);
+            return std::make_unique<ZcRareWordPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, &fields_params, match_data);
         } else {
-            return std::make_unique<Zc4RareWordPosOccIterator<bigEndian>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, &fields_params, match_data);
+            return std::make_unique<ZcRareWordPosOccIterator<bigEndian, false>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, &fields_params, match_data);
         }
     } else {
         if (posting_params._dynamic_k) {
-            return std::make_unique<ZcPosOccIterator<bigEndian>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, posting_params._min_chunk_docs, counts, &fields_params, match_data);
+            return std::make_unique<ZcPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, posting_params._min_chunk_docs, counts, &fields_params, match_data);
         } else {
-            return std::make_unique<Zc4PosOccIterator<bigEndian>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, posting_params._min_chunk_docs, counts, &fields_params, match_data);
+            return std::make_unique<ZcPosOccIterator<bigEndian, false>>(start, bit_length, posting_params._doc_id_limit, posting_params._encode_cheap_features, posting_params._min_chunk_docs, counts, &fields_params, match_data);
         }
     }
 }
@@ -102,16 +74,14 @@ create_zc_posocc_iterator(bool bigEndian, const PostingListCounts &counts, bitco
     }
 }
 
-template class Zc4RareWordPosOccIterator<true>;
-template class Zc4RareWordPosOccIterator<false>;
+template class ZcRareWordPosOccIterator<false, false>;
+template class ZcRareWordPosOccIterator<false, true>;
+template class ZcRareWordPosOccIterator<true, false>;
+template class ZcRareWordPosOccIterator<true, true>;
 
-template class Zc4PosOccIterator<true>;
-template class Zc4PosOccIterator<false>;
-
-template class ZcRareWordPosOccIterator<true>;
-template class ZcRareWordPosOccIterator<false>;
-
-template class ZcPosOccIterator<true>;
-template class ZcPosOccIterator<false>;
+template class ZcPosOccIterator<false, false>;
+template class ZcPosOccIterator<false, true>;
+template class ZcPosOccIterator<true, false>;
+template class ZcPosOccIterator<true, true>;
 
 }
