@@ -13,8 +13,6 @@
 
 namespace search::diskindex {
 
-class FieldReaderFieldInfo;
-
 /*
  * FieldReader is used to read a dictionary and posting list file
  * together, and get a sequential view of the stored data.
@@ -28,10 +26,9 @@ class FieldReaderFieldInfo;
  */
 class FieldReader
 {
-    FieldReader(const FieldReader &rhs) = delete;
-    FieldReader(const FieldReader &&rhs) = delete;
-    FieldReader &operator=(const FieldReader &rhs) = delete;
-    FieldReader &operator=(const FieldReader &&rhs) = delete;
+private:
+    void VESPA_DLL_LOCAL readCounts();
+    void VESPA_DLL_LOCAL readDocIdAndFeatures();
 public:
     using DictionaryFileSeqRead = index::DictionaryFileSeqRead;
 
@@ -62,10 +59,12 @@ protected:
         return 0u;
     }
 
-    void readCounts();
-    void readDocIdAndFeatures();
-
 public:
+    FieldReader(const FieldReader &rhs) = delete;
+    FieldReader(const FieldReader &&rhs) = delete;
+    FieldReader &operator=(const FieldReader &rhs) = delete;
+    FieldReader &operator=(const FieldReader &&rhs) = delete;
+
     FieldReader();
 
     virtual ~FieldReader();
