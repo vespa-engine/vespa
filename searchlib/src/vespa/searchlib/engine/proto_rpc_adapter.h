@@ -39,7 +39,7 @@ public:
                     MonitorServer &monitor_server,
                     FRT_Supervisor &orb);
 
-    void set_online() { _online.store(std::memory_order_release); }
+    void set_online() { _online.store(true, std::memory_order_release); }
     bool is_online() const { return _online.load(std::memory_order_acquire); }
 
     void rpc_search(FRT_RPCRequest *req);
