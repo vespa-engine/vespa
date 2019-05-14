@@ -5,14 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
@@ -116,7 +116,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
         for (ZoneId zoneId : zones.ids()) {
             responseStructure.uris.add(proxyRequest.getScheme() + "://" + proxyRequest.getControllerPrefix() +
-                                       zoneId.environment().name() + "/" + zoneId.region().value());
+                                       zoneId.environment().value() + "/" + zoneId.region().value());
         }
         JsonNode node = mapper.valueToTree(responseStructure);
         return new ProxyResponse(proxyRequest, node.toString(), 200, Optional.empty(), "application/json");

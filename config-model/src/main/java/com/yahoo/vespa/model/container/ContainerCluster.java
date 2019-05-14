@@ -609,7 +609,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     @Override
     public void getConfig(ConfigserverConfig.Builder builder) {
-        builder.system(zone.system().name());
+        builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
     }

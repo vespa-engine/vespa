@@ -212,7 +212,7 @@ public class MetricsReporter extends Maintainer {
     }
     
     private static void keepNodesWithSystem(PartialNodeResult nodeResult, SystemName system) {
-        nodeResult.rows.removeIf(node -> !system.name().equals(node.getValue("system").orElse("main")));
+        nodeResult.rows.removeIf(node -> !system.value().equals(node.getValue("system").orElse("main")));
     }
 
     private static Map<String, String> dimensions(ApplicationId application) {

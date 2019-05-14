@@ -141,7 +141,7 @@ public class Endpoint {
 
     private static String systemPart(SystemName system, String separator) {
         if (system == SystemName.main || isPublic(system)) return "";
-        return system.name() + separator;
+        return system.value() + separator;
     }
 
     private static String dnsSuffix(SystemName system, boolean legacy) {

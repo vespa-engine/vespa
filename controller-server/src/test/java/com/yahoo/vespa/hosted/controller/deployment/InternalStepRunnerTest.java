@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import org.junit.Before;
@@ -251,7 +250,7 @@ public class InternalStepRunnerTest {
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
         assertEquals(appId.serializedForm(), configObject.field("application").asString());
         assertEquals(JobType.systemTest.zone(tester.tester().controller().system()).value(), configObject.field("zone").asString());
-        assertEquals(tester.tester().controller().system().name(), configObject.field("system").asString());
+        assertEquals(tester.tester().controller().system().value(), configObject.field("system").asString());
         assertEquals(1, configObject.field("endpoints").children());
         assertEquals(1, configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).entries());
         configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->

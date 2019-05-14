@@ -48,7 +48,7 @@ public class ControllerContainerTest {
                "    <maxthreads>10</maxthreads>\n" +
                "  </config> \n" +
                "  <config name=\"cloud.config.configserver\">\n" +
-               "    <system>" + system().name() + "</system>\n" +
+               "    <system>" + system().value() + "</system>\n" +
                "  </config> \n" +
                "  <config name=\"vespa.hosted.rotation.config.rotations\">\n" +
                "    <rotations>\n" +
