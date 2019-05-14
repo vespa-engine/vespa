@@ -5,6 +5,7 @@ vespa_add_library(searchlib_features OBJECT
     array_parser.cpp
     attributefeature.cpp
     attributematchfeature.cpp
+    bm25_feature.cpp
     closenessfeature.cpp
     constant_feature.cpp
     debug_attribute_wait.cpp
