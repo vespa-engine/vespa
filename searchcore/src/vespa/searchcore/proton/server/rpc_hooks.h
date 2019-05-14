@@ -99,6 +99,7 @@ public:
     RPCHooksBase(const RPCHooksBase &) = delete;
     RPCHooksBase & operator = (const RPCHooksBase &) = delete;
     RPCHooksBase(Params &params);
+    void set_online();
     virtual ~RPCHooksBase();
     void close();
 
