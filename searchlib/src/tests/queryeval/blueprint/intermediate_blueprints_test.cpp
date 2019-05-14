@@ -1219,8 +1219,8 @@ TEST("require that children does not optimize when parents refuse them to") {
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
-        EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[1]->getClassName());
-        EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[2]->getClassName());
+        EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
+        EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
     }
 
     md->resolveTermField(12)->tagAsNotNeeded();
@@ -1229,8 +1229,8 @@ TEST("require that children does not optimize when parents refuse them to") {
     {
         const MultiSearch & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
-        EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[1]->getClassName());
-        EXPECT_EQUAL("search::diskindex::Zc4RareWordPosOccIterator<true>", e.getChildren()[2]->getClassName());
+        EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
+        EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
     }
 }
 

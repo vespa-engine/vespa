@@ -275,7 +275,7 @@ Test::requireThatBlueprintCanCreateSearchIterators()
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
         b->fetchPostings(true);
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
-        ASSERT_TRUE(dynamic_cast<Zc4RareWordPosOccIterator<true> *>(s.get()) != NULL);
+        ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != NULL));
     }
 }
 

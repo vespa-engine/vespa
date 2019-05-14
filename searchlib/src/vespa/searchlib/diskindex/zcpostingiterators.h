@@ -56,7 +56,7 @@ private:
 };
 
 template <bool bigEndian>
-class Zc4RareWordPostingIterator : public ZcIteratorBase
+class ZcRareWordPostingIteratorBase : public ZcIteratorBase
 {
 private:
     typedef ZcIteratorBase ParentClass;
@@ -72,19 +72,41 @@ public:
     uint32_t           _field_length;
     uint32_t           _num_occs;
 
-    Zc4RareWordPostingIterator(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
+    ZcRareWordPostingIteratorBase(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
 
     void doUnpack(uint32_t docId) override;
-    void doSeek(uint32_t docId) override;
-    void readWordStart(uint32_t docIdLimit) override;
     void rewind(Position start) override;
 };
 
-template <bool bigEndian>
-class ZcRareWordPostingIterator : public Zc4RareWordPostingIterator<bigEndian>
+template <bool dynamic_k> class ZcPostingDocIdKParam;
+
+template <>
+class ZcPostingDocIdKParam<false>
 {
-private:
-    typedef Zc4RareWordPostingIterator<bigEndian> ParentClass;
+public:
+    ZcPostingDocIdKParam() { }
+    constexpr static uint32_t get_doc_id_k() { return K_VALUE_ZCPOSTING_DELTA_DOCID; }
+    void setup(uint32_t, uint32_t) { }
+};
+
+template <>
+class ZcPostingDocIdKParam<true>
+{
+    uint32_t _doc_id_k;
+public:
+    ZcPostingDocIdKParam() : _doc_id_k(0) { }
+    uint32_t get_doc_id_k() const { return _doc_id_k; }
+    void setup(uint32_t num_docs, uint32_t doc_id_limit) {
+        using EC = bitcompression::FeatureEncodeContext<true>;
+        _doc_id_k = EC::calcDocIdK(num_docs, doc_id_limit);
+    }
+};
+
+
+template <bool bigEndian, bool dynamic_k>
+class ZcRareWordPostingIterator : public ZcRareWordPostingIteratorBase<bigEndian>
+{
+    using ParentClass = ZcRareWordPostingIteratorBase<bigEndian>;
     using ParentClass::getDocId;
     using ParentClass::getUnpacked;
     using ParentClass::clearUnpacked;
@@ -95,17 +117,13 @@ private:
     using ParentClass::_decode_cheap_features;
     using ParentClass::_field_length;
     using ParentClass::_num_occs;
-
-    uint32_t _docIdK;
-
+    ZcPostingDocIdKParam<dynamic_k> _doc_id_k_param;
 public:
     using ParentClass::_decodeContext;
-    ZcRareWordPostingIterator(const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
-
+    ZcRareWordPostingIterator(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features);
     void doSeek(uint32_t docId) override;
     void readWordStart(uint32_t docIdLimit) override;
 };
-
 
 class ZcPostingIteratorBase : public ZcIteratorBase
 {
@@ -308,13 +326,12 @@ public:
 };
 
 
-extern template class Zc4RareWordPostingIterator<true>;
-extern template class Zc4RareWordPostingIterator<false>;
+extern template class ZcRareWordPostingIterator<false, false>;
+extern template class ZcRareWordPostingIterator<false, true>;
+extern template class ZcRareWordPostingIterator<true, false>;
+extern template class ZcRareWordPostingIterator<true, true>;
 
 extern template class ZcPostingIterator<true>;
 extern template class ZcPostingIterator<false>;
-
-extern template class ZcRareWordPostingIterator<true>;
-extern template class ZcRareWordPostingIterator<false>;
 
 }
