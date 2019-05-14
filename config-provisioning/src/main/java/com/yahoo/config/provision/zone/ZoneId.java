@@ -99,8 +99,9 @@ public class ZoneId {
 
     @Override
     public String toString() {
-        // TODO: Use value() instead for last parts of statement
-        return "zone " + cloud + "." + system + "." + environment + "." + region;
+        return "zone " + value() + " in " + cloud;
+        // TODO: Use the below (need  to fix some use of toString() in tests first)
+        //return "zone " + cloud + "." + system + "." + environment + "." + region;
     }
 
     @Override
