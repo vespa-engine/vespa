@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.fusesource.jansi.Ansi;
 
 import java.nio.file.Paths;
 import java.time.ZoneOffset;
@@ -68,15 +69,11 @@ public class DeployMojo extends AbstractVespaMojo {
     }
 
     private void tailLogs(ApplicationId id, ZoneId zone, long run) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
         long last = -1;
         while (true) {
             DeploymentLog log = controller.deploymentLog(id, zone, run, last);
             for (DeploymentLog.Entry entry : log.entries())
-                System.out.printf("%8s%11s   %s\n",
-                                  "[" + entry.level().toUpperCase(),
-                                  formatter.format(entry.at()) + "]",
-                                  entry.message());
+                System.out.println(formatted(entry));
             last = log.last().orElse(last);
 
             if (!log.isActive())
@@ -90,6 +87,18 @@ public class DeployMojo extends AbstractVespaMojo {
                 break;
             }
         }
+    }
+
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
+
+    private static String formatted(DeploymentLog.Entry entry) {
+        String timestamp = formatter.format(entry.at());
+        switch (entry.level()) {
+            case "info" : timestamp = Ansi.ansi().bold().fgBlue().a(timestamp).reset().toString(); break;
+            case "warning" : timestamp = Ansi.ansi().bold().fgYellow().a(timestamp).reset().toString(); break;
+            case "error" : timestamp = Ansi.ansi().bold().fgRed().a(timestamp).reset().toString(); break;
+        }
+        return "[" + timestamp + "]  " + entry.message();
     }
 
 }
