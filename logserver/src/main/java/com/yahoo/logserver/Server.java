@@ -4,19 +4,14 @@ package com.yahoo.logserver;
 import ai.vespa.logserver.protocol.ArchiveLogMessagesMethod;
 import ai.vespa.logserver.protocol.RpcServer;
 import com.yahoo.io.FatalErrorHandler;
-import com.yahoo.io.Listener;
-import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.logserver.handlers.HandlerThread;
 import com.yahoo.logserver.handlers.LogHandler;
-import com.yahoo.logserver.net.LogConnectionFactory;
 import com.yahoo.yolean.system.CatchSignals;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -42,12 +37,7 @@ public class Server implements Runnable {
     }
 
     private static final int DEFAULT_RPC_LISTEN_PORT = 19080;
-    // the port is a String because we want to use it as the default
-    // value of a System.getProperty().
-    private static final String LISTEN_PORT = "19081";
 
-    private int listenPort;
-    private Listener listener;
     private final LogDispatcher dispatch;
     private RpcServer rpcServer;
 
@@ -109,25 +99,15 @@ public class Server implements Runnable {
 
     /**
      * Initialize the server and start up all its plugins,
-     *
-     * @param listenPort The port on which the logserver accepts log
-     *                   messages.
-     * @param rpcListenPort
      */
-    public void initialize(int listenPort, int rpcListenPort) {
+    public void initialize(int rpcListenPort) {
         if (isInitialized) {
             throw new IllegalStateException(APPNAME + " already initialized");
         }
 
-        this.listenPort = listenPort;
-
         // plugins
         registerPluginLoader(new BuiltinPluginLoader());
 
-        // main listener
-        listener = new Listener(APPNAME);
-        listener.addSelectLoopPostHook(dispatch);
-        listener.setFatalErrorHandler(fatalErrorHandler);
         rpcServer = new RpcServer(rpcListenPort);
         rpcServer.addMethod(new ArchiveLogMessagesMethod(dispatch).methodDefinition());
     }
@@ -136,26 +116,11 @@ public class Server implements Runnable {
      * Sets up the listen port and starts the Listener.  Then waits for
      * Listener to exit.
      */
+    @Override
     public void run() {
-        try {
-            listener.listen(new LogConnectionFactory(dispatch), listenPort);
-            log.log(LogLevel.CONFIG, APPNAME + ".listenport=" + listenPort);
-        } catch (IOException e) {
-            log.log(LogLevel.ERROR, "Unable to initialize", e);
-            return;
-        }
-
-        log.fine("Starting listener...");
-        listener.start();
         log.fine("Starting rpc server...");
         rpcServer.start();
         Event.started(APPNAME);
-        try {
-            listener.join();
-            log.fine("listener thread exited");
-        } catch (InterruptedException e) {
-            log.log(Level.WARNING, "Server was interrupted", e);
-        }
     }
 
     private void setupSignalHandler() {
@@ -187,7 +152,6 @@ public class Server implements Runnable {
         System.out.println();
         System.out.println("System properties:");
         System.out.println(" - " + APPNAME + ".rpcListenPort (" + DEFAULT_RPC_LISTEN_PORT + ")");
-        System.out.println(" - " + APPNAME + ".listenport (" + LISTEN_PORT + ")");
         System.out.println(" - " + APPNAME + ".queue.size (" + HandlerThread.DEFAULT_QUEUESIZE + ")");
         System.out.println();
     }
@@ -198,11 +162,10 @@ public class Server implements Runnable {
             System.exit(0);
         }
 
-        String portString = System.getProperty(APPNAME + ".listenport", LISTEN_PORT);
         int rpcPort = Integer.parseInt(System.getProperty(APPNAME + ".rpcListenPort", Integer.toString(DEFAULT_RPC_LISTEN_PORT)));
         Server server = Server.getInstance();
         server.setupSignalHandler();
-        server.initialize(Integer.parseInt(portString), rpcPort);
+        server.initialize(rpcPort);
 
         Thread t = new Thread(server, "logserver main");
         t.start();
