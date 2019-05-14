@@ -5,29 +5,31 @@ import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class LogForwarder extends AbstractService implements LogforwarderConfig.Producer {
 
     public static class Config {
         public final String deploymentServer;
         public final String clientName;
         public final String splunkHome;
+        public final Integer phoneHomeInterval;
 
-        private Config(String ds, String cn, String sh) {
+        private Config(String ds, String cn, String sh, Integer phi) {
             this.deploymentServer = ds;
             this.clientName = cn;
             this.splunkHome = sh;
+            this.phoneHomeInterval = phi;
         }
         public Config withDeploymentServer(String ds) {
-            return new Config(ds, clientName, splunkHome);
+            return new Config(ds, clientName, splunkHome, phoneHomeInterval);
         }
         public Config withClientName(String cn) {
-            return new Config(deploymentServer, cn, splunkHome);
+            return new Config(deploymentServer, cn, splunkHome, phoneHomeInterval);
         }
         public Config withSplunkHome(String sh) {
-            return new Config(deploymentServer, clientName, sh);
+            return new Config(deploymentServer, clientName, sh, phoneHomeInterval);
+        }
+        public Config withPhoneHomeInterval(Integer phi) {
+            return new Config(deploymentServer, clientName, splunkHome, phi);
         }
     }
 
@@ -45,7 +47,7 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     }
 
     public static Config cfg() {
-        return new Config(null, null, null);
+        return new Config(null, null, null, null);
     }
 
     /**
@@ -71,6 +73,9 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         builder.clientName(config.clientName);
         if (config.splunkHome != null) {
             builder.splunkHome(config.splunkHome);
+        }
+        if (config.phoneHomeInterval != null) {
+            builder.phoneHomeInterval(config.phoneHomeInterval);
         }
     }
 
