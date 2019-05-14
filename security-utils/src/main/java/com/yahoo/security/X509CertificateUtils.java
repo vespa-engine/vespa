@@ -106,17 +106,23 @@ public class X509CertificateUtils {
         return getCommonNames(certificate.getIssuerX500Principal());
     }
 
-    public static List<String> getCommonNames(X500Principal subject) {
+    public static List<String> getSubjectOrganizationalUnits(X509Certificate certificate) {
+        return getRdns(certificate.getSubjectX500Principal(), "OU");
+    }
+
+    public static List<String> getCommonNames(X500Principal distinguishedName) {
+        return getRdns(distinguishedName, "CN");
+    }
+
+    private static List<String> getRdns(X500Principal distinguishedName, String rdnName) {
         try {
-            String subjectPrincipal = subject.getName();
-            return new LdapName(subjectPrincipal).getRdns().stream()
-                    .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
+            return new LdapName(distinguishedName.getName()).getRdns().stream()
+                    .filter(rdn -> rdn.getType().equalsIgnoreCase(rdnName))
                     .map(rdn -> rdn.getValue().toString())
                     .collect(toList());
         } catch (NamingException e) {
-            throw new IllegalArgumentException("Invalid CN: " + e, e);
+            throw new IllegalArgumentException("Invalid DN: " + distinguishedName.getName(), e);
         }
-
     }
 
     public static List<SubjectAlternativeName> getSubjectAlternativeNames(X509Certificate certificate) {
