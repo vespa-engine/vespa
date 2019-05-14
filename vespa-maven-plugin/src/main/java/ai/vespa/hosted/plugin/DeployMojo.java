@@ -26,36 +26,19 @@ public class DeployMojo extends AbstractVespaMojo {
     @Parameter(property = "vespaVersion")
     private String vespaVersion;
 
-    @Parameter(property = "ignoreValidationErrors")
-    private String ignoreValidationErrors;
-
     @Parameter(property = "environment")
     private String environment;
 
     @Parameter(property = "region")
     private String region;
 
-    @Parameter(property = "repository")
-    private String repository;
-
-    @Parameter(property = "branch")
-    private String branch;
-
-    @Parameter(property = "commit")
-    private String commit;
-
-    @Parameter(property = "build")
-    private Long build;
-
     @Parameter(property = "follow", defaultValue = "true")
     private boolean follow;
 
     @Override
     protected void doExecute() {
-        Deployment deployment = build == null
-                ? Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip, projectPathOf("target", "application.zip"))))
-                : Deployment.ofReference(repository, branch, commit, build);
-        if ("true".equalsIgnoreCase(ignoreValidationErrors)) deployment = deployment.ignoringValidationErrors(); // TODO unused, GC or fix.
+        Deployment deployment = Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip,
+                                                                             projectPathOf("target", "application.zip"))));
         if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
 
         ZoneId zone = environment == null || region == null ? controller.devZone() : ZoneId.from(environment, region);
