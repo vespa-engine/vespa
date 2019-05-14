@@ -45,6 +45,17 @@ public enum SystemName {
         }
     }
 
+    public String value() {
+        switch (this) {
+            case dev: return "dev";
+            case cd: return "cd";
+            case main: return "main";
+            case Public: return "public";
+            case PublicCd: return "publiccd";
+            default : throw new IllegalStateException();
+        }
+    }
+
     public static Set<SystemName> all() {
         return EnumSet.allOf(SystemName.class);
     }
