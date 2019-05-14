@@ -292,8 +292,8 @@ struct MyConfigSnapshot
 template <typename Traits>
 struct FixtureBase
 {
-    ExecutorThreadingService _writeService;
     ThreadStackExecutor _summaryExecutor;
+    ExecutorThreadingService _writeService;
     typename Traits::Config _cfg;
     std::shared_ptr<BucketDBOwner> _bucketDB;
     BucketDBHandler _bucketDBHandler;
@@ -304,8 +304,8 @@ struct FixtureBase
     typename Traits::SubDB _subDb;
     IFeedView::SP _tmpFeedView;
     FixtureBase()
-        : _writeService(),
-          _summaryExecutor(1, 64 * 1024),
+        : _summaryExecutor(1, 64 * 1024),
+          _writeService(_summaryExecutor),
           _cfg(),
               _bucketDB(std::make_shared<BucketDBOwner>()),
               _bucketDBHandler(*_bucketDB),

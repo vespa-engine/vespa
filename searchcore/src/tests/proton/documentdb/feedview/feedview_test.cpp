@@ -519,6 +519,7 @@ struct FixtureBase
     DocumentMetaStoreContext::SP _dmscReal;
     test::DocumentMetaStoreContextObserver::SP _dmsc;
     ParamsContext         pc;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeServiceReal;
     test::ThreadingServiceObserver _writeService;
     documentmetastore::LidReuseDelayer _lidReuseDelayer;
@@ -703,7 +704,8 @@ FixtureBase::FixtureBase(TimeStamp visibilityDelay)
       _dmscReal(new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>())),
       _dmsc(new test::DocumentMetaStoreContextObserver(*_dmscReal)),
       pc(sc._builder->getDocumentType().getName(), "fileconfig_test"),
-      _writeServiceReal(),
+      _sharedExecutor(1, 0x10000),
+      _writeServiceReal(_sharedExecutor),
       _writeService(_writeServiceReal),
       _lidReuseDelayer(_writeService, _dmsc->get()),
       _commitTimeTracker(visibilityDelay),

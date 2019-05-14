@@ -6,8 +6,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
 
-namespace proton {
-namespace test {
+namespace proton:: test {
 
 class ThreadingServiceObserver : public searchcorespi::index::IThreadingService
 {
@@ -16,6 +15,7 @@ private:
     ThreadServiceObserver _master;
     ThreadServiceObserver _index;
     ThreadServiceObserver _summary;
+    ThreadServiceObserver _shared;
     search::SequencedTaskExecutorObserver _indexFieldInverter;
     search::SequencedTaskExecutorObserver _indexFieldWriter;
     search::SequencedTaskExecutorObserver _attributeFieldWriter;
@@ -26,12 +26,13 @@ public:
           _master(_service.master()),
           _index(service.index()),
           _summary(service.summary()),
+          _shared(service.shared()),
           _indexFieldInverter(_service.indexFieldInverter()),
           _indexFieldWriter(_service.indexFieldWriter()),
           _attributeFieldWriter(_service.attributeFieldWriter())
     {
     }
-    virtual ~ThreadingServiceObserver() override { }
+    ~ThreadingServiceObserver() override { }
     const ThreadServiceObserver &masterObserver() const {
         return _master;
     }
@@ -55,35 +56,35 @@ public:
     /**
      * Implements vespalib::Syncable
      */
-    virtual vespalib::Syncable &sync() override {
+    vespalib::Syncable &sync() override {
         return _service.sync();
     }
 
     /**
      * Implements IThreadingService
      */
-    virtual searchcorespi::index::IThreadService &master() override {
+    searchcorespi::index::IThreadService &master() override {
         return _master;
     }
-    virtual searchcorespi::index::IThreadService &index() override {
+    searchcorespi::index::IThreadService &index() override {
         return _index;
     }
-    virtual searchcorespi::index::IThreadService &summary() override {
+    searchcorespi::index::IThreadService &summary() override {
         return _summary;
     }
-    virtual search::ISequencedTaskExecutor &indexFieldInverter() override {
+    searchcorespi::index::IThreadService &shared() override {
+        return _shared;
+    }
+    search::ISequencedTaskExecutor &indexFieldInverter() override {
         return _indexFieldInverter;
     }
-    virtual search::ISequencedTaskExecutor &indexFieldWriter() override {
+    search::ISequencedTaskExecutor &indexFieldWriter() override {
         return _indexFieldWriter;
     }
 
-    virtual search::ISequencedTaskExecutor &attributeFieldWriter() override {
+    search::ISequencedTaskExecutor &attributeFieldWriter() override {
         return _attributeFieldWriter;
     }
 };
 
-} // namespace test
-} // namespace proton
-
-
+}

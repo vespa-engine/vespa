@@ -62,6 +62,7 @@ class Test : public vespalib::TestApp {
     FixedSourceSelector::UP _selector;
     FusionSpec _fusion_spec;
     DummyFileHeaderContext _fileHeaderContext;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _threadingService;
     IndexManager::MaintainerOperations _ops;
 
@@ -84,7 +85,8 @@ public:
           _selector(),
           _fusion_spec(),
           _fileHeaderContext(),
-          _threadingService(),
+          _sharedExecutor(1, 0x10000),
+          _threadingService(_sharedExecutor),
           _ops(_fileHeaderContext,
                TuneFileIndexManager(), 0,
                _threadingService)

@@ -201,6 +201,7 @@ struct FixtureBase {
     int heartbeatCount;
     int outstandingMoveOps;
     DocumentMetaStore::SP metaStore;
+    vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
     documentmetastore::LidReuseDelayer lidReuseDelayer;
     CommitTimeTracker commitTimeTracker;
@@ -214,10 +215,10 @@ struct FixtureBase {
           metaStore(new DocumentMetaStore(std::make_shared<BucketDBOwner>(),
                                           DocumentMetaStore::getFixedName(),
                                           search::GrowStrategy(),
-                                          DocumentMetaStore::IGidCompare::SP(
-                                                  new DocumentMetaStore::DefaultGidCompare),
+                                          std::make_shared<DocumentMetaStore::DefaultGidCompare>(),
                                           subDbType)),
-          writeService(),
+          sharedExecutor(1, 0x10000),
+          writeService(sharedExecutor),
           lidReuseDelayer(writeService, *metaStore),
           commitTimeTracker(fastos::TimeStamp()),
           feedview()

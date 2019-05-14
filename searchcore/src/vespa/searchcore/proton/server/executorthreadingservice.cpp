@@ -9,14 +9,17 @@ using search::SequencedTaskExecutor;
 
 namespace proton {
 
-ExecutorThreadingService::ExecutorThreadingService(uint32_t threads, uint32_t stackSize, uint32_t taskLimit)
+ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadStackExecutorBase & sharedExecutor,
+                                                   uint32_t threads, uint32_t stackSize, uint32_t taskLimit)
 
-    : _masterExecutor(1, stackSize),
+    : _sharedExecutor(sharedExecutor),
+      _masterExecutor(1, stackSize),
       _indexExecutor(1, stackSize, taskLimit),
       _summaryExecutor(1, stackSize, taskLimit),
       _masterService(_masterExecutor),
       _indexService(_indexExecutor),
       _summaryService(_summaryExecutor),
+      _sharedService(_sharedExecutor),
       _indexFieldInverter(std::make_unique<SequencedTaskExecutor>(threads, taskLimit)),
       _indexFieldWriter(std::make_unique<SequencedTaskExecutor>(threads, taskLimit)),
       _attributeFieldWriter(std::make_unique<SequencedTaskExecutor>(threads, taskLimit))
@@ -73,6 +76,7 @@ ExecutorThreadingService::getStats()
     return ExecutorThreadingServiceStats(_masterExecutor.getStats(),
                                          _indexExecutor.getStats(),
                                          _summaryExecutor.getStats(),
+                                         _sharedExecutor.getStats(),
                                          _indexFieldInverter->getStats(),
                                          _indexFieldWriter->getStats(),
                                          _attributeFieldWriter->getStats());

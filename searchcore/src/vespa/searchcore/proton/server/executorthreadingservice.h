@@ -18,12 +18,14 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
+    vespalib::ThreadStackExecutorBase & _sharedExecutor;
     vespalib::ThreadStackExecutor _masterExecutor;
     vespalib::BlockingThreadStackExecutor _indexExecutor;
     vespalib::BlockingThreadStackExecutor _summaryExecutor;
     ExecutorThreadService _masterService;
     ExecutorThreadService _indexService;
     ExecutorThreadService _summaryService;
+    ExecutorThreadService _sharedService;
     std::unique_ptr<search::SequencedTaskExecutor> _indexFieldInverter;
     std::unique_ptr<search::SequencedTaskExecutor> _indexFieldWriter;
     std::unique_ptr<search::SequencedTaskExecutor> _attributeFieldWriter;
@@ -35,7 +37,8 @@ public:
      * @stackSize The size of the stack of the underlying executors.
      * @taskLimit The task limit for the index executor.
      */
-    ExecutorThreadingService(uint32_t threads = 1,
+    ExecutorThreadingService(vespalib::ThreadStackExecutorBase &sharedExecutor,
+                             uint32_t threads = 1,
                              uint32_t stackSize = 128 * 1024,
                              uint32_t taskLimit = 1000);
     ~ExecutorThreadingService() override;
@@ -59,6 +62,9 @@ public:
     vespalib::ThreadStackExecutorBase &getSummaryExecutor() {
         return _summaryExecutor;
     }
+    vespalib::ThreadStackExecutorBase &getSharedExecutor() {
+        return _sharedExecutor;
+    }
 
     /**
      * Implements IThreadingService
@@ -72,6 +78,9 @@ public:
 
     searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
+    }
+    searchcorespi::index::IThreadService &shared() override {
+        return _sharedService;
     }
 
     search::ISequencedTaskExecutor &indexFieldInverter() override;
