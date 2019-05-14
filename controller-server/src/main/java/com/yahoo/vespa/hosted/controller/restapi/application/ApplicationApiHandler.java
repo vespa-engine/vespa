@@ -585,7 +585,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Add endpoint(s) defined by routing policies
         var endpointArray = response.setArray("endpoints");
-        for (var policy : controller.applications().routingPolicies(deploymentId.applicationId())) {
+        for (var policy : controller.applications().routingPolicies(deploymentId)) {
             Cursor endpointObject = endpointArray.addObject();
             Endpoint endpoint = policy.endpointIn(controller.system());
             endpointObject.setString("cluster", policy.cluster().value());

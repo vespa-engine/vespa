@@ -708,6 +708,13 @@ public class ApplicationController {
         return curator.readRoutingPolicies(application);
     }
 
+    /** Returns all known routing policies for given deployment */
+    public Set<RoutingPolicy> routingPolicies(DeploymentId deployment) {
+        return curator.readRoutingPolicies(deployment.applicationId()).stream()
+                .filter(policy -> policy.zone().equals(deployment.zoneId()))
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
     /** Sort given list of applications by application ID */
     private static List<Application> sort(List<Application> applications) {
         return applications.stream().sorted(Comparator.comparing(Application::id)).collect(Collectors.toList());

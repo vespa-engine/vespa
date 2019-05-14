@@ -1,11 +1,14 @@
 package ai.vespa.hosted.plugin;
 
+import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Deployment;
 import ai.vespa.hosted.api.DeploymentLog;
 import ai.vespa.hosted.api.DeploymentResult;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.fusesource.jansi.Ansi;
 
 import java.nio.file.Paths;
 import java.time.ZoneOffset;
@@ -62,19 +65,40 @@ public class DeployMojo extends AbstractVespaMojo {
         DeploymentResult result = controller.deploy(deployment, id, zone);
         System.out.println(result.message());
 
-        if (follow) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
-            DeploymentLog log = controller.deploymentLog(id, zone, result.run());
-            do {
-                for (DeploymentLog.Entry entry : log.entries())
-                    System.out.printf("[%10s%10s]   %s\n",
-                                      entry.level().toUpperCase(),
-                                      formatter.format(entry.at()),
-                                      entry.message());
-                log = controller.deploymentLog(id, zone, result.run(), log.last());
+        if (follow) tailLogs(id, zone, result.run());
+    }
+
+    private void tailLogs(ApplicationId id, ZoneId zone, long run) {
+        long last = -1;
+        while (true) {
+            DeploymentLog log = controller.deploymentLog(id, zone, run, last);
+            for (DeploymentLog.Entry entry : log.entries())
+                System.out.println(formatted(entry));
+            last = log.last().orElse(last);
+
+            if (!log.isActive())
+                break;
+
+            try {
+                Thread.sleep(1000);
             }
-            while (log.isActive());
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
+    }
+
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
+
+    private static String formatted(DeploymentLog.Entry entry) {
+        String timestamp = formatter.format(entry.at());
+        switch (entry.level()) {
+            case "info" : timestamp = Ansi.ansi().bold().fgBlue().a(timestamp).reset().toString(); break;
+            case "warning" : timestamp = Ansi.ansi().bold().fgYellow().a(timestamp).reset().toString(); break;
+            case "error" : timestamp = Ansi.ansi().bold().fgRed().a(timestamp).reset().toString(); break;
+        }
+        return "[" + timestamp + "]  " + entry.message();
     }
 
 }
