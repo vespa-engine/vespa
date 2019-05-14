@@ -7,6 +7,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.BundlesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
@@ -15,14 +16,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_FILE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_INSTANCE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_TENANT;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.checkMetric;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromModel;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromXml;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
@@ -32,7 +35,9 @@ import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetri
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
 import static java.util.Collections.singleton;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,6 +54,15 @@ public class MetricsProxyContainerClusterTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    @Test
+    public void metrics_proxy_bundle_is_included_in_bundles_config() {
+        VespaModel model = getModel(servicesWithAdminOnly());
+        var builder = new BundlesConfig.Builder();
+        model.getConfig(builder, CLUSTER_CONFIG_ID);
+        BundlesConfig config = builder.build();
+        assertEquals(1, config.bundle().size());
+        assertThat(config.bundle(0).value(), endsWith(METRICS_PROXY_BUNDLE_FILE.toString()));
+    }
 
     @Test
     public void default_consumer_is_always_present_and_has_all_vespa_metrics_and_all_system_metrics() {

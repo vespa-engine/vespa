@@ -19,7 +19,7 @@ public class BundleMapper {
         JAR_WITH_DEPS("-jar-with-dependencies.jar"),
         DEPLOY("-deploy.jar");
 
-        private final String suffix;
+        public final String suffix;
 
         JarSuffix(String suffix) {
             this.suffix = suffix;
@@ -45,10 +45,6 @@ public class BundleMapper {
     public static Path absoluteBundlePath(Path fileName) {
         if (fileName == null) return null;
         return LIBRARY_PATH.resolve(fileName);
-    }
-
-    public static Path bundlePathFromName(String name, JarSuffix suffix) {
-        return Paths.get(Defaults.getDefaults().underVespaHome(LIBRARY_PATH + name + suffix.suffix));
     }
 
     /**

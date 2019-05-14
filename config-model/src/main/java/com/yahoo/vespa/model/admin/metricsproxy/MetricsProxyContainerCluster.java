@@ -29,6 +29,7 @@ import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +47,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.getDefaultMetricsConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.JarSuffix.JAR_WITH_DEPS;
-import static com.yahoo.vespa.model.container.xml.BundleMapper.bundlePathFromName;
+import static com.yahoo.vespa.model.container.xml.BundleMapper.absoluteBundlePath;
 
 /**
  * Container cluster for metrics proxy containers.
@@ -60,8 +61,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
-    private static final String METRICS_PROXY_NAME = "metrics-proxy";
-    private static final Path METRICS_PROXY_BUNDLE_FILE = bundlePathFromName(METRICS_PROXY_NAME, JAR_WITH_DEPS);
+    static final String METRICS_PROXY_NAME = "metrics-proxy";
+    static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
     static final String DEFAULT_NAME_IN_MONITORING_SYSTEM = "vespa";
