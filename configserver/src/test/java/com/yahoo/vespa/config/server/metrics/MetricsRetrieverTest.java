@@ -44,17 +44,17 @@ public class MetricsRetrieverTest {
         stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(metricsString(10,20,33,40,50))));
+                        .withBody(metricsString())));
 
         stubFor(get(urlEqualTo("/2"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(metricsString(1,2,3,4,5))));
+                        .withBody(metricsString())));
 
         stubFor(get(urlEqualTo("/3"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(metricsString(1,2,3,4,5))));
+                        .withBody(metricsString())));
 
         MetricsResponse metricsResponse = metricsRetriever.retrieveAllMetrics(applications);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -69,7 +69,7 @@ public class MetricsRetrieverTest {
                 "     \"queriesPerSecond\": 2.8666666666666667,\n" +
                 "     \"writesPerSecond\": 1.4333333333333333,\n" +
                 "     \"documentCount\": 6000.0,\n" +
-                "     \"queryLatencyMillis\": 116.27906976744185,\n" +
+                "     \"queryLatencyMillis\": 93.02325581395348,\n" +
                 "     \"feedLatency\": 69.76744186046511\n" +
                 "    },\n" +
                 "    \"timestamp\": 1557306075\n" +
@@ -80,7 +80,7 @@ public class MetricsRetrieverTest {
                 "     \"queriesPerSecond\": 1.4333333333333333,\n" +
                 "     \"writesPerSecond\": 0.7166666666666667,\n" +
                 "     \"documentCount\": 3000.0,\n" +
-                "     \"queryLatencyMillis\": 116.27906976744185,\n" +
+                "     \"queryLatencyMillis\": 93.02325581395348,\n" +
                 "     \"feedLatency\": 69.76744186046511\n" +
                 "    },\n" +
                 "    \"timestamp\": 1557306075\n" +
@@ -92,8 +92,7 @@ public class MetricsRetrieverTest {
         wireMock.stop();
     }
 
-    private String metricsString(double queriesPerSecond, double writesPerSecond, double documentCount, double queryLatencyMillis, double writeLatencyMills) throws IOException {
-        String responseBody = Files.readString(Path.of("src/test/resources/metrics_response"));
-        return String.format(responseBody, queriesPerSecond, writesPerSecond, documentCount, queryLatencyMillis, writeLatencyMills);
+    private String metricsString() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics_response"));
     }
 }
