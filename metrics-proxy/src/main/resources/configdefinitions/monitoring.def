@@ -2,7 +2,7 @@
 package=ai.vespa.metricsproxy.core
 
 # The rate at which metrics are passed to the monitoring system. Currently (Apr 2019) only used by SystemPoller.
-intervalMinutes int default=5
+intervalMinutes int default=1
 
 # The name used for this application in the monitoring system
 systemName string default=vespa
