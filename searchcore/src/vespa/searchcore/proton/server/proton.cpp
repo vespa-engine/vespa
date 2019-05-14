@@ -332,6 +332,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _executor.sync();
     waitForOnlineState();
     _isReplayDone = true;
+    _rpcHooks->set_online();
     if ( ! _fs4Server->start() ) {
         throw vespalib::PortListenException(protonConfig.ptport, "FS4");
     }

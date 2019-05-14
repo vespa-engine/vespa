@@ -178,7 +178,8 @@ ProtoRpcAdapter::ProtoRpcAdapter(SearchServer &search_server,
                                  FRT_Supervisor &orb)
     : _search_server(search_server),
       _docsum_server(docsum_server),
-      _monitor_server(monitor_server)
+      _monitor_server(monitor_server),
+      _online(false)
 {
     FRT_ReflectionBuilder rb(&orb);
     //-------------------------------------------------------------------------
@@ -202,6 +203,9 @@ ProtoRpcAdapter::ProtoRpcAdapter(SearchServer &search_server,
 void
 ProtoRpcAdapter::rpc_search(FRT_RPCRequest *req)
 {
+    if (!is_online()) {
+        return req->SetError(FRTE_RPC_METHOD_FAILED, "Server not online");
+    }
     req->Detach();
     auto &client = req->getStash().create<SearchCompletionHandler>(*req);
     auto reply = _search_server.search(search_request_decoder(*req), client);
@@ -213,6 +217,9 @@ ProtoRpcAdapter::rpc_search(FRT_RPCRequest *req)
 void
 ProtoRpcAdapter::rpc_getDocsums(FRT_RPCRequest *req)
 {
+    if (!is_online()) {
+        return req->SetError(FRTE_RPC_METHOD_FAILED, "Server not online");
+    }
     req->Detach();
     auto &client = req->getStash().create<GetDocsumsCompletionHandler>(*req);
     auto reply = _docsum_server.getDocsums(docsum_request_decoder(*req), client);
@@ -224,6 +231,9 @@ ProtoRpcAdapter::rpc_getDocsums(FRT_RPCRequest *req)
 void
 ProtoRpcAdapter::rpc_ping(FRT_RPCRequest *rpc)
 {
+    if (!is_online()) {
+        return rpc->SetError(FRTE_RPC_METHOD_FAILED, "Server not online");
+    }
     rpc->Detach();
     ProtoMonitorRequest msg;
     if (decode_message(*rpc->GetParams(), msg)) {

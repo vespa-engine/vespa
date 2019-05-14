@@ -216,6 +216,12 @@ RPCHooksBase::open(Params & params)
     LOG(debug, "started monitoring interface");
 }
 
+void
+RPCHooksBase::set_online()
+{
+    _proto_rpc_adapter->set_online();
+}
+
 RPCHooksBase::~RPCHooksBase() = default;
 
 void
