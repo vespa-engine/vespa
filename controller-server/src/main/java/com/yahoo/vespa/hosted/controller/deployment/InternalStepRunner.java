@@ -321,14 +321,18 @@ public class InternalStepRunner implements StepRunner {
     private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
         logger.log("Attempting to find deployment endpoints ...");
         Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id, Set.of(zoneId));
+        if ( ! endpoints.containsKey(zoneId)) {
+            logger.log("Endpoints not yet ready.");
+            return false;
+        }
         List<String> messages = new ArrayList<>();
-        messages.add("Found endpoints");
+        messages.add("Found endpoints:");
         endpoints.forEach((zone, uris) -> {
             messages.add("- " + zone);
             uris.forEach(uri -> messages.add(" |-- " + uri));
         });
         logger.log(messages);
-        return endpoints.containsKey(zoneId);
+        return true;
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
@@ -366,6 +370,8 @@ public class InternalStepRunner implements StepRunner {
                                                     serviceStatus.currentGeneration() == -1 ? "not started!" : Long.toString(serviceStatus.currentGeneration())))
                 .collect(Collectors.toList());
         logger.log(statuses);
+        if (statuses.isEmpty())
+            logger.log("All services on wanted config generation.");
 
         return convergence.get().converged();
     }
