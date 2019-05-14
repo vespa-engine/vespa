@@ -180,4 +180,31 @@ public class CommandLineArgumentsTest {
         CommandLineArguments arguments = CommandLineArguments.build(asArray());
         SessionParams params = arguments.createSessionParams(true /* use json */);
     }
+
+    @Test
+    public void testEndpoint() {
+        add("endpoint", "http://myendpoint:1234");
+        CommandLineArguments arguments = CommandLineArguments.build(asArray());
+        SessionParams params = arguments.createSessionParams(true);
+        assertThat(params.getClusters().get(0).getEndpoints().get(0).getHostname(), is("myendpoint"));
+        assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(1234));
+        assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(false));
+    }
+
+    @Test
+    public void testEndpointHttps() {
+        add("endpoint", "https://myendpoint:1234");
+        CommandLineArguments arguments = CommandLineArguments.build(asArray());
+        SessionParams params = arguments.createSessionParams(true);
+        assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(true));
+    }
+
+    @Test
+    public void testEndpointAndHost() {
+        add("host", "myhost");
+        add("port", "2345");
+        add("endpoint", "http://myendpoint:1234");
+        CommandLineArguments arguments = CommandLineArguments.build(asArray());
+        assertThat(arguments, is(nullValue())); // cannot have both endpoint and host
+    }
 }

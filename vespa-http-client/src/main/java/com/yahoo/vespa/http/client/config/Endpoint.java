@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.config;
 
 import java.io.Serializable;
+import java.net.URL;
 
 /**
  * Represents an endpoint, in most cases a JDisc container
@@ -32,6 +33,10 @@ public final class Endpoint implements Serializable {
      */
     public static Endpoint create(String hostname, int port, boolean useSsl) {
         return new Endpoint(hostname, port, useSsl);
+    }
+
+    public static Endpoint create(URL url) {
+        return new Endpoint(url.getHost(), url.getPort(), "https".equals(url.getProtocol()));
     }
 
     private static final long serialVersionUID = 4545345L;
