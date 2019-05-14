@@ -21,6 +21,7 @@ public class Endpoint {
     public static final String YAHOO_DNS_SUFFIX = ".vespa.yahooapis.com";
     public static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
     public static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
+    public static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
     private final URI url;
     private final Scope scope;
@@ -153,6 +154,8 @@ public class Endpoint {
             case Public:
             case vaas:
                 return PUBLIC_DNS_SUFFIX;
+            case PublicCd:
+                return PUBLIC_CD_DNS_SUFFIX;
             default: throw new IllegalArgumentException("No DNS suffix declared for system " + system);
         }
     }
