@@ -2,6 +2,7 @@ package ai.vespa.hosted.api;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.OptionalLong;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -15,9 +16,9 @@ public class DeploymentLog {
 
     private final List<Entry> entries;
     private final boolean active;
-    private final long last;
+    private final OptionalLong last;
 
-    public DeploymentLog(List<Entry> entries, boolean active, long last) {
+    public DeploymentLog(List<Entry> entries, boolean active, OptionalLong last) {
         this.entries = entries.stream().sorted(comparing(Entry::at)).collect(toUnmodifiableList());
         this.active = active;
         this.last = last;
@@ -31,7 +32,7 @@ public class DeploymentLog {
         return active;
     }
 
-    public long last() {
+    public OptionalLong last() {
         return last;
     }
 

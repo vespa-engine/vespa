@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -285,7 +286,8 @@ public abstract class ControllerHttpClient {
                 }));
         return new DeploymentLog(entries,
                                  rootObject.field("active").asBool(),
-                                 rootObject.field("lastId").asLong());
+                                 rootObject.field("lastId").valid() ? OptionalLong.of(rootObject.field("lastId").asLong())
+                                                                    : OptionalLong.empty());
     }
 
     private static Slime toSlime(byte[] data) {

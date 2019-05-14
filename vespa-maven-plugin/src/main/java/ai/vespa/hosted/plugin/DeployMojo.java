@@ -1,8 +1,10 @@
 package ai.vespa.hosted.plugin;
 
+import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Deployment;
 import ai.vespa.hosted.api.DeploymentLog;
 import ai.vespa.hosted.api.DeploymentResult;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -62,18 +64,31 @@ public class DeployMojo extends AbstractVespaMojo {
         DeploymentResult result = controller.deploy(deployment, id, zone);
         System.out.println(result.message());
 
-        if (follow) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
-            DeploymentLog log = controller.deploymentLog(id, zone, result.run());
-            do {
-                for (DeploymentLog.Entry entry : log.entries())
-                    System.out.printf("[%10s%10s]   %s\n",
-                                      entry.level().toUpperCase(),
-                                      formatter.format(entry.at()),
-                                      entry.message());
-                log = controller.deploymentLog(id, zone, result.run(), log.last());
+        if (follow) tailLogs(id, zone, result.run());
+    }
+
+    private void tailLogs(ApplicationId id, ZoneId zone, long run) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
+        long last = -1;
+        while (true) {
+            DeploymentLog log = controller.deploymentLog(id, zone, run, last);
+            for (DeploymentLog.Entry entry : log.entries())
+                System.out.printf("%8s%11s   %s\n",
+                                  "[" + entry.level().toUpperCase(),
+                                  formatter.format(entry.at()) + "]",
+                                  entry.message());
+            last = log.last().orElse(last);
+
+            if (!log.isActive())
+                break;
+
+            try {
+                Thread.sleep(1000);
             }
-            while (log.isActive());
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 
