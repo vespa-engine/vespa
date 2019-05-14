@@ -110,36 +110,26 @@ FieldReader::open(const vespalib::string &prefix,
 {
     vespalib::string name = prefix + "posocc.dat.compressed";
     FastOS_StatInfo statInfo;
-    bool statres;
 
-    statres = FastOS_File::Stat(name.c_str(), &statInfo);
+    bool statres = FastOS_File::Stat(name.c_str(), &statInfo);
     if (!statres) {
-        LOG(error,
-            "Could not stat compressed posocc file %s: %s",
-            name.c_str(), getLastErrorString().c_str());
+        LOG(error, "Could not stat compressed posocc file %s: %s", name.c_str(), getLastErrorString().c_str());
         return false;
     }
 
     _dictFile = std::make_unique<PageDict4FileSeqRead>();
     PostingListParams featureParams;
-    _oldposoccfile = makePosOccRead(name,
-                                    _dictFile.get(),
-                                    featureParams,
-                                    tuneFileRead);
+    _oldposoccfile = makePosOccRead(name, _dictFile.get(), featureParams, tuneFileRead);
     vespalib::string cname = prefix + "dictionary";
 
     if (!_dictFile->open(cname, tuneFileRead)) {
-        LOG(error,
-            "Could not open posocc count file %s for read",
-            cname.c_str());
+        LOG(error, "Could not open posocc count file %s for read", cname.c_str());
         return false;
     }
 
     // open posocc.dat
     if (!_oldposoccfile || !_oldposoccfile->open(name, tuneFileRead)) {
-        LOG(error,
-            "Could not open posocc file %s for read",
-            name.c_str());
+        LOG(error, "Could not open posocc file %s for read", name.c_str());
         return false;
     }
     _oldWordNum = noWordNum();
@@ -158,8 +148,7 @@ FieldReader::close()
     if (_oldposoccfile) {
         bool closeRes = _oldposoccfile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc file for read");
+            LOG(error, "Could not close posocc file for read");
             ret = false;
         }
         _oldposoccfile.reset();
@@ -167,8 +156,7 @@ FieldReader::close()
     if (_dictFile) {
         bool closeRes = _dictFile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc file for read");
+            LOG(error, "Could not close posocc file for read");
             ret = false;
         }
         _dictFile.reset();

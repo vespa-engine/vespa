@@ -17,6 +17,7 @@ LOG_SETUP("feed_and_search_test");
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <sstream>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/common/documentsummary.h>
@@ -144,6 +145,7 @@ void Test::testSearch(Searchable &source,
 // again.
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     Schema schema = getSchema();
+    vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
     search::SequencedTaskExecutor indexFieldInverter(2);
     search::SequencedTaskExecutor indexFieldWriter(2);
     MemoryIndex memory_index(schema, indexFieldInverter, indexFieldWriter);
@@ -167,8 +169,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     const uint64_t num_words = memory_index.getNumWords();
     search::TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    index_builder.open(docIdLimit, num_words, tuneFileIndexing,
-                       fileHeaderContext);
+    index_builder.open(docIdLimit, num_words, tuneFileIndexing, fileHeaderContext);
     memory_index.dump(index_builder);
     index_builder.close();
 
@@ -177,17 +178,18 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     std::vector<string> fusionInputs;
     fusionInputs.push_back(index_dir);
     uint32_t fusionDocIdLimit = 0;
-    typedef search::diskindex::Fusion FastS_Fusion;
+    using Fusion = search::diskindex::Fusion;
     bool fret1 = DocumentSummary::readDocIdLimit(index_dir, fusionDocIdLimit);
     ASSERT_TRUE(fret1);
     SelectorArray selector(fusionDocIdLimit, 0);
-    bool fret2 = FastS_Fusion::merge(schema,
-                                    index_dir2,
-                                    fusionInputs,
-                                    selector,
-                                    false /* dynamicKPosOccFormat */,
-                                     tuneFileIndexing,
-                                     fileHeaderContext);
+    bool fret2 = Fusion::merge(schema,
+                              index_dir2,
+                              fusionInputs,
+                              selector,
+                              false /* dynamicKPosOccFormat */,
+                              tuneFileIndexing,
+                              fileHeaderContext,
+                              sharedExecutor);
     ASSERT_TRUE(fret2);
 
     // Fusion test with all docs removed in output (doesn't affect word list)
@@ -198,13 +200,14 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     bool fret3 = DocumentSummary::readDocIdLimit(index_dir, fusionDocIdLimit);
     ASSERT_TRUE(fret3);
     SelectorArray selector2(fusionDocIdLimit, 1);
-    bool fret4 = FastS_Fusion::merge(schema,
-                                    index_dir3,
-                                    fusionInputs,
-                                    selector2,
-                                    false /* dynamicKPosOccFormat */,
-                                     tuneFileIndexing,
-                                     fileHeaderContext);
+    bool fret4 = Fusion::merge(schema,
+                              index_dir3,
+                              fusionInputs,
+                              selector2,
+                              false /* dynamicKPosOccFormat */,
+                              tuneFileIndexing,
+                              fileHeaderContext,
+                              sharedExecutor);
     ASSERT_TRUE(fret4);
 
     // Fusion test with all docs removed in input (affects word list)
@@ -215,13 +218,14 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     bool fret5 = DocumentSummary::readDocIdLimit(index_dir3, fusionDocIdLimit);
     ASSERT_TRUE(fret5);
     SelectorArray selector3(fusionDocIdLimit, 0);
-    bool fret6 = FastS_Fusion::merge(schema,
-                                    index_dir4,
-                                    fusionInputs,
-                                    selector3,
-                                    false /* dynamicKPosOccFormat */,
-                                     tuneFileIndexing,
-                                     fileHeaderContext);
+    bool fret6 = Fusion::merge(schema,
+                              index_dir4,
+                              fusionInputs,
+                              selector3,
+                              false /* dynamicKPosOccFormat */,
+                              tuneFileIndexing,
+                              fileHeaderContext,
+                              sharedExecutor);
     ASSERT_TRUE(fret6);
 
     DiskIndex disk_index(index_dir);

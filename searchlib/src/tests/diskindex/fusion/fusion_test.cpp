@@ -16,6 +16,7 @@
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -37,7 +38,6 @@ using search::index::schema::DataType;
 using namespace index;
 
 namespace diskindex {
-
 
 class Test : public vespalib::TestApp
 {
@@ -62,8 +62,7 @@ myPushDocument(DocumentInverter &inv, FieldIndexCollection &fieldIndexes)
 }
 
 vespalib::string
-toString(FieldPositionsIterator posItr,
-         bool hasElements = false, bool hasWeights = false)
+toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeights = false)
 {
     vespalib::asciistream ss;
     ss << "{";
@@ -121,9 +120,7 @@ toString(DocIdAndFeatures &features)
 
 
 void
-validateDiskIndex(DiskIndex &dw,
-                  bool f2HasElements,
-                  bool f3HasWeights)
+validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
 {
     typedef DiskIndex::LookupResult LR;
     typedef index::PostingListHandle PH;
@@ -239,16 +236,13 @@ validateDiskIndex(DiskIndex &dw,
 
 
 void
-Test::requireThatFusionIsWorking(const vespalib::string &prefix,
-                                 bool directio,
-                                 bool readmmap)
+Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap)
 {
     Schema schema;
     Schema schema2;
     Schema schema3;
     for (SchemaUtil::IndexIterator it(getSchema()); it.isValid(); ++it) {
-        const Schema::IndexField &iField =
-            _schema.getIndexField(it.getIndex());
+        const Schema::IndexField &iField = _schema.getIndexField(it.getIndex());
         schema.addIndexField(Schema::IndexField(iField.getName(),
                                      iField.getDataType(),
                                      iField.getCollectionType()));
@@ -350,6 +344,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
     EXPECT_TRUE(FileKit::hasStamp(tsName));
     EXPECT_TRUE(FileKit::removeStamp(tsName));
     EXPECT_FALSE(FileKit::hasStamp(tsName));
+    vespalib::ThreadStackExecutor executor(4, 0x10000);
 
     do {
         DiskIndex dw2(prefix + "dump2");
@@ -362,12 +357,9 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
-        if (!EXPECT_TRUE(Fusion::merge(schema,
-                                       prefix + "dump3",
-                                       sources, selector,
+        if (!EXPECT_TRUE(Fusion::merge(schema, prefix + "dump3", sources, selector,
                                        dynamicKPosOcc,
-                                       tuneFileIndexing,
-                                       fileHeaderContext)))
+                                       tuneFileIndexing,fileHeaderContext, executor)))
             return;
     } while (0);
     do {
@@ -380,12 +372,9 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        if (!EXPECT_TRUE(Fusion::merge(schema2,
-                                       prefix + "dump4",
-                                       sources, selector,
+        if (!EXPECT_TRUE(Fusion::merge(schema2, prefix + "dump4", sources, selector,
                                        dynamicKPosOcc,
-                                       tuneFileIndexing,
-                                       fileHeaderContext)))
+                                       tuneFileIndexing, fileHeaderContext, executor)))
             return;
     } while (0);
     do {
@@ -398,12 +387,9 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        if (!EXPECT_TRUE(Fusion::merge(schema3,
-                                       prefix + "dump5",
-                                       sources, selector,
+        if (!EXPECT_TRUE(Fusion::merge(schema3, prefix + "dump5", sources, selector,
                                        dynamicKPosOcc,
-                                       tuneFileIndexing,
-                                       fileHeaderContext)))
+                                       tuneFileIndexing, fileHeaderContext, executor)))
             return;
     } while (0);
     do {
@@ -416,12 +402,9 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        if (!EXPECT_TRUE(Fusion::merge(schema,
-                                       prefix + "dump6",
-                                       sources, selector,
+        if (!EXPECT_TRUE(Fusion::merge(schema, prefix + "dump6", sources, selector,
                                        !dynamicKPosOcc,
-                                       tuneFileIndexing,
-                                       fileHeaderContext)))
+                                       tuneFileIndexing, fileHeaderContext, executor)))
             return;
     } while (0);
     do {
@@ -434,12 +417,9 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
-        if (!EXPECT_TRUE(Fusion::merge(schema,
-                                       prefix + "dump3",
-                                       sources, selector,
+        if (!EXPECT_TRUE(Fusion::merge(schema, prefix + "dump3", sources, selector,
                                        dynamicKPosOcc,
-                                       tuneFileIndexing,
-                                       fileHeaderContext)))
+                                       tuneFileIndexing, fileHeaderContext, executor)))
             return;
     } while (0);
     do {

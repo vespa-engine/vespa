@@ -14,8 +14,7 @@ namespace search::diskindex {
 using vespalib::getLastErrorString;
 using common::FileHeaderContext;
 
-FieldWriter::FieldWriter(uint32_t docIdLimit,
-                         uint64_t numWordIds)
+FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds)
     : _wordNum(noWordNum()),
       _prevDocId(0),
       _dictFile(),
@@ -50,10 +49,7 @@ FieldWriter::open(const vespalib::string &prefix,
     PostingListParams featureParams;
     PostingListParams countParams;
 
-    diskindex::setupDefaultPosOccParameters(&countParams,
-            &params,
-            _numWordIds,
-            _docIdLimit);
+    diskindex::setupDefaultPosOccParameters(&countParams, &params, _numWordIds, _docIdLimit);
 
     if (minSkipDocs != 0) {
         countParams.set("minSkipDocs", minSkipDocs);
@@ -70,12 +66,7 @@ FieldWriter::open(const vespalib::string &prefix,
     _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
-    _posoccfile = diskindex::makePosOccWrite(_dictFile.get(),
-                                             dynamicKPosOccFormat,
-                                             params,
-                                             featureParams,
-                                             schema,
-                                             indexId);
+    _posoccfile = makePosOccWrite(_dictFile.get(), dynamicKPosOccFormat, params, featureParams, schema, indexId);
     vespalib::string cname = _prefix + "dictionary";
 
     // Open output dictionary file
@@ -149,8 +140,7 @@ FieldWriter::close()
     if (_posoccfile) {
         bool closeRes = _posoccfile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc file for write");
+            LOG(error, "Could not close posocc file for write");
             ret = false;
         }
         _posoccfile.reset();
@@ -158,8 +148,7 @@ FieldWriter::close()
     if (_dictFile) {
         bool closeRes = _dictFile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc count file for write");
+            LOG(error, "Could not close posocc count file for write");
             ret = false;
         }
         _dictFile.reset();

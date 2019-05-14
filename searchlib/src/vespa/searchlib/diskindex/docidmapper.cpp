@@ -2,16 +2,14 @@
 
 #include "docidmapper.h"
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/searchlib/common/bitvector.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 
 #define NO_DOC static_cast<uint32_t>(-1)
 
 namespace search::diskindex {
 
 DocIdMapping::DocIdMapping()
-    : _docIdLimit(0u),
-      _selector(nullptr),
+    : _selector(nullptr),
+      _docIdLimit(0u),
       _selectorId(0)
 {
 }
@@ -36,9 +34,7 @@ DocIdMapping::setup(uint32_t docIdLimit)
 
 
 void
-DocIdMapping::setup(uint32_t docIdLimit,
-                    const SelectorArray *selector,
-                    uint8_t selectorId)
+DocIdMapping::setup(uint32_t docIdLimit, const SelectorArray *selector, uint8_t selectorId)
 {
     _docIdLimit = docIdLimit;
     _selector = selector;

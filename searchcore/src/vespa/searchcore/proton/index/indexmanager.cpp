@@ -66,7 +66,7 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, serialNum);
     const bool dynamic_k_doc_pos_occ_format = false;
     return Fusion::merge(schema, outputDir, sources, selectorArray, dynamic_k_doc_pos_occ_format,
-                         _tuneFileIndexing, fileHeaderContext);
+                         _tuneFileIndexing, fileHeaderContext, _threadingService.shared());
 }
 
 
