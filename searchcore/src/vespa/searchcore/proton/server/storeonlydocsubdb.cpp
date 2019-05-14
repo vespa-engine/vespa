@@ -77,7 +77,6 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     const IGetSerialNum &getSerialNum,
                                     const FileHeaderContext &fileHeaderContext,
                                     searchcorespi::index::IThreadingService &writeService,
-                                    vespalib::ThreadStackExecutorBase &sharedExecutor,
                                     std::shared_ptr<BucketDBOwner> bucketDB,
                                     bucketdb::IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
                                     DocumentDBTaggedMetrics &metrics,
@@ -88,7 +87,6 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
       _getSerialNum(getSerialNum),
       _fileHeaderContext(fileHeaderContext),
       _writeService(writeService),
-      _sharedExecutor(sharedExecutor),
       _bucketDB(bucketDB),
       _bucketDBHandlerInitializer(bucketDBHandlerInitializer),
       _metrics(metrics),
@@ -114,7 +112,6 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _rSummaryMgr(),
       _summaryAdapter(),
       _writeService(ctx._writeService),
-      _sharedExecutor(ctx._sharedExecutor),
       _metrics(ctx._metrics),
       _iSearchView(),
       _iFeedView(),
@@ -234,7 +231,7 @@ createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCf
     GrowStrategy grow = _attributeGrow;
     vespalib::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
-        (grow, baseDir, getSubDbName(), _docTypeName, _sharedExecutor,
+        (grow, baseDir, getSubDbName(), _docTypeName, _writeService.shared(),
          storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, bucketizer, result);
 }
 

@@ -109,7 +109,6 @@ public:
         const IGetSerialNum &_getSerialNum;
         const search::common::FileHeaderContext &_fileHeaderContext;
         searchcorespi::index::IThreadingService &_writeService;
-        vespalib::ThreadStackExecutorBase &_sharedExecutor;
         std::shared_ptr<BucketDBOwner> _bucketDB;
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
         DocumentDBTaggedMetrics &_metrics;
@@ -121,7 +120,6 @@ public:
                 const IGetSerialNum &getSerialNum,
                 const search::common::FileHeaderContext &fileHeaderContext,
                 searchcorespi::index::IThreadingService &writeService,
-                vespalib::ThreadStackExecutorBase &sharedExecutor,
                 std::shared_ptr<BucketDBOwner> bucketDB,
                 bucketdb::IBucketDBHandlerInitializer &
                 bucketDBHandlerInitializer,
@@ -152,7 +150,6 @@ private:
     ISummaryAdapter::SP           _summaryAdapter;
 protected:
     searchcorespi::index::IThreadingService &_writeService;
-    vespalib::ThreadStackExecutorBase       &_sharedExecutor;
     DocumentDBTaggedMetrics                 &_metrics;
     vespalib::VarHolder<ISearchHandler::SP> _iSearchView;
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;

@@ -101,7 +101,6 @@ public:
             const DocTypeName &docTypeName,
             searchcorespi::index::IThreadingService &writeService,
             vespalib::ThreadExecutor &warmupExecutor,
-            vespalib::ThreadStackExecutorBase &sharedExecutor,
             const search::common::FileHeaderContext &fileHeaderContext,
             MetricsWireService &metricsWireService,
             DocumentDBTaggedMetrics &metrics,
