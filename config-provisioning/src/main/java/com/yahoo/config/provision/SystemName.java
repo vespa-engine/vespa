@@ -23,6 +23,9 @@ public enum SystemName {
     /** System accessible for the public */
     Public,
 
+    /** Continuous deployment system for testing the Public system */
+    PublicCd,
+
     /** VaaS */
     vaas; // TODO: Remove this and use public everywhere
 
@@ -31,14 +34,25 @@ public enum SystemName {
     }
 
     public static SystemName from(String value) {
-        switch (value) {
+        switch (value.toLowerCase()) {
             case "dev": return dev;
             case "cd": return cd;
             case "main": return main;
-            case "public":
-            case "Public": return Public;
+            case "public": return Public;
+            case "publiccd": return PublicCd;
             case "vaas": return vaas;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
+        }
+    }
+
+    public String value() {
+        switch (this) {
+            case dev: return "dev";
+            case cd: return "cd";
+            case main: return "main";
+            case Public: return "public";
+            case PublicCd: return "publiccd";
+            default : throw new IllegalStateException();
         }
     }
 

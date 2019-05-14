@@ -725,7 +725,7 @@ public class InternalStepRunner implements StepRunner {
 
         root.setString("application", id.serializedForm());
         root.setString("zone", testerZone.value());
-        root.setString("system", system.name());
+        root.setString("system", system.value());
 
         Cursor endpointsObject = root.setObject("endpoints");
         deployments.forEach((zone, endpoints) -> {

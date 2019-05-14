@@ -280,7 +280,7 @@ public class InternalStepRunnerTest {
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
         assertEquals(appId.serializedForm(), configObject.field("application").asString());
         assertEquals(JobType.systemTest.zone(tester.tester().controller().system()).value(), configObject.field("zone").asString());
-        assertEquals(tester.tester().controller().system().name(), configObject.field("system").asString());
+        assertEquals(tester.tester().controller().system().value(), configObject.field("system").asString());
         assertEquals(1, configObject.field("endpoints").children());
         assertEquals(1, configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).entries());
         configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->

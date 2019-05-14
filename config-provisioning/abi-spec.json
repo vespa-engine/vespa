@@ -754,6 +754,7 @@
       "public static com.yahoo.config.provision.SystemName valueOf(java.lang.String)",
       "public static com.yahoo.config.provision.SystemName defaultSystem()",
       "public static com.yahoo.config.provision.SystemName from(java.lang.String)",
+      "public java.lang.String value()",
       "public static java.util.Set all()"
     ],
     "fields": [
@@ -761,6 +762,7 @@
       "public static final enum com.yahoo.config.provision.SystemName cd",
       "public static final enum com.yahoo.config.provision.SystemName main",
       "public static final enum com.yahoo.config.provision.SystemName Public",
+      "public static final enum com.yahoo.config.provision.SystemName PublicCd",
       "public static final enum com.yahoo.config.provision.SystemName vaas"
     ]
   },

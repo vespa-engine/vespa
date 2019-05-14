@@ -53,7 +53,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
 
         DefaultTimes(ConfigserverConfig configserverConfig) {
             this.defaultInterval = Duration.ofMinutes(configserverConfig.maintainerIntervalMinutes());
-            boolean isCd = configserverConfig.system().equals(SystemName.cd.name());
+            boolean isCd = configserverConfig.system().equals(SystemName.cd.value());
             // TODO: Want job control or feature flag to control when to run this, for now use a very
             // long interval to avoid running the maintainer except in CD
             this.tenantsMaintainerInterval = isCd
