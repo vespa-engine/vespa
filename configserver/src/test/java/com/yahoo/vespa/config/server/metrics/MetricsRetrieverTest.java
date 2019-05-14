@@ -25,14 +25,14 @@ import static org.junit.Assert.*;
 /**
  * @author olaa
  */
-public class MetricsAggregatorTest {
+public class MetricsRetrieverTest {
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
 
     @Test
     public void testMetricAggregation() throws IOException {
-        MetricsAggregator metricsAggregator = new MetricsAggregator();
+        MetricsRetriever metricsRetriever = new MetricsRetriever();
 
         ApplicationId applicationId = ApplicationId.from("tenant", "app", "default");
         Map<String, List<URI>> clusterHosts = Map.of(
@@ -56,7 +56,7 @@ public class MetricsAggregatorTest {
                         .withStatus(200)
                         .withBody(metricsString(1,2,3,4,5))));
 
-        MetricsResponse metricsResponse = metricsAggregator.aggregateAllMetrics(applications);
+        MetricsResponse metricsResponse = metricsRetriever.retrieveAllMetrics(applications);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         metricsResponse.render(bos);
         String expectedResponse = "[\n" +
@@ -65,20 +65,24 @@ public class MetricsAggregatorTest {
                 "  \"clusters\": [\n" +
                 "   {\n" +
                 "    \"clusterName\": \"cluster1\",\n" +
-                "    \"queriesPerSecond\": 2.8666666666666667,\n" +
-                "    \"writesPerSecond\": 1.4333333333333333,\n" +
-                "    \"documentCount\": 6000.0,\n" +
-                "    \"queryLatencyMillis\": 116.27906976744185,\n" +
-                "    \"feedLatency\": 69.76744186046511,\n" +
+                "    \"metrics\": {\n" +
+                "     \"queriesPerSecond\": 2.8666666666666667,\n" +
+                "     \"writesPerSecond\": 1.4333333333333333,\n" +
+                "     \"documentCount\": 6000.0,\n" +
+                "     \"queryLatencyMillis\": 116.27906976744185,\n" +
+                "     \"feedLatency\": 69.76744186046511\n" +
+                "    },\n" +
                 "    \"timestamp\": 1557306075\n" +
                 "   },\n" +
                 "   {\n" +
                 "    \"clusterName\": \"cluster2\",\n" +
-                "    \"queriesPerSecond\": 1.4333333333333333,\n" +
-                "    \"writesPerSecond\": 0.7166666666666667,\n" +
-                "    \"documentCount\": 3000.0,\n" +
-                "    \"queryLatencyMillis\": 116.27906976744185,\n" +
-                "    \"feedLatency\": 69.76744186046511,\n" +
+                "    \"metrics\": {\n" +
+                "     \"queriesPerSecond\": 1.4333333333333333,\n" +
+                "     \"writesPerSecond\": 0.7166666666666667,\n" +
+                "     \"documentCount\": 3000.0,\n" +
+                "     \"queryLatencyMillis\": 116.27906976744185,\n" +
+                "     \"feedLatency\": 69.76744186046511\n" +
+                "    },\n" +
                 "    \"timestamp\": 1557306075\n" +
                 "   }\n" +
                 "  ]\n" +

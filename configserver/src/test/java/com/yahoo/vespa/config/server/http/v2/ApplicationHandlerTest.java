@@ -35,8 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;

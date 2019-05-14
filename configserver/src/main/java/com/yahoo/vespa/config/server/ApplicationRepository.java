@@ -43,8 +43,7 @@ import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.metrics.Metrics;
-import com.yahoo.vespa.config.server.metrics.MetricsAggregator;
+import com.yahoo.vespa.config.server.metrics.MetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -588,9 +587,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Metrics ------------------------------------------------------------------------
 
     public HttpResponse getMetrics() {
-        MetricsAggregator metricsAggregator = new MetricsAggregator();
+        MetricsRetriever metricsRetriever = new MetricsRetriever();
         Map<ApplicationId, Map<String, List<URI>>> applicationHosts = getHostsPerApplication();
-        return metricsAggregator.aggregateAllMetrics(applicationHosts);
+        return metricsRetriever.retrieveAllMetrics(applicationHosts);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------

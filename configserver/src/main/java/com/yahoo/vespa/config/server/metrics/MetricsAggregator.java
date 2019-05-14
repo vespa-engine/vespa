@@ -1,107 +1,90 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.net.URI;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
+import java.util.Optional;
 
 /**
  * @author olaa
  */
 public class MetricsAggregator {
 
-    private static final Logger logger = Logger.getLogger(MetricsAggregator.class.getName());
-    HttpClient httpClient = HttpClientBuilder.create().build();
+    double feedLatencySum;
+    double feedLatencyCount;
+    double qrQueryLatencySum;
+    double qrQueryLatencyCount;
+    double containerQueryLatencySum;
+    double containerQueryLatencyCount;
+    double documentCount;
+    Instant timestamp;
 
-    public MetricsResponse aggregateAllMetrics(Map<ApplicationId, Map<String, List<URI>>> applicationHosts) {
-        Map<ApplicationId, Map<String, Metrics>> aggregatedMetrics = applicationHosts.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> aggregateMetricsByCluster(e.getValue())));
-        return new MetricsResponse(200, aggregatedMetrics);
+    public void addFeedLatencySum(double feedLatencySum) {
+        this.feedLatencySum += feedLatencySum;
     }
 
-    private Map<String, Metrics> aggregateMetricsByCluster(Map<String, List<URI>> clusterHosts) {
-        return clusterHosts.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> aggregateMetrics(e.getValue())
-                )
-            );
+    public void addFeedLatencyCount(double feedLatencyCount) {
+        this.feedLatencyCount += feedLatencyCount;
     }
 
-    private Metrics aggregateMetrics(List<URI> hosts) {
-        Metrics clusterMetrics = new Metrics();
-        hosts.stream()
-            .forEach(host -> accumulateMetrics(host, clusterMetrics));
-        return clusterMetrics;
+    public void addQrQueryLatencyCount(double qrQueryLatencyCount) {
+        this.qrQueryLatencyCount += qrQueryLatencyCount;
     }
 
-    private void accumulateMetrics(URI hostURI, Metrics metrics) {
-            Slime responseBody = doMetricsRequest(hostURI);
-            Inspector services = responseBody.get().field("services");
-            services.traverse((ArrayTraverser) (i, servicesInspector) -> {
-                parseService(servicesInspector, metrics);
-
-            });
-
+    public void addQrQueryLatencySum(double qrQueryLatencySum) {
+        this.qrQueryLatencySum += qrQueryLatencySum;
     }
 
-    private Slime doMetricsRequest(URI hostURI) {
-        HttpGet get = new HttpGet(hostURI);
-        try {
-            HttpResponse response = httpClient.execute(get);
-            InputStream is = response.getEntity().getContent();
-            Slime slime = SlimeUtils.jsonToSlime(is.readAllBytes());
-            is.close();
-            return slime;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    public void addContainerQueryLatencyCount(double containerQueryLatencyCount) {
+        this.containerQueryLatencyCount += containerQueryLatencyCount;
+    }
+
+    public void addContainerQueryLatencySum(double containerQueryLatencySum) {
+        this.containerQueryLatencySum += containerQueryLatencySum;
+    }
+
+    public void addDocumentCount(double documentCount) {
+        this.documentCount += documentCount;
+    }
+
+    public Optional<Double> aggregateFeedLatency() {
+        if (isZero(feedLatencySum) || isZero(feedLatencyCount)) return Optional.empty();
+        return Optional.of(feedLatencySum / feedLatencyCount);
+    }
+
+    public Optional<Double> aggregateFeedRate() {
+        if (isZero(feedLatencyCount)) return Optional.empty();
+        return Optional.of(feedLatencyCount / 60);
+    }
+
+    public Optional<Double> aggregateQueryLatency() {
+        if (isZero(containerQueryLatencyCount, containerQueryLatencySum) && isZero(qrQueryLatencyCount, qrQueryLatencySum)) return Optional.empty();
+        return Optional.of((containerQueryLatencySum + qrQueryLatencySum) / (containerQueryLatencyCount + qrQueryLatencyCount));
+    }
+
+    public Optional<Double> aggregateQueryRate() {
+        if (isZero(containerQueryLatencyCount) && isZero(qrQueryLatencyCount)) return Optional.empty();
+        return Optional.of((containerQueryLatencyCount + qrQueryLatencyCount) / 60);
+    }
+
+    public Optional<Double> aggregateDocumentCount() {
+        if (isZero(documentCount)) return Optional.empty();
+        return Optional.of(documentCount);
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    private boolean isZero(double... values) {
+        boolean isZero = false;
+        for (double value : values) {
+            isZero |= Math.abs(value) < 0.001;
         }
-    }
-
-    private void parseService(Inspector service, Metrics metrics) {
-        String serviceName = service.field("name").asString();
-        Instant timestamp = Instant.ofEpochSecond(service.field("timestamp").asLong());
-        metrics.setTimestamp(timestamp);
-        service.field("metrics").traverse((ArrayTraverser) (i, m) -> {
-            Inspector values = m.field("values");
-            switch (serviceName) {
-                case "container":
-                    metrics.addContainerQueryLatencyCount(values.field("query_latency.count").asDouble());
-                    metrics.addContainerQueryLatencySum(values.field("query_latency.sum").asDouble());
-                    metrics.addFeedLatencyCount(values.field("feed_latency.count").asDouble());
-                    metrics.addFeedLatencySum(values.field("feed_latency.sum").asDouble());
-                case "qrserver":
-                    metrics.addQrQueryLatencyCount(values.field("query_latency.count").asDouble());
-                    metrics.addQrQueryLatencySum(values.field("query_latency.sum").asDouble());
-                case "distributor":
-                    metrics.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
-            }
-        });
-
-    }
-
-    private void parseContainerMetrics(Inspector containerInspector, Metrics metrics) {
-
+        return isZero;
     }
 
 }
