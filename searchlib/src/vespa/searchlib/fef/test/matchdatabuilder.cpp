@@ -29,12 +29,12 @@ TermFieldMatchData *
 MatchDataBuilder::getTermFieldMatchData(uint32_t termId, uint32_t fieldId)
 {
     const ITermData *term = _queryEnv.getTerm(termId);
-    if (term == NULL) {
-        return NULL;
+    if (term == nullptr) {
+        return nullptr;
     }
     const ITermFieldData *field = term->lookupField(fieldId);
-    if (field == NULL || field->getHandle() >= _data.getNumTermFields()) {
-        return NULL;
+    if (field == nullptr || field->getHandle() >= _data.getNumTermFields()) {
+        return nullptr;
     }
     return _data.resolveTermField(field->getHandle());
 }
@@ -44,7 +44,7 @@ bool
 MatchDataBuilder::setFieldLength(const vespalib::string &fieldName, uint32_t length)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
-    if (info == NULL) {
+    if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
     }
@@ -56,7 +56,7 @@ bool
 MatchDataBuilder::addElement(const vespalib::string &fieldName, int32_t weight, uint32_t length)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
-    if (info == NULL) {
+    if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
     }
@@ -68,7 +68,7 @@ bool
 MatchDataBuilder::addOccurence(const vespalib::string &fieldName, uint32_t termId, uint32_t pos, uint32_t element)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
-    if (info == NULL) {
+    if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
     }
@@ -77,7 +77,7 @@ MatchDataBuilder::addOccurence(const vespalib::string &fieldName, uint32_t termI
         return false;
     }
     const ITermFieldData *tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
-    if (tfd == NULL) {
+    if (tfd == nullptr) {
         LOG(error, "Field '%s' is not searched by the given term.",
             fieldName.c_str());
         return false;
@@ -90,7 +90,7 @@ bool
 MatchDataBuilder::setWeight(const vespalib::string &fieldName, uint32_t termId, int32_t weight)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
-    if (info == NULL) {
+    if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
     }
@@ -99,7 +99,7 @@ MatchDataBuilder::setWeight(const vespalib::string &fieldName, uint32_t termId, 
         return false;
     }
     const ITermFieldData *tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
-    if (tfd == NULL) {
+    if (tfd == nullptr) {
         LOG(error, "Field '%s' is not searched by the given term.",
             fieldName.c_str());
         return false;
@@ -127,7 +127,7 @@ MatchDataBuilder::apply(uint32_t docId)
             TermFieldMatchData *match = getTermFieldMatchData(termId, fieldId);
 
             // Make sure there is a corresponding term field match data object.
-            if (match == NULL) {
+            if (match == nullptr) {
                 LOG(error, "Term id '%u' is invalid.", termId);
                 return false;
             }
@@ -142,7 +142,7 @@ MatchDataBuilder::apply(uint32_t docId)
 
             // For log, attempt to lookup field name.
             const FieldInfo *info = _queryEnv.getIndexEnv()->getField(fieldId);
-            vespalib::string name = info != NULL ? info->name() : vespalib::make_string("%d", fieldId).c_str();
+            vespalib::string name = info != nullptr ? info->name() : vespalib::make_string("%d", fieldId).c_str();
 
             // For each occurence of that term, in that field, do
             for (Positions::const_iterator occ_iter = field_iter->second.begin();

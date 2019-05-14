@@ -4,7 +4,9 @@
 #include "agefeature.h"
 #include "attributefeature.h"
 #include "attributematchfeature.h"
+#include "bm25_feature.h"
 #include "closenessfeature.h"
+#include "constant_feature.h"
 #include "debug_attribute_wait.h"
 #include "debug_wait.h"
 #include "distancefeature.h"
@@ -36,9 +38,9 @@
 #include "querycompletenessfeature.h"
 #include "queryfeature.h"
 #include "querytermcountfeature.h"
-#include "randomfeature.h"
 #include "random_normal_feature.h"
 #include "random_normal_stable_feature.h"
+#include "randomfeature.h"
 #include "rankingexpressionfeature.h"
 #include "raw_score_feature.h"
 #include "reverseproximityfeature.h"
@@ -52,7 +54,6 @@
 #include "terminfofeature.h"
 #include "text_similarity_feature.h"
 #include "valuefeature.h"
-#include "constant_feature.h"
 
 #include "max_reduce_prod_join_replacer.h"
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
@@ -69,27 +70,28 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(Blueprint::SP(new AgeBlueprint()));
     registry.addPrototype(Blueprint::SP(new AttributeBlueprint()));
     registry.addPrototype(Blueprint::SP(new AttributeMatchBlueprint()));
+    registry.addPrototype(Blueprint::SP(new Bm25Blueprint()));
     registry.addPrototype(Blueprint::SP(new ClosenessBlueprint()));
-    registry.addPrototype(Blueprint::SP(new MatchCountBlueprint()));
-    registry.addPrototype(Blueprint::SP(new DistanceBlueprint()));
-    registry.addPrototype(Blueprint::SP(new DistanceToPathBlueprint()));
     registry.addPrototype(Blueprint::SP(new DebugAttributeWaitBlueprint()));
     registry.addPrototype(Blueprint::SP(new DebugWaitBlueprint()));
+    registry.addPrototype(Blueprint::SP(new DistanceBlueprint()));
+    registry.addPrototype(Blueprint::SP(new DistanceToPathBlueprint()));
     registry.addPrototype(Blueprint::SP(new DotProductBlueprint()));
     registry.addPrototype(Blueprint::SP(new ElementCompletenessBlueprint()));
     registry.addPrototype(Blueprint::SP(new ElementSimilarityBlueprint()));
     registry.addPrototype(Blueprint::SP(new EuclideanDistanceBlueprint()));
     registry.addPrototype(Blueprint::SP(new FieldInfoBlueprint()));
-    registry.addPrototype(Blueprint::SP(new FlowCompletenessBlueprint()));
     registry.addPrototype(Blueprint::SP(new FieldLengthBlueprint()));
     registry.addPrototype(Blueprint::SP(new FieldMatchBlueprint()));
     registry.addPrototype(Blueprint::SP(new FieldTermMatchBlueprint()));
     registry.addPrototype(Blueprint::SP(new FirstPhaseBlueprint()));
+    registry.addPrototype(Blueprint::SP(new FlowCompletenessBlueprint()));
     registry.addPrototype(Blueprint::SP(new ForeachBlueprint()));
     registry.addPrototype(Blueprint::SP(new FreshnessBlueprint()));
     registry.addPrototype(Blueprint::SP(new ItemRawScoreBlueprint()));
-    registry.addPrototype(Blueprint::SP(new MatchesBlueprint()));
     registry.addPrototype(Blueprint::SP(new MatchBlueprint()));
+    registry.addPrototype(Blueprint::SP(new MatchCountBlueprint()));
+    registry.addPrototype(Blueprint::SP(new MatchesBlueprint()));
     registry.addPrototype(Blueprint::SP(new NativeAttributeMatchBlueprint()));
     registry.addPrototype(Blueprint::SP(new NativeDotProductBlueprint()));
     registry.addPrototype(Blueprint::SP(new NativeFieldMatchBlueprint()));
