@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -18,9 +19,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,6 +35,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -47,6 +49,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTes
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -203,6 +206,32 @@ public class InternalStepRunnerTest {
         tester.applications().deactivate(appId, JobType.systemTest.zone(tester.tester().controller().system()));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+    }
+
+    @Test
+    public void alternativeEndpointsAreDetected() {
+        tester.newRun(JobType.systemTest);
+        tester.runner().run();;
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.tester().controller().system()));
+        tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(tester.tester().controller().system()));
+        assertEquals(unfinished, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installTester));
+
+        tester.tester().controller().curator().writeRoutingPolicies(appId, Set.of(new RoutingPolicy(appId,
+                                                                                                    ClusterSpec.Id.from("default"),
+                                                                                                    JobType.systemTest.zone(tester.tester().controller().system()),
+                                                                                                    HostName.from("host"),
+                                                                                                    Optional.empty(),
+                                                                                                    emptySet())));
+        tester.tester().controller().curator().writeRoutingPolicies(testerId.id(), Set.of(new RoutingPolicy(testerId.id(),
+                                                                                                            ClusterSpec.Id.from("default"),
+                                                                                                            JobType.systemTest.zone(tester.tester().controller().system()),
+                                                                                                            HostName.from("host"),
+                                                                                                            Optional.empty(),
+                                                                                                            emptySet())));
+        tester.runner().run();;
+        assertEquals(succeeded, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(succeeded, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installTester));
     }
 
     @Test

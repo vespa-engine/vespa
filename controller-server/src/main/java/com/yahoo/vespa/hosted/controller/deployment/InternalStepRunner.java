@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -626,10 +627,17 @@ public class InternalStepRunner implements StepRunner {
     /** Returns all endpoints for all current deployments of the given real application. */
     private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
-        for (ZoneId zone : zones)
-            controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
-                      .filter(endpoints -> ! endpoints.isEmpty())
-                      .ifPresent(endpoints -> deployments.put(zone, endpoints));
+        for (ZoneId zone : zones) {
+            Set<RoutingPolicy> policies = controller.applications().routingPolicies(new DeploymentId(id, zone));
+            if ( ! policies.isEmpty())
+                deployments.put(zone, policies.stream()
+                                              .map(policy -> policy.endpointIn(controller.system()).url())
+                                              .collect(Collectors.toUnmodifiableList()));
+            else
+                controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+                          .filter(endpoints -> ! endpoints.isEmpty())
+                          .ifPresent(endpoints -> deployments.put(zone, endpoints));
+        }
         return deployments.build();
     }
 
