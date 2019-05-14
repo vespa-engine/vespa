@@ -10,13 +10,13 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneFilterMock;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
@@ -42,7 +42,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Inject
     public ZoneRegistryMock(ConfigserverConfig config) {
-        this(SystemName.valueOf(config.system()));
+        this(SystemName.from(config.system()));
     }
 
     public ZoneRegistryMock() {
