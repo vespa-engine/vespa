@@ -46,7 +46,7 @@ public class SubmitMojo extends AbstractVespaMojo {
                                                Paths.get(applicationTestZip),
                                                projectId == null ? OptionalLong.empty() : OptionalLong.of(projectId));
 
-        System.out.println(controller.submit(submission, id.tenant(), id.application()));
+        getLog().info(controller.submit(submission, id.tenant(), id.application()));
     }
 
 }

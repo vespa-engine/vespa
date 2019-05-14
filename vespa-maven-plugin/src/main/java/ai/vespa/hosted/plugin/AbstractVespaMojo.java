@@ -3,6 +3,7 @@ package ai.vespa.hosted.plugin;
 import ai.vespa.hosted.api.ControllerHttpClient;
 import com.yahoo.config.provision.ApplicationId;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
@@ -43,18 +44,23 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected ControllerHttpClient controller;
 
     @Override
-    public final void execute() {
-        setup();
-        doExecute();
+    public final void execute() throws MojoExecutionException {
+        try {
+            setup();
+            doExecute();
+        }
+        catch (Exception e) {
+            throw new MojoExecutionException("Execution failed for application '" + id + "':", e);
+        }
     }
 
     /** Override this in subclasses, instead of {@link #execute()}. */
-    protected abstract void doExecute();
+    protected abstract void doExecute() throws Exception;
 
     protected void setup() {
         tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
         application = firstNonBlank(application, project.getProperties().getProperty("application"));
-        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"), "default");
+        instance = firstNonBlank(instance, project.getProperties().getProperty("instance", "default"));
         id = ApplicationId.from(tenant, application, instance);
 
         controller = certificateFile == null

@@ -211,20 +211,8 @@ public abstract class ControllerHttpClient {
     private static String metaToJson(Deployment deployment) {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
-
-        if (deployment.repository().isPresent()) {
-            Cursor revisionObject = rootObject.setObject("sourceRevision");
-            deployment.repository().ifPresent(repository -> revisionObject.setString("repository", repository));
-            deployment.branch().ifPresent(branch -> revisionObject.setString("branch", branch));
-            deployment.commit().ifPresent(commit -> revisionObject.setString("commit", commit));
-            deployment.build().ifPresent(build -> rootObject.setLong("buildNumber", build));
-        }
-
         deployment.version().ifPresent(version -> rootObject.setString("vespaVersion", version));
-
-        if (deployment.ignoreValidationErrors()) rootObject.setBool("ignoreValidationErrors", true);
         rootObject.setBool("deployDirectly", true);
-
         return toJson(slime);
     }
 
@@ -244,7 +232,7 @@ public abstract class ControllerHttpClient {
     private static MultiPartStreamer toDataStream(Deployment deployment) {
         MultiPartStreamer streamer = new MultiPartStreamer();
         streamer.addJson("deployOptions", metaToJson(deployment));
-        deployment.applicationZip().ifPresent(zip -> streamer.addFile("applicationZip", zip));
+        streamer.addFile("applicationZip", deployment.applicationZip());
         return streamer;
     }
 
