@@ -33,23 +33,23 @@ public class RpcResourcePool {
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, NodeConnectionPool> nodeConnectionPools;
 
-    public RpcResourcePool(Map<Integer, Client.NodeConnection> nodeConnections) {
+    public RpcResourcePool(Map<Integer, NodeConnection> nodeConnections) {
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(Collections.singletonList(connection))));
         this.nodeConnectionPools = builder.build();
     }
 
     public RpcResourcePool(DispatchConfig dispatchConfig) {
-        var clients = new ArrayList<RpcClient>(dispatchConfig.numJrtSupervisors());
-        for (int i = 0; i < dispatchConfig.numJrtSupervisors(); i++) {
-            clients.add(new RpcClient());
-        }
+        var client = new RpcClient(dispatchConfig.numJrtTransportThreads());
 
-        // Create node rpc connection pools, indexed by the node distribution key
+        // Create rpc node connection pools indexed by the node distribution key
         var builder = new ImmutableMap.Builder<Integer, NodeConnectionPool>();
+        var numConnections = dispatchConfig.numJrtConnectionsPerNode();
         for (var node : dispatchConfig.node()) {
-            var connections = new ArrayList<Client.NodeConnection>(clients.size());
-            clients.forEach(client -> connections.add(client.createConnection(node.host(), node.port())));
+            var connections = new ArrayList<NodeConnection>(numConnections);
+            for (int i = 0; i < numConnections; i++) {
+                connections.add(client.createConnection(node.host(), node.port()));
+            }
             builder.put(node.key(), new NodeConnectionPool(connections));
         }
         this.nodeConnectionPools = builder.build();
@@ -80,7 +80,7 @@ public class RpcResourcePool {
     private class NodeConnectionPool {
         private final List<Client.NodeConnection> connections;
 
-        NodeConnectionPool(List<Client.NodeConnection> connections) {
+        NodeConnectionPool(List<NodeConnection> connections) {
             this.connections = connections;
         }
 
@@ -93,4 +93,5 @@ public class RpcResourcePool {
             connections.forEach(Client.NodeConnection::close);
         }
     }
+
 }
