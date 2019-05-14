@@ -200,6 +200,11 @@ public class InternalDeploymentTester {
             setEndpoints(appId, zone);
         }
         runner.run();
+        if (type.environment().isManuallyDeployed()) {
+            assertEquals(Step.Status.succeeded, jobs.run(run.id()).get().steps().get(Step.installReal));
+            assertTrue(jobs.run(run.id()).get().hasEnded());
+            return;
+        }
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installReal));
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installTester));
