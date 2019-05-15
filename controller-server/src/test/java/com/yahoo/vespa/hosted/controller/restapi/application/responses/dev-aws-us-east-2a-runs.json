@@ -2,9 +2,9 @@
   "1": {
     "id": 1,
     "status": "success",
-    "start": 0,
-    "end": 0,
-    "wantedPlatform": "6.1",
+    "start": 102000,
+    "end": 102000,
+    "wantedPlatform": "7.1",
     "wantedApplication": {
       "hash": "unknown"
     },
