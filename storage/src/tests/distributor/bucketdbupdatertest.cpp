@@ -17,6 +17,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <sstream>
 #include <iomanip>
 
@@ -2575,6 +2576,54 @@ TEST_F(BucketDBUpdaterTest, activate_cluster_state_request_without_pending_trans
     // false (meaning "didn't take message ownership") and there's no auto-generated reply.
     EXPECT_FALSE(activate_cluster_state_version(3));
     EXPECT_EQ(size_t(0), _sender.replies.size());
+}
+
+TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_bulk_loading_into_empty_db) {
+    // Need to trigger an initial edge to complete first bucket scan
+    ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("storage:1 distributor:2"),
+                                                     messageCount(1), 0));
+    _sender.clear();
+
+    lib::ClusterState state("storage:1 distributor:1");
+    setSystemState(state);
+
+    constexpr uint32_t superbuckets = 1u << 16u;
+    constexpr uint32_t sub_buckets = 14;
+    constexpr uint32_t n_buckets = superbuckets * sub_buckets;
+
+    vespalib::BenchmarkTimer timer(1.0);
+
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    for (uint32_t bsi = 0; bsi < _bucketSpaces.size(); ++bsi) {
+        ASSERT_EQ(_sender.commands[bsi]->getType(), MessageType::REQUESTBUCKETINFO);
+        const auto& req = dynamic_cast<const RequestBucketInfoCommand &>(*_sender.commands[bsi]);
+
+        auto sreply = std::make_shared<RequestBucketInfoReply>(req);
+        sreply->setAddress(storageAddress(0));
+        auto& vec = sreply->getBucketInfo();
+        if (req.getBucketSpace() == FixedBucketSpaces::default_space()) {
+            for (uint32_t sb = 0; sb < superbuckets; ++sb) {
+                for (uint64_t i = 0; i < sub_buckets; ++i) {
+                    document::BucketId bucket(48, (i << 32ULL) | sb);
+                    vec.push_back(api::RequestBucketInfoReply::Entry(bucket, api::BucketInfo(10,1,1)));
+                }
+            }
+        }
+
+        // Global space has no buckets but will serve as a trigger for merging
+        // buckets into the DB. This lets us measure the overhead of just this part.
+        if (req.getBucketSpace() == FixedBucketSpaces::global_space()) {
+            timer.before();
+        }
+        getBucketDBUpdater().onRequestBucketInfoReply(sreply);
+        if (req.getBucketSpace() == FixedBucketSpaces::global_space()) {
+            timer.after();
+            fprintf(stderr, "Took %g seconds to merge %u buckets into DB\n", timer.min_time(), n_buckets);
+        }
+    }
+
+    EXPECT_EQ(size_t(n_buckets), mutable_default_db().size());
+    EXPECT_EQ(size_t(0), mutable_global_db().size());
 }
 
 }
