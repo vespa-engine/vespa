@@ -69,25 +69,46 @@ public class LatencyTest {
         private final Throwable[] issues;
         private final Result[] results;
 
+        private enum State { WARMUP, BENCHMARK, COOLDOWN }
+        private long warmupEnd = 0;
+        private long benchmarkEnd = 0;
+        private long cooldownEnd = 0;
+
+        private long addSecs(long ns, double s) {
+            return ns + (long)(s * 1000_000_000);
+        }
+
+        private void setupBenchmark(double warmup, double benchmark, double cooldown) {
+            final long now = System.nanoTime();
+            warmupEnd = addSecs(now, warmup);
+            benchmarkEnd = addSecs(warmupEnd, benchmark);
+            cooldownEnd = addSecs(benchmarkEnd, cooldown);
+        }
+
         private void run(int threadId) {
             try {
                 barrier.await();
-                int value = 100;
-                final int warmupCnt = 10;
-                final int benchmarkCnt = 50;
-                final int cooldownCnt = 10;
-                final int totalReqs = (warmupCnt + benchmarkCnt + cooldownCnt);
+                State state = State.WARMUP;
+                int value = 0;
                 long t1 = 0;
                 long t2 = 0;
-                List<Double> list = new ArrayList<>();
+                int s1 = 0;
+                int s2 = 0;
+                double minLatency = 1.0e99;
                 Target target = network.connect();
-                for (int i = 0; i < totalReqs; ++i) {
-                    long before = System.nanoTime();
-                    if (i == warmupCnt) {
-                        t1 = before;
+                for (long t = System.nanoTime();
+                     state != State.COOLDOWN || t < cooldownEnd;
+                     t = System.nanoTime())
+                {
+                    if ((state == State.WARMUP) && (t >= warmupEnd)) {
+                        t1 = t;
+                        s1 = value;
+                        state = State.BENCHMARK;
                     }
-                    if (i == (warmupCnt + benchmarkCnt)) {
-                        t2 = before;
+                    if ((state == State.BENCHMARK) && (t >= benchmarkEnd)) {
+                        t2 = t;
+                        s2 = value;
+                        state = State.COOLDOWN;
                     }
                     if (reconnect) {
                         target.close();
@@ -96,16 +117,18 @@ public class LatencyTest {
                     Request req = new Request("inc");
                     req.parameters().add(new Int32Value(value));
                     target.invokeSync(req, 60.0);
-                    long duration = System.nanoTime() - before;
+                    long duration = System.nanoTime() - t;
                     assertTrue(req.checkReturnTypes("i"));
                     assertEquals(value + 1, req.returnValues().get(0).asInt32());
-                    value++;
-                    list.add(duration / 1000000.0);
+                    ++value;
+                    double latency = (duration / 1000_000.0);
+                    if (latency < minLatency) {
+                        minLatency = latency;
+                    }
                 }
                 target.close();
-                Collections.sort(list);
-                double benchTime = (t2 - t1) / 1000000000.0;
-                results[threadId] = new Result(list.get(list.size() / 2), benchmarkCnt / benchTime);
+                double benchTime = (t2 - t1) / 1000_000_000.0;
+                results[threadId] = new Result(minLatency, (s2 - s1) / benchTime);
             } catch (Throwable issue) {
                 issues[threadId] = issue;
             } finally {
@@ -113,13 +136,18 @@ public class LatencyTest {
             }
         }
 
-        public Client(boolean reconnect, Network network, int numThreads) {
+        public Client(boolean reconnect, Network network, int numThreads,
+                      double warmup, double benchmark, double cooldown)
+        {
             this.reconnect = reconnect;
             this.network = network;
-            this.barrier = new CyclicBarrier(numThreads);
+            this.barrier = new CyclicBarrier(numThreads, ()->setupBenchmark(warmup, benchmark, cooldown));
             this.latch = new CountDownLatch(numThreads);
             this.issues = new Throwable[numThreads];
             this.results = new Result[numThreads];
+        }
+        public Client(boolean reconnect, Network network, int numThreads) {
+            this(reconnect, network, numThreads, 0.1, 0.5, 0.1);
         }
 
         public void measureLatency(String prefix) throws Throwable {
