@@ -4,14 +4,13 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
-import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
@@ -40,7 +39,7 @@ class NodePrioritizer {
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
-    private final NodeList allNodes;
+    private final LockedNodeList allNodes;
     private final DockerHostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId appId;
@@ -51,7 +50,7 @@ class NodePrioritizer {
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
 
-    NodePrioritizer(NodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+    NodePrioritizer(LockedNodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                     int spares, NameResolver nameResolver, NodeFlavors flavors) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes);
@@ -63,17 +62,17 @@ class NodePrioritizer {
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
         int nofFailedNodes = (int) allNodes.asList().stream()
-                .filter(node -> node.state().equals(Node.State.failed))
-                .filter(node -> node.allocation().isPresent())
-                .filter(node -> node.allocation().get().owner().equals(appId))
-                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
-                .count();
+                                           .filter(node -> node.state().equals(Node.State.failed))
+                                           .filter(node -> node.allocation().isPresent())
+                                           .filter(node -> node.allocation().get().owner().equals(appId))
+                                           .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
+                                           .count();
 
         int nofNodesInCluster = (int) allNodes.asList().stream()
-                .filter(node -> node.allocation().isPresent())
-                .filter(node -> node.allocation().get().owner().equals(appId))
-                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
-                .count();
+                                              .filter(node -> node.allocation().isPresent())
+                                              .filter(node -> node.allocation().get().owner().equals(appId))
+                                              .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
+                                              .count();
 
         this.isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
         this.isDocker = isDocker();
@@ -85,14 +84,14 @@ class NodePrioritizer {
      * We do not count retired or inactive nodes as used capacity (as they could have been
      * moved to create space for the spare node in the first place).
      */
-    private static Set<Node> findSpareHosts(NodeList nodes, DockerHostCapacity capacity, int spares) {
+    private static Set<Node> findSpareHosts(LockedNodeList nodes, DockerHostCapacity capacity, int spares) {
         return nodes.asList().stream()
-                .filter(node -> node.type().equals(NodeType.host))
-                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
-                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                .sorted(capacity::compareWithoutInactive)
-                .limit(spares)
-                .collect(Collectors.toSet());
+                    .filter(node -> node.type().equals(NodeType.host))
+                    .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                    .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
+                    .sorted(capacity::compareWithoutInactive)
+                    .limit(spares)
+                    .collect(Collectors.toSet());
     }
 
     /**
@@ -120,32 +119,32 @@ class NodePrioritizer {
     /**
      * Add a node on each docker host with enough capacity for the requested flavor
      *
-     * @param allocationLock allocation lock from {@link NodeRepository#lockAllocation()}
      * @param exclusively Whether the ready docker nodes should only be added on hosts that
      *                    already have nodes allocated to this tenant
      */
-    void addNewDockerNodes(Mutex allocationLock, boolean exclusively) {
-        NodeList candidates;
+    void addNewDockerNodes(boolean exclusively) {
+        LockedNodeList candidates = allNodes;
 
         if (exclusively) {
-            Set<String> candidateHostnames = allNodes.asList().stream()
-                    .filter(node -> node.type() == NodeType.tenant)
-                    .filter(node -> node.allocation().map(a -> a.owner().tenant().equals(appId.tenant())).orElse(false))
-                    .flatMap(node -> node.parentHostname().stream())
-                    .collect(Collectors.toSet());
+            Set<String> candidateHostnames = candidates.asList().stream()
+                                                       .filter(node -> node.type() == NodeType.tenant)
+                                                       .filter(node -> node.allocation()
+                                                                           .map(a -> a.owner().tenant().equals(appId.tenant()))
+                                                                           .orElse(false))
+                                                       .flatMap(node -> node.parentHostname().stream())
+                                                       .collect(Collectors.toSet());
 
-            candidates = allNodes
-                    .filter(node -> candidateHostnames.contains(node.hostname()))
-                    .filter(node -> EnumSet.of(Node.State.provisioned, Node.State.ready, Node.State.active)
-                            .contains(node.state()));
+            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()))
+                                   .filter(node -> EnumSet.of(Node.State.provisioned, Node.State.ready, Node.State.active)
+                                                          .contains(node.state()));
         } else {
-            candidates = allNodes.state(Node.State.active);
+            candidates = candidates.filter(node -> node.state() == Node.State.active);
         }
 
-        addNewDockerNodesOn(allocationLock, candidates);
+        addNewDockerNodesOn(candidates);
     }
 
-    void addNewDockerNodesOn(Mutex allocationLock, NodeList candidates) {
+    private void addNewDockerNodesOn(LockedNodeList candidates) {
         if ( ! isDocker) return;
         ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(resources(requestedNodes));
 
@@ -155,7 +154,7 @@ class NodePrioritizer {
 
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
             boolean conflictingCluster = allNodes.childrenOf(node).owner(appId).asList().stream()
-                    .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
+                                                 .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
@@ -163,15 +162,15 @@ class NodePrioritizer {
 
             Optional<IP.Allocation> allocation;
             try {
-                allocation = node.ipAddressPool().findAllocation(allNodes, nameResolver);
-                if (!allocation.isPresent()) continue; // No free addresses in this pool
+                allocation = node.ipConfig().pool().findAllocation(allNodes, nameResolver);
+                if (allocation.isEmpty()) continue; // No free addresses in this pool
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to resolve hostname for allocation, skipping", e);
+                log.log(LogLevel.WARNING, "Failed allocating IP address on " + node.hostname(), e);
                 continue;
             }
 
             Node newNode = Node.createDockerNode(allocation.get().addresses(),
-                                                 Collections.emptySet(),
+                                                 Set.of(),
                                                  allocation.get().hostname(),
                                                  Optional.of(node.hostname()),
                                                  resources(requestedNodes),
@@ -283,10 +282,10 @@ class NodePrioritizer {
         // Choose container over content nodes
         if (a.allocation().isPresent() && b.allocation().isPresent()) {
             if (a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
-                    !b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
+                !b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
                 return -1;
             if (!a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
-                    b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
+                b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
                 return 1;
         }
 

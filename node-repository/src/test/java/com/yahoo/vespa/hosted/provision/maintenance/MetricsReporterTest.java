@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -128,12 +129,12 @@ public class MetricsReporterTest {
         Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1",
                                                 Optional.of("dockerHost"), new NodeResources(1, 3, 2), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
-        nodeRepository.addDockerNodes(Collections.singletonList(container1), nodeRepository.lockAllocation());
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
 
         Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2",
                                                 Optional.of("dockerHost"), new NodeResources(2, 4, 4), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
-        nodeRepository.addDockerNodes(Collections.singletonList(container2), nodeRepository.lockAllocation());
+        nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);

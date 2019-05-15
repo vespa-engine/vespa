@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Capacity calculation for docker hosts.
@@ -18,17 +18,10 @@ import java.util.List;
  */
 public class DockerHostCapacity {
 
-    /**
-     * An immutable list of nodes
-     */
-    private final NodeList allNodes;
+    private final LockedNodeList allNodes;
 
-    public DockerHostCapacity(List<Node> allNodes) {
-        this(new NodeList(allNodes));
-    }
-
-    public DockerHostCapacity(NodeList allNodes) {
-        this.allNodes = allNodes;
+    public DockerHostCapacity(LockedNodeList allNodes) {
+        this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
     }
 
     /**

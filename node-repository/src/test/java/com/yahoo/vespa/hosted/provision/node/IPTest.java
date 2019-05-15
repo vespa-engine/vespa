@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Assert;
@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ import static org.junit.Assert.fail;
 public class IPTest {
 
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-    private static final NodeList emptyList = new NodeList(Collections.emptyList());
+    private static final LockedNodeList emptyList = new LockedNodeList(List.of(), () -> {});
 
     private MockNameResolver resolver;
 

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
-import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.Inet4Address;
@@ -127,10 +127,10 @@ public class IP {
         /**
          * Find a free allocation in this pool. Note that the allocation is not final until it is assigned to a node
          *
-         * @param nodes All nodes in the repository
+         * @param nodes A locked list of all nodes in the repository
          * @return An allocation from the pool, if any can be made
          */
-        public Optional<Allocation> findAllocation(NodeList nodes, NameResolver resolver) {
+        public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
             var unusedAddresses = findUnused(nodes);
             var allocation = unusedAddresses.stream()
                                             .filter(IP::isV6)
@@ -149,9 +149,9 @@ public class IP {
         /**
          * Finds all unused addresses in this pool
          *
-         * @param nodes All nodes in the repository
+         * @param nodes Locked list of all nodes in the repository
          */
-        public Set<String> findUnused(NodeList nodes) {
+        public Set<String> findUnused(LockedNodeList nodes) {
             var unusedAddresses = new LinkedHashSet<>(addresses);
             nodes.filter(node -> node.ipConfig().primary().stream().anyMatch(addresses::contains))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));

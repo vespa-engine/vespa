@@ -184,6 +184,11 @@ public class NodeRepository extends AbstractComponent {
         return new NodeList(getNodes());
     }
 
+    /** Returns a locked list of all nodes in this repository */
+    public LockedNodeList list(Mutex lock) {
+        return new LockedNodeList(getNodes(), lock);
+    }
+
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
         return new LoadBalancerList(database().readLoadBalancers().values());
@@ -313,9 +318,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
-    // NOTE: This can only be called while holding the allocation lock, and that lock must have been held since
-    //       the nodes list was computed
-    public List<Node> addDockerNodes(List<Node> nodes, Mutex allocationLock) {
+    public List<Node> addDockerNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
             if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
@@ -329,7 +332,7 @@ public class NodeRepository extends AbstractComponent {
                                                    existing.get() + ", " + existing.get().history() + "). Node to be added: " +
                                                    node + ", " + node.history());
         }
-        return db.addNodesInState(nodes, Node.State.reserved);
+        return db.addNodesInState(nodes.asList(), Node.State.reserved);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
