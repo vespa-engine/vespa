@@ -22,7 +22,11 @@ import java.util.List;
  * @author bratseth
  */
 class RpcClient implements Client {
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
+
+    public RpcClient(int transportThreads) {
+        supervisor = new Supervisor(new Transport(transportThreads));
+    }
 
     @Override
     public NodeConnection createConnection(String hostname, int port) {
