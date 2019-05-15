@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -35,26 +36,26 @@ public class MetricsRetrieverTest {
         MetricsRetriever metricsRetriever = new MetricsRetriever();
 
         ApplicationId applicationId = ApplicationId.from("tenant", "app", "default");
-        Map<String, List<URI>> clusterHosts = Map.of(
-                "cluster1", List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2")),
-                "cluster2", List.of(URI.create("http://localhost:8080/3"))
-        );
-        Map<ApplicationId, Map<String, List<URI>>> applications = Map.of(applicationId, clusterHosts);
+
+        List<ClusterInfo> clusters = List.of(new ClusterInfo("cluster1", ClusterInfo.ClusterType.content, List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"))),
+                new ClusterInfo("cluster2", ClusterInfo.ClusterType.container, List.of(URI.create("http://localhost:8080/3"))));
+
+        Map<ApplicationId, Collection<ClusterInfo>> applications = Map.of(applicationId, clusters);
 
         stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(metricsString())));
+                        .withBody(contentMetrics())));
 
         stubFor(get(urlEqualTo("/2"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(metricsString())));
+                        .withBody(contentMetrics())));
 
         stubFor(get(urlEqualTo("/3"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(metricsString())));
+                        .withBody(containerMetrics())));
 
         MetricsResponse metricsResponse = metricsRetriever.retrieveAllMetrics(applications);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -64,35 +65,35 @@ public class MetricsRetrieverTest {
                 "  \"applicationId\": \"tenant:app:default\",\n" +
                 "  \"clusters\": [\n" +
                 "   {\n" +
-                "    \"clusterName\": \"cluster1\",\n" +
+                "    \"clusterId\": \"cluster1\",\n" +
+                "    \"clusterType\": \"content\",\n" +
                 "    \"metrics\": {\n" +
-                "     \"queriesPerSecond\": 2.8666666666666667,\n" +
-                "     \"writesPerSecond\": 1.4333333333333333,\n" +
-                "     \"documentCount\": 6000.0,\n" +
-                "     \"queryLatencyMillis\": 93.02325581395348,\n" +
-                "     \"feedLatency\": 69.76744186046511\n" +
-                "    },\n" +
-                "    \"timestamp\": 1557306075\n" +
+                "     \"documentCount\": 6000.0\n" +
+                "    }\n" +
                 "   },\n" +
                 "   {\n" +
-                "    \"clusterName\": \"cluster2\",\n" +
+                "    \"clusterId\": \"cluster2\",\n" +
+                "    \"clusterType\": \"container\",\n" +
                 "    \"metrics\": {\n" +
                 "     \"queriesPerSecond\": 1.4333333333333333,\n" +
-                "     \"writesPerSecond\": 0.7166666666666667,\n" +
-                "     \"documentCount\": 3000.0,\n" +
-                "     \"queryLatencyMillis\": 93.02325581395348,\n" +
+                "     \"feedPerSecond\": 0.7166666666666667,\n" +
+                "     \"queryLatency\": 93.02325581395348,\n" +
                 "     \"feedLatency\": 69.76744186046511\n" +
-                "    },\n" +
-                "    \"timestamp\": 1557306075\n" +
+                "    }\n" +
                 "   }\n" +
                 "  ]\n" +
                 " }\n" +
                 "]\n";
         assertEquals(expectedResponse, bos.toString());
         wireMock.stop();
+
     }
 
-    private String metricsString() throws IOException {
-        return Files.readString(Path.of("src/test/resources/metrics_response"));
+    private String containerMetrics() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/container_metrics"));
+    }
+
+    private String contentMetrics() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/content_metrics"));
     }
 }

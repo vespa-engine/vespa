@@ -7,6 +7,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
+import com.yahoo.vespa.config.server.metrics.ClusterInfo;
 import com.yahoo.vespa.config.server.metrics.MetricsAggregator;
 
 import java.io.IOException;
@@ -20,25 +21,26 @@ public class MetricsResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
 
-    public MetricsResponse(int status, Map<ApplicationId, Map<String, MetricsAggregator>> aggregatedMetrics) {
+    public MetricsResponse(int status, Map<ApplicationId, Map<ClusterInfo, MetricsAggregator>> aggregatedMetrics) {
         super(status);
 
         Cursor array = slime.setArray();
-        for (Map.Entry<ApplicationId, Map<String, MetricsAggregator>> entry : aggregatedMetrics.entrySet()) {
+        for (Map.Entry<ApplicationId, Map<ClusterInfo, MetricsAggregator>> entry : aggregatedMetrics.entrySet()) {
             Cursor object = array.addObject();
             object.setString("applicationId", entry.getKey().serializedForm());
             Cursor clusterArray = object.setArray("clusters");
-            for (Map.Entry<String, MetricsAggregator> clusterMetrics : entry.getValue().entrySet()) {
+            for (Map.Entry<ClusterInfo, MetricsAggregator> clusterMetrics : entry.getValue().entrySet()) {
                 Cursor clusterCursor = clusterArray.addObject();
                 MetricsAggregator metrics = clusterMetrics.getValue();
-                clusterCursor.setString("clusterName", clusterMetrics.getKey());
+                clusterCursor.setString("clusterId", clusterMetrics.getKey().getClusterId());
+                clusterCursor.setString("clusterType", clusterMetrics.getKey().getClusterType().name());
                 Cursor metricsCursor = clusterCursor.setObject("metrics");
                 metrics.aggregateQueryRate().ifPresent(queryrate -> metricsCursor.setDouble("queriesPerSecond", queryrate));
-                metrics.aggregateFeedRate().ifPresent(feedRate -> metricsCursor.setDouble("writesPerSecond", feedRate));
+                metrics.aggregateFeedRate().ifPresent(feedRate -> metricsCursor.setDouble("feedPerSecond", feedRate));
                 metrics.aggregateDocumentCount().ifPresent(documentCount -> metricsCursor.setDouble("documentCount", documentCount));
-                metrics.aggregateQueryLatency().ifPresent(queryLatency -> metricsCursor.setDouble("queryLatencyMillis",queryLatency));
+                metrics.aggregateQueryLatency().ifPresent(queryLatency -> metricsCursor.setDouble("queryLatency",queryLatency));
                 metrics.aggregateFeedLatency().ifPresent(feedLatency -> metricsCursor.setDouble("feedLatency", feedLatency));
-                clusterCursor.setLong("timestamp", metrics.getTimestamp().getEpochSecond());
+//                clusterCursor.setLong("timestamp", metrics.getTimestamp().getEpochSecond());
             }
         }
     }

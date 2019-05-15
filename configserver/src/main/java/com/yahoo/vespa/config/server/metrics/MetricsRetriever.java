@@ -17,6 +17,8 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -31,21 +33,20 @@ public class MetricsRetriever {
     private static final Logger logger = Logger.getLogger(MetricsRetriever.class.getName());
     HttpClient httpClient = HttpClientBuilder.create().build();
 
-    public MetricsResponse retrieveAllMetrics(Map<ApplicationId, Map<String, List<URI>>> applicationHosts) {
-        Map<ApplicationId, Map<String, MetricsAggregator>> allMetrics = applicationHosts.entrySet().stream()
+    public MetricsResponse retrieveAllMetrics(Map<ApplicationId, Collection<ClusterInfo>> applicationClusters) {
+        Map<ApplicationId, Map<ClusterInfo, MetricsAggregator>> allMetrics = applicationClusters.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         e -> getMetricsByCluster(e.getValue())));
         return new MetricsResponse(200, allMetrics);
     }
 
-    private Map<String, MetricsAggregator> getMetricsByCluster(Map<String, List<URI>> clusterHosts) {
-        return clusterHosts.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> getClusterMetrics(e.getValue())
-                )
-            );
+    private Map<ClusterInfo, MetricsAggregator> getMetricsByCluster(Collection<ClusterInfo> clusters) {
+        return clusters.stream()
+                .collect(LinkedHashMap::new,
+                        (map, item) -> map.put(item, getClusterMetrics(item.getHostnames())),
+                        Map::putAll
+                );
     }
 
     private MetricsAggregator getClusterMetrics(List<URI> hosts) {

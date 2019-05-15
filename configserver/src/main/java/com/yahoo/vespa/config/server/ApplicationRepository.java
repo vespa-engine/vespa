@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.metrics.ClusterInfo;
 import com.yahoo.vespa.config.server.metrics.MetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -588,8 +589,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse getMetrics() {
         MetricsRetriever metricsRetriever = new MetricsRetriever();
-        Map<ApplicationId, Map<String, List<URI>>> applicationHosts = getHostsPerApplication();
-        return metricsRetriever.retrieveAllMetrics(applicationHosts);
+        Map<ApplicationId, Collection<ClusterInfo>> applicationClusters = getApplicationClusters();
+        return metricsRetriever.retrieveAllMetrics(applicationClusters);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
@@ -745,8 +746,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     /** Finds all hosts, grouping them by application ID and cluster name */
-    private  Map<ApplicationId, Map<String, List<URI>>> getHostsPerApplication() {
-        Map<ApplicationId, Map<String, List<URI>>> applicationHosts = new HashMap<>();
+    private  Map<ApplicationId, Collection<ClusterInfo>> getApplicationClusters() {
+        Map<ApplicationId, Collection<ClusterInfo>> applicationHosts = new HashMap<>();
         tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
                 .forEach(applicationId ->{
@@ -757,20 +758,24 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     /** Finds the hosts of an application, grouped by cluster name */
-    private Map<String, List<URI>> getClustersOfApplication(ApplicationId applicationId) {
+    private Collection<ClusterInfo> getClustersOfApplication(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         Map<String, List<URI>> clusterHosts = new HashMap<>();
+        Map<String, ClusterInfo> clusters = new HashMap<>();
         application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
                 .forEach(hostInfo -> {
                             ServiceInfo serviceInfo = hostInfo.getServices().stream().filter(service -> METRICS_PROXY_CONTAINER.serviceName.equals(service.getServiceType()))
                                     .findFirst().orElseThrow(() -> new IllegalArgumentException("Unable to find services " + METRICS_PROXY_CONTAINER.serviceName.toString()));
                             String clusterName = serviceInfo.getProperty("clusterid").orElse("");
+                            String clusterTypeString = serviceInfo.getProperty("clustertype").orElse("");
+                            ClusterInfo.ClusterType clusterType = ClusterInfo.ClusterType.valueOf(clusterTypeString);
                             URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(serviceInfo) + "/metrics/v1/values");
                             clusterHosts.computeIfAbsent(clusterName, l -> new ArrayList<URI>()).add(host);
+                            clusters.computeIfAbsent(clusterName, c -> new ClusterInfo(clusterName, clusterType)).addHost(host);
                         }
                 );
-        return clusterHosts;
+        return clusters.values();
 
     }
     /** Returns version to use when deploying application in given environment */

@@ -26,28 +26,16 @@
       },
 
       {
-              "name":"qrserver",
-              "timestamp": 1557306075,
-              "metrics": [
-                  {
-                   "values": {
-                        "query_latency.count": 43.0,
-                        "query_latency.sum": 3000
-                    }
-                  }
-                ]
-            },
-        {
-        "name":"distributor",
-        "timestamp": 1557306075,
-        "metrics": [
-            {
-             "values": {
-                  "vds.distributor.docsstored.average": 3000
-
-              }
+      "name":"qrserver",
+      "timestamp": 1557306075,
+      "metrics": [
+          {
+           "values": {
+                "query_latency.count": 43.0,
+                "query_latency.sum": 3000
             }
-          ]
-      }
+          }
+        ]
+    }
   ]
 }
