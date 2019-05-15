@@ -88,6 +88,7 @@ struct ViewSet
 {
     IndexManagerDummyReconfigurer _reconfigurer;
     DummyFileHeaderContext _fileHeaderContext;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeService;
     SearchableFeedView::SerialNum serialNum;
     std::shared_ptr<const DocumentTypeRepo> repo;
@@ -117,7 +118,8 @@ struct ViewSet
 ViewSet::ViewSet()
     : _reconfigurer(),
       _fileHeaderContext(),
-      _writeService(),
+      _sharedExecutor(1, 0x10000),
+      _writeService(_sharedExecutor),
       serialNum(1),
       repo(createRepo()),
       _docTypeName(DOC_TYPE),
@@ -285,11 +287,13 @@ MyFastAccessFeedView::~MyFastAccessFeedView() = default;
 
 struct FastAccessFixture
 {
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeService;
     MyFastAccessFeedView _view;
     FastAccessDocSubDBConfigurer _configurer;
     FastAccessFixture()
-        : _writeService(),
+        : _sharedExecutor(1, 0x10000),
+          _writeService(_sharedExecutor),
           _view(_writeService),
           _configurer(_view._feedView, IAttributeWriterFactory::UP(new AttributeWriterFactory), "test")
     {

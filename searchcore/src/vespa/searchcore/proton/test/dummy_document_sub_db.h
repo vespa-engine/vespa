@@ -26,6 +26,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     IIndexManager::SP        _indexManager;
     ISummaryAdapter::SP      _summaryAdapter;
     IIndexWriter::SP         _indexWriter;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     std::unique_ptr<ExecutorThreadingService> _writeService;
 
     DummyDocumentSubDb(std::shared_ptr<BucketDBOwner> bucketDB, uint32_t subDbId)
@@ -35,7 +36,8 @@ struct DummyDocumentSubDb : public IDocumentSubDB
           _indexManager(),
           _summaryAdapter(),
           _indexWriter(),
-          _writeService(std::make_unique<ExecutorThreadingService>(1))
+          _sharedExecutor(1, 0x10000),
+          _writeService(std::make_unique<ExecutorThreadingService>(_sharedExecutor, 1))
     {
     }
     ~DummyDocumentSubDb() {}

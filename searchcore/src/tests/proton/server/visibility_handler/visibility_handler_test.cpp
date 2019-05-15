@@ -63,6 +63,7 @@ class Fixture
 {
 public:
     MyGetSerialNum _getSerialNum;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeServiceReal;
     ThreadingServiceObserver _writeService;
     std::shared_ptr<MyFeedView> _feedViewReal;
@@ -72,7 +73,8 @@ public:
 
     Fixture()
         : _getSerialNum(),
-          _writeServiceReal(),
+          _sharedExecutor(1, 0x10000),
+          _writeServiceReal(_sharedExecutor),
           _writeService(_writeServiceReal),
           _feedViewReal(std::make_shared<MyFeedView>()),
           _feedView(_feedViewReal),

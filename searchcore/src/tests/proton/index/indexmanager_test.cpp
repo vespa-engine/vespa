@@ -100,6 +100,7 @@ struct Fixture {
     SerialNum _serial_num;
     IndexManagerDummyReconfigurer _reconfigurer;
     DummyFileHeaderContext _fileHeaderContext;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeService;
     std::unique_ptr<IndexManager> _index_manager;
     Schema _schema;
@@ -109,7 +110,8 @@ struct Fixture {
         : _serial_num(0),
           _reconfigurer(),
           _fileHeaderContext(),
-          _writeService(),
+          _sharedExecutor(1, 0x10000),
+          _writeService(_sharedExecutor),
           _index_manager(),
           _schema(getSchema()),
           _builder(_schema)

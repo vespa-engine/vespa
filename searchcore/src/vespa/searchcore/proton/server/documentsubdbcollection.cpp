@@ -35,7 +35,6 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const DocTypeName &docTypeName,
         searchcorespi::index::IThreadingService &writeService,
         vespalib::ThreadExecutor &warmupExecutor,
-        vespalib::ThreadStackExecutorBase &sharedExecutor,
         const search::common::FileHeaderContext &fileHeaderContext,
         MetricsWireService &metricsWireService,
         DocumentDBTaggedMetrics &metrics,
@@ -61,7 +60,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     _bucketDBHandler = std::make_unique<bucketdb::BucketDBHandler>(*_bucketDB);
 
     StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,
-                                       sharedExecutor, _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
+                                       _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
     _subDBs.push_back
         (new SearchableDocSubDB(
                 SearchableDocSubDB::Config(

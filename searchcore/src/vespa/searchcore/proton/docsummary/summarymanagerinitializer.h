@@ -36,7 +36,7 @@ public:
                               const vespalib::string baseDir,
                               const vespalib::string &subDbName,
                               const DocTypeName &docTypeName,
-                              vespalib::ThreadStackExecutorBase & summaryExecutor,
+                              vespalib::ThreadExecutor & summaryExecutor,
                               const search::LogDocumentStore::Config & storeCfg,
                               const search::TuneFileSummary &tuneFile,
                               const search::common::FileHeaderContext & fileHeaderContext,

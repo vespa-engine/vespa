@@ -18,6 +18,7 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
+    vespalib::ThreadStackExecutorBase & _sharedExecutor;
     vespalib::ThreadStackExecutor _masterExecutor;
     vespalib::BlockingThreadStackExecutor _indexExecutor;
     vespalib::BlockingThreadStackExecutor _summaryExecutor;
@@ -35,7 +36,8 @@ public:
      * @stackSize The size of the stack of the underlying executors.
      * @taskLimit The task limit for the index executor.
      */
-    ExecutorThreadingService(uint32_t threads = 1,
+    ExecutorThreadingService(vespalib::ThreadStackExecutorBase &sharedExecutor,
+                             uint32_t threads = 1,
                              uint32_t stackSize = 128 * 1024,
                              uint32_t taskLimit = 1000);
     ~ExecutorThreadingService() override;
@@ -72,6 +74,9 @@ public:
 
     searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
+    }
+    vespalib::ThreadExecutor &shared() override {
+        return _sharedExecutor;
     }
 
     search::ISequencedTaskExecutor &indexFieldInverter() override;

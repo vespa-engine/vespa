@@ -145,22 +145,20 @@ struct MyStoreOnlyContext
     HwInfo           _hwInfo;
     StoreOnlyContext _ctx;
     MyStoreOnlyContext(IThreadingService &writeService,
-                       ThreadStackExecutorBase &summaryExecutor,
                        std::shared_ptr<BucketDBOwner> bucketDB,
-                       IBucketDBHandlerInitializer &
-                       bucketDBHandlerInitializer);
+                       IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MyStoreOnlyContext();
     const MySubDBOwner &getOwner() const {
         return _owner;
     }
 };
 
-MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService, ThreadStackExecutorBase &summaryExecutor,
+MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService,
                                        std::shared_ptr<BucketDBOwner> bucketDB,
                                        IBucketDBHandlerInitializer &bucketDBHandlerInitializer)
     : _owner(), _syncProxy(), _getSerialNum(), _fileHeader(),
       _metrics(DOCTYPE_NAME, 1), _configMutex(), _hwInfo(),
-      _ctx(_owner, _syncProxy, _getSerialNum, _fileHeader, writeService, summaryExecutor, bucketDB,
+      _ctx(_owner, _syncProxy, _getSerialNum, _fileHeader, writeService, bucketDB,
            bucketDBHandlerInitializer, _metrics, _configMutex, _hwInfo)
 {
 }
@@ -183,7 +181,6 @@ struct MyFastAccessContext
     MyMetricsWireService _wireService;
     FastAccessContext _ctx;
     MyFastAccessContext(IThreadingService &writeService,
-                        ThreadStackExecutorBase &summaryExecutor,
                         std::shared_ptr<BucketDBOwner> bucketDB,
                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MyFastAccessContext();
@@ -195,11 +192,11 @@ struct MyFastAccessContext
     }
 };
 
-MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService, ThreadStackExecutorBase &summaryExecutor,
+MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService,
                                          std::shared_ptr<BucketDBOwner> bucketDB,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
-    : _storeOnlyCtx(writeService, summaryExecutor, bucketDB, bucketDBHandlerInitializer),
-      _attributeMetrics(NULL),
+    : _storeOnlyCtx(writeService, bucketDB, bucketDBHandlerInitializer),
+      _attributeMetrics(nullptr),
       _wireService(),
       _ctx(_storeOnlyCtx._ctx, _attributeMetrics, _wireService)
 {}
@@ -221,7 +218,6 @@ struct MySearchableContext
     vespalib::Clock _clock;
     SearchableContext _ctx;
     MySearchableContext(IThreadingService &writeService,
-                        ThreadStackExecutorBase &executor,
                         std::shared_ptr<BucketDBOwner> bucketDB,
                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
     ~MySearchableContext();
@@ -234,14 +230,14 @@ struct MySearchableContext
 };
 
 
-MySearchableContext::MySearchableContext(IThreadingService &writeService, ThreadStackExecutorBase &executor,
+MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          std::shared_ptr<BucketDBOwner> bucketDB,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
-    : _fastUpdCtx(writeService, executor, bucketDB, bucketDBHandlerInitializer),
+    : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
-      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock, executor)
+      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock, writeService.shared())
 {}
-MySearchableContext::~MySearchableContext() {}
+MySearchableContext::~MySearchableContext() = default;
 
 struct OneAttrSchema : public Schema
 {
@@ -264,15 +260,13 @@ struct MyConfigSnapshot
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
-    MyConfigSnapshot(const Schema &schema,
-                     const vespalib::string &cfgDir)
+    MyConfigSnapshot(const Schema &schema, const vespalib::string &cfgDir)
         : _schema(schema),
           _builder(_schema),
           _cfg(),
           _bootstrap()
     {
-        DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig
-            (new DocumenttypesConfig(_builder.getDocumenttypesConfig()));
+        auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.getDocumenttypesConfig());
         TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB());
         _bootstrap = std::make_shared<BootstrapConfig>(1,
                                  documenttypesConfig,
@@ -292,8 +286,8 @@ struct MyConfigSnapshot
 template <typename Traits>
 struct FixtureBase
 {
-    ExecutorThreadingService _writeService;
     ThreadStackExecutor _summaryExecutor;
+    ExecutorThreadingService _writeService;
     typename Traits::Config _cfg;
     std::shared_ptr<BucketDBOwner> _bucketDB;
     BucketDBHandler _bucketDBHandler;
@@ -304,18 +298,17 @@ struct FixtureBase
     typename Traits::SubDB _subDb;
     IFeedView::SP _tmpFeedView;
     FixtureBase()
-        : _writeService(),
-          _summaryExecutor(1, 64 * 1024),
+        : _summaryExecutor(1, 64 * 1024),
+          _writeService(_summaryExecutor),
           _cfg(),
-              _bucketDB(std::make_shared<BucketDBOwner>()),
-              _bucketDBHandler(*_bucketDB),
-          _ctx(_writeService, _summaryExecutor, _bucketDB,
-                   _bucketDBHandler),
+          _bucketDB(std::make_shared<BucketDBOwner>()),
+          _bucketDBHandler(*_bucketDB),
+          _ctx(_writeService, _bucketDB, _bucketDBHandler),
           _baseSchema(),
           _snapshot(new MyConfigSnapshot(_baseSchema, Traits::ConfigDir::dir())),
           _baseDir(BASE_DIR + "/" + SUB_NAME, BASE_DIR),
           _subDb(_cfg._cfg, _ctx._ctx),
-              _tmpFeedView()
+          _tmpFeedView()
     {
         init();
     }
@@ -370,7 +363,7 @@ struct FixtureBase
         _tmpFeedView = _subDb.getFeedView();
         const typename Traits::FeedView *retval =
                 dynamic_cast<typename Traits::FeedView *>(_tmpFeedView.get());
-        ASSERT_TRUE(retval != NULL);
+        ASSERT_TRUE(retval != nullptr);
         return retval;
     }
     const MyMetricsWireService &getWireService() const {
@@ -468,44 +461,44 @@ assertAttributes2(const std::vector<search::AttributeVector *> &attributes)
 
 TEST_F("require that managers and components are instantiated", StoreOnlyFixture)
 {
-    EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
-    EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
-    EXPECT_TRUE(f._subDb.getAttributeManager().get() == NULL);
-    EXPECT_TRUE(f._subDb.getIndexManager().get() == NULL);
-    EXPECT_TRUE(f._subDb.getIndexWriter().get() == NULL);
-    EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
-    EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
-    EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(f._subDb.getFeedView().get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryManager());
+    EXPECT_TRUE(f._subDb.getSummaryAdapter());
+    EXPECT_TRUE( ! f._subDb.getAttributeManager());
+    EXPECT_TRUE( ! f._subDb.getIndexManager());
+    EXPECT_TRUE( ! f._subDb.getIndexWriter());
+    EXPECT_TRUE(f._subDb.getFeedView());
+    EXPECT_TRUE(f._subDb.getSearchView());
+    EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(f._subDb.getFeedView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != nullptr);
 }
 
 TEST_F("require that managers and components are instantiated", FastAccessFixture)
 {
-    EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
-    EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
-    EXPECT_TRUE(f._subDb.getAttributeManager().get() != NULL);
-    EXPECT_TRUE(f._subDb.getIndexManager().get() == NULL);
-    EXPECT_TRUE(f._subDb.getIndexWriter().get() == NULL);
-    EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
-    EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
-    EXPECT_TRUE(dynamic_cast<FastAccessFeedView *>(f._subDb.getFeedView().get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryManager());
+    EXPECT_TRUE(f._subDb.getSummaryAdapter());
+    EXPECT_TRUE(f._subDb.getAttributeManager());
+    EXPECT_TRUE( ! f._subDb.getIndexManager());
+    EXPECT_TRUE( ! f._subDb.getIndexWriter());
+    EXPECT_TRUE(f._subDb.getFeedView());
+    EXPECT_TRUE(f._subDb.getSearchView());
+    EXPECT_TRUE(dynamic_cast<FastAccessFeedView *>(f._subDb.getFeedView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<EmptySearchView *>(f._subDb.getSearchView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != nullptr);
 }
 
 TEST_F("require that managers and components are instantiated", SearchableFixture)
 {
-    EXPECT_TRUE(f._subDb.getSummaryManager().get() != NULL);
-    EXPECT_TRUE(f._subDb.getSummaryAdapter().get() != NULL);
-    EXPECT_TRUE(f._subDb.getAttributeManager().get() != NULL);
-    EXPECT_TRUE(f._subDb.getIndexManager().get() != NULL);
-    EXPECT_TRUE(f._subDb.getIndexWriter().get() != NULL);
-    EXPECT_TRUE(f._subDb.getFeedView().get() != NULL);
-    EXPECT_TRUE(f._subDb.getSearchView().get() != NULL);
-    EXPECT_TRUE(dynamic_cast<SearchableFeedView *>(f._subDb.getFeedView().get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<SearchView *>(f._subDb.getSearchView().get()) != NULL);
-    EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != NULL);
+    EXPECT_TRUE(f._subDb.getSummaryManager());
+    EXPECT_TRUE(f._subDb.getSummaryAdapter());
+    EXPECT_TRUE(f._subDb.getAttributeManager());
+    EXPECT_TRUE(f._subDb.getIndexManager());
+    EXPECT_TRUE(f._subDb.getIndexWriter());
+    EXPECT_TRUE(f._subDb.getFeedView());
+    EXPECT_TRUE(f._subDb.getSearchView());
+    EXPECT_TRUE(dynamic_cast<SearchableFeedView *>(f._subDb.getFeedView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<SearchView *>(f._subDb.getSearchView().get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<FastAccessDocumentRetriever *>(f._subDb.getDocumentRetriever().get()) != nullptr);
 }
 
 template<typename Fixture>
