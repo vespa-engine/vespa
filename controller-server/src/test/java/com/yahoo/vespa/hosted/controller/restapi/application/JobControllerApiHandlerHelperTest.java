@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devAwsUsEast2a;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
@@ -116,7 +117,7 @@ public class JobControllerApiHandlerHelperTest {
 
         tester.jobs().deploy(appId, JobType.devAwsUsEast2a, Optional.empty(), applicationPackage);
         tester.runJob(JobType.devAwsUsEast2a);
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
     }
 
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
