@@ -154,7 +154,8 @@ public class TenantBuilder {
                     reloadHandler,
                     tenant,
                     applicationRepo,
-                    componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)));
+                    componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)),
+                    componentRegistry.getFlagSource());
         }
     }
 
