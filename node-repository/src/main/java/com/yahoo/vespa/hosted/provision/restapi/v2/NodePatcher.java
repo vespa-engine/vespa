@@ -144,6 +144,9 @@ public class NodePatcher {
             case "openStackId" :
                 return node.withOpenStackId(asString(value));
             case "modelName":
+                if (value.type() == Type.NIX) {
+                    return node.withoutModelName();
+                }
                 return node.withModelName(asString(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
