@@ -25,7 +25,6 @@ private:
     ExecutorThreadService _masterService;
     ExecutorThreadService _indexService;
     ExecutorThreadService _summaryService;
-    ExecutorThreadService _sharedService;
     std::unique_ptr<search::SequencedTaskExecutor> _indexFieldInverter;
     std::unique_ptr<search::SequencedTaskExecutor> _indexFieldWriter;
     std::unique_ptr<search::SequencedTaskExecutor> _attributeFieldWriter;
@@ -62,9 +61,6 @@ public:
     vespalib::ThreadStackExecutorBase &getSummaryExecutor() {
         return _summaryExecutor;
     }
-    vespalib::ThreadStackExecutorBase &getSharedExecutor() {
-        return _sharedExecutor;
-    }
 
     /**
      * Implements IThreadingService
@@ -79,8 +75,8 @@ public:
     searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
     }
-    searchcorespi::index::IThreadService &shared() override {
-        return _sharedService;
+    vespalib::ThreadExecutor &shared() override {
+        return _sharedExecutor;
     }
 
     search::ISequencedTaskExecutor &indexFieldInverter() override;
