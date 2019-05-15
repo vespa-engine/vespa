@@ -79,8 +79,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
+    private static final int JRT_RPC_TRANSPORT_THREADS = 4;
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport(JRT_RPC_TRANSPORT_THREADS));
     private Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
