@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
@@ -30,9 +29,8 @@ import java.util.Set;
  */
 public final class Node {
 
-    private final Set<String> ipAddresses;
-    private final IP.AddressPool ipAddressPool;
     private final String hostname;
+    private final IP.Config ipConfig;
     private final String id;
     private final Optional<String> parentHostname;
     private final Flavor flavor;
@@ -50,22 +48,23 @@ public final class Node {
 
     /** Temporary method until we can merge it with the other create method */
     public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, NodeResources resources, NodeType type) {
-        return new Node("fake-" + hostname, ipAddresses, ipAddressPool, hostname, parentHostname, new Flavor(resources), Status.initial(), State.reserved,
+        return new Node("fake-" + hostname, new IP.Config(ipAddresses, ipAddressPool), hostname, parentHostname, new Flavor(resources), Status.initial(), State.reserved,
                         Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
     }
 
     /** Creates a node in the initial state (provisioned) */
     public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Optional<String> modelName, Flavor flavor, NodeType type) {
-        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+        return new Node(openStackId, new IP.Config(ipAddresses, ipAddressPool), hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                 Optional.empty(), History.empty(), type, new Reports(), modelName);
     }
 
     /** Creates a node. See also the {@code create} helper methods. */
-    public Node(String id, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
+    public Node(String id, IP.Config ipConfig, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
                 Reports reports, Optional<String> modelName) {
         Objects.requireNonNull(id, "A node must have an ID");
         requireNonEmptyString(hostname, "A node must have a hostname");
+        Objects.requireNonNull(ipConfig, "A node must a have an IP config");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
         Objects.requireNonNull(status, "A node must have a status");
@@ -77,13 +76,12 @@ public final class Node {
         Objects.requireNonNull(modelName, "A null modelName is not permitted");
 
         if (state == State.active)
-            requireNonEmpty(ipAddresses, "An active node must have at least one valid IP address");
-        if (parentHostname.isPresent() && !ipAddressPool.isEmpty())
+            requireNonEmpty(ipConfig.primary(), "An active node must have at least one valid IP address");
+        if (parentHostname.isPresent() && !ipConfig.pool().asSet().isEmpty())
             throw new IllegalArgumentException("A child node cannot have an IP address pool");
 
-        this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
-        this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
+        this.ipConfig = ipConfig;
         this.parentHostname = parentHostname;
         this.id = id;
         this.flavor = flavor;
@@ -97,11 +95,16 @@ public final class Node {
     }
 
     /** Returns the IP addresses of this node */
-    public Set<String> ipAddresses() { return ipAddresses; }
+    // TODO: Remove and make callers access this through ipConfig()
+    public Set<String> ipAddresses() { return ipConfig.primary(); }
 
     /** Returns the IP address pool available on this node. These IP addresses are available for use by containers
      * running on this node */
-    public IP.AddressPool ipAddressPool() { return ipAddressPool; }
+    // TODO: Remove and make callers access this through ipConfig()
+    public IP.Pool ipAddressPool() { return ipConfig.pool(); }
+
+    /** Returns the IP config of this node */
+    public IP.Config ipConfig() { return ipConfig; }
 
     /** Returns the host name of this node */
     public String hostname() { return hostname; }
@@ -196,31 +199,31 @@ public final class Node {
 
     /** Returns a node with the status assigned to the given value */
     public Node with(Status status) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node with(NodeType type) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
     }
 
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
     }
 
     /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status.withReboot(generation), state, allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status.withReboot(generation), state, allocation, history, type, reports, modelName);
     }
 
     /** Returns a copy of this with the openStackId set */
     public Node withOpenStackId(String openStackId) {
-        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
+        return new Node(openStackId, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
     }
 
     public Node withModelName(String modelName) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, Optional.of(modelName));
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, Optional.of(modelName));
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
@@ -244,33 +247,27 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
-                Optional.of(allocation), history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                        Optional.of(allocation), history, type, reports, modelName);
     }
 
     /** Returns a new Node without an allocation. */
     public Node withoutAllocation() {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
-                Optional.empty(), history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                        Optional.empty(), history, type, reports, modelName);
     }
 
 
-    /** Returns a copy of this node with the IP addresses set to the given value. */
-    public Node withIpAddresses(Set<String> ipAddresses) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
-                allocation, history, type, reports, modelName);
-    }
-
-    /** Returns a copy of this node with IP address pool set to the given value. */
-    public Node withIpAddressPool(Set<String> ipAddressPool) {
-        return new Node(id, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state,
-                allocation, history, type, reports, modelName);
+    /** Returns a copy of this node with IP config set to the given value. */
+    public Node with(IP.Config ipConfig) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                        allocation, history, type, reports, modelName);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, Optional.of(parentHostname), flavor, status, state,
-                allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, Optional.of(parentHostname), flavor, status, state,
+                        allocation, history, type, reports, modelName);
     }
 
     /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
@@ -284,11 +281,11 @@ public final class Node {
 
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
     }
 
     public Node with(Reports reports) {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);
     }
 
     private static void requireNonEmptyString(Optional<String> value, String message) {

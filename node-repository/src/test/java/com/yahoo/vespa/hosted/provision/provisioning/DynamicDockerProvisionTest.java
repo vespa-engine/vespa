@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
@@ -85,8 +86,8 @@ public class DynamicDockerProvisionTest {
         // Ready the provisioned hosts, add an IP addreses to pool and activate them
         for (Integer i : expectedProvisionIndexes) {
             String hostname = "host-" + i;
-            Node host = tester.nodeRepository().getNode(hostname).orElseThrow()
-                    .withIpAddressPool(Set.of("::" + i + ":2")).withIpAddresses(Set.of("::" + i + ":0"));
+            var ipConfig = new IP.Config(Set.of("::" + i + ":0"), Set.of("::" + i + ":2"));
+            Node host = tester.nodeRepository().getNode(hostname).orElseThrow().with(ipConfig);
             tester.nodeRepository().setReady(List.of(host), Agent.system, getClass().getSimpleName());
             nameResolver.addRecord(hostname + "-2", "::" + i + ":2");
         }

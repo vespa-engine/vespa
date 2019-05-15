@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -36,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -252,7 +254,7 @@ public class SerializationTest {
         Node node = createNode();
 
         // Test round-trip with IP address pool
-        node = node.withIpAddressPool(ImmutableSet.of("::1", "::2", "::3"));
+        node = node.with(node.ipConfig().with(IP.Pool.of(Set.of("::1", "::2", "::3"))));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
         assertEquals(node.ipAddressPool(), copy.ipAddressPool());
 

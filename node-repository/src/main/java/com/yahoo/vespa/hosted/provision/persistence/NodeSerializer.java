@@ -124,8 +124,8 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        toSlime(node.ipAddresses(), object.setArray(ipAddressesKey), IP::requireAddresses);
-        toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey), IP::requireAddressPool);
+        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey), IP.Config::require);
+        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey), IP.Pool::require);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         toSlime(node.flavor(), object);
@@ -186,7 +186,7 @@ public class NodeSerializer {
 
     private void toSlime(Set<String> ipAddresses, Cursor array, UnaryOperator<Set<String>> validator) {
         // Validating IP address format expensive, so we do it at serialization time instead of Node construction time
-        validator.apply(ipAddresses).stream().sorted(IP.naturalOrder).forEach(array::addString);
+        validator.apply(ipAddresses).stream().sorted(IP.NATURAL_ORDER).forEach(array::addString);
     }
 
     // ---------------- Deserialization --------------------------------------------------
@@ -197,8 +197,8 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(idKey).asString(),
-                        ipAddressesFromSlime(object, ipAddressesKey),
-                        ipAddressesFromSlime(object, ipAddressPoolKey),
+                        new IP.Config(ipAddressesFromSlime(object, ipAddressesKey),
+                                      ipAddressesFromSlime(object, ipAddressPoolKey)),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
