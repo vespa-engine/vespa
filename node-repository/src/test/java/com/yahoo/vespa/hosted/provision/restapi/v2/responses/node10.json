@@ -13,7 +13,7 @@
   "description": "Flavor-name-is-default",
   "minCpuCores": 2.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 0.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "tenant1",
@@ -58,8 +58,8 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "127.0.10.1",
+    "::10:1"
   ],
   "additionalIpAddresses": []
 }

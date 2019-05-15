@@ -9,8 +9,8 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
@@ -77,8 +77,8 @@ public class DynamicDockerAllocationTest {
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
         ClusterSpec clusterSpec2 = clusterSpec("myContent.t2.a2");
-        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), clusterSpec2, flavor, 0, tester);
-        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), clusterSpec2, flavor, 1, tester);
+        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), clusterSpec2, flavor, 3, tester);
+        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), clusterSpec2, flavor, 4, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
         deployApp(application1, clusterSpec1, flavor, tester, 2);
@@ -289,7 +289,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
+        Node node1a = Node.create("open1", Set.of("127.0.233." + index), Set.of(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());

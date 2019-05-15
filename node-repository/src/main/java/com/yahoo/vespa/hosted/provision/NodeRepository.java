@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
@@ -22,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -298,23 +298,17 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Set<String> ipAddressPool, Optional<String> parentHostname,
+    public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
                            Optional<String> modelName, Flavor flavor, NodeType type) {
-        if (ipAddresses.isEmpty()) {
-            ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
+        if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
+            ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
         }
-
-        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), ipAddressPool, hostname, parentHostname, modelName, flavor, type);
+        return Node.create(openStackId, ipConfig.primary(), ipConfig.pool().asSet(), hostname, parentHostname, modelName, flavor, type);
     }
 
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, ipAddresses, Collections.emptySet(), parentHostname, Optional.empty(), flavor, type);
-    }
-
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, Collections.emptySet(), parentHostname, flavor, type);
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor,
+                           NodeType type) {
+        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, Optional.empty(), flavor, type);
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
@@ -351,7 +345,7 @@ public class NodeRepository extends AbstractComponent {
                     if (node.equals(other)) throw new IllegalArgumentException(message);
                 }
             }
-            return db.addNodesInState(nodes, Node.State.provisioned);
+            return db.addNodesInState(IP.Config.verify(nodes, list(lock)), Node.State.provisioned);
         }
     }
 

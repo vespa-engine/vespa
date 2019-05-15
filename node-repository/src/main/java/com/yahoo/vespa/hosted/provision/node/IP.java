@@ -5,12 +5,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -111,6 +113,35 @@ public class IP {
                 throw new IllegalArgumentException("Found one or more invalid addresses in " + addresses, e);
             }
             return addresses;
+        }
+
+        /**
+         * Verify IP config of given nodes
+         *
+         * @throws IllegalArgumentException if there are IP conflicts with existing nodes
+         */
+        public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
+            for (Node node : nodes) {
+                for (Node other : allNodes) {
+                    if (node.equals(other)) continue;
+                    Set<String> addresses = new HashSet<>(node.ipConfig().primary());
+                    Set<String> otherAddresses = new HashSet<>(other.ipConfig().primary());
+                    if (node.type().isDockerHost()) { // Addresses of a host can never overlap with any other nodes
+                        addresses.addAll(node.ipConfig().pool().asSet());
+                        otherAddresses.addAll(other.ipConfig().pool().asSet());
+                    }
+                    otherAddresses.retainAll(addresses);
+                    if (!otherAddresses.isEmpty())
+                        throw new IllegalArgumentException("Cannot assign " + addresses + " to " + node.hostname() +
+                                                           ": " + otherAddresses + " already assigned to " +
+                                                           other.hostname());
+                }
+            }
+            return nodes;
+        }
+
+        public static Node verify(Node node, LockedNodeList allNodes) {
+            return verify(List.of(node), allNodes).get(0);
         }
 
     }

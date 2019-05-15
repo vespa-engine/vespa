@@ -10,8 +10,8 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -20,9 +20,10 @@ import com.yahoo.vespa.hosted.provision.node.Reports;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,24 +44,23 @@ public class NodePatcher {
 
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
-    private final NodeRepository nodeRepository;
+    private final LockedNodeList nodes;
+    private final Clock clock;
 
     private Node node;
     private List<Node> children;
     private boolean childrenModified = false;
 
-    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, NodeRepository nodeRepository) {
+    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, LockedNodeList nodes, Clock clock) {
+        this.nodeFlavors = nodeFlavors;
+        this.node = node;
+        this.children = node.type().isDockerHost() ? nodes.childrenOf(node).asList() : List.of();
+        this.nodes = nodes;
+        this.clock = clock;
         try {
-            this.nodeFlavors = nodeFlavors;
-            inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
-            this.node = node;
-            this.nodeRepository = nodeRepository;
-            this.children = node.type().isDockerHost() ?
-                    nodeRepository.list().childrenOf(node).asList() :
-                    Collections.emptyList();
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Error reading request body", e);
+            this.inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Error reading request body", e);
         }
     }
 
@@ -108,7 +108,7 @@ public class NodePatcher {
     private Node applyField(Node node, String name, Inspector value) {
         switch (name) {
             case "currentRebootGeneration" :
-                return node.withCurrentRebootGeneration(asLong(value), nodeRepository.clock().instant());
+                return node.withCurrentRebootGeneration(asLong(value), clock.instant());
             case "currentRestartGeneration" :
                 return patchCurrentRestartGeneration(asLong(value));
             case "currentDockerImage" :
@@ -131,11 +131,11 @@ public class NodePatcher {
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
-                return node.with(node.ipConfig().with(asStringSet(value)));
+                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), nodes);
             case "additionalIpAddresses" :
-                return node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value))));
+                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), nodes);
             case WANT_TO_RETIRE :
-                return node.withWantToRetire(asBoolean(value), Agent.operator, nodeRepository.clock().instant());
+                return node.withWantToRetire(asBoolean(value), Agent.operator, clock.instant());
             case WANT_TO_DEPROVISION :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
