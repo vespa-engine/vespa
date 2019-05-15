@@ -400,11 +400,11 @@ public class JobController {
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     Optional<URI> testerEndpoint(RunId id) {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        return controller.applications().routingPolicies(testerId).stream()
-                         .findAny()
-                         .map(policy -> policy.endpointIn(controller.system()).url())
-                         .or(() -> controller.applications().getDeploymentEndpoints(testerId)
-                                             .flatMap(uris -> uris.stream().findAny()));
+        return controller.applications().getDeploymentEndpoints(testerId)
+                         .flatMap(uris -> uris.stream().findAny())
+                         .or(() -> controller.applications().routingPolicies(testerId).stream()
+                                             .findAny()
+                                             .map(policy -> policy.endpointIn(controller.system()).url()));
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.

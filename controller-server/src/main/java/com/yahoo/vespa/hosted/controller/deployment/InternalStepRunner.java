@@ -628,15 +628,13 @@ public class InternalStepRunner implements StepRunner {
     private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
         for (ZoneId zone : zones) {
-            Set<RoutingPolicy> policies = controller.applications().routingPolicies(new DeploymentId(id, zone));
-            if ( ! policies.isEmpty())
-                deployments.put(zone, policies.stream()
-                                              .map(policy -> policy.endpointIn(controller.system()).url())
-                                              .collect(Collectors.toUnmodifiableList()));
-            else
-                controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
-                          .filter(endpoints -> ! endpoints.isEmpty())
-                          .ifPresent(endpoints -> deployments.put(zone, endpoints));
+            controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+                      .filter(endpoints -> ! endpoints.isEmpty())
+                      .or(() -> Optional.of(controller.applications().routingPolicies(new DeploymentId(id, zone)).stream()
+                                                      .map(policy -> policy.endpointIn(controller.system()).url())
+                                                      .collect(Collectors.toUnmodifiableList()))
+                                        .filter(endpoints -> ! endpoints.isEmpty()))
+                      .ifPresent(endpoints -> deployments.put(zone, endpoints));
         }
         return deployments.build();
     }
