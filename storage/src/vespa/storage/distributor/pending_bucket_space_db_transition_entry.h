@@ -9,15 +9,19 @@ namespace storage::distributor::dbtransition {
 struct Entry {
     Entry(const document::BucketId& bid,
           const BucketCopy& copy_)
-        : bucketId(bid),
+        : bucket_key(bid.toKey()),
           copy(copy_)
     {}
 
-    document::BucketId bucketId;
+    uint64_t bucket_key;
     BucketCopy copy;
 
-    bool operator<(const Entry& other) const {
-        return bucketId.toKey() < other.bucketId.toKey();
+    document::BucketId bucket_id() const noexcept {
+        return document::BucketId(document::BucketId::keyToBucketId(bucket_key));
+    }
+
+    bool operator<(const Entry& other) const noexcept {
+        return bucket_key < other.bucket_key;
     }
 };
 
