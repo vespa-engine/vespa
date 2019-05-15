@@ -273,8 +273,8 @@ protected:
         ZCDECODE(_valI, docId +=);
         setDocId(docId);
         if (_decode_cheap_features) {
-            ZCDECODE(_valI, _field_length =);
-            ZCDECODE(_valI, _num_occs =);
+            ZCDECODE(_valI, _field_length = 1 +);
+            ZCDECODE(_valI, _num_occs = 1 +);
         }
     }
     virtual void featureSeek(uint64_t offset) = 0;

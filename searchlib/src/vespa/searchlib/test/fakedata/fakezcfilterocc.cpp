@@ -316,6 +316,11 @@ FakeZcFilterOcc::hasWordPositions() const
     return false;
 }
 
+bool
+FakeZcFilterOcc::has_cheap_features() const
+{
+    return _posting_params._encode_cheap_features;
+}
 
 size_t
 FakeZcFilterOcc::skipBitSize() const
@@ -1267,7 +1272,6 @@ template <bool bigEndian>
 class FakeZc4SkipPosOcc : public FakeZcFilterOcc
 {
     search::index::PostingListCounts _counts;
-    bool _encode_cheap_features;
 protected:
     FakeZc4SkipPosOcc(const FakeWord &fw, const Zc4PostingParams &posting_params, const char *name_suffix);
 public:

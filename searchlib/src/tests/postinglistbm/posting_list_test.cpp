@@ -27,7 +27,7 @@ validate_posting_list_for_word(const FakePosting& posting, const FakeWord& word)
 
     std::unique_ptr<SearchIterator> iterator(posting.createIterator(tfmda));
     if (posting.hasWordPositions()) {
-        word.validate(iterator.get(), tfmda, false);
+        word.validate(iterator.get(), tfmda, posting.has_cheap_features(), false);
     } else {
         word.validate(iterator.get(), false);
     }

@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zcpostingiterators.h"
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
 namespace search::diskindex {
 
 using search::fef::TermFieldMatchDataArray;
+using search::fef::TermFieldMatchData;
 using search::bitcompression::FeatureDecodeContext;
 using search::bitcompression::FeatureEncodeContext;
 using queryeval::RankedSearchIteratorBase;
@@ -122,6 +124,11 @@ ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId)
     }
     assert(docId == getDocId());
     _decodeContext->unpackFeatures(_matchData, docId);
+    if (_decode_cheap_features) {
+        TermFieldMatchData *tfmd = _matchData[0];
+        tfmd->setFieldLength(_field_length);
+        tfmd->setNumOccs(_num_occs);
+    }
     setUnpacked();
 }
 
@@ -521,8 +528,8 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
                oDocId);
 #endif
         if (_decode_cheap_features) {
-            ZCDECODE(oCompr, field_length =);
-            ZCDECODE(oCompr, num_occs =);
+            ZCDECODE(oCompr, field_length = 1 +);
+            ZCDECODE(oCompr, num_occs = 1 +);
         }
         incNeedUnpack();
     }
@@ -554,6 +561,11 @@ ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
         _decodeContext->skipFeatures(needUnpack - 1);
     }
     _decodeContext->unpackFeatures(_matchData, docId);
+    if (_decode_cheap_features) {
+        TermFieldMatchData *tfmd = _matchData[0];
+        tfmd->setFieldLength(_field_length);
+        tfmd->setNumOccs(_num_occs);
+    }
     setUnpacked();
 }
 
