@@ -49,4 +49,10 @@ FakePosting::l4SkipBitSize() const
     return 0;
 }
 
+bool
+FakePosting::has_cheap_features() const
+{
+    return false;
+}
+
 }

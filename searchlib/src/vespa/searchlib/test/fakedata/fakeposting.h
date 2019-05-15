@@ -62,6 +62,8 @@ public:
     virtual bool
     hasWordPositions() const = 0;
 
+    virtual bool has_cheap_features() const;
+
     /*
      * Single posting list performance, without feature unpack.
      */

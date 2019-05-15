@@ -395,6 +395,7 @@ bool
 FakeWord::validate(search::queryeval::SearchIterator *iterator,
                    const fef::TermFieldMatchDataArray &matchData,
                    uint32_t stride,
+                   bool decode_cheap_features,
                    bool verbose) const
 {
     iterator->initFullRange();
@@ -432,6 +433,10 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
                 if (matchData[lfi]->getDocId() != docId)
                     continue;
+                if (decode_cheap_features) {
+                    assert(d->_collapsedDocWordFeatures._field_len == matchData[lfi]->getFieldLength());
+                    assert(d->_collapsedDocWordFeatures._num_occs == matchData[lfi]->getNumOccs());
+                }
                 TMDPI mdpe = matchData[lfi]->end();
                 TMDPI mdp = matchData[lfi]->begin();
                 while (mdp != mdpe) {
@@ -462,6 +467,7 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
 bool
 FakeWord::validate(search::queryeval::SearchIterator *iterator,
                    const fef::TermFieldMatchDataArray &matchData,
+                   bool decode_cheap_features,
                    bool verbose) const
 {
     iterator->initFullRange();
@@ -487,6 +493,10 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
                 if (matchData[lfi]->getDocId() != docId)
                     continue;
+                if (decode_cheap_features) {
+                    assert(d->_collapsedDocWordFeatures._field_len == matchData[lfi]->getFieldLength());
+                    assert(d->_collapsedDocWordFeatures._num_occs == matchData[lfi]->getNumOccs());
+                }
                 TMDPI mdpe = matchData[lfi]->end();
                 TMDPI mdp = matchData[lfi]->begin();
                 while (mdp != mdpe) {

@@ -240,14 +240,17 @@ public:
     validate(search::queryeval::SearchIterator *iterator,
              const fef::TermFieldMatchDataArray &matchData,
              uint32_t stride,
+             bool decode_cheap_features,
              bool verbose) const;
 
     bool
     validate(search::queryeval::SearchIterator *iterator,
              const fef::TermFieldMatchDataArray &matchData,
+             bool decode_cheap_features,
              bool verbose) const;
 
-    bool validate(search::queryeval::SearchIterator *iterator, bool verbose) const;
+    bool validate(search::queryeval::SearchIterator *iterator,
+                  bool verbose) const;
 
     bool
     validate(search::diskindex::FieldReader &fieldReader,

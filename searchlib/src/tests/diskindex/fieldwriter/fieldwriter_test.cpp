@@ -458,6 +458,7 @@ void
 randReadField(FakeWordSet &wordSet,
               const std::string &namepref,
               bool dynamicK,
+              bool decode_cheap_features,
               bool verbose)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
@@ -469,9 +470,10 @@ randReadField(FakeWordSet &wordSet,
 
     LOG(info,
         "enter randReadField,"
-        " namepref=%s, dynamicK=%s",
+        " namepref=%s, dynamicK=%s, decode_cheap_features=%s",
         namepref.c_str(),
-        dynamicKStr);
+        dynamicKStr,
+        bool_to_str(decode_cheap_features));
     tv.SetNow();
     before = tv.Secs();
 
@@ -533,12 +535,12 @@ randReadField(FakeWordSet &wordSet,
                     sb(handle.createIterator(counts, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
-                word->validate(sb.get(), tfmda, verbose);
-                word->validate(sb.get(), tfmda, 19, verbose);
-                word->validate(sb.get(), tfmda, 99, verbose);
-                word->validate(sb.get(), tfmda, 799, verbose);
-                word->validate(sb.get(), tfmda, 6399, verbose);
-                word->validate(sb.get(), tfmda, 11999, verbose);
+                word->validate(sb.get(), tfmda, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 19, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 99, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 799, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 6399, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 11999, decode_cheap_features, verbose);
                 ++wordNum;
             }
         }
@@ -552,10 +554,11 @@ randReadField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave randReadField, namepref=%s,"
-        " dynamicK=%s, "
+        " dynamicK=%s, decode_cheap_features=%s, "
         "elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
+        bool_to_str(decode_cheap_features),
         after - before);
 }
 
@@ -634,7 +637,7 @@ testFieldWriterVariant(FakeWordSet &wordSet, uint32_t doc_id_limit,
 {
     writeField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_cheap_features);
     readField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_cheap_features, verbose);
-    randReadField(wordSet, file_name_prefix, dynamic_k, verbose);
+    randReadField(wordSet, file_name_prefix, dynamic_k, encode_cheap_features, verbose);
     fusionField(wordSet.getNumWords(),
                 doc_id_limit,
                 file_name_prefix, file_name_prefix + "x",
