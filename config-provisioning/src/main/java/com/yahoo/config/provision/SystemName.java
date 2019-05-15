@@ -52,6 +52,7 @@ public enum SystemName {
             case main: return "main";
             case Public: return "public";
             case PublicCd: return "publiccd";
+            case vaas: return "vaas";
             default : throw new IllegalStateException();
         }
     }
