@@ -19,7 +19,6 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
       _reqPending(false),
       _scheduled(false),
       _reqDone(false),
-      _useOldProto(false),
       _specs(),
       _specsGen(),
       _updates(),
@@ -121,42 +120,6 @@ MirrorAPI::ready() const
     LockGuard guard(_lock);
     return _updates.getAsInt() != 0;
 }
-
-
-// returns true if reconnect is needed
-bool
-MirrorAPI::handleMirrorFetch()
-{
-    if (strcmp(_req->GetReturnSpec(), "SSi") != 0) {
-        LOG(warning, "unknown return types '%s' from RPC request", _req->GetReturnSpec());
-        return true;
-    }
-
-    FRT_Values &answer = *(_req->GetReturn());
-
-    uint32_t numNames  = answer[0]._string_array._len;
-    FRT_StringValue *n = answer[0]._string_array._pt;
-    uint32_t numSpecs  = answer[1]._string_array._len;
-    FRT_StringValue *s = answer[1]._string_array._pt;
-    uint32_t newGen    = answer[2]._intval32;
-
-    if (numNames != numSpecs) {
-        LOG(warning, "inconsistent array lengths from RPC mirror request");
-        return true;
-    }
-
-    if (_specsGen != newGen) {
-        SpecList specs;
-
-        for (uint32_t idx = 0; idx < numNames; idx++) {
-            specs.push_back(std::make_pair(std::string(n[idx]._str),
-                                           std::string(s[idx]._str)));
-        }
-        updateTo(specs, newGen);
-    }
-    return false;
-}
-
 
 // returns true if reconnect is needed
 bool
@@ -261,13 +224,7 @@ MirrorAPI::handleReqDone()
         bool reconn = (_target == 0);
 
         if (_req->IsError()) {
-            if (_req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD && !_useOldProto) {
-                _useOldProto = true;
-                return false;
-            }
             reconn = true;
-        } else if (_useOldProto) {
-            reconn = handleMirrorFetch();
         } else {
             reconn = handleIncrementalFetch();
         }
@@ -296,7 +253,6 @@ MirrorAPI::handleReconnect()
             _target = _orb.GetTarget(_currSlobrok.c_str());
         }
         _specsGen.reset();
-        _useOldProto = false;
         if (_target == 0) {
             if (_rpc_ms < 50000) {
                 _rpc_ms += 100;
@@ -327,11 +283,7 @@ MirrorAPI::makeRequest()
     }
 
     _req = _orb.AllocRPCRequest(_req);
-    if (_useOldProto) {
-        _req->SetMethodName("slobrok.mirror.fetch");
-    } else {
-        _req->SetMethodName("slobrok.incremental.fetch");
-    }
+    _req->SetMethodName("slobrok.incremental.fetch");
     _req->GetParams()->AddInt32(_specsGen.getAsInt()); // gencnt
     _req->GetParams()->AddInt32(5000);                 // mstimeout
     _target->InvokeAsync(_req, 0.001 * _rpc_ms, this);

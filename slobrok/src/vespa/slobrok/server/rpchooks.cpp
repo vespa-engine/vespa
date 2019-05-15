@@ -181,16 +181,6 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.mirror.fetch", "ii", "SSi",
-                    FRT_METHOD(RPCHooks::rpc_mirrorFetch), this);
-    rb.MethodDesc("Fetch or update mirror of name to spec map");
-    rb.ParamDesc("gencnt", "generation already known by client");
-    rb.ParamDesc("timeout", "How many milliseconds to wait for changes"
-                 "before returning if nothing has changed (max=10000)");
-    rb.ReturnDesc("names", "Array of NamedService names");
-    rb.ReturnDesc("specs", "Array of connection specifications (same order)");
-    rb.ReturnDesc("newgen", "Generation count for new version of the map");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.incremental.fetch", "ii", "iSSSi",
                     FRT_METHOD(RPCHooks::rpc_incrementalFetch), this);
     rb.MethodDesc("Fetch or update mirror of name to spec map");
@@ -503,19 +493,6 @@ RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
 
 }
 
-
-void
-RPCHooks::rpc_mirrorFetch(FRT_RPCRequest *req)
-{
-    _cnts.mirrorReqs++;
-    FRT_Values &args = *req->GetParams();
-
-    vespalib::GenCnt gencnt(args[0]._intval32);
-    uint32_t msTimeout = args[1]._intval32;
-
-    req->getStash().create<MirrorFetch>(_env.getSupervisor(), req,
-                                         _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
-}
 
 void
 RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)

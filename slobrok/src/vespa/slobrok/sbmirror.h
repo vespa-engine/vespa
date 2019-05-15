@@ -79,7 +79,6 @@ private:
     void updateTo(SpecList& newSpecs, uint32_t newGen);
 
     bool handleIncrementalFetch();
-    bool handleMirrorFetch();
 
     void handleReconfig();
     bool handleReqDone();
@@ -93,7 +92,6 @@ private:
     bool                     _reqPending;
     bool                     _scheduled;
     bool                     _reqDone;
-    bool                     _useOldProto;
     SpecList                 _specs;
     vespalib::GenCnt         _specsGen;
     vespalib::GenCnt         _updates;
