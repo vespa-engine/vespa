@@ -1,17 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
+import com.yahoo.log.LogLevel;
+import com.yahoo.log.LogMessage;
+import com.yahoo.logserver.handlers.LogHandler;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
-
-import com.yahoo.io.SelectLoopHook;
-import com.yahoo.log.LogLevel;
-import com.yahoo.log.LogMessage;
-import com.yahoo.logserver.handlers.LogHandler;
 
 
 /**
@@ -20,7 +19,7 @@ import com.yahoo.logserver.handlers.LogHandler;
  *
  * @author Bjorn Borud
  */
-public class LogDispatcher implements LogHandler, SelectLoopHook {
+public class LogDispatcher implements LogHandler {
     private static final Logger log = Logger.getLogger(LogDispatcher.class.getName());
 
     private final List<LogHandler> handlers = new CopyOnWriteArrayList<>();
@@ -186,12 +185,4 @@ public class LogDispatcher implements LogHandler, SelectLoopHook {
         return messageCount.get();
     }
 
-    /**
-     * Hook which is called when the select loop has finished.
-     */
-    public void selectLoopHook(boolean before) {
-        if (batchedMode.get()) {
-            flushBatch(stealBatch());
-        }
-    }
 }
