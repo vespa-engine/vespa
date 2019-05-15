@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -106,6 +106,11 @@ public class Deployment {
     public Deployment withMetrics(DeploymentMetrics metrics) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
                               activity, clusterMetrics);
+    }
+
+    public Deployment withClusterMetrics(List<ClusterMetrics> newClusterMetrics) {
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
+                activity, newClusterMetrics);
     }
 
     /**

@@ -6,7 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.metrics.ClusterMetrics;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -128,7 +128,9 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                 .reachable().ids()
                 .stream().forEach(zoneId -> {
                     Map<ApplicationId, List<ClusterMetrics>> allMetrics = controller().configServer().getMetrics(zoneId);
-
+                    allMetrics.entrySet().stream().forEach(entry -> applications.lockIfPresent(entry.getKey(), locked -> {
+                        applications.store(locked.with(zoneId, entry.getValue()));
+                    }));
                 }
         );
     }
