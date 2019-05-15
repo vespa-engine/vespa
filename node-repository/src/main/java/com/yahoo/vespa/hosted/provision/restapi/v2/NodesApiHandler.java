@@ -137,7 +137,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/node/")) {
             Node node = nodeFromRequest(request);
             try (var lock = nodeRepository.lock(node)) {
-                nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository).apply());
+                nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository).apply(), lock);
             }
             return new MessageResponse("Updated " + node.hostname());
         }

@@ -128,7 +128,7 @@ public class ProvisioningTester {
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return new NodeList(nodeRepository.getNodes(id, inState)); }
 
-    public void patchNode(Node node) { nodeRepository.write(node); }
+    public void patchNode(Node node) { nodeRepository.write(node, () -> {}); }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, NodeResources flavor) {
         return prepare(application, cluster, nodeCount, groups, false, flavor);

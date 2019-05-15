@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.UnaryOperator;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -399,7 +399,7 @@ public class NodeRepository extends AbstractComponent {
             List<Node> removableNodes =
                 nodes.stream().map(node -> node.with(node.allocation().get().removable()))
                               .collect(Collectors.toList());
-            write(removableNodes);
+            write(removableNodes, lock);
         }
     }
 
@@ -423,7 +423,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Move nodes to the dirty state */
     public List<Node> setDirty(List<Node> nodes, Agent agent, String reason) {
-        return performOn(NodeListFilter.from(nodes), node -> setDirty(node, agent, reason));
+        return performOn(NodeListFilter.from(nodes), (node, lock) -> setDirty(node, agent, reason));
     }
 
     /**
@@ -642,7 +642,7 @@ public class NodeRepository extends AbstractComponent {
      * Returns the nodes in their new state.
      */
     public List<Node> restart(NodeFilter filter) {
-        return performOn(StateFilter.from(Node.State.active, filter), node -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted())));
+        return performOn(StateFilter.from(Node.State.active, filter), (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()), lock));
     }
 
     /**
@@ -650,24 +650,28 @@ public class NodeRepository extends AbstractComponent {
      * Returns the nodes in their new state.
      */
     public List<Node> reboot(NodeFilter filter) {
-        return performOn(filter, node -> write(node.withReboot(node.status().reboot().withIncreasedWanted())));
+        return performOn(filter, (node, lock) -> write(node.withReboot(node.status().reboot().withIncreasedWanted()), lock));
     }
 
     /**
      * Writes this node after it has changed some internal state but NOT changed its state field.
-     * This does NOT lock the node repository.
+     * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
+     * @param lock Already acquired lock
      * @return the written node for convenience
      */
-    public Node write(Node node) { return db.writeTo(node.state(), node, Agent.system, Optional.empty()); }
+    public Node write(Node node, Mutex lock) { return write(List.of(node), lock).get(0); }
 
     /**
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
-     * This does NOT lock the node repository.
+     * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
+     * @param lock Already acquired lock
      * @return the written nodes for convenience
      */
-    public List<Node> write(List<Node> nodes) { return db.writeTo(nodes, Agent.system, Optional.empty()); }
+    public List<Node> write(List<Node> nodes, @SuppressWarnings("unused") Mutex lock) {
+        return db.writeTo(nodes, Agent.system, Optional.empty());
+    }
 
     /**
      * Performs an operation requiring locking on all nodes matching some filter.
@@ -676,7 +680,7 @@ public class NodeRepository extends AbstractComponent {
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
-    private List<Node> performOn(NodeFilter filter, UnaryOperator<Node> action) {
+    private List<Node> performOn(NodeFilter filter, BiFunction<Node, Mutex, Node> action) {
         List<Node> unallocatedNodes = new ArrayList<>();
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
@@ -693,12 +697,12 @@ public class NodeRepository extends AbstractComponent {
         List<Node> resultingNodes = new ArrayList<>();
         try (Mutex lock = lockAllocation()) {
             for (Node node : unallocatedNodes)
-                resultingNodes.add(action.apply(node));
+                resultingNodes.add(action.apply(node, lock));
         }
         for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
             try (Mutex lock = lock(applicationNodes.getKey())) {
                 for (Node node : applicationNodes.getValue())
-                    resultingNodes.add(action.apply(node));
+                    resultingNodes.add(action.apply(node, lock));
             }
         }
         return resultingNodes;

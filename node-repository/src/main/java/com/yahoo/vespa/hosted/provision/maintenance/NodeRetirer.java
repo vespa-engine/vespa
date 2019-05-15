@@ -86,7 +86,7 @@ public class NodeRetirer extends Maintainer {
                             if (! flavorSpareChecker.canRetireUnallocatedNodeWithFlavor(nodeToRetire.flavor())) break;
 
                             retirementPolicy.shouldRetire(nodeToRetire).ifPresent(reason -> {
-                                nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToDeprovision(true)));
+                                nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToDeprovision(true)), lock);
                                 nodeRepository().park(nodeToRetire.hostname(), false, Agent.NodeRetirer, reason);
                                 iter.remove();
                             });
@@ -160,7 +160,7 @@ public class NodeRetirer extends Maintainer {
                             Node updatedNode = node.with(node.status()
                                     .withWantToRetire(true)
                                     .withWantToDeprovision(true));
-                            nodeRepository().write(updatedNode);
+                            nodeRepository().write(updatedNode, lock);
                         }));
             }
 
