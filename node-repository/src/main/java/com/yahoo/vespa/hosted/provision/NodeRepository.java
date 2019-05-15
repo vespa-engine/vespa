@@ -348,7 +348,7 @@ public class NodeRepository extends AbstractComponent {
                     if (node.equals(other)) throw new IllegalArgumentException(message);
                 }
             }
-            return db.addNodes(nodes);
+            return db.addNodesInState(nodes, Node.State.provisioned);
         }
     }
 

@@ -121,15 +121,6 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Adds a set of nodes in the initial, provisioned state.
-     *
-     * @return the given nodes for convenience.
-     */
-    public List<Node> addNodes(List<Node> nodes) {
-        return addNodesInState(nodes, Node.State.provisioned);
-    }
-
-    /**
      * Removes multiple nodes in a single transaction.
      *
      * @param nodes list of the nodes to remove
