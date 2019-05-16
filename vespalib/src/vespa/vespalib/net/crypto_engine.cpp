@@ -1,15 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "crypto_engine.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/crypto_exception.h>
+#include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/statistics.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
-#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
-#include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <chrono>
 #include <thread>
@@ -240,7 +241,12 @@ CryptoEngine::get_default()
 {
     std::lock_guard guard(_shared_lock);
     if (!_shared_default) {
-        _shared_default = create_default_crypto_engine();
+        try {
+            _shared_default = create_default_crypto_engine();
+        } catch (net::tls::CryptoException &e) {
+            LOG(error, "failed to create default crypto engine: %s", e.what());
+            std::quick_exit(78);
+        }
     }
     return _shared_default;
 }
