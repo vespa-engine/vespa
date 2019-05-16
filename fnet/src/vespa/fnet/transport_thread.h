@@ -340,43 +340,6 @@ public:
      **/
     void Add(FNET_IOComponent *comp, bool needRef = true);
 
-
-    /**
-     * Calling this method enables read events for the given I/O
-     * component. Note that the actual work is performed by the
-     * transport thread. This method simply posts an event on the
-     * transport thread event queue. NOTE: in order to post async events
-     * regarding I/O components, an extra reference to the component
-     * needs to be allocated. The needRef flag indicates wether the
-     * caller already has done this.
-     *
-     * @param comp the component that wants read events.
-     * @param needRef should be set to false if the caller of this
-     *        method already has obtained an extra reference to the
-     *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
-     **/
-    void EnableRead(FNET_IOComponent *comp, bool needRef = true);
-
-
-    /**
-     * Calling this method disables read events for the given I/O
-     * component. Note that the actual work is performed by the
-     * transport thread. This method simply posts an event on the
-     * transport thread event queue. NOTE: in order to post async events
-     * regarding I/O components, an extra reference to the component
-     * needs to be allocated. The needRef flag indicates wether the
-     * caller already has done this.
-     *
-     * @param comp the component that no longer wants read events.
-     * @param needRef should be set to false if the caller of this
-     *        method already has obtained an extra reference to the
-     *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
-     **/
-    void DisableRead(FNET_IOComponent *comp, bool needRef = true);
-
-
     /**
      * Calling this method enables write events for the given I/O
      * component. Note that the actual work is performed by the
@@ -393,24 +356,6 @@ public:
      *        AddRef method on the component.
      **/
     void EnableWrite(FNET_IOComponent *comp, bool needRef = true);
-
-
-    /**
-     * Calling this method disables write events for the given I/O
-     * component. Note that the actual work is performed by the
-     * transport thread. This method simply posts an event on the
-     * transport thread event queue. NOTE: in order to post async events
-     * regarding I/O components, an extra reference to the component
-     * needs to be allocated. The needRef flag indicates wether the
-     * caller already has done this.
-     *
-     * @param comp the component that no longer wants write events.
-     * @param needRef should be set to false if the caller of this
-     *        method already has obtained an extra reference to the
-     *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
-     **/
-    void DisableWrite(FNET_IOComponent *comp, bool needRef = true);
 
 
     /**
@@ -477,16 +422,6 @@ public:
      * from the transport thread is not a good idea.
      **/
     void sync();
-
-
-    /**
-     * Obtain a pointer to the current time sampler. The current time
-     * sampler may only be used by the transport thread. Also, it SHOULD
-     * be used by ALL methods driven by the transport thread that wants
-     * to have an estimate of the current time. This includes the custom
-     * application hook, packet delivery callbacks and pingable objects.
-     **/
-    FastOS_Time *GetTimeSampler() { return &_now; }
 
 
     /**

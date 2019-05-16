@@ -35,10 +35,7 @@ public:
         FNET_CMD_NOCOMMAND = 0,
         FNET_CMD_CHANNEL_LOST,
         FNET_CMD_IOC_ADD,
-        FNET_CMD_IOC_ENABLE_READ,
-        FNET_CMD_IOC_DISABLE_READ,
         FNET_CMD_IOC_ENABLE_WRITE,
-        FNET_CMD_IOC_DISABLE_WRITE,
         FNET_CMD_IOC_HANDSHAKE_ACT,
         FNET_CMD_IOC_CLOSE,
         FNET_CMD_EXECUTE,
@@ -48,13 +45,9 @@ public:
         FNET_CMD_LASTVALUE = FNET_CMD_BAD_PACKET
     };
 
-    static FNET_ControlPacket NoCommand;
     static FNET_ControlPacket ChannelLost;
     static FNET_ControlPacket IOCAdd;
-    static FNET_ControlPacket IOCEnableRead;
-    static FNET_ControlPacket IOCDisableRead;
     static FNET_ControlPacket IOCEnableWrite;
-    static FNET_ControlPacket IOCDisableWrite;
     static FNET_ControlPacket IOCHandshakeACT;
     static FNET_ControlPacket IOCClose;
     static FNET_ControlPacket Execute;

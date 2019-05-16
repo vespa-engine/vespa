@@ -36,9 +36,7 @@ FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::C
     }
 }
 
-FNET_Transport::~FNET_Transport()
-{
-}
+FNET_Transport::~FNET_Transport() = default;
 
 void
 FNET_Transport::post_or_perform(vespalib::Executor::Task::UP task)
@@ -186,35 +184,10 @@ FNET_Transport::Add(FNET_IOComponent *comp, bool needRef) {
     comp->Owner()->Add(comp, needRef);
 }
 
-void
-FNET_Transport::EnableRead(FNET_IOComponent *comp, bool needRef) {
-    comp->Owner()->EnableRead(comp, needRef);
-}
-
-void
-FNET_Transport::DisableRead(FNET_IOComponent *comp, bool needRef) {
-    comp->Owner()->DisableRead(comp, needRef);
-}
-
-void
-FNET_Transport::EnableWrite(FNET_IOComponent *comp, bool needRef) {
-    comp->Owner()->EnableWrite(comp, needRef);
-}
-
-void
-FNET_Transport::DisableWrite(FNET_IOComponent *comp, bool needRef) {
-    comp->Owner()->DisableWrite(comp, needRef);
-}
 
 void
 FNET_Transport::Close(FNET_IOComponent *comp, bool needRef) {
     comp->Owner()->Close(comp, needRef);
-}
-
-FastOS_TimeInterface *
-FNET_Transport::GetTimeSampler() {
-    assert(_threads.size() == 1);
-    return _threads[0]->GetTimeSampler();
 }
 
 void
