@@ -35,7 +35,6 @@ import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaxmlparser.DocumentFeedOperation;
 import com.yahoo.vespaxmlparser.FeedOperation;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -107,7 +106,7 @@ public class RestApi extends LoggingRequestHandler {
         this.operationHandler = operationHandler;
         this.threadsAvailableForApi = new AtomicInteger(threadsAvailable);
     }
-    
+
     @Override
     public void destroy() {
         operationHandler.shutdown();

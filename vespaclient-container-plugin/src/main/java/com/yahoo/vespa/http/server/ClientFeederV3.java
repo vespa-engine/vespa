@@ -18,7 +18,6 @@ import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 import com.yahoo.vespaxmlparser.FeedOperation;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -188,6 +187,8 @@ class ClientFeederV3 {
                 if (log.isLoggable(LogLevel.DEBUG)) {
                     log.log(LogLevel.DEBUG, Exceptions.toMessageString(e), e);
                 }
+                metric.add(MetricNames.PARSE_ERROR, 1, null);
+
                 repliesFromOldMessages.add(new OperationStatus(
                         Exceptions.toMessageString(e), operationId.get(), ErrorCode.ERROR, false, ""));
 

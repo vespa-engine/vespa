@@ -353,8 +353,7 @@ public class OperationHandlerImplTest {
     @Test
     public void api_root_visiting_throws_exception_on_unknown_bucket_space_name() throws Exception {
         try {
-            VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "",
-                    optionsBuilder().cluster("foo").bucketSpace("langbein").build());
+            generatedVisitParametersFrom(apiRootVisitUri(), "", optionsBuilder().cluster("foo").bucketSpace("langbein").build());
         } catch (RestApiException e) {
             assertThat(e.getResponse().getStatus(), is(400));
             assertThat(renderRestApiExceptionAsString(e), containsString(

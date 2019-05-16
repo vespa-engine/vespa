@@ -23,7 +23,7 @@ public final class MetaStream extends ByteArrayInputStream {
 
     private static final byte[] createPayload(byte[] buf) {
         StringBuilder bu = new StringBuilder();
-        for (byte b : buf) {
+        for (int i = 0; i < buf.length; i++) {
             bu.append("id:banana:banana::doc1 0\n");
         }
         return Utf8.toBytes(bu.toString());

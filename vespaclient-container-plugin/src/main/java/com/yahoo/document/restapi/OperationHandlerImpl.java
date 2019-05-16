@@ -26,7 +26,6 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaxmlparser.FeedOperation;
-import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import com.yahoo.yolean.concurrent.ResourceFactory;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -41,7 +40,7 @@ import java.util.Set;
 /**
  * Sends operations to messagebus via document api.
  *
- * @author dybis 
+ * @author dybis
  */
 public class OperationHandlerImpl implements OperationHandler {
 
