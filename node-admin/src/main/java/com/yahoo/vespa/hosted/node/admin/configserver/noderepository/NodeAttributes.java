@@ -28,7 +28,6 @@ public class NodeAttributes {
     private Optional<Version> vespaVersion = Optional.empty();
     private Optional<Version> currentOsVersion = Optional.empty();
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
-    private Optional<String> hardwareDivergence = Optional.empty();
     private Optional<String> hardwareFailureDescription = Optional.empty();
     private Optional<Boolean> wantToDeprovision = Optional.empty();
     /** The list of reports to patch. A null value is used to remove the report. */
@@ -119,10 +118,6 @@ public class NodeAttributes {
         return currentFirmwareCheck;
     }
 
-    public Optional<String> getHardwareDivergence() {
-        return hardwareDivergence;
-    }
-
     public Optional<String> getHardwareFailureDescription() {
         return hardwareFailureDescription;
     }
@@ -138,7 +133,7 @@ public class NodeAttributes {
     @Override
     public int hashCode() {
         return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
-                currentFirmwareCheck, hardwareDivergence, hardwareFailureDescription, wantToDeprovision, reports);
+                currentFirmwareCheck, hardwareFailureDescription, wantToDeprovision, reports);
     }
 
     public boolean isEmpty() {
@@ -158,7 +153,6 @@ public class NodeAttributes {
                 && Objects.equals(vespaVersion, other.vespaVersion)
                 && Objects.equals(currentOsVersion, other.currentOsVersion)
                 && Objects.equals(currentFirmwareCheck, other.currentFirmwareCheck)
-                && Objects.equals(hardwareDivergence, other.hardwareDivergence)
                 && Objects.equals(hardwareFailureDescription, other.hardwareFailureDescription)
                 && Objects.equals(reports, other.reports)
                 && Objects.equals(wantToDeprovision, other.wantToDeprovision);
@@ -173,7 +167,6 @@ public class NodeAttributes {
                         vespaVersion.map(ver -> "vespaVersion=" + ver.toFullString()),
                         currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
                         currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
-                        hardwareDivergence.map(hwDivg -> "hardwareDivergence=" + hwDivg),
                         hardwareFailureDescription.map(hwDesc -> "hardwareFailureDescription=" + hwDesc),
                         Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports),
                         wantToDeprovision.map(depr -> "wantToDeprovision=" + depr))
