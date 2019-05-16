@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test of the REST APIs provided by the node repository.
@@ -224,6 +223,14 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                                   Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated host4.yahoo.com\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"modelName\":\"foo\"");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                                   Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated host4.yahoo.com\"}");
+        assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "modelName", false);
         container.handleRequest((new Request("http://localhost:8080/nodes/v2/upgrade/tenant", Utf8.toBytes("{\"dockerImage\": \"docker.domain.tld/my/image\"}"), Request.Method.PATCH)));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
@@ -863,9 +870,13 @@ public class RestApiTest {
     }
 
     private void assertResponseContains(Request request, String responseSnippet) throws IOException {
+        assertPartialResponse(request, responseSnippet, true);
+    }
+
+    private void assertPartialResponse(Request request, String responseSnippet, boolean match) throws IOException {
         String response = container.handleRequest(request).getBodyAsString();
-        assertTrue(String.format("Expected response to contain: %s\nResponse: %s", responseSnippet, response),
-                response.contains(responseSnippet));
+        assertEquals(String.format("Expected response to " + (match ? " " : "not ") + "contain: %s\nResponse: %s",
+                                   responseSnippet, response), match, response.contains(responseSnippet));
     }
 
     private void assertFile(Request request, String responseFile) throws IOException {
