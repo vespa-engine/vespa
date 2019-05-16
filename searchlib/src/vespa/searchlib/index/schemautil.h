@@ -83,6 +83,10 @@ public:
             return _schema.getIndexField(_index).getName();
         }
 
+        bool use_experimental_posting_list_format() const {
+            return _schema.getIndexField(_index).use_experimental_posting_list_format();
+        }
+
         IndexIterator &operator++() {
             if (_index < _schema.getNumIndexFields()) {
                 ++_index;
