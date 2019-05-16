@@ -28,7 +28,7 @@ public class ProtocolRepository {
      */
     public void putProtocol(Protocol protocol) {
         if (protocols.put(protocol.getName(), protocol) != null) {
-            routingPolicyCache.clear();
+            clearPolicyCache();
         }
     }
 
@@ -72,6 +72,10 @@ public class ProtocolRepository {
             return ret;
         }
         synchronized (this) {
+            ret = routingPolicyCache.get(cacheKey);
+            if (ret != null) {
+                return ret;
+            }
             Protocol protocol = getProtocol(protocolName);
             if (protocol == null) {
                 log.log(LogLevel.ERROR, "Protocol '" + protocolName + "' not supported.");
@@ -81,6 +85,9 @@ public class ProtocolRepository {
                 ret = protocol.createPolicy(policyName, policyParam);
             } catch (RuntimeException e) {
                 log.log(LogLevel.ERROR, "Protcol '" + protocolName + "' threw an exception: " + e.getMessage(), e);
+                if (ret != null) {
+                    ret.destroy();
+                }
                 return null;
             }
             if (ret == null) {

@@ -108,8 +108,13 @@ public class Distribution {
             distributionBitMasks[i] = mask;
             mask = (mask << 1) | 1;
         }
-        configSub = new ConfigSubscriber();
-        configSub.subscribe(configSubscriber, StorDistributionConfig.class, configId);
+        try {
+            configSub = new ConfigSubscriber();
+            configSub.subscribe(configSubscriber, StorDistributionConfig.class, configId);
+        } catch (Throwable e) {
+            close();
+            throw e;
+        }
     }
 
     public Distribution(StorDistributionConfig config) {
@@ -122,7 +127,11 @@ public class Distribution {
     }
 
     public void close() {
-        if (configSub!=null) configSub.close();
+        if (configSub!=null) {
+            configSub.close();
+            configSub = null;
+        }
+        configSubscriber = null;
     }
 
     private int getGroupSeed(BucketId bucket, ClusterState state, Group group) {
@@ -146,7 +155,7 @@ public class Distribution {
         return seed;
     }
 
-    private class ScoredGroup implements Comparable<ScoredGroup> {
+    private static class ScoredGroup implements Comparable<ScoredGroup> {
         Group group;
         double score;
 
@@ -158,7 +167,7 @@ public class Distribution {
             return Double.valueOf(o.score).compareTo(score);
         }
     }
-    private class ScoredNode {
+    private static class ScoredNode {
         int index;
         int reliability;
         double score;
@@ -205,7 +214,7 @@ public class Distribution {
         }
         return getIdealDistributorGroup(bucket, clusterState, results.first().group, redundancyArray[0]);
     }
-    private class ResultGroup implements Comparable<ResultGroup> {
+    private static class ResultGroup implements Comparable<ResultGroup> {
         Group group;
         int redundancy;
 
