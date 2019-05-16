@@ -29,6 +29,7 @@ import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +47,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.getDefaultMetricsConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.JarSuffix.JAR_WITH_DEPS;
-import static com.yahoo.vespa.model.container.xml.BundleMapper.bundlePathFromName;
+import static com.yahoo.vespa.model.container.xml.BundleMapper.absoluteBundlePath;
 
 /**
  * Container cluster for metrics proxy containers.
@@ -61,11 +62,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
     private static final String METRICS_PROXY_NAME = "metrics-proxy";
-    private static final Path METRICS_PROXY_BUNDLE_FILE = bundlePathFromName(METRICS_PROXY_NAME, JAR_WITH_DEPS);
+    static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
-
-    static final String DEFAULT_NAME_IN_MONITORING_SYSTEM = "vespa";
-    static final int DEFAULT_MONITORING_INTERVAL = 1;
 
     static final class AppDimensionNames {
         static final String ZONE = "zone";
@@ -108,8 +106,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     public void getConfig(MonitoringConfig.Builder builder) {
-        builder.systemName(getSystemName())
-                .intervalMinutes(getIntervalMinutes());
+        getSystemName().ifPresent(builder::systemName);
+        getIntervalMinutes().ifPresent(builder::intervalMinutes);
     }
 
     @Override
@@ -149,19 +147,16 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         return Optional.empty();
     }
 
-    private String getSystemName() {
+    private Optional<String> getSystemName() {
         Monitoring monitoring = getMonitoringService();
-        if (monitoring != null && ! monitoring.getClustername().equals(""))
-            return monitoring.getClustername();
-        return DEFAULT_NAME_IN_MONITORING_SYSTEM;
+        return monitoring != null && ! monitoring.getClustername().equals("") ?
+                Optional.of(monitoring.getClustername()) : Optional.empty();
     }
 
-    private int getIntervalMinutes() {
+    private Optional<Integer> getIntervalMinutes() {
         Monitoring monitoring = getMonitoringService();
-        if (monitoring != null && monitoring.getInterval() != null) {
-            return monitoring.getInterval();
-        }
-        return DEFAULT_MONITORING_INTERVAL;
+        return monitoring != null ?
+                Optional.of(monitoring.getInterval()) : Optional.empty();
     }
 
     private void  addMetricsProxyComponent(Class<?> componentClass) {

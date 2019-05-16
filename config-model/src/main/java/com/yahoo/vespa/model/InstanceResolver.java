@@ -8,7 +8,6 @@ import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 
 import java.lang.reflect.Field;
@@ -16,7 +15,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 
 /**
  * <p>
@@ -42,34 +40,18 @@ class InstanceResolver {
      * Resolves this config key into a correctly typed ConfigInstance using the given config builder.
      * FIXME: Make private once config overrides are deprecated.?
      *
-     * @param key   a ConfigKey
      * @param builder a ConfigBuilder to create the instance from.
      * @param targetDef the def to use
      * @return the config instance or null of no producer for this found in model
      */
-    static ConfigInstance resolveToInstance(ConfigKey<?> key, ConfigBuilder builder, InnerCNode targetDef) {
-        ConfigDefinitionKey defKey = new ConfigDefinitionKey(key);
+    static ConfigInstance resolveToInstance(ConfigInstance.Builder builder, InnerCNode targetDef) {
         try {
             if (targetDef != null) applyDef(builder, targetDef);
-            Class<? extends ConfigInstance> clazz = getConfigClass(defKey, builder.getClass().getClassLoader());
+            Class<? extends ConfigInstance> clazz = getConfigClass(builder.getClass());
             return clazz.getConstructor(builder.getClass()).newInstance(builder);
         } catch (Exception e) {
             throw new ConfigurationRuntimeException(e);
         }
-    }
-
-    /**
-     * Resolves this config key into a correctly typed ConfigBuilder using the given config model.
-     * FIXME: Make private once config overrides are deprecated.?
-     *
-     * @return the config builder or null if no producer for this found in model
-     */
-    static ConfigBuilder resolveToBuilder(ConfigKey<?> key, VespaModel model) {
-        if (model == null) return null;
-        ConfigDefinitionKey defKey = new ConfigDefinitionKey(key);
-        ConfigInstance.Builder builder = model.createBuilder(defKey);
-        model.getConfig(builder, key.getConfigId());
-        return builder;
     }
 
     /**
@@ -143,31 +125,28 @@ class InstanceResolver {
         }
     }
 
-    /**
-     * Returns a {@link ConfigInstance} of right type for given key using reflection
-     *
-     * @param  cKey a ConfigKey
-     * @return a {@link ConfigInstance} or null if not available in classpath
-     */
     @SuppressWarnings("unchecked")
-    private static Class<? extends ConfigInstance> getConfigClass(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
-        String className = createClassName(cKey.getName());
-        String fullClassName = packageName(cKey) + "." + className;
-        Class<?> clazz;
-        try {
-            clazz = instanceLoader != null ? instanceLoader.loadClass(fullClassName) : Class.forName(fullClassName);
-        } catch (ClassNotFoundException e) {
-            throw new ConfigurationRuntimeException("Could not find config class for key " + cKey, e);
+    private static Class<? extends ConfigInstance> getConfigClass(Class<? extends ConfigInstance.Builder> builderClass) {
+        Class<?> configClass = builderClass.getEnclosingClass();
+        if (configClass == null || ! ConfigInstance.class.isAssignableFrom(configClass)) {
+            throw new ConfigurationRuntimeException("Builder class " + builderClass + " has enclosing class " + configClass + ", which is not a ConfigInstance");
         }
-        if (! ConfigInstance.class.isAssignableFrom(clazz)) {
-            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance subclass, can not produce config for " + cKey);
-        }
-        return (Class<? extends ConfigInstance>) clazz;
+        return (Class<? extends ConfigInstance>) configClass;
     }
 
-    static String packageName(ConfigDefinitionKey cKey) {
-        String prefix = "com.yahoo.";
+    static String packageName(ConfigDefinitionKey cKey, PackagePrefix packagePrefix) {
+        String prefix = packagePrefix.value;
         return prefix + (cKey.getNamespace().isEmpty() ? CNode.DEFAULT_NAMESPACE : cKey.getNamespace());
     }
 
+
+    enum PackagePrefix {
+        COM_YAHOO("com.yahoo."),
+        NONE("");
+
+        final String value;
+        PackagePrefix (String value) {
+            this.value = value;
+        }
+    }
 }
