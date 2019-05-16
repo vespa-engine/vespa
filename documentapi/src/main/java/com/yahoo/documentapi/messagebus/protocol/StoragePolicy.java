@@ -349,15 +349,24 @@ public class StoragePolicy extends SlobrokPolicy {
         private final int maxOldClusterVersionBeforeSendingRandom; // Reset cluster version protection
 
         DistributorSelectionLogic(Parameters params, SlobrokPolicy policy) {
-            this.hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
-            this.distribution = params.createDistribution(policy);
-            persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
-            maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
+            try {
+                hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
+                distribution = params.createDistribution(policy);
+                persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
+                maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
+            } catch (Throwable e) {
+                destroy();
+                throw e;
+            }
         }
 
         public void destroy() {
-            hostFetcher.close();
-            distribution.close();
+            if (hostFetcher != null) {
+                hostFetcher.close();
+            }
+            if (distribution != null) {
+                distribution.close();
+            }
         }
 
         String getTargetSpec(RoutingContext context, BucketId bucketId) {
