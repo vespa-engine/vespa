@@ -200,6 +200,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.fastDisk,
                 node.bandwidth,
                 node.ipAddresses,
+                node.additionalIpAddresses,
                 Optional.ofNullable(node.hardwareFailureDescription),
                 reports,
                 Optional.ofNullable(node.parentHostname));
