@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
+import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -33,6 +34,7 @@ import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.searchdefinition.processing.Processing;
+import com.yahoo.vespa.model.InstanceResolver.PackagePrefix;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.ml.ConvertedModel;
@@ -357,7 +359,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     public ConfigInstance.Builder getConfig(ConfigInstance.Builder builder, String configId) {
         checkId(configId);
         Optional<ConfigProducer> configProducer = getConfigProducer(configId);
-        if ( ! configProducer.isPresent()) return null;
+        if (configProducer.isEmpty()) return null;
 
         populateConfigBuilder(builder, configProducer.get());
         return builder;
@@ -381,7 +383,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     @Override
     public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
-        ConfigBuilder builder = InstanceResolver.resolveToBuilder(configKey, this);
+        ConfigInstance.Builder builder = resolveToBuilder(configKey);
+        // TODO: remove if-statement, the builder can never be null.
         if (builder != null) {
             log.log(LogLevel.DEBUG, () -> "Found builder for " + configKey);
             ConfigPayload payload;
@@ -389,24 +392,37 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             if (builder instanceof GenericConfig.GenericConfigBuilder) {
                 payload = getConfigFromGenericBuilder(builder);
             } else {
-                payload = getConfigFromBuilder(configKey, builder, innerCNode);
+                payload = getConfigFromBuilder(builder, innerCNode);
             }
             return (innerCNode != null) ? payload.applyDefaultsFromDef(innerCNode) : payload;
         }
         return null;
     }
 
-    private ConfigPayload getConfigFromBuilder(ConfigKey configKey, ConfigBuilder builder, InnerCNode targetDef) {
+    /**
+     * Resolves the given config key into a correctly typed ConfigBuilder
+     * and fills in the config from this model.
+     *
+     * @return A new config builder with config from this model filled in,.
+     */
+    private ConfigInstance.Builder resolveToBuilder(ConfigKey<?> key) {
+        ConfigDefinitionKey defKey = new ConfigDefinitionKey(key);
+        ConfigInstance.Builder builder = createBuilder(defKey);
+        getConfig(builder, key.getConfigId());
+        return builder;
+    }
+
+    private ConfigPayload getConfigFromBuilder(ConfigInstance.Builder builder, InnerCNode targetDef) {
         try {
-            ConfigInstance instance = InstanceResolver.resolveToInstance(configKey, builder, targetDef);
-            log.log(LogLevel.DEBUG, () -> "getConfigFromBuilder for " + configKey + ",instance=" + instance);
+            ConfigInstance instance = InstanceResolver.resolveToInstance(builder, targetDef);
+            log.log(LogLevel.DEBUG, () -> "getConfigFromBuilder for builder " + builder.getClass().getName() + ", instance=" + instance);
             return ConfigPayload.fromInstance(instance);
         } catch (ConfigurationRuntimeException e) {
             // This can happen in cases where services ask for config that no longer exist before they have been able
             // to reconfigure themselves. This happens for instance whenever jdisc reconfigures itself until
             // ticket 6599572 is fixed. When that happens, consider propagating a full error rather than empty payload
             // back to the client.
-            log.log(LogLevel.INFO, "Error resolving instance for key '" + configKey + "', returning empty config: " + Exceptions.toMessageString(e));
+            log.log(LogLevel.INFO, "Error resolving instance for builder '" + builder.getClass().getName() + "', returning empty config: " + Exceptions.toMessageString(e));
             return ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
         }
     }
@@ -424,14 +440,15 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return keySet;
     }
 
-    public ConfigInstance.Builder createBuilder(ConfigDefinitionKey key) {
+    private ConfigInstance.Builder createBuilder(ConfigDefinitionKey key) {
         String className = createClassName(key.getName());
         Class<?> clazz;
 
-        final String fullClassName = InstanceResolver.packageName(key) + "." + className;
+        Pair<String, ClassLoader> fullClassNameAndLoader = getClassLoaderForProducer(key, className);
+        String fullClassName = fullClassNameAndLoader.getFirst();
+        ClassLoader classLoader = fullClassNameAndLoader.getSecond();
+
         final String builderName = fullClassName + "$Builder";
-        final String producerName = fullClassName + "$Producer";
-        ClassLoader classLoader = getConfigClassLoader(producerName);
         if (classLoader == null) {
             classLoader = getClass().getClassLoader();
             log.log(LogLevel.DEBUG, () -> "No producer found to get classloader from for " + fullClassName + ". Using default");
@@ -455,6 +472,24 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance.Builder, can not produce config for the name '" + key.getName() + "'.");
         }
         return (ConfigInstance.Builder) i;
+    }
+
+    /**
+     * Takes a candidate class name and tries to find a config producer for that class in the model. First, an
+     * attempt is made with the given full class name, and if unsuccessful, then with 'com.yahoo.' prefixed to it.
+     * Returns the full class name and the class loader that a producer was found for. If no producer was found,
+     * returns the full class name with prefix, and null for the class loader.
+     */
+    private Pair<String, ClassLoader> getClassLoaderForProducer(ConfigDefinitionKey key, String shortClassName) {
+        String fullClassNameWithComYahoo = InstanceResolver.packageName(key, PackagePrefix.COM_YAHOO) + "." + shortClassName;
+        String fullClassNameWithoutPrefix = InstanceResolver.packageName(key, PackagePrefix.NONE) + "." + shortClassName;
+        String producerSuffix = "$Producer";
+
+        ClassLoader loader = getConfigClassLoader(fullClassNameWithoutPrefix + producerSuffix);
+        if (loader != null) return new Pair<>(fullClassNameWithoutPrefix, loader);
+
+        return new Pair<>(fullClassNameWithComYahoo,
+                          getConfigClassLoader(fullClassNameWithComYahoo + producerSuffix));
     }
 
     /**
