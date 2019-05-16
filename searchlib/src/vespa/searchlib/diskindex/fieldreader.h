@@ -39,7 +39,7 @@ public:
     typedef index::PostingListCounts PostingListCounts;
     typedef index::PostingListParams PostingListParams;
 
-    uint64_t _wordNum;
+    uint64_t        _wordNum;
     DocIdAndFeatures _docIdAndFeatures;
 protected:
     std::unique_ptr<DictionaryFileSeqRead> _dictFile;

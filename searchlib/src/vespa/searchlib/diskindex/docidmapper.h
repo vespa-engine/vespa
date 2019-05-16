@@ -9,13 +9,13 @@ namespace search { class BitVector; }
 
 namespace search::diskindex {
 
-typedef vespalib::Array<uint8_t> SelectorArray;
+using SelectorArray = vespalib::Array<uint8_t>;
 
 class DocIdMapping
 {
 public:
-    uint32_t _docIdLimit;
     const SelectorArray *_selector; // External ownership
+    uint32_t _docIdLimit;
     uint8_t _selectorId;
 
     DocIdMapping();
@@ -32,7 +32,7 @@ public:
     const uint8_t *_selector;
     uint32_t _docIdLimit; // Limit on legal input values
     uint32_t _selectorLimit; // Limit on output
-    uint8_t _selectorId;
+    uint8_t  _selectorId;
 
     DocIdMapper()
         : _selector(nullptr),
@@ -42,12 +42,9 @@ public:
     { }
 
     void setup(const DocIdMapping &mapping) {
-        _selector = (mapping._selector != nullptr) ?
-                    &((*mapping._selector)[0]) : nullptr;
+        _selector = (mapping._selector != nullptr) ? &((*mapping._selector)[0]) : nullptr;
         _docIdLimit = mapping._docIdLimit;
-        _selectorLimit = (mapping._selector != nullptr) ?
-                         (*mapping._selector).size() :
-                         0u;
+        _selectorLimit = (mapping._selector != nullptr) ? (*mapping._selector).size() : 0u;
         _selectorId = mapping._selectorId;
     }
 
