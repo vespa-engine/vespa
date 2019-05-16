@@ -37,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -83,7 +82,7 @@ public class RPCNetwork implements Network, MethodHandler {
     public RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
         this.slobroksConfig = slobrokConfig;
         identity = params.getIdentity();
-        orb = new Supervisor(new Transport());
+        orb = new Supervisor(new Transport(2));
         orb.setMaxInputBufferSize(params.getMaxInputBufferSize());
         orb.setMaxOutputBufferSize(params.getMaxOutputBufferSize());
         targetPool = new RPCTargetPool(params.getConnectionExpireSecs());
