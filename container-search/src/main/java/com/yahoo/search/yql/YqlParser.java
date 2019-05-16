@@ -18,7 +18,6 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
-import com.yahoo.component.Version;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
@@ -457,7 +456,7 @@ public class YqlParser implements Parser {
                 Preconditions.checkArgument(key.indexOf("0x") == 0 || key.indexOf("[") == 0);
                 if (key.indexOf("0x") == 0) {
                     String subqueryString = key.substring(2);
-                    if (subqueryString.length() > 16) 
+                    if (subqueryString.length() > 16)
                         throw new NumberFormatException("Too long subquery string: " + key);
                     long currentSubqueryBitmap = new BigInteger(subqueryString, 16).longValue();
                     addFeatures(value, item, currentSubqueryBitmap);
@@ -667,7 +666,7 @@ public class YqlParser implements Parser {
         }
         return item;
     }
-    
+
     private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
         String languageTag = getAnnotation(ast, USER_INPUT_LANGUAGE, String.class, null,
                                            "language setting for segmenting query section");
@@ -686,7 +685,7 @@ public class YqlParser implements Parser {
 
     private String getStringContents(OperatorNode<ExpressionOperator> operator) {
         switch (operator.getOperator()) {
-            case LITERAL: 
+            case LITERAL:
                 return operator.getArgument(0, String.class);
             case VARREF:
                 Preconditions.checkState(userQuery != null,
@@ -775,11 +774,11 @@ public class YqlParser implements Parser {
         for (OperatorNode<?> op : sortArguments) {
             OperatorNode<ExpressionOperator> fieldNode = op.<OperatorNode<ExpressionOperator>> getArgument(0);
             String field = fetchFieldRead(fieldNode);
-            String locale = getAnnotation(fieldNode, SORTING_LOCALE, String.class, null, 
+            String locale = getAnnotation(fieldNode, SORTING_LOCALE, String.class, null,
                                           "locale used by sorting function");
             String function = getAnnotation(fieldNode, SORTING_FUNCTION, String.class, null,
                                             "sorting function for the specified attribute");
-            String strength = getAnnotation(fieldNode, SORTING_STRENGTH, String.class, null, 
+            String strength = getAnnotation(fieldNode, SORTING_STRENGTH, String.class, null,
                                             "strength for sorting function");
             AttributeSorter sorter;
             if (function == null) {
@@ -1004,7 +1003,7 @@ public class YqlParser implements Parser {
     }
 
     private static boolean isIndexOnLeftHandSide(OperatorNode<ExpressionOperator> ast) {
-        OperatorNode node =  ast.getArgument(0, OperatorNode.class);
+        OperatorNode<?> node =  ast.getArgument(0, OperatorNode.class);
         return node.getOperator() == ExpressionOperator.READ_FIELD || node.getOperator() == ExpressionOperator.PROPREF;
     }
 
@@ -1080,13 +1079,20 @@ public class YqlParser implements Parser {
     @NonNull
     private Item buildTermSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
-        return instantiateLeafItem(getIndex(ast.<OperatorNode<ExpressionOperator>> getArgument(0)), ast.<OperatorNode<ExpressionOperator>> getArgument(1));
+        String field = getIndex(ast.<OperatorNode<ExpressionOperator>>getArgument(0));
+        if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
+            userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly", 1);
+        }
+        return instantiateLeafItem(field, ast.<OperatorNode<ExpressionOperator>> getArgument(1));
     }
 
     @NonNull
     private Item buildRegExpSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.MATCHES);
-        String field = getIndex(ast.<OperatorNode<ExpressionOperator>> getArgument(0));
+        String field = getIndex(ast.<OperatorNode<ExpressionOperator>>getArgument(0));
+        if (userQuery != null && !indexFactsSession.getIndex(field).isAttribute()) {
+            userQuery.trace("Field '" + field + "' is indexed, non-literal regular expressions will not be matched", 1);
+        }
         OperatorNode<ExpressionOperator> ast1 = ast.<OperatorNode<ExpressionOperator>> getArgument(1);
         String wordData = getStringContents(ast1);
         RegExpItem regExp = new RegExpItem(field, true, wordData);
@@ -1210,7 +1216,7 @@ public class YqlParser implements Parser {
     private Item instantiateWordAlternativesItem(String field, OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() >= 1, "Expected 1 or more arguments, got %s.", args.size());
-        Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.", 
+        Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.",
                                     args.get(0).getOperator());
 
         List<WordAlternativesItem.Alternative> terms = new ArrayList<>();
@@ -1261,7 +1267,7 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private Item instantiateWordItem(String field, 
+    private Item instantiateWordItem(String field,
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
                                      SegmentWhen segmentPolicy) {
         String wordData = getStringContents(ast);
@@ -1413,7 +1419,7 @@ public class YqlParser implements Parser {
         }
         {
             Item leaf = (Item) out;
-            Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS, 
+            Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS,
                                                       Map.class, Collections.emptyMap(), "item annotation map");
             for (Map.Entry<?, ?> entry : itemAnnotations.entrySet()) {
                 Preconditions.checkArgument(entry.getKey() instanceof String,
@@ -1524,14 +1530,14 @@ public class YqlParser implements Parser {
 
     private static void assertHasOperator(OperatorNode<?> ast, Operator expectedOperator) {
         Preconditions.checkArgument(ast.getOperator() == expectedOperator,
-                                    "Expected operator %s, got %s.", 
+                                    "Expected operator %s, got %s.",
                                     expectedOperator, ast.getOperator());
     }
 
     private static void assertHasFunctionName(OperatorNode<?> ast, String expectedFunctionName) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(expectedFunctionName.equals(names.get(0)),
-                                    "Expected function '%s', got '%s'.", 
+                                    "Expected function '%s', got '%s'.",
                                     expectedFunctionName, names.get(0));
     }
 
@@ -1655,21 +1661,21 @@ public class YqlParser implements Parser {
         return expectedValueClass.cast(value);
     }
 
-    private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, 
+    private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
                                 T defaultValue, String description) {
         return getAnnotation(ast, key, expectedClass, defaultValue, description, true);
     }
 
-    private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue, 
+    private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
                                 String description, boolean considerParents) {
         Object value = ast.getAnnotation(key);
-        for (Iterator<OperatorNode<?>> i = annotationStack.iterator(); value == null 
+        for (Iterator<OperatorNode<?>> i = annotationStack.iterator(); value == null
                                                                        && considerParents && i.hasNext();) {
             value = i.next().getAnnotation(key);
         }
         if (value == null) return defaultValue;
         Preconditions.checkArgument(expectedClass.isInstance(value),
-                                   "Expected %s for annotation '%s' (%s), got %s.", 
+                                   "Expected %s for annotation '%s' (%s), got %s.",
                                     expectedClass.getName(), key, description, value.getClass().getName());
         return expectedClass.cast(value);
     }
