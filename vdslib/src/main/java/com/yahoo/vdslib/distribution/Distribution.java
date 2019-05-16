@@ -127,7 +127,11 @@ public class Distribution {
     }
 
     public void close() {
-        if (configSub!=null) configSub.close();
+        if (configSub!=null) {
+            configSub.close();
+            configSub = null;
+        }
+        configSubscriber = null;
     }
 
     private int getGroupSeed(BucketId bucket, ClusterState state, Group group) {
