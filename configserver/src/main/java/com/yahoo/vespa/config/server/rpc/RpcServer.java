@@ -79,8 +79,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
+    private static final int JRT_RPC_TRANSPORT_THREADS = 4;
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport(JRT_RPC_TRANSPORT_THREADS));
     private Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
@@ -144,11 +145,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Called by reflection from RPC.
      * Handles RPC method "config.v3.getConfig" requests.
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
-    @SuppressWarnings({"UnusedDeclaration"})
     public final void getConfigV3(Request req) {
         if (log.isLoggable(LogLevel.SPAM)) {
             log.log(LogLevel.SPAM, getConfigMethodName);
@@ -158,21 +157,17 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Called by reflection from RPC.
      * Returns 0 if server is alive.
      */
-    @SuppressWarnings("UnusedDeclaration")
     public final void ping(Request req) {
         req.returnValues().add(new Int32Value(0));
     }
 
     /**
-     * Called by reflection from RPC.
      * Returns a String with statistics data for the server.
      *
      * @param req a Request
      */
-    @SuppressWarnings("UnusedDeclaration")
     public void printStatistics(Request req) {
         req.returnValues().add(new StringValue("Delayed responses queue size: " + delayedConfigResponses.size()));
     }
@@ -211,16 +206,15 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     private void setUpHandlers() {
         // The getConfig method in this class will handle RPC calls for getting config
-        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this, getConfigMethodName));
-        getSupervisor().addMethod(new Method("ping", "", "i", this, "ping")
+        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3));
+        getSupervisor().addMethod(new Method("ping", "", "i", this::ping)
                                   .methodDesc("ping")
                                   .returnDesc(0, "ret code", "return code, 0 is OK"));
-        getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
+        getSupervisor().addMethod(new Method("printStatistics", "", "s", this::printStatistics)
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si", "is", this, "serveFile"));
-        getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
-                                        this, "setFileReferencesToDownload")
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si", "is", this::serveFile));
+        getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i", this::setFileReferencesToDownload)
                                      .methodDesc("set which file references to download")
                                      .paramDesc(0, "file references", "file reference to download")
                                      .returnDesc(0, "ret", "0 if success, 1 otherwise"));
@@ -547,14 +541,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
     }
 
-    @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
         request.detach();
         FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
         fileServer.serveFile(request.parameters().get(0).asString(), request.parameters().get(1).asInt32() == 0, request, receiver);
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
     public final void setFileReferencesToDownload(Request req) {
         String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
         Stream.of(fileReferenceStrings)
