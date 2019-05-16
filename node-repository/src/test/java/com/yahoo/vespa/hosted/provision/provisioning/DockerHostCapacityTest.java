@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +28,6 @@ public class DockerHostCapacityTest {
     private DockerHostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
-    private Node nodeA, nodeB, nodeC, nodeD, nodeE;
     private Flavor flavorDocker, flavorDocker2;
 
     @Before
@@ -43,20 +43,20 @@ public class DockerHostCapacityTest {
         host3 = Node.create("host3", Collections.singleton("::21"), generateIPs(22, 1), "host3", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
 
         // Add two containers to host1
-        nodeA = Node.create("nodeA", Collections.singleton("::2"), Collections.emptySet(), "nodeA", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
-        nodeB = Node.create("nodeB", Collections.singleton("::3"), Collections.emptySet(), "nodeB", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
+        var nodeA = Node.create("nodeA", Collections.singleton("::2"), Collections.emptySet(), "nodeA", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
+        var nodeB = Node.create("nodeB", Collections.singleton("::3"), Collections.emptySet(), "nodeB", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
 
         // Add two containers to host 2 (same as host 1)
-        nodeC = Node.create("nodeC", Collections.singleton("::12"), Collections.emptySet(), "nodeC", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
-        nodeD = Node.create("nodeD", Collections.singleton("::13"), Collections.emptySet(), "nodeD", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
+        var nodeC = Node.create("nodeC", Collections.singleton("::12"), Collections.emptySet(), "nodeC", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
+        var nodeD = Node.create("nodeD", Collections.singleton("::13"), Collections.emptySet(), "nodeD", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
 
         // Add a larger container to host3
-        nodeE = Node.create("nodeE", Collections.singleton("::22"), Collections.emptySet(), "nodeE", Optional.of("host3"), Optional.empty(), flavorDocker2, NodeType.tenant);
+        var nodeE = Node.create("nodeE", Collections.singleton("::22"), Collections.emptySet(), "nodeE", Optional.of("host3"), Optional.empty(), flavorDocker2, NodeType.tenant);
 
         // init docker host capacity
         nodes = new ArrayList<>();
         Collections.addAll(nodes, host1, host2, host3, nodeA, nodeB, nodeC, nodeD, nodeE);
-        capacity = new DockerHostCapacity(nodes);
+        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class DockerHostCapacityTest {
         Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(),
                 "nodeF", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
         nodes.add(nodeF);
-        capacity = new DockerHostCapacity(nodes);
+        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}));
         assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker)));
         assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker2)));
     }

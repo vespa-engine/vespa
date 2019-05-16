@@ -78,7 +78,7 @@ public class NodeRetirerTest {
     public void testRetireAllocated() {
         // Update IP addresses on ready nodes so that when they are deployed to, we wont retire them
         tester.nodeRepository.getNodes(Node.State.ready)
-                .forEach(node -> tester.nodeRepository.write(node.withIpAddresses(Collections.singleton("::2"))));
+                .forEach(node -> tester.nodeRepository.write(node.with(node.ipConfig().with(Set.of("::2"))), () -> {}));
 
         tester.assertCountsForStateByFlavor(Node.State.active, 9, 4, 8, 11, -1);
 
@@ -132,11 +132,11 @@ public class NodeRetirerTest {
         assertEquals(expected, actual);
 
         Node nodeWantToRetire = tester.nodeRepository.getNode("host3.test.yahoo.com").orElseThrow(RuntimeException::new);
-        tester.nodeRepository.write(nodeWantToRetire.with(nodeWantToRetire.status().withWantToRetire(true)));
+        tester.nodeRepository.write(nodeWantToRetire.with(nodeWantToRetire.status().withWantToRetire(true)), () -> {});
         Node nodeToFail = tester.nodeRepository.getNode("host5.test.yahoo.com").orElseThrow(RuntimeException::new);
         tester.nodeRepository.fail(nodeToFail.hostname(), Agent.system, "Failed for unit testing");
         Node nodeToUpdate = tester.nodeRepository.getNode("host8.test.yahoo.com").orElseThrow(RuntimeException::new);
-        tester.nodeRepository.write(nodeToUpdate.withIpAddresses(Collections.singleton("::2")));
+        tester.nodeRepository.write(nodeToUpdate.with(nodeToUpdate.ipConfig().with(Set.of("::2"))), () -> {});
 
         nodes = tester.nodeRepository.getNodes(app);
         Set<String> excluded = Stream.of(nodeWantToRetire, nodeToFail, nodeToUpdate).map(Node::hostname).collect(Collectors.toSet());
@@ -153,7 +153,7 @@ public class NodeRetirerTest {
 
         // Lets put 3 random nodes in wantToRetire
         List<Node> nodesToRetire = tester.nodeRepository.getNodes(app).stream().limit(3).collect(Collectors.toList());
-        nodesToRetire.forEach(node -> tester.nodeRepository.write(node.with(node.status().withWantToRetire(true))));
+        nodesToRetire.forEach(node -> tester.nodeRepository.write(node.with(node.status().withWantToRetire(true)), () -> {}));
         long actualOneWantToRetire = retirer.getNumberNodesAllowToRetireForCluster(tester.nodeRepository.getNodes(app), 2);
         assertEquals(0, actualOneWantToRetire);
 

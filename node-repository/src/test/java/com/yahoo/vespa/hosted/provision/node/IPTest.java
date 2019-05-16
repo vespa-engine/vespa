@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Assert;
@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ import static org.junit.Assert.fail;
 public class IPTest {
 
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-    private static final NodeList emptyList = new NodeList(Collections.emptyList());
+    private static final LockedNodeList emptyList = new LockedNodeList(List.of(), () -> {});
 
     private MockNameResolver resolver;
 
@@ -67,17 +68,17 @@ public class IPTest {
                         "2001:db8:0:0:0:0:0:ffff",
                         "2001:db8:85a3:0:0:8a2e:370:7334",
                         "2001:db8:95a3:0:0:0:0:7334"),
-                new ArrayList<>(ImmutableSortedSet.copyOf(IP.naturalOrder, ipAddresses))
+                new ArrayList<>(ImmutableSortedSet.copyOf(IP.NATURAL_ORDER, ipAddresses))
         );
     }
 
     @Test
     public void test_find_allocation_single_stack() {
-        IP.AddressPool pool = createNode(ImmutableSet.of(
+        IP.Pool pool = createNode(ImmutableSet.of(
                 "::1",
                 "::2",
                 "::3"
-        )).ipAddressPool();
+        )).ipConfig().pool();
 
         resolver.addRecord("host1", "::2");
         resolver.addRecord("host2", "::3");
@@ -103,7 +104,7 @@ public class IPTest {
 
     @Test
     public void test_find_allocation_dual_stack() {
-        IP.AddressPool pool = dualStackPool();
+        IP.Pool pool = dualStackPool();
         Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
         assertEquals("::1", allocation.get().ipv6Address());
         assertEquals("127.0.0.2", allocation.get().ipv4Address().get());
@@ -112,7 +113,7 @@ public class IPTest {
 
     @Test
     public void test_find_allocation_multiple_ipv4_addresses() {
-        IP.AddressPool pool = dualStackPool();
+        IP.Pool pool = dualStackPool();
         resolver.addRecord("host3", "127.0.0.127");
         try {
             pool.findAllocation(emptyList, resolver);
@@ -125,7 +126,7 @@ public class IPTest {
 
     @Test
     public void test_find_allocation_invalid_ipv4_reverse_record() {
-        IP.AddressPool pool = dualStackPool();
+        IP.Pool pool = dualStackPool();
         resolver.removeRecord("127.0.0.2")
                 .addReverseRecord("127.0.0.2", "host5");
         try {
@@ -137,7 +138,7 @@ public class IPTest {
         }
     }
 
-    private IP.AddressPool dualStackPool() {
+    private IP.Pool dualStackPool() {
         Node node = createNode(ImmutableSet.of(
                 "127.0.0.1",
                 "127.0.0.2",
@@ -163,7 +164,7 @@ public class IPTest {
                 .addReverseRecord("::1", "host3")
                 .addReverseRecord("::2", "host1");
 
-        return node.ipAddressPool();
+        return node.ipConfig().pool();
     }
 
     private static Node createNode(Set<String> ipAddresses) {

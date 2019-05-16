@@ -156,7 +156,7 @@ public class ProvisioningTest {
         HostSpec host1 = state1.container0.iterator().next();
         assertFalse(host1.version().isPresent());
         Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
-        tester.nodeRepository().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))));
+        tester.nodeRepository().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))), () -> {});
 
         // redeploy
         SystemState state2 = prepare(application1, 1, 1, 1, 1, new NodeResources(1, 1, 1), tester);

@@ -95,7 +95,7 @@ public class NodeFailer extends Maintainer {
 
         // Ready nodes
         try (Mutex lock = nodeRepository().lockAllocation()) {
-            updateNodeLivenessEventsForReadyNodes();
+            updateNodeLivenessEventsForReadyNodes(lock);
 
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
@@ -129,7 +129,7 @@ public class NodeFailer extends Maintainer {
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
     }
 
-    private void updateNodeLivenessEventsForReadyNodes() {
+    private void updateNodeLivenessEventsForReadyNodes(Mutex lock) {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
         for (Node node : nodeRepository().getNodes(Node.State.ready)) {
@@ -139,7 +139,7 @@ public class NodeFailer extends Maintainer {
             if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                 History updatedHistory = node.history()
                         .with(new History.Event(History.Event.Type.requested, Agent.system, lastLocalRequest.get()));
-                nodeRepository().write(node.with(updatedHistory));
+                nodeRepository().write(node.with(updatedHistory), lock);
             }
         }
     }
@@ -329,7 +329,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.downAt(clock.instant()));
+            return nodeRepository().write(node.downAt(clock.instant()), lock);
         }
     }
 
@@ -338,7 +338,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            nodeRepository().write(node.up());
+            nodeRepository().write(node.up(), lock);
         }
     }
 

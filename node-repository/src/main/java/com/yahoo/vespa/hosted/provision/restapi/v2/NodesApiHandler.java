@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -137,7 +138,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/node/")) {
             Node node = nodeFromRequest(request);
             try (var lock = nodeRepository.lock(node)) {
-                nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository).apply());
+                var patchedNode = new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.list(lock),
+                                                  nodeRepository.clock()).apply();
+                nodeRepository.write(patchedNode, lock);
             }
             return new MessageResponse("Updated " + node.hostname());
         }
@@ -218,8 +221,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
-                ipAddresses,
-                ipAddressPool,
+                new IP.Config(ipAddresses, ipAddressPool),
                 parentHostname,
                 modelName,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),

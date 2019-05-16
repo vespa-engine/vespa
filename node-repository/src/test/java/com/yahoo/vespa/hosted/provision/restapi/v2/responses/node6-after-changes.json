@@ -7,13 +7,13 @@
   "openStackId": "node6",
   "flavor": "default",
   "canonicalFlavor": "default",
-  "minDiskAvailableGb":400.0,
-  "minMainMemoryAvailableGb":16.0,
-  "description":"Flavor-name-is-default",
-  "minCpuCores":2.0,
-  "fastDisk":true,
-  "bandwidth":0.0,
-  "environment":"BARE_METAL",
+  "minDiskAvailableGb": 400.0,
+  "minMainMemoryAvailableGb": 16.0,
+  "description": "Flavor-name-is-default",
+  "minCpuCores": 2.0,
+  "fastDisk": true,
+  "bandwidth": 0.0,
+  "environment": "BARE_METAL",
   "owner": {
     "tenant": "tenant2",
     "application": "application2",
@@ -60,8 +60,8 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "127.0.6.1",
+    "::6:1"
   ],
   "additionalIpAddresses": [],
   "hardwareDivergence": "{\"actualCpuCores\":2}"

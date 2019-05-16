@@ -49,7 +49,7 @@ public class NodeFailerTest {
                         .orElse(node.hostname().equals(hostWithHwFailure)))
                 .forEach(node -> {
             Node updatedNode = node.with(node.status().withHardwareFailureDescription(Optional.of("HW failure")));
-            tester.nodeRepository.write(updatedNode);
+            tester.nodeRepository.write(updatedNode, () -> {});
         });
 
         testNodeFailingWith(tester, hostWithHwFailure);
@@ -66,7 +66,7 @@ public class NodeFailerTest {
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
                     Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
-                    tester.nodeRepository.write(updatedNode);
+                    tester.nodeRepository.write(updatedNode, () -> {});
                 });
 
         testNodeFailingWith(tester, hostWithFailureReports);
@@ -136,7 +136,7 @@ public class NodeFailerTest {
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
                     Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
-                    tester.nodeRepository.write(updatedNode);
+                    tester.nodeRepository.write(updatedNode, () -> {});
                 });
 
         // The ready node will be failed, but neither the host nor the 2 active nodes since they have not been suspended
@@ -215,8 +215,8 @@ public class NodeFailerTest {
         // Hardware failures are detected on two ready nodes, which are then failed
         Node readyFail1 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(2);
         Node readyFail2 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(3);
-        tester.nodeRepository.write(readyFail1.with(readyFail1.status().withHardwareFailureDescription(Optional.of("memory_mcelog"))));
-        tester.nodeRepository.write(readyFail2.with(readyFail2.status().withHardwareFailureDescription(Optional.of("disk_smart"))));
+        tester.nodeRepository.write(readyFail1.with(readyFail1.status().withHardwareFailureDescription(Optional.of("memory_mcelog"))), () -> {});
+        tester.nodeRepository.write(readyFail2.with(readyFail2.status().withHardwareFailureDescription(Optional.of("disk_smart"))), () -> {});
         assertEquals(4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         tester.failer.run();
         assertEquals(2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
@@ -540,7 +540,7 @@ public class NodeFailerTest {
         assertEquals(Node.State.ready, readyNode.state());
 
         tester.nodeRepository.write(readyNode.with(readyNode.status()
-                .withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"))));
+                .withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"))), () -> {});
 
         tester.failer.run();
 

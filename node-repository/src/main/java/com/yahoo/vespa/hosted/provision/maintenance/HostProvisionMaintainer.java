@@ -50,7 +50,7 @@ public class HostProvisionMaintainer extends Maintainer {
             candidates(nodes).forEach((host, children) -> {
                 try {
                     List<Node> updatedNodes = hostProvisioner.provision(host, children);
-                    nodeRepository().write(updatedNodes);
+                    nodeRepository().write(updatedNodes, lock);
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     log.log(Level.INFO, "Failed to provision " + host.hostname() + ": " + Exceptions.toMessageString(e));
                 } catch (FatalProvisioningException e) {

@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -54,7 +55,7 @@ public class MetricsReporter extends Maintainer {
 
     @Override
     public void maintain() {
-        List<Node> nodes = nodeRepository().getNodes();
+        LockedNodeList nodes = nodeRepository().list(() -> {}); // Ignore locking for the purposes of reporting metrics
 
         Map<HostName, List<ServiceInstance>> servicesByHost =
                 serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName();
@@ -200,8 +201,8 @@ public class MetricsReporter extends Maintainer {
         return context;
     }
 
-    private void updateStateMetrics(List<Node> nodes) {
-        Map<Node.State, List<Node>> nodesByState = nodes.stream()
+    private void updateStateMetrics(LockedNodeList nodes) {
+        Map<Node.State, List<Node>> nodesByState = nodes.asList().stream()
                 .collect(Collectors.groupingBy(Node::state));
 
         // Metrics pr state
@@ -212,7 +213,7 @@ public class MetricsReporter extends Maintainer {
         }
     }
 
-    private void updateDockerMetrics(List<Node> nodes) {
+    private void updateDockerMetrics(LockedNodeList nodes) {
         // Capacity flavors for docker
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
         metric.set("hostedVespa.docker.totalCapacityCpu", capacity.getCapacityTotal().vcpu(), null);
@@ -230,7 +231,6 @@ public class MetricsReporter extends Maintainer {
             metric.set("hostedVespa.docker.freeCapacityFlavor", capacity.freeCapacityInFlavorEquivalence(flavor), context);
             metric.set("hostedVespa.docker.hostsAvailableFlavor", capacity.getNofHostsAvailableFor(flavor), context);
         }
-
-
     }
+
 }

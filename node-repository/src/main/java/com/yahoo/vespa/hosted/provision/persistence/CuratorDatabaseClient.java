@@ -121,15 +121,6 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Adds a set of nodes in the initial, provisioned state.
-     *
-     * @return the given nodes for convenience.
-     */
-    public List<Node> addNodes(List<Node> nodes) {
-        return addNodesInState(nodes, Node.State.provisioned);
-    }
-
-    /**
      * Removes multiple nodes in a single transaction.
      *
      * @param nodes list of the nodes to remove
@@ -211,7 +202,7 @@ public class CuratorDatabaseClient {
 
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.id(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
+            Node newNode = new Node(node.id(), node.ipConfig(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,

@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
@@ -22,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.UnaryOperator;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -184,6 +184,11 @@ public class NodeRepository extends AbstractComponent {
         return new NodeList(getNodes());
     }
 
+    /** Returns a locked list of all nodes in this repository */
+    public LockedNodeList list(Mutex lock) {
+        return new LockedNodeList(getNodes(), lock);
+    }
+
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
         return new LoadBalancerList(database().readLoadBalancers().values());
@@ -293,29 +298,21 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Set<String> ipAddressPool, Optional<String> parentHostname,
+    public Node createNode(String openStackId, String hostname, IP.Config ipConfig, Optional<String> parentHostname,
                            Optional<String> modelName, Flavor flavor, NodeType type) {
-        if (ipAddresses.isEmpty()) {
-            ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
+        if (ipConfig.primary().isEmpty()) { // TODO: Remove this. Only test code hits this path
+            ipConfig = ipConfig.with(nameResolver.getAllByNameOrThrow(hostname));
         }
-
-        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), ipAddressPool, hostname, parentHostname, modelName, flavor, type);
+        return Node.create(openStackId, ipConfig.primary(), ipConfig.pool().asSet(), hostname, parentHostname, modelName, flavor, type);
     }
 
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, ipAddresses, Collections.emptySet(), parentHostname, Optional.empty(), flavor, type);
-    }
-
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
-                           Flavor flavor, NodeType type) {
-        return createNode(openStackId, hostname, Collections.emptySet(), parentHostname, flavor, type);
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor,
+                           NodeType type) {
+        return createNode(openStackId, hostname, IP.Config.EMPTY, parentHostname, Optional.empty(), flavor, type);
     }
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
-    // NOTE: This can only be called while holding the allocation lock, and that lock must have been held since
-    //       the nodes list was computed
-    public List<Node> addDockerNodes(List<Node> nodes, Mutex allocationLock) {
+    public List<Node> addDockerNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
             if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
@@ -329,7 +326,7 @@ public class NodeRepository extends AbstractComponent {
                                                    existing.get() + ", " + existing.get().history() + "). Node to be added: " +
                                                    node + ", " + node.history());
         }
-        return db.addNodesInState(nodes, Node.State.reserved);
+        return db.addNodesInState(nodes.asList(), Node.State.reserved);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
@@ -348,7 +345,7 @@ public class NodeRepository extends AbstractComponent {
                     if (node.equals(other)) throw new IllegalArgumentException(message);
                 }
             }
-            return db.addNodes(nodes);
+            return db.addNodesInState(IP.Config.verify(nodes, list(lock)), Node.State.provisioned);
         }
     }
 
@@ -396,7 +393,7 @@ public class NodeRepository extends AbstractComponent {
             List<Node> removableNodes =
                 nodes.stream().map(node -> node.with(node.allocation().get().removable()))
                               .collect(Collectors.toList());
-            write(removableNodes);
+            write(removableNodes, lock);
         }
     }
 
@@ -420,7 +417,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Move nodes to the dirty state */
     public List<Node> setDirty(List<Node> nodes, Agent agent, String reason) {
-        return performOn(NodeListFilter.from(nodes), node -> setDirty(node, agent, reason));
+        return performOn(NodeListFilter.from(nodes), (node, lock) -> setDirty(node, agent, reason));
     }
 
     /**
@@ -639,7 +636,7 @@ public class NodeRepository extends AbstractComponent {
      * Returns the nodes in their new state.
      */
     public List<Node> restart(NodeFilter filter) {
-        return performOn(StateFilter.from(Node.State.active, filter), node -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted())));
+        return performOn(StateFilter.from(Node.State.active, filter), (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()), lock));
     }
 
     /**
@@ -647,24 +644,28 @@ public class NodeRepository extends AbstractComponent {
      * Returns the nodes in their new state.
      */
     public List<Node> reboot(NodeFilter filter) {
-        return performOn(filter, node -> write(node.withReboot(node.status().reboot().withIncreasedWanted())));
+        return performOn(filter, (node, lock) -> write(node.withReboot(node.status().reboot().withIncreasedWanted()), lock));
     }
 
     /**
      * Writes this node after it has changed some internal state but NOT changed its state field.
-     * This does NOT lock the node repository.
+     * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
+     * @param lock Already acquired lock
      * @return the written node for convenience
      */
-    public Node write(Node node) { return db.writeTo(node.state(), node, Agent.system, Optional.empty()); }
+    public Node write(Node node, Mutex lock) { return write(List.of(node), lock).get(0); }
 
     /**
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
-     * This does NOT lock the node repository.
+     * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
+     * @param lock Already acquired lock
      * @return the written nodes for convenience
      */
-    public List<Node> write(List<Node> nodes) { return db.writeTo(nodes, Agent.system, Optional.empty()); }
+    public List<Node> write(List<Node> nodes, @SuppressWarnings("unused") Mutex lock) {
+        return db.writeTo(nodes, Agent.system, Optional.empty());
+    }
 
     /**
      * Performs an operation requiring locking on all nodes matching some filter.
@@ -673,7 +674,7 @@ public class NodeRepository extends AbstractComponent {
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
-    private List<Node> performOn(NodeFilter filter, UnaryOperator<Node> action) {
+    private List<Node> performOn(NodeFilter filter, BiFunction<Node, Mutex, Node> action) {
         List<Node> unallocatedNodes = new ArrayList<>();
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
@@ -690,12 +691,12 @@ public class NodeRepository extends AbstractComponent {
         List<Node> resultingNodes = new ArrayList<>();
         try (Mutex lock = lockAllocation()) {
             for (Node node : unallocatedNodes)
-                resultingNodes.add(action.apply(node));
+                resultingNodes.add(action.apply(node, lock));
         }
         for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
             try (Mutex lock = lock(applicationNodes.getKey())) {
                 for (Node node : applicationNodes.getValue())
-                    resultingNodes.add(action.apply(node));
+                    resultingNodes.add(action.apply(node, lock));
             }
         }
         return resultingNodes;

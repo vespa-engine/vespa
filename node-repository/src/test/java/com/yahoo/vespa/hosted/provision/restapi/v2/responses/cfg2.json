@@ -32,6 +32,9 @@
       "agent": "system"
     }
   ],
-  "ipAddresses": ["127.0.1.2"],
+  "ipAddresses": [
+    "127.0.202.1",
+    "::202:1"
+  ],
   "additionalIpAddresses": []
 }

@@ -28,6 +28,9 @@
       "url": "http://localhost:8080/nodes/v2/node/dockerhost5.yahoo.com"
     },
     {
+      "url": "http://localhost:8080/nodes/v2/node/test-node-pool-101-2"
+    },
+    {
       "url": "http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"
     },
     {
@@ -44,9 +47,6 @@
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/host14.yahoo.com"
-    },
-    {
-      "url": "http://localhost:8080/nodes/v2/node/test-container-1"
     },
     {
       "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com"

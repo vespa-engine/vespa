@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -40,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -97,7 +99,8 @@ public class NodeRetirerTester {
             for (int j = 0; j < nums[i]; j++) {
                 int id = nextNodeId++;
                 nodes.add(nodeRepository.createNode("node" + id, "host" + id + ".test.yahoo.com",
-                        Collections.singleton("::1"), Optional.empty(), flavor, NodeType.tenant));
+                                                    new IP.Config(Set.of("::1"), Set.of()), Optional.empty(),
+                                                    Optional.empty(), flavor, NodeType.tenant));
             }
         }
 

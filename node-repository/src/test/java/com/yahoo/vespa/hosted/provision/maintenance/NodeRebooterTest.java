@@ -60,7 +60,7 @@ public class NodeRebooterTest {
         for (Node node : tester.nodeRepository.getNodes(Node.State.ready, Node.State.active)) {
             if (node.status().reboot().wanted() > node.status().reboot().current())
                 tester.nodeRepository.write(node.withCurrentRebootGeneration(node.status().reboot().wanted(), 
-                                                                             tester.clock.instant()));
+                                                                             tester.clock.instant()), () -> {});
         }
     }
     
