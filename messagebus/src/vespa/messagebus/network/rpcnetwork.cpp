@@ -405,7 +405,7 @@ RPCNetwork::sync()
 void
 RPCNetwork::shutdown()
 {
-    _transport->ShutDown(false);
+    _transport->ShutDown(true);
     _threadPool->Close();
     _executor->shutdown();
     _executor->sync();
