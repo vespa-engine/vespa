@@ -229,7 +229,7 @@ public final class Node {
 
     /** Returns a copy of this with model name cleared */
     public Node withoutModelName() {
-        return new Node(id, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type, reports, Optional.empty());
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, Optional.empty());
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
