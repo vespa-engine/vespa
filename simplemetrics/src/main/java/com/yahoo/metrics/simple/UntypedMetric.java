@@ -74,12 +74,20 @@ public class UntypedMetric {
         if (outputFormat != other.outputFormat) {
             throw new IllegalArgumentException("Mismatching output formats: " + outputFormat + " and " + other.outputFormat + ".");
         }
-        count += other.count;
-        if (otherIsNewer) {
+        if (count > 0) {
+            if (other.count > 0) {
+                max = Math.max(other.max, max);
+                min = Math.min(other.min, min);
+                if (otherIsNewer) {
+                    current = other.current;
+                }
+            }
+        } else {
+            max = other.max;
+            min = other.min;
             current = other.current;
         }
-        max = Math.max(other.max, max);
-        min = Math.min(other.min, min);
+        count += other.count;
         sum += other.sum;
         if (histogram != null) {
             // some config scenarios may lead to differing histogram settings,
