@@ -217,10 +217,10 @@ RPCNetwork::getSendAdapter(const vespalib::Version &version)
 bool
 RPCNetwork::start()
 {
-    if (!_orb->Listen(_requestedPort)) {
+    if (!_transport->Start(_threadPool.get())) {
         return false;
     }
-    if (!_transport->Start(_threadPool.get())) {
+    if (!_orb->Listen(_requestedPort)) {
         return false;
     }
     return true;
