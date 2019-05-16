@@ -659,7 +659,7 @@ public class InternalStepRunner implements StepRunner {
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
-                "    <container version='1.0' id='default'>\n" +
+                "    <container version='1.0' id='tester'>\n" +
                 "\n" +
                 "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
