@@ -12,8 +12,6 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.EXIT_JVM;
 
@@ -69,13 +68,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @SuppressWarnings("unused")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                 FlagSource flagSource) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-                Flags.CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD.bindTo(flagSource).value()
-                     ? Mode.BOOTSTRAP_IN_SEPARATE_THREAD
-                     : Mode.BOOTSTRAP_IN_CONSTRUCTOR,
-             EXIT_JVM,
+                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus, BOOTSTRAP_IN_CONSTRUCTOR, EXIT_JVM,
              applicationRepository.configserverConfig().hostedVespa()
                      ? VipStatusMode.VIP_STATUS_FILE
                      : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY);

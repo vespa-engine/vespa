@@ -35,12 +35,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
-            "config-server-bootstrap-in-separate-thread", false,
-            "Whether to run config server/controller bootstrap in a separate thread.",
-            "Takes effect only at bootstrap of config server/controller",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag MONITOR_TENANT_HOST_HEALTH = defineFeatureFlag(
             "monitor-tenant-hosts-health", false,
             "Whether service monitor will monitor /state/v1/health of the host admins on the tenant hosts.",
