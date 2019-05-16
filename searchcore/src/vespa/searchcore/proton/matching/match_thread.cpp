@@ -88,6 +88,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools &tools, HitCollec
 {
 }
 
+template <bool use_rank_drop_limit>
 void
 MatchThread::Context::rankHit(uint32_t docId) {
     double score = _score_feature.as_number(docId);
@@ -95,8 +96,11 @@ MatchThread::Context::rankHit(uint32_t docId) {
     if (__builtin_expect(std::isnan(score) || std::isinf(score), false)) {
         score = -HUGE_VAL;
     }
-    // invert test since default drop limit is -NaN (keep all hits)
-    if (!(score <= _rankDropLimit)) {
+    if (use_rank_drop_limit) {
+        if (__builtin_expect(score > _rankDropLimit, true)) {
+            _hits.addHit(docId, score);
+        }
+    } else {
         _hits.addHit(docId, score);
     }
 }
@@ -152,7 +156,7 @@ MatchThread::try_share(DocidRange &docid_range, uint32_t next_docid) {
     return false;
 }
 
-template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work>
+template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, bool use_rank_drop_limit>
 uint32_t
 MatchThread::inner_match_loop(Context &context, MatchTools &tools, DocidRange &docid_range)
 {
@@ -162,7 +166,7 @@ MatchThread::inner_match_loop(Context &context, MatchTools &tools, DocidRange &d
     while ((docId < docid_range.end) && !context.atSoftDoom()) {
         if (do_rank) {
             search->unpack(docId);
-            context.rankHit(docId);
+            context.rankHit<use_rank_drop_limit>(docId);
         } else {
             context.addHit(docId);
         }
@@ -180,7 +184,7 @@ MatchThread::inner_match_loop(Context &context, MatchTools &tools, DocidRange &d
     return docId;
 }
 
-template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work>
+template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, bool use_rank_drop_limit>
 void
 MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
 {
@@ -193,7 +197,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
          docid_range = scheduler.next_range(thread_id))
     {
         if (!softDoomed) {
-            uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work>(context, tools, docid_range);
+            uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work, use_rank_drop_limit>(context, tools, docid_range);
             softDoomed = (lastCovered < docid_range.end);
             if (softDoomed) {
                 overtime = - context.timeLeft();
@@ -222,14 +226,25 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
 
 //-----------------------------------------------------------------------------
 
+template <bool do_rank, bool do_limit, bool do_share, bool use_rank_drop_limit>
+void
+MatchThread::match_loop_helper_rank_limit_share_drop(MatchTools &tools, HitCollector &hits)
+{
+    if (FastBlackListingStrategy::can_use(do_rank, do_limit, tools.search())) {
+        match_loop<FastBlackListingStrategy, do_rank, do_limit, do_share, use_rank_drop_limit>(tools, hits);
+    } else {
+        match_loop<SimpleStrategy, do_rank, do_limit, do_share, use_rank_drop_limit>(tools, hits);
+    }
+}
+
 template <bool do_rank, bool do_limit, bool do_share>
 void
 MatchThread::match_loop_helper_rank_limit_share(MatchTools &tools, HitCollector &hits)
 {
-    if (FastBlackListingStrategy::can_use(do_rank, do_limit, tools.search())) {
-        match_loop<FastBlackListingStrategy, do_rank, do_limit, do_share>(tools, hits);
+    if (std::isnan(matchParams.rankDropLimit)) {
+        match_loop_helper_rank_limit_share_drop<do_rank, do_limit, do_share, false>(tools, hits);
     } else {
-        match_loop<SimpleStrategy, do_rank, do_limit, do_share>(tools, hits);
+        match_loop_helper_rank_limit_share_drop<do_rank, do_limit, do_share, true>(tools, hits);
     }
 }
 
