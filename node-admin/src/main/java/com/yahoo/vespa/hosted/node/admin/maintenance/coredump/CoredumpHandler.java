@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -46,7 +48,6 @@ public class CoredumpHandler {
     private final CoredumpReporter coredumpReporter;
     private final Path crashPatchInContainer;
     private final Path doneCoredumpsPath;
-    private final Supplier<String> coredumpIdSupplier;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
@@ -54,21 +55,17 @@ public class CoredumpHandler {
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                            Path crashPathInContainer, Path doneCoredumpsPath) {
-        this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath, () -> UUID.randomUUID().toString());
-    }
-
-    CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
-        this.coredumpIdSupplier = coredumpIdSupplier;
     }
 
 
     public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier) {
+
+        UUID coredumpId = generateCoredumpId(context);
         Path containerCrashPathOnHost = context.pathOnHostFromPathInNode(crashPatchInContainer);
         Path containerProcessingPathOnHost = containerCrashPathOnHost.resolve(PROCESSING_DIRECTORY_NAME);
 
@@ -79,16 +76,16 @@ public class CoredumpHandler {
                 .deleteRecursively();
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
-        getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
+        getCoredumpToProcess(coredumpId, containerCrashPathOnHost, containerProcessingPathOnHost)
                 .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributesSupplier));
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
-    Optional<Path> getCoredumpToProcess(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
+    Optional<Path> getCoredumpToProcess(UUID coredumpId, Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
         return FileFinder.directories(containerProcessingPathOnHost).stream()
                 .map(FileFinder.FileAttributes::path)
                 .findAny()
-                .or(() -> enqueueCoredump(containerCrashPathOnHost, containerProcessingPathOnHost));
+                .or(() -> enqueueCoredump(coredumpId, containerCrashPathOnHost, containerProcessingPathOnHost));
     }
 
     /**
@@ -97,7 +94,7 @@ public class CoredumpHandler {
      *
      * @return path to directory inside processing directory which contains the enqueued core dump file
      */
-    Optional<Path> enqueueCoredump(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
+    Optional<Path> enqueueCoredump(UUID coredumpID, Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
         return FileFinder.files(containerCrashPathOnHost)
                 .match(nameStartsWith(".").negate())
                 .maxDepth(1)
@@ -107,7 +104,7 @@ public class CoredumpHandler {
                 .map(coredumpPath -> {
                     UnixPath coredumpInProcessingDirectory = new UnixPath(
                             containerProcessingPathOnHost
-                                    .resolve(coredumpIdSupplier.get())
+                                    .resolve(coredumpID.toString())
                                     .resolve(COREDUMP_FILENAME_PREFIX + coredumpPath.getFileName()));
                     coredumpInProcessingDirectory.createParents();
                     return uncheck(() -> Files.move(coredumpPath, coredumpInProcessingDirectory.toPath())).getParent();
@@ -173,5 +170,13 @@ public class CoredumpHandler {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "No coredump file found in processing directory " + coredumpProccessingDirectory));
+    }
+
+    private UUID generateCoredumpId(NodeAgentContext context) {
+        NodeSpec nodeSpec = context.node();
+        String hostname = nodeSpec.getParentHostname().orElse(nodeSpec.getHostname());
+        String version = nodeSpec.getVespaVersion().orElse(Version.emptyVersion).toFullString();
+        byte[] seed = (hostname + version).getBytes();
+        return UUID.nameUUIDFromBytes(seed);
     }
 }
