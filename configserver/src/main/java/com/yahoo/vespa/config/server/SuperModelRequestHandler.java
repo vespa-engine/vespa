@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.component.Version;
 import com.yahoo.log.LogLevel;
@@ -115,6 +116,11 @@ public class SuperModelRequestHandler implements RequestHandler {
     @Override
     public ApplicationId resolveApplicationId(String hostName) {
         return ApplicationId.global();
+    }
+
+    @Override
+    public Set<FileReference> listFileReferences(ApplicationId applicationId) {
+        throw new UnsupportedOperationException();
     }
 
     public void enable() {
