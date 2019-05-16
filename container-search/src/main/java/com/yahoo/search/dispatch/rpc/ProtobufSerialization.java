@@ -148,7 +148,9 @@ public class ProtobufSerialization {
         }
         MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
-        MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
+        if (query.getPresentation().getHighlight() != null) {
+            MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
+        }
         mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
 
