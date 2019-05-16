@@ -7,6 +7,7 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
     gtest_runner.cpp
     DEPENDS
     vdslib_bucketdistributiontest
+    vdslib_containertest
     gtest
 )
 
@@ -20,7 +21,6 @@ vespa_add_executable(vdslib_testrunner_app TEST
     SOURCES
     testrunner.cpp
     DEPENDS
-    vdslib_containertest
     vdslib_testdistribution
     vdslib_teststate
     vdslib_testthread
