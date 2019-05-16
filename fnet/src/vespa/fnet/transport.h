@@ -282,10 +282,6 @@ public:
     //-------------------------------------------------------------------------
 
     static void Add(FNET_IOComponent *comp, bool needRef = true);
-    static void EnableRead(FNET_IOComponent *comp, bool needRef = true);
-    static void DisableRead(FNET_IOComponent *comp, bool needRef = true);
-    static void EnableWrite(FNET_IOComponent *comp, bool needRef = true);
-    static void DisableWrite(FNET_IOComponent *comp, bool needRef = true);
     static void Close(FNET_IOComponent *comp, bool needRef = true);
 
     //-------------------------------------------------------------------------
@@ -293,6 +289,5 @@ public:
     // only one of: (a) Start, (b) Main
     // -------------------------------------------------------------------------
 
-    FastOS_TimeInterface *GetTimeSampler();
     void Main();
 };
