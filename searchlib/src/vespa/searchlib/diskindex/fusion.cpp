@@ -178,9 +178,9 @@ Fusion::mergeFields(vespalib::ThreadExecutor & executor)
             done.countDown();
         }));
     }
-    LOG(info, "Waiting for %u fields", schema.getNumIndexFields());
+    LOG(debug, "Waiting for %u fields", schema.getNumIndexFields());
     done.await();
-    LOG(info, "Done waiting for %u fields", schema.getNumIndexFields());
+    LOG(debug, "Done waiting for %u fields", schema.getNumIndexFields());
     return (failed == 0u);
 }
 
@@ -205,7 +205,7 @@ Fusion::mergeField(uint32_t id)
     }
     vespalib::mkdir(indexDir, false);
 
-    LOG(info, "mergeField for field %s dir %s", indexName.c_str(), indexDir.c_str());
+    LOG(debug, "mergeField for field %s dir %s", indexName.c_str(), indexDir.c_str());
 
     makeTmpDirs(indexDir);
 
@@ -231,7 +231,7 @@ Fusion::mergeField(uint32_t id)
         return false;
     }
 
-    LOG(info, "Finished mergeField for field %s dir %s", indexName.c_str(), indexDir.c_str());
+    LOG(debug, "Finished mergeField for field %s dir %s", indexName.c_str(), indexDir.c_str());
 
     return true;
 }
