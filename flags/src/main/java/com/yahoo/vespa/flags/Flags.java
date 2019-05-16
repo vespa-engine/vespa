@@ -152,6 +152,13 @@ public class Flags {
             "Takes effect on deployment through controller",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED = defineFeatureFlag(
+            "config-server-fail-if-active-session-cannot-be-loaded", false,
+            "Whether to fail or just log if loading an active session fails at startup of config server",
+            "Takes effect only at bootstrap of config server/controller",
+            HOSTNAME);
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

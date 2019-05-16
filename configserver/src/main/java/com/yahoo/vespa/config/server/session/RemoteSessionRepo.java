@@ -14,7 +14,9 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.yolean.Exceptions;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -33,10 +35,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper, set for example
- * by the prepare HTTP handler on another configserver. The zookeeper state watched in this class is shared
- * between all config servers, so it should not modify any global state, because the operation will be performed
- * on all servers. The repo can be regarded as read only from the POV of the configserver.
+ * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper. The zookeeper state watched in
+ * this class is shared between all config servers, so it should not modify any global state, because the operation
+ * will be performed on all servers. The repo can be regarded as read only from the POV of the configserver.
  *
  * @author Vegard Havdal
  * @author Ulf Lilleengen
@@ -55,6 +56,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final ReloadHandler reloadHandler;
     private final TenantName tenantName;
     private final MetricUpdater metrics;
+    private final FlagSource flagSource;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
 
@@ -70,7 +72,8 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
                              TenantApplications applicationRepo,
-                             MetricUpdater metricUpdater) {
+                             MetricUpdater metricUpdater,
+                             FlagSource flagSource) {
         this.curator = curator;
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
@@ -78,6 +81,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
         this.metrics = metricUpdater;
+        this.flagSource = flagSource;
         initializeSessions();
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.directoryCache.addListener(this::childEvent);
@@ -94,6 +98,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.metrics = null;
         this.directoryCache = null;
         this.applicationRepo = null;
+        this.flagSource = new InMemoryFlagSource();
     }
 
     public List<Long> getSessions() {
@@ -128,7 +133,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
-    // TODO: Add sessions in parallel
     private void initializeSessions() throws NumberFormatException {
         getSessions().forEach(this::sessionAdded);
     }
@@ -158,7 +162,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
      */
     private void sessionAdded(long sessionId) {
         try {
-            log.log(LogLevel.DEBUG, "Adding session to RemoteSessionRepo: " + sessionId);
+            log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
             RemoteSession session = remoteSessionFactory.createSession(sessionId);
             Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
@@ -168,6 +172,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             addSession(session);
             metrics.incAddedSessions();
         } catch (Exception e) {
+            if (Flags.CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED.bindTo(flagSource).value()) throw e;
             log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
         }
     }
@@ -181,15 +186,11 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private void loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
-            try {
-                if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
-                    log.log(LogLevel.DEBUG, "Found active application for session " + session.getSessionId() + " , loading it");
-                    reloadHandler.reloadConfig(session.ensureApplicationLoaded());
-                    log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId);
-                    return;
-                }
-            } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + "Skipping loading of application '" + applicationId + "': " + Exceptions.toMessageString(e));
+            if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
+                log.log(LogLevel.DEBUG, () -> "Found active application for session " + session.getSessionId() + " , loading it");
+                reloadHandler.reloadConfig(session.ensureApplicationLoaded());
+                log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId);
+                return;
             }
         }
     }
@@ -217,10 +218,9 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
     }
 
-    private void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got child event: " + event);
-        }
+    @SuppressWarnings("unused")
+    private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
+        log.log(LogLevel.DEBUG, () -> "Got child event: " + event);
         switch (event.getType()) {
             case CHILD_ADDED:
                 sessionsChanged();
@@ -239,7 +239,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         for (long sessionId : sessionList) {
             RemoteSession session = getSession(sessionId);
             if (session == null) continue; // session might have been deleted after getting session list
-            log.log(LogLevel.DEBUG, session.logPre() + "Confirming upload for session " + sessionId);
+            log.log(LogLevel.DEBUG, () -> session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
         }
     }
