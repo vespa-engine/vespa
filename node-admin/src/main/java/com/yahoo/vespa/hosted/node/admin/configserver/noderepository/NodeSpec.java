@@ -7,7 +7,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -385,8 +384,7 @@ public class NodeSpec {
         private double minDiskAvailableGb;
         private boolean fastDisk = false;
         private double bandwidth;
-        private Set<String> ipAddresses = Collections.emptySet();
-        private Optional<String> hardwareDivergence = Optional.empty();
+        private Set<String> ipAddresses = Set.of();
         private Optional<String> hardwareFailureDescription = Optional.empty();
         private NodeReports reports = new NodeReports();
         private Optional<String> parentHostname = Optional.empty();
@@ -405,6 +403,7 @@ public class NodeSpec {
             fastDisk(node.fastDisk);
             bandwidth(node.bandwidth);
             ipAddresses(node.ipAddresses);
+            additionalIpAddresses(node.additionalIpAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
             currentRebootGeneration(node.currentRebootGeneration);
             reports(new NodeReports(node.reports));
@@ -559,11 +558,6 @@ public class NodeSpec {
 
         public Builder ipAddresses(Set<String> ipAddresses) {
             this.ipAddresses = ipAddresses;
-            return this;
-        }
-
-        public Builder hardwareDivergence(String hardwareDivergence) {
-            this.hardwareDivergence = Optional.of(hardwareDivergence);
             return this;
         }
 
