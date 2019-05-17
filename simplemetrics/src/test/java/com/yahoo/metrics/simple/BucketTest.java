@@ -137,6 +137,35 @@ public class BucketTest {
         assertEquals(3, entry.getValue().getCount());
     }
 
+    @Test
+    public final void testMergeDifferentMetrics() {
+        bucket.put(new Sample(new Measurement(2), new Identifier("nalle", null), AssumedType.GAUGE));
+        Bucket otherNew = new Bucket();
+        otherNew.put(new Sample(new Measurement(3), new Identifier("other", null), AssumedType.GAUGE));
+        bucket.merge(otherNew, true);
+        Set<Entry<Identifier, UntypedMetric>> entries = bucket.entrySet();
+        assertEquals(2, entries.size());
+
+        Collection<Map.Entry<Point, UntypedMetric>> nalle_values = bucket.getValuesForMetric("nalle");
+        assertEquals(1, nalle_values.size());
+        Collection<Map.Entry<Point, UntypedMetric>> other_values = bucket.getValuesForMetric("other");
+        assertEquals(1, other_values.size());
+
+        UntypedMetric nalle_v = nalle_values.iterator().next().getValue();
+        assertEquals(1, nalle_v.getCount());
+        assertEquals(2, nalle_v.getSum(), 0.0);
+        assertEquals(2, nalle_v.getLast(), 0.0);
+        assertEquals(2, nalle_v.getMin(), 0.0);
+        assertEquals(2, nalle_v.getMax(), 0.0);
+
+        UntypedMetric other_v = other_values.iterator().next().getValue();
+        assertEquals(1, other_v.getCount());
+        assertEquals(3, other_v.getSum(), 0.0);
+        assertEquals(3, other_v.getLast(), 0.0);
+        assertEquals(3, other_v.getMax(), 0.0);
+        assertEquals(3, other_v.getMin(), 0.0);
+    }
+
     private static class CheckThatItWasLogged extends Handler {
         final boolean[] loggingMarker;
 
