@@ -1212,7 +1212,6 @@ public class ModelProvisioningTest {
     public void testRequestingSpecificNodeResources() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
                 "   <admin version='4.0'>" +
                 "      <logservers>" +
                 "         <nodes count='1' dedicated='true'>" +
