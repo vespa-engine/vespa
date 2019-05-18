@@ -56,6 +56,10 @@ public class NodeResources {
     public double diskGb() { return diskGb; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
 
+    public NodeResources withDiskSpeed(DiskSpeed speed) {
+        return new NodeResources(vcpu, memoryGb, diskGb, speed);
+    }
+
     public NodeResources subtract(NodeResources other) {
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");
