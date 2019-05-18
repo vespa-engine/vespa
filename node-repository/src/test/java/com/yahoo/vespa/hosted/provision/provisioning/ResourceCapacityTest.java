@@ -72,6 +72,11 @@ public class ResourceCapacityTest {
         assertEquals(1, compare(d3DiskFlavor.resources(), d3CPUFlavor.resources()));
         assertEquals(-1, compare(d3CPUFlavor.resources(), d3MemFlavor.resources()));
         assertEquals(1, compare(d3MemFlavor.resources(), d3DiskFlavor.resources()));
+
+        assertEquals(-1, compare(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow),
+                                          new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)));
+        assertEquals(1, compare(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast),
+                                         new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)));
     }
 
     private int compare(NodeResources a, NodeResources b) {

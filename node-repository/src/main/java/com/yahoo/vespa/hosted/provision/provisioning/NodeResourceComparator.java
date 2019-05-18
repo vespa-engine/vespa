@@ -22,7 +22,6 @@ public class NodeResourceComparator {
 
     private static class MemoryDiskCpu implements Comparator<NodeResources> {
 
-        // TODO: Take disk into account
         @Override
         public int compare(NodeResources a, NodeResources b) {
             if (a.memoryGb() > b.memoryGb()) return 1;
@@ -31,6 +30,13 @@ public class NodeResourceComparator {
             if (a.diskGb() < b.diskGb()) return -1;
             if (a.vcpu() > b.vcpu()) return 1;
             if (a.vcpu() < b.vcpu()) return -1;
+            return compare(a.diskSpeed(), b.diskSpeed());
+        }
+
+        private int compare(NodeResources.DiskSpeed a, NodeResources.DiskSpeed b) {
+            if (a == b) return 0;
+            if (a == NodeResources.DiskSpeed.slow) return -1;
+            if (b == NodeResources.DiskSpeed.slow) return 1;
             return 0;
         }
 

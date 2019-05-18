@@ -75,12 +75,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (this.node.state().equals(Node.State.ready) && !other.node.state().equals(Node.State.ready)) return -1;
         if (other.node.state().equals(Node.State.ready) && !this.node.state().equals(Node.State.ready)) return 1;
 
-        // The node state should be equal here
-        if (!this.node.state().equals(other.node.state())) {
-            throw new RuntimeException(
-                    String.format("Error during node priority comparison. Node states are not equal as expected. Got %s and %s.",
-                                  this.node.state(), other.node.state()));
-        }
+        if ( ! this.node.state().equals(other.node.state()))
+            throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
 
         // Choose exact flavor
         if (this.preferredOnFlavor && !other.preferredOnFlavor) return -1;
