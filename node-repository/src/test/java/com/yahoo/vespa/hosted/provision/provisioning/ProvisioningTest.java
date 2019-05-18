@@ -240,7 +240,6 @@ public class ProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
 
         tester.makeReadyNodes(12, "d-1-1-1");
-        tester.makeReadyNodes(16, "d-2-2-2");
 
         NodeResources small = new NodeResources(1, 1, 1);
         NodeResources large = new NodeResources(2, 2, 2);
@@ -252,6 +251,8 @@ public class ProvisioningTest {
         // redeploy with reduced size (to cause us to have retired nodes before switching flavor)
         SystemState state2 = prepare(application1, 2, 2, 3, 3, small, tester);
         tester.activate(application1, state2.allHosts);
+
+        tester.makeReadyNodes(16, "d-2-2-2");
 
         // redeploy with increased sizes and new flavor
         SystemState state3 = prepare(application1, 3, 4, 4, 5, large, tester);

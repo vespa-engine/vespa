@@ -228,6 +228,9 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
+        return makeReadyNodes(n, asFlavor(flavor, type), type);
+    }
+    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type) {
         return makeReadyNodes(n, flavor, type, 0);
     }
 
@@ -235,7 +238,10 @@ public class ProvisioningTester {
         return makeProvisionedNodes(count, flavor, type, ipAddressPoolSize, false);
     }
 
-    public List<Node> makeProvisionedNodes(int n, String flavorName, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+    public List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        return makeProvisionedNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
+    }
+    public List<Node> makeProvisionedNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
@@ -272,20 +278,12 @@ public class ProvisioningTester {
                     nameResolver.addRecord(String.format("node-%d-of-%s", poolIp, hostname), ipv4Addr);
                 }
             }
-            Optional<Flavor> flavor = nodeFlavors.getFlavor(flavorName);
-            if (flavor.isEmpty()) {
-                if (type == NodeType.tenant) // Tenant nodes can have any (docker) flavor
-                    flavor = Optional.of(new Flavor(NodeResources.fromLegacyName(flavorName)));
-                else
-                    throw new IllegalArgumentException("No flavor '" + flavorName + "'");
-            }
-
             nodes.add(nodeRepository.createNode(hostname,
                                                 hostname,
                                                 new IP.Config(hostIps, ipAddressPool),
                                                 Optional.empty(),
                                                 Optional.empty(),
-                                                flavor.get(),
+                                                flavor,
                                                 type));
         }
         nodes = nodeRepository.addNodes(nodes);
@@ -326,37 +324,58 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize);
+    }
+    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize) {
         return makeReadyNodes(n, flavor, type, ipAddressPoolSize, false);
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
+    }
+    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
+    private Flavor asFlavor(String flavorString, NodeType type) {
+        Optional<Flavor> flavor = nodeFlavors.getFlavor(flavorString);
+        if (flavor.isEmpty()) {
+            // TODO: Remove the need for this by always adding hosts with a given capacity
+            if (type == NodeType.tenant) // Tenant nodes can have any (docker) flavor
+                flavor = Optional.of(new Flavor(NodeResources.fromLegacyName(flavorString)));
+            else
+                throw new IllegalArgumentException("No flavor '" + flavorString + "'");
+        }
+        return flavor.get();
+    }
+
     /** Creates a set of virtual docker hosts */
-    public List<Node> makeReadyVirtualDockerHosts(int n, NodeResources flavor) {
-        return makeReadyVirtualNodes(n, 1, flavor, Optional.empty(),
-                i -> "dockerHost" + i, NodeType.host);
+    public List<Node> makeDockerHosts(int n, NodeResources resources) {
+        return makeDockerHosts(n, resources, "dockerHost");
+    }
+
+    public List<Node> makeDockerHosts(int n, NodeResources resources, String namePrefix) {
+        return makeReadyVirtualNodes(n, 1, resources, Optional.empty(), i -> namePrefix + i, NodeType.host);
     }
 
     /** Creates a set of virtual docker nodes on a single docker host starting with index 1 and increasing */
-    public List<Node> makeReadyVirtualDockerNodes(int n, NodeResources flavor, String dockerHostId) {
-        return makeReadyVirtualNodes(n, 1, flavor, Optional.of(dockerHostId),
-                i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+    public List<Node> makeReadyVirtualDockerNodes(int n, NodeResources resources, String dockerHostId) {
+        return makeReadyVirtualNodes(n, 1, resources, Optional.of(dockerHostId),
+                                     i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
     }
 
     /** Creates a single of virtual docker node on a single parent host */
-    public List<Node> makeReadyVirtualDockerNode(int index, NodeResources flavor, String dockerHostId) {
-        return makeReadyVirtualNodes(1, index, flavor, Optional.of(dockerHostId),
-                i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+    public List<Node> makeReadyVirtualDockerNode(int index, NodeResources resources, String dockerHostId) {
+        return makeReadyVirtualNodes(1, index, resources, Optional.of(dockerHostId),
+                                     i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
     }
 
     /** Creates a set of virtual nodes without a parent host */
-    public List<Node> makeReadyVirtualNodes(int n, NodeResources flavor) {
-        return makeReadyVirtualNodes(n, 0, flavor, Optional.empty(),
-                i -> UUID.randomUUID().toString(), NodeType.tenant);
+    public List<Node> makeReadyVirtualNodes(int n, NodeResources resources) {
+        return makeReadyVirtualNodes(n, 0, resources, Optional.empty(),
+                                     i -> UUID.randomUUID().toString(), NodeType.tenant);
     }
 
     /** Creates a set of virtual nodes on a single parent host */

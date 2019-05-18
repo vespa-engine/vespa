@@ -63,9 +63,9 @@ public class GroupPreparer {
 
                 // Create a prioritized set of nodes
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
-                NodePrioritizer prioritizer = new NodePrioritizer(
-                        nodeList, application, cluster, requestedNodes, spareCount, nodeRepository.nameResolver(),
-                        nodeRepository.getAvailableFlavors());
+                NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
+                                                                  spareCount, nodeRepository.nameResolver(),
+                                                                  nodeRepository.getAvailableFlavors());
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);

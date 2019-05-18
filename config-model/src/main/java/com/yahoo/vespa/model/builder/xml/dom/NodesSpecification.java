@@ -178,7 +178,8 @@ public class NodesSpecification {
         if (resources != null) {
             return Optional.of(new NodeResources(resources.requiredDoubleAttribute("vcpu"),
                                                  parseGbAmount(resources.requiredStringAttribute("memory")),
-                                                 parseGbAmount(resources.requiredStringAttribute("disk"))));
+                                                 parseGbAmount(resources.requiredStringAttribute("disk")),
+                                                 parseOptionalDiskSpeed(resources.stringAttribute("disk-speed"))));
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
             return Optional.of(NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor")));
@@ -220,6 +221,17 @@ public class NodesSpecification {
             throw new IllegalArgumentException("Invalid byte amount '" + byteAmount +
                                                "': Must be a floating point number " +
                                                "optionally followed by k, M, G, T, P, E, Z or Y");
+        }
+    }
+
+    private static NodeResources.DiskSpeed parseOptionalDiskSpeed(String diskSpeedString) {
+        if (diskSpeedString == null) return NodeResources.DiskSpeed.fast;
+        switch (diskSpeedString) {
+            case "fast" : return NodeResources.DiskSpeed.fast;
+            case "slow" : return NodeResources.DiskSpeed.slow;
+            case "any" : return NodeResources.DiskSpeed.any;
+            default: throw new IllegalArgumentException("Illegal disk-speed value '" + diskSpeedString +
+                                                        "': Legal values are 'fast', 'slow' and 'any')");
         }
     }
 

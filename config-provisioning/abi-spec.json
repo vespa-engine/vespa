@@ -384,6 +384,8 @@
       "public java.lang.String name()",
       "public int cost()",
       "public boolean isStock()",
+      "public boolean isConfigured()",
+      "public com.yahoo.config.provision.NodeResources resources()",
       "public double getMinMainMemoryAvailableGb()",
       "public double getMinDiskAvailableGb()",
       "public boolean hasFastDisk()",
@@ -401,8 +403,6 @@
       "public boolean hasAtLeast(com.yahoo.config.provision.NodeResources)",
       "public void freeze()",
       "public boolean isLargerThan(com.yahoo.config.provision.Flavor)",
-      "public boolean isConfigured()",
-      "public com.yahoo.config.provision.NodeResources resources()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
@@ -590,6 +590,24 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.NodeResources$DiskSpeed": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed[] values()",
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed fast",
+      "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed slow",
+      "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed any"
+    ]
+  },
   "com.yahoo.config.provision.NodeResources": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -598,14 +616,17 @@
     ],
     "methods": [
       "public void <init>(double, double, double)",
+      "public void <init>(double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public double vcpu()",
       "public double memoryGb()",
       "public double diskGb()",
+      "public com.yahoo.config.provision.NodeResources$DiskSpeed diskSpeed()",
       "public boolean allocateByLegacyName()",
       "public java.util.Optional legacyName()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
+      "public boolean satisfies(com.yahoo.config.provision.NodeResources)",
       "public static com.yahoo.config.provision.NodeResources fromLegacyName(java.lang.String)"
     ],
     "fields": []

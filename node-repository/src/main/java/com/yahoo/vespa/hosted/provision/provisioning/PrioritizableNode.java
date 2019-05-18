@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Optional;
@@ -16,7 +17,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     Node node;
 
     /** The free capacity, including retired allocations */
-    final ResourceCapacity freeParentCapacity;
+    final NodeResources freeParentCapacity;
 
     /** The parent host (docker or hypervisor) */
     final Optional<Node> parent;
@@ -33,7 +34,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** True if exact flavor is specified by the allocation request and this node has this flavor */
     final boolean preferredOnFlavor;
 
-    private PrioritizableNode(Node node, ResourceCapacity freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean preferredOnFlavor) {
+    private PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean preferredOnFlavor) {
         this.node = node;
         this.freeParentCapacity = freeParentCapacity;
         this.parent = parent;
@@ -90,7 +91,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (other.parent.isPresent() && !this.parent.isPresent()) return 1;
 
         // Choose the node with parent node with the least capacity (TODO parameterize this as this is pretty much the core of the algorithm)
-        int freeCapacity = ResourceCapacityComparator.defaultOrder().compare(this.freeParentCapacity, other.freeParentCapacity);
+        int freeCapacity = NodeResourceComparator.defaultOrder().compare(this.freeParentCapacity, other.freeParentCapacity);
         if (freeCapacity != 0) return freeCapacity;
 
         // Choose cheapest node
@@ -108,7 +109,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     static class Builder {
         public final Node node;
-        private ResourceCapacity freeParentCapacity = ResourceCapacity.NONE;
+        private NodeResources freeParentCapacity = new NodeResources(0, 0, 0);
         private Optional<Node> parent = Optional.empty();
         private boolean violatesSpares;
         private boolean isSurplusNode;
@@ -119,7 +120,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
             this.node = node;
         }
 
-        Builder withFreeParentCapacity(ResourceCapacity freeParentCapacity) {
+        Builder withFreeParentCapacity(NodeResources freeParentCapacity) {
             this.freeParentCapacity = freeParentCapacity;
             return this;
         }
@@ -153,4 +154,5 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
             return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, preferredOnFlavor);
         }
     }
+
 }

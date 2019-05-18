@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -61,7 +62,7 @@ public class DockerHostCapacityTest {
 
     @Test
     public void compare_used_to_sort_in_decending_order() {
-        assertEquals(host1, nodes.get(0)); //Make sure it is unsorted here
+        assertEquals(host1, nodes.get(0)); // Make sure it is unsorted here
 
         Collections.sort(nodes, capacity::compare);
         assertEquals(host3, nodes.get(0));
@@ -71,20 +72,20 @@ public class DockerHostCapacityTest {
 
     @Test
     public void hasCapacity() {
-        assertTrue(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker)));
-        assertTrue(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker2)));
-        assertTrue(capacity.hasCapacity(host2, ResourceCapacity.of(flavorDocker)));
-        assertTrue(capacity.hasCapacity(host2, ResourceCapacity.of(flavorDocker2)));
-        assertFalse(capacity.hasCapacity(host3, ResourceCapacity.of(flavorDocker)));  // No ip available
-        assertFalse(capacity.hasCapacity(host3, ResourceCapacity.of(flavorDocker2))); // No ip available
+        assertTrue(capacity.hasCapacity(host1, flavorDocker.resources()));
+        assertTrue(capacity.hasCapacity(host1, flavorDocker2.resources()));
+        assertTrue(capacity.hasCapacity(host2, flavorDocker.resources()));
+        assertTrue(capacity.hasCapacity(host2, flavorDocker2.resources()));
+        assertFalse(capacity.hasCapacity(host3, flavorDocker.resources()));  // No ip available
+        assertFalse(capacity.hasCapacity(host3, flavorDocker2.resources())); // No ip available
 
         // Add a new node to host1 to deplete the memory resource
         Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(),
                 "nodeF", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
         nodes.add(nodeF);
         capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}));
-        assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker)));
-        assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker2)));
+        assertFalse(capacity.hasCapacity(host1, flavorDocker.resources()));
+        assertFalse(capacity.hasCapacity(host1, flavorDocker2.resources()));
     }
 
     @Test
@@ -96,7 +97,7 @@ public class DockerHostCapacityTest {
 
     @Test
     public void getCapacityTotal() {
-        ResourceCapacity total = capacity.getCapacityTotal();
+        NodeResources total = capacity.getCapacityTotal();
         assertEquals(21.0, total.vcpu(), 0.1);
         assertEquals(30.0, total.memoryGb(), 0.1);
         assertEquals(36.0, total.diskGb(), 0.1);
@@ -104,7 +105,7 @@ public class DockerHostCapacityTest {
 
     @Test
     public void getFreeCapacityTotal() {
-        ResourceCapacity totalFree = capacity.getFreeCapacityTotal();
+        NodeResources totalFree = capacity.getFreeCapacityTotal();
         assertEquals(15.0, totalFree.vcpu(), 0.1);
         assertEquals(14.0, totalFree.memoryGb(), 0.1);
         assertEquals(24.0, totalFree.diskGb(), 0.1);

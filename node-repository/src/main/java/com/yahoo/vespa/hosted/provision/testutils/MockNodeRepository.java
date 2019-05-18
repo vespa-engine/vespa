@@ -151,6 +151,7 @@ public class MockNodeRepository extends NodeRepository {
                                                       Set.of(RotationName.from("us-cluster")));
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
 
+
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container,
                                                    ClusterSpec.Id.from("id1"),

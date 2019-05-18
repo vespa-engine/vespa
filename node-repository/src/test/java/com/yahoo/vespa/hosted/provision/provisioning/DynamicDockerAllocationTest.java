@@ -279,6 +279,42 @@ public class DynamicDockerAllocationTest {
         assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipAddresses());
     }
 
+    @Test
+    public void provisioning_fast_disk_speed_do_not_get_slow_nodes() {
+        provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.fast, true);
+    }
+
+    @Test
+    public void provisioning_slow_disk_speed_do_not_get_fast_nodes() {
+        provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.slow, true);
+    }
+
+    @Test
+    public void provisioning_any_disk_speed_gets_slow_and_fast_nodes() {
+        provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.any, false);
+    }
+
+    private void provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed requestDiskSpeed, boolean expectOutOfCapacity) {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        NodeResources resources = new NodeResources(1, 1, 1, requestDiskSpeed);
+
+        try {
+            List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
+            if (expectOutOfCapacity) fail("Expected out of capacity");
+            assertEquals(4, hosts.size());
+            tester.activate(application, hosts);
+        }
+        catch (OutOfCapacityException e) {
+            if ( ! expectOutOfCapacity) throw e;
+        }
+    }
+
     private ApplicationId makeApplicationId(String tenant, String appName) {
         return ApplicationId.from(tenant, appName, "default");
     }

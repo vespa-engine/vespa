@@ -97,6 +97,9 @@ public interface NodeSpec {
                     return true;
             }
             else {
+                // Note: changing this condition to flavor.resources().satisfies(requestedNodeResources))
+                // is semantically correct, but we only want partial matching when allocating from docker hosts,
+                // which is done separately, so we compare by equality here
                 if (requestedNodeResources.equals(flavor.resources()))
                     return true;
             }
