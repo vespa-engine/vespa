@@ -6,6 +6,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.concurrent.Timer;
 
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,9 +18,10 @@ import java.util.Map;
  */
 public class RPCTargetPool {
 
-    private final Map<String, Entry> targets = new HashMap<String, Entry>();
+    private final Map<String, Entry> targets = new HashMap<>();
     private final Timer timer;
     private final long expireMillis;
+    private final int numTargetsPerSpec;
 
     /**
      * Constructs a new instance of this class, and registers the {@link SystemTimer} for detecting and closing
@@ -27,8 +29,8 @@ public class RPCTargetPool {
      *
      * @param expireSecs The number of seconds until an idle connection is closed.
      */
-    public RPCTargetPool(double expireSecs) {
-        this(SystemTimer.INSTANCE, expireSecs);
+    public RPCTargetPool(double expireSecs, int numTargetsPerSpec) {
+        this(SystemTimer.INSTANCE, expireSecs, numTargetsPerSpec);
     }
 
     /**
@@ -38,9 +40,10 @@ public class RPCTargetPool {
      * @param timer      The timer to use for connection expiration.
      * @param expireSecs The number of seconds until an idle connection is closed.
      */
-    public RPCTargetPool(Timer timer, double expireSecs) {
+    public RPCTargetPool(Timer timer, double expireSecs, int numTargetsPerSpec) {
         this.timer = timer;
         this.expireMillis = (long)(expireSecs * 1000);
+        this.numTargetsPerSpec = numTargetsPerSpec;
     }
 
     /**
@@ -56,9 +59,8 @@ public class RPCTargetPool {
         long expireTime = currentTime - expireMillis;
         while (it.hasNext()) {
             Entry entry = it.next();
-            RPCTarget target = entry.target;
-            if (target.getJRTTarget().isValid()) {
-                if (target.getRefCount() > 1) {
+            if (entry.isValid()) {
+                if (entry.getRefCount() > 1) {
                     entry.lastUse = currentTime;
                     continue; // someone is using this
                 }
@@ -68,7 +70,7 @@ public class RPCTargetPool {
                     }
                 }
             }
-            target.subRef();
+            entry.close();
             it.remove();
         }
     }
@@ -85,23 +87,25 @@ public class RPCTargetPool {
     public RPCTarget getTarget(Supervisor orb, RPCServiceAddress address) {
         Spec spec = address.getConnectionSpec();
         String key = spec.toString();
-        RPCTarget ret;
+        long now = timer.milliTime();
         synchronized (this) {
             Entry entry = targets.get(key);
             if (entry != null) {
-                if (entry.target.getJRTTarget().isValid()) {
-                    entry.target.addRef();
-                    entry.lastUse = timer.milliTime();
-                    return entry.target;
+                RPCTarget target = entry.getTarget(now);
+                if (target != null) {
+                    return target;
                 }
-                entry.target.subRef();
+                entry.close();
                 targets.remove(key);
             }
-            ret = new RPCTarget(spec, orb);
-            targets.put(key, new Entry(ret, timer.milliTime()));
+            RPCTarget [] tmpTargets = new RPCTarget[numTargetsPerSpec];
+            for (int i=0; i < tmpTargets.length; i++) {
+                tmpTargets[i] = new RPCTarget(spec, orb);
+            }
+            entry = new Entry(tmpTargets, now);
+            targets.put(key, entry);
+            return entry.getTarget(now);
         }
-        ret.addRef();
-        return ret;
     }
 
 
@@ -118,14 +122,51 @@ public class RPCTargetPool {
      * Implements a helper class holds the necessary reference and timestamp of a target. The lastUse member is updated
      * when a call to {@link RPCTargetPool#flushTargets(boolean)} iterates over an active target.
      */
-    private static class Entry {
+    private static class Entry implements Closeable {
 
-        final RPCTarget target;
-        long lastUse = 0;
+        private final RPCTarget [] targets;
+        private int index;
+        long lastUse;
 
-        Entry(RPCTarget target, long lastUse) {
-            this.target = target;
+        Entry(RPCTarget [] targets, long lastUse) {
+            this.targets = targets;
             this.lastUse = lastUse;
+        }
+        RPCTarget getTarget(long now) {
+            if (index >= targets.length) {
+                index = 0;
+            }
+            RPCTarget target = targets[index];
+            if (target.getJRTTarget().isValid()) {
+                target.addRef();
+                lastUse = now;
+                index++;
+                return target;
+            }
+            return null;
+        }
+        boolean isValid() {
+            for (RPCTarget target : targets) {
+                if ( ! target.getJRTTarget().isValid()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        int getRefCount() {
+            int refCount = 0;
+            for (RPCTarget target : targets) {
+                refCount += target.getRefCount();
+            }
+            return refCount;
+        }
+
+        @Override
+        public void close() {
+            for (RPCTarget target : targets) {
+                target.subRef();
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ public class RPCNetworkParams {
     private int maxInputBufferSize = 256 * 1024;
     private int maxOutputBufferSize = 256 * 1024;
     private double connectionExpireSecs = 30;
+    private int numTargetsPerSpec = 1;
 
     /**
      * Constructs a new instance of this class with reasonable default values.
@@ -40,6 +41,7 @@ public class RPCNetworkParams {
         connectionExpireSecs = params.connectionExpireSecs;
         maxInputBufferSize = params.maxInputBufferSize;
         maxOutputBufferSize = params.maxOutputBufferSize;
+        numTargetsPerSpec = params.numTargetsPerSpec;
     }
 
     /**
@@ -140,6 +142,14 @@ public class RPCNetworkParams {
     public RPCNetworkParams setConnectionExpireSecs(double secs) {
         this.connectionExpireSecs = secs;
         return this;
+    }
+
+    RPCNetworkParams setNumTargetsPerSpec(int numTargetsPerSpec) {
+        this.numTargetsPerSpec = numTargetsPerSpec;
+        return this;
+    }
+    int getNumTargetsPerSpec() {
+        return numTargetsPerSpec;
     }
 
     /**
