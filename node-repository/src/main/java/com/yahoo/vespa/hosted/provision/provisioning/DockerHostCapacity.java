@@ -30,31 +30,25 @@ public class DockerHostCapacity {
      * Used in prioritizing hosts for allocation in <b>descending</b> order.
      */
     int compare(Node hostA, Node hostB) {
-        int comp = compare(freeCapacityOf(hostB, false),
-                           freeCapacityOf(hostA, false));
-        if (comp == 0) {
-            comp = compare(freeCapacityOf(hostB, false),
-                           freeCapacityOf(hostA, false));
-            if (comp == 0) {
-                // If resources are equal - we want to assign to the one with the most IPaddresses free
-                comp = freeIPs(hostB) - freeIPs(hostA);
-            }
-        }
-        return comp;
+        int result = compare(freeCapacityOf(hostB, false), freeCapacityOf(hostA, false));
+        if (result != 0) return result;
+
+        result = compare(freeCapacityOf(hostB, false), freeCapacityOf(hostA, false));
+        if (result != 0) return result;
+
+        // If resources are equal we want to assign to the one with the most IPaddresses free
+        return freeIPs(hostB) - freeIPs(hostA);
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
-        int comp = compare(freeCapacityOf(hostB,  true),
-                           freeCapacityOf(hostA, true));
-        if (comp == 0) {
-            comp = compare(freeCapacityOf(hostB, true),
-                           freeCapacityOf(hostA, true));
-            if (comp == 0) {
-                // If resources are equal - we want to assign to the one with the most IPaddresses free
-                comp = freeIPs(hostB) - freeIPs(hostA);
-            }
-        }
-        return comp;
+        int result = compare(freeCapacityOf(hostB,  true), freeCapacityOf(hostA, true));
+        if (result != 0) return result;
+
+        result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
+        if (result != 0) return result;
+
+        // If resources are equal we want to assign to the one with the most IPaddresses free
+        return freeIPs(hostB) - freeIPs(hostA);
     }
 
     private int compare(NodeResources a, NodeResources b) {
@@ -76,34 +70,38 @@ public class DockerHostCapacity {
         return dockerHost.ipAddressPool().findUnused(allNodes).size();
     }
 
-    // TODO: Capacity cannot be added when some have slow disks
-    public NodeResources getFreeCapacityTotal() {
+    /** Return total free capacity for a given disk speed (or for any disk speed) */
+    public NodeResources getFreeCapacityTotal(NodeResources.DiskSpeed speed) {
         return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .map(n -> freeCapacityOf(n, false))
-                .reduce(new NodeResources(0, 0, 0), NodeResources::add);
+                       .filter(n -> n.type().equals(NodeType.host))
+                       .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
+                       .map(n -> freeCapacityOf(n, false))
+                       .reduce(new NodeResources(0, 0, 0), NodeResources::add)
+                       .withDiskSpeed(speed); // Set speed to 'any' if necvessary
     }
 
-    // TODO: Capacity cannot be added when some have slow disks
-    public NodeResources getCapacityTotal() {
+    /** Return total capacity for a given disk speed (or for any disk speed) */
+    public NodeResources getCapacityTotal(NodeResources.DiskSpeed speed) {
         return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .map(host -> host.flavor().resources())
-                .reduce(new NodeResources(0, 0, 0), NodeResources::add);
+                       .filter(n -> n.type().equals(NodeType.host))
+                       .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
+                       .map(host -> host.flavor().resources())
+                       .reduce(new NodeResources(0, 0, 0), NodeResources::add)
+                       .withDiskSpeed(speed); // Set speed to 'any' if necessary
     }
 
     public int freeCapacityInFlavorEquivalence(Flavor flavor) {
         return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .map(n -> canFitNumberOf(n, flavor))
-                .reduce(0, (a, b) -> a + b);
+                       .filter(n -> n.type().equals(NodeType.host))
+                       .map(n -> canFitNumberOf(n, flavor))
+                       .reduce(0, (a, b) -> a + b);
     }
 
     public long getNofHostsAvailableFor(Flavor flavor) {
         return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .filter(n -> hasCapacity(n, flavor.resources()))
-                .count();
+                       .filter(n -> n.type().equals(NodeType.host))
+                       .filter(n -> hasCapacity(n, flavor.resources()))
+                       .count();
     }
 
     private int canFitNumberOf(Node node, Flavor flavor) {

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -216,20 +217,28 @@ public class MetricsReporter extends Maintainer {
     private void updateDockerMetrics(LockedNodeList nodes) {
         // Capacity flavors for docker
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        metric.set("hostedVespa.docker.totalCapacityCpu", capacity.getCapacityTotal().vcpu(), null);
-        metric.set("hostedVespa.docker.totalCapacityMem", capacity.getCapacityTotal().memoryGb(), null);
-        metric.set("hostedVespa.docker.totalCapacityDisk", capacity.getCapacityTotal().diskGb(), null);
-        metric.set("hostedVespa.docker.freeCapacityCpu", capacity.getFreeCapacityTotal().vcpu(), null);
-        metric.set("hostedVespa.docker.freeCapacityMem", capacity.getFreeCapacityTotal().memoryGb(), null);
-        metric.set("hostedVespa.docker.freeCapacityDisk", capacity.getFreeCapacityTotal().diskGb(), null);
+        metric.set("hostedVespa.docker.totalCapacityCpu",
+                   capacity.getCapacityTotal(NodeResources.DiskSpeed.any).vcpu(), null);
+        metric.set("hostedVespa.docker.totalCapacityMem",
+                   capacity.getCapacityTotal(NodeResources.DiskSpeed.any).memoryGb(), null);
+        metric.set("hostedVespa.docker.totalCapacityDisk",
+                   capacity.getCapacityTotal(NodeResources.DiskSpeed.any).diskGb(), null);
+        metric.set("hostedVespa.docker.freeCapacityCpu",
+                   capacity.getFreeCapacityTotal(NodeResources.DiskSpeed.any).vcpu(), null);
+        metric.set("hostedVespa.docker.freeCapacityMem",
+                   capacity.getFreeCapacityTotal(NodeResources.DiskSpeed.any).memoryGb(), null);
+        metric.set("hostedVespa.docker.freeCapacityDisk",
+                   capacity.getFreeCapacityTotal(NodeResources.DiskSpeed.any).diskGb(), null);
 
         List<Flavor> dockerFlavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
                 .filter(f -> f.getType().equals(Flavor.Type.DOCKER_CONTAINER))
                 .collect(Collectors.toList());
         for (Flavor flavor : dockerFlavors) {
             Metric.Context context = getContextAt("flavor", flavor.name());
-            metric.set("hostedVespa.docker.freeCapacityFlavor", capacity.freeCapacityInFlavorEquivalence(flavor), context);
-            metric.set("hostedVespa.docker.hostsAvailableFlavor", capacity.getNofHostsAvailableFor(flavor), context);
+            metric.set("hostedVespa.docker.freeCapacityFlavor",
+                       capacity.freeCapacityInFlavorEquivalence(flavor), context);
+            metric.set("hostedVespa.docker.hostsAvailableFlavor",
+                       capacity.getNofHostsAvailableFor(flavor), context);
         }
     }
 
