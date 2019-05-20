@@ -92,7 +92,7 @@ public class DeploymentTrigger {
      * trigger next.
      */
     public void notifyOfCompletion(JobReport report) {
-        log.log(LogLevel.INFO, String.format("Notified of %s for %s of %s (%d)",
+        log.log(LogLevel.DEBUG, String.format("Notified of %s for %s of %s (%d)",
                                              report.jobError().map(e -> e.toString() + " error")
                                                    .orElse("success"),
                                              report.jobType(),
@@ -181,7 +181,7 @@ public class DeploymentTrigger {
      * the project id is removed from the application owning the job, to prevent further trigger attempts.
      */
     public boolean trigger(Job job) {
-        log.log(LogLevel.INFO, String.format("Triggering %s: %s", job, job.triggering));
+        log.log(LogLevel.DEBUG, String.format("Triggering %s: %s", job, job.triggering));
         try {
             applications().lockOrThrow(job.applicationId(), application -> {
                 if (application.get().deploymentJobs().deployedInternally())
