@@ -223,14 +223,14 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
-                       "{\"message\":\"Updated host4.yahoo.com\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"modelName\":\"foo\"");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
-                       "{\"message\":\"Updated host4.yahoo.com\"}");
-        assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "modelName", false);
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "modelName", false);
         container.handleRequest((new Request("http://localhost:8080/nodes/v2/upgrade/tenant", Utf8.toBytes("{\"dockerImage\": \"docker.domain.tld/my/image\"}"), Request.Method.PATCH)));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
@@ -467,6 +467,12 @@ public class RestApiTest {
                                     asNodeJson("host8.yahoo.com", "large-variant", "127.0.253.1", "::253:1") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
+
+        // Attempt to PATCH field not relevant for child node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+                                   Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'modelName': A child node cannot have model name set\"}");
     }
 
     @Test

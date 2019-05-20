@@ -77,8 +77,10 @@ public final class Node {
 
         if (state == State.active)
             requireNonEmpty(ipConfig.primary(), "An active node must have at least one valid IP address");
-        if (parentHostname.isPresent() && !ipConfig.pool().asSet().isEmpty())
-            throw new IllegalArgumentException("A child node cannot have an IP address pool");
+        if (parentHostname.isPresent()) {
+            if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
+        }
 
         this.hostname = hostname;
         this.ipConfig = ipConfig;
