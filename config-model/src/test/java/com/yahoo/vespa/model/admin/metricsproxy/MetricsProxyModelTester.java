@@ -31,7 +31,7 @@ class MetricsProxyModelTester {
     static final String CLUSTER_CONFIG_ID = "admin/metrics";
 
     // Used for all configs that are produced by the container, not the cluster.
-    static final String CONTAINER_CONFIG_ID = CLUSTER_CONFIG_ID + "/0";
+    static final String CONTAINER_CONFIG_ID = CLUSTER_CONFIG_ID + "/metricsproxy.0";
 
     static VespaModel getModel(String servicesXml) {
         var numberOfHosts = 1;
