@@ -49,7 +49,7 @@ public class MinimalQueryInserterTestCase {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         searchChain = null;
         context = null;
         execution = null;
