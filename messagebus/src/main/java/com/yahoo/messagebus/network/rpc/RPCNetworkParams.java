@@ -144,7 +144,7 @@ public class RPCNetworkParams {
         return this;
     }
 
-    RPCNetworkParams setNumTargetsPerSpec(int numTargetsPerSpec) {
+    public RPCNetworkParams setNumTargetsPerSpec(int numTargetsPerSpec) {
         this.numTargetsPerSpec = numTargetsPerSpec;
         return this;
     }

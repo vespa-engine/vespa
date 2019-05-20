@@ -34,6 +34,7 @@ class FeederParams {
     private boolean benchmarkMode = false;
     private int numDispatchThreads = 1;
     private int maxPending = 0;
+    private int numConnectionsPerTarget = 2;
     private List<InputStream> inputStreams = new ArrayList<>();
 
     FeederParams() {
@@ -82,6 +83,11 @@ class FeederParams {
         return this;
     }
 
+    int getNumConnectionsPerTarget() { return numConnectionsPerTarget; }
+    FeederParams setNumConnectionsPerTarget(int numConnectionsPerTarget) {
+        this.numConnectionsPerTarget = numConnectionsPerTarget;
+        return this;
+    }
     boolean isSerialTransferEnabled() {
         return maxPending == 1;
     }
@@ -109,6 +115,7 @@ class FeederParams {
         opts.addOption("r", "route", true, "Route for sending messages. default is 'default'....");
         opts.addOption("b", "mode", true, "Mode for benchmarking.");
         opts.addOption("o", "output", true, "File to write to. Extensions gives format (.xml, .json, .vespa) json will be produced if no extension.");
+        opts.addOption("c", "numconnections", true, "Number of connections per host.");
 
         CommandLine cmd = new DefaultParser().parse(opts, args);
 
@@ -117,6 +124,9 @@ class FeederParams {
         }
         if (cmd.hasOption('m')) {
             maxPending = Integer.valueOf(cmd.getOptionValue('m').trim());
+        }
+        if (cmd.hasOption('c')) {
+            numConnectionsPerTarget = Integer.valueOf(cmd.getOptionValue('c').trim());
         }
         if (cmd.hasOption('r')) {
             route = Route.parse(cmd.getOptionValue('r').trim());
