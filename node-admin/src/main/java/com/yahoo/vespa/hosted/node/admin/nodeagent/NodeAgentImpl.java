@@ -711,6 +711,11 @@ public class NodeAgentImpl implements NodeAgent {
             }
 
             @Override
+            public void removeFile(Path pathInContainer) {
+                throw new UnsupportedOperationException("removeFile not implemented");
+            }
+
+            @Override
             public void createSymlink(Path symlink, Path pathInContainer) {
                 throw new UnsupportedOperationException("createSymlink not implemented");
             }
