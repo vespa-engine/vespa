@@ -16,5 +16,20 @@ public interface ContainerData {
      * @param data            The content of the file.
      */
     void addFile(Path pathInContainer, String data);
+
+    /**
+     * Remove file in container at path.
+     *
+     * @param pathInContainer The path to the file inside the container, absolute or relative root /.
+     */
+    default void removeFile(Path pathInContainer) { /* TODO: Remove this when implementing classes have been updated */ }
+
+    /**
+     * Symlink to a file in container at path.
+     *
+     * @param symlink The path to the symlink inside the container, absolute or relative root /.
+     * @param target The path to the target file for the symbolic link inside the container, absolute or relative root /.
+     */
+    default void createSymlink(Path symlink, Path target) { /* TODO: Remove this when implementing classes have been updated */ }
 }
 
