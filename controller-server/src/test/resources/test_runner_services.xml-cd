@@ -5,7 +5,7 @@
         <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
-                <surefireMemoryMb>7680</surefireMemoryMb>
+                <surefireMemoryMb>5120</surefireMemoryMb>
             </config>
         </component>
 
