@@ -52,6 +52,10 @@ public class BoolFieldValue extends FieldValue {
         if ( ! checkAssign(o)) return;
         if (o instanceof String || o instanceof StringFieldValue) {
             value = Boolean.parseBoolean(o.toString());
+        } else if (o instanceof Boolean) {
+            value = (Boolean) o;
+        } else if (o instanceof BoolFieldValue) {
+            value = ((BoolFieldValue) o).value;
         } else {
             throw new IllegalArgumentException("Class " + o.getClass() + " not applicable to an " + this.getClass() + " instance.");
         }
@@ -94,8 +98,7 @@ public class BoolFieldValue extends FieldValue {
         if ( ! super.equals(o)) return false;
 
         BoolFieldValue that = (BoolFieldValue) o;
-        if (value != that.value) return false;
-        return true;
+        return (value == that.value);
     }
 
     @Override
