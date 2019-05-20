@@ -877,80 +877,65 @@ public class YqlParser implements Parser {
         return ast.getArgument(0);
     }
 
-    @NonNull
     private static String fetchFieldRead(OperatorNode<ExpressionOperator> ast) {
         switch (ast.getOperator()) {
             case READ_FIELD:
                 return ast.getArgument(1);
             case PROPREF:
-                return new StringBuilder(fetchFieldRead(ast.getArgument(0)))
-                        .append('.').append(ast.getArgument(1).toString()).toString();
+                return fetchFieldRead(ast.getArgument(0)) + '.' + ast.getArgument(1);
             default:
                 throw newUnexpectedArgumentException(ast.getOperator(),
-                        ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+                                                     ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
         }
     }
 
-    @NonNull
     private IntItem buildGreaterThanOrEquals(OperatorNode<ExpressionOperator> ast) {
-        IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem("[" + fetchConditionWord(ast) + ";]", fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
+            IntItem number = new IntItem("[" + fetchConditionWord(ast) + ";]", fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem("[;" + fetchConditionWord(ast) + "]", fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
+            IntItem number = new IntItem("[;" + fetchConditionWord(ast) + "]", fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
-        return number;
     }
 
-    @NonNull
     private IntItem buildLessThanOrEquals(OperatorNode<ExpressionOperator> ast) {
-        IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem("[;" + fetchConditionWord(ast) + "]", fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
+            IntItem number = new IntItem("[;" + fetchConditionWord(ast) + "]", fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem("[" + fetchConditionWord(ast) + ";]", fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
+            IntItem number = new IntItem("[" + fetchConditionWord(ast) + ";]", fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
-        return number;
     }
 
-    @NonNull
     private IntItem buildGreaterThan(OperatorNode<ExpressionOperator> ast) {
-        IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem(">" + fetchConditionWord(ast), fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
+            IntItem number = new IntItem(">" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem("<" + fetchConditionWord(ast), fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
+            IntItem number = new IntItem("<" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
-        return number;
     }
 
-    @NonNull
     private IntItem buildLessThan(OperatorNode<ExpressionOperator> ast) {
-        IntItem number;
         if (isIndexOnLeftHandSide(ast)) {
-            number = new IntItem("<" + fetchConditionWord(ast), fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
+            IntItem number = new IntItem("<" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(1, OperatorNode.class), number);
         } else {
-            number = new IntItem(">" + fetchConditionWord(ast), fetchConditionIndex(ast));
-            number = leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
+            IntItem number = new IntItem(">" + fetchConditionWord(ast), fetchConditionIndex(ast));
+            return leafStyleSettings(ast.getArgument(0, OperatorNode.class), number);
         }
-        return number;
     }
 
-    @NonNull
     private TermItem buildEquals(OperatorNode<ExpressionOperator> ast) {
         String value = fetchConditionWord(ast);
 
         TermItem item;
-        if (value.equals("true")) {
+        if (value.equals("true"))
             item = new BoolItem(true, fetchConditionIndex(ast));
-        } else if (value.equals("false"))
+        else if (value.equals("false"))
             item = new BoolItem(false, fetchConditionIndex(ast));
         else
             item = new IntItem(value, fetchConditionIndex(ast));
@@ -961,7 +946,6 @@ public class YqlParser implements Parser {
             return leafStyleSettings(ast.getArgument(0, OperatorNode.class), item);
     }
 
-    @NonNull
     private String fetchConditionIndex(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
@@ -986,7 +970,6 @@ public class YqlParser implements Parser {
         return negative + currentAst.getArgument(0).toString();
     }
 
-    @NonNull
     private static String fetchConditionWord(OperatorNode<ExpressionOperator> ast) {
         OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
         OperatorNode<ExpressionOperator> rhs = ast.getArgument(1);
@@ -1007,7 +990,6 @@ public class YqlParser implements Parser {
         return node.getOperator() == ExpressionOperator.READ_FIELD || node.getOperator() == ExpressionOperator.PROPREF;
     }
 
-    @NonNull
     private CompositeItem buildAnd(OperatorNode<ExpressionOperator> ast) {
         AndItem andItem = new AndItem();
         NotItem notItem = new NotItem();
@@ -1026,12 +1008,10 @@ public class YqlParser implements Parser {
         return notItem;
     }
 
-    @NonNull
     private CompositeItem buildOr(OperatorNode<ExpressionOperator> spec) {
         return convertVarArgs(spec, 0, new OrItem());
     }
 
-    @NonNull
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
         Integer targetNumHits = getAnnotation(spec, TARGET_NUM_HITS,
@@ -1047,12 +1027,10 @@ public class YqlParser implements Parser {
         return convertVarArgs(spec, 1, weakAnd);
     }
 
-    @NonNull
     private CompositeItem buildRank(OperatorNode<ExpressionOperator> spec) {
         return convertVarArgs(spec, 1, new RankItem());
     }
 
-    @NonNull
     private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, @NonNull CompositeItem out) {
         Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
@@ -1076,7 +1054,6 @@ public class YqlParser implements Parser {
         }
     }
 
-    @NonNull
     private Item buildTermSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
         String field = getIndex(ast.<OperatorNode<ExpressionOperator>>getArgument(0));
@@ -1086,7 +1063,6 @@ public class YqlParser implements Parser {
         return instantiateLeafItem(field, ast.<OperatorNode<ExpressionOperator>> getArgument(1));
     }
 
-    @NonNull
     private Item buildRegExpSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.MATCHES);
         String field = getIndex(ast.<OperatorNode<ExpressionOperator>>getArgument(0));
@@ -1099,8 +1075,6 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast1, regExp);
     }
 
-
-    @NonNull
     private Item buildRange(OperatorNode<ExpressionOperator> spec) {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
@@ -1127,7 +1101,6 @@ public class YqlParser implements Parser {
         }
     }
 
-    @NonNull
     private IntItem instantiateRangeItem(
             List<OperatorNode<ExpressionOperator>> args,
             OperatorNode<ExpressionOperator> spec) {
@@ -1177,7 +1150,6 @@ public class YqlParser implements Parser {
         return boundValue;
     }
 
-    @NonNull
     private Item instantiateLeafItem(String field, OperatorNode<ExpressionOperator> ast) {
         switch (ast.getOperator()) {
             case LITERAL:
@@ -1191,7 +1163,6 @@ public class YqlParser implements Parser {
         }
     }
 
-    @NonNull
     private Item instantiateCompositeLeaf(String field, OperatorNode<ExpressionOperator> ast) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
@@ -1237,7 +1208,6 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, new WordAlternativesItem(field, isFromQuery, origin, terms));
     }
 
-    @NonNull
     private Item instantiateEquivItem(String field, OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() >= 2, "Expected 2 or more arguments, got %s.", args.size());
@@ -1261,12 +1231,10 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, equiv);
     }
 
-    @NonNull
     private Item instantiateWordItem(String field, OperatorNode<ExpressionOperator> ast, Class<?> parent) {
         return instantiateWordItem(field, ast, parent, SegmentWhen.POSSIBLY);
     }
 
-    @NonNull
     private Item instantiateWordItem(String field,
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
                                      SegmentWhen segmentPolicy) {
@@ -1352,7 +1320,6 @@ public class YqlParser implements Parser {
         return fromQuery && ! indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute();
     }
 
-    @NonNull
     private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
                                  boolean fromQuery, Class<?> parent, Language language) {
         String toSegment = wordData;
@@ -1395,7 +1362,6 @@ public class YqlParser implements Parser {
         wordStyleSettings(ast, wordItem);
     }
 
-    @NonNull
     private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast, @NonNull T out) {
         {
             Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
@@ -1632,7 +1598,7 @@ public class YqlParser implements Parser {
         indexNameExpander = newExpander;
         return old;
     }
-    @NonNull
+
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
         String index = fetchFieldRead(operatorNode);
         String expanded = indexNameExpander.expand(index);

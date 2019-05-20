@@ -2,8 +2,10 @@
 package com.yahoo.search.yql;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.language.Language;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.AndItem;
@@ -25,6 +27,7 @@ import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
+import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig.Indexinfo;
 import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Alias;
@@ -38,6 +41,7 @@ import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
+import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -906,6 +910,30 @@ public class YqlParserTestCase {
         assertEquals("foo:\"forest WORD_ALTERNATIVES foo:[ tree(0.7) trees(1.0) ]\"", root.toString());
     }
 
+    /** Verifies that we can search for a backslash */
+    @Test
+    public void testBackslash() {
+        {
+            String queryString = "select * from testtype where title contains \"\\\\\";"; // Java escaping * YQL escaping
+
+            QueryTree query = parse(queryString);
+
+            assertEquals("title:\\", query.toString());
+        }
+
+        {
+            Query query = new Query("search?yql=select%20*%20from%20testtype%20where%20title%20contains%20%22%5C%5C%22;");
+
+            // Cause parsing :-\
+            Chain<Searcher> searchChain = new Chain<>(new MinimalQueryInserter());
+            Execution.Context context = Execution.Context.createContextStub(null, null, new SimpleLinguistics());
+            Execution execution = new Execution(searchChain, context);
+            execution.search(query);
+
+            assertEquals("title:\\", query.getModel().getQueryTree().toString());
+        }
+    }
+
     private void checkWordAlternativesContent(WordAlternativesItem alternatives) {
         boolean seenTree = false;
         boolean seenForest = false;
@@ -981,10 +1009,8 @@ public class YqlParserTestCase {
 
     private static String toString(List<VespaGroupingStep> steps) {
         List<String> actual = new ArrayList<>(steps.size());
-        for (VespaGroupingStep step : steps) {
-            actual.add(step.continuations().toString() +
-                       step.getOperation());
-        }
+        for (VespaGroupingStep step : steps)
+            actual.add(step.continuations().toString() + step.getOperation());
         return actual.toString();
     }
 }
