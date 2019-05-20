@@ -43,6 +43,7 @@ public class JobRunner extends Maintainer {
     public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors, StepRunner runner) {
         super(controller, duration, jobControl);
         this.jobs = controller.jobController();
+        this.jobs.setRunner(this::advance);
         this.executors = executors;
         this.runner = runner;
     }

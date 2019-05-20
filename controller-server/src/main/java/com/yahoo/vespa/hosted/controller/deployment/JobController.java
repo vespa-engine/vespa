@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -72,6 +73,8 @@ public class JobController {
     private final TesterCloud cloud;
     private final Badges badges;
 
+    private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
+
     public JobController(Controller controller, RunDataStore runDataStore, TesterCloud testerCloud) {
         this.controller = controller;
         this.curator = controller.curator();
@@ -82,6 +85,7 @@ public class JobController {
 
     public TesterCloud cloud() { return cloud; }
     public int historyLength() { return historyLength; }
+    public void setRunner(Consumer<Run> runner) { this.runner.set(runner); }
 
     /** Rewrite all job data with the newest format. */
     public void updateStorage() {
@@ -317,12 +321,16 @@ public class JobController {
                                          ApplicationVersion.unknown,
                                          Optional.empty(),
                                          Optional.empty()));
+
+            runner.get().accept(last(id, type).get());
         });
     }
 
     /** Aborts a run and waits for it complete. */
     private void abortAndWait(RunId id) {
         abort(id);
+        runner.get().accept(last(id.application(), id.type()).get());
+
         while ( ! last(id.application(), id.type()).get().hasEnded()) {
             try {
                 Thread.sleep(100);
