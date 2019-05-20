@@ -213,8 +213,10 @@ public class ArchiverHandlerTestCase {
     @Test
     public void testCacheEldestEntry() throws IOException {
         LogWriterLRUCache cache = new LogWriterLRUCache(5, (float) 0.75);
+        String d = "target/tmp/logarchive";
+        FilesArchived archive = new FilesArchived(new File(d));
         for (int i = 0; i < cache.maxEntries + 10; i++) {
-            cache.put(i, new LogWriter("/tmp/", 5));
+            cache.put(i, new LogWriter(d+"/2018/12/31/17", 5, archive));
         }
         assertEquals(cache.size(), cache.maxEntries);
     }

@@ -93,11 +93,12 @@ public class ArchiverHandler extends AbstractLogHandler {
      */
     private LogFilter filter = null;
 
+    private FilesArchived filesArchived;
+
     /**
-     * Creates an ArchiverHandler which puts files under
-     * the given root directory.
+     * Creates an ArchiverHandler
      */
-    public ArchiverHandler() {
+    private ArchiverHandler() {
         calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         dateformat = new SimpleDateFormat("yyyy/MM/dd/HH");
         dateformat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -137,7 +138,7 @@ public class ArchiverHandler extends AbstractLogHandler {
         }
 
         // invariant: LogWriter we sought was not in the cache
-        logWriter = new LogWriter(getPrefix(m), maxFileSize);
+        logWriter = new LogWriter(getPrefix(m), maxFileSize, filesArchived);
         logWriterLRUCache.put(slot, logWriter);
 
         return logWriter;
@@ -174,13 +175,7 @@ public class ArchiverHandler extends AbstractLogHandler {
      */
     public String getPrefix(LogMessage msg) {
         calendar.setTimeInMillis(msg.getTimestamp().toEpochMilli());
-/*
-        int year   = calendar.get(Calendar.YEAR);
-        int month  = calendar.get(Calendar.MONTH) + 1;
-        int day    = calendar.get(Calendar.DAY_OF_MONTH);
-        int hour   = calendar.get(Calendar.HOUR_OF_DAY);
-*/
-        StringBuffer result = new StringBuffer(absoluteRootDir.length()
+        StringBuilder result = new StringBuilder(absoluteRootDir.length()
                                                        + 1 // slash
                                                        + 4 // year
                                                        + 1 // slash
@@ -189,9 +184,9 @@ public class ArchiverHandler extends AbstractLogHandler {
                                                        + 2 // day
                                                        + 1 // slash
                                                        + 2 // hour
-        )
-                .append(absoluteRootDir).append("/")
-                .append(dateformat.format(calendar.getTime()));
+        );
+        result.append(absoluteRootDir).append("/")
+              .append(dateformat.format(calendar.getTime()));
         return result.toString();
     }
 
@@ -244,7 +239,7 @@ public class ArchiverHandler extends AbstractLogHandler {
                 log.log(LogLevel.DEBUG, "Created root at " + absoluteRootDir);
             }
         }
-
+        filesArchived = new FilesArchived(root);
     }
 
     public String toString() {
