@@ -33,18 +33,12 @@ public class DockerHostCapacity {
         int result = compare(freeCapacityOf(hostB, false), freeCapacityOf(hostA, false));
         if (result != 0) return result;
 
-        result = compare(freeCapacityOf(hostB, false), freeCapacityOf(hostA, false));
-        if (result != 0) return result;
-
         // If resources are equal we want to assign to the one with the most IPaddresses free
         return freeIPs(hostB) - freeIPs(hostA);
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
         int result = compare(freeCapacityOf(hostB,  true), freeCapacityOf(hostA, true));
-        if (result != 0) return result;
-
-        result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
         if (result != 0) return result;
 
         // If resources are equal we want to assign to the one with the most IPaddresses free
@@ -76,8 +70,8 @@ public class DockerHostCapacity {
                        .filter(n -> n.type().equals(NodeType.host))
                        .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
                        .map(n -> freeCapacityOf(n, false))
-                       .reduce(new NodeResources(0, 0, 0), NodeResources::add)
-                       .withDiskSpeed(speed); // Set speed to 'any' if necvessary
+                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add)
+                       .withDiskSpeed(speed); // Set speed to 'any' if necessary
     }
 
     /** Return total capacity for a given disk speed (or for any disk speed) */
@@ -86,7 +80,7 @@ public class DockerHostCapacity {
                        .filter(n -> n.type().equals(NodeType.host))
                        .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
                        .map(host -> host.flavor().resources())
-                       .reduce(new NodeResources(0, 0, 0), NodeResources::add)
+                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add)
                        .withDiskSpeed(speed); // Set speed to 'any' if necessary
     }
 
