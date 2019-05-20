@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintai
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -703,8 +704,16 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     protected ContainerData createContainerData(NodeAgentContext context) {
-        return (pathInContainer, data) -> {
-            throw new UnsupportedOperationException("addFile not implemented");
+        return new ContainerData() {
+            @Override
+            public void addFile(Path pathInContainer, String data) {
+                throw new UnsupportedOperationException("addFile not implemented");
+            }
+
+            @Override
+            public void createSymlink(Path symlink, Path pathInContainer) {
+                throw new UnsupportedOperationException("createSymlink not implemented");
+            }
         };
     }
 }
