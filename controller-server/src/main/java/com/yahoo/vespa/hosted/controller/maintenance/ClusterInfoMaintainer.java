@@ -66,7 +66,8 @@ public class ClusterInfoMaintainer extends Maintainer {
 
             // Add to map
             List<String> hostnames = clusterNodes.stream().map(NodeRepositoryNode::getHostname).collect(Collectors.toList());
-            ClusterInfo inf = new ClusterInfo(node.getFlavor(), node.getCost(), cpu, mem, disk,
+            int cost = node.getCost() == null ? 0 : node.getCost(); // Cost is not guaranteed to be defined for all flavors
+            ClusterInfo inf = new ClusterInfo(node.getFlavor(), cost, cpu, mem, disk,
                                               ClusterSpec.Type.from(node.getMembership().clustertype), hostnames);
             infoMap.put(new ClusterSpec.Id(id), inf);
         }
