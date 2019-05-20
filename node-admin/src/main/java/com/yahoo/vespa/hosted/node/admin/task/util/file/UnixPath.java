@@ -207,6 +207,11 @@ public class UnixPath {
         }
     }
 
+    public UnixPath createSymbolicLink(Path link) {
+        uncheck(() -> Files.createSymbolicLink(link, path));
+        return new UnixPath(link);
+    }
+
     @Override
     public String toString() {
         return path.toString();
