@@ -1105,6 +1105,7 @@ createIterator(const TermFieldMatchDataArray &matchData) const
 template <bool bigEndian>
 class FakeEGCompr64PosOcc : public FakeZcFilterOcc
 {
+    search::index::PostingListCounts _counts;
 public:
     FakeEGCompr64PosOcc(const FakeWord &fw);
     ~FakeEGCompr64PosOcc() override;
@@ -1120,6 +1121,8 @@ FakeEGCompr64PosOcc<bigEndian>::FakeEGCompr64PosOcc(const FakeWord &fw)
                       bigEndian ? ".zcposoccbe" : ".zcposoccle")
 {
     setup(fw);
+    _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 
@@ -1149,14 +1152,14 @@ SearchIterator *
 FakeEGCompr64PosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new ZcRareWordPosOccIterator<bigEndian, true>(Position(_compressed.first, 0),
-                                                         _compressedBits, _posting_params._doc_id_limit, false, &_fieldsParams, matchData);
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
 template <bool bigEndian>
 class FakeEG2Compr64PosOcc : public FakeZcFilterOcc
 {
+    search::index::PostingListCounts _counts;
 public:
     FakeEG2Compr64PosOcc(const FakeWord &fw);
     ~FakeEG2Compr64PosOcc() override;
@@ -1172,6 +1175,8 @@ FakeEG2Compr64PosOcc<bigEndian>::FakeEG2Compr64PosOcc(const FakeWord &fw)
                       bigEndian ? ".zc4posoccbe" : ".zc4posoccle")
 {
     setup(fw);
+    _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 
@@ -1202,8 +1207,7 @@ SearchIterator *
 FakeEG2Compr64PosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new ZcRareWordPosOccIterator<bigEndian, false>(Position(_compressed.first, 0),
-                                                          _compressedBits, _posting_params._doc_id_limit, false, &_fieldsParams, matchData);
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
@@ -1260,11 +1264,7 @@ SearchIterator *
 FakeZcSkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new ZcPosOccIterator<bigEndian, true>(Position(_compressed.first, 0), _compressedBits, _posting_params._doc_id_limit, false,
-                                           static_cast<uint32_t>(-1),
-                                           _counts,
-                                           &_fieldsParams,
-                                           matchData);
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
