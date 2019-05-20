@@ -45,11 +45,11 @@ public class Distribution {
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
 
     public Group getRootGroup() {
-        return config.get().nodeGraph;
+        return config.getAcquire().nodeGraph;
     }
 
     public int getRedundancy() {
-        return config.get().redundancy;
+        return config.getAcquire().redundancy;
     }
 
     private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = new ConfigSubscriber.SingleSubscriber<>() {
@@ -103,7 +103,7 @@ public class Distribution {
                             + "\nminimum:\n" + config.toString());
                 }
                 root.calculateDistributionHashValues();
-                Distribution.this.config.set(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
+                Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
             } catch (ParseException e) {
                 throw new IllegalStateException("Failed to parse config", e);
             }
@@ -350,7 +350,7 @@ public class Distribution {
         // Find what hierarchical groups we should have copies in
         List<ResultGroup> groupDistribution = new ArrayList<>();
 
-        Config cfg = config.get();
+        Config cfg = config.getAcquire();
         getIdealGroups(bucket, clusterState, cfg.nodeGraph, cfg.redundancy, groupDistribution);
 
         int seed = getStorageSeed(bucket, clusterState);
@@ -438,7 +438,7 @@ public class Distribution {
                     + " bits when cluster uses " + state.getDistributionBitCount() + " distribution bits.");
         }
 
-        Config cfg = config.get();
+        Config cfg = config.getAcquire();
         Group idealGroup = getIdealDistributorGroup(cfg.distributorAutoOwnershipTransferOnWholeGroupDown, bucket, state, cfg.nodeGraph, cfg.redundancy);
         if (idealGroup == null) {
             throw new NoDistributorsAvailableException("No distributors available in cluster state version " + state.getVersion());
@@ -490,7 +490,7 @@ public class Distribution {
     }
     public void visitGroups(GroupVisitor visitor) {
         Map<Integer, Group> groups = new TreeMap<>();
-        Group nodeGraph = config.get().nodeGraph;
+        Group nodeGraph = config.getAcquire().nodeGraph;
         groups.put(nodeGraph.getIndex(), nodeGraph);
         visitGroups(visitor, groups);
     }
