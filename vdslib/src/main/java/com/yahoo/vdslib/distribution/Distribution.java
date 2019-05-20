@@ -24,21 +24,32 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Distribution {
 
-    private int[] distributionBitMasks = new int[65];
-    private Group nodeGraph;
-    private int redundancy;
-    private boolean distributorAutoOwnershipTransferOnWholeGroupDown = false;
+    private static class Config {
+        Config(Group nodeGraph, int redundancy, boolean distributorAutoOwnershipTransferOnWholeGroupDown) {
+            this.nodeGraph = nodeGraph;
+            this.redundancy = redundancy;
+            this.distributorAutoOwnershipTransferOnWholeGroupDown = distributorAutoOwnershipTransferOnWholeGroupDown;
+        }
+
+        private final Group nodeGraph;
+        private final int redundancy;
+        private final boolean distributorAutoOwnershipTransferOnWholeGroupDown;
+    }
+
+    private final int[] distributionBitMasks = new int[65];
     private ConfigSubscriber configSub;
+    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
 
     public Group getRootGroup() {
-        return nodeGraph;
+        return config.getAcquire().nodeGraph;
     }
 
     public int getRedundancy() {
-        return redundancy;
+        return config.getAcquire().redundancy;
     }
 
     private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = new ConfigSubscriber.SingleSubscriber<>() {
@@ -92,12 +103,9 @@ public class Distribution {
                             + "\nminimum:\n" + config.toString());
                 }
                 root.calculateDistributionHashValues();
-                Distribution.this.nodeGraph = root;
-                Distribution.this.redundancy = config.redundancy();
-                //Distribution.this.diskDistribution = config.disk_distribution();
-                distributorAutoOwnershipTransferOnWholeGroupDown = config.distributor_auto_ownership_transfer_on_whole_group_down();
+                Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
             } catch (ParseException e) {
-                throw (IllegalStateException) new IllegalStateException("Failed to parse config").initCause(e);
+                throw new IllegalStateException("Failed to parse config", e);
             }
         }
     };
@@ -164,7 +172,7 @@ public class Distribution {
         @Override
         public int compareTo(ScoredGroup o) {
             // Sorts by highest first.
-            return Double.valueOf(o.score).compareTo(score);
+            return Double.compare(o.score, score);
         }
     }
     private static class ScoredNode {
@@ -187,7 +195,8 @@ public class Distribution {
         }
         return true;
     }
-    private Group getIdealDistributorGroup(BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
+    private Group getIdealDistributorGroup(boolean distributorAutoOwnershipTransferOnWholeGroupDown,
+                                           BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
         if (parent.isLeafGroup()) {
             return parent;
         }
@@ -212,7 +221,7 @@ public class Distribution {
         if (results.isEmpty()) {
             return null;
         }
-        return getIdealDistributorGroup(bucket, clusterState, results.first().group, redundancyArray[0]);
+        return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, results.first().group, redundancyArray[0]);
     }
     private static class ResultGroup implements Comparable<ResultGroup> {
         Group group;
@@ -326,8 +335,7 @@ public class Distribution {
         return idealDisk;
     }
 
-    List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket,
-                                              String upStates) throws TooFewBucketBitsInUseException {
+    List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket, String upStates) throws TooFewBucketBitsInUseException {
         List<Integer> resultNodes = new ArrayList<>();
 
         // If bucket is split less than distribution bit, we cannot distribute
@@ -342,7 +350,8 @@ public class Distribution {
         // Find what hierarchical groups we should have copies in
         List<ResultGroup> groupDistribution = new ArrayList<>();
 
-        getIdealGroups(bucket, clusterState, nodeGraph, redundancy, groupDistribution);
+        Config cfg = config.getAcquire();
+        getIdealGroups(bucket, clusterState, cfg.nodeGraph, cfg.redundancy, groupDistribution);
 
         int seed = getStorageSeed(bucket, clusterState);
 
@@ -429,7 +438,8 @@ public class Distribution {
                     + " bits when cluster uses " + state.getDistributionBitCount() + " distribution bits.");
         }
 
-        Group idealGroup = getIdealDistributorGroup(bucket, state, nodeGraph, redundancy);
+        Config cfg = config.getAcquire();
+        Group idealGroup = getIdealDistributorGroup(cfg.distributorAutoOwnershipTransferOnWholeGroupDown, bucket, state, cfg.nodeGraph, cfg.redundancy);
         if (idealGroup == null) {
             throw new NoDistributorsAvailableException("No distributors available in cluster state version " + state.getVersion());
         }
@@ -480,6 +490,7 @@ public class Distribution {
     }
     public void visitGroups(GroupVisitor visitor) {
         Map<Integer, Group> groups = new TreeMap<>();
+        Group nodeGraph = config.getAcquire().nodeGraph;
         groups.put(nodeGraph.getIndex(), nodeGraph);
         visitGroups(visitor, groups);
     }
