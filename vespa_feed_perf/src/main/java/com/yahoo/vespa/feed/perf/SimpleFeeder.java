@@ -341,7 +341,7 @@ public class SimpleFeeder implements ReplyHandler {
         inputStreams = params.getInputStreams();
         out = params.getStdOut();
         numThreads = params.getNumDispatchThreads();
-        mbus = newMessageBus(docTypeMgr, params.getConfigId());
+        mbus = newMessageBus(docTypeMgr, params);
         session = newSession(mbus, this, params.getMaxPending());
         docTypeMgr.configure(params.getConfigId());
         benchmarkMode = params.isBenchmarkMode();
@@ -462,10 +462,11 @@ public class SimpleFeeder implements ReplyHandler {
         return out.toString();
     }
 
-    private static RPCMessageBus newMessageBus(DocumentTypeManager docTypeMgr, String configId) {
+    private static RPCMessageBus newMessageBus(DocumentTypeManager docTypeMgr, FeederParams params) {
         return new RPCMessageBus(new MessageBusParams().addProtocol(new DocumentProtocol(docTypeMgr)),
-                                 new RPCNetworkParams().setSlobrokConfigId(configId),
-                                 configId);
+                                 new RPCNetworkParams().setSlobrokConfigId(params.getConfigId())
+                                                       .setNumTargetsPerSpec(params.getNumConnectionsPerTarget()),
+                                 params.getConfigId());
     }
 
     private static SourceSession newSession(RPCMessageBus mbus, ReplyHandler replyHandler, int maxPending) {

@@ -84,6 +84,13 @@ public class FeederParamsTest {
     public void requireThatNumThreadsAreParsed() throws ParseException, FileNotFoundException {
         assertEquals(1, new FeederParams().getNumDispatchThreads());
         assertEquals(17, new FeederParams().parseArgs("-n 17").getNumDispatchThreads());
+        assertEquals(17, new FeederParams().parseArgs("--numthreads", "17").getNumDispatchThreads());
+    }
+    @Test
+    public void requireThatNumConnectionsAreParsed() throws ParseException, FileNotFoundException {
+        assertEquals(2, new FeederParams().getNumConnectionsPerTarget());
+        assertEquals(17, new FeederParams().parseArgs("-c 17").getNumConnectionsPerTarget());
+        assertEquals(17, new FeederParams().parseArgs("--numconnections", "17").getNumConnectionsPerTarget());
     }
 
     @Test

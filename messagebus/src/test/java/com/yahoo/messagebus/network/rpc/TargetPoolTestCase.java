@@ -11,12 +11,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author Simon Thoresen Hult
@@ -44,14 +45,45 @@ public class TargetPoolTestCase {
     }
 
     @Test
-    public void testConnectionExpire() throws ListenFailedException, UnknownHostException {
+    public void testConnectionCycling()  {
+        // Necessary setup to be able to resolve targets.
+        RPCServiceAddress adr1 = registerServer();
+
+        PoolTimer timer = new PoolTimer();
+        RPCTargetPool pool1 = new RPCTargetPool(timer, 0.666, 1);
+
+        RPCTarget target1 = pool1.getTarget(orb, adr1);
+        RPCTarget target2 = pool1.getTarget(orb, adr1);
+        assertSame(target1, target2);
+        target1.subRef();
+        target2.subRef();
+
+        RPCTargetPool pool3 = new RPCTargetPool(timer, 0.666, 3);
+
+        target1 = pool3.getTarget(orb, adr1);
+        target2 = pool3.getTarget(orb, adr1);
+        RPCTarget target3 = pool3.getTarget(orb, adr1);
+        assertNotSame(target1, target2);
+        assertNotSame(target2, target3);
+        assertNotSame(target3, target1);
+
+
+        RPCTarget target4 = pool3.getTarget(orb, adr1);
+        assertSame(target1, target4);
+        target1.subRef();
+        target2.subRef();
+        target3.subRef();
+        target4.subRef();
+    }
+    @Test
+    public void testConnectionExpire()  {
         // Necessary setup to be able to resolve targets.
         RPCServiceAddress adr1 = registerServer();
         RPCServiceAddress adr2 = registerServer();
         RPCServiceAddress adr3 = registerServer();
 
         PoolTimer timer = new PoolTimer();
-        RPCTargetPool pool = new RPCTargetPool(timer, 0.666);
+        RPCTargetPool pool = new RPCTargetPool(timer, 0.666, 1);
 
         // Assert that all connections expire.
         RPCTarget target;

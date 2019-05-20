@@ -85,7 +85,7 @@ public class RPCNetwork implements Network, MethodHandler {
         orb = new Supervisor(new Transport(2));
         orb.setMaxInputBufferSize(params.getMaxInputBufferSize());
         orb.setMaxOutputBufferSize(params.getMaxOutputBufferSize());
-        targetPool = new RPCTargetPool(params.getConnectionExpireSecs());
+        targetPool = new RPCTargetPool(params.getConnectionExpireSecs(), params.getNumTargetsPerSpec());
         servicePool = new RPCServicePool(this, 4096);
 
         Method method = new Method("mbus.getVersion", "", "s", this);
