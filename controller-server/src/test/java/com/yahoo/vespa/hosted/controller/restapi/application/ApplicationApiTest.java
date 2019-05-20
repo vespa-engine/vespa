@@ -658,6 +658,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
 
+        // DELETE the deployment to dev
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/default", DELETE)
+                                      .userIdentity(USER_ID),
+                              "Deactivated tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/default");
+
         // DELETE an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
