@@ -207,6 +207,11 @@ public class UnixPath {
         }
     }
 
+    /**
+     * Creates a symbolic link from {@code link} to {@code this} (the target)
+     * @param link the path for the symbolic link
+     * @return the path to the symbolic link
+     */
     public UnixPath createSymbolicLink(Path link) {
         uncheck(() -> Files.createSymbolicLink(link, path));
         return new UnixPath(link);
