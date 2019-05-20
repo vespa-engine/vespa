@@ -556,7 +556,9 @@ public class ApplicationController {
         // TODO: Make this one transaction when database is moved to ZooKeeper
         instances.forEach(id -> lockOrThrow(id, application -> {
             if ( ! application.get().deployments().isEmpty())
-                throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
+                throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments in: " +
+                                                   application.get().deployments().keySet().stream().map(ZoneId::toString)
+                                                              .sorted().collect(Collectors.joining(", ")));
 
             curator.removeApplication(id);
             applicationStore.removeAll(id);
