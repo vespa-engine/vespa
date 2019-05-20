@@ -26,7 +26,8 @@ Nodes = element nodes {
 Resources = element resources {
     attribute vcpu { xsd:double { minExclusive = "0.0" } } &
     attribute memory { xsd:string } &
-    attribute disk { xsd:string }
+    attribute disk { xsd:string } &
+    attribute disk-speed { xsd:string }?
 }
 
 OptionalDedicatedNodes = element nodes {

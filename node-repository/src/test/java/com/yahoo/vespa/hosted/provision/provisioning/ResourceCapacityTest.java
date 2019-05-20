@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Test;
 
@@ -36,49 +37,50 @@ public class ResourceCapacityTest {
         Flavor d3MemFlavor = new Flavor(flavors.flavor(6));
         Flavor d3CPUFlavor = new Flavor(flavors.flavor(7));
 
-        ResourceCapacity capacityOfHostSmall = ResourceCapacity.of(hostSmallFlavor);
+        NodeResources capacityOfHostSmall = hostSmallFlavor.resources();
 
         // Assert initial capacities
-        assertTrue(capacityOfHostSmall.hasCapacityFor(hostSmallFlavor));
-        assertTrue(capacityOfHostSmall.hasCapacityFor(d1Flavor));
-        assertTrue(capacityOfHostSmall.hasCapacityFor(d2Flavor));
-        assertTrue(capacityOfHostSmall.hasCapacityFor(d3Flavor));
-        assertFalse(capacityOfHostSmall.hasCapacityFor(hostLargeFlavor));
+        assertTrue(capacityOfHostSmall.satisfies(hostSmallFlavor.resources()));
+        assertTrue(capacityOfHostSmall.satisfies(d1Flavor.resources()));
+        assertTrue(capacityOfHostSmall.satisfies(d2Flavor.resources()));
+        assertTrue(capacityOfHostSmall.satisfies(d3Flavor.resources()));
+        assertFalse(capacityOfHostSmall.satisfies(hostLargeFlavor.resources()));
 
         // Also check that we are taking all three resources into accout
-        assertFalse(capacityOfHostSmall.hasCapacityFor(d3DiskFlavor));
-        assertFalse(capacityOfHostSmall.hasCapacityFor(d3MemFlavor));
-        assertFalse(capacityOfHostSmall.hasCapacityFor(d3CPUFlavor));
+        assertFalse(capacityOfHostSmall.satisfies(d3DiskFlavor.resources()));
+        assertFalse(capacityOfHostSmall.satisfies(d3MemFlavor.resources()));
+        assertFalse(capacityOfHostSmall.satisfies(d3CPUFlavor.resources()));
 
         // Compare it to various flavors
-        assertEquals(1, compare(capacityOfHostSmall, nodeCapacity(d1Flavor)));
-        assertEquals(1, compare(capacityOfHostSmall, nodeCapacity(d2Flavor)));
-        assertEquals(0, compare(capacityOfHostSmall, nodeCapacity(d3Flavor)));
-        assertEquals(-1, compare(capacityOfHostSmall, nodeCapacity(d3DiskFlavor)));
-        assertEquals(-1, compare(capacityOfHostSmall, nodeCapacity(d3CPUFlavor)));
-        assertEquals(-1, compare(capacityOfHostSmall, nodeCapacity(d3MemFlavor)));
+        assertEquals(1, compare(capacityOfHostSmall, d1Flavor.resources()));
+        assertEquals(1, compare(capacityOfHostSmall, d2Flavor.resources()));
+        assertEquals(0, compare(capacityOfHostSmall, d3Flavor.resources()));
+        assertEquals(-1, compare(capacityOfHostSmall, d3DiskFlavor.resources()));
+        assertEquals(-1, compare(capacityOfHostSmall, d3CPUFlavor.resources()));
+        assertEquals(-1, compare(capacityOfHostSmall, d3MemFlavor.resources()));
 
         // Change free capacity and assert on rest capacity
-        capacityOfHostSmall = capacityOfHostSmall.subtract(ResourceCapacity.of(d1Flavor));
-        assertEquals(0, compare(capacityOfHostSmall, nodeCapacity(d2Flavor)));
+        capacityOfHostSmall = capacityOfHostSmall.subtract(d1Flavor.resources());
+        assertEquals(0, compare(capacityOfHostSmall, d2Flavor.resources()));
 
         // Assert on rest capacity
-        assertTrue(capacityOfHostSmall.hasCapacityFor(d1Flavor));
-        assertFalse(capacityOfHostSmall.hasCapacityFor(d3Flavor));
+        assertTrue(capacityOfHostSmall.satisfies(d1Flavor.resources()));
+        assertFalse(capacityOfHostSmall.satisfies(d3Flavor.resources()));
 
         // At last compare the disk and cpu and mem variations
-        assertEquals(-1, compare(nodeCapacity(d3Flavor), nodeCapacity(d3DiskFlavor)));
-        assertEquals(1, compare(nodeCapacity(d3DiskFlavor), nodeCapacity(d3CPUFlavor)));
-        assertEquals(-1, compare(nodeCapacity(d3CPUFlavor), nodeCapacity(d3MemFlavor)));
-        assertEquals(1, compare(nodeCapacity(d3MemFlavor), nodeCapacity(d3DiskFlavor)));
+        assertEquals(-1, compare(d3Flavor.resources(), d3DiskFlavor.resources()));
+        assertEquals(1, compare(d3DiskFlavor.resources(), d3CPUFlavor.resources()));
+        assertEquals(-1, compare(d3CPUFlavor.resources(), d3MemFlavor.resources()));
+        assertEquals(1, compare(d3MemFlavor.resources(), d3DiskFlavor.resources()));
+
+        assertEquals(-1, compare(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow),
+                                          new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)));
+        assertEquals(1, compare(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast),
+                                         new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)));
     }
 
-    private ResourceCapacity nodeCapacity(Flavor flavor) {
-        return ResourceCapacity.of(flavor);
-    }
-
-    private int compare(ResourceCapacity a, ResourceCapacity b) {
-        return ResourceCapacityComparator.defaultOrder().compare(a, b);
+    private int compare(NodeResources a, NodeResources b) {
+        return NodeResourceComparator.defaultOrder().compare(a, b);
     }
 
 }

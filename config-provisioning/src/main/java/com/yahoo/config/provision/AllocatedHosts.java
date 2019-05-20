@@ -39,6 +39,7 @@ public class AllocatedHosts {
     private static final String vcpuKey = "vcpu";
     private static final String memoryKey = "memory";
     private static final String diskKey = "disk";
+    private static final String diskSpeedKey = "diskSpeed";
 
     /** Wanted version */
     private static final String hostSpecVespaVersionKey = "vespaVersion";
@@ -92,6 +93,7 @@ public class AllocatedHosts {
             resourcesObject.setDouble(vcpuKey, resources.vcpu());
             resourcesObject.setDouble(memoryKey, resources.memoryGb());
             resourcesObject.setDouble(diskKey, resources.diskGb());
+            resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
         }
     }
 
@@ -131,11 +133,32 @@ public class AllocatedHosts {
             Inspector resources = object.field(resourcesKey);
             return Optional.of(new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                             resources.field(memoryKey).asDouble(),
-                                                            resources.field(diskKey).asDouble())));
+                                                            resources.field(diskKey).asDouble(),
+                                                            diskSpeedFromSlime(resources.field(diskSpeedKey)))));
         }
         else {
             return Optional.empty();
         }
+    }
+
+    private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
+        if ( ! diskSpeed.valid()) return NodeResources.DiskSpeed.fast; // TODO: Remove this line after June 2019
+        switch (diskSpeed.asString()) {
+            case "fast" : return NodeResources.DiskSpeed.fast;
+            case "slow" : return NodeResources.DiskSpeed.slow;
+            case "any" : return NodeResources.DiskSpeed.any;
+            default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed.asString() + "'");
+        }
+    }
+
+    private static String diskSpeedToString(NodeResources.DiskSpeed diskSpeed) {
+        switch (diskSpeed) {
+            case fast : return "fast";
+            case slow : return "slow";
+            case any : return "any";
+            default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed + "'");
+        }
+
     }
 
     private static ClusterMembership membershipFromSlime(Inspector object) {

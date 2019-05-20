@@ -104,7 +104,6 @@ public class DynamicDockerProvisionTest {
         assertEquals(4, tester.nodeRepository().getNodes(NodeType.tenant, Node.State.reserved).size());
     }
 
-
     private static void deployZoneApp(ProvisioningTester tester) {
         ApplicationId applicationId = tester.makeApplicationId();
         List<HostSpec> list = tester.prepare(applicationId,

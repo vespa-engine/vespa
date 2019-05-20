@@ -146,34 +146,33 @@ class NodePrioritizer {
 
     private void addNewDockerNodesOn(LockedNodeList candidates) {
         if ( ! isDocker) return;
-        ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(resources(requestedNodes));
+        NodeResources wantedResources = resources(requestedNodes);
 
-        for (Node node : candidates) {
-            if (node.type() != NodeType.host) continue;
-            if (node.status().wantToRetire()) continue;
+        for (Node host : candidates) {
+            if (host.type() != NodeType.host) continue;
+            if (host.status().wantToRetire()) continue;
 
-            boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
-            boolean conflictingCluster = allNodes.childrenOf(node).owner(appId).asList().stream()
+            boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(host, wantedResources);
+            boolean conflictingCluster = allNodes.childrenOf(host).owner(appId).asList().stream()
                                                  .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
-            log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + node);
-
+            log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + host);
             Optional<IP.Allocation> allocation;
             try {
-                allocation = node.ipConfig().pool().findAllocation(allNodes, nameResolver);
+                allocation = host.ipConfig().pool().findAllocation(allNodes, nameResolver);
                 if (allocation.isEmpty()) continue; // No free addresses in this pool
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed allocating IP address on " + node.hostname(), e);
+                log.log(LogLevel.WARNING, "Failed allocating IP address on " + host.hostname(), e);
                 continue;
             }
 
             Node newNode = Node.createDockerNode(allocation.get().addresses(),
                                                  Set.of(),
                                                  allocation.get().hostname(),
-                                                 Optional.of(node.hostname()),
-                                                 resources(requestedNodes),
+                                                 Optional.of(host.hostname()),
+                                                 resources(requestedNodes).withDiskSpeed(host.flavor().resources().diskSpeed()),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
@@ -257,11 +256,8 @@ class NodePrioritizer {
     }
 
     private static NodeResources resources(NodeSpec requestedNodes) {
-        if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
-            NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
-            return countSpec.resources();
-        }
-        return null;
+        if ( ! (requestedNodes instanceof NodeSpec.CountNodeSpec)) return null;
+        return ((NodeSpec.CountNodeSpec)requestedNodes).resources();
     }
 
     private boolean isDocker() {
@@ -271,8 +267,7 @@ class NodePrioritizer {
 
     private static int compareForRelocation(Node a, Node b) {
         // Choose smallest node
-        int capacity = ResourceCapacityComparator.defaultOrder().compare(ResourceCapacity.of(a),
-                                                                         ResourceCapacity.of(b));
+        int capacity = NodeResourceComparator.defaultOrder().compare(a.flavor().resources(), b.flavor().resources());
         if (capacity != 0) return capacity;
 
         // Choose unallocated over allocated (this case is when we have ready docker nodes)

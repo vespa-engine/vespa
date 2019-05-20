@@ -1211,12 +1211,12 @@ public class ModelProvisioningTest {
     @Test
     public void testRequestingSpecificNodeResources() {
         String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
                 "   <admin version='4.0'>" +
                 "      <logservers>" +
                 "         <nodes count='1' dedicated='true'>" +
-                "            <resources vcpu='0.1' memory='0.2Gb' disk='300Gb'/>" +
+                "            <resources vcpu='0.1' memory='0.2Gb' disk='300Gb' disk-speed='slow'/>" +
                 "         </nodes>" +
                 "      </logservers>" +
                 "      <slobroks>" +
@@ -1260,7 +1260,7 @@ public class ModelProvisioningTest {
 
         int totalHosts = 23;
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(new NodeResources(0.1, 0.2, 300), 1);// Logserver
+        tester.addHosts(new NodeResources(0.1, 0.2, 300, NodeResources.DiskSpeed.slow), 1);// Logserver
         tester.addHosts(new NodeResources(0.1, 0.3, 1), 2); // Slobrok
         tester.addHosts(new NodeResources(12, 10, 30), 4); // Container
         tester.addHosts(new NodeResources(0.8, 3, 2), 2); // Controller-foo
