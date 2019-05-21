@@ -20,7 +20,7 @@ private:
     DecodeContextReal _decodeContextReal;
 public:
     ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
-                             bool decode_cheap_features, bool decode_normal_features,
+                             bool decode_normal_features, bool decode_cheap_features,
                              const bitcompression::PosOccFieldsParams *fieldsParams,
                              const fef::TermFieldMatchDataArray &matchData);
 };
@@ -37,7 +37,7 @@ private:
     DecodeContext _decodeContextReal;
 public:
     ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
-                     bool decode_cheap_features, bool decode_normal_features,
+                     bool decode_normal_features, bool decode_cheap_features,
                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
                      const bitcompression::PosOccFieldsParams *fieldsParams,
                      const fef::TermFieldMatchDataArray &matchData);
