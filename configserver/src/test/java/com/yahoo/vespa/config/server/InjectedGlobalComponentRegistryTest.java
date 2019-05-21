@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
+import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -66,7 +67,7 @@ public class InjectedGlobalComponentRegistryTest {
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences")));
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences")), new NoopRpcAuthorizer());
         generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
