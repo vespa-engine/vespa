@@ -2596,7 +2596,7 @@ TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_bulk_loading_into_empty_db) {
     ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
     for (uint32_t bsi = 0; bsi < _bucketSpaces.size(); ++bsi) {
         ASSERT_EQ(_sender.commands[bsi]->getType(), MessageType::REQUESTBUCKETINFO);
-        const auto& req = dynamic_cast<const RequestBucketInfoCommand &>(*_sender.commands[bsi]);
+        const auto& req = dynamic_cast<const RequestBucketInfoCommand&>(*_sender.commands[bsi]);
 
         auto sreply = std::make_shared<RequestBucketInfoReply>(req);
         sreply->setAddress(storageAddress(0));
@@ -2605,7 +2605,7 @@ TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_bulk_loading_into_empty_db) {
             for (uint32_t sb = 0; sb < superbuckets; ++sb) {
                 for (uint64_t i = 0; i < sub_buckets; ++i) {
                     document::BucketId bucket(48, (i << 32ULL) | sb);
-                    vec.push_back(api::RequestBucketInfoReply::Entry(bucket, api::BucketInfo(10,1,1)));
+                    vec.push_back(api::RequestBucketInfoReply::Entry(bucket, api::BucketInfo(10, 1, 1)));
                 }
             }
         }
@@ -2624,6 +2624,31 @@ TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_bulk_loading_into_empty_db) {
 
     EXPECT_EQ(size_t(n_buckets), mutable_default_db().size());
     EXPECT_EQ(size_t(0), mutable_global_db().size());
+}
+
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_getter_is_non_null_only_when_state_is_pending) {
+    auto initial_baseline = std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:d");
+    auto initial_default = std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:m");
+
+    lib::ClusterStateBundle initial_bundle(*initial_baseline, {{FixedBucketSpaces::default_space(), initial_default},
+                                                               {FixedBucketSpaces::global_space(), initial_baseline}});
+    set_cluster_state_bundle(initial_bundle);
+
+    auto* state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::default_space());
+    ASSERT_TRUE(state != nullptr);
+    EXPECT_EQ(*initial_default, *state);
+
+    state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::global_space());
+    ASSERT_TRUE(state != nullptr);
+    EXPECT_EQ(*initial_baseline, *state);
+
+    ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(*initial_baseline, messageCount(1), 0));
+
+    state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::default_space());
+    EXPECT_TRUE(state == nullptr);
+
+    state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::global_space());
+    EXPECT_TRUE(state == nullptr);
 }
 
 }

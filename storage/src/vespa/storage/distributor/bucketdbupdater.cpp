@@ -71,12 +71,19 @@ BucketOwnership
 BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
 {
     if (hasPendingClusterState()) {
-        const lib::ClusterState& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
+        const auto& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
         if (!_distributorComponent.ownsBucketInState(state, b)) {
             return BucketOwnership::createNotOwnedInState(state);
         }
     }
     return BucketOwnership::createOwned();
+}
+
+const lib::ClusterState*
+BucketDBUpdater::pendingClusterStateOrNull(const document::BucketSpace& space) const {
+    return (hasPendingClusterState()
+            ? _pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(space).get()
+            : nullptr);
 }
 
 void
@@ -850,6 +857,7 @@ BucketDBUpdater::NodeRemover::process(BucketDatabase::Entry& e)
     for (uint16_t i = 0; i < e->getNodeCount(); i++) {
         Node n(NodeType::STORAGE, e->getNodeRef(i).getNode());
 
+        // TODO replace with intersection hash set of config and cluster state
         if (_state.getNodeState(n).getState().oneOf(_upStates)) {
             remainingCopies.push_back(e->getNodeRef(i));
         }

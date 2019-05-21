@@ -74,6 +74,8 @@ public:
 
     BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const override;
 
+    const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
+
     /**
      * Enables a new cluster state. Called after the bucket db updater has
      * retrieved all bucket info related to the change.
