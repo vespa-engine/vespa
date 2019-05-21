@@ -95,17 +95,25 @@ public class RPCTargetPool {
                 if (target != null) {
                     return target;
                 }
-                entry.close();
-                targets.remove(key);
+                dropTarget(entry, key);
             }
-            RPCTarget [] tmpTargets = new RPCTarget[numTargetsPerSpec];
-            for (int i=0; i < tmpTargets.length; i++) {
-                tmpTargets[i] = new RPCTarget(spec, orb);
-            }
-            entry = new Entry(tmpTargets, now);
-            targets.put(key, entry);
-            return entry.getTarget(now);
+            return createAndAddTarget(orb, spec, key, now);
         }
+    }
+
+    private void dropTarget(Entry entry, String key) {
+        entry.close();
+        targets.remove(key);
+    }
+
+    private RPCTarget createAndAddTarget(Supervisor orb, Spec spec, String key, long now) {
+        RPCTarget [] tmpTargets = new RPCTarget[numTargetsPerSpec];
+        for (int i=0; i < tmpTargets.length; i++) {
+            tmpTargets[i] = new RPCTarget(spec, orb);
+        }
+        Entry entry = new Entry(tmpTargets, now);
+        targets.put(key, entry);
+        return entry.getTarget(now);
     }
 
 
