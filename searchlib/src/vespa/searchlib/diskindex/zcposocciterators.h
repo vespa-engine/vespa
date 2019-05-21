@@ -19,9 +19,10 @@ private:
     using DecodeContextReal = std::conditional_t<dynamic_k, bitcompression::EGPosOccDecodeContextCooked<bigEndian>, bitcompression::EG2PosOccDecodeContextCooked<bigEndian>>;
     DecodeContextReal _decodeContextReal;
 public:
-    ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
-                              const bitcompression::PosOccFieldsParams *fieldsParams,
-                              const fef::TermFieldMatchDataArray &matchData);
+    ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+                             bool decode_normal_features, bool decode_cheap_features,
+                             const bitcompression::PosOccFieldsParams *fieldsParams,
+                             const fef::TermFieldMatchDataArray &matchData);
 };
 
 
@@ -35,10 +36,11 @@ private:
     using DecodeContext = std::conditional_t<dynamic_k, bitcompression::EGPosOccDecodeContextCooked<bigEndian>, bitcompression::EG2PosOccDecodeContextCooked<bigEndian>>;
     DecodeContext _decodeContextReal;
 public:
-    ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit, bool decode_cheap_features,
-                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
-                      const bitcompression::PosOccFieldsParams *fieldsParams,
-                      const fef::TermFieldMatchDataArray &matchData);
+    ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
+                     bool decode_normal_features, bool decode_cheap_features,
+                     uint32_t minChunkDocs, const index::PostingListCounts &counts,
+                     const bitcompression::PosOccFieldsParams *fieldsParams,
+                     const fef::TermFieldMatchDataArray &matchData);
 };
 
 std::unique_ptr<search::queryeval::SearchIterator>
