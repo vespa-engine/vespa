@@ -26,7 +26,11 @@ public interface NetworkPortRequestor {
      */
     default int getWantedPort() { return 0; }
 
-    /** Returns the number of ports needed by this service. */
+    /**
+     * Returns the number of ports needed by this service.
+     * User-defined ports for container http servers should not be counted, as those
+     * ports are required to be outside Vespa's port range.
+     */
     int getPortCount();
 
     /**

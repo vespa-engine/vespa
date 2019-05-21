@@ -82,7 +82,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
 
-        setRpcServerEnabled(false);
+        setMessageBusEnabled(false);
+        setRpcServerEnabled(false);  // TODO: set to true
         addDefaultHandlersExceptStatus();
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);

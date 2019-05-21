@@ -137,6 +137,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
+        cluster.setMessageBusEnabled(rpcServerEnabled);
         cluster.setRpcServerEnabled(rpcServerEnabled);
         cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
