@@ -39,7 +39,6 @@
     <component id="com.yahoo.vespa.config.server.filedistribution.FileServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.rpc.security.DummyNodeIdentifierProvider" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.rpc.security.DefaultRpcAuthorizerProvider" bundle="configserver" />
 
     <component id="com.yahoo.vespa.serviceview.ConfigServerLocation" bundle="configserver" />
 
