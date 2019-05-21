@@ -137,8 +137,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
 
+    // TODO: move all message-bus related fields/methods to ApplicationContainerCluster. No need for mbus for other clusters.
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
+
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
 
