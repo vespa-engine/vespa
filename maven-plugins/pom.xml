@@ -8,7 +8,6 @@
         <version>7-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
-    <groupId>com.yahoo.vespa</groupId>
     <artifactId>bundle-plugins</artifactId>
     <name>bundle-plugins</name>
     <packaging>pom</packaging>
@@ -24,5 +23,6 @@
         <module>../application-deploy-plugin</module>
         <module>../vespa-application-maven-plugin</module>
         <module>../abi-check-plugin</module>
+        <module>../vespa-maven-plugin</module>
     </modules>
 </project>
