@@ -2,9 +2,10 @@
 
 #include "handlerecorder.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 
+using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
 
 namespace proton::matching {
@@ -16,30 +17,44 @@ namespace proton::matching {
 #endif
 
 namespace {
-     __thread HandleRecorder * _T_recorder TLS_LINKAGE = NULL;
+     __thread HandleRecorder * _T_recorder TLS_LINKAGE = nullptr;
      __thread bool _T_assert_all_handles_are_registered = false;
 }
 
 HandleRecorder::HandleRecorder() :
-    _handles()
+    _normal_handles(),
+    _cheap_handles()
 {
 }
 
+namespace {
+
 vespalib::string
-HandleRecorder::toString() const
+handles_to_string(const HandleRecorder::HandleSet& handles)
 {
     vespalib::asciistream os;
     std::vector<TermFieldHandle> sorted;
-    for (TermFieldHandle handle : _handles) {
+    for (TermFieldHandle handle : handles) {
         sorted.push_back(handle);
     }
     std::sort(sorted.begin(), sorted.end());
     if ( !sorted.empty() ) {
         os << sorted[0];
         for (size_t i(1); i < sorted.size(); i++) {
-            os << ' ' << sorted[i];
+            os << ',' << sorted[i];
         }
     }
+    return os.str();
+}
+
+}
+
+vespalib::string
+HandleRecorder::to_string() const
+{
+    vespalib::asciistream os;
+    os << "normal: [" << handles_to_string(_normal_handles) << "], ";
+    os << "cheap: [" << handles_to_string(_cheap_handles) << "]";
     return os.str();
 }
 
@@ -64,17 +79,33 @@ HandleRecorder::~HandleRecorder()
 
 HandleRecorder::Binder::~Binder()
 {
-    _T_recorder = NULL;
+    _T_recorder = nullptr;
 }
 
-void HandleRecorder::registerHandle(TermFieldHandle handle)
+void
+HandleRecorder::register_handle(TermFieldHandle handle,
+                                MatchDataDetails requested_details)
 {
     // There should be no registration of handles that is not recorded.
     // That will lead to issues later on.
-    if (_T_recorder != NULL) {
-        _T_recorder->add(handle);
+    if (_T_recorder != nullptr) {
+        _T_recorder->add(handle, requested_details);
     } else if (_T_assert_all_handles_are_registered) {
-        assert(_T_recorder != NULL);
+        assert(_T_recorder != nullptr);
+    }
+}
+
+void
+HandleRecorder::add(TermFieldHandle handle,
+                    MatchDataDetails requested_details)
+
+{
+    if (requested_details == MatchDataDetails::Normal) {
+        _normal_handles.insert(handle);
+    } else if (requested_details == MatchDataDetails::Cheap) {
+        _cheap_handles.insert(handle);
+    } else {
+        abort();
     }
 }
 

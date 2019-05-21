@@ -114,6 +114,7 @@ vespa_define_module(
     src/tests/proton/matching
     src/tests/proton/matching/constant_value_repo
     src/tests/proton/matching/docid_range_scheduler
+    src/tests/proton/matching/handle_recorder
     src/tests/proton/matching/index_environment
     src/tests/proton/matching/match_loop_communicator
     src/tests/proton/matching/match_phase_limiter
