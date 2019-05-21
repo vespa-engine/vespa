@@ -43,6 +43,9 @@ public class CapacityPolicies {
 
     public NodeResources decideNodeResources(Capacity requestedCapacity, ClusterSpec cluster) {
         Optional<NodeResources> requestedResources = requestedCapacity.nodeResources();
+
+        if (zone.system() == SystemName.cd && requestedResources.isPresent())
+            requestedResources = Optional.of(requestedResources.get().withDiskSpeed(NodeResources.DiskSpeed.any));
         if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
             return requestedResources.get();
 
