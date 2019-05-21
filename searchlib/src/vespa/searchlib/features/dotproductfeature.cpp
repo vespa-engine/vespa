@@ -354,8 +354,7 @@ size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint3
 DotProductBlueprint::DotProductBlueprint() :
     Blueprint("dotProduct"),
     _defaultAttribute(),
-    _queryVector(),
-    _attribute(nullptr)
+    _queryVector()
 { }
 
 DotProductBlueprint::~DotProductBlueprint() = default;
@@ -572,8 +571,6 @@ createForDirectArray(const IAttributeVector * attribute,
     return createForDirectArrayImpl<A>(attribute, arguments.values, arguments.indexes, stash);
 }
 
-const char * OBJECT = "object";
-
 FeatureExecutor &
 createFromObject(const IAttributeVector * attribute, const fef::Anything & object, vespalib::Stash &stash)
 {
@@ -760,7 +757,22 @@ attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property 
     return std::unique_ptr<fef::Anything>();
 }
 
+vespalib::string
+make_key(const vespalib::string & base, const vespalib::string & queryVector) {
+    vespalib::string key(base);
+    key.append('.');
+    key.append(queryVector);
+    return key;
+}
+
 } // anon ns
+
+DotProductBlueprint::SharedState::SharedState(const IAttributeVector * attribute, fef::Anything::UP arguments)
+    : _attribute(attribute),
+      _arguments(std::move(arguments))
+{}
+
+DotProductBlueprint::SharedState::~SharedState() = default;
 
 const IAttributeVector *
 DotProductBlueprint::upgradeIfNecessary(const IAttributeVector * attribute, const IQueryEnvironment & env) const {
@@ -776,8 +788,7 @@ DotProductBlueprint::upgradeIfNecessary(const IAttributeVector * attribute, cons
 void
 DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
 {
-    _attribute = env.getAttributeContext().getAttribute(getAttribute(env));
-    const IAttributeVector * attribute = _attribute;
+    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
     if (attribute == nullptr) return;
 
     attribute = upgradeIfNecessary(attribute, env);
@@ -816,24 +827,30 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
             // TODO actually use the parsed output for wset operations!
         }
     }
-    if (arguments) {
-        store.add(getBaseName() + "." + _queryVector + "." + OBJECT, std::move(arguments));
-    }
+    store.add(make_key(getBaseName(), _queryVector), std::make_unique<SharedState>(attribute, std::move(arguments)));
 }
 
 FeatureExecutor &
 DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    const IAttributeVector * attribute = (_attribute != nullptr) ? _attribute : env.getAttributeContext().getAttribute(getAttribute(env));
+    const IAttributeVector * attribute = nullptr;
+    const SharedState * sharedState = nullptr;
+    const fef::Anything * argument = env.getObjectStore().get(make_key(getBaseName(), _queryVector));
+    if (argument != nullptr) {
+        sharedState = static_cast<const SharedState *>(argument);
+        attribute = sharedState->_attribute;
+    }
+    if (attribute == nullptr) {
+        attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+    }
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
     attribute = upgradeIfNecessary(attribute, env);
-    const fef::Anything * argument = env.getObjectStore().get(getBaseName() + "." + _queryVector + "." + OBJECT);
-    if (argument != nullptr) {
-        return createFromObject(attribute, *argument, stash);
+    if ((sharedState != nullptr) && sharedState->_arguments) {
+        return createFromObject(attribute, *sharedState->_arguments, stash);
     } else {
         Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
         if (prop.found() && !prop.get().empty()) {

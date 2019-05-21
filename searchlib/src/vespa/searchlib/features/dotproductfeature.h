@@ -304,12 +304,17 @@ private:
     vespalib::string _defaultAttribute;
     vespalib::string _queryVector;
 
-    mutable const IAttributeVector * _attribute;
-
     vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
     const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
 
 public:
+    class SharedState : public fef::Anything {
+    public:
+        SharedState(const IAttributeVector * attribute, fef::Anything::UP arguments);
+        ~SharedState() override;
+        const IAttributeVector * _attribute;
+        fef::Anything::UP        _arguments;
+    };
     DotProductBlueprint();
     ~DotProductBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
