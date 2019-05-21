@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
@@ -12,11 +11,23 @@ import java.net.SocketAddress;
  */
 public class Spec {
 
-    private SocketAddress address;
-    private String        host;
-    private int           port;
-    private boolean       malformed;
+    private final SocketAddress address;
+    private final String        host;
+    private final int           port;
+    private final boolean       malformed;
+    private final String asString;
 
+    private static SocketAddress createAddress(String host, int port) {
+        return (host == null)
+                ? new InetSocketAddress(port)
+                : new InetSocketAddress(host, port);
+    }
+
+    private static String createString(String host, int port) {
+        return (host == null)
+                ?  "tcp/" + port
+                : "tcp/" + host + ":" + port;
+    }
     /**
      * Create a Spec from a string. The form of the input string is
      * 'tcp/host:port' or 'tcp/port' where 'host' is the host name and
@@ -29,21 +40,31 @@ public class Spec {
         if (spec.startsWith("tcp/")) {
             int sep = spec.indexOf(':');
             String portStr;
+            String hostStr = null;
             if (sep == -1) {
                 portStr = spec.substring(4);
             } else {
-                host = spec.substring(4, sep);
+                hostStr = spec.substring(4, sep);
                 portStr = spec.substring(sep + 1);
             }
+            boolean correct = true;
+            int portNum = 0;
             try {
-                port = Integer.parseInt(portStr);
+                portNum = Integer.parseInt(portStr);
             } catch (NumberFormatException e) {
-                host = null;
-                port = 0;
-                malformed = true;
+                correct = false;
             }
+            port = portNum;
+            malformed = ! correct;
+            host = correct ? hostStr : null;
+            address = correct ? createAddress(host, port) : null;
+            asString = correct ? createString(host, port) : "MALFORMED";
         } else {
             malformed = true;
+            port = 0;
+            host = null;
+            address = null;
+            asString = "MALFORMED";
         }
     }
 
@@ -56,6 +77,9 @@ public class Spec {
     public Spec(String host, int port) {
         this.host = host;
         this.port = port;
+        malformed = false;
+        asString = createString(host, port);
+        address = createAddress(host, port);
     }
 
     /**
@@ -68,7 +92,7 @@ public class Spec {
      * @param port port number
      */
     public Spec(int port) {
-        this.port = port;
+        this(null, port);
     }
 
     /**
@@ -106,16 +130,6 @@ public class Spec {
      * @return socket address
      */
     SocketAddress address() {
-        if (malformed) {
-            return null;
-        }
-        if (address == null) {
-            if (host == null) {
-                address = new InetSocketAddress(port);
-            } else {
-                address = new InetSocketAddress(host, port);
-            }
-        }
         return address;
     }
 
@@ -126,13 +140,7 @@ public class Spec {
      * @return string representation of this address
      */
     public String toString() {
-        if (malformed) {
-            return "MALFORMED";
-        }
-        if (host == null) {
-            return "tcp/" + port;
-        }
-        return "tcp/" + host + ":" + port;
+        return asString;
     }
 
 }
