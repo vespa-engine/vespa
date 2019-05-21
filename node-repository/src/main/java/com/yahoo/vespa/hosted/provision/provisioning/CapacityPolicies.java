@@ -42,10 +42,14 @@ public class CapacityPolicies {
     }
 
     public NodeResources decideNodeResources(Capacity requestedCapacity, ClusterSpec cluster) {
-        Optional<NodeResources> requestedResources = requestedCapacity.nodeResources();
+        NodeResources resources = decideNodeResources(requestedCapacity.nodeResources(), cluster);
+        if (zone.system() == SystemName.cd)
+            return resources.withDiskSpeed(NodeResources.DiskSpeed.any);
+        else
+            return resources;
+    }
 
-        if (zone.system() == SystemName.cd && requestedResources.isPresent())
-            requestedResources = Optional.of(requestedResources.get().withDiskSpeed(NodeResources.DiskSpeed.any));
+    private NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
         if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
             return requestedResources.get();
 
