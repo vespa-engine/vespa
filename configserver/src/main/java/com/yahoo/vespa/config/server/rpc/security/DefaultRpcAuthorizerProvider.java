@@ -2,9 +2,9 @@
 package com.yahoo.vespa.config.server.rpc.security;
 
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.security.NodeIdentifier;
+import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -33,4 +33,7 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
     public RpcAuthorizer get() {
         return rpcAuthorizer;
     }
+
+    @Override
+    public void deconstruct() {}
 }
