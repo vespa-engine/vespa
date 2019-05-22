@@ -48,13 +48,17 @@
 
     <preprocess:include file='config-models.xml' required='false' />
     <preprocess:include file='node-repository.xml' required='false' />
+    <!-- TODO: Remove when new path for routing-status.xml is used -->
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
+    <preprocess:include file='routing-status.xml' required='false' />
     <preprocess:include file='model-integration.xml' required='true' />
 
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
+    <!-- TODO: Remove when new path for metrics-packets.xml is used -->
     <preprocess:include file='hosted-vespa/metrics-packets.xml' required='false' />
+    <preprocess:include file='metrics-packets.xml' required='false' />
     <preprocess:include file='controller/container.xml' required='false' />
     <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
@@ -153,7 +157,9 @@
 
     <http>
       <server port="19071" id="configserver" />
+      <!-- TODO: Remove when new path for http-server.xml is used -->
       <preprocess:include file='hosted-vespa/http-server.xml' required='false' />
+      <preprocess:include file='http-server.xml' required='false' />
       <preprocess:include file='controller/http.xml' required='false' />
     </http>
 
