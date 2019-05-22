@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,9 +33,9 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
- * A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
+ * <p>A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
  * index through indexing and how data from documents should be served at search time.</p> <p>The identity of this
- * class is its name.
+ * class is its name.</p>
  *
  * @author bratseth
  */
