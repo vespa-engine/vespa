@@ -33,9 +33,9 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
- * <p>A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
- * index through indexing and how data from documents should be served at search time.</p> <p>The identity of this
- * class is its name.</p>
+ * A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
+ * index through indexing and how data from documents should be served at search time. The identity of this
+ * class is its name.
  *
  * @author bratseth
  */

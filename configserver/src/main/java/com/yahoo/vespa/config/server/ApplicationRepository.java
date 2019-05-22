@@ -103,7 +103,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus;
     private final Orchestrator orchestrator;
-    private final LogRetriever logRetriever = new LogRetriever();
+    private final LogRetriever logRetriever;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -113,9 +113,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator) {
-        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(), infraDeployerProvider.getInfraDeployer(),
-             configConvergenceChecker, httpProxy, configserverConfig, orchestrator,
-             Clock.systemUTC(), new FileDistributionStatus());
+        this(tenantRepository,
+             hostProvisionerProvider.getHostProvisioner(),
+             infraDeployerProvider.getInfraDeployer(),
+             configConvergenceChecker,
+             httpProxy,
+             configserverConfig,
+             orchestrator,
+             new LogRetriever(),
+             new FileDistributionStatus(),
+             Clock.systemUTC());
     }
 
     // For testing
@@ -123,17 +130,45 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Provisioner hostProvisioner,
                                  Orchestrator orchestrator,
                                  Clock clock) {
-        this(tenantRepository, hostProvisioner, orchestrator, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()));
+        this(tenantRepository,
+             hostProvisioner,
+             orchestrator,
+             new ConfigserverConfig(new ConfigserverConfig.Builder()),
+             new LogRetriever(),
+             clock);
     }
 
     // For testing
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Orchestrator orchestrator,
-                                 Clock clock,
-                                 ConfigserverConfig configserverConfig) {
-        this(tenantRepository, Optional.of(hostProvisioner), Optional.empty(), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
-             configserverConfig, orchestrator, clock, new FileDistributionStatus());
+                                 LogRetriever logRetriever,
+                                 Clock clock) {
+        this(tenantRepository,
+             hostProvisioner,
+             orchestrator,
+             new ConfigserverConfig(new ConfigserverConfig.Builder()),
+             logRetriever,
+             clock);
+    }
+
+    // For testing
+    public ApplicationRepository(TenantRepository tenantRepository,
+                                 Provisioner hostProvisioner,
+                                 Orchestrator orchestrator,
+                                 ConfigserverConfig configserverConfig,
+                                 LogRetriever logRetriever,
+                                 Clock clock) {
+        this(tenantRepository,
+             Optional.of(hostProvisioner),
+             Optional.empty(),
+             new ConfigConvergenceChecker(),
+             new HttpProxy(new SimpleHttpFetcher()),
+             configserverConfig,
+             orchestrator,
+             logRetriever,
+             new FileDistributionStatus(),
+             clock);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -143,17 +178,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
                                   Orchestrator orchestrator,
-                                  Clock clock,
-                                  FileDistributionStatus fileDistributionStatus) {
+                                  LogRetriever logRetriever,
+                                  FileDistributionStatus fileDistributionStatus,
+                                  Clock clock) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.infraDeployer = infraDeployer;
         this.convergeChecker = configConvergenceChecker;
         this.httpProxy = httpProxy;
-        this.clock = clock;
         this.configserverConfig = configserverConfig;
         this.orchestrator = orchestrator;
+        this.logRetriever = logRetriever;
         this.fileDistributionStatus = fileDistributionStatus;
+        this.clock = clock;
     }
 
     // ---------------- Deploying ----------------------------------------------------------------
