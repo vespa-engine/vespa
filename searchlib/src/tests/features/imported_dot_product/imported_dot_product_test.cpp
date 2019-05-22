@@ -48,7 +48,7 @@ struct FixtureBase : ImportedAttributeFixture {
 
         feature.getQueryEnv().getProperties().add("dotProduct.vector", vector);
         if (pre_parsed) {
-            feature.getQueryEnv().getObjectStore().add("dotProduct.vector.object", std::move(pre_parsed));
+            feature.getQueryEnv().getObjectStore().add("dotProduct.vector", std::make_unique<DotProductBlueprint::SharedState>(nullptr, std::move(pre_parsed)));
         }
         auto readGuard = imported_attr->makeReadGuard(false);
         const IAttributeVector *attr = readGuard->attribute();
@@ -143,9 +143,11 @@ struct ArrayFixture : FixtureBase {
         auto& obj_store = feature.getQueryEnv().getObjectStore();
         bp.prepareSharedState(feature.getQueryEnv(), obj_store);
         // Resulting name is very implementation defined. But at least the tests will break if it changes.
-        const auto* parsed = obj_store.get("dotProduct.fancyvector.object");
-        ASSERT_TRUE(parsed != nullptr);
-        const auto* as_object = dynamic_cast<const ExpectedType*>(parsed);
+        const auto* anything = obj_store.get("dotProduct.fancyvector");
+        ASSERT_TRUE(anything != nullptr);
+        const auto* state = dynamic_cast<const DotProductBlueprint::SharedState*>(anything);
+        ASSERT_TRUE(state != nullptr);
+        const auto* as_object = dynamic_cast<const ExpectedType*>(state->_arguments.get());
         ASSERT_TRUE(as_object != nullptr);
         verify(expected, *as_object);
     }

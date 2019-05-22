@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import java.util.Optional;
-import java.util.Set;
-
 import com.yahoo.component.Version;
+import com.yahoo.config.FileReference;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
+
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Instances of this can serve misc config related requests
@@ -83,4 +84,12 @@ public interface RequestHandler {
      * @return an {@link ApplicationId} instance.
      */
     ApplicationId resolveApplicationId(String hostName);
+
+    /**
+     * Returns the set of file references from the application's Vespa models, aggregated across all application versions.
+     *
+     * @param applicationId application id to use
+     * @return set of file references that is owned by the application
+     */
+    Set<FileReference> listFileReferences(ApplicationId applicationId);
 }

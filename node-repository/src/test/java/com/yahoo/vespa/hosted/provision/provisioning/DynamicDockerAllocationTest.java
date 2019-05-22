@@ -14,7 +14,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
@@ -252,27 +251,7 @@ public class DynamicDockerAllocationTest {
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
-        assertEquals(0, initialSpareCapacity.size());
-    }
-
-    @Test
-    public void cd_uses_slow_disk_nodes_for_docker_hosts() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.test, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        tester.makeReadyNodes(4, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
-        deployZoneApp(tester);
-        ApplicationId application1 = tester.makeApplicationId();
-        List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 3, 1, new NodeResources(1, 1, 1));
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
-    }
-
-    @Test
-    public void cd_uses_slow_disk_nodes_for_docker_hosts_with_default_flavor() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.test, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        tester.makeReadyNodes(4, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
-        deployZoneApp(tester);
-        ApplicationId application1 = tester.makeApplicationId();
-        List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), Capacity.fromCount(3, Optional.empty(), false, true), 1);
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
+        assertThat(initialSpareCapacity.size(), is(0));
     }
 
     @Test(expected = OutOfCapacityException.class)

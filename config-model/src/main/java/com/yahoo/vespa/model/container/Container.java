@@ -75,7 +75,6 @@ public abstract class Container extends AbstractService implements
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
     protected final int numHttpServerPorts;
-    private static final int numRpcServerPorts = 2;
 
     protected Container(AbstractConfigProducer parent, String name, int index) {
         this(parent, name, false, index);
@@ -165,16 +164,19 @@ public abstract class Container extends AbstractService implements
     }
 
     protected void tagServers() {
+        int offset = 0;
         if (numHttpServerPorts > 0) {
-            portsMeta.on(0).tag("http").tag("query").tag("external").tag("state");
+            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
         }
 
         for (int i = 1; i < numHttpServerPorts; i++)
-            portsMeta.on(i).tag("http").tag("external");
+            portsMeta.on(offset++).tag("http").tag("external");
 
+        if (messageBusEnabled()) {
+            portsMeta.on(offset++).tag("rpc").tag("messaging");
+        }
         if (rpcServerEnabled()) {
-            portsMeta.on(numHttpServerPorts + 0).tag("rpc").tag("messaging");
-            portsMeta.on(numHttpServerPorts + 1).tag("rpc").tag("admin");
+            portsMeta.on(offset++).tag("rpc").tag("admin");
         }
     }
 
@@ -235,12 +237,11 @@ public abstract class Container extends AbstractService implements
     }
 
     /**
-     * @return the number of ports needed by the Container - those reserved manually(reservePortPrepended)
+     * @return the number of ports needed by the Container except those reserved manually(reservePortPrepended)
      */
     public int getPortCount() {
         int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2; // TODO remove +2, only here to keep irrelevant unit tests from failing.
-        int rpcPorts = (rpcServerEnabled()) ? numRpcServerPorts : 0;
-        return httpPorts + rpcPorts;
+        return httpPorts + numMessageBusPorts() + numRpcPorts();
     }
 
     @Override
@@ -256,12 +257,11 @@ public abstract class Container extends AbstractService implements
         for (int i = 1; i < httpPorts; i++) {
             suffixes[off++] = "http/" + i;
         }
-        int rpcPorts = (rpcServerEnabled()) ? numRpcServerPorts : 0;
-        if (rpcPorts > 0) {
+        if (messageBusEnabled()) {
             suffixes[off++] = "messaging";
         }
-        if (rpcPorts > 1) {
-            suffixes[off++] = "rpc";
+        if (rpcServerEnabled()) {
+            suffixes[off++] = "rpc/admin";
         }
         while (off < n) {
             suffixes[off] = "unused/" + off;
@@ -283,12 +283,17 @@ public abstract class Container extends AbstractService implements
     }
 
     private int getRpcPort() {
-        return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + 1) : 0;
+        return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + numMessageBusPorts()) : 0;
     }
 
+    protected int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }
+
+
     private int getMessagingPort() {
-        return getRelativePort(numHttpServerPorts);
+        return messageBusEnabled() ? getRelativePort(numHttpServerPorts) : 0;
     }
+
+    protected int numMessageBusPorts() { return messageBusEnabled() ? 1 : 0; }
 
     @Override
     public int getHealthPort()  {

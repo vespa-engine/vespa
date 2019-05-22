@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.NotFoundException;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.yahoo.vespa.config.server.NotFoundException;
 
 /**
  * Used during config request handling to route to the right config model
@@ -79,6 +79,10 @@ public final class ApplicationMapper {
 
     public Set<ApplicationId> listApplicationIds() {
         return Collections.unmodifiableSet(requestHandlers.keySet());
+    }
+
+    public List<Application> listApplications(ApplicationId applicationId) {
+        return requestHandlers.get(applicationId).getAllApplications();
     }
 
 }

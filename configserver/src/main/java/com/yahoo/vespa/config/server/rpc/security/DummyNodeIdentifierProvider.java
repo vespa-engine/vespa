@@ -1,8 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.provision.security;
+package com.yahoo.vespa.config.server.rpc.security;
 
 import com.google.inject.Inject;
-import com.google.inject.Provider;
+import com.yahoo.config.provision.security.NodeIdentifier;
+import com.yahoo.config.provision.security.NodeIdentity;
+import com.yahoo.container.di.componentgraph.Provider;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -21,6 +23,9 @@ public class DummyNodeIdentifierProvider implements Provider<NodeIdentifier> {
     public NodeIdentifier get() {
         return instance;
     }
+
+    @Override
+    public void deconstruct() {}
 
     private static class ThrowingNodeIdentifier implements NodeIdentifier {
         @Override

@@ -520,9 +520,9 @@ createIterator(const TermFieldMatchDataArray &matchData) const
     return new FakeFilterOccZCArrayIterator(_compressed.first, 0, _posting_params._doc_id_limit, matchData);
 }
 
-template <bool doSkip>
 class FakeZcSkipFilterOcc : public FakeZcFilterOcc
 {
+    search::index::PostingListCounts _counts;
 public:
     FakeZcSkipFilterOcc(const FakeWord &fw);
 
@@ -531,580 +531,31 @@ public:
 };
 
 static FPFactoryInit
-initNoSkip(std::make_pair("ZcNoSkipFilterOcc",
-                          makeFPFactory<FPFactoryT<FakeZcSkipFilterOcc<false> > >));
-
-
-static FPFactoryInit
 initSkip(std::make_pair("ZcSkipFilterOcc",
-                        makeFPFactory<FPFactoryT<FakeZcSkipFilterOcc<true> > >));
+                        makeFPFactory<FPFactoryT<FakeZcSkipFilterOcc>>));
 
-template<>
-FakeZcSkipFilterOcc<false>::FakeZcSkipFilterOcc(const FakeWord &fw)
-    : FakeZcFilterOcc(fw, true, Zc4PostingParams(force_skip, disable_chunking, fw._docIdLimit, true, false, false), ".zc5noskipfilterocc")
-{
-    setup(fw);
-}
-
-
-template<>
-FakeZcSkipFilterOcc<true>::FakeZcSkipFilterOcc(const FakeWord &fw)
+FakeZcSkipFilterOcc::FakeZcSkipFilterOcc(const FakeWord &fw)
     : FakeZcFilterOcc(fw, true, Zc4PostingParams(force_skip, disable_chunking, fw._docIdLimit, true, false, false), ".zc5skipfilterocc")
 {
     setup(fw);
+    _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 
-template <bool doSkip>
-FakeZcSkipFilterOcc<doSkip>::~FakeZcSkipFilterOcc()
-{
-}
+FakeZcSkipFilterOcc::~FakeZcSkipFilterOcc() = default;
 
-
-template <bool doSkip>
-class FakeFilterOccZCSkipArrayIterator
-    : public queryeval::RankedSearchIteratorBase
-{
-private:
-
-    FakeFilterOccZCSkipArrayIterator(const FakeFilterOccZCSkipArrayIterator &other);
-
-    FakeFilterOccZCSkipArrayIterator&
-    operator=(const FakeFilterOccZCSkipArrayIterator &other);
-
-public:
-    // Pointer to compressed data
-    const uint8_t *_valI;
-    uint32_t _lastDocId;
-    uint32_t _l1SkipDocId;
-    uint32_t _l2SkipDocId;
-    uint32_t _l3SkipDocId;
-    uint32_t _l4SkipDocId;
-    const uint8_t *_l1SkipDocIdPos;
-    const uint8_t *_l1SkipValI;
-    const uint8_t *_valIBase;
-    const uint8_t *_l1SkipValIBase;
-    const uint8_t *_l2SkipDocIdPos;
-    const uint8_t *_l2SkipValI;
-    const uint8_t *_l2SkipL1SkipPos;
-    const uint8_t *_l2SkipValIBase;
-    const uint8_t *_l3SkipDocIdPos;
-    const uint8_t *_l3SkipValI;
-    const uint8_t *_l3SkipL1SkipPos;
-    const uint8_t *_l3SkipL2SkipPos;
-    const uint8_t *_l3SkipValIBase;
-    const uint8_t *_l4SkipDocIdPos;
-    const uint8_t *_l4SkipValI;
-    const uint8_t *_l4SkipL1SkipPos;
-    const uint8_t *_l4SkipL2SkipPos;
-    const uint8_t *_l4SkipL3SkipPos;
-
-    typedef search::bitcompression::FeatureDecodeContextBE DecodeContext;
-    typedef search::bitcompression::FeatureEncodeContextBE EncodeContext;
-    DecodeContext _decodeContext;
-    uint32_t _docIdLimit;
-
-    FakeFilterOccZCSkipArrayIterator(const uint64_t *compressed,
-                                     int bitOffset,
-                                     uint32_t docIdLimit,
-                                     const TermFieldMatchDataArray &matchData);
-
-    ~FakeFilterOccZCSkipArrayIterator() override;
-
-    void doL4SkipSeek(uint32_t docId);
-    void doL3SkipSeek(uint32_t docId);
-    void doL2SkipSeek(uint32_t docId);
-    void doL1SkipSeek(uint32_t docId);
-
-    void doUnpack(uint32_t docId) override;
-    void doSeek(uint32_t docId) override;
-    void initRange(uint32_t begin, uint32_t end) override;
-    Trinary is_strict() const override { return Trinary::True; }
-};
-
-
-template <bool doSkip>
-FakeFilterOccZCSkipArrayIterator<doSkip>::
-FakeFilterOccZCSkipArrayIterator(const uint64_t *compressed,
-                                 int bitOffset,
-                                 uint32_t docIdLimit,
-                                 const fef::TermFieldMatchDataArray &matchData)
-    : queryeval::RankedSearchIteratorBase(matchData),
-      _valI(NULL),
-      _lastDocId(0),
-      _l1SkipDocId(0),
-      _l2SkipDocId(0),
-      _l3SkipDocId(0),
-      _l4SkipDocId(0),
-      _l1SkipDocIdPos(NULL),
-      _l1SkipValI(NULL),
-      _valIBase(NULL),
-      _l1SkipValIBase(NULL),
-      _l2SkipDocIdPos(NULL),
-      _l2SkipValI(NULL),
-      _l2SkipL1SkipPos(NULL),
-      _l2SkipValIBase(NULL),
-      _l3SkipDocIdPos(NULL),
-      _l3SkipValI(NULL),
-      _l3SkipL1SkipPos(NULL),
-      _l3SkipL2SkipPos(NULL),
-      _l3SkipValIBase(NULL),
-      _l4SkipDocIdPos(NULL),
-      _l4SkipValI(NULL),
-      _l4SkipL1SkipPos(NULL),
-      _l4SkipL2SkipPos(NULL),
-      _l4SkipL3SkipPos(NULL),
-      _decodeContext(compressed, bitOffset),
-      _docIdLimit(docIdLimit)
-{
-}
-
-template <bool doSkip>
-void
-FakeFilterOccZCSkipArrayIterator<doSkip>::
-initRange(uint32_t begin, uint32_t end)
-{
-    queryeval::RankedSearchIteratorBase::initRange(begin, end);
-    DecodeContext &d = _decodeContext;
-    Zc4PostingParams params(force_skip, disable_chunking, _docIdLimit, true, false, false);
-    Zc4PostingHeader header;
-    header.read(d, params);
-    _lastDocId = header._last_doc_id;
-    assert((d.getBitOffset() & 7) == 0);
-    const uint8_t *bcompr = d.getByteCompr();
-    _valIBase = _valI = bcompr;
-    _l1SkipDocIdPos = _l2SkipDocIdPos = bcompr;
-    _l3SkipDocIdPos = _l4SkipDocIdPos = bcompr;
-    bcompr += header._doc_ids_size;
-    if (header._l1_skip_size != 0) {
-        _l1SkipValIBase = _l1SkipValI = bcompr;
-        _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos = bcompr;
-        bcompr += header._l1_skip_size;
-    } else {
-        _l1SkipValIBase = _l1SkipValI = NULL;
-        _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos = NULL;
-    }
-    if (header._l2_skip_size != 0) {
-        _l2SkipValIBase = _l2SkipValI = bcompr;
-        _l3SkipL2SkipPos = _l4SkipL2SkipPos = bcompr;
-        bcompr += header._l2_skip_size;
-    } else {
-        _l2SkipValIBase = _l2SkipValI = NULL;
-        _l3SkipL2SkipPos = _l4SkipL2SkipPos = NULL;
-    }
-    if (header._l3_skip_size != 0) {
-        _l3SkipValIBase = _l3SkipValI = bcompr;
-        _l4SkipL3SkipPos = bcompr;
-        bcompr += header._l3_skip_size;
-    } else {
-        _l3SkipValIBase = _l3SkipValI = NULL;
-        _l4SkipL3SkipPos = NULL;
-    }
-    if (header._l4_skip_size != 0) {
-        _l4SkipValI = bcompr;
-        bcompr += header._l4_skip_size;
-    } else {
-        _l4SkipValI = NULL;
-    }
-    d.setByteCompr(bcompr);
-    uint32_t oDocId;
-    ZCDECODE(_valI, oDocId = 1 +);
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("DecodeInit docId=%d\n",
-           oDocId);
-#endif
-    setDocId(oDocId);
-    if (_l1SkipValI != NULL) {
-        ZCDECODE(_l1SkipValI, _l1SkipDocId = 1 +);
-    } else
-        _l1SkipDocId = _lastDocId;
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L1DecodeInit docId=%d\n",
-           _l1SkipDocId);
-#endif
-    if (_l2SkipValI != NULL) {
-        ZCDECODE(_l2SkipValI, _l2SkipDocId = 1 +);
-    } else
-        _l2SkipDocId = _lastDocId;
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L2DecodeInit docId=%d\n",
-           _l2SkipDocId);
-#endif
-    if (_l3SkipValI != NULL) {
-        ZCDECODE(_l3SkipValI, _l3SkipDocId = 1 +);
-    } else
-        _l3SkipDocId = _lastDocId;
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L3DecodeInit docId=%d\n",
-           _l3SkipDocId);
-#endif
-    if (_l4SkipValI != NULL) {
-        ZCDECODE(_l4SkipValI, _l4SkipDocId = 1 +);
-    } else
-          _l4SkipDocId = _lastDocId;
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L4DecodeInit docId=%d\n",
-           _l4SkipDocId);
-#endif
-    clearUnpacked();
-}
-
-
-template <bool doSkip>
-FakeFilterOccZCSkipArrayIterator<doSkip>::
-~FakeFilterOccZCSkipArrayIterator()
-{
-}
-
-
-template <>
-void
-FakeFilterOccZCSkipArrayIterator<true>::doL4SkipSeek(uint32_t docId)
-{
-    uint32_t lastL4SkipDocId;
-
-    if (__builtin_expect(docId > _lastDocId, false)) {
-        _l4SkipDocId = _l3SkipDocId = _l2SkipDocId = _l1SkipDocId = search::endDocId;
-        setAtEnd();
-        return;
-    }
-    do {
-        lastL4SkipDocId = _l4SkipDocId;
-        ZCDECODE(_l4SkipValI, _l4SkipDocIdPos += 1 +);
-        ZCDECODE(_l4SkipValI, _l4SkipL1SkipPos += 1 + );
-        ZCDECODE(_l4SkipValI, _l4SkipL2SkipPos += 1 + );
-        ZCDECODE(_l4SkipValI, _l4SkipL3SkipPos += 1 + );
-        ZCDECODE(_l4SkipValI, _l4SkipDocId += 1 + );
-#if DEBUG_ZCFILTEROCC_PRINTF
-        printf("L4Decode docId %d, docIdPos %d,"
-               " l1SkipPos %d, l2SkipPos %d, l3SkipPos %d, nextDocId %d\n",
-               lastL4SkipDocId,
-               (int) (_l4SkipDocIdPos - _valIBase),
-               (int) (_l4SkipL1SkipPos - _l1SkipValIBase),
-               (int) (_l4SkipL2SkipPos - _l2SkipValIBase),
-               (int) (_l4SkipL3SkipPos - _l3SkipValIBase),
-               _l4SkipDocId);
-#endif
-    } while (docId > _l4SkipDocId);
-    _valI = _l1SkipDocIdPos = _l2SkipDocIdPos = _l3SkipDocIdPos =
-            _l4SkipDocIdPos;
-    _l1SkipDocId = _l2SkipDocId = _l3SkipDocId = lastL4SkipDocId;
-    _l1SkipValI = _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos;
-    _l2SkipValI = _l3SkipL2SkipPos = _l4SkipL2SkipPos;
-    _l3SkipValI = _l4SkipL3SkipPos;
-    ZCDECODE(_valI, lastL4SkipDocId += 1 +);
-    ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-    ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 +);
-    ZCDECODE(_l3SkipValI, _l3SkipDocId += 1 +);
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L4Seek, docId %d docIdPos %d"
-           " L1SkipPos %d L2SkipPos %d L3SkipPos %d, nextDocId %d\n",
-           lastL4SkipDocId,
-           (int) (_l4SkipDocIdPos - _valIBase),
-           (int) (_l4SkipL1SkipPos - _l1SkipValIBase),
-           (int) (_l4SkipL2SkipPos - _l2SkipValIBase),
-           (int) (_l4SkipL3SkipPos - _l3SkipValIBase),
-           _l4SkipDocId);
-#endif
-    setDocId(lastL4SkipDocId);
-}
-
-
-template <>
-void
-FakeFilterOccZCSkipArrayIterator<true>::doL3SkipSeek(uint32_t docId)
-{
-    uint32_t lastL3SkipDocId;
-
-    if (__builtin_expect(docId > _l4SkipDocId, false)) {
-        doL4SkipSeek(docId);
-        if (docId <= _l3SkipDocId) {
-            return;
-        }
-    }
-    do {
-        lastL3SkipDocId = _l3SkipDocId;
-        ZCDECODE(_l3SkipValI, _l3SkipDocIdPos += 1 +);
-        ZCDECODE(_l3SkipValI, _l3SkipL1SkipPos += 1 + );
-        ZCDECODE(_l3SkipValI, _l3SkipL2SkipPos += 1 + );
-        ZCDECODE(_l3SkipValI, _l3SkipDocId += 1 + );
-#if DEBUG_ZCFILTEROCC_PRINTF
-        printf("L3Decode docId %d, docIdPos %d,"
-               " l1SkipPos %d, l2SkipPos %d, nextDocId %d\n",
-               lastL3SkipDocId,
-               (int) (_l3SkipDocIdPos - _valIBase),
-               (int) (_l3SkipL1SkipPos - _l1SkipValIBase),
-               (int) (_l3SkipL2SkipPos - _l2SkipValIBase),
-               _l3SkipDocId);
-#endif
-    } while (docId > _l3SkipDocId);
-    _valI = _l1SkipDocIdPos = _l2SkipDocIdPos = _l3SkipDocIdPos;
-    _l1SkipDocId = _l2SkipDocId = lastL3SkipDocId;
-    _l1SkipValI = _l2SkipL1SkipPos = _l3SkipL1SkipPos;
-    _l2SkipValI = _l3SkipL2SkipPos;
-    ZCDECODE(_valI, lastL3SkipDocId += 1 +);
-    ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-    ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 +);
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L3Seek, docId %d docIdPos %d"
-           " L1SkipPos %d L2SkipPos %d, nextDocId %d\n",
-           lastL3SkipDocId,
-           (int) (_l3SkipDocIdPos - _valIBase),
-           (int) (_l3SkipL1SkipPos - _l1SkipValIBase),
-           (int) (_l3SkipL2SkipPos - _l2SkipValIBase),
-           _l3SkipDocId);
-#endif
-    setDocId(lastL3SkipDocId);
-}
-
-
-template <>
-void
-FakeFilterOccZCSkipArrayIterator<true>::doL2SkipSeek(uint32_t docId)
-{
-    uint32_t lastL2SkipDocId;
-
-    if (__builtin_expect(docId > _l3SkipDocId, false)) {
-        doL3SkipSeek(docId);
-        if (docId <= _l2SkipDocId) {
-            return;
-        }
-    }
-    do {
-        lastL2SkipDocId = _l2SkipDocId;
-        ZCDECODE(_l2SkipValI, _l2SkipDocIdPos += 1 +);
-        ZCDECODE(_l2SkipValI, _l2SkipL1SkipPos += 1 + );
-        ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 + );
-#if DEBUG_ZCFILTEROCC_PRINTF
-        printf("L2Decode docId %d, docIdPos %d, l1SkipPos %d, nextDocId %d\n",
-               lastL2SkipDocId,
-               (int) (_l2SkipDocIdPos - _valIBase),
-               (int) (_l2SkipL1SkipPos - _l1SkipValIBase),
-               _l2SkipDocId);
-#endif
-    } while (docId > _l2SkipDocId);
-    _valI = _l1SkipDocIdPos = _l2SkipDocIdPos;
-    _l1SkipDocId = lastL2SkipDocId;
-    _l1SkipValI = _l2SkipL1SkipPos;
-    ZCDECODE(_valI, lastL2SkipDocId += 1 +);
-    ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L2Seek, docId %d docIdPos %d L1SkipPos %d, nextDocId %d\n",
-           lastL2SkipDocId,
-           (int) (_l2SkipDocIdPos - _valIBase),
-           (int) (_l2SkipL1SkipPos - _l1SkipValIBase),
-           _l2SkipDocId);
-#endif
-    setDocId(lastL2SkipDocId);
-}
-
-
-template <>
-void
-FakeFilterOccZCSkipArrayIterator<false>::doL1SkipSeek(uint32_t docId)
-{
-    (void) docId;
-}
-
-
-template <>
-void
-FakeFilterOccZCSkipArrayIterator<true>::doL1SkipSeek(uint32_t docId)
-{
-    uint32_t lastL1SkipDocId;
-    if (__builtin_expect(docId > _l2SkipDocId, false)) {
-        doL2SkipSeek(docId);
-        if (docId <= _l1SkipDocId) {
-            return;
-        }
-    }
-    do {
-        lastL1SkipDocId = _l1SkipDocId;
-        ZCDECODE(_l1SkipValI, _l1SkipDocIdPos += 1 +);
-        ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-#if DEBUG_ZCFILTEROCC_PRINTF
-        printf("L1Decode docId %d, docIdPos %d, L1SkipPos %d, nextDocId %d\n",
-               lastL1SkipDocId,
-               (int) (_l1SkipDocIdPos - _valIBase),
-               (int) (_l1SkipValI - _l1SkipValIBase),
-                _l1SkipDocId);
-#endif
-    } while (docId > _l1SkipDocId);
-    _valI = _l1SkipDocIdPos;
-    ZCDECODE(_valI, lastL1SkipDocId += 1 +);
-    setDocId(lastL1SkipDocId);
-#if DEBUG_ZCFILTEROCC_PRINTF
-    printf("L1SkipSeek, docId %d docIdPos %d, nextDocId %d\n",
-           lastL1SkipDocId,
-           (int) (_l1SkipDocIdPos - _valIBase),
-           _l1SkipDocId);
-#endif
-}
-
-
-template <bool doSkip>
-void
-FakeFilterOccZCSkipArrayIterator<doSkip>::doSeek(uint32_t docId)
-{
-    if (getUnpacked()) {
-        clearUnpacked();
-    }
-    if (doSkip && docId > _l1SkipDocId) {
-        doL1SkipSeek(docId);
-    }
-    uint32_t oDocId = getDocId();
-    if (doSkip) {
-#if DEBUG_ZCFILTEROCC_ASSERT
-        assert(oDocId <= _l1SkipDocId);
-        assert(docId <= _l1SkipDocId);
-        assert(oDocId <= _l2SkipDocId);
-        assert(docId <= _l2SkipDocId);
-        assert(oDocId <= _l3SkipDocId);
-        assert(docId <= _l3SkipDocId);
-        assert(oDocId <= _l4SkipDocId);
-        assert(docId <= _l4SkipDocId);
-#endif
-    }
-    const uint8_t *oCompr = _valI;
-    while (__builtin_expect(oDocId < docId, true)) {
-        if (!doSkip) {
-            if (__builtin_expect(oDocId >= _lastDocId, false)) {
-#if DEBUG_ZCFILTEROCC_ASSERT
-                assert(_l1SkipDocId == _lastDocId);
-                assert(_l2SkipDocId == _lastDocId);
-                assert(_l3SkipDocId == _lastDocId);
-                assert(_l4SkipDocId == _lastDocId);
-#endif
-                oDocId = _l1SkipDocId = _l2SkipDocId = _l3SkipDocId =
-                         _l4SkipDocId = search::endDocId;
-                break;
-            }
-        }
-        if (doSkip) {
-#if DEBUG_ZCFILTEROCC_ASSERT
-            assert(oDocId <= _l1SkipDocId);
-            assert(oDocId <= _l2SkipDocId);
-            assert(oDocId <= _l3SkipDocId);
-            assert(oDocId <= _l4SkipDocId);
-#endif
-        } else if (__builtin_expect(oDocId >= _l1SkipDocId, false)) {
-            // Validate L1 Skip information
-            assert(oDocId == _l1SkipDocId);
-            ZCDECODE(_l1SkipValI, _l1SkipDocIdPos += 1 +);
-            assert(oCompr == _l1SkipDocIdPos);
-            if (__builtin_expect(oDocId >= _l2SkipDocId, false)) {
-                // Validate L2 Skip information
-                assert(oDocId == _l2SkipDocId);
-                ZCDECODE(_l2SkipValI, _l2SkipDocIdPos += 1 +);
-                ZCDECODE(_l2SkipValI, _l2SkipL1SkipPos += 1 +);
-                assert(oCompr = _l2SkipDocIdPos);
-                assert(_l1SkipValI == _l2SkipL1SkipPos);
-                if (__builtin_expect(oDocId >= _l3SkipDocId, false)) {
-                    // Validate L3 Skip information
-                    assert(oDocId == _l3SkipDocId);
-                    ZCDECODE(_l3SkipValI, _l3SkipDocIdPos += 1 +);
-                    ZCDECODE(_l3SkipValI, _l3SkipL1SkipPos += 1 +);
-                    ZCDECODE(_l3SkipValI, _l3SkipL2SkipPos += 1 +);
-                    assert(oCompr = _l3SkipDocIdPos);
-                    assert(_l1SkipValI == _l3SkipL1SkipPos);
-                    assert(_l2SkipValI == _l3SkipL2SkipPos);
-                    if (__builtin_expect(oDocId >= _l4SkipDocId, false)) {
-                        // Validate L4 Skip information
-                        assert(oDocId == _l4SkipDocId);
-                        ZCDECODE(_l4SkipValI, _l4SkipDocIdPos += 1 +);
-                        ZCDECODE(_l4SkipValI, _l4SkipL1SkipPos += 1 +);
-                        ZCDECODE(_l4SkipValI, _l4SkipL2SkipPos += 1 +);
-                        ZCDECODE(_l4SkipValI, _l4SkipL3SkipPos += 1 +);
-                        assert(oCompr = _l4SkipDocIdPos);
-                        assert(_l1SkipValI == _l4SkipL1SkipPos);
-                        assert(_l2SkipValI == _l4SkipL2SkipPos);
-                        assert(_l3SkipValI == _l4SkipL3SkipPos);
-                        ZCDECODE(_l4SkipValI, _l4SkipDocId += 1 +);
-                        assert(_l4SkipDocId <= _lastDocId);
-#if DEBUG_ZCFILTEROCC_PRINTF
-                        printf("L4DecodeV docId=%d docIdPos=%d"
-                               " L1SkipPos=%d L2SkipPos %d L3SkipPos %d\n",
-                               _l4SkipDocId,
-                               (int) (_l4SkipDocIdPos - _valIBase),
-                               (int) (_l4SkipL1SkipPos - _l1SkipValIBase),
-                               (int) (_l4SkipL2SkipPos - _l2SkipValIBase),
-                               (int) (_l4SkipL3SkipPos - _l3SkipValIBase));
-#endif
-                    }
-                    ZCDECODE(_l3SkipValI, _l3SkipDocId += 1 +);
-                    assert(_l3SkipDocId <= _lastDocId);
-                    assert(_l3SkipDocId <= _l4SkipDocId);
-#if DEBUG_ZCFILTEROCC_PRINTF
-                    printf("L3DecodeV docId=%d docIdPos=%d"
-                           " L1SkipPos=%d L2SkipPos %d\n",
-                           _l3SkipDocId,
-                           (int) (_l3SkipDocIdPos - _valIBase),
-                           (int) (_l3SkipL1SkipPos - _l1SkipValIBase),
-                           (int) (_l3SkipL2SkipPos - _l2SkipValIBase));
-#endif
-                }
-                ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 +);
-                assert(_l2SkipDocId <= _lastDocId);
-                assert(_l2SkipDocId <= _l4SkipDocId);
-                assert(_l2SkipDocId <= _l3SkipDocId);
-#if DEBUG_ZCFILTEROCC_PRINTF
-                printf("L2DecodeV docId=%d docIdPos=%d L1SkipPos=%d\n",
-                       _l2SkipDocId,
-                       (int) (_l2SkipDocIdPos - _valIBase),
-                       (int) (_l2SkipL1SkipPos - _l1SkipValIBase));
-#endif
-            }
-            ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-            assert(_l1SkipDocId <= _lastDocId);
-            assert(_l1SkipDocId <= _l4SkipDocId);
-            assert(_l1SkipDocId <= _l3SkipDocId);
-            assert(_l1SkipDocId <= _l2SkipDocId);
-#if DEBUG_ZCFILTEROCC_PRINTF
-            printf("L1DecodeV docId=%d, docIdPos=%d\n",
-                   _l1SkipDocId,
-                   (int) (_l1SkipDocIdPos - _valIBase));
-#endif
-        }
-        ZCDECODE(oCompr, oDocId += 1 +);
-#if DEBUG_ZCFILTEROCC_PRINTF
-        printf("Decode docId=%d\n",
-               oDocId);
-#endif
-    }
-    _valI = oCompr;
-    setDocId(oDocId);
-    return;
-}
-
-
-template <bool doSkip>
-void
-FakeFilterOccZCSkipArrayIterator<doSkip>::doUnpack(uint32_t docId)
-{
-    if (_matchData.size() != 1 || getUnpacked()) {
-        return;
-    }
-    assert(docId == getDocId());
-    _matchData[0]->reset(docId);
-    setUnpacked();
-}
-
-
-template <bool doSkip>
 SearchIterator *
-FakeZcSkipFilterOcc<doSkip>::
-createIterator(const TermFieldMatchDataArray &matchData) const
+FakeZcSkipFilterOcc::createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new FakeFilterOccZCSkipArrayIterator<doSkip>(_compressed.first,
-            0,
-            _posting_params._doc_id_limit,
-            matchData);
+    return create_zc_posocc_iterator(true, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
 template <bool bigEndian>
 class FakeEGCompr64PosOcc : public FakeZcFilterOcc
 {
+    search::index::PostingListCounts _counts;
 public:
     FakeEGCompr64PosOcc(const FakeWord &fw);
     ~FakeEGCompr64PosOcc() override;
@@ -1120,6 +571,8 @@ FakeEGCompr64PosOcc<bigEndian>::FakeEGCompr64PosOcc(const FakeWord &fw)
                       bigEndian ? ".zcposoccbe" : ".zcposoccle")
 {
     setup(fw);
+    _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 
@@ -1149,14 +602,14 @@ SearchIterator *
 FakeEGCompr64PosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new ZcRareWordPosOccIterator<bigEndian, true>(Position(_compressed.first, 0),
-                                                         _compressedBits, _posting_params._doc_id_limit, false, &_fieldsParams, matchData);
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
 template <bool bigEndian>
 class FakeEG2Compr64PosOcc : public FakeZcFilterOcc
 {
+    search::index::PostingListCounts _counts;
 public:
     FakeEG2Compr64PosOcc(const FakeWord &fw);
     ~FakeEG2Compr64PosOcc() override;
@@ -1172,6 +625,8 @@ FakeEG2Compr64PosOcc<bigEndian>::FakeEG2Compr64PosOcc(const FakeWord &fw)
                       bigEndian ? ".zc4posoccbe" : ".zc4posoccle")
 {
     setup(fw);
+    _counts._bitLength = _compressedBits;
+    _counts._numDocs = _hitDocs;
 }
 
 
@@ -1202,8 +657,7 @@ SearchIterator *
 FakeEG2Compr64PosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new ZcRareWordPosOccIterator<bigEndian, false>(Position(_compressed.first, 0),
-                                                          _compressedBits, _posting_params._doc_id_limit, false, &_fieldsParams, matchData);
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
@@ -1260,11 +714,7 @@ SearchIterator *
 FakeZcSkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new ZcPosOccIterator<bigEndian, true>(Position(_compressed.first, 0), _compressedBits, _posting_params._doc_id_limit, false,
-                                           static_cast<uint32_t>(-1),
-                                           _counts,
-                                           &_fieldsParams,
-                                           matchData);
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 
@@ -1355,7 +805,7 @@ class FakeZc5NoSkipPosOccCf : public FakeZc4SkipPosOcc<bigEndian>
 public:
     FakeZc5NoSkipPosOccCf(const FakeWord &fw)
         : FakeZc4SkipPosOcc<bigEndian>(fw, Zc4PostingParams(disable_skip, disable_chunking, fw._docIdLimit, true, true, true),
-                                       (bigEndian ? ".zc5noskipposoccbe.cf" : "zc5noskipposoccle.cf"))
+                                       (bigEndian ? ".zc5noskipposoccbe.cf" : ".zc5noskipposoccle.cf"))
     {
     }
 };

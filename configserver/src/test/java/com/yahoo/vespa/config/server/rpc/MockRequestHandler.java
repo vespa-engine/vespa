@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.ConfigKey;
@@ -88,6 +89,11 @@ public class MockRequestHandler implements RequestHandler, ReloadHandler, Tenant
     @Override
     public ApplicationId resolveApplicationId(String hostName) {
         return ApplicationId.defaultId();
+    }
+
+    @Override
+    public Set<FileReference> listFileReferences(ApplicationId applicationId) {
+        return Set.of();
     }
 
     @Override

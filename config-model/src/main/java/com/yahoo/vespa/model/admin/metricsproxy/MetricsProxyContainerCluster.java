@@ -4,17 +4,17 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
-import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
+import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
-import ai.vespa.metricsproxy.metric.ExternalMetrics;
+import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
+import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcServer;
-import ai.vespa.metricsproxy.core.MonitoringConfig;
-import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import ai.vespa.metricsproxy.service.ConfigSentinelClient;
+import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -25,7 +25,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.nio.file.Path;
@@ -83,7 +82,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
 
-        setRpcServerEnabled(false);
+        setMessageBusEnabled(false);
+        setRpcServerEnabled(true);
         addDefaultHandlersExceptStatus();
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
@@ -129,7 +129,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 .orElse(emptyMetricSet());
     }
 
-    // Returns the metricConsumers from services.xml
+    // Returns the metrics consumers from services.xml
     private Map<String, MetricsConsumer> getUserMetricsConsumers() {
         return getAdmin()
                 .map(admin -> admin.getUserMetrics().getConsumers())

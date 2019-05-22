@@ -323,7 +323,8 @@ Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter &wri
 {
     vespalib::string dir = _outDir + "/" + index.getName();
 
-    if (!writer.open(dir + "/", 64, 262144, _dynamicKPosIndexFormat, false, index.getSchema(),
+    if (!writer.open(dir + "/", 64, 262144, _dynamicKPosIndexFormat,
+                     index.use_experimental_posting_list_format(), index.getSchema(),
                      index.getIndex(), _tuneFileIndexing._write, _fileHeaderContext)) {
         throw IllegalArgumentException(make_string("Could not open output posocc + dictionary in %s", dir.c_str()));
     }

@@ -13,6 +13,8 @@ import com.yahoo.prelude.fastsearch.test.fs4mock.MockBackend;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFS4ResourcePool;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.rpc.MockRpcResourcePoolBuilder;
+import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.searchchain.Execution;
 
@@ -31,6 +33,7 @@ class FastSearcherTester {
     public static final String selfHostname = HostName.getLocalhost();
 
     private final MockFS4ResourcePool mockFS4ResourcePool;
+    private final RpcResourcePool mockRpcResourcePool;
     private final FastSearcher fastSearcher;
     private final MockDispatcher mockDispatcher;
     private final VipStatus vipStatus;
@@ -53,7 +56,10 @@ class FastSearcherTester {
         vipStatus = new VipStatus(b.build());
 
         mockFS4ResourcePool = new MockFS4ResourcePool();
-        mockDispatcher = new MockDispatcher(clusterId, searchNodes, mockFS4ResourcePool, containerClusterSize, vipStatus);
+        var builder = new MockRpcResourcePoolBuilder();
+        searchNodes.forEach(node -> builder.connection(node.key()));
+        mockRpcResourcePool = builder.build();
+        mockDispatcher = MockDispatcher.create(searchNodes, mockFS4ResourcePool, mockRpcResourcePool, containerClusterSize, vipStatus);
         fastSearcher = new FastSearcher(new MockBackend(selfHostname, 0L, true),
                                         mockFS4ResourcePool,
                                         mockDispatcher,

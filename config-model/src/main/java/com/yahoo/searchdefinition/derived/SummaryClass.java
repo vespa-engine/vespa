@@ -27,12 +27,12 @@ public class SummaryClass extends Derived {
     public static final String DOCUMENT_ID_FIELD = "documentid";
 
     /** True if this summary class needs to access summary information on disk */
-    private boolean accessingDiskSummary = false;
+    private boolean accessingDiskSummary=false;
 
     /** The summary fields of this indexed by name */
     private Map<String,SummaryClassField> fields = new java.util.LinkedHashMap<>();
 
-    private DeployLogger deployLogger;
+    private DeployLogger deployLogger = new BaseDeployLogger();
 
     private final Random random = new Random(7);
 
