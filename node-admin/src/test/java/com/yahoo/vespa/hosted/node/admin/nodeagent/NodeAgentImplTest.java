@@ -680,7 +680,7 @@ public class NodeAgentImplTest {
                 .replaceAll("\\s", "")
                 .replaceAll("\\n", "");
 
-        String[] expectedCommand = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19094",  "setExtraMetrics", expectedMetrics};
+        String[] expectedCommand = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19095",  "setExtraMetrics", expectedMetrics};
         doAnswer(invocation -> {
             NodeAgentContext calledContainerName = (NodeAgentContext) invocation.getArguments()[0];
             long calledTimeout = (long) invocation.getArguments()[1];
@@ -691,7 +691,7 @@ public class NodeAgentImplTest {
                     .replaceAll("([0-9]+\\.[0-9]{1,3})([0-9]*)", "$1"); // Only keep the first 3 decimals
 
             // TODO: Remove when old metrics proxy is discontinued.
-            calledCommand[3] = calledCommand[3].replaceFirst("19091", "19094");
+            calledCommand[3] = calledCommand[3].replaceFirst("19091", "19095");
 
             assertEquals(context, calledContainerName);
             assertEquals(5L, calledTimeout);

@@ -88,6 +88,7 @@ public abstract class Container extends AbstractService implements
         this.index = index;
 
         if (getHttp() == null) {
+            // TODO Vespa 8: set to 1. The second (health) port has not been used since Vespa 6 or earlier.
             numHttpServerPorts = 2;
             addChild(defaultHttpServer);
         } else if (getHttp().getHttpServer() == null) {
@@ -240,7 +241,8 @@ public abstract class Container extends AbstractService implements
      * @return the number of ports needed by the Container except those reserved manually(reservePortPrepended)
      */
     public int getPortCount() {
-        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2; // TODO remove +2, only here to keep irrelevant unit tests from failing.
+        // TODO Vespa 8: remove +2, only here for historical reasons
+        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2;
         return httpPorts + numMessageBusPorts() + numRpcPorts();
     }
 
