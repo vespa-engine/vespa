@@ -29,6 +29,7 @@ public class LogRetriever {
     }
 
     private static class ProxyResponse extends HttpResponse {
+
         private final org.apache.http.HttpResponse clientResponse;
 
         private ProxyResponse(org.apache.http.HttpResponse clientResponse) {
