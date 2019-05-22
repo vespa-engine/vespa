@@ -196,11 +196,10 @@ public class SystemUpgraderTest {
 
         // System upgrades in zone 1:
         systemUpgrader.maintain();
-        List<SystemApplication> allExceptZoneAndConfig = List.of(SystemApplication.configServerHost,
-                                                                 SystemApplication.proxyHost);
-        completeUpgrade(allExceptZoneAndConfig, version2, zone1);
-        systemUpgrader.maintain();
-        completeUpgrade(SystemApplication.configServer, version2, zone1);
+        List<SystemApplication> allExceptZone = List.of(SystemApplication.configServerHost,
+                                                        SystemApplication.configServer,
+                                                        SystemApplication.proxyHost);
+        completeUpgrade(allExceptZone, version2, zone1);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);
         convergeServices(SystemApplication.zone, zone1);
@@ -208,9 +207,7 @@ public class SystemUpgraderTest {
 
         // zone 2 and 3:
         systemUpgrader.maintain();
-        completeUpgrade(allExceptZoneAndConfig, version2, zone2, zone3);
-        systemUpgrader.maintain();
-        completeUpgrade(SystemApplication.configServer, version2, zone2, zone3);
+        completeUpgrade(allExceptZone, version2, zone2, zone3);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
         convergeServices(SystemApplication.zone, zone2, zone3);
@@ -218,9 +215,7 @@ public class SystemUpgraderTest {
 
         // zone 4:
         systemUpgrader.maintain();
-        completeUpgrade(allExceptZoneAndConfig, version2, zone4);
-        systemUpgrader.maintain();
-        completeUpgrade(SystemApplication.configServer, version2, zone4);
+        completeUpgrade(allExceptZone, version2, zone4);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone4);
 

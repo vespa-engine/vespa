@@ -22,7 +22,7 @@ public enum SystemApplication {
 
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
-    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config, configServerHost),
+    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
     zone(ApplicationId.from("hosted-vespa", "routing", "default"), Set.of(NodeType.proxy, NodeType.host),
          configServerHost, proxyHost, configServer);
 
