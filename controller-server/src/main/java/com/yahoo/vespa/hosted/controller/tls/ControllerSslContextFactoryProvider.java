@@ -56,6 +56,8 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
 
     /** Create a SslContextFactory backed by an in-memory key and trust store */
     private SslContextFactory createSslContextFactory(int port) {
+        // TODO Use DefaultTlsContext to configure SslContextFactory (ensure that cipher/protocol configuration is same across all TLS endpoints).
+
         SslContextFactory factory = new SslContextFactory();
         if (port != 443) {
             factory.setWantClientAuth(true);
@@ -63,6 +65,7 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
         factory.setTrustStore(truststore);
         factory.setKeyStore(keystore);
         factory.setKeyStorePassword("");
+        factory.setExcludeProtocols("TLSv1.3"); // TLSv1.3 is broken is multiple OpenJDK 11 versions
         factory.setEndpointIdentificationAlgorithm(null); // disable https hostname verification of clients (must be disabled when using Athenz x509 certificates)
         return factory;
     }

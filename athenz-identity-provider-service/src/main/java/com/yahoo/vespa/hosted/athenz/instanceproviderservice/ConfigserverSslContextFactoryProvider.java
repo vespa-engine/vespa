@@ -109,6 +109,9 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                                                                  AthenzService configserverIdentity,
                                                                  ZtsClient ztsClient,
                                                                  AthenzProviderServiceConfig.Zones zoneConfig) {
+
+        // TODO Use DefaultTlsContext to configure SslContextFactory (ensure that cipher/protocol configuration is same across all TLS endpoints)
+
         SslContextFactory factory = new SslContextFactory();
 
         factory.setWantClientAuth(true);
@@ -124,6 +127,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                         .orElseGet(() -> updateKeystore(configserverIdentity, generateKeystorePassword(), keyProvider, ztsClient, zoneConfig));
         factory.setKeyStore(keyStore);
         factory.setKeyStorePassword("");
+        factory.setExcludeProtocols("TLSv1.3"); // TLSv1.3 is broken is multiple OpenJDK 11 versions
         factory.setEndpointIdentificationAlgorithm(null); // disable https hostname verification of clients (must be disabled when using Athenz x509 certificates)
         return factory;
     }
