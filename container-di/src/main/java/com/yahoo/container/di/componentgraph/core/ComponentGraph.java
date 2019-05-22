@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.container.di.componentgraph.core.Exceptions.removeStackTrace;
+import static java.util.stream.Collectors.joining;
 
 /**
  * @author Tony Vaagenes
@@ -393,7 +394,8 @@ public class ComponentGraph {
             });
 
             if (ready.isEmpty()) {
-                throw new IllegalStateException("There is a cycle in the component injection graph.");
+                String cycle = notReady.stream().map(node -> node.componentId().stringValue()).collect(joining(",", "[", "]"));
+                throw new IllegalStateException("There is a cycle in the component injection graph: " + cycle);
             }
 
             ready.forEach(node -> node.usedComponents()
