@@ -723,6 +723,8 @@ class FakeZc4SkipPosOcc : public FakeZcFilterOcc
 {
     search::index::PostingListCounts _counts;
 protected:
+    bool _unpack_normal_features;
+    bool _unpack_cheap_features;
     FakeZc4SkipPosOcc(const FakeWord &fw, const Zc4PostingParams &posting_params, const char *name_suffix);
 public:
     FakeZc4SkipPosOcc(const FakeWord &fw);
@@ -730,12 +732,17 @@ public:
     size_t bitSize() const override;
     bool hasWordPositions() const override;
     SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
+    bool enable_unpack_normal_features() const override { return _unpack_normal_features; }
+    bool enable_unpack_cheap_features() const override { return _unpack_cheap_features; }
 };
 
 
 template <bool bigEndian>
 FakeZc4SkipPosOcc<bigEndian>::FakeZc4SkipPosOcc(const FakeWord &fw, const Zc4PostingParams &posting_params, const char *name_suffix)
-    : FakeZcFilterOcc(fw, bigEndian, posting_params, name_suffix)
+    : FakeZcFilterOcc(fw, bigEndian, posting_params, name_suffix),
+      _counts(),
+      _unpack_normal_features(true),
+      _unpack_cheap_features(true)
 {
     setup(fw);
     _counts._bitLength = _compressedBits;
@@ -774,7 +781,7 @@ SearchIterator *
 FakeZc4SkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData, _unpack_normal_features, _unpack_cheap_features).release();
 }
 
 template <bool bigEndian>
@@ -788,6 +795,28 @@ public:
     }
 };
 
+class FakeZc4SkipPosOccCfNoNormalUnpack : public FakeZc4SkipPosOcc<true>
+{
+public:
+    FakeZc4SkipPosOccCfNoNormalUnpack(const FakeWord &fw)
+        : FakeZc4SkipPosOcc<true>(fw, Zc4PostingParams(force_skip, disable_chunking, fw._docIdLimit, false, true, true),
+                                  ".zc4skipposoccbe.cf.nnu")
+    {
+        _unpack_normal_features = false;
+    }
+};
+
+class FakeZc4SkipPosOccCfNoCheapUnpack : public FakeZc4SkipPosOcc<true>
+{
+public:
+    FakeZc4SkipPosOccCfNoCheapUnpack(const FakeWord &fw)
+        : FakeZc4SkipPosOcc<true>(fw, Zc4PostingParams(force_skip, disable_chunking, fw._docIdLimit, false, true, true),
+                                  ".zc4skipposoccbe.cf.ncu")
+    {
+        _unpack_cheap_features = false;
+    }
+};
+
 template <bool bigEndian>
 class FakeZc4NoSkipPosOccCf : public FakeZc4SkipPosOcc<bigEndian>
 {
@@ -796,6 +825,28 @@ public:
         : FakeZc4SkipPosOcc<bigEndian>(fw, Zc4PostingParams(disable_skip, disable_chunking, fw._docIdLimit, false, true, true),
                                        (bigEndian ? ".zc4noskipposoccbe.cf" : "zc4noskipposoccle.cf"))
     {
+    }
+};
+
+class FakeZc4NoSkipPosOccCfNoNormalUnpack : public FakeZc4SkipPosOcc<true>
+{
+public:
+    FakeZc4NoSkipPosOccCfNoNormalUnpack(const FakeWord &fw)
+        : FakeZc4SkipPosOcc<true>(fw, Zc4PostingParams(disable_skip, disable_chunking, fw._docIdLimit, false, true, true),
+                                  ".zc4noskipposoccbe.cf.nnu")
+    {
+        _unpack_normal_features = false;
+    }
+};
+
+class FakeZc4NoSkipPosOccCfNoCheapUnpack : public FakeZc4SkipPosOcc<true>
+{
+public:
+    FakeZc4NoSkipPosOccCfNoCheapUnpack(const FakeWord &fw)
+        : FakeZc4SkipPosOcc<true>(fw, Zc4PostingParams(disable_skip, disable_chunking, fw._docIdLimit, false, true, true),
+                                  ".zc4noskipposoccbe.cf.ncu")
+    {
+        _unpack_cheap_features = false;
     }
 };
 
@@ -859,8 +910,28 @@ initSkipPos0lecf(std::make_pair("Zc4SkipPosOccLE.cf",
                                 makeFPFactory<FPFactoryT<FakeZc4SkipPosOccCf<false> > >));
 
 static FPFactoryInit
+initSkipPos0becfnnu(std::make_pair("Zc4SkipPosOccBE.cf.nnu",
+                                makeFPFactory<FPFactoryT<FakeZc4SkipPosOccCfNoNormalUnpack > >));
+
+
+static FPFactoryInit
+initSkipPos0becfncu(std::make_pair("Zc4SkipPosOccBE.cf.ncu",
+                                makeFPFactory<FPFactoryT<FakeZc4SkipPosOccCfNoCheapUnpack > >));
+
+
+static FPFactoryInit
 initNoSkipPos0becf(std::make_pair("Zc4NoSkipPosOccBE.cf",
                                   makeFPFactory<FPFactoryT<FakeZc4NoSkipPosOccCf<true> > >));
+
+
+static FPFactoryInit
+initNoSkipPos0becfnnu(std::make_pair("Zc4NoSkipPosOccBE.cf.nnu",
+                                  makeFPFactory<FPFactoryT<FakeZc4NoSkipPosOccCfNoNormalUnpack > >));
+
+
+static FPFactoryInit
+initNoSkipPos0becfncu(std::make_pair("Zc4NoSkipPosOccBE.cf.ncu",
+                                  makeFPFactory<FPFactoryT<FakeZc4NoSkipPosOccCfNoCheapUnpack > >));
 
 
 static FPFactoryInit

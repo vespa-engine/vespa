@@ -55,4 +55,16 @@ FakePosting::has_cheap_features() const
     return false;
 }
 
+bool
+FakePosting::enable_unpack_normal_features() const
+{
+    return true;
+}
+
+bool
+FakePosting::enable_unpack_cheap_features() const
+{
+    return true;
+}
+
 }

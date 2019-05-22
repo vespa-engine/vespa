@@ -217,9 +217,9 @@ makeSomePostings(FPFactory *postingFactory,
             std::unique_ptr<SearchIterator> iterator(posting->createIterator(tfmda));
             if (posting->hasWordPositions()) {
                 if (stride != 0) {
-                    word->validate(iterator.get(), tfmda, stride, posting->has_cheap_features(), verbose);
+                    word->validate(iterator.get(), tfmda, stride, posting->enable_unpack_normal_features(), posting->has_cheap_features() && posting->enable_unpack_cheap_features(), verbose);
                 } else {
-                    word->validate(iterator.get(), tfmda, posting->has_cheap_features(), verbose);
+                    word->validate(iterator.get(), tfmda, posting->enable_unpack_normal_features(), posting->has_cheap_features() && posting->enable_unpack_cheap_features(), verbose);
                 }
             } else {
                 word->validate(iterator.get(), verbose);
