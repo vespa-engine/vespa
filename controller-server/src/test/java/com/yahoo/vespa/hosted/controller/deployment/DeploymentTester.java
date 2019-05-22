@@ -140,8 +140,8 @@ public class DeploymentTester {
         readyJobTrigger().maintain();
     }
 
-    /** Dispatch all pending name services requests */
-    public void updateDns() {
+    /** Flush all pending name services requests */
+    public void flushDnsRequests() {
         nameServiceDispatcher.run();
         assertTrue("All name service requests dispatched",
                    controller().curator().readNameServiceQueue().requests().isEmpty());
@@ -225,7 +225,7 @@ public class DeploymentTester {
             assertFalse(applications().require(application.id()).change().hasTargets());
         }
         if (updateDnsAutomatically) {
-            updateDns();
+            flushDnsRequests();
         }
     }
 

@@ -55,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
+import com.yahoo.vespa.hosted.controller.maintenance.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -115,9 +116,9 @@ public class ApplicationController {
     private final AccessControl accessControl;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
+    private final RoutingPolicies routingPolicies;
     private final Clock clock;
     private final BooleanFlag redirectLegacyDnsFlag;
-
     private final DeploymentTrigger deploymentTrigger;
 
     ApplicationController(Controller controller, CuratorDb curator,
@@ -130,6 +131,7 @@ public class ApplicationController {
         this.accessControl = accessControl;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
+        this.routingPolicies = new RoutingPolicies(controller);
         this.clock = clock;
         this.redirectLegacyDnsFlag = Flags.REDIRECT_LEGACY_DNS_NAMES.bindTo(controller.flagSource());
 
@@ -327,6 +329,7 @@ public class ApplicationController {
                 cnames = app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).collect(Collectors.toSet());
                 // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
                 app.rotation().map(RotationId::asString).ifPresent(cnames::add);
+
                 // Update application with information from application package
                 if (   ! preferOldestVersion
                     && ! application.get().deploymentJobs().deployedInternally()
@@ -422,6 +425,11 @@ public class ApplicationController {
         ConfigServer.PreparedApplication preparedApplication =
                 configServer.deploy(deploymentId, deployOptions, cnames, rotationNames,
                                     applicationPackage.zippedContent());
+
+        // Refresh routing policies on successful deployment. At this point we can safely assume that the config server
+        // has allocated load balancers for the deployment.
+        routingPolicies.refresh(application, zone);
+
         return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                   applicationPackage.zippedContent().length);
     }
@@ -643,9 +651,10 @@ public class ApplicationController {
     private LockedApplication deactivate(LockedApplication application, ZoneId zone) {
         try {
             configServer.deactivate(new DeploymentId(application.get().id(), zone));
-        }
-        catch (NotFoundException ignored) {
+        } catch (NotFoundException ignored) {
             // ok; already gone
+        } finally {
+            routingPolicies.refresh(application.get().id(), zone);
         }
         return application.withoutDeploymentIn(zone);
     }
