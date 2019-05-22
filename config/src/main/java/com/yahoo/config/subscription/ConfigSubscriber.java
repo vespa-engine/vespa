@@ -262,10 +262,10 @@ public class ConfigSubscriber {
                 throwIfExceptionSet(subscription);
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
                 if (currentGen == null) currentGen = config.getGeneration();
-                if ( ! currentGen.equals(config.getGeneration())) allGenerationsTheSame = false;
-                allGenerationsChanged = allGenerationsChanged && config.isGenerationChanged();
-                if (config.isConfigChanged()) anyConfigChanged = true;
-                internalRedeployOnly = internalRedeployOnly && config.isInternalRedeploy();
+                allGenerationsTheSame &= currentGen.equals(config.getGeneration());
+                allGenerationsChanged &= config.isGenerationChanged();
+                anyConfigChanged      |= config.isConfigChanged();
+                internalRedeployOnly  &= config.isInternalRedeploy();
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
             reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
