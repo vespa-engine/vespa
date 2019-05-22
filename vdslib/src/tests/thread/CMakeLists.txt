@@ -4,4 +4,5 @@ vespa_add_library(vdslib_testthread
     taskschedulertest.cpp
     DEPENDS
     vdslib
+    gtest
 )
