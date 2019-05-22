@@ -128,7 +128,7 @@ RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) cons
         // Should we catch this in parsing?
     if (expr.size() == 0) return ResultList(Result::True);
     try {
-        std::basic_regex<char> expression(expr.data(), expr.size());
+        std::regex expression(expr.data(), expr.size());
         return ResultList(Result::get(std::regex_search(val.c_str(), val.c_str() + val.size(), expression)));
     } catch (std::regex_error &) {
         return ResultList(Result::False);

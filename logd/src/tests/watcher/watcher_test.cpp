@@ -22,7 +22,7 @@ using vespalib::ThreadStackExecutor;
 using vespalib::makeLambdaTask;
 using namespace std::chrono_literals;
 
-std::basic_regex<char> rotated_log(R"(vespa.log-[0-9]*-[0-9]*-[0-9]*\.[0-9]*-[0-9]*-[0-9]*)");
+std::regex rotated_log(R"(vespa.log-[0-9]*-[0-9]*-[0-9]*\.[0-9]*-[0-9]*-[0-9]*)");
 
 namespace logdemon {
 
