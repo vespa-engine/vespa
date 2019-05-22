@@ -12,6 +12,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Optional;
 
+/**
+ * @author olaaun
+ */
 public class LogRetriever {
 
     private final HttpClient httpClient = HttpClientBuilder.create().build();
@@ -45,4 +48,5 @@ public class LogRetriever {
             clientResponse.getEntity().writeTo(outputStream);
         }
     }
+
 }

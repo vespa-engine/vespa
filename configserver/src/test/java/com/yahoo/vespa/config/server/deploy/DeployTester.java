@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -126,8 +127,9 @@ public class DeployTester {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           new ProvisionerAdapter(provisioner),
                                                           new OrchestratorMock(),
-                                                          clock,
-                                                          configserverConfig);
+                                                          configserverConfig,
+                                                          new LogRetriever(),
+                                                          clock);
     }
 
     public Tenant tenant() {
