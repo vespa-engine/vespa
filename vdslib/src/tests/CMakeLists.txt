@@ -8,6 +8,8 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
     DEPENDS
     vdslib_bucketdistributiontest
     vdslib_containertest
+    vdslib_teststate
+    vdslib_testthread
     gtest
 )
 
@@ -22,8 +24,6 @@ vespa_add_executable(vdslib_testrunner_app TEST
     testrunner.cpp
     DEPENDS
     vdslib_testdistribution
-    vdslib_teststate
-    vdslib_testthread
 )
 
 # TODO: Test with a larger chunk size to parallelize test suite runs 
