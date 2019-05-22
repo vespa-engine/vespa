@@ -456,7 +456,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
         ZoneId zone = id.type().zone(controller.system());
-        if (controller.applications().require(id.application()).deployments().containsKey(zone))
+        if (deployment(id.application(), id.type()).isPresent())
             try {
                 logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
                 List<LogEntry> entries = new ArrayList<>();
@@ -566,6 +566,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the real application with the given id. */
     private Application application(ApplicationId id) {
+        controller.applications().lockOrThrow(id, __ -> { }); // Memory fence.
         return controller.applications().require(id);
     }
 
