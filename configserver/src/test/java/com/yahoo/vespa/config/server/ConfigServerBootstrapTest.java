@@ -60,7 +60,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host2", "host3");
         DeployTester tester = new DeployTester(configserverConfig, provisioner);
         tester.deployApp("src/test/apps/hosted/");
 
@@ -93,7 +93,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host2", "host3");
         DeployTester tester = new DeployTester(configserverConfig, provisioner);
         tester.deployApp("src/test/apps/hosted/");
 
