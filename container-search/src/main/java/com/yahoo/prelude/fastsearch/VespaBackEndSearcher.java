@@ -4,7 +4,6 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.collections.TinyIdentitySet;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.Packet;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -167,17 +166,13 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
             return new Result(query);
 
-        Result result = null;
+        Result result = doSearch2(query, execution);
+        if (isLoggingFine())
+            getLogger().fine("Result NOT retrieved from cache");
 
-        if (result == null) {
-            result = doSearch2(query, execution);
-            if (isLoggingFine())
-                getLogger().fine("Result NOT retrieved from cache");
-
-            if (query.getTraceLevel() >= 1)
-                query.trace(getName() + " dispatch response: " + result, false, 1);
-            result.trace(getName());
-        }
+        if (query.getTraceLevel() >= 1)
+            query.trace(getName() + " dispatch response: " + result, false, 1);
+        result.trace(getName());
         return result;
     }
 
@@ -231,7 +226,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    static void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
+    void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
         if ((query.getTraceLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
 
         StringBuilder s = new StringBuilder();
@@ -275,7 +270,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" ranking.queryCache=true");
         }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
-            s.append(" sessionId=").append(query.getSessionId());
+            s.append(" sessionId=").append(query.getSessionId(getServerId()));
         }
 
         List<Grouping> grouping = GroupingExecutor.getGroupingList(query);
