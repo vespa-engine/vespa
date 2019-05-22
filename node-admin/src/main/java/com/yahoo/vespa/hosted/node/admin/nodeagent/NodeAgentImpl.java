@@ -608,7 +608,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // TODO: Clean up and inline method when old metrics proxy has been discontinued.
     private void runPushMetricsCommand(NodeAgentContext context, String wrappedMetrics, boolean newMetricsProxy) {
-        int port = newMetricsProxy ? 19094 : 19091;
+        int port = newMetricsProxy ? 19095 : 19091;
         String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:" + port,  "setExtraMetrics", wrappedMetrics};
         try {
             dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
