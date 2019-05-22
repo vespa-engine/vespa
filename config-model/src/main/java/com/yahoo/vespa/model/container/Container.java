@@ -164,18 +164,19 @@ public abstract class Container extends AbstractService implements
     }
 
     protected void tagServers() {
+        int offset = 0;
         if (numHttpServerPorts > 0) {
-            portsMeta.on(0).tag("http").tag("query").tag("external").tag("state");
+            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
         }
 
         for (int i = 1; i < numHttpServerPorts; i++)
-            portsMeta.on(i).tag("http").tag("external");
+            portsMeta.on(offset++).tag("http").tag("external");
 
         if (messageBusEnabled()) {
-            portsMeta.on(numHttpServerPorts).tag("rpc").tag("messaging");
+            portsMeta.on(offset++).tag("rpc").tag("messaging");
         }
         if (rpcServerEnabled()) {
-            portsMeta.on(numHttpServerPorts + 1).tag("rpc").tag("admin");
+            portsMeta.on(offset++).tag("rpc").tag("admin");
         }
     }
 
@@ -260,7 +261,7 @@ public abstract class Container extends AbstractService implements
             suffixes[off++] = "messaging";
         }
         if (rpcServerEnabled()) {
-            suffixes[off++] = "rpc";
+            suffixes[off++] = "rpc/admin";
         }
         while (off < n) {
             suffixes[off] = "unused/" + off;
@@ -285,14 +286,14 @@ public abstract class Container extends AbstractService implements
         return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + numMessageBusPorts()) : 0;
     }
 
-    private int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }
+    protected int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }
 
 
     private int getMessagingPort() {
         return messageBusEnabled() ? getRelativePort(numHttpServerPorts) : 0;
     }
 
-    private int numMessageBusPorts() { return messageBusEnabled() ? 1 : 0; }
+    protected int numMessageBusPorts() { return messageBusEnabled() ? 1 : 0; }
 
     @Override
     public int getHealthPort()  {

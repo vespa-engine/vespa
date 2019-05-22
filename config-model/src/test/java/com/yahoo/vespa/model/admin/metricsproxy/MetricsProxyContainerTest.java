@@ -60,19 +60,32 @@ public class MetricsProxyContainerTest {
     }
 
     @Test
-    public void rpc_server_is_running_on_expected_port() {
+    public void metrics_rpc_server_is_running_on_expected_port() {
         VespaModel model = getModel(servicesWithContent());
-
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
-        int rpcPort = container.metricsRpcPortOffset();
-        assertTrue(container.getPortsMeta().getTagsAt(rpcPort).contains("rpc"));
-        assertTrue(container.getPortsMeta().getTagsAt(rpcPort).contains("metrics"));
+        int offset = container.metricsRpcPortOffset();
+        assertEquals(2, container.getPortsMeta().getTagsAt(offset).size());
+        assertTrue(container.getPortsMeta().getTagsAt(offset).contains("rpc"));
+        assertTrue(container.getPortsMeta().getTagsAt(offset).contains("metrics"));
 
-        assertEquals("rpc/metrics", container.getPortSuffixes()[rpcPort]);
+        assertEquals("rpc/metrics", container.getPortSuffixes()[offset]);
 
         RpcConnectorConfig config = getRpcConnectorConfig(model);
-        assertEquals(19094, config.port());
+        assertEquals(19095, config.port());
+    }
+
+    @Test
+    public void admin_rpc_server_is_running() {
+        VespaModel model = getModel(servicesWithContent());
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
+
+        int offset = container.metricsRpcPortOffset() - 1;
+        assertEquals(2, container.getPortsMeta().getTagsAt(offset).size());
+        assertTrue(container.getPortsMeta().getTagsAt(offset).contains("rpc"));
+        assertTrue(container.getPortsMeta().getTagsAt(offset).contains("admin"));
+
+        assertEquals("rpc/admin", container.getPortSuffixes()[offset]);
     }
 
     @Test

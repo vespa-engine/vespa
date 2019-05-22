@@ -60,7 +60,7 @@ public class MetricsProxyContainer extends Container implements
     }
 
     int metricsRpcPortOffset() {
-        return numHttpServerPorts;
+        return numHttpServerPorts + numMessageBusPorts() + numRpcPorts();
     }
 
     @Override
@@ -92,7 +92,7 @@ public class MetricsProxyContainer extends Container implements
     @Override
     protected void tagServers() {
         super.tagServers();
-        portsMeta.on(numHttpServerPorts).tag("rpc").tag("metrics");
+        portsMeta.on(metricsRpcPortOffset()).tag("rpc").tag("metrics");
     }
 
     @Override
