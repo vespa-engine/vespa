@@ -71,12 +71,19 @@ BucketOwnership
 BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
 {
     if (hasPendingClusterState()) {
-        const lib::ClusterState& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
+        const auto& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
         if (!_distributorComponent.ownsBucketInState(state, b)) {
             return BucketOwnership::createNotOwnedInState(state);
         }
     }
     return BucketOwnership::createOwned();
+}
+
+const lib::ClusterState*
+BucketDBUpdater::pendingClusterStateOrNull(const document::BucketSpace& space) const {
+    return (hasPendingClusterState()
+            ? _pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(space).get()
+            : nullptr);
 }
 
 void
@@ -121,7 +128,7 @@ BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
 void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState,
-        [[maybe_unused]] bool is_distribution_config_change)
+        bool is_distribution_config_change)
 {
     const bool move_to_read_only_db = shouldDeferStateEnabling();
     const char* up_states = _distributorComponent.getDistributor().getStorageNodeUpStates();
@@ -129,6 +136,16 @@ BucketDBUpdater::removeSuperfluousBuckets(
         const auto& newDistribution(elem.second->getDistribution());
         const auto& oldClusterState(elem.second->getClusterState());
         const auto& new_cluster_state = newState.getDerivedClusterState(elem.first);
+
+        // Running a full DB sweep is expensive, so if the cluster state transition does
+        // not actually indicate that buckets should possibly be removed, we elide it entirely.
+        if (!is_distribution_config_change
+            && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
+        {
+            LOG(debug, "Eliding DB pruning for state transition '%s' -> '%s'",
+                oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
+            continue;
+        }
 
         auto& bucketDb(elem.second->getBucketDatabase());
         auto& readOnlyDb(_distributorComponent.getReadOnlyBucketSpaceRepo().get(elem.first).getBucketDatabase());
@@ -850,6 +867,7 @@ BucketDBUpdater::NodeRemover::process(BucketDatabase::Entry& e)
     for (uint16_t i = 0; i < e->getNodeCount(); i++) {
         Node n(NodeType::STORAGE, e->getNodeRef(i).getNode());
 
+        // TODO replace with intersection hash set of config and cluster state
         if (_state.getNodeState(n).getState().oneOf(_upStates)) {
             remainingCopies.push_back(e->getNodeRef(i));
         }

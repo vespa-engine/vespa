@@ -24,7 +24,6 @@ vespa_add_library(storage_testdistributor TEST
     ownership_transfer_safe_time_point_calculator_test.cpp
     pendingmessagetrackertest.cpp
     persistence_metrics_set_test.cpp
-    putoperationtest.cpp
     removebucketoperationtest.cpp
     removelocationtest.cpp
     removeoperationtest.cpp
@@ -50,6 +49,7 @@ vespa_add_library(storage_gtestdistributor TEST
     bucketdatabasetest.cpp
     bucketdbupdatertest.cpp
     mapbucketdatabasetest.cpp
+    putoperationtest.cpp
     # Fixture etc. dupes with non-gtest runner :
     distributortestutil.cpp
     bucket_db_prune_elision_test.cpp

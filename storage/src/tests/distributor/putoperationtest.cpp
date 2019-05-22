@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config/helper/configgetter.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/distributor.h>
@@ -12,9 +10,8 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <iomanip>
 
 using std::shared_ptr;
@@ -29,79 +26,26 @@ using namespace storage::lib;
 using namespace std::literals::string_literals;
 using document::test::makeDocumentBucket;
 
-namespace storage {
+using namespace ::testing;
 
-namespace distributor {
+namespace storage::distributor {
 
-class PutOperationTest : public CppUnit::TestFixture,
-                         public DistributorTestUtil {
-    CPPUNIT_TEST_SUITE(PutOperationTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testBucketDatabaseGetsSpecialEntryWhenCreateBucketSent);
-    CPPUNIT_TEST(testSendInlineSplitBeforePutIfBucketTooLarge);
-    CPPUNIT_TEST(testDoNotSendInlineSplitIfNotConfigured);
-    CPPUNIT_TEST(testNodeRemovedOnReply);
-    CPPUNIT_TEST(testDoNotSendCreateBucketIfAlreadyPending);
-    CPPUNIT_TEST(testMultipleCopies);
-    CPPUNIT_TEST(testMultipleCopiesEarlyReturnPrimaryNotRequired);
-    CPPUNIT_TEST(testMultipleCopiesEarlyReturnPrimaryRequired);
-    CPPUNIT_TEST(testMultipleCopiesEarlyReturnPrimaryRequiredNotDone);
-    CPPUNIT_TEST_IGNORED(testDoNotRevertOnFailureAfterEarlyReturn);
-    CPPUNIT_TEST(testStorageFailed);
-    CPPUNIT_TEST(testRevertSuccessfulCopiesWhenOneFails);
-    CPPUNIT_TEST(testNoRevertIfRevertDisabled);
-    CPPUNIT_TEST(testNoStorageNodes);
-    CPPUNIT_TEST(testUpdateCorrectBucketOnRemappedPut);
-    CPPUNIT_TEST(testTargetNodes);
-    CPPUNIT_TEST(testDoNotResurrectDownedNodesInBucketDB);
-    CPPUNIT_TEST(sendToRetiredNodesIfNoUpNodesAvailable);
-    CPPUNIT_TEST(replicaImplicitlyActivatedWhenActivationIsNotDisabled);
-    CPPUNIT_TEST(replicaNotImplicitlyActivatedWhenActivationIsDisabled);
-    CPPUNIT_TEST_SUITE_END();
-
-    std::shared_ptr<const DocumentTypeRepo> _repo;
-    const DocumentType* _html_type;
+class PutOperationTest : public Test,
+                         public DistributorTestUtil
+{
+public:
+    document::TestDocMan _testDocMan;
     std::unique_ptr<Operation> op;
 
-protected:
-    void testSimple();
-    void testBucketDatabaseGetsSpecialEntryWhenCreateBucketSent();
-    void testSendInlineSplitBeforePutIfBucketTooLarge();
-    void testDoNotSendInlineSplitIfNotConfigured();
-    void testNodeRemovedOnReply();
-    void testDoNotSendCreateBucketIfAlreadyPending();
-    void testStorageFailed();
-    void testNoReply();
-    void testMultipleCopies();
-    void testRevertSuccessfulCopiesWhenOneFails();
-    void testNoRevertIfRevertDisabled();
-    void testInconsistentChecksum();
-    void testNoStorageNodes();
-    void testMultipleCopiesEarlyReturnPrimaryNotRequired();
-    void testMultipleCopiesEarlyReturnPrimaryRequired();
-    void testMultipleCopiesEarlyReturnPrimaryRequiredNotDone();
-    void testDoNotRevertOnFailureAfterEarlyReturn();
-    void testUpdateCorrectBucketOnRemappedPut();
-    void testBucketNotFound();
-    void testTargetNodes();
-    void testDoNotResurrectDownedNodesInBucketDB();
-    void sendToRetiredNodesIfNoUpNodesAvailable();
-    void replicaImplicitlyActivatedWhenActivationIsNotDisabled();
-    void replicaNotImplicitlyActivatedWhenActivationIsDisabled();
+    ~PutOperationTest() override;
 
-    void doTestCreationWithBucketActivationDisabled(bool disabled);
+    void do_test_creation_with_bucket_activation_disabled(bool disabled);
 
-public:
-    void setUp() override {
-        _repo.reset(
-                new DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>
-                                     ::getConfig("config-doctypes",
-                                                 FileSpec(TEST_PATH("config-doctypes.cfg")))));
-        _html_type = _repo->getDocumentType("text/html");
+    void SetUp() override {
         createLinks();
     };
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
@@ -113,7 +57,7 @@ public:
                       = api::ReturnCode::OK,
                       api::BucketInfo info = api::BucketInfo(1,2,3,4,5))
     {
-        CPPUNIT_ASSERT(!_sender.commands.empty());
+        ASSERT_FALSE(_sender.commands.empty());
         if (idx == -1) {
             idx = _sender.commands.size() - 1;
         } else if (static_cast<size_t>(idx) >= _sender.commands.size()) {
@@ -138,30 +82,25 @@ public:
         op->start(_sender, framework::MilliSecTime(0));
     }
 
-    Document::SP createDummyDocument(const char* ns,
-                                                    const char* id) const
-    {
-        return Document::SP(
-                new Document(*_html_type,
-                             DocumentId(DocIdString(ns, id))));
-
+    const document::DocumentType& doc_type() const {
+        return *_testDocMan.getTypeRepo().getDocumentType("testdoctype1");
     }
 
-    std::shared_ptr<api::PutCommand> createPut(
-            const Document::SP doc) const
-    {
-        return std::shared_ptr<api::PutCommand>(
-                new api::PutCommand(makeDocumentBucket(document::BucketId(0)), doc, 100));
+    Document::SP createDummyDocument(const char* ns, const char* id) const {
+        return std::make_shared<Document>(doc_type(), DocumentId(DocIdString(ns, id)));
+    }
+
+    std::shared_ptr<api::PutCommand> createPut(Document::SP doc) const {
+        return std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), std::move(doc), 100);
     }
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(PutOperationTest);
+PutOperationTest::~PutOperationTest() = default;
 
 document::BucketId
 PutOperationTest::createAndSendSampleDocument(uint32_t timeout) {
     Document::SP
-        doc(new Document(*_html_type,
-                         DocumentId(DocIdString("test", "test"))));
+        doc(new Document(doc_type(), DocumentId(DocIdString("test", "test"))));
 
     document::BucketId id = getExternalOperationHandler().getBucketId(doc->getId());
     addIdealNodes(id);
@@ -186,44 +125,36 @@ typedef bool RequirePrimaryWritten;
 
 }
 
-void
-PutOperationTest::testSimple()
-{
+TEST_F(PutOperationTest, simple) {
     setupDistributor(1, 1, "storage:1 distributor:1");
     createAndSendSampleDocument(180);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Put(BucketId(0x4000000000008b13), "
-                                     "doc:test:test, timestamp 100, size 33) => 0"),
-                         _sender.getCommands(true, true));
+    ASSERT_EQ("Put(BucketId(0x4000000000008b13), "
+              "doc:test:test, timestamp 100, size 36) => 0",
+              _sender.getCommands(true, true));
 
     sendReply();
 
-    CPPUNIT_ASSERT_EQUAL(std::string("PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                                     "timestamp 100) ReturnCode(NONE)"),
-                         _sender.getLastReply());
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-PutOperationTest::testBucketDatabaseGetsSpecialEntryWhenCreateBucketSent()
-{
+TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_sent) {
     setupDistributor(2, 1, "storage:1 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "test"));
     sendPut(createPut(doc));
 
     // Database updated before CreateBucket is sent
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000008b13) : "
-                        "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)"),
-            dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+    ASSERT_EQ("BucketId(0x4000000000008b13) : "
+              "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)",
+              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 0,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
 }
 
-void
-PutOperationTest::testSendInlineSplitBeforePutIfBucketTooLarge()
-{
+TEST_F(PutOperationTest, send_inline_split_before_put_if_bucket_too_large) {
     setupDistributor(1, 1, "storage:1 distributor:1");
     getConfig().setSplitCount(1024);
     getConfig().setSplitSize(1000000);
@@ -232,19 +163,16 @@ PutOperationTest::testSendInlineSplitBeforePutIfBucketTooLarge()
 
     sendPut(createPut(createDummyDocument("test", "uri")));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("SplitBucketCommand(BucketId(0x4000000000002a52)Max doc count: "
-                        "1024, Max total doc size: 1000000) Reasons to start: "
-                        "[Splitting bucket because its maximum size (10000 b, 10000 docs, 10000 meta, 10000 b total) is "
-                        "higher than the configured limit of (1000000, 1024)] => 0,"
-                        "Put(BucketId(0x4000000000002a52), doc:test:uri, timestamp 100, "
-                        "size 32) => 0"),
-            _sender.getCommands(true, true));
+    ASSERT_EQ("SplitBucketCommand(BucketId(0x4000000000002a52)Max doc count: "
+              "1024, Max total doc size: 1000000) Reasons to start: "
+              "[Splitting bucket because its maximum size (10000 b, 10000 docs, 10000 meta, 10000 b total) is "
+              "higher than the configured limit of (1000000, 1024)] => 0,"
+              "Put(BucketId(0x4000000000002a52), doc:test:uri, timestamp 100, "
+              "size 35) => 0",
+              _sender.getCommands(true, true));
 }
 
-void
-PutOperationTest::testDoNotSendInlineSplitIfNotConfigured()
-{
+TEST_F(PutOperationTest, do_not_send_inline_split_if_not_configured) {
     setupDistributor(1, 1, "storage:1 distributor:1");
     getConfig().setSplitCount(1024);
     getConfig().setDoInlineSplit(false);
@@ -253,94 +181,79 @@ PutOperationTest::testDoNotSendInlineSplitIfNotConfigured()
 
     sendPut(createPut(createDummyDocument("test", "uri")));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                        "Put(BucketId(0x4000000000002a52), doc:test:uri, timestamp 100, "
-                        "size 32) => 0"),
-            _sender.getCommands(true, true));
+    ASSERT_EQ("Put(BucketId(0x4000000000002a52), doc:test:uri, timestamp 100, "
+              "size 35) => 0",
+              _sender.getCommands(true, true));
 }
 
-void
-PutOperationTest::testNodeRemovedOnReply()
-{
+TEST_F(PutOperationTest, node_removed_on_reply) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     createAndSendSampleDocument(180);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Put(BucketId(0x4000000000008b13), "
-                        "doc:test:test, timestamp 100, size 33) => 1,"
-                        "Put(BucketId(0x4000000000008b13), "
-                        "doc:test:test, timestamp 100, size 33) => 0"),
-            _sender.getCommands(true, true));
+    ASSERT_EQ("Put(BucketId(0x4000000000008b13), "
+              "doc:test:test, timestamp 100, size 36) => 1,"
+              "Put(BucketId(0x4000000000008b13), "
+              "doc:test:test, timestamp 100, size 36) => 0",
+              _sender.getCommands(true, true));
 
     getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x8b13)), 0);
 
     sendReply(0);
     sendReply(1);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                                 "PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                                 "timestamp 100) ReturnCode(BUCKET_DELETED, "
-                                 "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000008b13)) was deleted from nodes [0] "
-                                 "after message was sent but before it was done. "
-                                 "Sent to [1,0])"),
-                         _sender.getLastReply());
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(BUCKET_DELETED, "
+              "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000008b13)) was deleted from nodes [0] "
+              "after message was sent but before it was done. "
+              "Sent to [1,0])",
+              _sender.getLastReply());
 }
 
-void
-PutOperationTest::testStorageFailed()
-{
+TEST_F(PutOperationTest, storage_failed) {
     setupDistributor(2, 1, "storage:1 distributor:1");
 
     createAndSendSampleDocument(180);
 
     sendReply(-1, api::ReturnCode::INTERNAL_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                                     "timestamp 100) ReturnCode(INTERNAL_FAILURE)"),
-                         _sender.getLastReply(true));
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(INTERNAL_FAILURE)",
+              _sender.getLastReply(true));
 }
 
-void
-PutOperationTest::testMultipleCopies()
-{
+TEST_F(PutOperationTest, multiple_copies) {
     setupDistributor(3, 4, "storage:4 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "test"));
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 3,Create bucket => 1,"
-                                     "Create bucket => 0,Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
+              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+              _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 6; i++) {
         sendReply(i);
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 100) ReturnCode(NONE)"),
-            _sender.getLastReply(true));
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply(true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000008b13) : "
-                        "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
-                        "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
-                        "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)"),
-            dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+    ASSERT_EQ("BucketId(0x4000000000008b13) : "
+              "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
+              "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
+              "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
+              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 }
 
-
-void
-PutOperationTest::testMultipleCopiesEarlyReturnPrimaryRequired()
-{
+TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
     setupDistributor(3, 4, "storage:4 distributor:1", 2, true);
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 3,Create bucket => 1,"
-                                     "Create bucket => 0,Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
+              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+              _sender.getCommands(true));
 
     // Reply to 2 CreateBucket, including primary
     for (uint32_t i = 0;  i < 2; i++) {
@@ -351,23 +264,19 @@ PutOperationTest::testMultipleCopiesEarlyReturnPrimaryRequired()
         sendReply(3 + i);
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                    "timestamp 100) ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-PutOperationTest::testMultipleCopiesEarlyReturnPrimaryNotRequired()
-{
+TEST_F(PutOperationTest, multiple_copies_early_return_primary_not_required) {
     setupDistributor(3, 4, "storage:4 distributor:1", 2, false);
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 3,Create bucket => 1,"
-                                     "Create bucket => 0,Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
+              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+              _sender.getCommands(true));
 
     // Reply only to 2 nodes (but not the primary)
     for (uint32_t i = 1;  i < 3; i++) {
@@ -377,22 +286,19 @@ PutOperationTest::testMultipleCopiesEarlyReturnPrimaryNotRequired()
         sendReply(3 + i); // Put
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 100) ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-PutOperationTest::testMultipleCopiesEarlyReturnPrimaryRequiredNotDone()
-{
+TEST_F(PutOperationTest, multiple_copies_early_return_primary_required_not_done) {
     setupDistributor(3, 4, "storage:4 distributor:1", 2, true);
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 3,Create bucket => 1,"
-                                     "Create bucket => 0,Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
+              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+              _sender.getCommands(true));
 
     // Reply only to 2 nodes (but not the primary)
     sendReply(1);
@@ -400,20 +306,18 @@ PutOperationTest::testMultipleCopiesEarlyReturnPrimaryRequiredNotDone()
     sendReply(4);
     sendReply(5);
 
-    CPPUNIT_ASSERT_EQUAL(0, (int)_sender.replies.size());
+    ASSERT_EQ(0, _sender.replies.size());
 }
 
-void
-PutOperationTest::testDoNotRevertOnFailureAfterEarlyReturn()
-{
+TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
     setupDistributor(Redundancy(3),NodeCount(4), "storage:4 distributor:1",
                      ReturnAfter(2), RequirePrimaryWritten(false));
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 3,Create bucket => 1,"
-                                     "Create bucket => 0,Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
+              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+              _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 3; i++) {
         sendReply(i); // CreateBucket
@@ -422,28 +326,23 @@ PutOperationTest::testDoNotRevertOnFailureAfterEarlyReturn()
         sendReply(3 + i); // Put
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                    "timestamp 100) ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
 
     sendReply(5, api::ReturnCode::INTERNAL_FAILURE);
     // Should not be any revert commands sent
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 3,Create bucket => 1,"
-                                     "Create bucket => 0,Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
+              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+              _sender.getCommands(true));
 }
 
-void
-PutOperationTest::testRevertSuccessfulCopiesWhenOneFails()
-{
+TEST_F(PutOperationTest, revert_successful_copies_when_one_fails) {
     setupDistributor(3, 4, "storage:4 distributor:1");
 
     createAndSendSampleDocument(180);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Put => 3,Put => 1,Put => 0", _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 2; i++) {
         sendReply(i);
@@ -451,28 +350,24 @@ PutOperationTest::testRevertSuccessfulCopiesWhenOneFails()
 
     sendReply(2, api::ReturnCode::INTERNAL_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("PutReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), timestamp 100) "
-                                     "ReturnCode(INTERNAL_FAILURE)"),
-                         _sender.getLastReply(true));
+    ASSERT_EQ("PutReply(doc:test:test, "
+              "BucketId(0x0000000000000000), timestamp 100) "
+              "ReturnCode(INTERNAL_FAILURE)",
+              _sender.getLastReply(true));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Revert => 3,Revert => 1"),
-                         _sender.getCommands(true, false, 3));
+    ASSERT_EQ("Revert => 3,Revert => 1", _sender.getCommands(true, false, 3));
 }
 
-void
-PutOperationTest::testNoRevertIfRevertDisabled()
-{
+TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
     close();
     getDirConfig().getConfig("stor-distributormanager")
                   .set("enable_revert", "false");
-    setUp();
+    SetUp();
     setupDistributor(3, 4, "storage:4 distributor:1");
 
     createAndSendSampleDocument(180);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 3,Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Put => 3,Put => 1,Put => 0", _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 2; i++) {
         sendReply(i);
@@ -480,26 +375,23 @@ PutOperationTest::testNoRevertIfRevertDisabled()
 
     sendReply(2, api::ReturnCode::INTERNAL_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("PutReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), timestamp 100) "
-                                     "ReturnCode(INTERNAL_FAILURE)"),
-                         _sender.getLastReply(true));
+    ASSERT_EQ("PutReply(doc:test:test, "
+              "BucketId(0x0000000000000000), timestamp 100) "
+              "ReturnCode(INTERNAL_FAILURE)",
+              _sender.getLastReply(true));
 
-    CPPUNIT_ASSERT_EQUAL(std::string(""),
-                         _sender.getCommands(true, false, 3));
+    ASSERT_EQ("", _sender.getCommands(true, false, 3));
 }
 
-void
-PutOperationTest::testDoNotSendCreateBucketIfAlreadyPending()
-{
+TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     Document::SP doc(createDummyDocument("test", "uri"));
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 1,Create bucket => 0,"
-                                     "Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 1,Create bucket => 0,"
+              "Put => 1,Put => 0",
+              _sender.getCommands(true));
 
     // Manually shove sent messages into pending message tracker, since
     // this isn't done automatically.
@@ -510,37 +402,32 @@ PutOperationTest::testDoNotSendCreateBucketIfAlreadyPending()
 
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 1,Create bucket => 0,"
-                                     "Put => 1,Put => 0,"
-                                     "Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 1,Create bucket => 0,"
+              "Put => 1,Put => 0,"
+              "Put => 1,Put => 0",
+              _sender.getCommands(true));
 }
 
-void
-PutOperationTest::testNoStorageNodes()
-{
+TEST_F(PutOperationTest, no_storage_nodes) {
     setupDistributor(2, 1, "storage:0 distributor:1");
     createAndSendSampleDocument(180);
-    CPPUNIT_ASSERT_EQUAL(std::string("PutReply(doc:test:test, BucketId(0x0000000000000000), "
-                                     "timestamp 100) ReturnCode(NOT_CONNECTED, "
-                                     "Can't store document: No storage nodes available)"),
-                         _sender.getLastReply(true));
+    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NOT_CONNECTED, "
+              "Can't store document: No storage nodes available)",
+              _sender.getLastReply(true));
 }
 
-void
-PutOperationTest::testUpdateCorrectBucketOnRemappedPut()
-{
+TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
-    Document::SP doc(new Document(*_html_type, DocumentId(
+    Document::SP doc(new Document(doc_type(), DocumentId(
                             UserDocIdString("userdoc:test:13:uri"))));
 
     addNodesToBucketDB(document::BucketId(16,13), "0=0,1=0");
 
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 0,Put => 1"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Put => 0,Put => 1", _sender.getCommands(true));
 
     {
         std::shared_ptr<api::StorageCommand> msg2  = _sender.commands[0];
@@ -553,15 +440,14 @@ PutOperationTest::testUpdateCorrectBucketOnRemappedPut()
 
     sendReply(1);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("PutReply(userdoc:test:13:uri, "
-                                     "BucketId(0x0000000000000000), "
-                                     "timestamp 100) ReturnCode(NONE)"),
-                         _sender.getLastReply());
+    ASSERT_EQ("PutReply(userdoc:test:13:uri, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(NONE)",
+              _sender.getLastReply());
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x440000000000000d) : "
-                        "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)"),
-            dumpBucket(document::BucketId(17, 13)));
+    ASSERT_EQ("BucketId(0x440000000000000d) : "
+              "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
+              dumpBucket(document::BucketId(17, 13)));
 }
 
 BucketInfo
@@ -612,52 +498,78 @@ PutOperationTest::getNodes(const std::string& infoString) {
     return ost.str();
 }
 
-void
-PutOperationTest::testTargetNodes()
-{
+TEST_F(PutOperationTest, target_nodes) {
     setupDistributor(2, 6, "storage:6 distributor:1");
 
     // Ideal state of bucket is 1,3.
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 1 3 ) create( 1 3 )"), getNodes(""));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 1 3 ) create( 3 )"),   getNodes("1-1-true"));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 1 3 ) create( 3 )"),   getNodes("1-1-false"));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 3 4 5 ) create( )"),   getNodes("3-1-true,4-1-true,5-1-true"));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 3 4 ) create( )"),     getNodes("3-2-true,4-2-true,5-1-false"));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 1 3 4 ) create( )"),   getNodes("3-2-true,4-2-true,1-1-false"));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 4 5 ) create( )"),     getNodes("4-2-false,5-1-false"));
-    CPPUNIT_ASSERT_EQUAL(std::string("target( 1 4 ) create( 1 )"),   getNodes("4-1-true"));
+    ASSERT_EQ("target( 1 3 ) create( 1 3 )", getNodes(""));
+    ASSERT_EQ("target( 1 3 ) create( 3 )",   getNodes("1-1-true"));
+    ASSERT_EQ("target( 1 3 ) create( 3 )",   getNodes("1-1-false"));
+    ASSERT_EQ("target( 3 4 5 ) create( )",   getNodes("3-1-true,4-1-true,5-1-true"));
+    ASSERT_EQ("target( 3 4 ) create( )",     getNodes("3-2-true,4-2-true,5-1-false"));
+    ASSERT_EQ("target( 1 3 4 ) create( )",   getNodes("3-2-true,4-2-true,1-1-false"));
+    ASSERT_EQ("target( 4 5 ) create( )",     getNodes("4-2-false,5-1-false"));
+    ASSERT_EQ("target( 1 4 ) create( 1 )",   getNodes("4-1-true"));
 }
 
-void
-PutOperationTest::testDoNotResurrectDownedNodesInBucketDB()
-{
-    setupDistributor(2, 2, "storage:2 distributor:1");
+TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_state) {
+    setupDistributor(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
 
     Document::SP doc(createDummyDocument("test", "uri"));
     document::BucketId bId = getExternalOperationHandler().getBucketId(doc->getId());
 
-    addNodesToBucketDB(bId, "0=1/2/3/t,1=1/2/3/t");
+    addNodesToBucketDB(bId, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
 
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 1,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Put => 1,Put => 0,Put => 2", _sender.getCommands(true));
 
-    enableDistributorClusterState("distributor:1 storage:2 .1.s:d");
+    enableDistributorClusterState("distributor:1 storage:3 .1.s:d .2.s:m");
     addNodesToBucketDB(bId, "0=1/2/3/t"); // This will actually remove node #1.
 
-    sendReply(0, api::ReturnCode::OK, api::BucketInfo(9,9,9));
-    sendReply(1, api::ReturnCode::OK, api::BucketInfo(5,6,7));
+    sendReply(0, api::ReturnCode::OK, api::BucketInfo(9, 9, 9));
+    sendReply(1, api::ReturnCode::OK, api::BucketInfo(5, 6, 7));
+    sendReply(2, api::ReturnCode::OK, api::BucketInfo(7, 8, 9));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000002a52) : "
-                        "node(idx=0,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false,ready=false)"),
-            dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+    ASSERT_EQ("BucketId(0x4000000000002a52) : "
+              "node(idx=0,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false,ready=false)",
+              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 }
 
-void
-PutOperationTest::sendToRetiredNodesIfNoUpNodesAvailable()
-{
+TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending_state) {
+    setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
+
+    auto doc = createDummyDocument("test", "uri");
+    auto bucket = getExternalOperationHandler().getBucketId(doc->getId());
+    addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
+    sendPut(createPut(doc));
+
+    ASSERT_EQ("Put => 1,Put => 0,Put => 2", _sender.getCommands(true));
+    // Trigger a pending (but not completed) cluster state transition where content
+    // node 0 is down. This will prune its replica from the DB. We assume that the
+    // downed node managed to send off a reply to the Put before it went down, and
+    // this reply must not recreate the replica in the bucket database. This is because
+    // we have an invariant that the DB shall not contain replicas on nodes that are
+    // not available.
+    // We also let node 2 be in maintenance to ensure we also consider this an unavailable state.
+    // Note that we have to explicitly trigger a transition that requires an async bucket
+    // fetch here; if we just set a node down the cluster state would be immediately applied
+    // and the distributor's "clear pending messages for downed nodes" logic would kick in
+    // and hide the problem.
+    getBucketDBUpdater().onSetSystemState(
+            std::make_shared<api::SetSystemStateCommand>(
+                    lib::ClusterState("version:2 distributor:1 storage:4 .0.s:d .2.s:m")));
+
+    sendReply(0, api::ReturnCode::OK, api::BucketInfo(5, 6, 7));
+    sendReply(1, api::ReturnCode::OK, api::BucketInfo(6, 7, 8));
+    sendReply(2, api::ReturnCode::OK, api::BucketInfo(9, 8, 7));
+
+    ASSERT_EQ("BucketId(0x4000000000002a52) : "
+              "node(idx=1,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false,ready=false)",
+              dumpBucket(bucket));
+}
+
+TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "distributor:1 storage:2 .0.s:r .1.s:r");
     Document::SP doc(createDummyDocument("test", "uri"));
@@ -667,41 +579,31 @@ PutOperationTest::sendToRetiredNodesIfNoUpNodesAvailable()
 
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL("Put => 0,Put => 1"s,
-                         _sender.getCommands(true));
+    ASSERT_EQ("Put => 0,Put => 1", _sender.getCommands(true));
 }
 
-void
-PutOperationTest::doTestCreationWithBucketActivationDisabled(bool disabled)
-{
+void PutOperationTest::do_test_creation_with_bucket_activation_disabled(bool disabled) {
     setupDistributor(Redundancy(2), NodeCount(2), "distributor:1 storage:1");
     disableBucketActivationInConfig(disabled);
 
     Document::SP doc(createDummyDocument("test", "uri"));
     sendPut(createPut(doc));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 0,Put => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
     auto cmd = _sender.commands[0];
     auto createCmd = std::dynamic_pointer_cast<api::CreateBucketCommand>(cmd);
-    CPPUNIT_ASSERT(createCmd.get() != nullptr);
+    ASSERT_TRUE(createCmd.get() != nullptr);
     // There's only 1 content node, so if activation were not disabled, it
     // should always be activated.
-    CPPUNIT_ASSERT_EQUAL(!disabled, createCmd->getActive());
+    ASSERT_EQ(!disabled, createCmd->getActive());
 }
 
-void
-PutOperationTest::replicaImplicitlyActivatedWhenActivationIsNotDisabled()
-{
-    doTestCreationWithBucketActivationDisabled(false);
+TEST_F(PutOperationTest, replica_implicitly_activated_when_activation_is_not_disabled) {
+    do_test_creation_with_bucket_activation_disabled(false);
 }
 
-void
-PutOperationTest::replicaNotImplicitlyActivatedWhenActivationIsDisabled()
-{
-    doTestCreationWithBucketActivationDisabled(true);
-}
-
+TEST_F(PutOperationTest, replica_not_implicitly_activated_when_activation_is_disabled) {
+    do_test_creation_with_bucket_activation_disabled(true);
 }
 
 }

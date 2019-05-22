@@ -175,9 +175,10 @@ public:
     bool initializing() const;
 
 private:
-    std::vector<uint16_t> enumerateDownNodes(
+    void enumerateUnavailableNodes(
+            std::vector<uint16_t>& unavailableNodes,
             const lib::ClusterState& s,
-            const document::Bucket &bucket,
+            const document::Bucket& bucket,
             const std::vector<BucketCopy>& candidates) const;
     DistributorInterface& _distributor;
 
