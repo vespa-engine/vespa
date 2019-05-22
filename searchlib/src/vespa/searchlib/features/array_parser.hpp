@@ -11,11 +11,11 @@
 
 namespace search::features {
 
-template <typename OutputType>
+template <typename OutputType, typename T>
 void
 ArrayParser::parse(const vespalib::string &input, OutputType &output)
 {
-    typedef std::vector<ValueAndIndex<typename OutputType::value_type>> SparseVector;
+    typedef std::vector<ValueAndIndex<T>> SparseVector;
     SparseVector sparse;
     parsePartial(input, sparse);
     std::sort(sparse.begin(), sparse.end());
@@ -47,7 +47,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                 try {
                     is >> key >> colon >> value;
                     if ((colon == ':') && is.eof()) {
-                        output.push_back(ValueAndIndexType(value, key));
+                        output.emplace_back(value, key);
                     } else {
                         logWarning(vespalib::make_string(
                                 "Could not parse item '%s' in query vector '%s', skipping. "
@@ -73,7 +73,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
             while (!is.eof()) {
                 try {
                     is >> value;
-                    output.push_back(ValueAndIndexType(value, index++));
+                    output.emplace_back(value, index++);
                 } catch (vespalib::IllegalArgumentException & e) {
                     logWarning(vespalib::make_string(
                             "Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
