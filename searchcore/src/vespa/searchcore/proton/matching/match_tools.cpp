@@ -38,6 +38,7 @@ bool contains_all(const HandleRecorder::HandleSet &old_set,
 }
 
 void tag_match_data(const HandleRecorder::HandleSet &handles, MatchData &match_data) {
+    // TODO: Move tagging to separate component (for testing) and tag normal and cheap.
     for (TermFieldHandle handle = 0; handle < match_data.getNumTermFields(); ++handle) {
         if (handles.find(handle) == handles.end()) {
             match_data.resolveTermField(handle)->tagAsNotNeeded();
@@ -81,12 +82,14 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
         _rank_program->setup(*_match_data, _queryEnv, _featureOverrides);
     }
     bool can_reuse_search = (_search && !_search_has_changed &&
-                             contains_all(_used_handles, recorder.getHandles()));
+            contains_all(_used_normal_handles, recorder.get_normal_handles()) &&
+            contains_all(_used_cheap_handles, recorder.get_cheap_handles()));
     if (!can_reuse_search) {
-        tag_match_data(recorder.getHandles(), *_match_data);
+        tag_match_data(recorder.get_normal_handles(), *_match_data);
         _match_data->set_termwise_limit(termwise_limit);
         _search = _query.createSearch(*_match_data);
-        _used_handles = recorder.getHandles();
+        _used_normal_handles = recorder.get_normal_handles();
+        _used_cheap_handles = recorder.get_cheap_handles();
         _search_has_changed = false;
     }
 }
@@ -111,7 +114,8 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
       _match_data(mdl.createMatchData()),
       _rank_program(),
       _search(),
-      _used_handles(),
+      _used_normal_handles(),
+      _used_cheap_handles(),
       _search_has_changed(false)
 {
 }

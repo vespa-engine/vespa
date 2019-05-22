@@ -40,7 +40,8 @@ public:
             return FieldSpec(field_name, getFieldId(),
                              getHandle(), filter_field);
         }
-        search::fef::TermFieldHandle getHandle() const override;
+        using SimpleTermFieldData::getHandle;
+        search::fef::TermFieldHandle getHandle(search::fef::MatchDataDetails requested_details) const override;
     };
 
 private:

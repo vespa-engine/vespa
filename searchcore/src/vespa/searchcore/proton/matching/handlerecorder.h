@@ -3,11 +3,11 @@
 #pragma once
 
 #include <vespa/searchlib/fef/handle.h>
+#include <vespa/searchlib/fef/match_data_details.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/noncopyable.hpp>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * This is a recorder that will register all handles used by any features for a given query.
@@ -20,7 +20,7 @@ namespace matching {
 class HandleRecorder
 {
 public:
-    typedef vespalib::hash_set<search::fef::TermFieldHandle> HandleSet;
+    using HandleSet = vespalib::hash_set<search::fef::TermFieldHandle>;
     class Binder : public vespalib::noncopyable {
     public:
         Binder(HandleRecorder & recorder);
@@ -33,16 +33,17 @@ public:
     };
     HandleRecorder();
     ~HandleRecorder();
-    const HandleSet & getHandles() const { return _handles; }
-    static void registerHandle(search::fef::TermFieldHandle handle);
-    vespalib::string toString() const;
+    const HandleSet& get_normal_handles() const { return _normal_handles; }
+    const HandleSet& get_cheap_handles() const { return _cheap_handles; }
+    static void register_handle(search::fef::TermFieldHandle handle,
+                                search::fef::MatchDataDetails requested_details);
+    vespalib::string to_string() const;
 private:
-    void add(search::fef::TermFieldHandle handle) {
-        _handles.insert(handle);
-    }
-    HandleSet _handles;
+    void add(search::fef::TermFieldHandle handle,
+             search::fef::MatchDataDetails requested_details);
+    HandleSet _normal_handles;
+    HandleSet _cheap_handles;
 };
 
-}  // namespace matching
-}  // namespace proton
+}
 

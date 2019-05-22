@@ -3,6 +3,7 @@
 #pragma once
 
 #include "handle.h"
+#include "match_data_details.h"
 
 namespace search::fef {
 
@@ -35,11 +36,22 @@ public:
     virtual double getDocFreq() const = 0;
 
     /**
-     * Obtain the match handle for this field.
+     * Obtain the match handle for this field,
+     * requesting normal match data in the corresponding TermFieldMatchData.
      *
      * @return match handle (or IllegalHandle)
      **/
-    virtual TermFieldHandle getHandle() const = 0;
+    TermFieldHandle getHandle() const {
+        return getHandle(MatchDataDetails::Normal);
+    }
+
+    /**
+     * Obtain the match handle for this field,
+     * requesting match data with the given details in the corresponding TermFieldMatchData.
+     *
+     * @return match handle (or IllegalHandle)
+     **/
+    virtual TermFieldHandle getHandle(MatchDataDetails requested_details) const = 0;
 };
 
 }

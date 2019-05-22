@@ -14,6 +14,7 @@ using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
+using search::fef::MatchDataDetails;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::query::Node;
@@ -115,10 +116,10 @@ ProtonTermData::lookupField(uint32_t fieldId) const
 }
 
 TermFieldHandle
-ProtonTermData::FieldEntry::getHandle() const
+ProtonTermData::FieldEntry::getHandle(MatchDataDetails requested_details) const
 {
-    TermFieldHandle handle(search::fef::SimpleTermFieldData::getHandle());
-    HandleRecorder::registerHandle(handle);
+    TermFieldHandle handle(search::fef::SimpleTermFieldData::getHandle(requested_details));
+    HandleRecorder::register_handle(handle, requested_details);
     return handle;
 }
 

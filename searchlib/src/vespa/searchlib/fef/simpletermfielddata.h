@@ -47,12 +47,16 @@ public:
      **/
     double getDocFreq() const override final { return _docFreq; }
 
+    using ITermFieldData::getHandle;
+
     /**
-     * Obtain the match handle for this field.
+     * Obtain the match handle for this field,
+     * requesting match data with the given details in the corresponding TermFieldMatchData.
      *
-     * @return match handle
+     * @return match handle (or IllegalHandle)
      **/
-    TermFieldHandle getHandle() const override {
+    TermFieldHandle getHandle(MatchDataDetails requestedDetails) const override {
+        (void) requestedDetails;
         return _handle;
     }
 
