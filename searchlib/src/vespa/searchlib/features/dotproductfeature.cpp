@@ -577,6 +577,8 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
         if (!attribute->isImported()) {
             switch (attribute->getBasicType()) {
+                case BasicType::INT8:
+                    return createForDirectArray<IntegerAttributeTemplate<int8_t>>(attribute, dynamic_cast<const ArrayParam<int8_t> &>(object), stash);
                 case BasicType::INT32:
                     return createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
                 case BasicType::INT64:
@@ -590,6 +592,7 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
             }
         } else {
             switch (attribute->getBasicType()) {
+                case BasicType::INT8:
                 case BasicType::INT32:
                 case BasicType::INT64:
                     return createForImportedArray<int64_t>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
@@ -612,6 +615,8 @@ FeatureExecutor *
 createTypedArrayExecutor(const IAttributeVector * attribute, const Property & prop, vespalib::Stash & stash) {
     if (!attribute->isImported()) {
         switch (attribute->getBasicType()) {
+            case BasicType::INT8:
+                return &createForDirectArray<IntegerAttributeTemplate<int8_t>>(attribute, prop, stash);
             case BasicType::INT32:
                 return &createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
             case BasicType::INT64:
@@ -629,6 +634,7 @@ createTypedArrayExecutor(const IAttributeVector * attribute, const Property & pr
         // on int32_t or float, or reinterpreting type casts will end up pointing at
         // data that is not of the correct size. Which would be Bad(tm).
         switch (attribute->getBasicType()) {
+            case BasicType::INT8:
             case BasicType::INT32:
             case BasicType::INT64:
                 return &createForImportedArray<IAttributeVector::largeint_t>(attribute, prop, stash);
@@ -701,6 +707,8 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
                 return createForDirectIntegerWSet<int32_t>(attribute, prop, stash);
             } else if (attribute->getBasicType() == BasicType::INT64) {
                 return createForDirectIntegerWSet<int64_t>(attribute, prop, stash);
+            } else if (attribute->getBasicType() == BasicType::INT8) {
+                return createForDirectIntegerWSet<int8_t>(attribute, prop, stash);
             }
         }
     }
@@ -729,6 +737,8 @@ fef::Anything::UP
 attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
     if (!attribute.isImported()) {
         switch (attribute.getBasicType()) {
+            case BasicType::INT8:
+                return std::make_unique<ArrayParam<int8_t>>(prop);
             case BasicType::INT32:
                 return std::make_unique<ArrayParam<int32_t>>(prop);
             case BasicType::INT64:
@@ -744,6 +754,7 @@ attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property 
         // See rationale in createTypedArrayExecutor() as to why we promote < 64 bit types
         // to their full-width equivalent when dealing with imported attributes.
         switch (attribute.getBasicType()) {
+            case BasicType::INT8:
             case BasicType::INT32:
             case BasicType::INT64:
                 return std::make_unique<ArrayParam<int64_t>>(prop);
