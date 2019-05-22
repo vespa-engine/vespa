@@ -274,6 +274,9 @@ public class DockerOperationsImpl implements DockerOperations {
         List<Path> paths = new ArrayList<>(List.of(
                 Paths.get("/etc/vespa/flags"),
                 Paths.get("/etc/yamas-agent"),
+                Paths.get("/opt/splunkforwarder/var/log"),
+                Paths.get("/var/log"),
+                Paths.get("/var/spool/postfix/maildrop"),
                 context.pathInNodeUnderVespaHome("logs/daemontools_y"),
                 context.pathInNodeUnderVespaHome("logs/jdisc_core"),
                 context.pathInNodeUnderVespaHome("logs/langdetect"),
