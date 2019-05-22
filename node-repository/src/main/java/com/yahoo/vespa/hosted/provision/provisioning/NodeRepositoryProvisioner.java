@@ -96,11 +96,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            NodeResources flavor = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
-            log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
+            NodeResources resources = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
+            log.log(LogLevel.DEBUG, () -> "Decided node resources for requested tenant nodes: " + resources);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, flavor, exclusive, requestedCapacity.canFail());
+            requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
