@@ -266,7 +266,7 @@ public class ConfigSubscriber {
                 allGenerationsChanged = allGenerationsChanged && config.isGenerationChanged();
                 if (config.isConfigChanged()) anyConfigChanged = true;
                 internalRedeployOnly = internalRedeployOnly && config.isInternalRedeploy();
-                timeLeftMillis = timeLeftMillis - (System.currentTimeMillis() - started);
+                timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
             reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
             if (!reconfigDue && timeLeftMillis > 0) {
