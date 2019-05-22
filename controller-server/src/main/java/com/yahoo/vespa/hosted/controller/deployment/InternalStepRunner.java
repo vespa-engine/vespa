@@ -388,41 +388,35 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Attempting to find endpoints ...");
         Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application(), zones);
+        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(deployment.get(), endpointTimeout)) {
+            logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
+            return Optional.of(error);
+        }
         List<String> messages = new ArrayList<>();
-        messages.add("Found endpoints");
+        messages.add("Found endpoints:");
         endpoints.forEach((zone, uris) -> {
             messages.add("- " + zone);
             uris.forEach(uri -> messages.add(" |-- " + uri));
         });
         logger.log(messages);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
-            if (timedOut(deployment.get(), endpointTimeout)) {
-                logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
-                return Optional.of(error);
-            }
-
-            logger.log("Endpoints for the deployment to test are not yet ready.");
-            return Optional.empty();
-        }
-
-        Map<ZoneId, List<String>> clusters = listClusters(id.application(), zones);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isPresent() && controller.jobController().cloud().ready(testerEndpoint.get())) {
+        if (testerEndpoint.isEmpty() && timedOut(deployment.get(), endpointTimeout)) {
+            logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
+            return Optional.of(error);
+        }
+
+        if (controller.jobController().cloud().ready(testerEndpoint.get())) {
             logger.log("Starting tests ...");
             controller.jobController().cloud().startTests(testerEndpoint.get(),
                                                           TesterCloud.Suite.of(id.type()),
                                                           testConfig(id.application(), id.type().zone(controller.system()),
-                                                                     controller.system(), endpoints, clusters));
+                                                                     controller.system(), endpoints,
+                                                                     listClusters(id.application(), zones)));
             return Optional.of(running);
         }
 
-        if (timedOut(deployment.get(), endpointTimeout)) {
-            logger.log(WARNING, "Endpoint for tester failed to show up within " + endpointTimeout.toMinutes() + " minutes of real deployment!");
-            return Optional.of(error);
-        }
-
-        logger.log("Endpoints of tester container not yet available.");
+        logger.log("Tester container not yet ready.");
         return Optional.empty();
     }
 
