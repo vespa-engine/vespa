@@ -398,11 +398,11 @@ DotProductBlueprint::createInstance() const
 
 namespace {
 
-template <typename T>
+template <typename T, typename AsT = T>
 void
 parseVectors(const Property& prop, std::vector<T>& values, std::vector<uint32_t>& indexes)
 {
-    typedef std::vector<ArrayParser::ValueAndIndex<T>> SparseV;
+    typedef std::vector<ArrayParser::ValueAndIndex<AsT>> SparseV;
     SparseV sparse;
     ArrayParser::parsePartial(prop.get(), sparse);
     if ( ! sparse.empty()) {
@@ -421,6 +421,12 @@ parseVectors(const Property& prop, std::vector<T>& values, std::vector<uint32_t>
             }
         }
     }
+}
+
+template <>
+void
+parseVectors<int8_t, int8_t>(const Property& prop, std::vector<int8_t>& values, std::vector<uint32_t>& indexes) {
+    parseVectors<int8_t, int16_t>(prop, values, indexes);
 }
 
 }

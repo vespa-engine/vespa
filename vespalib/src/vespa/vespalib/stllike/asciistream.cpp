@@ -235,6 +235,17 @@ asciistream & asciistream::operator >> (char & v)
     return *this;
 }
 
+asciistream & asciistream::operator >> (signed char & v)
+{
+    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    if (_rPos < length()) {
+        v = _rbuf[_rPos++];
+    } else {
+        throwUnderflow(_rPos);
+    }
+    return *this;
+}
+
 asciistream & asciistream::operator >> (unsigned char & v)
 {
     for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);

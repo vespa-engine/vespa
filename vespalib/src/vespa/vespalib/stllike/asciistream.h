@@ -64,6 +64,7 @@ public:
     asciistream & operator >> (FloatModifier v)           { _floatModifier = v; return *this; }
     asciistream & operator >> (bool & v);
     asciistream & operator >> (char & v);
+    asciistream & operator >> (signed char & v);
     asciistream & operator >> (unsigned char & v);
     asciistream & operator >> (std::string & v);
     asciistream & operator >> (string & v);

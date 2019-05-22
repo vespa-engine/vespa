@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("prod_features_test");
 
 #include "prod_features.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -49,6 +47,9 @@ LOG_SETUP("prod_features_test");
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <cmath>
+
+#include <vespa/log/log.h>
+LOG_SETUP("prod_features_test");
 
 using namespace search::features;
 using namespace search::fef;
@@ -1065,6 +1066,25 @@ verifyCorrectDotProductExecutor(BlueprintFactory & factory, vespalib::stringref 
     EXPECT_EQUAL(1u, deps.output.size());
 }
 
+template<typename T>
+void verifyArrayParser()
+{
+    std::vector<vespalib::string> v = {"(0:2,7:-3,1:-3)", "{0:2,7:-3,1:-3}", "[2 -3 0 0 0 0 0 -3]"};
+    for(const vespalib::string & s : v) {
+        std::vector<T> out;
+        ArrayParser::parse(s, out);
+        EXPECT_EQUAL(8u, out.size());
+        EXPECT_EQUAL(2,  out[0]);
+        EXPECT_EQUAL(-3, out[1]);
+        EXPECT_EQUAL(0,  out[2]);
+        EXPECT_EQUAL(0,  out[3]);
+        EXPECT_EQUAL(0,  out[4]);
+        EXPECT_EQUAL(0,  out[5]);
+        EXPECT_EQUAL(0,  out[6]);
+        EXPECT_EQUAL(-3, out[7]);
+    }
+}
+
 }
 
 void
@@ -1159,22 +1179,12 @@ Test::testDotProduct()
             EXPECT_EQUAL(out.getVector()[1].second, -3.5);
         }
     }
-    { // Array parser
-        std::vector<vespalib::string> v = {"(0:2,7:-3,1:-3)", "{0:2,7:-3,1:-3}", "[2 -3 0 0 0 0 0 -3]"};
-        for(const vespalib::string & s : v) {
-            std::vector<int32_t> out;
-            ArrayParser::parse(s, out);
-            EXPECT_EQUAL(8u, out.size());
-            EXPECT_EQUAL(2,  out[0]);
-            EXPECT_EQUAL(-3, out[1]);
-            EXPECT_EQUAL(0,  out[2]);
-            EXPECT_EQUAL(0,  out[3]);
-            EXPECT_EQUAL(0,  out[4]);
-            EXPECT_EQUAL(0,  out[5]);
-            EXPECT_EQUAL(0,  out[6]);
-            EXPECT_EQUAL(-3, out[7]);
-        }
-    }
+    verifyArrayParser<int8_t>();
+    verifyArrayParser<int16_t>();
+    verifyArrayParser<int32_t>();
+    verifyArrayParser<int64_t>();
+    verifyArrayParser<float>();
+    verifyArrayParser<double>();
     {
         vespalib::string s = "[[1:3]]";
         std::vector<int32_t> out;
@@ -1202,13 +1212,12 @@ Test::testDotProduct()
             assertDotProduct(0,   "(f:5,g:5)",             1, "wsextstr");
             assertDotProduct(550, "(a:1,b:2,c:3,d:4,e:5)", 1, "wsextstr");
         }
-        { // integer attribute
-            assertDotProduct(0,  "()",                    1, "wsint");
-            assertDotProduct(0,  "(6:5,7:5)",             1, "wsint");
-            assertDotProduct(55, "(1:1,2:2,3:3,4:4,5:5)", 1, "wsint");
+        for (const char * name : {"wsbyte", "wsint"}) {
+            assertDotProduct(0,  "()",                    1, name);
+            assertDotProduct(0,  "(6:5,7:5)",             1, name);
+            assertDotProduct(55, "(1:1,2:2,3:3,4:4,5:5)", 1, name);
         }
-        std::vector<const char *> attributes = {"arrint", "arrfloat", "arrint_fast", "arrfloat_fast"};
-        for (const char * name : attributes) {
+        for (const char * name : {"arrbyte", "arrint", "arrfloat", "arrint_fast", "arrfloat_fast"}) {
             assertDotProduct(0,  "()",                    1, name);
             assertDotProduct(0,  "(6:5,7:5)",             1, name);
             assertDotProduct(55,  "(0:1,1:2,2:3,3:4,4:5)", 1, name);
@@ -1260,6 +1269,8 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
         bool fastSearch;
     };
     std::vector<Config> cfgList = { {"wsint", AVBT::INT32, AVCT::WSET, false},
+                                    {"wsbyte", AVBT::INT8, AVCT::WSET, false},
+                                    {"arrbyte", AVBT::INT8, AVCT::ARRAY, false},
                                     {"arrint", AVBT::INT32, AVCT::ARRAY, false},
                                     {"arrfloat", AVBT::FLOAT, AVCT::ARRAY, false},
                                     {"arrint_fast", AVBT::INT32, AVCT::ARRAY, true},
