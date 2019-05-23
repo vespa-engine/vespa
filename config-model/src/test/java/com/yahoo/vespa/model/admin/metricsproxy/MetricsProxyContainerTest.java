@@ -32,7 +32,6 @@ public class MetricsProxyContainerTest {
     public void one_metrics_proxy_container_is_added_to_every_node() {
         var numberOfHosts = 4;
         var tester = new VespaModelTester();
-        tester.enableMetricsProxyContainer(true);
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(servicesWithManyNodes(), true);
