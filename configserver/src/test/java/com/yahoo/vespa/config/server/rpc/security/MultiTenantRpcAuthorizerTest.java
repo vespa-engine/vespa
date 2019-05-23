@@ -25,7 +25,8 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -178,7 +179,7 @@ public class MultiTenantRpcAuthorizerTest {
         return new MultiTenantRpcAuthorizer(
                 new StaticNodeIdentifier(identity),
                 hostRegistry,
-                createRequestHandlerProviderMock(),
+                createTenantRepositoryMock(),
                 new DirectExecutor(),
                 ENFORCE);
     }
@@ -191,15 +192,17 @@ public class MultiTenantRpcAuthorizerTest {
         return mockJrtRpcRequest(fileReference.value());
     }
 
-    private static RequestHandlerProvider createRequestHandlerProviderMock() {
+    private static TenantRepository createTenantRepositoryMock() {
         RequestHandler requestHandler = mock(RequestHandler.class);
         when(requestHandler.hasApplication(APPLICATION_ID, Optional.empty())).thenReturn(true);
         when(requestHandler.resolveApplicationId(HOSTNAME.value())).thenReturn(APPLICATION_ID);
         when(requestHandler.listFileReferences(APPLICATION_ID)).thenReturn(Set.of(FILE_REFERENCE));
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.getRequestHandler()).thenReturn(requestHandler);
 
-        RequestHandlerProvider handlerProvider = mock(RequestHandlerProvider.class);
-        when(handlerProvider.getRequestHandler(APPLICATION_ID.tenant())).thenReturn(Optional.of(requestHandler));
-        return handlerProvider;
+        TenantRepository tenantRepository = mock(TenantRepository.class);
+        when(tenantRepository.getTenant(APPLICATION_ID.tenant())).thenReturn(tenant);
+        return tenantRepository;
     }
 
     private static Request mockJrtRpcRequest(String payload) {

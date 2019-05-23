@@ -16,7 +16,6 @@ import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -98,9 +97,7 @@ public class RpcTester implements AutoCloseable {
                                                                        generationCounter,
                                                                        new InMemoryFlagSource())),
                                   Metrics.createTestMetrics(), new HostRegistries(),
-                                  hostLivenessTracker, new FileServer(temporaryFolder.newFolder()),
-                                  new NoopRpcAuthorizer(),
-                                  new RpcRequestHandlerProvider());
+                                  hostLivenessTracker, new FileServer(temporaryFolder.newFolder()));
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);
         t = new Thread(rpcServer);
         t.start();

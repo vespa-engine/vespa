@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 
 import java.io.File;
@@ -39,7 +38,7 @@ public class MockRpc extends RpcServer {
 
     public MockRpc(int port, boolean createDefaultTenant, boolean pretendToHaveLoadedAnyApplication, File tempDir) {
         super(createConfig(port), null, Metrics.createTestMetrics(), 
-              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(tempDir), new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
+              new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(tempDir));
         if (createDefaultTenant) {
             onTenantCreate(TenantName.from("default"), new MockTenantProvider(pretendToHaveLoadedAnyApplication));
         }
