@@ -1,25 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("fef_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/objectstore.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("fef_test");
 
 using namespace search::fef;
 using std::shared_ptr;
 using search::feature_t;
 
-class Test : public vespalib::TestApp
-{
-public:
-    void testLayout();
-    void testObjectStore();
-    void testTermFieldMatchDataAppend();
-    int Main() override;
-};
-
-void
-Test::testLayout()
+TEST("test layout")
 {
     {
         TermFieldMatchData tmd;
@@ -43,8 +34,7 @@ Test::testLayout()
     EXPECT_EQUAL(IllegalFieldId, t2->getFieldId());
 }
 
-void
-Test::testObjectStore()
+TEST("test ObjectStore")
 {
     ObjectStore s;
     class Object : public Anything {
@@ -66,8 +56,7 @@ Test::testObjectStore()
     EXPECT_EQUAL(o11, s.get("a"));
 }
 
-void
-Test::testTermFieldMatchDataAppend()
+TEST("test TermFieldMatchDataAppend")
 {
     TermFieldMatchData tmd;
     EXPECT_EQUAL(0u, tmd.size());
@@ -91,14 +80,10 @@ Test::testTermFieldMatchDataAppend()
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.capacity());
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("fef_test");
-    testLayout();
-    testObjectStore();
-    testTermFieldMatchDataAppend();
-    TEST_DONE();
+TEST("verify size of essential fef classes") {
+    EXPECT_EQUAL(12u,sizeof(TermFieldMatchData::Positions));
+    EXPECT_EQUAL(24u,sizeof(TermFieldMatchData::Features));
+    EXPECT_EQUAL(36u,sizeof(TermFieldMatchData));
 }
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }
