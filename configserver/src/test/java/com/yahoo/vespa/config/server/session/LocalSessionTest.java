@@ -54,13 +54,11 @@ public class LocalSessionTest {
     private Curator curator;
     private ConfigCurator configCurator;
     private TenantFileSystemDirs tenantFileSystemDirs;
-    private SuperModelGenerationCounter superModelGenerationCounter;
 
     @Before
     public void setupTest() {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        superModelGenerationCounter = new SuperModelGenerationCounter(curator);
         tenantFileSystemDirs = new TenantFileSystemDirs(Files.createTempDir(), TenantName.from("test_tenant"));
     }
 
@@ -203,7 +201,6 @@ public class LocalSessionTest {
                         sessionDir,
                         applications,
                         new HostRegistry<>(),
-                        superModelGenerationCounter,
                         flagSource));
     }
 

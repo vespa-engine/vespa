@@ -45,13 +45,13 @@ public class RpcTester implements AutoCloseable {
     private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
     private final String myHostname = HostName.getLocalhost();
     private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
+    private final MockTenantProvider tenantProvider;
+    private final GenerationCounter generationCounter;
+    private final Spec spec;
 
     private RpcServer rpcServer;
-    private MockTenantProvider tenantProvider;
-    private GenerationCounter generationCounter;
     private Thread t;
     private Supervisor sup;
-    private Spec spec;
 
     private List<Integer> allocatedPorts;
 
@@ -145,7 +145,4 @@ public class RpcTester implements AutoCloseable {
         return tenantProvider;
     }
 
-    GenerationCounter generationCounter() {
-        return generationCounter;
-    }
 }

@@ -35,7 +35,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final SessionPreparer sessionPreparer;
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
-    private final SuperModelGenerationCounter superModelGenerationCounter;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final HostRegistries hostRegistries;
@@ -68,7 +67,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.sessionPreparer = sessionPreparer;
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
-        this.superModelGenerationCounter = superModelGenerationCounter;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
@@ -92,8 +90,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public TenantListener getTenantListener() { return rpcServer; }
     @Override
     public ReloadListener getReloadListener() { return rpcServer; }
-    @Override
-    public SuperModelGenerationCounter getSuperModelGenerationCounter() { return superModelGenerationCounter; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
     @Override

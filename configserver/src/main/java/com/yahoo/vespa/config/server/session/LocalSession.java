@@ -41,7 +41,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     private final SessionPreparer sessionPreparer;
     private final SessionContext sessionContext;
     private final File serverDB;
-    private final SuperModelGenerationCounter superModelGenerationCounter;
 
     /**
      * Create a session. This involves loading the application, validating it and distributing it.
@@ -56,7 +55,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
         this.applicationRepo = sessionContext.getApplicationRepo();
         this.sessionPreparer = sessionPreparer;
         this.sessionContext = sessionContext;
-        this.superModelGenerationCounter = sessionContext.getSuperModelGenerationCounter();
     }
 
     public ConfigChangeActions prepare(DeployLogger logger, 
@@ -119,7 +117,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     /** Add transactions to delete this session to the given nested transaction */
     public void delete(NestedTransaction transaction) {
         transaction.add(zooKeeperClient.deleteTransaction(), FileTransaction.class);
-        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())), SuperModelGenerationCounter.IncrementTransaction.class);
+        transaction.add(FileTransaction.from(FileOperations.delete(serverDB.getAbsolutePath())));
     }
 
     @Override

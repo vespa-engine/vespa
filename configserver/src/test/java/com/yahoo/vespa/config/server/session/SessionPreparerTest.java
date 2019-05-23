@@ -219,7 +219,6 @@ public class SessionPreparerTest {
                                   app.getAppDir(),
                                   TenantApplications.create(curator, new MockReloadHandler(), TenantName.from("tenant")),
                                   new HostRegistry<>(),
-                                  new SuperModelGenerationCounter(curator),
                                   flagSource);
     }
 

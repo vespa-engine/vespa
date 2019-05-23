@@ -114,7 +114,6 @@ public class RpcServerTest {
     }
 
     private void testEnabled(RpcTester tester) throws IOException, SAXException {
-        tester.generationCounter().increment();
         Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                           new ServerCache(),
                                           2L,
