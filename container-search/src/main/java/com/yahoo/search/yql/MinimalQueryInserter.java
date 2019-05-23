@@ -38,9 +38,8 @@ public class MinimalQueryInserter extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        if (query.properties().get(YQL) == null) {
-            return execution.search(query);
-        }
+        if (query.properties().get(YQL) == null) return execution.search(query);
+
         ParserEnvironment env = ParserEnvironment.fromExecutionContext(execution.context());
         YqlParser parser = (YqlParser) ParserFactory.newInstance(Query.Type.YQL, env);
         parser.setQueryParser(false);

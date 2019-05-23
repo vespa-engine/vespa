@@ -557,7 +557,16 @@ abstract class StructuredParser extends AbstractParser {
             if (phrase != null) {
                 phrase.addItem(word);
             } else if (firstWord != null) {
-                phrase = new PhraseItem();
+                if (submodes.site || submodes.url) {
+                    UriItem uriItem = new UriItem();
+                    if (submodes.site)
+                        uriItem.setEndAnchorDefault(true);
+                    phrase = uriItem;
+                }
+                else {
+                    phrase = new PhraseItem();
+                }
+
                 if (quoted || submodes.site || submodes.url) {
                     phrase.setExplicit(true);
                 }

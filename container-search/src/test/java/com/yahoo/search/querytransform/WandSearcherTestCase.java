@@ -45,7 +45,7 @@ public class WandSearcherTestCase {
     private IndexFacts buildIndexFacts() {
         SearchDefinition sd = new SearchDefinition("test");
         sd.addIndex(new Index(VESPA_FIELD));
-        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        return new IndexFacts(new IndexModel(sd));
     }
 
     private Execution buildExec() {

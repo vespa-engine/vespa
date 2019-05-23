@@ -32,10 +32,12 @@ public class PhraseItem extends CompositeIndexedItem {
         }
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.PHRASE;
     }
 
+    @Override
     public String getName() {
         return "PHRASE";
     }
@@ -162,10 +164,12 @@ public class PhraseItem extends CompositeIndexedItem {
         return (BlockItem) getItem(index);
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer); // takes care of index bytes
     }
 
+    @Override
     public int encode(ByteBuffer buffer) {
         encodeThis(buffer);
         int itemCount = 1;
@@ -186,13 +190,16 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     /** Returns false, no parenthezes for phrases */
+    @Override
     protected boolean shouldParenthize() {
         return false;
     }
 
     /** Phrase items uses a empty heading instead of "PHRASE " */
+    @Override
     protected void appendHeadingString(StringBuilder buffer) { }
 
+    @Override
     protected void appendBodyString(StringBuilder buffer) {
         appendIndexString(buffer);
 

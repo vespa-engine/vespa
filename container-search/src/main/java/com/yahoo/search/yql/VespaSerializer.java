@@ -13,6 +13,7 @@ import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
+import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
@@ -33,12 +34,14 @@ import static com.yahoo.search.yql.YqlParser.RANKED;
 import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
 import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
+import static com.yahoo.search.yql.YqlParser.START_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
+import static com.yahoo.search.yql.YqlParser.URI;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
 import static com.yahoo.search.yql.YqlParser.WAND;
 import static com.yahoo.search.yql.YqlParser.WEAK_AND;
@@ -89,6 +92,7 @@ import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
+import com.yahoo.prelude.query.UriItem;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WeightedSetItem;
@@ -267,6 +271,47 @@ public class VespaSerializer {
             } else {
                 return "";
             }
+        }
+
+    }
+
+    private static class UriSerializer extends Serializer {
+        @Override
+        void onExit(StringBuilder destination, Item item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, Item item) {
+            UriItem uriItem = (UriItem) item;
+            String annotations = uriAnnotations(uriItem);
+
+            destination.append(uriItem.getIndexName()).append(" contains ");
+            if (annotations.length() > 0)
+                destination.append('(').append(annotations);
+            destination.append(URI).append("(\"");
+            destination.append(uriItem.getArgumentString());
+            destination.append("\")");
+            if (annotations.length() > 0)
+                destination.append(')');
+            return false;
+        }
+
+        static String uriAnnotations(UriItem item) {
+            if (item.hasStartAnchor() == item.isStartAnchorDefault() &&
+                item.hasEndAnchor() == item.isEndAnchorDefault())
+                return "";
+
+            StringBuilder b = new StringBuilder();
+            b.append("[{");
+            if (item.hasStartAnchor() != item.isStartAnchorDefault()) {
+                b.append("\"" + START_ANCHOR + "\": " + item.hasStartAnchor());
+            }
+            if (item.hasEndAnchor() != item.isEndAnchorDefault()) {
+                if (b.length() > 2)
+                    b.append(", ");
+                b.append("\"" + END_ANCHOR + "\": " + item.hasEndAnchor());
+            }
+            b.append("}]");
+            return b.toString();
         }
 
     }
@@ -1111,6 +1156,7 @@ public class VespaSerializer {
         dispatchBuilder.put(WeightedSetItem.class, new WeightedSetSerializer());
         dispatchBuilder.put(WordItem.class, new WordSerializer());
         dispatchBuilder.put(RegExpItem.class, new RegExpSerializer());
+        dispatchBuilder.put(UriItem.class, new UriSerializer());
         dispatch = ImmutableMap.copyOf(dispatchBuilder);
     }
 

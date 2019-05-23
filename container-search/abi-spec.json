@@ -424,6 +424,7 @@
       "public boolean removeItem(com.yahoo.prelude.query.Item)",
       "public int getItemCount()",
       "public java.util.ListIterator getItemIterator()",
+      "public java.util.List items()",
       "public int encode(java.nio.ByteBuffer)",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected int encodingArity()",
@@ -808,12 +809,16 @@
       "public"
     ],
     "methods": [
-      "public static com.yahoo.prelude.query.WordItem createStartOfHost()",
-      "public static com.yahoo.prelude.query.WordItem createEndOfHost()",
+      "public boolean isStartAnchor()",
+      "public boolean isEndAnchor()",
       "protected java.lang.String getEncodedWord()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public static com.yahoo.prelude.query.MarkerWordItem createStartOfHost(java.lang.String)",
+      "public static com.yahoo.prelude.query.MarkerWordItem createStartOfHost()",
+      "public static com.yahoo.prelude.query.MarkerWordItem createEndOfHost(java.lang.String)",
+      "public static com.yahoo.prelude.query.MarkerWordItem createEndOfHost()"
     ],
     "fields": []
   },
@@ -1520,6 +1525,28 @@
     "methods": [
       "public void <init>()",
       "public static void visit(com.yahoo.prelude.query.ToolBox$QueryVisitor, com.yahoo.prelude.query.Item)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.prelude.query.UriItem": {
+    "superClass": "com.yahoo.prelude.query.PhraseItem",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(java.lang.String)",
+      "public void addStartAnchorItem()",
+      "public void addEndAnchorItem()",
+      "public boolean hasStartAnchor()",
+      "public boolean hasEndAnchor()",
+      "public boolean isStartAnchorDefault()",
+      "public void setStartAnchorDefault(boolean)",
+      "public boolean isEndAnchorDefault()",
+      "public void setEndAnchorDefault(boolean)",
+      "public void setSourceString(java.lang.String)",
+      "public java.lang.String getArgumentString()"
     ],
     "fields": []
   },

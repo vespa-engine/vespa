@@ -9,6 +9,7 @@ import com.yahoo.search.query.QueryTree;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -162,15 +163,18 @@ public abstract class CompositeItem extends Item {
         return removed;
     }
 
-    /** Returns the number of direct ancestors of this item */
+    /** Returns the number of direct children of this item */
     public int getItemCount() {
         return subitems.size();
     }
 
-    /** Returns a modifiable list iterator */
+    /** Returns a modifiable list iterator of the immediate children of this */
     public ListIterator<Item> getItemIterator() {
         return new ListIteratorWrapper(this);
     }
+
+    /** Returns a read only list of the immediate children of this */
+    public List<Item> items() { return Collections.unmodifiableList(subitems); }
 
     public int encode(ByteBuffer buffer) {
         encodeThis(buffer);
