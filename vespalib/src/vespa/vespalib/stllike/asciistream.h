@@ -40,6 +40,7 @@ public:
     void swap(asciistream & rhs) noexcept;
     asciistream & operator << (bool v)                { if (v) { *this << '1'; } else { *this << '0'; } return *this; }
     asciistream & operator << (char v)                { doFill(1); write(&v, 1); return *this; }
+    asciistream & operator << (signed char v)         { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }

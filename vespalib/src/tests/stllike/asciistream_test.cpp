@@ -508,6 +508,8 @@ AsciistreamTest::Main()
     TEST_DO(verify<double>(7.89, -1.3, "7.89", "7.89 -1.3", ' '));
     TEST_DO(verify<bool>(true, false, "1", "1 0", ' '));
     TEST_DO(verify<char>(65, 66, "A", "A B", ' '));
+    TEST_DO(verify<unsigned char>(65, 66, "A", "A B", ' '));
+    TEST_DO(verify<signed char>(65, 66, "A", "A B", ' '));
 //    TEST_DO(verify<int8_t>(65, -1, "65", "65 -1", ' '));
     TEST_DO(verify<int16_t>(0, -1, "0", "0 -1", ' '));
     TEST_DO(verify<int16_t>(789, -1, "789", "789 -1", ' '));
