@@ -30,7 +30,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
         final var proxyNodes = nodeRepository.getNodes(NodeType.proxy);
 
         if (proxyNodes.size() == 0) {
-            throw new RuntimeException("Missing proxy nodes in nodeRepository");
+            throw new IllegalStateException("Missing proxy nodes in nodeRepository");
         }
 
         final var firstProxyNode = proxyNodes.get(0);

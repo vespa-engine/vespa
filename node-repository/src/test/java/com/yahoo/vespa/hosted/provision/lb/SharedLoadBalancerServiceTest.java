@@ -37,7 +37,7 @@ public class SharedLoadBalancerServiceTest {
         assertEquals(Set.of(4080, 4443), lb.ports());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalStateException.class)
     public void test_exception_on_missing_proxies() {
         loadBalancerService.create(applicationId, clusterId, reals);
     }
