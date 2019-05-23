@@ -395,7 +395,8 @@ bool
 FakeWord::validate(search::queryeval::SearchIterator *iterator,
                    const fef::TermFieldMatchDataArray &matchData,
                    uint32_t stride,
-                   bool decode_cheap_features,
+                   bool unpack_normal_features,
+                   bool unpack_cheap_features,
                    bool verbose) const
 {
     iterator->initFullRange();
@@ -433,29 +434,36 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
                 if (matchData[lfi]->getDocId() != docId)
                     continue;
-                if (decode_cheap_features) {
+                if (unpack_cheap_features) {
                     assert(d->_collapsedDocWordFeatures._field_len == matchData[lfi]->getFieldLength());
                     assert(d->_collapsedDocWordFeatures._num_occs == matchData[lfi]->getNumOccs());
+                } else {
+                    assert(matchData[lfi]->getFieldLength() == 0u);
+                    assert(matchData[lfi]->getNumOccs() == 0u);
                 }
-                TMDPI mdpe = matchData[lfi]->end();
-                TMDPI mdp = matchData[lfi]->begin();
-                while (mdp != mdpe) {
-                    assert(p != pe);
-                    assert(positions > 0);
-                    assert(p->_wordPos == mdp->getPosition());
-                    assert(p->_elementId == mdp->getElementId());
-                    assert(p->_elementWeight == mdp->getElementWeight());
-                    assert(p->_elementLen == mdp->getElementLen());
-                    ++p;
-                    ++mdp;
-                    --positions;
+                if (unpack_normal_features) {
+                    TMDPI mdpe = matchData[lfi]->end();
+                    TMDPI mdp = matchData[lfi]->begin();
+                    while (mdp != mdpe) {
+                        assert(p != pe);
+                        assert(positions > 0);
+                        assert(p->_wordPos == mdp->getPosition());
+                        assert(p->_elementId == mdp->getElementId());
+                        assert(p->_elementWeight == mdp->getElementWeight());
+                        assert(p->_elementLen == mdp->getElementLen());
+                        ++p;
+                        ++mdp;
+                        --positions;
+                    }
+                } else {
+                    assert(matchData[lfi]->size() == 0u);
                 }
             }
-            assert(positions == 0);
+            assert(positions == 0 || !unpack_normal_features);
         }
         ++d;
     }
-    assert(p == pe);
+    assert(p == pe || !unpack_normal_features);
     assert(d == de);
     if (verbose)
         printf("word '%s' validated successfully with unpack\n",
@@ -467,7 +475,8 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
 bool
 FakeWord::validate(search::queryeval::SearchIterator *iterator,
                    const fef::TermFieldMatchDataArray &matchData,
-                   bool decode_cheap_features,
+                   bool unpack_normal_features,
+                   bool unpack_cheap_features,
                    bool verbose) const
 {
     iterator->initFullRange();
@@ -493,25 +502,32 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             for (size_t lfi = 0; lfi < matchData.size(); ++lfi) {
                 if (matchData[lfi]->getDocId() != docId)
                     continue;
-                if (decode_cheap_features) {
+                if (unpack_cheap_features) {
                     assert(d->_collapsedDocWordFeatures._field_len == matchData[lfi]->getFieldLength());
                     assert(d->_collapsedDocWordFeatures._num_occs == matchData[lfi]->getNumOccs());
+                } else {
+                    assert(matchData[lfi]->getFieldLength() == 0u);
+                    assert(matchData[lfi]->getNumOccs() == 0u);
                 }
-                TMDPI mdpe = matchData[lfi]->end();
-                TMDPI mdp = matchData[lfi]->begin();
-                while (mdp != mdpe) {
-                    assert(p != pe);
-                    assert(positions > 0);
-                    assert(p->_wordPos == mdp->getPosition());
-                    assert(p->_elementId == mdp->getElementId());
-                    assert(p->_elementWeight == mdp->getElementWeight());
-                    assert(p->_elementLen == mdp->getElementLen());
-                    ++p;
-                    ++mdp;
-                    --positions;
+                if (unpack_normal_features) {
+                    TMDPI mdpe = matchData[lfi]->end();
+                    TMDPI mdp = matchData[lfi]->begin();
+                    while (mdp != mdpe) {
+                        assert(p != pe);
+                        assert(positions > 0);
+                        assert(p->_wordPos == mdp->getPosition());
+                        assert(p->_elementId == mdp->getElementId());
+                        assert(p->_elementWeight == mdp->getElementWeight());
+                        assert(p->_elementLen == mdp->getElementLen());
+                        ++p;
+                        ++mdp;
+                        --positions;
+                    }
+                } else {
+                    assert(matchData[lfi]->size() == 0u);
                 }
             }
-            assert(positions == 0);
+            assert(positions == 0 || !unpack_normal_features);
             ++d;
             ++docId;
         } else {
@@ -523,7 +539,7 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
         if (docId >= _docIdLimit)
             break;
     }
-    assert(p == pe);
+    assert(p == pe || !unpack_normal_features);
     assert(d == de);
     if (verbose)
         printf("word '%s' validated successfully with unpack\n",

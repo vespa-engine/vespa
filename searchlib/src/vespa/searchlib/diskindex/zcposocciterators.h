@@ -21,6 +21,7 @@ private:
 public:
     ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
                              bool decode_normal_features, bool decode_cheap_features,
+                             bool unpack_normal_features, bool unpack_cheap_features,
                              const bitcompression::PosOccFieldsParams *fieldsParams,
                              const fef::TermFieldMatchDataArray &matchData);
 };
@@ -38,6 +39,7 @@ private:
 public:
     ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
                      bool decode_normal_features, bool decode_cheap_features,
+                     bool unpack_normal_features, bool unpack_cheap_features,
                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
                      const bitcompression::PosOccFieldsParams *fieldsParams,
                      const fef::TermFieldMatchDataArray &matchData);
@@ -45,6 +47,10 @@ public:
 
 std::unique_ptr<search::queryeval::SearchIterator>
 create_zc_posocc_iterator(bool bigEndian, const index::PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data);
+
+// Temporarily for unit testing.
+std::unique_ptr<search::queryeval::SearchIterator>
+create_zc_posocc_iterator(bool bigEndian, const index::PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data, bool unpack_normal_features, bool unpack_cheap_features);
 
 extern template class ZcRareWordPosOccIterator<false, false>;
 extern template class ZcRareWordPosOccIterator<false, true>;

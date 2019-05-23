@@ -535,12 +535,12 @@ randReadField(FakeWordSet &wordSet,
                     sb(handle.createIterator(counts, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
-                word->validate(sb.get(), tfmda, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 19, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 99, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 799, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 6399, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 11999, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, true, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 19, true, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 99, true, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 799, true, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 6399, true, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, 11999, true, decode_cheap_features, verbose);
                 ++wordNum;
             }
         }

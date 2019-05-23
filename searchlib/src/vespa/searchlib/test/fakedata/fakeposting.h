@@ -64,6 +64,10 @@ public:
 
     virtual bool has_cheap_features() const;
 
+    virtual bool enable_unpack_normal_features() const;
+
+    virtual bool enable_unpack_cheap_features() const;
+
     /*
      * Single posting list performance, without feature unpack.
      */
