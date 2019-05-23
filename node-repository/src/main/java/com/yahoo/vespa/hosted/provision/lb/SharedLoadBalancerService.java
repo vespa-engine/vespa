@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * This code mimics provisioning load balancers that already exist in the routing layer.
+ * It will just map the load balancer request to the proxy nodes available in the node repository.
+ *
  * @author ogronnesby
  */
 public class SharedLoadBalancerService implements LoadBalancerService {
