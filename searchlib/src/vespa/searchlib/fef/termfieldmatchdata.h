@@ -25,7 +25,7 @@ public:
         TermFieldMatchDataPosition *_positions;
         uint16_t                    _maxElementLength;
         uint16_t                    _allocated;
-    } __attribute__((packed));
+    };
 
     union Features {
         feature_t     _rawScore;

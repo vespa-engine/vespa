@@ -81,7 +81,7 @@ TEST("test TermFieldMatchDataAppend")
 }
 
 TEST("verify size of essential fef classes") {
-    EXPECT_EQUAL(12u,sizeof(TermFieldMatchData::Positions));
+    EXPECT_EQUAL(16u,sizeof(TermFieldMatchData::Positions));
     EXPECT_EQUAL(24u,sizeof(TermFieldMatchData::Features));
     EXPECT_EQUAL(36u,sizeof(TermFieldMatchData));
 }
