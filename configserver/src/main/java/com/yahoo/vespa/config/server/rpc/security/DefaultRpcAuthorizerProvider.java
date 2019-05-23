@@ -7,7 +7,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.server.host.HostRegistries;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
 /**
  * A provider for {@link RpcAuthorizer}. The instance provided is dependent on the configuration of the configserver.
@@ -22,10 +22,10 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
     public DefaultRpcAuthorizerProvider(ConfigserverConfig config,
                                         NodeIdentifier nodeIdentifier,
                                         HostRegistries hostRegistries,
-                                        TenantRepository tenantRepository) {
+                                        RequestHandlerProvider handlerProvider) {
         this.rpcAuthorizer =
                 TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant()
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, tenantRepository)
+                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider)
                         : new NoopRpcAuthorizer();
     }
 

@@ -19,8 +19,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -46,29 +45,29 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private final NodeIdentifier nodeIdentifier;
     private final HostRegistry<TenantName> hostRegistry;
-    private final TenantRepository tenantRepository;
+    private final RequestHandlerProvider handlerProvider;
     private final Executor executor;
     private final Mode mode;
 
     @Inject
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
                                     HostRegistries hostRegistries,
-                                    TenantRepository tenantRepository) {
+                                    RequestHandlerProvider handlerProvider) {
         this(nodeIdentifier,
              hostRegistries.getTenantHostRegistry(),
-             tenantRepository,
+             handlerProvider,
              Executors.newFixedThreadPool(4, new DaemonThreadFactory("RPC-Authorizer-")),
              Mode.LOG_ONLY); // TODO Change default mode
     }
 
     MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
                              HostRegistry<TenantName> hostRegistry,
-                             TenantRepository tenantRepository,
+                             RequestHandlerProvider handlerProvider,
                              Executor executor,
                              Mode mode) {
         this.nodeIdentifier = nodeIdentifier;
         this.hostRegistry = hostRegistry;
-        this.tenantRepository = tenantRepository;
+        this.handlerProvider = handlerProvider;
         this.executor = executor;
         this.mode = mode;
     }
@@ -196,8 +195,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     }
 
     private Optional<RequestHandler> getTenantHandler(TenantName tenantName) {
-        return Optional.ofNullable(tenantRepository.getTenant(tenantName))
-                .map(Tenant::getRequestHandler);
+        return handlerProvider.getRequestHandler(tenantName);
     }
 
     @SuppressWarnings("unchecked")

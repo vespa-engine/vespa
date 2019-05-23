@@ -123,7 +123,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Inject
     public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
                      MetricUpdaterFactory metrics, HostRegistries hostRegistries,
-                     HostLivenessTracker hostLivenessTracker, FileServer fileServer, RpcAuthorizer rpcAuthorizer) {
+                     HostLivenessTracker hostLivenessTracker, FileServer fileServer, RpcAuthorizer rpcAuthorizer,
+                     RpcRequestHandlerProvider handlerProvider) {
         this.superModelRequestHandler = superModelRequestHandler;
         metricUpdaterFactory = metrics;
         supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
@@ -144,6 +145,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.fileServer = fileServer;
         this.rpcAuthorizer = rpcAuthorizer;
         downloader = fileServer.downloader();
+        handlerProvider.setInstance(this);
         setUpHandlers();
     }
 
@@ -388,14 +390,15 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             return GetConfigContext.create(ApplicationId.global(), superModelRequestHandler, trace);
         }
         TenantName tenant = optionalTenant.orElse(TenantName.defaultName()); // perhaps needed for non-hosted?
-        if ( ! hasRequestHandler(tenant)) {
+        Optional<RequestHandler> requestHandler = getRequestHandler(tenant);
+        if (requestHandler.isEmpty()) {
             String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
             log.log(LogLevel.WARNING, msg);
             return null;
         }
-        RequestHandler handler = getRequestHandler(tenant);
+        RequestHandler handler = requestHandler.get();
         ApplicationId applicationId = handler.resolveApplicationId(request.getClientHostName());
         if (trace.shouldTrace(TRACELEVEL_DEBUG)) {
             trace.trace(TRACELEVEL_DEBUG, "Host '" + request.getClientHostName() + "' should have config from application '" + applicationId + "'");
@@ -403,15 +406,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return GetConfigContext.create(applicationId, handler, trace);
     }
 
-    private boolean hasRequestHandler(TenantName tenant) {
-        return tenantProviders.containsKey(tenant);
-    }
-
-    private RequestHandler getRequestHandler(TenantName tenant) {
-        if (!tenantProviders.containsKey(tenant)) {
-            throw new IllegalStateException("No request handler for " + tenant);
-        }
-        return tenantProviders.get(tenant).getRequestHandler();
+    Optional<RequestHandler> getRequestHandler(TenantName tenant) {
+        return Optional.ofNullable(tenantProviders.get(tenant))
+                .map(TenantHandlerProvider::getRequestHandler);
     }
 
     void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
