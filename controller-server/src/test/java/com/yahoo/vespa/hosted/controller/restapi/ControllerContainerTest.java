@@ -106,10 +106,6 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
                "    <binding>http://*/cost/v1/*</binding>\n" +
                "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
-               "    <binding>http://*/zone/v1</binding>\n" +
-               "    <binding>http://*/zone/v1/*</binding>\n" +
-               "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v2</binding>\n" +
                "    <binding>http://*/zone/v2/*</binding>\n" +
@@ -131,6 +127,10 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
                "    <binding>http://*/athenz/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
+               "    <binding>http://*/zone/v1</binding>\n" +
+               "    <binding>http://*/zone/v1/*</binding>\n" +
                "  </handler>\n" +
 
                "  <http>\n" +
