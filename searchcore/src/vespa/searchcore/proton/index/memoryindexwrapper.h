@@ -68,7 +68,7 @@ public:
     search::index::Schema::SP getPrunedSchema() const override {
         return _index.getPrunedSchema();
     }
-    search::MemoryUsage getMemoryUsage() const override {
+    vespalib::MemoryUsage getMemoryUsage() const override {
         return _index.getMemoryUsage();
     }
     void insertDocument(uint32_t lid, const document::Document &doc) override {

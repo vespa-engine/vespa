@@ -140,10 +140,10 @@ ReferenceMappings::shrink(uint32_t docIdLimit)
     _targetLids.shrink(docIdLimit);
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 ReferenceMappings::getMemoryUsage()
 {
-    MemoryUsage usage = _reverseMapping.getMemoryUsage();
+    vespalib::MemoryUsage usage = _reverseMapping.getMemoryUsage();
     usage.merge(_reverseMappingIndices.getMemoryUsage());
     usage.merge(_targetLids.getMemoryUsage());
     return usage;

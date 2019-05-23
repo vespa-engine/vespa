@@ -818,10 +818,10 @@ AttributeVector::makeReadGuard(bool stableEnumGuard) const
     return std::make_unique<ReadGuard>(this, _genHandler.takeGuard(), stableEnumGuard ? &_enumLock : nullptr);
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 AttributeVector::getChangeVectorMemoryUsage() const
 {
-    return MemoryUsage(0, 0, 0, 0);
+    return vespalib::MemoryUsage(0, 0, 0, 0);
 }
 
 void

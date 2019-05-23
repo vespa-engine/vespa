@@ -25,7 +25,7 @@ public:
         search::btree::BTreeNoLeafData,
         search::btree::NoAggregated,
         const KeyComp &>;
-    using MetaDataStore = search::attribute::RcuVectorBase<RawDocumentMetaData>;
+    using MetaDataStore = vespalib::RcuVectorBase<RawDocumentMetaData>;
 
 private:
     GidIterator _gidIterator; // iterator over frozen tree

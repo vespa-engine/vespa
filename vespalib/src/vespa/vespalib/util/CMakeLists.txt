@@ -31,6 +31,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     printable.cpp
     priority_queue.cpp
     random.cpp
+    rcuvector.cpp
     regexp.cpp
     runnable.cpp
     runnable_pair.cpp

@@ -11,13 +11,13 @@
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreebuilder.hpp>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
 #include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/fastos/file.h>
 #include "document_meta_store_versions.h"
 
@@ -32,7 +32,7 @@ using search::FileReader;
 using search::GrowStrategy;
 using search::IAttributeSaveTarget;
 using search::LidUsageStats;
-using search::MemoryUsage;
+using vespalib::MemoryUsage;
 using search::attribute::SearchContextParams;
 using search::btree::BTreeNoLeafData;
 using search::fef::TermFieldMatchData;
@@ -200,7 +200,7 @@ DocumentMetaStore::insert(DocId lid, const RawDocumentMetaData &metaData)
 void
 DocumentMetaStore::onUpdateStat()
 {
-    MemoryUsage usage = _metaDataStore.getMemoryUsage();
+    vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
     usage.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
     size_t bvSize = _lidAlloc.getUsedLidsSize();
     usage.incAllocatedBytes(bvSize);

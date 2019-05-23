@@ -55,7 +55,7 @@ public:
         _store.clearHoldLists();
     }
 
-    MemoryUsage
+    vespalib::MemoryUsage
     getMemoryUsage() const
     {
         return _store.getMemoryUsage();

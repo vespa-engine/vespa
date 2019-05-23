@@ -6,7 +6,7 @@
 #include "reference_mappings.h"
 #include "reference.h"
 #include <vespa/searchlib/datastore/unique_store.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace search { class IGidToLidMapperFactory; }
 
@@ -27,7 +27,7 @@ public:
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     using ReferenceStore = datastore::UniqueStore<Reference>;
-    using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
+    using ReferenceStoreIndices = vespalib::RcuVectorBase<EntryRef>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
     // Class used to map from target lid to source lids
     using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
@@ -41,7 +41,7 @@ public:
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
-    MemoryUsage _cachedUniqueStoreMemoryUsage;
+    vespalib::MemoryUsage _cachedUniqueStoreMemoryUsage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 

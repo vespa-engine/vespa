@@ -201,11 +201,11 @@ DataStoreBase::dropBuffers()
     _genHolder.clearHoldLists();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 DataStoreBase::getMemoryUsage() const
 {
     MemStats stats = getMemStats();
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(stats._allocBytes);
     usage.setUsedBytes(stats._usedBytes);
     usage.setDeadBytes(stats._deadBytes);

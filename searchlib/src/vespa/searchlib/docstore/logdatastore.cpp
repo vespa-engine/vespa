@@ -7,8 +7,8 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -1156,11 +1156,11 @@ LogDataStore::getStorageStats() const
                                  lastSerialNum, lastFlushedSerialNum, docIdLimit);
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 LogDataStore::getMemoryUsage() const
 {
     LockGuard guard(_updateLock);
-    MemoryUsage result;
+    vespalib::MemoryUsage result;
     result.merge(_lidInfo.getMemoryUsage());
     for (const auto &fileChunk : _fileChunks) {
         if (fileChunk) {

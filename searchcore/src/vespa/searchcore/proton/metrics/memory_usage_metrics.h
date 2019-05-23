@@ -4,7 +4,7 @@
 
 #include <vespa/metrics/metrics.h>
 
-namespace search { class MemoryUsage; }
+namespace vespalib { class MemoryUsage; }
 
 namespace proton {
 
@@ -22,7 +22,7 @@ private:
 public:
     MemoryUsageMetrics(metrics::MetricSet *parent);
     ~MemoryUsageMetrics();
-    void update(const search::MemoryUsage &usage);
+    void update(const vespalib::MemoryUsage &usage);
 };
 
 } // namespace proton

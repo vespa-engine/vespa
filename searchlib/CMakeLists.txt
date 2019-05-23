@@ -103,7 +103,6 @@ vespa_define_module(
     src/tests/common/foregroundtaskexecutor
     src/tests/common/location
     src/tests/common/packets
-    src/tests/common/rcuvector
     src/tests/common/resultset
     src/tests/common/sequencedtaskexecutor
     src/tests/common/summaryfeatures

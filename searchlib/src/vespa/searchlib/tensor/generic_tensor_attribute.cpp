@@ -4,10 +4,10 @@
 #include "generic_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;

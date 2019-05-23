@@ -78,7 +78,7 @@ public:
     /**
      * Return memory usage (only the data store is included)
      */
-    MemoryUsage getMemoryUsage() const {
+    vespalib::MemoryUsage getMemoryUsage() const {
         return _store.getMemoryUsage();
     }
 

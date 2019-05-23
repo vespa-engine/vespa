@@ -177,7 +177,7 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    MemoryUsage getMemoryUsage() const {
+    vespalib::MemoryUsage getMemoryUsage() const {
         return _store.getMemoryUsage();
     }
 

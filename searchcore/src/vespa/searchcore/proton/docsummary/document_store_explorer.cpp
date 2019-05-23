@@ -18,7 +18,7 @@ DocumentStoreExplorer::DocumentStoreExplorer(ISummaryManager::SP mgr)
 namespace {
 
 void
-setMemoryUsage(Cursor &object, const search::MemoryUsage &usage)
+setMemoryUsage(Cursor &object, const vespalib::MemoryUsage &usage)
 {
     Cursor &memory = object.setObject("memoryUsage");
     memory.setLong("allocatedBytes", usage.allocatedBytes());

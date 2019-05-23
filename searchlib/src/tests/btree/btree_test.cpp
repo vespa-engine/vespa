@@ -172,7 +172,7 @@ private:
     bool assertLeafNode(const std::string & exp, const LeafNodeType & n);
     bool assertSeek(int skey, int ekey, const MyTree & tree);
     bool assertSeek(int skey, int ekey, MyTree::Iterator & itr);
-    bool assertMemoryUsage(const MemoryUsage & exp, const MemoryUsage & act);
+    bool assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act);
 
     void
     buildSubTree(const std::vector<LeafPair> &sub,
@@ -251,7 +251,7 @@ Test::assertSeek(int skey, int ekey, MyTree::Iterator & itr)
 }
 
 bool
-Test::assertMemoryUsage(const MemoryUsage & exp, const MemoryUsage & act)
+Test::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act)
 {
     if (!EXPECT_EQUAL(exp.allocatedBytes(), act.allocatedBytes())) return false;
     if (!EXPECT_EQUAL(exp.usedBytes(), act.usedBytes())) return false;
@@ -1047,7 +1047,7 @@ Test::requireThatMemoryUsageIsCalculated()
     GenerationHandler gh;
     gh.incGeneration();
     NodeAllocator tm;
-    MemoryUsage mu;
+    vespalib::MemoryUsage mu;
     const uint32_t initialInternalNodes = 128u;
     const uint32_t initialLeafNodes = 128u;
     mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
@@ -1079,7 +1079,7 @@ Test::requireThatMemoryUsageIsCalculated()
     tm.transferHoldLists(gh.getCurrentGeneration());
     gh.incGeneration();
     tm.trimHoldLists(gh.getFirstUsedGeneration());
-    mu = MemoryUsage();
+    mu = vespalib::MemoryUsage();
     mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
     mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
     mu.incUsedBytes(sizeof(INode) * 2);

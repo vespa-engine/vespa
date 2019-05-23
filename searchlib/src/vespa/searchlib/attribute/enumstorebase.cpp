@@ -9,8 +9,8 @@
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -112,7 +112,7 @@ EnumStoreBase::getBufferIndex(datastore::BufferState::State status)
     return Index::numBuffers();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 EnumStoreBase::getMemoryUsage() const
 {
     return _store.getMemoryUsage();
@@ -333,7 +333,7 @@ EnumStoreDict<Dictionary>::getNumUniques() const
 
 
 template <typename Dictionary>
-MemoryUsage
+vespalib::MemoryUsage
 EnumStoreDict<Dictionary>::getTreeMemoryUsage() const
 {
     return _dict.getMemoryUsage();
@@ -632,10 +632,6 @@ template class EnumStoreDict<EnumTree>;
 
 template class EnumStoreDict<EnumPostingTree>;
 
-namespace attribute {
-    template class RcuVectorBase<EnumStoreIndex>;
-}
-
 template
 class btree::BTreeNodeT<EnumStoreBase::Index, EnumTreeTraits::INTERNAL_SLOTS>;
 
@@ -723,6 +719,10 @@ class btree::BTree<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregate
                    const EnumStoreComparatorWrapper, EnumTreeTraits>;
 
 
+}
+
+namespace vespalib {
+template class RcuVectorBase<search::EnumStoreIndex>;
 }
 
 VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::EnumStoreIndex, search::EnumStoreIndex,

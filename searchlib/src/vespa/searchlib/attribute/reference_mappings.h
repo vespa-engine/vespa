@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/btree/btreestore.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <atomic>
 
 namespace search::attribute {
@@ -18,7 +18,7 @@ class ReferenceMappings
     using GenerationHolder = vespalib::GenerationHolder;
     using EntryRef = search::datastore::EntryRef;
     // Classes used to map from target lid to source lids
-    using ReverseMappingIndices = RcuVectorBase<EntryRef>;
+    using ReverseMappingIndices = vespalib::RcuVectorBase<EntryRef>;
     using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
                                              btree::NoAggregated,
                                              std::less<uint32_t>,
@@ -35,7 +35,7 @@ class ReferenceMappings
     // source lids.
     ReverseMapping _reverseMapping;
     // vector containing target lid given source lid
-    RcuVectorBase<uint32_t> _targetLids;
+    vespalib::RcuVectorBase<uint32_t> _targetLids;
     const uint32_t &_committedDocIdLimit;
 
     void syncForwardMapping(const Reference &entry);
@@ -74,7 +74,7 @@ public:
     // Setup mapping after load
     void buildReverseMapping(const Reference &entry, const std::vector<ReverseMapping::KeyDataType> &adds);
 
-    MemoryUsage getMemoryUsage();
+    vespalib::MemoryUsage getMemoryUsage();
 
     // Reader API, reader must hold generation guard
     template <typename FunctionType>

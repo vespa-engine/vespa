@@ -15,7 +15,7 @@ MultiValueNumericPostingAttribute<B, M>::freezeEnumDictionary()
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::mergeMemoryStats(MemoryUsage & total)
+MultiValueNumericPostingAttribute<B, M>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
     total.merge(this->getPostingList().getMemoryUsage());
 }

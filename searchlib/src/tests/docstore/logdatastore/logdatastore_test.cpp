@@ -984,12 +984,12 @@ TEST_F("require that lid space can be compacted and shrunk", Fixture)
     EXPECT_FALSE(f.store.canShrinkLidSpace());
 
     f.compactLidSpace(2);
-    MemoryUsage before = f.store.getMemoryUsage();
+    vespalib::MemoryUsage before = f.store.getMemoryUsage();
     EXPECT_TRUE(f.store.canShrinkLidSpace());
     EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain()); // one lid info entry
     f.store.shrinkLidSpace();
 
-    MemoryUsage after = f.store.getMemoryUsage();
+    vespalib::MemoryUsage after = f.store.getMemoryUsage();
     EXPECT_LESS(after.usedBytes(), before.usedBytes());
     EXPECT_EQUAL(8u, before.usedBytes() - after.usedBytes());
 }

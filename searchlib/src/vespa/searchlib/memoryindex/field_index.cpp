@@ -191,10 +191,10 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
     }
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 FieldIndex::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.merge(_wordStore.getMemoryUsage());
     usage.merge(_dict.getMemoryUsage());
     usage.merge(_postingListStore.getMemoryUsage());

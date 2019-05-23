@@ -71,7 +71,7 @@ protected:
 
     virtual bool onAddDoc(DocId doc) override;
 
-    virtual MemoryUsage getChangeVectorMemoryUsage() const override;
+    virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     typedef attribute::LoadedStringVectorReal LoadedVectorR;
     virtual void fillPostings(LoadedVector & loaded);

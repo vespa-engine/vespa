@@ -133,7 +133,7 @@ public:
             ++i;
         }
     }
-    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
 
 using MyRef = MyStore::RefType;
@@ -461,7 +461,7 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     s.incDead(r, 1);
     s.holdBuffer(r.bufferId());
     s.transferHoldLists(100);
-    MemoryUsage m = s.getMemoryUsage();
+    vespalib::MemoryUsage m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
     EXPECT_EQ(5 * sizeof(int), m.usedBytes());
     EXPECT_EQ(2 * sizeof(int), m.deadBytes());
@@ -476,7 +476,7 @@ TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
     MyRef r2 = s.addEntry(20);
     MyRef r3 = s.addEntry(30);
     (void) r3;
-    MemoryUsage m = s.getMemoryUsage();
+    vespalib::MemoryUsage m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
     EXPECT_EQ(4 * sizeof(int), m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());

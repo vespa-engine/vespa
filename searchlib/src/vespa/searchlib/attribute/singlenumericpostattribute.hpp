@@ -34,7 +34,7 @@ SingleValueNumericPostingAttribute<B>::freezeEnumDictionary()
 
 template <typename B>
 void
-SingleValueNumericPostingAttribute<B>::mergeMemoryStats(MemoryUsage & total)
+SingleValueNumericPostingAttribute<B>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
     total.merge(this->_postingList.getMemoryUsage());
 }

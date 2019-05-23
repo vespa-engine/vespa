@@ -11,8 +11,8 @@
 #include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/indexbuilder.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace search::memoryindex {
 
@@ -150,7 +150,7 @@ public:
 
     void dump(search::index::IndexBuilder & indexBuilder);
 
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
     DictionaryTree &getDictionaryTree() { return _dict; }
     PostingListStore &getPostingListStore() { return _postingListStore; }
     FieldIndexRemover &getDocumentRemover() { return _remover; }

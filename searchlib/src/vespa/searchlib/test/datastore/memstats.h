@@ -2,9 +2,9 @@
 
 #pragma once
 
-namespace search {
-namespace datastore {
-namespace test {
+#include <vespa/vespalib/util/memoryusage.h>
+
+namespace search::datastore::test {
 
 /*
  * Class representing expected memory stats in unit tests.
@@ -15,7 +15,7 @@ struct MemStats
     size_t _hold;
     size_t _dead;
     MemStats() : _used(0), _hold(0), _dead(0) {}
-    MemStats(const MemoryUsage &usage)
+    MemStats(const vespalib::MemoryUsage &usage)
         : _used(usage.usedBytes()),
           _hold(usage.allocatedBytesOnHold()),
           _dead(usage.deadBytes()) {}
@@ -34,6 +34,4 @@ struct MemStats
     }
 };
 
-}
-}
 }

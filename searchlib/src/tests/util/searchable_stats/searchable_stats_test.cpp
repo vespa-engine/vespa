@@ -22,7 +22,7 @@ Test::Main()
         EXPECT_EQUAL(0u, stats.sizeOnDisk());
         {
             SearchableStats rhs;
-            EXPECT_EQUAL(&rhs.memoryUsage(MemoryUsage(100,0,0,0)), &rhs);
+            EXPECT_EQUAL(&rhs.memoryUsage(vespalib::MemoryUsage(100,0,0,0)), &rhs);
             EXPECT_EQUAL(&rhs.docsInMemory(10), &rhs);
             EXPECT_EQUAL(&rhs.sizeOnDisk(1000), &rhs);
             EXPECT_EQUAL(&stats.add(rhs), &stats);
@@ -30,7 +30,7 @@ Test::Main()
         EXPECT_EQUAL(100u, stats.memoryUsage().allocatedBytes());
         EXPECT_EQUAL(10u, stats.docsInMemory());
         EXPECT_EQUAL(1000u, stats.sizeOnDisk());
-        EXPECT_EQUAL(&stats.add(SearchableStats().memoryUsage(MemoryUsage(100,0,0,0)).docsInMemory(10).sizeOnDisk(1000)), &stats);
+        EXPECT_EQUAL(&stats.add(SearchableStats().memoryUsage(vespalib::MemoryUsage(100,0,0,0)).docsInMemory(10).sizeOnDisk(1000)), &stats);
         EXPECT_EQUAL(200u, stats.memoryUsage().allocatedBytes());
         EXPECT_EQUAL(20u, stats.docsInMemory());
         EXPECT_EQUAL(2000u, stats.sizeOnDisk());

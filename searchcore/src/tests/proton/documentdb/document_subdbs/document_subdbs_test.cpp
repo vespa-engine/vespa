@@ -128,8 +128,8 @@ struct MyStoreOnlyConfig
         : _cfg(DocTypeName(DOCTYPE_NAME),
               SUB_NAME,
               BASE_DIR,
-              GrowStrategy(),
-                   0, 0, SubDbType::READY)
+              search::GrowStrategy(),
+              0, 0, SubDbType::READY)
     {
     }
 };

@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <functional>
 
 namespace search { class CompactionStrategy; }
@@ -18,15 +18,15 @@ class MultiValueMappingBase
 {
 public:
     using EntryRef = datastore::EntryRef;
-    using RefVector = RcuVectorBase<EntryRef>;
+    using RefVector = vespalib::RcuVectorBase<EntryRef>;
 
 protected:
     RefVector _indices;
     size_t    _totalValues;
-    MemoryUsage _cachedArrayStoreMemoryUsage;
+    vespalib::MemoryUsage _cachedArrayStoreMemoryUsage;
     AddressSpace _cachedArrayStoreAddressSpaceUsage;
 
-    MultiValueMappingBase(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
+    MultiValueMappingBase(const vespalib::GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMappingBase();
 
     void updateValueCount(size_t oldValues, size_t newValues) {
@@ -35,10 +35,10 @@ protected:
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
-    virtual MemoryUsage getArrayStoreMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getArrayStoreMemoryUsage() const = 0;
     virtual AddressSpace getAddressSpaceUsage() const = 0;
-    MemoryUsage getMemoryUsage() const;
-    MemoryUsage updateStat();
+    vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage updateStat();
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 

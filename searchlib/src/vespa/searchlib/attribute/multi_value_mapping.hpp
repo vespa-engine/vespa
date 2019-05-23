@@ -4,12 +4,13 @@
 
 #include "multi_value_mapping.h"
 #include <vespa/searchlib/datastore/array_store.hpp>
-#include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::attribute {
 
 template <typename EntryT, typename RefT>
-MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg, const GrowStrategy &gs)
+MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
+                                                  const vespalib::GrowStrategy &gs)
     : MultiValueMappingBase(gs, _store.getGenerationHolder()),
       _store(storeCfg)
 {
@@ -54,7 +55,7 @@ MultiValueMapping<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAdd
 }
 
 template <typename EntryT, typename RefT>
-MemoryUsage
+vespalib::MemoryUsage
 MultiValueMapping<EntryT,RefT>::getArrayStoreMemoryUsage() const
 {
     return _store.getMemoryUsage();

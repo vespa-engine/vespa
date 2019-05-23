@@ -3,7 +3,7 @@
 #pragma once
 
 #include "enumattribute.h"
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace search {
 
@@ -19,7 +19,7 @@ class SingleValueEnumAttributeBase
 {
 protected:
     typedef EnumStoreBase::Index      EnumIndex;
-    typedef search::attribute::RcuVectorBase<EnumIndex> EnumIndexVector;
+    typedef vespalib::RcuVectorBase<EnumIndex> EnumIndexVector;
     typedef AttributeVector::DocId        DocId;
     typedef AttributeVector::EnumHandle   EnumHandle;
     typedef vespalib::GenerationHolder GenerationHolder;
@@ -83,7 +83,7 @@ protected:
         this->getEnumStore().freezeTree();
     }
 
-    virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
+    virtual void mergeMemoryStats(vespalib::MemoryUsage & total) { (void) total; }
 
     void fillValues(LoadedVector & loaded) override;
 

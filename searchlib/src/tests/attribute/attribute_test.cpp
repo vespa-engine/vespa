@@ -1816,7 +1816,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     EXPECT_EQUAL(1u, ia.getCurrentGeneration());
     uint64_t lastAllocated;
     uint64_t lastOnHold;
-    MemoryUsage changeVectorMemoryUsage(attr->getChangeVectorMemoryUsage());
+    vespalib::MemoryUsage changeVectorMemoryUsage(attr->getChangeVectorMemoryUsage());
     size_t changeVectorAllocated = changeVectorMemoryUsage.allocatedBytes();
     if (exactStatus) {
         EXPECT_EQUAL(2u + changeVectorAllocated, ia.getStatus().getAllocated());

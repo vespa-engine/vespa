@@ -50,7 +50,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     virtual search::DataStoreStorageStats getStorageStats() const override {
         return search::DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
     }
-    virtual search::MemoryUsage getMemoryUsage() const override { return search::MemoryUsage(); }
+    virtual vespalib::MemoryUsage getMemoryUsage() const override { return vespalib::MemoryUsage(); }
     virtual std::vector<search::DataStoreFileChunkStats> getFileChunkStats() const override {
         std::vector<search::DataStoreFileChunkStats> result;
         return result;

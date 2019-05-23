@@ -5,7 +5,7 @@
 #include "i_tensor_attribute.h"
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include "tensor_store.h"
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::tensor {
 
@@ -16,7 +16,7 @@ class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute
 {
 protected:
     using EntryRef = TensorStore::EntryRef;
-    using RefVector = attribute::RcuVectorBase<EntryRef>;
+    using RefVector = vespalib::RcuVectorBase<EntryRef>;
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors

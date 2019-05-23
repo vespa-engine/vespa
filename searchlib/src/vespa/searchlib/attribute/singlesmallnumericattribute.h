@@ -4,7 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <limits>
 
 namespace search {
@@ -32,7 +32,7 @@ private:
     uint32_t _valueShiftMask;   // 0x1f, 0x0f or 0x07
     uint32_t _wordShift;        // 0x05, 0x04 or 0x03
 
-    typedef search::attribute::RcuVectorBase<Word> DataVector;
+    typedef vespalib::RcuVectorBase<Word> DataVector;
     DataVector _wordData;
 
     T getFromEnum(EnumHandle) const override {

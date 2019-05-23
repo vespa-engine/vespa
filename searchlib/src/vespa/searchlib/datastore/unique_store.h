@@ -98,7 +98,7 @@ public:
     }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation);

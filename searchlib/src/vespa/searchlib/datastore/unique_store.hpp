@@ -190,10 +190,10 @@ UniqueStore<EntryT, RefT>::compactWorst()
 }
 
 template <typename EntryT, typename RefT>
-MemoryUsage
+vespalib::MemoryUsage
 UniqueStore<EntryT, RefT>::getMemoryUsage() const
 {
-    MemoryUsage usage = _store.getMemoryUsage();
+    vespalib::MemoryUsage usage = _store.getMemoryUsage();
     usage.merge(_dict.getMemoryUsage());
     return usage;
 }

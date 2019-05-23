@@ -12,7 +12,7 @@ LOG_SETUP("reference_attribute_test");
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/document/base/documentid.h>
 
-using search::MemoryUsage;
+using vespalib::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using search::attribute::Reference;

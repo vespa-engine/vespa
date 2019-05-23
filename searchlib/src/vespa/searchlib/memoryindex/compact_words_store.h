@@ -3,8 +3,8 @@
 
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace search::memoryindex {
@@ -75,7 +75,7 @@ public:
         ~Store();
         datastore::EntryRef insert(const Builder &builder);
         Iterator get(datastore::EntryRef wordRef) const;
-        MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+        vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     };
 
     using DocumentWordsMap = vespalib::hash_map<uint32_t, datastore::EntryRef>;
@@ -90,7 +90,7 @@ public:
     void insert(const Builder &builder);
     void remove(uint32_t docId);
     Iterator get(uint32_t docId) const;
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 };
 
 }

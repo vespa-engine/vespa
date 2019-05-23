@@ -4,9 +4,9 @@
 
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/queryeval/searchable.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace search::index { class IndexBuilder; }
 
@@ -162,7 +162,7 @@ public:
     /**
      * Gets an approximation of how much memory the index uses.
      */
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
 };

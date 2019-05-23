@@ -84,7 +84,7 @@ public:
     }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst(bool compactMemory, bool compactAddressSpace);
-    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
     /**
      * Returns the address space usage by this store as the ratio between active buffers

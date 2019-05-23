@@ -3,9 +3,9 @@
 #pragma once
 
 #include "common.h"
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <experimental/optional>
 
 namespace search::predicate {
@@ -49,7 +49,7 @@ struct SimpleIndexConfig {
     // Use vector posting list in foreach_frozen if doc frequency is above
     double foreach_vector_threshold = DEFAULT_FOREACH_VECTOR_THRESHOLD;
     // Grow strategy for the posting vectors
-    GrowStrategy grow_strategy = GrowStrategy();
+    vespalib::GrowStrategy grow_strategy = vespalib::GrowStrategy();
 
     SimpleIndexConfig() {}
     SimpleIndexConfig(double upper_docid_freq_threshold_,
@@ -58,7 +58,7 @@ struct SimpleIndexConfig {
                       size_t lower_vector_size_threshold_,
                       size_t vector_prune_frequency_,
                       double foreach_vector_threshold_,
-                      GrowStrategy grow_strategy_)
+                      vespalib::GrowStrategy grow_strategy_)
             : upper_docid_freq_threshold(upper_docid_freq_threshold_),
               lower_docid_freq_threshold(lower_docid_freq_threshold_),
               upper_vector_size_threshold(upper_vector_size_threshold_),
@@ -66,7 +66,7 @@ struct SimpleIndexConfig {
               vector_prune_frequency(vector_prune_frequency_),
               foreach_vector_threshold(foreach_vector_threshold_),
               grow_strategy(grow_strategy_) {}
-    SimpleIndexConfig(double upper_docid_freq_threshold_, GrowStrategy grow_strategy_)
+    SimpleIndexConfig(double upper_docid_freq_threshold_, vespalib::GrowStrategy grow_strategy_)
             : upper_docid_freq_threshold(upper_docid_freq_threshold_),
               lower_docid_freq_threshold(upper_docid_freq_threshold_ * 0.80),
               grow_strategy(grow_strategy_) {}
@@ -74,7 +74,7 @@ struct SimpleIndexConfig {
 
 template <typename Posting, typename Key, typename DocId>
 class PostingVectorIterator {
-    using PostingVector = attribute::RcuVectorBase<Posting>;
+    using PostingVector = vespalib::RcuVectorBase<Posting>;
 
     const Posting * const _vector;
     const size_t _size;
@@ -131,7 +131,7 @@ public:
     using BTreeStore = btree::BTreeStore<
             DocId, Posting, btree::NoAggregated, std::less<DocId>, btree::BTreeDefaultTraits>;
     using BTreeIterator = typename BTreeStore::ConstIterator;
-    using PostingVector = attribute::RcuVectorBase<Posting>;
+    using PostingVector = vespalib::RcuVectorBase<Posting>;
     using VectorStore = btree::BTree<Key, std::shared_ptr<PostingVector>, btree::NoAggregated>;
     using VectorIterator = PostingVectorIterator<Posting, Key, DocId>;
 
@@ -189,7 +189,7 @@ public:
     void commit();
     void trimHoldLists(generation_t used_generation);
     void transferHoldLists(generation_t generation);
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
     template <typename FunctionType>
     void foreach_frozen_key(datastore::EntryRef ref, Key key, FunctionType func) const;
 

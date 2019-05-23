@@ -518,7 +518,7 @@ StringAttribute::fixupEnumRefCounts(const EnumVector &)
     fprintf(stderr, "StringAttribute::fixupEnumRefCounts\n");
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 StringAttribute::getChangeVectorMemoryUsage() const
 {
     return _changes.getMemoryUsage();

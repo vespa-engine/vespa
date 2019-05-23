@@ -5,9 +5,9 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 
-namespace search {
+namespace vespalib { class MemoryUsage; }
 
-class MemoryUsage;
+namespace search {
 
 struct ChangeBase {
     enum Type {
@@ -171,7 +171,7 @@ public:
     void clear();
     const_iterator begin() const { return const_iterator(_v, 0); }
     const_iterator end()   const { return const_iterator(_v, size()); }
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 private:
     void linkIn(uint32_t doc, size_t index, size_t last);
     Vector _v;

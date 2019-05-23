@@ -16,15 +16,15 @@
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/docstore/cachestats.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdb_metrics_updater");
 
 using search::LidUsageStats;
 using search::CacheStats;
-using search::MemoryUsage;
+using vespalib::MemoryUsage;
 
 namespace proton {
 
@@ -49,7 +49,7 @@ DocumentDBMetricsUpdater::~DocumentDBMetricsUpdater() = default;
 namespace {
 
 struct TotalStats {
-    search::MemoryUsage memoryUsage;
+    MemoryUsage memoryUsage;
     uint64_t diskUsage;
     TotalStats() : memoryUsage(), diskUsage() {}
 };

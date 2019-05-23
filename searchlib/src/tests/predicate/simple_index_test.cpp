@@ -64,7 +64,7 @@ const auto config = SimpleIndexConfig(UPPER_DOCID_FREQ_THRESHOLD,
                                       LOWER_VECTOR_SIZE_THRESHOLD,
                                       VECTOR_PRUNE_FREQUENCY,
                                       FOREACH_VECTOR_THRESHOLD,
-                                      GrowStrategy());
+                                      vespalib::GrowStrategy());
 struct Fixture {
     GenerationHolder _generation_holder;
     SimpleDocIdLimitProvider _limit_provider;
