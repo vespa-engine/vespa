@@ -8,6 +8,7 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
     DEPENDS
     vdslib_bucketdistributiontest
     vdslib_containertest
+    vdslib_testdistribution
     vdslib_teststate
     vdslib_testthread
     gtest
@@ -16,18 +17,4 @@ vespa_add_executable(vdslib_gtest_runner_app TEST
 vespa_add_test(
     NAME vdslib_gtest_runner_app
     COMMAND vdslib_gtest_runner_app
-)
-
-# Runner for unit tests written in CppUnit (DEPRECATED).
-vespa_add_executable(vdslib_testrunner_app TEST
-    SOURCES
-    testrunner.cpp
-    DEPENDS
-    vdslib_testdistribution
-)
-
-# TODO: Test with a larger chunk size to parallelize test suite runs 
-vespa_add_test(
-    NAME vdslib_testrunner_app
-    COMMAND vdslib_testrunner_app
 )
