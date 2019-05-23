@@ -17,6 +17,13 @@ hash_map<K, V, H, EQ, M>::hash_map(size_t reserveSize, H hasher, EQ equality) :
 { }
 
 template <typename K, typename V, typename H, typename EQ, typename M>
+hash_map<K, V, H, EQ, M>::hash_map(std::initializer_list<value_type> input)
+    : _ht(0)
+{
+    insert(input.begin(), input.end());
+}
+
+template <typename K, typename V, typename H, typename EQ, typename M>
 hash_map<K, V, H, EQ, M>::~hash_map() = default;
 
 template <typename K, typename V, typename H, typename EQ, typename M>

@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/match_data_details.h>
-#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/noncopyable.hpp>
 
 namespace proton::matching {
@@ -20,7 +20,7 @@ namespace proton::matching {
 class HandleRecorder
 {
 public:
-    using HandleSet = vespalib::hash_set<search::fef::TermFieldHandle>;
+    using HandleMap = vespalib::hash_map<search::fef::TermFieldHandle, search::fef::MatchDataDetails>;
     class Binder : public vespalib::noncopyable {
     public:
         Binder(HandleRecorder & recorder);
@@ -33,16 +33,14 @@ public:
     };
     HandleRecorder();
     ~HandleRecorder();
-    const HandleSet& get_normal_handles() const { return _normal_handles; }
-    const HandleSet& get_cheap_handles() const { return _cheap_handles; }
+    const HandleMap& get_handles() const { return _handles; }
     static void register_handle(search::fef::TermFieldHandle handle,
                                 search::fef::MatchDataDetails requested_details);
     vespalib::string to_string() const;
 private:
     void add(search::fef::TermFieldHandle handle,
              search::fef::MatchDataDetails requested_details);
-    HandleSet _normal_handles;
-    HandleSet _cheap_handles;
+    HandleMap _handles;
 };
 
 }

@@ -4,6 +4,9 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
 #include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <vespa/vespalib/util/array_equal.hpp>
 
 using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
@@ -22,20 +25,21 @@ namespace {
 }
 
 HandleRecorder::HandleRecorder() :
-    _normal_handles(),
-    _cheap_handles()
+    _handles()
 {
 }
 
 namespace {
 
 vespalib::string
-handles_to_string(const HandleRecorder::HandleSet& handles)
+handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails requested_details)
 {
     vespalib::asciistream os;
     std::vector<TermFieldHandle> sorted;
-    for (TermFieldHandle handle : handles) {
-        sorted.push_back(handle);
+    for (const auto &handle : handles) {
+        if ((static_cast<int>(handle.second) & static_cast<int>(requested_details)) != 0) {
+            sorted.push_back(handle.first);
+        }
     }
     std::sort(sorted.begin(), sorted.end());
     if ( !sorted.empty() ) {
@@ -53,8 +57,8 @@ vespalib::string
 HandleRecorder::to_string() const
 {
     vespalib::asciistream os;
-    os << "normal: [" << handles_to_string(_normal_handles) << "], ";
-    os << "cheap: [" << handles_to_string(_cheap_handles) << "]";
+    os << "normal: [" << handles_to_string(_handles, MatchDataDetails::Normal) << "], ";
+    os << "cheap: [" << handles_to_string(_handles, MatchDataDetails::Cheap) << "]";
     return os.str();
 }
 
@@ -100,13 +104,14 @@ HandleRecorder::add(TermFieldHandle handle,
                     MatchDataDetails requested_details)
 
 {
-    if (requested_details == MatchDataDetails::Normal) {
-        _normal_handles.insert(handle);
-    } else if (requested_details == MatchDataDetails::Cheap) {
-        _cheap_handles.insert(handle);
+    if (requested_details == MatchDataDetails::Normal ||
+        requested_details == MatchDataDetails::Cheap) {
+        _handles[handle] = static_cast<MatchDataDetails>(static_cast<int>(_handles[handle]) | static_cast<int>(requested_details));
     } else {
         abort();
     }
 }
 
 }
+
+VESPALIB_HASH_MAP_INSTANTIATE(search::fef::TermFieldHandle, search::fef::MatchDataDetails);

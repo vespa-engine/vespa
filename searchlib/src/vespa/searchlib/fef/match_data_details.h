@@ -14,8 +14,8 @@ namespace search::fef {
  *   Cheap match data ('number of occurrences' and 'field length') should be available.
  */
 enum class MatchDataDetails {
-    Normal,
-    Cheap
+    Normal = 1,
+    Cheap = 2
 };
 
 }
