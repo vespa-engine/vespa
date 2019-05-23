@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -140,6 +141,13 @@ public class FilesArchived {
         return sum;
     }
 
+    private static Pattern dateFormatRegexp = Pattern.compile(".*/" +
+            "[0-9][0-9][0-9][0-9]/" + // year
+            "[0-9][0-9]/" + // month
+            "[0-9][0-9]/" + // day
+            "[0-9][0-9]-" + // hour
+            "[0-9].*"); // generation
+
     private static List<LogFile> scanDir(File top) {
         List<LogFile> retval = new ArrayList<>();
         String[] names = top.list();
@@ -147,7 +155,12 @@ public class FilesArchived {
             for (String name : names) {
                 File sub = new File(top, name);
                 if (sub.isFile()) {
-                    retval.add(new LogFile(sub));
+                    String pathName = sub.toString();
+                    if (dateFormatRegexp.matcher(pathName).matches()) {
+                        retval.add(new LogFile(sub));
+                    } else {
+                        log.warning("skipping file not matching log archive pattern: "+pathName);
+                    }
                 } else if (sub.isDirectory()) {
                     for (LogFile subFile : scanDir(sub)) {
                         retval.add(subFile);

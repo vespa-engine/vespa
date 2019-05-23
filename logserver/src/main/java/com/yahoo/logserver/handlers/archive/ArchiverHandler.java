@@ -26,25 +26,6 @@ import java.util.logging.Logger;
  * <p>
  * This class is not thread safe.
  * </p>
- * <p>
- * TODO:
- * </p>
- * <ul>
- * <li> Add file locking support in order to make it
- * possible to do concurrent compression of log
- * files.
- * </li>
- * <li> Add support for disk monitoring.  Should have
- * high/low watermark mechanism and three modes
- * of operation: normal, tight and full.  In
- * "tight" mode disk is running low and compression
- * and cleanup should possibly be more frequent.
- * </li>
- * <li> Add compression task which periodically scans
- * the log directory looking for uncompressed
- * candidate log files.
- * </li>
- * </ul>
  *
  * @author Bjorn Borud
  */
