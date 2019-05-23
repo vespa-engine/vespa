@@ -18,6 +18,8 @@ SameElementBlueprint::SameElementBlueprint()
 {
 }
 
+SameElementBlueprint::~SameElementBlueprint() = default;
+
 FieldSpec
 SameElementBlueprint::getNextChildField(const vespalib::string &field_name, uint32_t field_id)
 {
