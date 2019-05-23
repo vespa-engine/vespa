@@ -10,7 +10,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
-import static ai.vespa.metricsproxy.metric.model.json.JsonUtil.toMetricsPackets;
+import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toMetricsPackets;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -19,12 +19,12 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author gjoranv
  */
-public class JsonUtilTest {
+public class YamasJsonUtilTest {
     @Test
     public void json_model_gets_null_status_by_default() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .build();
-        YamasJsonModel jsonModel = JsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
+        YamasJsonModel jsonModel = YamasJsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
         assertNull(jsonModel.status_code);
         assertNull(jsonModel.status_msg);
     }
@@ -33,7 +33,7 @@ public class JsonUtilTest {
     public void status_is_included_in_json_model_when_explicitly_asked_for() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .build();
-        YamasJsonModel jsonModel = JsonUtil.toYamasArray(singleton(packet), true).metrics.get(0);
+        YamasJsonModel jsonModel = YamasJsonUtil.toYamasArray(singleton(packet), true).metrics.get(0);
         assertNotNull(jsonModel.status_code);
         assertNotNull(jsonModel.status_msg);
     }
@@ -43,7 +43,7 @@ public class JsonUtilTest {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .timestamp(0L)
                 .build();
-        YamasJsonModel jsonModel = JsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
+        YamasJsonModel jsonModel = YamasJsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
         assertNull(jsonModel.timestamp);
     }
 
@@ -51,7 +51,7 @@ public class JsonUtilTest {
     public void empty_consumers_is_translated_to_null_routing_in_json_model() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .build();
-        YamasJsonModel jsonModel = JsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
+        YamasJsonModel jsonModel = YamasJsonUtil.toYamasArray(singleton(packet)).metrics.get(0);
         assertNull(jsonModel.routing);
     }
 
