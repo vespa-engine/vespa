@@ -36,9 +36,9 @@ public class SimpleServer {
 	}
 	Supervisor orb = new Supervisor(new Transport());
 	SimpleServer handler = new SimpleServer();
-	orb.addMethod(new Method("inc", "i", "i", handler, "rpc_inc"));
-	orb.addMethod(new Method("echo", "*", "*", handler, "rpc_echo"));
-	orb.addMethod(new Method("test", "iib", "i", handler, "rpc_test"));
+	orb.addMethod(new Method("inc", "i", "i", handler::rpc_inc));
+	orb.addMethod(new Method("echo", "*", "*", handler::rpc_echo));
+	orb.addMethod(new Method("test", "iib", "i", handler::rpc_test));
 	try {
 	    orb.listen(new Spec(args[0]));
 	} catch (ListenFailedException e) {

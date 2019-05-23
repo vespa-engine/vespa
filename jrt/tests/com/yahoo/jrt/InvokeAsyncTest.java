@@ -23,7 +23,7 @@ public class InvokeAsyncTest {
         client   = new Supervisor(new Transport());
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
-        server.addMethod(new Method("concat", "ss", "s", this, "rpc_concat")
+        server.addMethod(new Method("concat", "ss", "s", this::rpc_concat)
                          .methodDesc("Concatenate 2 strings")
                          .paramDesc(0, "str1", "a string")
                          .paramDesc(1, "str2", "another string")
@@ -39,7 +39,7 @@ public class InvokeAsyncTest {
         server.transport().shutdown().join();
     }
 
-    public void rpc_concat(Request req) {
+    private void rpc_concat(Request req) {
         barrier.waitFor();
         req.returnValues().add(new StringValue(req.parameters()
                                                .get(0).asString() +

@@ -21,7 +21,7 @@ public class AbortTest {
         client   = new Supervisor(new Transport());
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
-        server.addMethod(new Method("test", "i", "i", this, "rpc_test"));
+        server.addMethod(new Method("test", "i", "i", this::rpc_test));
         barrier = new Test.Barrier();
     }
 

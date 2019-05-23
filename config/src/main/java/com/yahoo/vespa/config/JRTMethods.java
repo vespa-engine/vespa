@@ -14,11 +14,6 @@ public class JRTMethods {
     private static final String configV3GetConfigRequestTypes = "s";
     private static final String configV3GetConfigResponseTypes = "sx";
 
-    public static Method createConfigV3GetConfigMethod(Object handler, String handlerMethod) {
-        return addDescriptions(
-                new Method(configV3getConfigMethodName, configV3GetConfigRequestTypes, configV3GetConfigResponseTypes, handler, handlerMethod));
-    }
-
     public static Method createConfigV3GetConfigMethod(MethodHandler methodHandler) {
         return addDescriptions(
                 new Method(configV3getConfigMethodName, configV3GetConfigRequestTypes, configV3GetConfigResponseTypes, methodHandler));
