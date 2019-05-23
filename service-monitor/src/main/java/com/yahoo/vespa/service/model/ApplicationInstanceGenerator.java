@@ -4,6 +4,7 @@ package com.yahoo.vespa.service.model;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.monitor.ServiceId;
 import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 
@@ -53,8 +55,21 @@ public class ApplicationInstanceGenerator {
 
         for (HostInfo host : applicationInfo.getModel().getHosts()) {
             HostName hostName = new HostName(host.getHostname());
+
+            boolean isTenantHost =
+                    applicationInfo.getApplicationId().equals(ZoneApplication.getApplicationId()) &&
+                    host.getServices().stream().anyMatch(serviceInfo ->
+                            ZoneApplication.isNodeAdminServiceInfo(applicationInfo.getApplicationId(), serviceInfo));
+
             for (ServiceInfo serviceInfo : host.getServices()) {
                 ServiceClusterKey serviceClusterKey = toServiceClusterKey(serviceInfo);
+
+                if (isTenantHost && !ZoneApplication.isNodeAdminServiceInfo(applicationInfo.getApplicationId(), serviceInfo)) {
+                    // A tenant host only runs the host-admin service, even though the model contains a bunch of
+                    // standard services like config-sentinel and metrics proxy.
+                    continue;
+                }
+
                 ServiceInstance serviceInstance =
                         toServiceInstance(
                                 applicationInfo.getApplicationId(),
