@@ -1,12 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.IP;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -24,6 +26,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     private static final Comparator<Node> hostnameComparator = Comparator.comparing(Node::hostname);
     private final NodeRepository nodeRepository;
 
+    @Inject
     public SharedLoadBalancerService(NodeRepository nodeRepository) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository, "Missing nodeRepository value");
     }
@@ -40,6 +43,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
         final var firstProxyNode = proxyNodes.get(0);
         final var networkNames = proxyNodes.stream()
                 .flatMap(node -> node.ipAddresses().stream())
+                .map(SharedLoadBalancerService::addNetworKPrefixLength)
                 .collect(Collectors.toSet());
 
         return new LoadBalancerInstance(
@@ -59,5 +63,14 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     @Override
     public Protocol protocol() {
         return Protocol.dualstack;
+    }
+
+    private static String addNetworKPrefixLength(String address) {
+        if (IP.isV6(address)) {
+            return address + "/128";
+        }
+        else {
+            return address + "/32";
+        }
     }
 }

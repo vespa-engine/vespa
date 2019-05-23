@@ -33,7 +33,7 @@ public class SharedLoadBalancerServiceTest {
 
         assertEquals(HostName.from("host-1.yahoo.com"), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
-        assertEquals(Set.of("127.0.0.1", "127.0.0.2", "::1", "::2"), lb.networks());
+        assertEquals(Set.of("127.0.0.1/32", "127.0.0.2/32", "::1/128", "::2/128"), lb.networks());
         assertEquals(Set.of(4080, 4443), lb.ports());
     }
 
