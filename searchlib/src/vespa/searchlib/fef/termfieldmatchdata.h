@@ -22,9 +22,9 @@ public:
     typedef const TermFieldMatchDataPosition * PositionsIterator;
     typedef TermFieldMatchDataPosition * MutablePositionsIterator;
     struct Positions {
+        TermFieldMatchDataPosition *_positions;
         uint16_t                    _maxElementLength;
         uint16_t                    _allocated;
-        TermFieldMatchDataPosition *_positions;
     } __attribute__((packed));
 
     union Features {
@@ -32,7 +32,7 @@ public:
         unsigned char _position[sizeof(TermFieldMatchDataPosition)];
         Positions     _positions;
         uint64_t      _subqueries;
-    } __attribute__((packed));
+    };
 private:
     bool  isRawScore()  const { return _fieldId & 0x8000; }
     bool  isMultiPos()  const { return _fieldId & 0x4000; }
