@@ -172,6 +172,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         req.returnValues().add(new StringValue("Delayed responses queue size: " + delayedConfigResponses.size()));
     }
 
+    @Override
     public void run() {
         log.log(LogLevel.INFO, "Rpc will listen on port " + spec.port());
         try {
