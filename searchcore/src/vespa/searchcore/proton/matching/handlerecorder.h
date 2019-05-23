@@ -20,7 +20,7 @@ namespace proton::matching {
 class HandleRecorder
 {
 public:
-    using HandleMap = vespalib::hash_map<search::fef::TermFieldHandle, uint32_t>;
+    using HandleMap = vespalib::hash_map<search::fef::TermFieldHandle, search::fef::MatchDataDetails>;
     class Binder : public vespalib::noncopyable {
     public:
         Binder(HandleRecorder & recorder);

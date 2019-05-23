@@ -32,7 +32,7 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
     for (const auto &handle: new_map) {
         const auto old_itr = old_map.find(handle.first);
         if (old_itr == old_map.end() ||
-            ((handle.second & ~(old_itr->second)) != 0)) {
+            ((static_cast<int>(handle.second) & ~static_cast<int>(old_itr->second)) != 0)) {
             return false;
         }
     }

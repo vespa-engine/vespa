@@ -13,14 +13,9 @@ using namespace proton::matching;
 
 using HandleMap = HandleRecorder::HandleMap;
 
-constexpr uint32_t details_to_mask(MatchDataDetails requested_details)
-{
-    return (1u << static_cast<int>(requested_details));
-}
-
-constexpr uint32_t NormalMask = details_to_mask(MatchDataDetails::Normal);
-constexpr uint32_t CheapMask = details_to_mask(MatchDataDetails::Cheap);
-constexpr uint32_t BothMask = NormalMask | CheapMask;
+constexpr MatchDataDetails NormalMask = MatchDataDetails::Normal;
+constexpr MatchDataDetails CheapMask = MatchDataDetails::Cheap;
+constexpr MatchDataDetails BothMask = static_cast<MatchDataDetails>(static_cast<int>(NormalMask) | static_cast<int>(CheapMask));
 
 void
 register_normal_handle(TermFieldHandle handle)

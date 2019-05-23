@@ -4,6 +4,9 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
 #include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <vespa/vespalib/util/array_equal.hpp>
 
 using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
@@ -28,18 +31,13 @@ HandleRecorder::HandleRecorder() :
 
 namespace {
 
-uint32_t details_to_mask(MatchDataDetails requested_details)
-{
-    return (1u << static_cast<int>(requested_details));
-}
-
 vespalib::string
 handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails requested_details)
 {
     vespalib::asciistream os;
     std::vector<TermFieldHandle> sorted;
     for (const auto &handle : handles) {
-        if ((handle.second & details_to_mask(requested_details)) != 0) {
+        if ((static_cast<int>(handle.second) & static_cast<int>(requested_details)) != 0) {
             sorted.push_back(handle.first);
         }
     }
@@ -108,10 +106,12 @@ HandleRecorder::add(TermFieldHandle handle,
 {
     if (requested_details == MatchDataDetails::Normal ||
         requested_details == MatchDataDetails::Cheap) {
-        _handles[handle] |= details_to_mask(requested_details);
+        _handles[handle] = static_cast<MatchDataDetails>(static_cast<int>(_handles[handle]) | static_cast<int>(requested_details));
     } else {
         abort();
     }
 }
 
 }
+
+VESPALIB_HASH_MAP_INSTANTIATE(search::fef::TermFieldHandle, search::fef::MatchDataDetails);
