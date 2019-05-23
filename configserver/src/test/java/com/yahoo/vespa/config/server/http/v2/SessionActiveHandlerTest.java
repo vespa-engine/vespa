@@ -232,7 +232,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                                                 applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator),
+                                                                 applicationRepo, new HostRegistry<>(),
                                                                  flagSource)));
     }
 

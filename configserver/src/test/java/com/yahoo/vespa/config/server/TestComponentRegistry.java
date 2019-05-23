@@ -40,7 +40,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Metrics metrics;
     private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
-    private final SuperModelGenerationCounter superModelGenerationCounter;
     private final ConfigDefinitionRepo defRepo;
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
@@ -72,7 +71,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
-        this.superModelGenerationCounter = new SuperModelGenerationCounter(curator);
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
@@ -176,8 +174,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public TenantListener getTenantListener() { return tenantListener; }
     @Override
     public ReloadListener getReloadListener() { return reloadListener; }
-    @Override
-    public SuperModelGenerationCounter getSuperModelGenerationCounter() { return superModelGenerationCounter; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override

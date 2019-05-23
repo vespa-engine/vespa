@@ -92,6 +92,7 @@ public class SuperModelManager implements SuperModelProvider {
             SuperModel newSuperModel = this.superModelConfigProvider
                     .getSuperModel()
                     .cloneAndSetApplication(applicationInfo);
+            generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
             listeners.stream().forEach(listener ->
                     listener.applicationActivated(newSuperModel, applicationInfo));
@@ -103,6 +104,7 @@ public class SuperModelManager implements SuperModelProvider {
             SuperModel newSuperModel = this.superModelConfigProvider
                     .getSuperModel()
                     .cloneAndRemoveApplication(applicationId);
+            generationCounter.increment();
             makeNewSuperModelConfigProvider(newSuperModel);
             listeners.stream().forEach(listener ->
                     listener.applicationRemoved(newSuperModel, applicationId));
