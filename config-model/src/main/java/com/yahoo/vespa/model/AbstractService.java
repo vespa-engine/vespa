@@ -378,10 +378,10 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     public String getJvmOptions() {
         return jvmOptions;
     }
-    public void setJvmOptions(String args) {
+    public final void setJvmOptions(String args) {
         jvmOptions = (args == null) ? "" : args;
     }
-    public void appendJvmOptions(String args) {
+    public final void appendJvmOptions(String args) {
         if ((args != null) && ! "".equals(args)) {
             setJvmOptions(jvmOptions + getSeparator(jvmOptions) + args);
         }
@@ -389,7 +389,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     private static String getSeparator(String current) {
         return ("".equals(current)) ? "" : " ";
     }
-    public void prependJvmOptions(String args) {
+    public final void prependJvmOptions(String args) {
         if ((args != null) && ! "".equals(args)) {
             setJvmOptions(args + getSeparator(jvmOptions) + jvmOptions);
         }
