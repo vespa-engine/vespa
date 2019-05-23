@@ -5,8 +5,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +30,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     @Override
     public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
         final var proxyNodes = nodeRepository.getNodes(NodeType.proxy);
+        proxyNodes.sort(Comparator.comparing(Node::hostname));
 
         if (proxyNodes.size() == 0) {
             throw new IllegalStateException("Missing proxy nodes in nodeRepository");
