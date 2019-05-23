@@ -48,6 +48,7 @@ public class VespaModelTester {
     private Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
+    private boolean enableMetricsProxyContainer = false;
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -104,6 +105,10 @@ public class VespaModelTester {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
     }
 
+    public void enableMetricsProxyContainer(boolean enableMetricsProxyContainer) {
+        this.enableMetricsProxyContainer = enableMetricsProxyContainer;
+    }
+
     /** Creates a model which uses 0 as start index and fails on out of capacity */
     public VespaModel createModel(String services, String ... retiredHostNames) {
         return createModel(Zone.defaultZone(), services, true, retiredHostNames);
@@ -144,7 +149,8 @@ public class VespaModelTester {
                 .setMultitenant(true)
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
-                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
+                .setEnableMetricsProxyContainer(enableMetricsProxyContainer);
 
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
