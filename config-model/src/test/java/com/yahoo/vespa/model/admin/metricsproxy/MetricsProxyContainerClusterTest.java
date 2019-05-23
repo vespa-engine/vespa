@@ -205,7 +205,7 @@ public class MetricsProxyContainerClusterTest {
     }
 
 
-    private String servicesWithAdminOnly() {
+    private static String servicesWithAdminOnly() {
         return String.join("\n", "<services>",
                            "    <admin version='4.0'>",
                            "        <adminserver hostalias='node1'/>",
