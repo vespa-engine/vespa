@@ -148,7 +148,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * Handles RPC method "config.v3.getConfig" requests.
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
-    public final void getConfigV3(Request req) {
+    private void getConfigV3(Request req) {
         if (log.isLoggable(LogLevel.SPAM)) {
             log.log(LogLevel.SPAM, getConfigMethodName);
         }
@@ -159,7 +159,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     /**
      * Returns 0 if server is alive.
      */
-    public final void ping(Request req) {
+    private void ping(Request req) {
         req.returnValues().add(new Int32Value(0));
     }
 
@@ -168,7 +168,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      *
      * @param req a Request
      */
-    public void printStatistics(Request req) {
+    private void printStatistics(Request req) {
         req.returnValues().add(new StringValue("Delayed responses queue size: " + delayedConfigResponses.size()));
     }
 
@@ -541,13 +541,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
     }
 
-    public final void serveFile(Request request) {
+    private void serveFile(Request request) {
         request.detach();
         FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
         fileServer.serveFile(request.parameters().get(0).asString(), request.parameters().get(1).asInt32() == 0, request, receiver);
     }
 
-    public final void setFileReferencesToDownload(Request req) {
+    private void setFileReferencesToDownload(Request req) {
         String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
         Stream.of(fileReferenceStrings)
                 .map(FileReference::new)
