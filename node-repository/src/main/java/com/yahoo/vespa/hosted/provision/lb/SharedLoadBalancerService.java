@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 /**
  * @author ogronnesby
  */
-public class OnPremiseLoadBalancerService implements LoadBalancerService {
+public class SharedLoadBalancerService implements LoadBalancerService {
     private final NodeRepository nodeRepository;
 
-    public OnPremiseLoadBalancerService(NodeRepository nodeRepository) {
+    public SharedLoadBalancerService(NodeRepository nodeRepository) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository, "Missing nodeRepository value");
     }
 

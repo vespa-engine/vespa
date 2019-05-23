@@ -16,9 +16,9 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author ogronnesby
  */
-public class OnPremiseLoadBalancerServiceTest {
+public class SharedLoadBalancerServiceTest {
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private final OnPremiseLoadBalancerService loadBalancerService = new OnPremiseLoadBalancerService(tester.nodeRepository());
+    private final SharedLoadBalancerService loadBalancerService = new SharedLoadBalancerService(tester.nodeRepository());
     private final ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "default");
     private final ClusterSpec.Id clusterId = ClusterSpec.Id.from("qrs1");
     private final Set<Real> reals = Set.of(
