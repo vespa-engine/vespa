@@ -11,7 +11,16 @@ using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
 using namespace proton::matching;
 
-using HandleSet = HandleRecorder::HandleSet;
+using HandleMap = HandleRecorder::HandleMap;
+
+constexpr uint32_t details_to_mask(MatchDataDetails requested_details)
+{
+    return (1u << static_cast<int>(requested_details));
+}
+
+constexpr uint32_t NormalMask = details_to_mask(MatchDataDetails::Normal);
+constexpr uint32_t CheapMask = details_to_mask(MatchDataDetails::Cheap);
+constexpr uint32_t BothMask = NormalMask | CheapMask;
 
 void
 register_normal_handle(TermFieldHandle handle)
@@ -34,8 +43,7 @@ TEST(HandleRecorderTest, can_record_both_normal_and_cheap_handles)
         register_cheap_handle(5);
         register_normal_handle(7);
     }
-    EXPECT_EQ(HandleSet({3, 7}), recorder.get_normal_handles());
-    EXPECT_EQ(HandleSet({5}), recorder.get_cheap_handles());
+    EXPECT_EQ(HandleMap({{3, NormalMask}, {5, CheapMask}, {7, NormalMask}}), recorder.get_handles());
     EXPECT_EQ("normal: [3,7], cheap: [5]", recorder.to_string());
 }
 
@@ -47,8 +55,7 @@ TEST(HandleRecorderTest, the_same_handle_can_be_in_both_normal_and_cheap_set)
         register_normal_handle(3);
         register_cheap_handle(3);
     }
-    EXPECT_EQ(HandleSet({3}), recorder.get_normal_handles());
-    EXPECT_EQ(HandleSet({3}), recorder.get_cheap_handles());
+    EXPECT_EQ(HandleMap({{3, BothMask}}), recorder.get_handles());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

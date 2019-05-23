@@ -22,20 +22,26 @@ namespace {
 }
 
 HandleRecorder::HandleRecorder() :
-    _normal_handles(),
-    _cheap_handles()
+    _handles()
 {
 }
 
 namespace {
 
+uint32_t details_to_mask(MatchDataDetails requested_details)
+{
+    return (1u << static_cast<int>(requested_details));
+}
+
 vespalib::string
-handles_to_string(const HandleRecorder::HandleSet& handles)
+handles_to_string(const HandleRecorder::HandleMap& handles, MatchDataDetails requested_details)
 {
     vespalib::asciistream os;
     std::vector<TermFieldHandle> sorted;
-    for (TermFieldHandle handle : handles) {
-        sorted.push_back(handle);
+    for (const auto &handle : handles) {
+        if ((handle.second & details_to_mask(requested_details)) != 0) {
+            sorted.push_back(handle.first);
+        }
     }
     std::sort(sorted.begin(), sorted.end());
     if ( !sorted.empty() ) {
@@ -53,8 +59,8 @@ vespalib::string
 HandleRecorder::to_string() const
 {
     vespalib::asciistream os;
-    os << "normal: [" << handles_to_string(_normal_handles) << "], ";
-    os << "cheap: [" << handles_to_string(_cheap_handles) << "]";
+    os << "normal: [" << handles_to_string(_handles, MatchDataDetails::Normal) << "], ";
+    os << "cheap: [" << handles_to_string(_handles, MatchDataDetails::Cheap) << "]";
     return os.str();
 }
 
@@ -100,10 +106,9 @@ HandleRecorder::add(TermFieldHandle handle,
                     MatchDataDetails requested_details)
 
 {
-    if (requested_details == MatchDataDetails::Normal) {
-        _normal_handles.insert(handle);
-    } else if (requested_details == MatchDataDetails::Cheap) {
-        _cheap_handles.insert(handle);
+    if (requested_details == MatchDataDetails::Normal ||
+        requested_details == MatchDataDetails::Cheap) {
+        _handles[handle] |= details_to_mask(requested_details);
     } else {
         abort();
     }
