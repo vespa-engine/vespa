@@ -8,30 +8,30 @@ namespace vespalib {
 
 class GrowStrategy {
 private:
-    uint32_t _initialCapacity;
-    float    _growFactor;
-    uint32_t _growDelta;
+    size_t _initialCapacity;
+    float  _growFactor;
+    size_t _growDelta;
 public:
     GrowStrategy() noexcept
         : GrowStrategy(1024, 0.5, 0)
     {}
-    GrowStrategy(uint32_t initialCapacity, float growPercent, uint32_t growDelta) noexcept
+    GrowStrategy(size_t initialCapacity, float growPercent, size_t growDelta) noexcept
         : _initialCapacity(initialCapacity),
           _growFactor(growPercent),
           _growDelta(growDelta)
     {
     }
 
-    static GrowStrategy make(uint32_t initialCapacity, float growFactor, uint32_t growDelta) noexcept {
+    static GrowStrategy make(size_t initialCapacity, float growFactor, size_t growDelta) noexcept {
         return GrowStrategy(initialCapacity, growFactor, growDelta);
     }
 
-    uint32_t    getInitialCapacity() const noexcept { return _initialCapacity; }
-    uint32_t        getGrowPercent() const noexcept { return _growFactor*100; }
-    float            getGrowFactor() const noexcept { return _growFactor; }
-    uint32_t          getGrowDelta() const noexcept { return _growDelta; }
-    void    setInitialCapacity(uint32_t v) noexcept { _initialCapacity = v; }
-    void          setGrowDelta(uint32_t v) noexcept { _growDelta = v; }
+    size_t getInitialCapacity() const noexcept { return _initialCapacity; }
+    size_t     getGrowPercent() const noexcept { return _growFactor*100; }
+    float       getGrowFactor() const noexcept { return _growFactor; }
+    size_t       getGrowDelta() const noexcept { return _growDelta; }
+    void setInitialCapacity(size_t v) noexcept { _initialCapacity = v; }
+    void       setGrowDelta(size_t v) noexcept { _growDelta = v; }
 
     bool operator==(const GrowStrategy & rhs) const noexcept {
         return (_initialCapacity == rhs._initialCapacity &&
