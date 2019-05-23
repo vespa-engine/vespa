@@ -1,22 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
-namespace storage {
-namespace lib {
-
-struct IdealNodeCalculatorImplTest : public CppUnit::TestFixture {
-
-    void testNormalUsage();
-
-    CPPUNIT_TEST_SUITE(IdealNodeCalculatorImplTest);
-    CPPUNIT_TEST(testNormalUsage);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(IdealNodeCalculatorImplTest);
+namespace storage::lib {
 
 /**
  * Class is just a wrapper for distribution, so little needs to be tested. Just
@@ -26,8 +14,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(IdealNodeCalculatorImplTest);
  *   - Changes in distribution/cluster state is picked up.
  */
 
-void
-IdealNodeCalculatorImplTest::testNormalUsage()
+TEST(IdealNodeCalculatorImplTest, test_normal_usage)
 {
     ClusterState state("storage:10");
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 10));
@@ -38,10 +25,9 @@ IdealNodeCalculatorImplTest::testNormalUsage()
     configurable.setClusterState(state);
 
     std::string expected("[storage.8, storage.9, storage.6]");
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             expected,
             calc.getIdealStorageNodes(document::BucketId(16, 5)).toString());
 }
 
-} // lib
-} // storage
+}

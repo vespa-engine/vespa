@@ -6,4 +6,5 @@ vespa_add_library(vdslib_testdistribution
     idealnodecalculatorimpltest.cpp
     DEPENDS
     vdslib
+    gtest
 )

@@ -1,7 +1,4 @@
 .depend
 Makefile
-datadistributiontest
 test.vlog
-testrunner
 vdslib_gtest_runner_app
-vdslib_testrunner_app
