@@ -58,7 +58,8 @@ int64_t adjustUpperBound(int32_t arity, int64_t upper_bound) {
 }
 
 SimpleIndexConfig createSimpleIndexConfig(const search::attribute::Config &config) {
-    return SimpleIndexConfig(config.predicateParams().dense_posting_list_threshold(), config.getGrowStrategy());
+    return SimpleIndexConfig(config.predicateParams().dense_posting_list_threshold(),
+                             config.getGrowStrategy().to_generic_strategy());
 }
 
 }  // namespace
@@ -72,8 +73,8 @@ PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name,
                                 _limit_provider, createSimpleIndexConfig(config), config.predicateParams().arity())),
       _lower_bound(adjustLowerBound(config.predicateParams().arity(), config.predicateParams().lower_bound())),
       _upper_bound(adjustUpperBound(config.predicateParams().arity(), config.predicateParams().upper_bound())),
-      _min_feature(config.getGrowStrategy(), getGenerationHolder()),
-      _interval_range_vector(config.getGrowStrategy(), getGenerationHolder()),
+      _min_feature(config.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
+      _interval_range_vector(config.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
       _max_interval_range(1)
 {
 }
@@ -105,7 +106,7 @@ void
 PredicateAttribute::onUpdateStat()
 {
     // update statistics
-    MemoryUsage combined;
+    vespalib::MemoryUsage combined;
     combined.merge(_min_feature.getMemoryUsage());
     combined.merge(_interval_range_vector.getMemoryUsage());
     combined.merge(_index->getMemoryUsage());

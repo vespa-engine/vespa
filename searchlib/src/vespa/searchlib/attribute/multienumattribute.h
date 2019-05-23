@@ -79,7 +79,7 @@ protected:
     void fillValues(LoadedVector & loaded) override;
     void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
     void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
-    virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
+    virtual void mergeMemoryStats(vespalib::MemoryUsage & total) { (void) total; }
 
 public:
     MultiValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

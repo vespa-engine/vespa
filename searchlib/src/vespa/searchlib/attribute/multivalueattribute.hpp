@@ -22,7 +22,7 @@ MultiValueAttribute(const vespalib::string &baseFileName,
                                                                multivalueattribute::SMALL_MEMORY_PAGE_SIZE,
                                                                8 * 1024,
                                                                cfg.getGrowStrategy().getMultiValueAllocGrowFactor()),
-                 cfg.getGrowStrategy())
+                 cfg.getGrowStrategy().to_generic_strategy())
 {
 }
 

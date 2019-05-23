@@ -76,7 +76,7 @@ public:
     void insert(const PredicateTreeAnnotations &annotations, uint32_t docId);
     FeatureSet get(uint32_t docId) const;
     void remove(uint32_t docId);
-    search::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     void serialize(vespalib::DataBuffer &buffer) const;
 };

@@ -11,10 +11,10 @@
 #include "raw_document_meta_data.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace proton::bucketdb {
     class SplitBucketSession;
@@ -54,7 +54,7 @@ public:
 
 private:
     // maps from lid -> meta data
-    typedef search::attribute::RcuVectorBase<RawDocumentMetaData> MetaDataStore;
+    typedef vespalib::RcuVectorBase<RawDocumentMetaData> MetaDataStore;
     typedef documentmetastore::LidGidKeyComparator KeyComp;
 
     // Lids are stored as keys in the tree, sorted by their gid

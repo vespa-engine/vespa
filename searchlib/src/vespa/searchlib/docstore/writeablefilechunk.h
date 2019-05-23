@@ -62,7 +62,7 @@ public:
     size_t getDiskFootprint() const override;
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
-    MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getMemoryUsage() const override;
     size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
     void waitForDiskToCatchUpToNow() const;
     void flushPendingChunks(uint64_t serialNum);

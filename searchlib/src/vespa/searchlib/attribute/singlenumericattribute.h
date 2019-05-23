@@ -4,7 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <limits>
 
 namespace search {
@@ -24,7 +24,7 @@ private:
     typedef typename B::generation_t generation_t;
     using B::getGenerationHolder;
 
-    typedef attribute::RcuVectorBase<T> DataVector;
+    typedef vespalib::RcuVectorBase<T> DataVector;
     DataVector _data;
 
     T getFromEnum(EnumHandle e) const override {

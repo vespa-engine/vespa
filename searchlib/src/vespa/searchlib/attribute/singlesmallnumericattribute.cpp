@@ -94,7 +94,7 @@ SingleValueSmallNumericAttribute::addDoc(DocId & doc) {
 void
 SingleValueSmallNumericAttribute::onUpdateStat()
 {
-    MemoryUsage usage = _wordData.getMemoryUsage();
+    vespalib::MemoryUsage usage = _wordData.getMemoryUsage();
     usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     uint32_t numDocs = B::getNumDocs();
     updateStatistics(numDocs, numDocs,

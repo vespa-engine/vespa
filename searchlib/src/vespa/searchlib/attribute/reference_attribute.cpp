@@ -180,7 +180,7 @@ ReferenceAttribute::onCommit()
 void
 ReferenceAttribute::onUpdateStat()
 {
-    MemoryUsage total = _store.getMemoryUsage();
+    vespalib::MemoryUsage total = _store.getMemoryUsage();
     _cachedUniqueStoreMemoryUsage = total;
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());

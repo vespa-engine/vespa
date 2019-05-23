@@ -27,7 +27,7 @@ public:
         return _store.getEntry<char>(internalRef);
     }
 
-    MemoryUsage getMemoryUsage() const {
+    vespalib::MemoryUsage getMemoryUsage() const {
         return _store.getMemoryUsage();
     }
 };

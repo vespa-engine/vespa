@@ -3,9 +3,9 @@
 #pragma once
 
 #include "bufferstate.h"
-#include <vespa/vespalib/util/generationholder.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/generationholder.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 #include <deque>
 
@@ -228,7 +228,7 @@ public:
 
     void switchOrGrowActiveBuffer(uint32_t typeId, size_t elemsNeeded);
 
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     AddressSpace getAddressSpaceUsage() const;
 

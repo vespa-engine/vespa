@@ -90,7 +90,7 @@ public:
                 const document::DocumentTypeRepo &repo) override;
     double getVisitCost() const override;
     DataStoreStorageStats getStorageStats() const override;
-    MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getMemoryUsage() const override;
     std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
 
     /**

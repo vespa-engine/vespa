@@ -7,7 +7,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 
 namespace search::btree {
@@ -157,7 +157,7 @@ public:
     const KeyT &getLastKey(BTreeNode::Ref node) const;
     const AggrT &getAggregated(BTreeNode::Ref node) const;
 
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     vespalib::string toString(BTreeNode::Ref ref) const;
     vespalib::string toString(const BTreeNode * node) const;

@@ -161,10 +161,10 @@ CompactWordsStore::get(uint32_t docId) const
     return Iterator();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 CompactWordsStore::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.incAllocatedBytes(_docs.getMemoryConsumption());
     usage.incUsedBytes(_docs.getMemoryUsed());
     usage.merge(_wordsStore.getMemoryUsage());

@@ -92,7 +92,7 @@ FloatingPointAttribute::getString(DocId doc, char * s, size_t sz) const {
     return s;
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 FloatingPointAttribute::getChangeVectorMemoryUsage() const
 {
     return _changes.getMemoryUsage();

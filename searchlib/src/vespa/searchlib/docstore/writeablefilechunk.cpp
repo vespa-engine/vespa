@@ -600,11 +600,11 @@ WriteableFileChunk::getMemoryMetaFootprint() const
     return mySizeWithoutMyParent + FileChunk::getMemoryMetaFootprint();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 WriteableFileChunk::getMemoryUsage() const
 {
     LockGuard guard(_lock);
-    MemoryUsage result;
+    vespalib::MemoryUsage result;
     for (const auto &chunk : _chunkMap) {
         result.merge(chunk.second->getMemoryUsage());
     }

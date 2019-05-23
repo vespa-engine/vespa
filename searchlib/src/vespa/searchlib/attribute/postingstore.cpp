@@ -615,10 +615,10 @@ PostingStore<DataT>::clear(const EntryRef ref)
 
 
 template <typename DataT>
-MemoryUsage
+vespalib::MemoryUsage
 PostingStore<DataT>::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.merge(_allocator.getMemoryUsage());
     usage.merge(_store.getMemoryUsage());
     uint64_t bvExtraBytes = _bvExtraBytes;

@@ -11,6 +11,7 @@
 using namespace search;
 using namespace search::datastore;
 using namespace search::memoryindex;
+using vespalib::MemoryUsage;
 
 typedef CompactWordsStore::Builder Builder;
 typedef CompactWordsStore::Iterator Iterator;

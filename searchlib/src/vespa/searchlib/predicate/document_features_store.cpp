@@ -198,8 +198,8 @@ void DocumentFeaturesStore::remove(uint32_t doc_id) {
     }
 }
 
-search::MemoryUsage DocumentFeaturesStore::getMemoryUsage() const {
-    search::MemoryUsage usage;
+vespalib::MemoryUsage DocumentFeaturesStore::getMemoryUsage() const {
+    vespalib::MemoryUsage usage;
     usage.incAllocatedBytes(_docs.getMemoryConsumption());
     usage.incUsedBytes(_docs.getMemoryUsed());
     usage.incAllocatedBytes(_ranges.getMemoryConsumption());

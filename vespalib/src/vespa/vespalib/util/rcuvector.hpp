@@ -5,11 +5,11 @@
 #include "rcuvector.h"
 #include <vespa/vespalib/util/array.hpp>
 
-namespace search::attribute {
+namespace vespalib {
 
 template <typename T>
 RcuVectorHeld<T>::RcuVectorHeld(size_t size, std::unique_ptr<T> data)
-    : vespalib::GenerationHeldBase(size),
+    : GenerationHeldBase(size),
       _data(std::move(data))
 { }
 
@@ -41,7 +41,7 @@ template <typename T>
 void
 RcuVectorBase<T>::reset() {
     // Assumes no readers at this moment
-    Array().swap(_data);
+    ArrayType().swap(_data);
     _data.reserve(16);
 }
 
@@ -51,7 +51,7 @@ RcuVectorBase<T>::~RcuVectorBase() = default;
 template <typename T>
 void
 RcuVectorBase<T>::expand(size_t newCapacity) {
-    std::unique_ptr<Array> tmpData(new Array());
+    std::unique_ptr<ArrayType> tmpData(new ArrayType());
     tmpData->reserve(newCapacity);
     for (const T & v : _data) {
         tmpData->push_back_fast(v);
@@ -61,10 +61,10 @@ RcuVectorBase<T>::expand(size_t newCapacity) {
 
 template <typename T>
 void
-RcuVectorBase<T>::replaceVector(std::unique_ptr<Array> replacement) {
+RcuVectorBase<T>::replaceVector(std::unique_ptr<ArrayType> replacement) {
     replacement->swap(_data); // atomic switch of underlying data
     size_t holdSize = replacement->capacity() * sizeof(T);
-    vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(replacement)));
+    GenerationHeldBase::UP hold(new RcuVectorHeld<ArrayType>(holdSize, std::move(replacement)));
     _genHolder.hold(std::move(hold));
     onReallocation();
 }
@@ -89,7 +89,7 @@ RcuVectorBase<T>::shrink(size_t newSize)
         return;
     }
     if (!_data.try_unreserve(wantedCapacity)) {
-        std::unique_ptr <Array> tmpData(new Array());
+        std::unique_ptr<ArrayType> tmpData(new ArrayType());
         tmpData->reserve(wantedCapacity);
         tmpData->resize(newSize);
         for (uint32_t i = 0; i < newSize; ++i) {
@@ -99,14 +99,14 @@ RcuVectorBase<T>::shrink(size_t newSize)
         // after swap.  Attribute vectors uses _committedDocIdLimit for this.
         tmpData->swap(_data); // atomic switch of underlying data
         size_t holdSize = tmpData->capacity() * sizeof(T);
-        vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
+        GenerationHeldBase::UP hold(new RcuVectorHeld<ArrayType>(holdSize, std::move(tmpData)));
         _genHolder.hold(std::move(hold));
         onReallocation();
     }
 }
 
 template <typename T>
-RcuVectorBase<T>::RcuVectorBase(GenerationHolder &genHolder,
+RcuVectorBase<T>::RcuVectorBase(GenerationHolderType &genHolder,
                                 const Alloc &initialAlloc)
     : _data(initialAlloc),
       _growPercent(100),
@@ -120,7 +120,7 @@ template <typename T>
 RcuVectorBase<T>::RcuVectorBase(size_t initialCapacity,
                                 size_t growPercent,
                                 size_t growDelta,
-                                GenerationHolder &genHolder,
+                                GenerationHolderType &genHolder,
                                 const Alloc &initialAlloc)
     : _data(initialAlloc),
       _growPercent(growPercent),
@@ -132,10 +132,10 @@ RcuVectorBase<T>::RcuVectorBase(size_t initialCapacity,
 
 template <typename T>
 RcuVectorBase<T>::RcuVectorBase(GrowStrategy growStrategy,
-                                GenerationHolder &genHolder,
+                                GenerationHolderType &genHolder,
                                 const Alloc &initialAlloc)
-    : RcuVectorBase(growStrategy.getDocsInitialCapacity(), growStrategy.getDocsGrowPercent(),
-                    growStrategy.getDocsGrowDelta(), genHolder, initialAlloc)
+    : RcuVectorBase(growStrategy.getInitialCapacity(), growStrategy.getGrowPercent(),
+                    growStrategy.getGrowDelta(), genHolder, initialAlloc)
 {
 }
 

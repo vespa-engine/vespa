@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace search {
+namespace vespalib {
 
 class MemoryUsage {
 private:
@@ -57,4 +57,4 @@ public:
     }
 };
 
-} // namespace search
+} // namespace vespalib

@@ -120,6 +120,7 @@ vespa_define_module(
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
     src/tests/util/md5
+    src/tests/util/rcuvector
     src/tests/valgrind
     src/tests/websocket
     src/tests/zcurve

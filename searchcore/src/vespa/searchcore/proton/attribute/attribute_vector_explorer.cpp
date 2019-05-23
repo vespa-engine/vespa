@@ -12,7 +12,7 @@ using search::AddressSpace;
 using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::EnumStoreBase;
-using search::MemoryUsage;
+using vespalib::MemoryUsage;
 using search::attribute::MultiValueMappingBase;
 using search::attribute::IPostingListAttributeBase;
 using namespace vespalib::slime;

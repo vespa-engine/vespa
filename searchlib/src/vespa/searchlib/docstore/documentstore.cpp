@@ -422,7 +422,7 @@ DocumentStore::getStorageStats() const
     return _backingStore.getStorageStats();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 DocumentStore::getMemoryUsage() const
 {
     return _backingStore.getMemoryUsage();

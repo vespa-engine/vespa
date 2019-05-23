@@ -7,7 +7,7 @@
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 using vespalib::eval::SimpleTensor;
 using vespalib::eval::ValueType;
@@ -125,7 +125,7 @@ void
 TensorAttribute::onUpdateStat()
 {
     // update statistics
-    MemoryUsage total = _refVector.getMemoryUsage();
+    vespalib::MemoryUsage total = _refVector.getMemoryUsage();
     total.merge(_tensorStore.getMemoryUsage());
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     this->updateStatistics(_refVector.size(),

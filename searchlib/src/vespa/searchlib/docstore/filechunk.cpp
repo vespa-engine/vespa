@@ -523,10 +523,10 @@ FileChunk::getMemoryMetaFootprint() const
     return sizeof(*this) + _chunkInfo.byteCapacity();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 FileChunk::getMemoryUsage() const
 {
-    MemoryUsage result;
+    vespalib::MemoryUsage result;
     result.incAllocatedBytes(sizeof(*this));
     result.incUsedBytes(sizeof(*this));
     result.incAllocatedBytes(_chunkInfo.byteCapacity());

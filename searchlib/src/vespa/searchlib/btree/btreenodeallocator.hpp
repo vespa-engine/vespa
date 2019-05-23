@@ -376,11 +376,11 @@ getAggregated(BTreeNode::Ref node) const
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
-MemoryUsage
+vespalib::MemoryUsage
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 getMemoryUsage() const
 {
-    MemoryUsage usage = _nodeStore.getMemoryUsage();
+    vespalib::MemoryUsage usage = _nodeStore.getMemoryUsage();
     return usage;
 }
 

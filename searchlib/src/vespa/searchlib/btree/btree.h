@@ -132,7 +132,7 @@ public:
     BTreeNode::Ref getRoot() const {
         return _tree.getRoot();
     }
-    MemoryUsage getMemoryUsage() const {
+    vespalib::MemoryUsage getMemoryUsage() const {
         return _alloc.getMemoryUsage();
     }
 

@@ -33,7 +33,7 @@ struct NullDataStore : IDataStore {
     DataStoreStorageStats getStorageStats() const override {
         return DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
     }
-    MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const override { return vespalib::MemoryUsage(); }
     std::vector<DataStoreFileChunkStats>
     getFileChunkStats() const override {
         std::vector<DataStoreFileChunkStats> result;

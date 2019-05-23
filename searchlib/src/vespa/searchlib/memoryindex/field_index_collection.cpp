@@ -50,10 +50,10 @@ FieldIndexCollection::dump(search::index::IndexBuilder &indexBuilder)
     }
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 FieldIndexCollection::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     for (auto &fieldIndex : _fieldIndexes) {
         usage.merge(fieldIndex->getMemoryUsage());
     }

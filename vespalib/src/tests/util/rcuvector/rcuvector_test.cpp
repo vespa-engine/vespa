@@ -1,14 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
-using namespace search::attribute;
-using search::MemoryUsage;
-using vespalib::alloc::Alloc;
-using vespalib::GenerationHandler;
-using vespalib::GenerationHolder;
-using vespalib::GenerationHeldBase;
+using namespace vespalib;
 
 bool
 assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
@@ -246,7 +241,7 @@ struct ShrinkFixture {
     GenerationHolder g;
     RcuVectorBase<int> vec;
     int *oldPtr;
-    ShrinkFixture() : g(), vec(4096, 50, 0, g, Alloc::allocMMap()), oldPtr()
+    ShrinkFixture() : g(), vec(4096, 50, 0, g, alloc::Alloc::allocMMap()), oldPtr()
     {
         for (size_t i = 0; i < 4000; ++i) {
             vec.push_back(7);

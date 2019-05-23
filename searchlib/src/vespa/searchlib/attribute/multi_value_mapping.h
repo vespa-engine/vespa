@@ -27,7 +27,7 @@ public:
     MultiValueMapping(const MultiValueMapping &) = delete;
     MultiValueMapping & operator = (const MultiValueMapping &) = delete;
     MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
-                      const GrowStrategy &gs = GrowStrategy());
+                      const vespalib::GrowStrategy &gs = vespalib::GrowStrategy());
     ~MultiValueMapping() override;
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
@@ -47,7 +47,7 @@ public:
     void compactWorst(bool compactMemory, bool compactAddressSpace) override;
 
     AddressSpace getAddressSpaceUsage() const override;
-    MemoryUsage getArrayStoreMemoryUsage() const override;
+    vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;
 
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,

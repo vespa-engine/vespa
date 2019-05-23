@@ -60,7 +60,7 @@ template <typename B>
 void
 SingleValueNumericAttribute<B>::onUpdateStat()
 {
-    MemoryUsage usage = _data.getMemoryUsage();
+    vespalib::MemoryUsage usage = _data.getMemoryUsage();
     usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_data.size(), _data.size(),

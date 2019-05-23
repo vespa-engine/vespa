@@ -244,10 +244,10 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
     return visitor.getResult();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 MemoryIndex::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.merge(_fieldIndexes->getMemoryUsage());
     return usage;
 }

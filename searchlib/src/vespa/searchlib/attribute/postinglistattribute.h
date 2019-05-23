@@ -65,7 +65,7 @@ protected:
                        uint32_t toLid, EnumStoreComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
-    virtual MemoryUsage getMemoryUsage() const override;
+    virtual vespalib::MemoryUsage getMemoryUsage() const override;
 
 public:
     const PostingList & getPostingList() const { return _postingList; }

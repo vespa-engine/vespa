@@ -2,7 +2,7 @@
 
 #include "rcuvector.hpp"
 
-namespace search::attribute {
+namespace vespalib {
 
 template class RcuVectorBase<uint8_t>;
 template class RcuVectorBase<uint16_t>;

@@ -131,10 +131,10 @@ Chunk::getUniqueLids() const
     return unique;
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 Chunk::getMemoryUsage() const
 {
-    MemoryUsage result;
+    vespalib::MemoryUsage result;
     result.incAllocatedBytes(_format->getBuffer().capacity());
     result.incUsedBytes(_format->getBuffer().size());
     result.incAllocatedBytes(sizeof(Entry) * _lids.capacity());

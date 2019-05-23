@@ -47,7 +47,7 @@ public:
 
     void dump(search::index::IndexBuilder & indexBuilder);
 
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     FieldIndex *getFieldIndex(uint32_t fieldId) const {
         return _fieldIndexes[fieldId].get();

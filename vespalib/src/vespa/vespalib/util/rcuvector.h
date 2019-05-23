@@ -2,16 +2,16 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/generationholder.h>
-#include <vespa/searchlib/util/memoryusage.h>
-#include <vespa/searchcommon/common/growstrategy.h>
-#include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/array.h>
+#include "alloc.h"
+#include "array.h"
+#include "generationholder.h"
+#include "growstrategy.h"
+#include "memoryusage.h"
 
-namespace search::attribute {
+namespace vespalib {
 
 template <typename T>
-class RcuVectorHeld : public vespalib::GenerationHeldBase
+class RcuVectorHeld : public GenerationHeldBase
 {
     std::unique_ptr<T> _data;
 
@@ -37,16 +37,16 @@ private:
     static_assert(std::is_trivially_destructible<T>::value,
                   "Value type must be trivially destructible");
 
-    using Array = vespalib::Array<T>;
-    using Alloc = vespalib::alloc::Alloc;
+    using ArrayType = Array<T>;
+    using Alloc = alloc::Alloc;
 protected:
-    using generation_t = vespalib::GenerationHandler::generation_t;
-    using GenerationHolder = vespalib::GenerationHolder;
+    using generation_t = GenerationHandler::generation_t;
+    using GenerationHolderType = GenerationHolder;
 private:
-    Array              _data;
-    size_t             _growPercent;
-    size_t             _growDelta;
-    GenerationHolder   &_genHolder;
+    ArrayType             _data;
+    size_t                _growPercent;
+    size_t                _growDelta;
+    GenerationHolderType &_genHolder;
 
     size_t calcNewSize(size_t baseSize) const {
         size_t delta = (baseSize * _growPercent / 100) + _growDelta;
@@ -61,7 +61,7 @@ private:
 
 public:
     using ValueType = T;
-    RcuVectorBase(GenerationHolder &genHolder,
+    RcuVectorBase(GenerationHolderType &genHolder,
                   const Alloc &initialAlloc = Alloc::alloc());
 
     /**
@@ -72,11 +72,11 @@ public:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
     RcuVectorBase(size_t initialCapacity, size_t growPercent, size_t growDelta,
-                  GenerationHolder &genHolder,
+                  GenerationHolderType &genHolder,
                   const Alloc &initialAlloc = Alloc::alloc());
 
     RcuVectorBase(GrowStrategy growStrategy,
-                  GenerationHolder &genHolder,
+                  GenerationHolderType &genHolder,
                   const Alloc &initialAlloc = Alloc::alloc());
 
     virtual ~RcuVectorBase();
@@ -121,17 +121,17 @@ public:
 
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));
-    void replaceVector(std::unique_ptr<Array> replacement);
+    void replaceVector(std::unique_ptr<ArrayType> replacement);
 };
 
 template <typename T>
 class RcuVector : public RcuVectorBase<T>
 {
 private:
-    typedef typename RcuVectorBase<T>::generation_t generation_t;
-    typedef typename RcuVectorBase<T>::GenerationHolder GenerationHolder;
-    generation_t       _generation;
-    GenerationHolder   _genHolderStore;
+    using generation_t         = typename RcuVectorBase<T>::generation_t;
+    using GenerationHolderType = typename RcuVectorBase<T>::GenerationHolderType;
+    generation_t         _generation;
+    GenerationHolderType _genHolderStore;
 
     void onReallocation() override;
 

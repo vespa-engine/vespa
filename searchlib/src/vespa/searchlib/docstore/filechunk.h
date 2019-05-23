@@ -6,8 +6,8 @@
 #include "ibucketizer.h"
 #include "lid_info.h"
 #include "randread.h"
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -117,7 +117,7 @@ public:
     virtual size_t getDiskFootprint() const { return _diskFootprint; }
     virtual size_t getMemoryFootprint() const;
     virtual size_t getMemoryMetaFootprint() const;
-    virtual MemoryUsage getMemoryUsage() const;
+    virtual vespalib::MemoryUsage getMemoryUsage() const;
 
     virtual size_t getDiskHeaderFootprint(void) const { return _dataHeaderLen + _idxHeaderLen; }
     size_t getDiskBloat() const {

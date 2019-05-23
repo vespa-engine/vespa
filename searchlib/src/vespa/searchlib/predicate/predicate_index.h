@@ -78,7 +78,7 @@ public:
     void commit();
     void trimHoldLists(generation_t used_generation);
     void transferHoldLists(generation_t generation);
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     int getArity() const { return _arity; }
 

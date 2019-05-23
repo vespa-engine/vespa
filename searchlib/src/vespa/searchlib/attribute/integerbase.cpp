@@ -89,7 +89,7 @@ bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     return retval;
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 IntegerAttribute::getChangeVectorMemoryUsage() const
 {
     return _changes.getMemoryUsage();

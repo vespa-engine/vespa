@@ -5,7 +5,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search
@@ -35,7 +35,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
     /**
      * Returns the memory usage of this memory index.
      */
-    virtual search::MemoryUsage getMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getMemoryUsage() const = 0;
 
     /**
      * Returns the memory usage of an empty version of this memory index.

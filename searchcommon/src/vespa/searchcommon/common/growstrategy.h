@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/growstrategy.h>
 #include <cstdint>
 
 namespace search {
@@ -37,6 +38,10 @@ public:
     float getMultiValueAllocGrowFactor() const { return _multiValueAllocGrowFactor; }
     void    setDocsInitialCapacity(uint32_t v) { _docsInitialCapacity = v; }
     void          setDocsGrowDelta(uint32_t v) { _docsGrowDelta = v; }
+
+    vespalib::GrowStrategy to_generic_strategy() const {
+        return vespalib::GrowStrategy(_docsInitialCapacity, _docsGrowFactor, _docsGrowDelta);
+    }
 
     bool operator==(const GrowStrategy & rhs) const {
         return _docsInitialCapacity == rhs._docsInitialCapacity &&

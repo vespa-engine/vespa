@@ -9,7 +9,7 @@ LOG_SETUP("unique_store_test");
 #include <vector>
 
 using namespace search::datastore;
-using search::MemoryUsage;
+using vespalib::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using MemStats = search::datastore::test::MemStats;

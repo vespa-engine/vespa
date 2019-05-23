@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/compressionconfig.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <memory>
 #include <vector>
 
@@ -102,7 +102,7 @@ public:
     vespalib::ConstBufferRef getLid(uint32_t lid) const;
     const vespalib::nbostream & getData() const;
     bool hasRoom(size_t len) const;
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 private:
     vespalib::nbostream & getData();
 

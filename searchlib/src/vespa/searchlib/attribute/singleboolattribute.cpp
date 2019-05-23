@@ -83,7 +83,7 @@ SingleBoolAttribute::onAddDocs(DocId docIdLimit) {
 
 void
 SingleBoolAttribute::onUpdateStat() {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.extraByteSize());
     usage.setUsedBytes(_bv.sizeBytes());
     usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());

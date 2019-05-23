@@ -193,7 +193,7 @@ public:
     void clearHoldLists() { _store.clearHoldLists();}
     std::vector<uint32_t> startCompact() { return _store.startCompact(_typeId); }
     void finishCompact(const std::vector<uint32_t> & toHold) { _store.finishCompact(toHold); }
-    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
 };
 

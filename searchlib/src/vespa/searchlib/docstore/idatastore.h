@@ -5,8 +5,8 @@
 #include "data_store_file_chunk_stats.h"
 #include <vespa/fastos/timestamp.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
-#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 
 namespace vespalib { class DataBuffer; }
@@ -165,7 +165,7 @@ public:
     /*
      * Return the memory usage for data store.
      */
-    virtual MemoryUsage getMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getMemoryUsage() const = 0;
 
     /*
      * Return detailed stats about underlying files for data store.

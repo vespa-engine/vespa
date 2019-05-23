@@ -78,7 +78,7 @@ private:
     using PostingParent::forwardedOnAddDoc;
 
     void freezeEnumDictionary() override;
-    void mergeMemoryStats(MemoryUsage & total) override;
+    void mergeMemoryStats(vespalib::MemoryUsage & total) override;
     void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused) override ;
 
 public:

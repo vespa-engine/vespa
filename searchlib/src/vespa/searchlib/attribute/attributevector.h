@@ -16,10 +16,10 @@
 #include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/identifiable.h>
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/fastos/time.h>
 #include <cmath>
 #include <mutex>
@@ -662,7 +662,7 @@ public:
 
     static bool isEnumerated(const vespalib::GenericHeader &header);
 
-    virtual MemoryUsage getChangeVectorMemoryUsage() const;
+    virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const;
 };
 
 }
