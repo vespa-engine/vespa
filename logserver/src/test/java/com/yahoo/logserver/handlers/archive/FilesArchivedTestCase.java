@@ -44,6 +44,8 @@ public class FilesArchivedTestCase {
     public void testMaintenance() throws java.io.IOException {
         File tmpDir = temporaryFolder.newFolder();
         try {
+            makeLogfile(tmpDir, "foo/bar", 35*24); // non-matching file
+
             makeLogfile(tmpDir, "2018/11/20/13-0", 35*24);
             makeLogfile(tmpDir, "2018/11/21/13-0", 34*24);
             makeLogfile(tmpDir, "2018/12/28/13-0", 3*24);
@@ -55,6 +57,7 @@ public class FilesArchivedTestCase {
             dumpFiles(tmpDir, "before archive maintenance");
             FilesArchived a = new FilesArchived(tmpDir);
             dumpFiles(tmpDir, "after archive maintenance");
+            checkExist(tmpDir, "foo/bar");
             checkExist(tmpDir, "2018/12/31/17-0");
             checkExist(tmpDir, "2018/12/31/16-0");
             checkExist(tmpDir, "2018/12/31/14-0.gz");
@@ -90,6 +93,7 @@ public class FilesArchivedTestCase {
 
             checkNoExist(tmpDir, "2018/12/31/16-0");
             checkNoExist(tmpDir, "2018/12/31/17-0");
+            checkExist(tmpDir, "foo/bar");
         } finally {
             IOUtils.recursiveDeleteDir(tmpDir);
         }
