@@ -94,9 +94,11 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor responseObject = slime.setObject();
 
-        Cursor lastVersionsObject = responseObject.setObject("lastVersions");
-        lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
-        lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        if (application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
+            Cursor lastVersionsObject = responseObject.setObject("lastVersions");
+            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
+            lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        }
 
         if ( ! change.isEmpty()) {
             Cursor deployingObject = responseObject.setObject("deploying");
@@ -132,6 +134,17 @@ class JobControllerApiHandlerHelper {
                            running,
                            baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
         });
+
+        Cursor devJobsObject = responseObject.setObject("devJobs");
+        for (JobType type : JobType.allIn(controller.system()))
+            if (   type.environment() != null
+                && type.environment().isManuallyDeployed()
+                && application.deployments().containsKey(type.zone(controller.system())))
+                controller.jobController().last(application.id(), type)
+                          .ifPresent(last -> runToSlime(devJobsObject.setObject(type.jobName()),
+                                                        last,
+                                                        baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize()));
+
         return new SlimeJsonResponse(slime);
     }
 

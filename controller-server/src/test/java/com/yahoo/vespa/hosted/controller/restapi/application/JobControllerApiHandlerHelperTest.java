@@ -120,6 +120,20 @@ public class JobControllerApiHandlerHelperTest {
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
     }
 
+    @Test
+    public void testDevResponses() {
+        InternalDeploymentTester tester = new InternalDeploymentTester();
+        tester.clock().setInstant(Instant.EPOCH);
+
+        ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
+        tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.configServer().convergeServices(appId, zone);
+        tester.setEndpoints(appId, zone);
+        tester.runner().run();
+
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root")), "dev-overview.json");
+    }
+
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);

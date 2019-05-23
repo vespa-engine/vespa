@@ -7,8 +7,10 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.cd;
@@ -106,6 +108,10 @@ public enum JobType {
             throw new IllegalArgumentException(this + " does not have any zones in " + system);
 
         return zones.get(system);
+    }
+
+    public static List<JobType> allIn(SystemName system) {
+        return Stream.of(values()).filter(job -> job.zones.containsKey(system)).collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns whether this is a production job */
