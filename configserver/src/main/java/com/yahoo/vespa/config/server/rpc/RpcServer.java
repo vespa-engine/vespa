@@ -3,12 +3,12 @@ package com.yahoo.vespa.config.server.rpc;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Int32Value;
@@ -28,16 +28,17 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.vespa.config.server.GetConfigContext;
+import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.ReloadListener;
-import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
+import com.yahoo.vespa.config.server.rpc.security.RpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -99,6 +100,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final MetricUpdaterFactory metricUpdaterFactory;
     private final HostLivenessTracker hostLivenessTracker;
     private final FileServer fileServer;
+    private final RpcAuthorizer rpcAuthorizer;
 
     private final ThreadPoolExecutor executorService;
     private final FileDownloader downloader;
@@ -121,7 +123,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Inject
     public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
                      MetricUpdaterFactory metrics, HostRegistries hostRegistries,
-                     HostLivenessTracker hostLivenessTracker, FileServer fileServer) {
+                     HostLivenessTracker hostLivenessTracker, FileServer fileServer, RpcAuthorizer rpcAuthorizer,
+                     RpcRequestHandlerProvider handlerProvider) {
         this.superModelRequestHandler = superModelRequestHandler;
         metricUpdaterFactory = metrics;
         supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
@@ -140,7 +143,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.hostedVespa = config.hostedVespa();
         this.canReturnEmptySentinelConfig = config.canReturnEmptySentinelConfig();
         this.fileServer = fileServer;
+        this.rpcAuthorizer = rpcAuthorizer;
         downloader = fileServer.downloader();
+        handlerProvider.setInstance(this);
         setUpHandlers();
     }
 
@@ -148,18 +153,19 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * Handles RPC method "config.v3.getConfig" requests.
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
-    public final void getConfigV3(Request req) {
+    private void getConfigV3(Request req) {
         if (log.isLoggable(LogLevel.SPAM)) {
             log.log(LogLevel.SPAM, getConfigMethodName);
         }
         req.detach();
-        addToRequestQueue(JRTServerConfigRequestV3.createFromRequest(req));
+        rpcAuthorizer.authorizeConfigRequest(req)
+                .thenRun(() -> addToRequestQueue(JRTServerConfigRequestV3.createFromRequest(req)));
     }
 
     /**
      * Returns 0 if server is alive.
      */
-    public final void ping(Request req) {
+    private void ping(Request req) {
         req.returnValues().add(new Int32Value(0));
     }
 
@@ -168,10 +174,11 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      *
      * @param req a Request
      */
-    public void printStatistics(Request req) {
+    private void printStatistics(Request req) {
         req.returnValues().add(new StringValue("Delayed responses queue size: " + delayedConfigResponses.size()));
     }
 
+    @Override
     public void run() {
         log.log(LogLevel.INFO, "Rpc will listen on port " + spec.port());
         try {
@@ -383,14 +390,15 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             return GetConfigContext.create(ApplicationId.global(), superModelRequestHandler, trace);
         }
         TenantName tenant = optionalTenant.orElse(TenantName.defaultName()); // perhaps needed for non-hosted?
-        if ( ! hasRequestHandler(tenant)) {
+        Optional<RequestHandler> requestHandler = getRequestHandler(tenant);
+        if (requestHandler.isEmpty()) {
             String msg = TenantRepository.logPre(tenant) + "Unable to find request handler for tenant. Requested from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
             log.log(LogLevel.WARNING, msg);
             return null;
         }
-        RequestHandler handler = getRequestHandler(tenant);
+        RequestHandler handler = requestHandler.get();
         ApplicationId applicationId = handler.resolveApplicationId(request.getClientHostName());
         if (trace.shouldTrace(TRACELEVEL_DEBUG)) {
             trace.trace(TRACELEVEL_DEBUG, "Host '" + request.getClientHostName() + "' should have config from application '" + applicationId + "'");
@@ -398,15 +406,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return GetConfigContext.create(applicationId, handler, trace);
     }
 
-    private boolean hasRequestHandler(TenantName tenant) {
-        return tenantProviders.containsKey(tenant);
-    }
-
-    private RequestHandler getRequestHandler(TenantName tenant) {
-        if (!tenantProviders.containsKey(tenant)) {
-            throw new IllegalStateException("No request handler for " + tenant);
-        }
-        return tenantProviders.get(tenant).getRequestHandler();
+    Optional<RequestHandler> getRequestHandler(TenantName tenant) {
+        return Optional.ofNullable(tenantProviders.get(tenant))
+                .map(TenantHandlerProvider::getRequestHandler);
     }
 
     void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
@@ -541,19 +543,26 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
     }
 
-    public final void serveFile(Request request) {
+    private void serveFile(Request request) {
         request.detach();
-        FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
-        fileServer.serveFile(request.parameters().get(0).asString(), request.parameters().get(1).asInt32() == 0, request, receiver);
+        rpcAuthorizer.authorizeFileRequest(request)
+                .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
+                    FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
+                    fileServer.serveFile(request.parameters().get(0).asString(), request.parameters().get(1).asInt32() == 0, request, receiver);
+                });
     }
 
-    public final void setFileReferencesToDownload(Request req) {
-        String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
-        Stream.of(fileReferenceStrings)
-                .map(FileReference::new)
-                .forEach(fileReference -> downloader.downloadIfNeeded(
-                        new FileReferenceDownload(fileReference, false /* downloadFromOtherSourceIfNotFound */)));
-        req.returnValues().add(new Int32Value(0));
+    private void setFileReferencesToDownload(Request req) {
+        req.detach();
+        rpcAuthorizer.authorizeFileRequest(req)
+                .thenRun(() -> { // okay to do in authorizer thread as downloadIfNeeded is async
+                    String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
+                    Stream.of(fileReferenceStrings)
+                            .map(FileReference::new)
+                            .forEach(fileReference -> downloader.downloadIfNeeded(
+                                    new FileReferenceDownload(fileReference, false /* downloadFromOtherSourceIfNotFound */)));
+                    req.returnValues().add(new Int32Value(0));
+                });
     }
 
     HostLivenessTracker hostLivenessTracker() {

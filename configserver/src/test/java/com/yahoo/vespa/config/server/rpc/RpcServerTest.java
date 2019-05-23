@@ -173,7 +173,7 @@ public class RpcServerTest {
 
     private void testPrintStatistics(RpcTester tester) {
         Request req = new Request("printStatistics");
-        tester.rpcServer().printStatistics(req);
+        tester.performRequest(req);
         assertThat(req.returnValues().get(0).asString(), is("Delayed responses queue size: 0"));
     }
 
