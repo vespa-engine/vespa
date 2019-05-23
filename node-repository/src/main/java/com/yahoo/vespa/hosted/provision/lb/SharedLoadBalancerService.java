@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  * @author ogronnesby
  */
 public class SharedLoadBalancerService implements LoadBalancerService {
+    private static final Comparator<Node> hostnameComparator = Comparator.comparing(Node::hostname);
     private final NodeRepository nodeRepository;
 
     public SharedLoadBalancerService(NodeRepository nodeRepository) {
@@ -30,7 +31,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     @Override
     public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
         final var proxyNodes = nodeRepository.getNodes(NodeType.proxy);
-        proxyNodes.sort(Comparator.comparing(Node::hostname));
+        proxyNodes.sort(hostnameComparator);
 
         if (proxyNodes.size() == 0) {
             throw new IllegalStateException("Missing proxy nodes in nodeRepository");
