@@ -21,19 +21,19 @@ TEST(GroupTest, test_operators)
     {
         auto g0 = make_group(0, "1|*|*");
         auto g1 = make_group(1, "1|*|*");
-        EXPECT_TRUE(!(*g0 == *g1));
+        EXPECT_FALSE(*g0 == *g1);
     }
     {
         auto g0 = make_group(0, "1|*");
         auto g1 = make_group(0, "1|*|*");
-        EXPECT_TRUE(!(*g0 == *g1));
+        EXPECT_FALSE(*g0 == *g1);
     }
     {
         auto g0 = make_group(0, "1|*");
         auto g1 = make_group(1, "1|*|*");
         g0->addSubGroup(std::move(g1));
         auto g2 = make_group(0, "1|*");
-        EXPECT_TRUE(!(*g0 == *g2));
+        EXPECT_FALSE(*g0 == *g2);
     }
 }
 
