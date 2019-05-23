@@ -34,6 +34,13 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
                "    <binding>http://*/api/application/v4/*</binding>\n" +
                "  </handler>\n" +
 
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
+               "    <binding>http://*/zone/v1</binding>\n" +
+               "    <binding>http://*/zone/v1/*</binding>\n" +
+               "    <binding>http://*/api/zone/v1</binding>\n" +
+               "    <binding>http://*/api/zone/v1/*</binding>\n" +
+               "  </handler>\n" +
+
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
                "    <binding>http://*/user/v1/*</binding>\n" +
                "    <binding>http://*/api/user/v1/*</binding>\n" +

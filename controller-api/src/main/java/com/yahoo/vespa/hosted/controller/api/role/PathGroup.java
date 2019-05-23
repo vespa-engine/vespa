@@ -134,7 +134,8 @@ enum PathGroup {
                    "/statuspage/v1/{*}"),
 
     /** Paths providing public information. */
-    publicInfo("/badge/v1/{*}",
+    publicInfo(Optional.of("/api"),
+               "/badge/v1/{*}",
                "/zone/v1/{*}");
 
     final List<String> pathSpecs;
