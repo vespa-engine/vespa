@@ -84,14 +84,14 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private CompletableFuture<Void> doAsyncAuthorization(Request request, BiConsumer<Request, NodeIdentity> authorizer) {
         return CompletableFuture.runAsync(
-                () -> getPeerIdentity(request)
-                        .ifPresent(peerIdentity -> {
-                            try {
-                                authorizer.accept(request, peerIdentity);
-                            } catch (Throwable t) {
-                                handleAuthorizationFailure(request, t);
-                            }
-                        }),
+                () -> {
+                    try {
+                        getPeerIdentity(request)
+                                .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
+                    } catch (Throwable t) {
+                        handleAuthorizationFailure(request, t);
+                    }
+                },
                 executor);
     }
 
