@@ -130,11 +130,9 @@ public class LocalSessionTest {
         String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(3)).getAbsolute();
         assertTrue(configCurator.exists(sessionNode));
         assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
-        long gen = superModelGenerationCounter.get();
         NestedTransaction transaction = new NestedTransaction();
         session.delete(transaction);
         transaction.commit();
-        assertThat(superModelGenerationCounter.get(), is(gen + 1));
         assertFalse(configCurator.exists(sessionNode));
         assertFalse(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
     }
