@@ -16,6 +16,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -45,6 +46,14 @@ public class MetricsProxyContainerTest {
                     .count();
             assertThat(metricsProxies, is(1L));
         }
+    }
+
+    @Test
+    public void metrics_proxy_requires_less_memory_than_other_containers() {
+        VespaModel model = getModel(servicesWithContent());
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
+        assertThat(container.getStartupCommand(), containsString("-Xms32m"));
+        assertThat(container.getStartupCommand(), containsString("-Xmx512m"));
     }
 
     @Test
@@ -129,7 +138,7 @@ public class MetricsProxyContainerTest {
     }
 
 
-    private String servicesWithManyNodes() {
+    private static String servicesWithManyNodes() {
         return String.join("\n",
                            "<services>",
                            "    <container version='1.0' id='foo'>",
@@ -142,7 +151,7 @@ public class MetricsProxyContainerTest {
                            "</services>");
     }
 
-    private String servicesWithContent() {
+    private static String servicesWithContent() {
         return String.join("\n",
                            "<services>",
                            "    <admin version='4.0'>",
