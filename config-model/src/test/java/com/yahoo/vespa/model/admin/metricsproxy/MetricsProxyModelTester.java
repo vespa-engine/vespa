@@ -36,7 +36,6 @@ class MetricsProxyModelTester {
     static VespaModel getModel(String servicesXml) {
         var numberOfHosts = 1;
         var tester = new VespaModelTester();
-        tester.enableMetricsProxyContainer(true);
         tester.addHosts(numberOfHosts);
         tester.setHosted(false);
         return tester.createModel(servicesXml, true);
@@ -45,7 +44,6 @@ class MetricsProxyModelTester {
     static VespaModel getHostedModel(String servicesXml) {
         var numberOfHosts = 2;
         var tester = new VespaModelTester();
-        tester.enableMetricsProxyContainer(true);
         tester.addHosts(flavorFromString(MY_FLAVOR), numberOfHosts);
         tester.setHosted(true);
         tester.setApplicationId(MY_TENANT, MY_APPLICATION, MY_INSTANCE);
