@@ -277,6 +277,6 @@ public:
      * @return constant
      **/
     static uint32_t invalidId() { return 0xdeadbeefU; }
-} __attribute__((packed));
+};
 
 }
