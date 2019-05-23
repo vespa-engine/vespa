@@ -53,7 +53,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final JobRunner jobRunner;
     private final ContactInformationMaintainer contactInformationMaintainer;
     private final CostReportMaintainer costReportMaintainer;
-    private final RoutingPolicyMaintainer routingPolicyMaintainer;
     private final ResourceMeterMaintainer resourceMeterMaintainer;
     private final NameServiceDispatcher nameServiceDispatcher;
 
@@ -86,7 +85,6 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
-        routingPolicyMaintainer = new RoutingPolicyMaintainer(controller, Duration.ofMinutes(5), jobControl, curator);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepositoryClient, Clock.systemUTC(), metric, resourceSnapshotConsumer);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
     }
@@ -116,7 +114,6 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner.deconstruct();
         contactInformationMaintainer.deconstruct();
         costReportMaintainer.deconstruct();
-        routingPolicyMaintainer.deconstruct();
         resourceMeterMaintainer.deconstruct();
         nameServiceDispatcher.deconstruct();
     }

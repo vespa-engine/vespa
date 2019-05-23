@@ -204,14 +204,16 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return loadBalancers.getOrDefault(zone, Collections.emptyList());
     }
 
+    @Override
+    public List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone) {
+        return getLoadBalancers(zone).stream()
+                                     .filter(lb -> lb.application().equals(application))
+                                     .collect(Collectors.toUnmodifiableList());
+    }
+
     public void addLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
-        this.loadBalancers.compute(zone, (k, existing) -> {
-           if (existing == null) {
-               existing = new ArrayList<>();
-           }
-           existing.addAll(loadBalancers);
-           return existing;
-        });
+        this.loadBalancers.putIfAbsent(zone, new ArrayList<>());
+        this.loadBalancers.get(zone).addAll(loadBalancers);
     }
 
     public void removeLoadBalancers(ApplicationId application, ZoneId zone) {

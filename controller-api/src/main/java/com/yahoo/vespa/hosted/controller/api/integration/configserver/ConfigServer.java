@@ -1,11 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
@@ -75,5 +76,8 @@ public interface ConfigServer {
 
     /** Get all load balancers in given zone */
     List<LoadBalancer> getLoadBalancers(ZoneId zone);
+
+    /** Get all load balancers for application in given zone */
+    List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone);
 
 }

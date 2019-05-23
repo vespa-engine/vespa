@@ -74,13 +74,11 @@ public class OsVersionStatus {
                 controller.configServer().nodeRepository().list(zone, application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
                           .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.environment(), zone.region()))
-                          .forEach(node -> versions.compute(new OsVersion(node.version(), zone.cloud()), (ignored, nodes) -> {
-                              if (nodes == null) {
-                                  nodes = new ArrayList<>();
-                              }
-                              nodes.add(node);
-                              return nodes;
-                          }));
+                          .forEach(node -> {
+                              var version = new OsVersion(node.version(), zone.cloud());
+                              versions.putIfAbsent(version, new ArrayList<>());
+                              versions.get(version).add(node);
+                          });
             }
         }
 

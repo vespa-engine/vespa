@@ -15,12 +15,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,31 +34,32 @@ import static org.junit.Assert.assertTrue;
  * @author mortent
  * @author mpolden
  */
-public class RoutingPolicyMaintainerTest {
+public class RoutingPoliciesTest {
 
     private final DeploymentTester tester = new DeploymentTester();
+
     private final Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
     private final Application app2 = tester.createApplication("app2", "tenant1", 1, 1L);
 
-    private final RoutingPolicyMaintainer maintainer = new RoutingPolicyMaintainer(tester.controller(), Duration.ofHours(12),
-                                                                                   new JobControl(new MockCuratorDb()),
-                                                                                   tester.controllerTester().curator());
+    private final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
+    private final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
+    private final ZoneId zone3 = ZoneId.from("prod", "us-east-3");
+
     private final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
-            .region("us-west-1")
-            .region("us-central-1")
+            .region(zone1.region())
+            .region(zone2.region())
             .build();
 
     @Test
     public void maintains_global_routing_policies() {
+        int buildNumber = 42;
         int clustersPerZone = 2;
-        tester.deployCompletely(app1, applicationPackage);
-        // Cluster is member of 2 global rotations
+        // Cluster 0 is member of 2 global rotations
         Map<Integer, Set<RotationName>> rotations = Map.of(0, Set.of(RotationName.from("r0"), RotationName.from("r1")));
-        provisionLoadBalancers(app1, clustersPerZone, rotations);
+        provisionLoadBalancers(clustersPerZone, rotations, app1.id(), zone1, zone2);
 
         // Creates alias records for cluster0
-        maintain();
+        tester.deployCompletely(app1, applicationPackage, ++buildNumber);
         Supplier<List<Record>> records1 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app1.tenant1.global.vespa.oath.cloud"));
         Supplier<List<Record>> records2 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r1.app1.tenant1.global.vespa.oath.cloud"));
         assertEquals(2, records1.get().size());
@@ -76,16 +74,15 @@ public class RoutingPolicyMaintainerTest {
         // Applications gains a new deployment
         ApplicationPackage updatedApplicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("us-west-1")
-                .region("us-central-1")
-                .region("us-east-3")
+                .region(zone1.region())
+                .region(zone2.region())
+                .region(zone3.region())
                 .build();
         int numberOfDeployments = 3;
-        tester.deployCompletely(app1, updatedApplicationPackage, BuildJob.defaultBuildNumber + 1);
+        provisionLoadBalancers(clustersPerZone, rotations, app1.id(), zone3);
+        tester.deployCompletely(app1, updatedApplicationPackage, ++buildNumber);
 
         // Cluster in new deployment is added to the rotation
-        provisionLoadBalancers(app1, 2, rotations);
-        maintain();
         assertEquals(numberOfDeployments, records1.get().size());
         assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records1.get().get(0).data().asString());
         assertEquals("lb-0--tenant1:app1:default--prod.us-east-3/dns-zone-1/prod.us-east-3", records1.get().get(1).data().asString());
@@ -93,16 +90,15 @@ public class RoutingPolicyMaintainerTest {
 
         // Another application is deployed
         Supplier<List<Record>> records3 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app2.tenant1.global.vespa.oath.cloud"));
+        provisionLoadBalancers(1, Map.of(0, Set.of(RotationName.from("r0"))), app2.id(), zone1, zone2);
         tester.deployCompletely(app2, applicationPackage);
-        provisionLoadBalancers(app2, 1, Map.of(0, Set.of(RotationName.from("r0"))));
-        maintain();
         assertEquals(2, records3.get().size());
         assertEquals("lb-0--tenant1:app2:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records3.get().get(0).data().asString());
         assertEquals("lb-0--tenant1:app2:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records3.get().get(1).data().asString());
 
         // All rotations for app1 are removed
-        provisionLoadBalancers(app1, clustersPerZone, Collections.emptyMap());
-        maintain();
+        provisionLoadBalancers(clustersPerZone, Map.of(), app1.id(), zone1, zone2, zone3);
+        tester.deployCompletely(app1, updatedApplicationPackage, ++buildNumber);
         assertEquals(List.of(), records1.get());
         Set<RoutingPolicy> policies = tester.controller().curator().readRoutingPolicies(app1.id());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
@@ -115,11 +111,11 @@ public class RoutingPolicyMaintainerTest {
     public void maintains_routing_policies_per_zone() {
         // Deploy application
         int clustersPerZone = 2;
-        tester.deployCompletely(app1, applicationPackage);
-        provisionLoadBalancers(app1, clustersPerZone);
+        int buildNumber = 42;
+        provisionLoadBalancers(clustersPerZone, app1.id(), zone1, zone2);
+        tester.deployCompletely(app1, applicationPackage, ++buildNumber);
 
-        // Creates records and policies for all clusters in all zones
-        maintain();
+        // Deployment creates records and policies for all clusters in all zones
         Set<String> expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -129,14 +125,14 @@ public class RoutingPolicyMaintainerTest {
         assertEquals(expectedRecords, recordNames());
         assertEquals(4, policies(app1).size());
 
-        // Next run does nothing
-        maintain();
+        // Next deploy does nothing
+        tester.deployCompletely(app1, applicationPackage, ++buildNumber);
         assertEquals(expectedRecords, recordNames());
         assertEquals(4, policies(app1).size());
 
-        // Add 1 cluster in each zone
-        provisionLoadBalancers(app1, clustersPerZone + 1);
-        maintain();
+        // Add 1 cluster in each zone and deploy
+        provisionLoadBalancers(clustersPerZone + 1, app1.id(), zone1, zone2);
+        tester.deployCompletely(app1, applicationPackage, ++buildNumber);
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -148,10 +144,9 @@ public class RoutingPolicyMaintainerTest {
         assertEquals(expectedRecords, recordNames());
         assertEquals(6, policies(app1).size());
 
-        // Add another application
-        tester.deployCompletely(app2, applicationPackage);
-        provisionLoadBalancers(app2, clustersPerZone);
-        maintain();
+        // Deploy another application
+        provisionLoadBalancers(clustersPerZone, app2.id(), zone1, zone2);
+        tester.deployCompletely(app2, applicationPackage, ++buildNumber);
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -167,9 +162,9 @@ public class RoutingPolicyMaintainerTest {
         assertEquals(expectedRecords, recordNames());
         assertEquals(4, policies(app2).size());
 
-        // Remove cluster from app1
-        provisionLoadBalancers(app1, clustersPerZone);
-        maintain();
+        // Deploy removes cluster from app1
+        provisionLoadBalancers(clustersPerZone, app1.id(), zone1, zone2);
+        tester.deployCompletely(app1, applicationPackage, ++buildNumber);
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -185,10 +180,10 @@ public class RoutingPolicyMaintainerTest {
         // Remove app2 completely
         tester.controller().applications().require(app2.id()).deployments().keySet()
               .forEach(zone -> {
-                  tester.controller().applications().deactivate(app2.id(), zone);
                   tester.configServer().removeLoadBalancers(app2.id(), zone);
+                  tester.controller().applications().deactivate(app2.id(), zone);
               });
-        maintain();
+        tester.flushDnsRequests();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -198,11 +193,6 @@ public class RoutingPolicyMaintainerTest {
         assertEquals(expectedRecords, recordNames());
         assertTrue("Removes stale routing policies " + app2, tester.controller().applications().routingPolicies(app2.id()).isEmpty());
         assertEquals("Keeps routing policies for " + app1, 4, tester.controller().applications().routingPolicies(app1.id()).size());
-    }
-
-    private void maintain() {
-        maintainer.run();
-        tester.updateDns();
     }
 
     private Set<RoutingPolicy> policies(Application application) {
@@ -216,22 +206,19 @@ public class RoutingPolicyMaintainerTest {
                      .collect(Collectors.toSet());
     }
 
-    private void provisionLoadBalancers(Application application, int clustersPerZone, Map<Integer, Set<RotationName>> clusterRotations) {
-        tester.controller().applications().require(application.id())
-              .deployments().keySet()
-              .forEach(zone -> tester.configServer().removeLoadBalancers(application.id(), zone));
-        tester.controller().applications().require(application.id())
-              .deployments().keySet()
-              .forEach(zone -> tester.configServer()
-                                     .addLoadBalancers(zone, createLoadBalancers(zone, application.id(), clustersPerZone, clusterRotations)));
+    private void provisionLoadBalancers(int clustersPerZone, Map<Integer, Set<RotationName>> clusterRotations, ApplicationId application, ZoneId... zones) {
+        for (ZoneId zone : zones) {
+            tester.configServer().removeLoadBalancers(application, zone);
+            tester.configServer().addLoadBalancers(zone, createLoadBalancers(zone, application, clustersPerZone, clusterRotations));
+        }
     }
 
-    private void provisionLoadBalancers(Application application, int clustersPerZone) {
-        provisionLoadBalancers(application, clustersPerZone, Collections.emptyMap());
+    private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, ZoneId... zones) {
+        provisionLoadBalancers(clustersPerZone, Map.of(), application, zones);
     }
 
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count,
-                                                   Map<Integer, Set<RotationName>> clusterRotations) {
+                                                          Map<Integer, Set<RotationName>> clusterRotations) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             Set<RotationName> rotations = clusterRotations.getOrDefault(i, Collections.emptySet());

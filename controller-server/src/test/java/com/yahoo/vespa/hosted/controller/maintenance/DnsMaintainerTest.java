@@ -104,7 +104,7 @@ public class DnsMaintainerTest {
         for (int i = 0; i < ControllerTester.availableRotations; i++) {
             maintainer.maintain();
         }
-        tester.updateDns();
+        tester.flushDnsRequests();
         assertFalse("DNS record removed", findCname.apply("app1--tenant1.global.vespa.yahooapis.com").isPresent());
         assertFalse("DNS record removed", findCname.apply("app1--tenant1.global.vespa.oath.cloud").isPresent());
         assertFalse("DNS record removed", findCname.apply("app1.tenant1.global.vespa.yahooapis.com").isPresent());
@@ -124,7 +124,7 @@ public class DnsMaintainerTest {
         // One record is removed per run
         for (int i = 1; i <= staleTotal*2; i++) {
             maintainer.run();
-            tester.updateDns();
+            tester.flushDnsRequests();
             assertEquals(Math.max(staleTotal - i, 0), records().size());
         }
     }

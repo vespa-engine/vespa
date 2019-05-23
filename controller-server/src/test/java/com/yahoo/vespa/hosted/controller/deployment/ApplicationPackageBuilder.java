@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import java.io.ByteArrayOutputStream;
@@ -60,6 +61,10 @@ public class ApplicationPackageBuilder {
     public ApplicationPackageBuilder globalServiceId(String globalServiceId) {
         this.globalServiceId = globalServiceId;
         return this;
+    }
+
+    public ApplicationPackageBuilder region(RegionName regionName) {
+        return region(regionName.value());
     }
 
     public ApplicationPackageBuilder region(String regionName) {

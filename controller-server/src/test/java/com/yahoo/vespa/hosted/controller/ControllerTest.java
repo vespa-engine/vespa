@@ -294,7 +294,7 @@ public class ControllerTest {
                                 "app1--tenant1.global.vespa.yahooapis.com"),
                          tester.configServer().rotationCnames().get(new DeploymentId(application.id(), deployment.zone())));
         }
-        tester.updateDns();
+        tester.flushDnsRequests();
         assertEquals(3, tester.controllerTester().nameService().records().size());
 
         Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
