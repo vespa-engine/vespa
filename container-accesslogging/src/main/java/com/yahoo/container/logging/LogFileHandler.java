@@ -261,18 +261,16 @@ public class LogFileHandler extends StreamHandler {
 
     private void runCompression(File oldFile) {
         File gzippedFile = new File(oldFile.getPath() + ".gz");
-        try {
-            GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
-            FileInputStream inputStream = new FileInputStream(oldFile);
+        try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
+             FileInputStream inputStream = new FileInputStream(oldFile))
+        {
             byte [] buffer = new byte[0x100000];
 
             for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
                 compressor.write(buffer, 0, read);
             }
-            inputStream.close();
             compressor.finish();
             compressor.flush();
-            compressor.close();
 
             NativeIO nativeIO = new NativeIO();
             nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
