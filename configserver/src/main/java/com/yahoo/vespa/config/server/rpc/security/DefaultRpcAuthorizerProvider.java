@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
@@ -23,10 +22,10 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
                                         NodeIdentifier nodeIdentifier,
                                         HostRegistries hostRegistries,
                                         RequestHandlerProvider handlerProvider) {
-        this.rpcAuthorizer =
-                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant()
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider)
-                        : new NoopRpcAuthorizer();
+        this.rpcAuthorizer = new NoopRpcAuthorizer();
+//                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant()
+//                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider)
+//                        : new NoopRpcAuthorizer();
     }
 
     @Override
