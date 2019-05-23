@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers.archive;
 
-import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
 import com.yahoo.plugin.SystemPropertyConfig;
@@ -28,10 +27,10 @@ import static org.junit.Assert.fail;
 public class ArchiverHandlerTestCase {
 
     private static final String[] mStrings = {
-            "1095159244.095000\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
-            "1095206399.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
-            "1095206400.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
-            "1095206401.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
+        "1095159244.095000\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
+        "1095206399.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
+        "1095206400.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
+        "1095206401.000000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
     };
 
     private static final LogMessage[] msg = new LogMessage[mStrings.length];
@@ -63,19 +62,16 @@ public class ArchiverHandlerTestCase {
     @Test
     public void testDateHash() throws IOException {
         File tmpDir = temporaryFolder.newFolder();
-        try {
-            ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                    1024);
-            long now = 1095159244095L;
-            long midnight = 1095206400000L;
-            assertEquals(2004091410, a.dateHash(now));
-            assertEquals(2004091423, a.dateHash(midnight - 1));
-            assertEquals(2004091500, a.dateHash(midnight));
-            assertEquals(2004091500, a.dateHash(midnight + 1));
-            a.close();
-        } finally {
-            IOUtils.recursiveDeleteDir(tmpDir);
-        }
+
+        ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
+                                                1024);
+        long now = 1095159244095L;
+        long midnight = 1095206400000L;
+        assertEquals(2004091410, a.dateHash(now));
+        assertEquals(2004091423, a.dateHash(midnight - 1));
+        assertEquals(2004091500, a.dateHash(midnight));
+        assertEquals(2004091500, a.dateHash(midnight + 1));
+        a.close();
     }
 
     /**
@@ -95,8 +91,6 @@ public class ArchiverHandlerTestCase {
             a.close();
         } catch (InvalidLogFormatException e) {
             fail(e.toString());
-        } finally {
-            IOUtils.recursiveDeleteDir(tmpDir);
         }
     }
 
@@ -107,66 +101,63 @@ public class ArchiverHandlerTestCase {
     @Test
     public void testLogging() throws java.io.IOException, InvalidLogFormatException {
         File tmpDir = temporaryFolder.newFolder();
-        try {
-            ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                    1024);
 
-            for (int i = 0; i < msg.length; i++) {
-                a.handle(msg[i]);
-            }
-            a.close();
+        ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
+                                                1024);
 
-
-            // make sure all the log files are there, that all log entries
-            // are accounted for and that they match what we logged.
-            int messageCount = 0;
-
-            // map of files we've already inspected.  this we need to ensure
-            // that we are not inspecting the same files over and over again
-            // so the counts get messed up
-            Set<String> inspectedFiles = new HashSet<String>();
-
-            for (int i = 0; i < msg.length; i++) {
-                String name = a.getPrefix(msg[i]) + "-0";
-
-                // have we inspected this file before?
-                if (! inspectedFiles.add(name)) {
-                    continue;
-                }
-
-
-                File f = new File(name);
-                assertTrue(f.exists());
-
-                BufferedReader br = new BufferedReader(new FileReader(f));
-                for (String line = br.readLine();
-                     line != null;
-                     line = br.readLine()) {
-                    // primitive check if the messages match
-                    boolean foundMatch = false;
-                    for (int k = 0; k < mStrings.length; k++) {
-                        if (mStrings[k].equals(line)) {
-                            foundMatch = true;
-                            break;
-                        }
-                    }
-                    assertTrue(foundMatch);
-
-                    // try to instantiate messages to ensure that they
-                    // are parseable
-                    @SuppressWarnings("unused")
-                    LogMessage m = LogMessage.parseNativeFormat(line);
-                    messageCount++;
-                }
-                br.close();
-            }
-
-            // verify that the number of log messages written equals
-            // the number of log messages we have in our test
-            assertEquals(mStrings.length, messageCount);
-        } finally {
-            IOUtils.recursiveDeleteDir(tmpDir);
+        for (int i = 0; i < msg.length; i++) {
+            a.handle(msg[i]);
         }
+        a.close();
+
+
+        // make sure all the log files are there, that all log entries
+        // are accounted for and that they match what we logged.
+        int messageCount = 0;
+
+        // map of files we've already inspected.  this we need to ensure
+        // that we are not inspecting the same files over and over again
+        // so the counts get messed up
+        Set<String> inspectedFiles = new HashSet<String>();
+
+        for (int i = 0; i < msg.length; i++) {
+            String name = a.getPrefix(msg[i]) + "-0";
+
+            // have we inspected this file before?
+            if (! inspectedFiles.add(name)) {
+                continue;
+            }
+
+
+            File f = new File(name);
+            assertTrue(f.exists());
+
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            for (String line = br.readLine();
+                 line != null;
+                 line = br.readLine()) {
+                // primitive check if the messages match
+                boolean foundMatch = false;
+                for (int k = 0; k < mStrings.length; k++) {
+                    if (mStrings[k].equals(line)) {
+                        foundMatch = true;
+                        break;
+                    }
+                }
+                assertTrue(foundMatch);
+
+                // try to instantiate messages to ensure that they
+                // are parseable
+                @SuppressWarnings("unused")
+                    LogMessage m = LogMessage.parseNativeFormat(line);
+                messageCount++;
+            }
+            br.close();
+        }
+
+        // verify that the number of log messages written equals
+        // the number of log messages we have in our test
+        assertEquals(mStrings.length, messageCount);
     }
 
     /**
@@ -175,39 +166,39 @@ public class ArchiverHandlerTestCase {
     @Test
     public void testRotation() throws IOException {
         File tmpDir = temporaryFolder.newFolder();
-        try {
-            ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                    msg[1].toString().length() + 1);
-            // log the same message 4 times
-            for (int i = 0; i < 4; i++) {
-                a.handle(msg[1]);
-            }
-            a.close();
 
-            // we should now have 3 files
-            String prefix = a.getPrefix(msg[1]);
-            int msgCount = 0;
-            for (int i = 0; i < 3; i++) {
-                File f = new File(prefix + "-" + i);
-                assertTrue(f.exists());
-
-                // ensure there's the same log message in all files
-                BufferedReader br = new BufferedReader(new FileReader(f));
-                for (String line = br.readLine();
-                     line != null;
-                     line = br.readLine()) {
-                    assertTrue(msg[1].toString().equals((line + "\n")));
-                    msgCount++;
-                }
-                br.close();
-            }
-            assertEquals(4, msgCount);
-
-            // make sure we have no more than 3 files
-            assertTrue(! (new File(prefix + "-3").exists()));
-        } finally {
-            IOUtils.recursiveDeleteDir(tmpDir);
+        ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
+                                                msg[1].toString().length() + 1);
+        // log the same message 4 times
+        for (int i = 0; i < 4; i++) {
+            a.handle(msg[1]);
         }
+        a.close();
+
+        // we should now have 3 files
+        String prefix = a.getPrefix(msg[1]);
+        int msgCount = 0;
+        for (int i = 0; i < 3; i++) {
+            File f = new File(prefix + "-" + i);
+            assertTrue(f.exists());
+
+            // ensure there's the same log message in all files
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            for (String line = br.readLine();
+                 line != null;
+                 line = br.readLine()) {
+                assertTrue(msg[1].toString().equals((line + "\n")));
+                msgCount++;
+            }
+            br.close();
+        }
+        assertEquals(4, msgCount);
+
+        // make sure we have no more than 3 files
+        assertTrue(! (new File(prefix + "-3").exists()));
+
+
+
     }
 
     @Test

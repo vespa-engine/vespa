@@ -2,8 +2,6 @@
 
 package com.yahoo.logserver.handlers.archive;
 
-import com.yahoo.io.IOUtils;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -43,60 +41,57 @@ public class FilesArchivedTestCase {
     @Test
     public void testMaintenance() throws java.io.IOException {
         File tmpDir = temporaryFolder.newFolder();
-        try {
-            makeLogfile(tmpDir, "foo/bar", 35*24); // non-matching file
 
-            makeLogfile(tmpDir, "2018/11/20/13-0", 35*24);
-            makeLogfile(tmpDir, "2018/11/21/13-0", 34*24);
-            makeLogfile(tmpDir, "2018/12/28/13-0", 3*24);
-            makeLogfile(tmpDir, "2018/12/29/13-0", 2*24);
-            makeLogfile(tmpDir, "2018/12/30/13-0", 1*24);
-            makeLogfile(tmpDir, "2018/12/31/14-0", 3);
-            makeLogfile(tmpDir, "2018/12/31/16-0", 1);
-            makeLogfile(tmpDir, "2018/12/31/17-0", 0);
-            dumpFiles(tmpDir, "before archive maintenance");
-            FilesArchived a = new FilesArchived(tmpDir);
-            dumpFiles(tmpDir, "after archive maintenance");
-            checkExist(tmpDir, "foo/bar");
-            checkExist(tmpDir, "2018/12/31/17-0");
-            checkExist(tmpDir, "2018/12/31/16-0");
-            checkExist(tmpDir, "2018/12/31/14-0.gz");
-            checkExist(tmpDir, "2018/12/28/13-0.gz");
-            checkExist(tmpDir, "2018/12/29/13-0.gz");
-            checkExist(tmpDir, "2018/12/30/13-0.gz");
+        makeLogfile(tmpDir, "foo/bar", 35*24); // non-matching file
 
-            checkNoExist(tmpDir, "2018/12/31/17-0.gz");
-            checkNoExist(tmpDir, "2018/12/31/16-0.gz");
-            checkNoExist(tmpDir, "2018/12/31/14-0");
-            checkNoExist(tmpDir, "2018/12/28/13-0");
-            checkNoExist(tmpDir, "2018/12/29/13-0");
-            checkNoExist(tmpDir, "2018/12/30/13-0");
+        makeLogfile(tmpDir, "2018/11/20/13-0", 35*24);
+        makeLogfile(tmpDir, "2018/11/21/13-0", 34*24);
+        makeLogfile(tmpDir, "2018/12/28/13-0", 3*24);
+        makeLogfile(tmpDir, "2018/12/29/13-0", 2*24);
+        makeLogfile(tmpDir, "2018/12/30/13-0", 1*24);
+        makeLogfile(tmpDir, "2018/12/31/14-0", 3);
+        makeLogfile(tmpDir, "2018/12/31/16-0", 1);
+        makeLogfile(tmpDir, "2018/12/31/17-0", 0);
+        dumpFiles(tmpDir, "before archive maintenance");
+        FilesArchived a = new FilesArchived(tmpDir);
+        dumpFiles(tmpDir, "after archive maintenance");
+        checkExist(tmpDir, "foo/bar");
+        checkExist(tmpDir, "2018/12/31/17-0");
+        checkExist(tmpDir, "2018/12/31/16-0");
+        checkExist(tmpDir, "2018/12/31/14-0.gz");
+        checkExist(tmpDir, "2018/12/28/13-0.gz");
+        checkExist(tmpDir, "2018/12/29/13-0.gz");
+        checkExist(tmpDir, "2018/12/30/13-0.gz");
 
-            checkNoExist(tmpDir, "2018/11/20/13-0");
-            checkNoExist(tmpDir, "2018/11/20/13-0.gz");
-            checkNoExist(tmpDir, "2018/11/21/13-0");
-            checkNoExist(tmpDir, "2018/11/21/13-0.gz");
+        checkNoExist(tmpDir, "2018/12/31/17-0.gz");
+        checkNoExist(tmpDir, "2018/12/31/16-0.gz");
+        checkNoExist(tmpDir, "2018/12/31/14-0");
+        checkNoExist(tmpDir, "2018/12/28/13-0");
+        checkNoExist(tmpDir, "2018/12/29/13-0");
+        checkNoExist(tmpDir, "2018/12/30/13-0");
 
-            makeLogfile(tmpDir, "2018/12/31/16-0", 3);
-            makeLogfile(tmpDir, "2018/12/31/17-0", 3);
-            makeLogfile(tmpDir, "2018/12/31/17-1", 1);
-            makeLogfile(tmpDir, "2018/12/31/17-2", 0);
+        checkNoExist(tmpDir, "2018/11/20/13-0");
+        checkNoExist(tmpDir, "2018/11/20/13-0.gz");
+        checkNoExist(tmpDir, "2018/11/21/13-0");
+        checkNoExist(tmpDir, "2018/11/21/13-0.gz");
 
-            dumpFiles(tmpDir, "before second archive maintenance");
-            a.maintenance();
-            dumpFiles(tmpDir, "after second archive maintenance");
+        makeLogfile(tmpDir, "2018/12/31/16-0", 3);
+        makeLogfile(tmpDir, "2018/12/31/17-0", 3);
+        makeLogfile(tmpDir, "2018/12/31/17-1", 1);
+        makeLogfile(tmpDir, "2018/12/31/17-2", 0);
 
-            checkExist(tmpDir, "2018/12/31/17-2");
-            checkExist(tmpDir, "2018/12/31/17-1");
-            checkExist(tmpDir, "2018/12/31/16-0.gz");
-            checkExist(tmpDir, "2018/12/31/17-0.gz");
+        dumpFiles(tmpDir, "before second archive maintenance");
+        a.maintenance();
+        dumpFiles(tmpDir, "after second archive maintenance");
 
-            checkNoExist(tmpDir, "2018/12/31/16-0");
-            checkNoExist(tmpDir, "2018/12/31/17-0");
-            checkExist(tmpDir, "foo/bar");
-        } finally {
-            IOUtils.recursiveDeleteDir(tmpDir);
-        }
+        checkExist(tmpDir, "2018/12/31/17-2");
+        checkExist(tmpDir, "2018/12/31/17-1");
+        checkExist(tmpDir, "2018/12/31/16-0.gz");
+        checkExist(tmpDir, "2018/12/31/17-0.gz");
+
+        checkNoExist(tmpDir, "2018/12/31/16-0");
+        checkNoExist(tmpDir, "2018/12/31/17-0");
+        checkExist(tmpDir, "foo/bar");
     }
 
     private void dumpFiles(File dir, String header) {
