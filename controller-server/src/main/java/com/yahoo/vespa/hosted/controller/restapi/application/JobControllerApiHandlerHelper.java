@@ -94,9 +94,11 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor responseObject = slime.setObject();
 
-        Cursor lastVersionsObject = responseObject.setObject("lastVersions");
-        lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
-        lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        if (application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
+            Cursor lastVersionsObject = responseObject.setObject("lastVersions");
+            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
+            lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        }
 
         if ( ! change.isEmpty()) {
             Cursor deployingObject = responseObject.setObject("deploying");
