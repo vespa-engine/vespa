@@ -24,7 +24,7 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
                                         HostRegistries hostRegistries,
                                         RequestHandlerProvider handlerProvider) {
         this.rpcAuthorizer =
-                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant()
+                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa()
                         ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider)
                         : new NoopRpcAuthorizer();
     }
