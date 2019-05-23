@@ -113,19 +113,17 @@ public class FilesArchived {
 
     private void compress(File oldFile) {
         File gzippedFile = new File(oldFile.getPath() + ".gz");
-        try {
+        try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
+             FileInputStream inputStream = new FileInputStream(oldFile))
+        {
             long mtime = oldFile.lastModified();
-            GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
-            FileInputStream inputStream = new FileInputStream(oldFile);
             byte [] buffer = new byte[0x100000];
 
             for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
                 compressor.write(buffer, 0, read);
             }
-            inputStream.close();
             compressor.finish();
             compressor.flush();
-            compressor.close();
             oldFile.delete();
             gzippedFile.setLastModified(mtime);
             log.info("Compressed: "+gzippedFile);
