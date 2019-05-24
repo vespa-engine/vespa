@@ -90,9 +90,7 @@ protected:
     void Reset();
 
     template <bool (*IsPartChar)(unsigned char c)>
-    static unsigned char *ParseURLPart(unsigned char *url,
-                                              unsigned char *buf,
-                                              unsigned int bufsize);
+    static unsigned char *ParseURLPart(unsigned char *url, unsigned char *buf, unsigned int bufsize);
 
 public:
     static bool IsAlphaChar(unsigned char c);
