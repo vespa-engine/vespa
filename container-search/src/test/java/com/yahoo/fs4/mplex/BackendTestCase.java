@@ -139,7 +139,6 @@ public class BackendTestCase {
                                                    0,0,0,1, 0, 0, 0, 42, 0, 0, 0, 127, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
                                                    0, 0, 1 };
 
-    @Before
     public void setUp() throws Exception {
         logger = Logger.getLogger(Backend.class.getName());
         initUseParent = logger.getUseParentHandlers();
@@ -150,7 +149,6 @@ public class BackendTestCase {
         backend = listeners.getBackend(server.host.getHostString(), server.host.getPort());
     }
 
-    @After
     public void tearDown() throws Exception {
         listeners.deconstruct();
         server.dispatch.socket.close();
@@ -160,7 +158,21 @@ public class BackendTestCase {
     }
 
     @Test
-    public void testBackend() throws IOException, InvalidChannelException {
+    public void testAll() throws Exception {
+        setUp();
+        doTestBackend();
+        tearDown();
+
+        setUp();
+        doTestPinging();
+        tearDown();
+
+        setUp();
+        doRequireStatistics();
+        tearDown();
+    }
+
+    public void doTestBackend() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openChannel();
         Query q = new Query("/?query=a");
         BasicPacket[] b = null;
@@ -178,8 +190,7 @@ public class BackendTestCase {
         channel.close();
     }
 
-    @Test
-    public void testPinging() throws IOException, InvalidChannelException {
+    public void doTestPinging() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openPingChannel();
         BasicPacket[] b = null;
         server.dispatch.setNoChannel();
@@ -196,8 +207,7 @@ public class BackendTestCase {
         channel.close();
     }
 
-    @Test
-    public void requireStatistics() throws IOException, InvalidChannelException {
+    public void doRequireStatistics() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openPingChannel();
         server.dispatch.channelId = -1;
         server.dispatch.packetData = PONG;
