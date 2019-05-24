@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * Contains the rank features of a query.
@@ -29,13 +30,18 @@ public class RankFeatures implements Cloneable {
         this.features = features;
     }
 
-    /** Sets a rank feature by full name to a value */
-    public void put(String name, String value) {
+    /** Sets a double rank feature */
+    public void put(String name, double value) {
         features.put(name, value);
     }
 
     /** Sets a tensor rank feature */
     public void put(String name, Tensor value) {
+        features.put(name, value);
+    }
+
+    /** Sets a rank feature to a value represented as a string */
+    public void put(String name, String value) {
         features.put(name, value);
     }
 
@@ -49,6 +55,18 @@ public class RankFeatures implements Cloneable {
     /** Returns this value as whatever type it was stored as. Returns null if the value is not set. */
     public Object getObject(String name) {
         return features.get(name);
+    }
+
+    /**
+     * Returns a double rank feature, or empty if there is no value with this name.
+     *
+     * @throws IllegalArgumentException if the value is set but is not a double
+     */
+    public OptionalDouble getDouble(String name) {
+        Object feature = features.get(name);
+        if (feature == null) return OptionalDouble.empty();
+        if (feature instanceof Double) return OptionalDouble.of((Double)feature);
+        throw new IllegalArgumentException("Expected a double value of '" + name + "' but has " + feature);
     }
 
     /**
