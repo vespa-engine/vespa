@@ -206,14 +206,16 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     }
 
     private void nodeChanged() {
-        Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-        for (RemoteSession session : listSessions()) {
-            sessionMetrics.add(session.getStatus());
-        }
-        metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
-        metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
-        metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
-        metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+        zkWatcherExecutor.execute(() -> {
+            Multiset<Session.Status> sessionMetrics = HashMultiset.create();
+            for (RemoteSession session : listSessions()) {
+                sessionMetrics.add(session.getStatus());
+            }
+            metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
+            metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
+            metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
+            metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+        });
     }
 
     @SuppressWarnings("unused")

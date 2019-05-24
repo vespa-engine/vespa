@@ -362,6 +362,7 @@ public class TenantRepository {
         try {
             zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();
+            zkWatcherExecutor.shutdownAndWait();
             zkCacheExecutor.awaitTermination(50, TimeUnit.SECONDS);
             checkForRemovedApplicationsService.awaitTermination(50, TimeUnit.SECONDS);
         }
