@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -9,6 +10,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.ReloadListener;
@@ -33,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -60,15 +63,15 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
                                 TenantName tenant,
                                 List<ReloadListener> reloadListeners,
                                 ConfigResponseFactory responseFactory,
-                                HostRegistries hostRegistries,
-                                Curator curator) { // TODO jvenstad: Merge this class with TenantApplications, and straighten this out.
+                                GlobalComponentRegistry registry) { // TODO jvenstad: Merge this class with TenantApplications, and straighten this out.
         this.metrics = metrics;
         this.tenant = tenant;
         this.reloadListeners = List.copyOf(reloadListeners);
         this.responseFactory = responseFactory;
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
-        this.hostRegistry = hostRegistries.createApplicationHostRegistry(tenant);
-        this.applications = TenantApplications.create(curator, this, tenant);
+        this.hostRegistry = registry.getHostRegistries().createApplicationHostRegistry(tenant);
+        this.applications = TenantApplications.create(registry, this, tenant);
+
     }
 
     /**

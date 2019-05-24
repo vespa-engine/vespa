@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -16,12 +17,15 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Registry containing all the "static"/"global" components in a config server in one place.
@@ -45,6 +49,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final ConfigServerDB configServerDB;
     private final FlagSource flagSource;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
+    private final ExecutorService zkCacheExecutor;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -78,6 +83,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.configServerDB = configServerDB;
         this.flagSource = flagSource;
         this.zkWatcherExecutor = new StripedExecutor<>();
+        this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
 
     @Override
@@ -126,4 +132,9 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public FlagSource getFlagSource() { return flagSource; }
+
+    @Override
+    public ExecutorService getZkCacheExecutor() {
+        return zkCacheExecutor;
+    }
 }

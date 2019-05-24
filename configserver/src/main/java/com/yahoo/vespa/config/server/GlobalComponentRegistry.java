@@ -19,6 +19,7 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Interface representing all global config server components used within the config server.
@@ -44,5 +45,5 @@ public interface GlobalComponentRegistry {
     ConfigServerDB getConfigServerDB();
     StripedExecutor<TenantName> getZkWatcherExecutor();
     FlagSource getFlagSource();
-
+    ExecutorService getZkCacheExecutor();
 }

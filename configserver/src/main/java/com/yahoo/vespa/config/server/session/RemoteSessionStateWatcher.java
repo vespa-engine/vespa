@@ -1,17 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
@@ -24,24 +23,25 @@ public class RemoteSessionStateWatcher {
 
     private static final Logger log = Logger.getLogger(RemoteSessionStateWatcher.class.getName());
     // One thread pool for all instances of this class
-    private static final Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(RemoteSessionStateWatcher.class.getName()));
 
     private final Curator.FileCache fileCache;
     private final ReloadHandler reloadHandler;
     private final RemoteSession session;
     private final MetricUpdater metrics;
-
+    private final Executor zkWatcherExecutor;
 
     RemoteSessionStateWatcher(Curator.FileCache fileCache,
                               ReloadHandler reloadHandler,
                               RemoteSession session,
-                              MetricUpdater metrics) {
+                              MetricUpdater metrics,
+                              Executor zkWatcherExecutor) {
         this.fileCache = fileCache;
         this.reloadHandler = reloadHandler;
         this.session = session;
         this.metrics = metrics;
         this.fileCache.start();
         this.fileCache.addListener(this::nodeChanged);
+        this.zkWatcherExecutor = zkWatcherExecutor;
     }
 
     private void sessionChanged(Session.Status status) {
@@ -73,7 +73,7 @@ public class RemoteSessionStateWatcher {
     }
 
     public void nodeChanged() {
-        executor.execute(() -> {
+        zkWatcherExecutor.execute(() -> {
             try {
                 ChildData data = fileCache.getCurrentData();
                 if (data != null) {

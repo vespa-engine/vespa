@@ -3,14 +3,18 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -28,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -45,9 +50,6 @@ import java.util.stream.Collectors;
 public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
-    // One thread pool for all instances of this class
-    private static final ExecutorService pathChildrenExecutor =
-            Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(RemoteSessionRepo.class.getName()));
 
     private final Curator curator;
     private final Path sessionsPath;
@@ -59,31 +61,26 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final FlagSource flagSource;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
+    private final Executor zkWatcherExecutor;
 
-    /**
-     * @param curator              a {@link Curator} instance.
-     * @param remoteSessionFactory a {@link com.yahoo.vespa.config.server.session.RemoteSessionFactory}
-     * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
-     * @param tenantName           a {@link TenantName} instance.
-     * @param applicationRepo      a {@link TenantApplications} instance.
-     */
-    public RemoteSessionRepo(Curator curator,
+    public RemoteSessionRepo(GlobalComponentRegistry registry,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
-                             TenantApplications applicationRepo,
-                             MetricUpdater metricUpdater,
-                             FlagSource flagSource) {
-        this.curator = curator;
+                             TenantApplications applicationRepo) {
+
+        this.curator = registry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
-        this.metrics = metricUpdater;
-        this.flagSource = flagSource;
+        this.metrics = registry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.flagSource = registry.getFlagSource();
+        StripedExecutor<TenantName> zkWatcherExecutor = registry.getZkWatcherExecutor();
+        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         initializeSessions();
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, pathChildrenExecutor);
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, registry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
@@ -99,6 +96,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.directoryCache = null;
         this.applicationRepo = null;
         this.flagSource = new InMemoryFlagSource();
+        this.zkWatcherExecutor = Runnable::run;
     }
 
     public List<Long> getSessions() {
@@ -168,7 +166,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
             loadSessionIfActive(session);
-            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics));
+            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
             addSession(session);
             metrics.incAddedSessions();
         } catch (Exception e) {
@@ -220,19 +218,21 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     @SuppressWarnings("unused")
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
-        log.log(LogLevel.DEBUG, () -> "Got child event: " + event);
-        switch (event.getType()) {
-            case CHILD_ADDED:
-                sessionsChanged();
-                synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
-                break;
-            case CHILD_REMOVED:
-                sessionsChanged();
-                break;
-            case CONNECTION_RECONNECTED:
-                sessionsChanged();
-                break;
-        }
+        zkWatcherExecutor.execute(() -> {
+            log.log(LogLevel.DEBUG, () -> "Got child event: " + event);
+            switch (event.getType()) {
+                case CHILD_ADDED:
+                    sessionsChanged();
+                    synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
+                    break;
+                case CHILD_REMOVED:
+                    sessionsChanged();
+                    break;
+                case CONNECTION_RECONNECTED:
+                    sessionsChanged();
+                    break;
+            }
+        });
     }
 
     private void synchronizeOnNew(List<Long> sessionList) {

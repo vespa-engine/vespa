@@ -93,11 +93,11 @@ public class TenantRequestHandlerTest {
         Metrics sh = Metrics.createTestMetrics();
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
-        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries(), curator);
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .modelFactoryRegistry(createRegistry())
                 .build();
+        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), componentRegistry);
     }
 
     private void feedApp(File appDir, long sessionId, ApplicationId appId, boolean  internalRedeploy) throws IOException {

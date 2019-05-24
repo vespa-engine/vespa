@@ -74,7 +74,7 @@ public class TenantRepository {
     private final Curator curator;
 
     private final MetricUpdater metricUpdater;
-    private final ExecutorService zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+    private final ExecutorService zkCacheExecutor;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
@@ -106,6 +106,7 @@ public class TenantRepository {
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
+        this.zkCacheExecutor = globalComponentRegistry.getZkCacheExecutor();
         this.zkWatcherExecutor = globalComponentRegistry.getZkWatcherExecutor();
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -154,17 +155,13 @@ public class TenantRepository {
     public synchronized void updateTenants() {
         Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
         log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
-        checkForRemovedTenants(allTenants);
-        allTenants.stream().filter(tenantName -> ! tenants.containsKey(tenantName)).forEach(this::createTenant);
+        for (TenantName tenantName : Set.copyOf(tenants.keySet()))
+            if ( ! allTenants.contains(tenantName))
+                zkWatcherExecutor.execute(tenantName, () -> closeTenant(tenantName));
+        for (TenantName tenantName : allTenants)
+            if ( ! tenants.containsKey(tenantName))
+                zkWatcherExecutor.execute(tenantName, () -> createTenant(tenantName));
         metricUpdater.setTenants(tenants.size());
-    }
-
-    private void checkForRemovedTenants(Set<TenantName> newTenants) {
-        for (TenantName tenantName : ImmutableSet.copyOf(tenants.keySet())) {
-            if ( ! newTenants.contains(tenantName)) {
-                closeTenant(tenantName);
-            }
-        }
     }
 
     private void bootstrapTenants() {
@@ -359,12 +356,6 @@ public class TenantRepository {
                 break;
         }
     }
-
-    /** Use this executor for ZK cache listeners, and have them delegate their work to the {@link #zkWatcherExecutor()}. */
-    public ExecutorService zkCacheExecutor() { return zkCacheExecutor; }
-
-    /** Use this executor to run watcher reactions serially for each tenant. Used by {@link #zkCacheExecutor()}. */
-    public StripedExecutor<TenantName> zkWatcherExecutor() { return zkWatcherExecutor; }
 
     public void close() {
         directoryCache.ifPresent(Curator.DirectoryCache::close);

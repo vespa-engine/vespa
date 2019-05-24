@@ -98,9 +98,7 @@ public class TenantBuilder {
 
 	private void createLocalSessionRepo() {
         if (localSessionRepo == null) {
-            localSessionRepo = new LocalSessionRepo(tenantFileSystemDirs, localSessionLoader, componentRegistry.getClock(),
-                                                    componentRegistry.getConfigserverConfig().sessionLifetime(),
-                                                    componentRegistry.getCurator());
+            localSessionRepo = new LocalSessionRepo(tenant, componentRegistry, tenantFileSystemDirs, localSessionLoader);
         }
     }
 
@@ -129,8 +127,7 @@ public class TenantBuilder {
                                                                  tenant,
                                                                  Collections.singletonList(componentRegistry.getReloadListener()),
                                                                  ConfigResponseFactory.create(componentRegistry.getConfigserverConfig()),
-                                                                 componentRegistry.getHostRegistries(),
-                                                                 componentRegistry.getCurator());
+                                                                 componentRegistry);
             if (hostValidator == null) {
                 this.hostValidator = impl;
             }
@@ -149,13 +146,12 @@ public class TenantBuilder {
 
     private void createRemoteSessionRepo() {
         if (remoteSessionRepo == null) {
-            remoteSessionRepo = new RemoteSessionRepo(componentRegistry.getCurator(),
-                    remoteSessionFactory,
-                    reloadHandler,
-                    tenant,
-                    applicationRepo,
-                    componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)),
-                    componentRegistry.getFlagSource());
+            remoteSessionRepo = new RemoteSessionRepo(componentRegistry,
+                                                      remoteSessionFactory,
+                                                      reloadHandler,
+                                                      tenant,
+                                                      applicationRepo);
+
         }
     }
 
