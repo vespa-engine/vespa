@@ -163,8 +163,6 @@ public class StorageMaintainer {
         context.node().getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version.toFullString()));
 
         if (! isConfigserverLike(context.nodeType())) {
-            tags.put("flavor", context.node().getFlavor());
-            tags.put("canonicalFlavor", context.node().getCanonicalFlavor());
             tags.put("state", context.node().getState().toString());
             context.node().getParentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
             context.node().getOwner().ifPresent(owner -> {
