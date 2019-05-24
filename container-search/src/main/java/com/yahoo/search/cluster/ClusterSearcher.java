@@ -160,7 +160,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
 
             result = robustSearch(query, execution, connection);
 
-            if (!shouldRetry(query, result))
+            if ( ! shouldRetry(query, result))
                 return result;
 
             if (query.getTraceLevel() >= 6)
