@@ -147,7 +147,8 @@ public class TenantRepository {
         return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
     }
 
-    private synchronized void updateTenants() {
+    /** Public for testing. */
+    public synchronized void updateTenants() {
         Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
         log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
         checkForRemovedTenants(allTenants);
