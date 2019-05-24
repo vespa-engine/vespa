@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-import static ai.vespa.metricsproxy.TestUtil.getContents;
+import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
@@ -35,7 +35,7 @@ public class GenericJsonModelTest {
         assertEquals(2, jsonModel.node.metrics.size());
         assertEquals(16.222, jsonModel.node.metrics.get(0).values.get("cpu.util"), 0.01d);
 
-        String expected = getContents(TEST_FILE).trim().replaceAll("\\s+", "");;
+        String expected = getFileContents(TEST_FILE).trim().replaceAll("\\s+", "");;
 
         String serialized = jsonModel.serialize();
         String trimmed = serialized.trim().replaceAll("\\s+", "");
@@ -81,7 +81,7 @@ public class GenericJsonModelTest {
 
     private GenericJsonModel genericJsonModelFromTestFile() throws IOException {
         ObjectMapper mapper = createObjectMapper();
-        return mapper.readValue(getContents(TEST_FILE), GenericJsonModel.class);
+        return mapper.readValue(getFileContents(TEST_FILE), GenericJsonModel.class);
     }
 
 }

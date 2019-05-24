@@ -8,8 +8,6 @@ import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metrics;
 import org.junit.Test;
 
-import java.io.File;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -21,7 +19,7 @@ public class MetricsFetcherTest {
 
     @Test
     public void testStateFormatMetricsParse() {
-        String jsonData = TestUtil.getContents("metrics-state.json");
+        String jsonData = TestUtil.getFileContents("metrics-state.json");
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         Metrics metrics = fetcher.createMetrics(jsonData, 0);
         assertThat("Wrong number of metrics", metrics.size(), is(10));

@@ -4,7 +4,6 @@
 
 package ai.vespa.metricsproxy.service;
 
-import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metric;
 import org.json.JSONException;
 import org.junit.After;
@@ -12,6 +11,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -33,7 +33,7 @@ public class ContainerServiceTest {
     public void setupHTTPServer() {
         csPort = 18637; // see factory/doc/port-ranges.txt
         try {
-            String response = TestUtil.getContents("metrics-container-state-multi-chain.json");
+            String response = getFileContents("metrics-container-state-multi-chain.json");
             service = new MockHttpServer(csPort, response, HttpMetricFetcher.METRICS_PATH);
         } catch (Exception e) {
             e.printStackTrace();
