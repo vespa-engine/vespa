@@ -72,6 +72,6 @@ public class ModelContextImplTest {
         assertFalse(context.properties().hostedVespa());
         assertThat(context.properties().rotations(), equalTo(rotations));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
-        assertThat(context.properties().useDedicatedNodeForLogserver(), equalTo(false));
+        assertThat(context.properties().useDedicatedNodeForLogserver(), equalTo(true));
     }
 }
