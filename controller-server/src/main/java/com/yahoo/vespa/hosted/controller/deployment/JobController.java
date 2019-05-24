@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -410,7 +409,7 @@ public class JobController {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
         return controller.applications().getDeploymentEndpoints(testerId)
                          .flatMap(uris -> uris.stream().findAny())
-                         .or(() -> controller.applications().routingPolicies(testerId).stream()
+                         .or(() -> controller.applications().routingPolicies().get(testerId).stream()
                                              .findAny()
                                              .map(policy -> policy.endpointIn(controller.system()).url()));
     }

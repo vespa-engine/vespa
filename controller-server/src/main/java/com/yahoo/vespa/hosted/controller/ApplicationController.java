@@ -48,7 +48,6 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
@@ -714,16 +713,8 @@ public class ApplicationController {
         return rotationRepository;
     }
 
-    /** Returns all known routing policies for given application */
-    public Set<RoutingPolicy> routingPolicies(ApplicationId application) {
-        return curator.readRoutingPolicies(application);
-    }
-
-    /** Returns all known routing policies for given deployment */
-    public Set<RoutingPolicy> routingPolicies(DeploymentId deployment) {
-        return curator.readRoutingPolicies(deployment.applicationId()).stream()
-                .filter(policy -> policy.zone().equals(deployment.zoneId()))
-                .collect(Collectors.toUnmodifiableSet());
+    public RoutingPolicies routingPolicies() {
+        return routingPolicies;
     }
 
     /** Sort given list of applications by application ID */
