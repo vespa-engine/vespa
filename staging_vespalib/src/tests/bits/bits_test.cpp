@@ -5,7 +5,6 @@
 #include <boost/crc.hpp>
 #include <boost/version.hpp>
 
-
 #if BOOST_VERSION < 106900
     #define REFLECT reflect
 #else
