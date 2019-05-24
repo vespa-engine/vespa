@@ -569,6 +569,26 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
               dumpBucket(bucket));
 }
 
+// TODO probably also do this for updates and removes
+// TODO consider if we should use the pending state verbatim for computing targets if it exists
+TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state) {
+    setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
+    auto doc = createDummyDocument("test", "test");
+    auto bucket = getExternalOperationHandler().getBucketId(doc->getId());
+    addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
+    getBucketDBUpdater().onSetSystemState(
+            std::make_shared<api::SetSystemStateCommand>(
+                    lib::ClusterState("version:2 distributor:1 storage:4 .0.s:d .2.s:m")));
+    _sender.clear();
+
+    sendPut(createPut(doc));
+    EXPECT_EQ("", _sender.getCommands(true));
+    EXPECT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 100) ReturnCode(BUSY, "
+              "One or more target content nodes are unavailable in the pending cluster state)",
+              _sender.getLastReply(true));
+}
+
 TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "distributor:1 storage:2 .0.s:r .1.s:r");

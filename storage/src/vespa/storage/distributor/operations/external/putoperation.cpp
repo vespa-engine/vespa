@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.put");
@@ -145,6 +146,17 @@ PutOperation::sendPutToBucketOnNode(document::BucketSpace bucketSpace, const doc
 
 }
 
+bool PutOperation::has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const {
+    auto* pending_state = _manager.getDistributor().pendingClusterStateOrNull(_msg->getBucket().getBucketSpace());
+    if (!pending_state) {
+        return false;
+    }
+    const char* up_states = _manager.getDistributor().getStorageNodeUpStates();
+    return std::any_of(targets.begin(), targets.end(), [pending_state, up_states](const auto& target){
+        return !pending_state->getNodeState(target.getNode()).getState().oneOf(up_states);
+    });
+}
+
 void
 PutOperation::onStart(DistributorMessageSender& sender)
 {
@@ -186,6 +198,13 @@ PutOperation::onStart(DistributorMessageSender& sender)
                                 "Bucket was being deleted while we got a PUT, failing operation to be safe"));
                 return;
             }
+        }
+
+        if (has_unavailable_targets_in_pending_state(targets)) {
+            _tracker.fail(sender, api::ReturnCode(
+                    api::ReturnCode::BUSY, "One or more target content nodes are unavailable in "
+                                           "the pending cluster state"));
+            return;
         }
 
         // Mark any entries we're not feeding to as not trusted.
