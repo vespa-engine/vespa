@@ -158,7 +158,7 @@ public class TenantRepository {
     private void checkForRemovedTenants(Set<TenantName> newTenants) {
         for (TenantName tenantName : ImmutableSet.copyOf(tenants.keySet())) {
             if (!newTenants.contains(tenantName)) {
-                deleteTenant(tenantName);
+                closeTenant(tenantName);
             }
         }
     }
@@ -277,11 +277,19 @@ public class TenantRepository {
     public synchronized void deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
-        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
-        Tenant tenant = tenants.remove(name);
-        if (tenant == null) {
+        if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
-        }
+
+        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
+        tenants.get(name).delete();
+    }
+
+    public synchronized void closeTenant(TenantName name) {
+        Tenant tenant = tenants.remove(name);
+        if (tenant == null)
+            throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
+
+        log.log(LogLevel.INFO, "Closing tenant '" + name + "'");
         notifyRemovedTenant(name);
         tenant.close();
     }
