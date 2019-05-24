@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public class RpcRequestHandlerProvider implements RequestHandlerProvider {
 
-    private RpcServer instance;
+    private volatile RpcServer instance;
 
     @Inject
     public RpcRequestHandlerProvider() {}
