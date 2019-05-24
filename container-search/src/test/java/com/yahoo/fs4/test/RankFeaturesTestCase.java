@@ -24,9 +24,28 @@ public class RankFeaturesTestCase {
     public void requireThatRankPropertiesTakesBothStringAndObject() {
         RankProperties p = new RankProperties();
         p.put("string", "b");
-        p.put("object", Integer.valueOf(7));
+        p.put("object", 7);
         assertEquals("7", p.get("object").get(0));
         assertEquals("b", p.get("string").get(0));
+    }
+
+    @Test
+    public void requireThatRankFeaturesUsingDoubleAndDoubleToStringEncodeTheSameWay() {
+        RankFeatures withDouble = new RankFeatures();
+        withDouble.put("query(myDouble)", 3.8);
+        assertEquals(3.8, withDouble.getDouble("query(myDouble)").getAsDouble(), 0.000001);
+
+        RankFeatures withString = new RankFeatures();
+        withString.put("query(myDouble)", String.valueOf(3.8));
+
+        RankProperties withDoubleP = new RankProperties();
+        withDouble.prepare(withDoubleP);
+        RankProperties withStringP = new RankProperties();
+        withString.prepare(withStringP);
+
+        byte[] withDoubleEncoded = encode(withDoubleP);
+        byte[] withStringEncoded = encode(withStringP);
+        assertEquals(Arrays.toString(withStringEncoded), Arrays.toString(withDoubleEncoded));
     }
 
     @Test
@@ -113,4 +132,5 @@ public class RankFeaturesTestCase {
         }
         return result;
     }
+
 }

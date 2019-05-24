@@ -6425,10 +6425,12 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void put(java.lang.String, java.lang.String)",
+      "public void put(java.lang.String, double)",
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
+      "public void put(java.lang.String, java.lang.String)",
       "public java.lang.String get(java.lang.String)",
       "public java.lang.Object getObject(java.lang.String)",
+      "public java.util.OptionalDouble getDouble(java.lang.String)",
       "public java.util.Optional getTensor(java.lang.String)",
       "public java.util.Map asMap()",
       "public boolean isEmpty()",
