@@ -39,15 +39,6 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
     return true;
 }
 
-void tag_match_data(const HandleRecorder::HandleMap &handles, MatchData &match_data) {
-    // TODO: Move tagging to separate component (for testing) and tag normal and cheap.
-    for (TermFieldHandle handle = 0; handle < match_data.getNumTermFields(); ++handle) {
-        if (handles.find(handle) == handles.end()) {
-            match_data.resolveTermField(handle)->tagAsNotNeeded();
-        }
-    }
-}
-
 DegradationParams
 extractDegradationParams(const RankSetup &rankSetup, const Properties &rankProperties)
 {
@@ -86,7 +77,7 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
     bool can_reuse_search = (_search && !_search_has_changed &&
             contains_all(_used_handles, recorder.get_handles()));
     if (!can_reuse_search) {
-        tag_match_data(recorder.get_handles(), *_match_data);
+        recorder.tag_match_data(*_match_data);
         _match_data->set_termwise_limit(termwise_limit);
         _search = _query.createSearch(*_match_data);
         _used_handles = recorder.get_handles();

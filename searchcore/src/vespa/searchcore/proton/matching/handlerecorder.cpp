@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "handlerecorder.h"
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
 #include <cassert>
@@ -8,6 +9,7 @@
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <vespa/vespalib/util/array_equal.hpp>
 
+using search::fef::MatchData;
 using search::fef::MatchDataDetails;
 using search::fef::TermFieldHandle;
 
@@ -109,6 +111,20 @@ HandleRecorder::add(TermFieldHandle handle,
         _handles[handle] = static_cast<MatchDataDetails>(static_cast<int>(_handles[handle]) | static_cast<int>(requested_details));
     } else {
         abort();
+    }
+}
+
+void
+HandleRecorder::tag_match_data(MatchData &match_data) {
+    for (TermFieldHandle handle = 0; handle < match_data.getNumTermFields(); ++handle) {
+        auto &tfmd = *match_data.resolveTermField(handle);
+        auto recorded = _handles.find(handle);
+        if (recorded == _handles.end()) {
+            tfmd.tagAsNotNeeded();
+        } else {
+            tfmd.setNeedNormalFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Normal)) != 0);
+            tfmd.setNeedCheapFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Cheap)) != 0);
+        }
     }
 }
 
