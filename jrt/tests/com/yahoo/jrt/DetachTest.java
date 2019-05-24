@@ -23,12 +23,9 @@ public class DetachTest {
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
 
-        server.addMethod(new Method("d_inc", "i", "i", this,
-                                    "rpc_detach_inc"));
-        server.addMethod(new Method("d_inc_r", "i", "i", this,
-                                    "rpc_detach_inc_return"));
-        server.addMethod(new Method("inc_b", "i", "i", this,
-                                    "rpc_inc_barrier"));
+        server.addMethod(new Method("d_inc", "i", "i", this::rpc_detach_inc));
+        server.addMethod(new Method("d_inc_r", "i", "i", this::rpc_detach_inc_return));
+        server.addMethod(new Method("inc_b", "i", "i", this::rpc_inc_barrier));
         receptor = new Test.Receptor();
         barrier = new Test.Barrier();
     }
@@ -43,21 +40,21 @@ public class DetachTest {
 
     Request detached = null;
 
-    public void rpc_detach_inc(Request req) {
+    private void rpc_detach_inc(Request req) {
         req.detach();
         int value = req.parameters().get(0).asInt32();
         req.returnValues().add(new Int32Value(value + 1));
         detached = req;
     }
 
-    public void rpc_detach_inc_return(Request req) {
+    private void rpc_detach_inc_return(Request req) {
         req.detach();
         int value = req.parameters().get(0).asInt32();
         req.returnValues().add(new Int32Value(value + 1));
         req.returnRequest();
     }
 
-    public void rpc_inc_barrier(Request req) {
+    private void rpc_inc_barrier(Request req) {
         int value = req.parameters().get(0).asInt32();
         req.returnValues().add(new Int32Value(value + 1));
         receptor.put(req);

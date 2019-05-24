@@ -22,12 +22,12 @@ public class InvokeVoidTest {
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
 
-        server.addMethod(new Method("set", "i", "", this, "rpc_set")
+        server.addMethod(new Method("set", "i", "", this::rpc_set)
                          .methodDesc("Set the stored value")
                          .paramDesc(0, "value", "the new value"));
-        server.addMethod(new Method("inc", "", "", this, "rpc_inc")
+        server.addMethod(new Method("inc", "", "", this::rpc_inc)
                          .methodDesc("Increase the stored value"));
-        server.addMethod(new Method("get", "", "i", this, "rpc_get")
+        server.addMethod(new Method("get", "", "i", this::rpc_get)
                          .methodDesc("Get the stored value")
                          .returnDesc(0, "value", "the stored value"));
     }
@@ -42,13 +42,13 @@ public class InvokeVoidTest {
 
     private int value = 0;
 
-    public void rpc_set(Request req) {
+    private void rpc_set(Request req) {
         value = req.parameters().get(0).asInt32();
     }
-    public void rpc_inc(Request req) {
+    private void rpc_inc(Request req) {
         value++;
     }
-    public void rpc_get(Request req) {
+    private void rpc_get(Request req) {
         req.returnValues().add(new Int32Value(value));
     }
 

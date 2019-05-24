@@ -43,23 +43,19 @@ public class FileDistributionRpcServer {
 
     private void declareFileDistributionMethods() {
         // Legacy method, needs to be the same name as used in filedistributor
-        supervisor.addMethod(new Method("waitFor", "s", "s",
-                                        this, "getFile")
+        supervisor.addMethod(new Method("waitFor", "s", "s", this::getFile)
                                      .methodDesc("get path to file reference")
                                      .paramDesc(0, "file reference", "file reference")
                                      .returnDesc(0, "path", "path to file"));
-        supervisor.addMethod(new Method("filedistribution.getFile", "s", "s",
-                                        this, "getFile")
+        supervisor.addMethod(new Method("filedistribution.getFile", "s", "s", this::getFile)
                                      .methodDesc("get path to file reference")
                                      .paramDesc(0, "file reference", "file reference")
                                      .returnDesc(0, "path", "path to file"));
-        supervisor.addMethod(new Method("filedistribution.getActiveFileReferencesStatus", "", "SD",
-                                        this, "getActiveFileReferencesStatus")
+        supervisor.addMethod(new Method("filedistribution.getActiveFileReferencesStatus", "", "SD", this::getActiveFileReferencesStatus)
                                      .methodDesc("download status for file references")
                                      .returnDesc(0, "file references", "array of file references")
                                      .returnDesc(1, "download status", "percentage downloaded of each file reference in above array"));
-        supervisor.addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
-                                        this, "setFileReferencesToDownload")
+        supervisor.addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i", this::setFileReferencesToDownload)
                                      .methodDesc("set which file references to download")
                                      .paramDesc(0, "file references", "file reference to download")
                                      .returnDesc(0, "ret", "0 if success, 1 otherwise"));
@@ -75,14 +71,12 @@ public class FileDistributionRpcServer {
     private static final int fileReferenceRemoved = fileReferenceDoesNotExists + 1;
     private static final int fileReferenceInternalError = fileReferenceRemoved + 1;
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void getFile(Request req) {
+    private void getFile(Request req) {
         req.detach();
         rpcDownloadExecutor.execute(() -> downloadFile(req));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void getActiveFileReferencesStatus(Request req) {
+    private void getActiveFileReferencesStatus(Request req) {
         Map<FileReference, Double> downloadStatus = downloader.downloadStatus();
 
         String[] fileRefArray = new String[downloadStatus.keySet().size()];
@@ -101,8 +95,7 @@ public class FileDistributionRpcServer {
         req.returnValues().add(new DoubleArray(downloadStatusArray));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setFileReferencesToDownload(Request req) {
+    private void setFileReferencesToDownload(Request req) {
         log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         Arrays.stream(req.parameters().get(0).asStringArray())
                 .map(FileReference::new)

@@ -57,45 +57,45 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     }
 
     private void declareConfigMethods() {
-        supervisor.addMethod(JRTMethods.createConfigV3GetConfigMethod(this, "getConfigV3"));
+        supervisor.addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3));
         supervisor.addMethod(new Method("ping", "", "i",
-                this, "ping")
+                this::ping)
                 .methodDesc("ping")
                 .returnDesc(0, "ret code", "return code, 0 is OK"));
         supervisor.addMethod(new Method("printStatistics", "", "s",
-                this, "printStatistics")
+                this::printStatistics)
                 .methodDesc("printStatistics")
                 .returnDesc(0, "statistics", "Statistics for server"));
         supervisor.addMethod(new Method("listCachedConfig", "", "S",
-                this, "listCachedConfig")
+                this::listCachedConfig)
                 .methodDesc("list cached configs)")
                 .returnDesc(0, "data", "string array of configs"));
         supervisor.addMethod(new Method("listCachedConfigFull", "", "S",
-                this, "listCachedConfigFull")
+                this::listCachedConfigFull)
                 .methodDesc("list cached configs with cache content)")
                 .returnDesc(0, "data", "string array of configs"));
         supervisor.addMethod(new Method("listSourceConnections", "", "S",
-                this, "listSourceConnections")
+                this::listSourceConnections)
                 .methodDesc("list config source connections)")
                 .returnDesc(0, "data", "string array of source connections"));
         supervisor.addMethod(new Method("invalidateCache", "", "S",
-                this, "invalidateCache")
+                this::invalidateCache)
                 .methodDesc("list config source connections)")
                 .returnDesc(0, "data", "0 if success, 1 otherwise"));
         supervisor.addMethod(new Method("updateSources", "s", "s",
-                this, "updateSources")
+                this::updateSources)
                 .methodDesc("update list of config sources")
                 .returnDesc(0, "ret", "list of updated config sources"));
         supervisor.addMethod(new Method("setMode", "s", "S",
-                this, "setMode")
+                this::setMode)
                 .methodDesc("Set config proxy mode { default | memorycache }")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise as first element, description as second element"));
         supervisor.addMethod(new Method("getMode", "", "s",
-                this, "getMode")
+                this::getMode)
                 .methodDesc("What serving mode the config proxy is in (default, memorycache)")
                 .returnDesc(0, "ret", "mode as a string"));
         supervisor.addMethod(new Method("dumpCache", "s", "s",
-                this, "dumpCache")
+                this::dumpCache)
                 .methodDesc("Dump cache to disk")
                 .paramDesc(0, "path", "path to write cache contents to")
                 .returnDesc(0, "ret", "Empty string or error message"));
@@ -108,8 +108,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      *
      * @param req a Request
      */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void getConfigV3(Request req) {
+    private void getConfigV3(Request req) {
         log.log(LogLevel.SPAM, () -> "getConfigV3");
         JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
         if (isProtocolVersionSupported(request)) {
@@ -123,7 +122,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      *
      * @param req a Request
      */
-    public final void ping(Request req) {
+    void ping(Request req) {
         req.returnValues().add(new Int32Value(0));
     }
 
@@ -132,7 +131,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      *
      * @param req a Request
      */
-    public final void printStatistics(Request req) {
+    void printStatistics(Request req) {
         StringBuilder sb = new StringBuilder();
         sb.append("\nDelayed responses queue size: ");
         sb.append(proxyServer.delayedResponses.size());
@@ -144,23 +143,22 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         req.returnValues().add(new StringValue(sb.toString()));
     }
 
-    public final void listCachedConfig(Request req) {
+    void listCachedConfig(Request req) {
         listCachedConfig(req, false);
     }
 
-    public final void listCachedConfigFull(Request req) {
+    void listCachedConfigFull(Request req) {
         listCachedConfig(req, true);
     }
 
-    public final void listSourceConnections(Request req) {
+    void listSourceConnections(Request req) {
         String[] ret = new String[2];
         ret[0] = "Current source: " + proxyServer.getActiveSourceConnection();
         ret[1] = "All sources:\n" + printSourceConnections();
         req.returnValues().add(new StringArray(ret));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void updateSources(Request req) {
+    void updateSources(Request req) {
         String sources = req.parameters().get(0).asString();
         String ret;
         System.out.println(proxyServer.getMode());
@@ -173,7 +171,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         req.returnValues().add(new StringValue(ret));
     }
 
-    public final void invalidateCache(Request req) {
+    void invalidateCache(Request req) {
         proxyServer.getMemoryCache().clear();
         String[] s = new String[2];
         s[0] = "0";
@@ -181,7 +179,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         req.returnValues().add(new StringArray(s));
     }
 
-    public final void setMode(Request req) {
+    void setMode(Request req) {
         String suppliedMode = req.parameters().get(0).asString();
         log.log(LogLevel.DEBUG, () -> "Supplied mode=" + suppliedMode);
         String[] s = new String[2];
@@ -197,12 +195,11 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         req.returnValues().add(new StringArray(s));
     }
 
-    public final void getMode(Request req) {
+    void getMode(Request req) {
         req.returnValues().add(new StringValue(proxyServer.getMode().name()));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void dumpCache(Request req) {
+    void dumpCache(Request req) {
         final MemoryCache memoryCache = proxyServer.getMemoryCache();
         req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
     }

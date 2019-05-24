@@ -95,7 +95,7 @@ public class EchoTest {
         client   = new Supervisor(new Transport(crypto, 1));
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
-        server.addMethod(new Method("echo", "*", "*", this, "rpc_echo"));
+        server.addMethod(new Method("echo", "*", "*", this::rpc_echo));
         refValues = new Values();
         byte[]   dataValue   = { 1, 2, 3, 4 };
         byte[]   int8Array   = { 1, 2, 3, 4 };
@@ -135,7 +135,7 @@ public class EchoTest {
         server.transport().shutdown().join();
     }
 
-    public void rpc_echo(Request req) {
+    private void rpc_echo(Request req) {
         if (!Test.equals(req.parameters(), refValues)) {
             System.err.println("Parameters does not match reference values");
             req.setError(ErrorCode.METHOD_FAILED, "parameter mismatch");
