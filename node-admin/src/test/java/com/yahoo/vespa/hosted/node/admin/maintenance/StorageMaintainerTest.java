@@ -71,8 +71,6 @@ public class StorageMaintainerTest {
                     "    role: tenants\n" +
                     "    zone: prod.us-north-1\n" +
                     "    vespaVersion: 6.305.12\n" +
-                    "    flavor: d-2-8-50\n" +
-                    "    canonicalFlavor: d-2-8-50\n" +
                     "    state: active\n" +
                     "    parentHostname: host123.test.domain.tld\n" +
                     "    tenantName: tenant\n" +
@@ -103,8 +101,6 @@ public class StorageMaintainerTest {
                     "    role: routing\n" +
                     "    zone: prod.us-north-1\n" +
                     "    vespaVersion: 6.305.12\n" +
-                    "    flavor: d-2-8-50\n" +
-                    "    canonicalFlavor: d-2-8-50\n" +
                     "    state: active\n" +
                     "    parentHostname: host123.test.domain.tld\n" +
                     "    tenantName: tenant\n" +
