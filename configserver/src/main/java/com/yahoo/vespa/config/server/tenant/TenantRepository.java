@@ -273,9 +273,8 @@ public class TenantRepository {
      * Removes the given tenant from ZooKeeper and filesystem. Assumes that tenant exists.
      *
      * @param name name of the tenant
-     * @return this TenantRepository instance
      */
-    public synchronized TenantRepository deleteTenant(TenantName name) {
+    public synchronized void deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
@@ -285,7 +284,6 @@ public class TenantRepository {
         }
         notifyRemovedTenant(name);
         tenant.close();
-        return this;
     }
 
     // For unit testing
