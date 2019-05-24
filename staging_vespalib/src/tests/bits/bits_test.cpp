@@ -4,6 +4,12 @@
 #include <vespa/vespalib/util/bits.h>
 #include <boost/crc.hpp>
 
+#if BOOST_VERSION < 106900
+    #define REFLECT reflect
+#else
+    #define REFLECT reflect_q
+#endif
+
 using namespace vespalib;
 
 class Test : public TestApp
@@ -38,7 +44,7 @@ void Test::testFixed(const T * v, size_t sz)
     EXPECT_EQUAL(1ul << (sizeof(T)*8 - 1), Bits::reverse(static_cast<T>(1)));
     EXPECT_EQUAL(static_cast<T>(-1), Bits::reverse(static_cast<T>(-1)));
     for (size_t i(0); i < sz; i++) {
-        EXPECT_EQUAL(Bits::reverse(v[i]), boost::detail::reflector<sizeof(T)*8>::reflect(v[i]));
+        EXPECT_EQUAL(Bits::reverse(v[i]), boost::detail::reflector<sizeof(T)*8>::REFLECT(v[i]));
         EXPECT_EQUAL(Bits::reverse(Bits::reverse(v[i])), v[i]);
     }
 }
