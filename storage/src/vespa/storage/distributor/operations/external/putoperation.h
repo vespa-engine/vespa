@@ -49,6 +49,8 @@ private:
 
     bool shouldImplicitlyActivateReplica(const OperationTargetList& targets) const;
 
+    bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;
+
     std::shared_ptr<api::PutCommand> _msg;
     DistributorComponent& _manager;
     DistributorBucketSpace &_bucketSpace;
