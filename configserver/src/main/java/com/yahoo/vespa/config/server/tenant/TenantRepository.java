@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -73,7 +74,8 @@ public class TenantRepository {
     private final Curator curator;
 
     private final MetricUpdater metricUpdater;
-    private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+    private final ExecutorService zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+    private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Optional<Curator.DirectoryCache> directoryCache;
@@ -104,6 +106,7 @@ public class TenantRepository {
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
+        this.zkWatcherExecutor = globalComponentRegistry.getZkWatcherExecutor();
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -112,7 +115,7 @@ public class TenantRepository {
         curator.create(vespaPath);
 
         if (useZooKeeperWatchForTenantChanges) {
-            this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor));
+            this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
             this.directoryCache.get().start();
             this.directoryCache.get().addListener(this::childEvent);
         } else {
@@ -158,7 +161,7 @@ public class TenantRepository {
 
     private void checkForRemovedTenants(Set<TenantName> newTenants) {
         for (TenantName tenantName : ImmutableSet.copyOf(tenants.keySet())) {
-            if (!newTenants.contains(tenantName)) {
+            if ( ! newTenants.contains(tenantName)) {
                 closeTenant(tenantName);
             }
         }
@@ -357,12 +360,18 @@ public class TenantRepository {
         }
     }
 
+    /** Use this executor for ZK cache listeners, and have them delegate their work to the {@link #zkWatcherExecutor()}. */
+    public ExecutorService zkCacheExecutor() { return zkCacheExecutor; }
+
+    /** Use this executor to run watcher reactions serially for each tenant. Used by {@link #zkCacheExecutor()}. */
+    public StripedExecutor<TenantName> zkWatcherExecutor() { return zkWatcherExecutor; }
+
     public void close() {
         directoryCache.ifPresent(Curator.DirectoryCache::close);
         try {
-            pathChildrenExecutor.shutdown();
+            zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();
-            pathChildrenExecutor.awaitTermination(50, TimeUnit.SECONDS);
+            zkCacheExecutor.awaitTermination(50, TimeUnit.SECONDS);
             checkForRemovedApplicationsService.awaitTermination(50, TimeUnit.SECONDS);
         }
         catch (InterruptedException e) {

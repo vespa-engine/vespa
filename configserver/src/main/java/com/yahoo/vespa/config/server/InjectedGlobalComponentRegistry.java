@@ -3,8 +3,10 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
@@ -42,6 +44,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Zone zone;
     private final ConfigServerDB configServerDB;
     private final FlagSource flagSource;
+    private final StripedExecutor<TenantName> zkWatcherExecutor;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -74,6 +77,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.zone = zone;
         this.configServerDB = configServerDB;
         this.flagSource = flagSource;
+        this.zkWatcherExecutor = new StripedExecutor<>();
     }
 
     @Override
@@ -114,6 +118,11 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
+
+    @Override
+    public StripedExecutor<TenantName> getZkWatcherExecutor() {
+        return zkWatcherExecutor;
+    }
 
     @Override
     public FlagSource getFlagSource() { return flagSource; }
