@@ -4,7 +4,7 @@
 
 #include "multi_value_mapping_base.h"
 #include <vespa/searchlib/datastore/array_store.h>
-#include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/address_space.h>
 
 namespace search::attribute {
 
@@ -46,7 +46,7 @@ public:
 
     void compactWorst(bool compactMemory, bool compactAddressSpace) override;
 
-    AddressSpace getAddressSpaceUsage() const override;
+    vespalib::AddressSpace getAddressSpaceUsage() const override;
     vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;
 
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,

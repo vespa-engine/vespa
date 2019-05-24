@@ -62,7 +62,7 @@ MultiValueMapping<EntryT,RefT>::getArrayStoreMemoryUsage() const
 }
 
 template <typename EntryT, typename RefT>
-AddressSpace
+vespalib::AddressSpace
 MultiValueMapping<EntryT, RefT>::getAddressSpaceUsage() const {
     return _store.addressSpaceUsage();
 }

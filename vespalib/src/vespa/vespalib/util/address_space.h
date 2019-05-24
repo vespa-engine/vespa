@@ -4,7 +4,7 @@
 
 #include <iosfwd>
 
-namespace search {
+namespace vespalib {
 
 /**
  * Represents an address space with number of bytes/entries used

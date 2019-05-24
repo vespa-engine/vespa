@@ -4,7 +4,7 @@
 #include <ostream>
 #include <cassert>
 
-namespace search {
+namespace vespalib {
 
 AddressSpace::AddressSpace(size_t used_, size_t dead_, size_t limit_)
     : _used(used_),
@@ -19,5 +19,5 @@ std::ostream &operator << (std::ostream &out, const AddressSpace &rhs)
     return out << "used=" << rhs.used() << ", dead=" << rhs.dead() << ", limit=" << rhs.limit();
 }
 
-} // namespace search
+} // namespace vespalib
 

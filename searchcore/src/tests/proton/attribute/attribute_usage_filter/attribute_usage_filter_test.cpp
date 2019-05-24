@@ -10,13 +10,13 @@ using proton::AttributeUsageStats;
 namespace
 {
 
-search::AddressSpace enumStoreOverLoad(30 * 1024 * 1024 * UINT64_C(1024),
-                                       0,
-                                       32 * 1024 * 1024 * UINT64_C(1024));
+vespalib::AddressSpace enumStoreOverLoad(30 * 1024 * 1024 * UINT64_C(1024),
+                                         0,
+                                         32 * 1024 * 1024 * UINT64_C(1024));
 
-search::AddressSpace multiValueOverLoad(127 * 1024 * 1024,
-                                        0,
-                                        128 * 1024 * 1024);
+vespalib::AddressSpace multiValueOverLoad(127 * 1024 * 1024,
+                                          0,
+                                          128 * 1024 * 1024);
 
 
 

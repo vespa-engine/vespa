@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_vespalib_util OBJECT
     SOURCES
     active.cpp
+    address_space.cpp
     alloc.cpp
     approx.cpp
     array.cpp

@@ -90,7 +90,7 @@ public:
      * Returns the address space usage by this store as the ratio between active buffers
      * and the total number available buffers.
      */
-    AddressSpace addressSpaceUsage() const;
+    vespalib::AddressSpace addressSpaceUsage() const;
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }

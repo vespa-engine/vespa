@@ -133,7 +133,7 @@ MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
 
 
 template <typename B, typename M>
-AddressSpace
+vespalib::AddressSpace
 MultiValueAttribute<B, M>::getMultiValueAddressSpaceUsage() const
 {
     return _mvMapping.getAddressSpaceUsage();

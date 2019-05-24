@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -300,7 +300,7 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
 
-    AddressSpace getAddressSpaceUsage() const;
+    vespalib::AddressSpace getAddressSpaceUsage() const;
 
     void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);

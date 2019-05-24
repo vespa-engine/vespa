@@ -8,10 +8,10 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using search::attribute::Status;
-using search::AddressSpace;
 using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::EnumStoreBase;
+using vespalib::AddressSpace;
 using vespalib::MemoryUsage;
 using search::attribute::MultiValueMappingBase;
 using search::attribute::IPostingListAttributeBase;

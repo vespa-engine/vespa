@@ -218,13 +218,13 @@ AttributeVector::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, u
     _status.updateStatistics(numValues, numUniqueValue, allocated, used, dead, onHold);
 }
 
-AddressSpace
+vespalib::AddressSpace
 AttributeVector::getEnumStoreAddressSpaceUsage() const
 {
     return AddressSpaceUsage::defaultEnumStoreUsage();
 }
 
-AddressSpace
+vespalib::AddressSpace
 AttributeVector::getMultiValueAddressSpaceUsage() const
 {
     return AddressSpaceUsage::defaultMultiValueUsage();
@@ -721,7 +721,7 @@ AttributeVector::getEstimatedSaveByteSize() const
     uint64_t idxFileSize = 0;
     uint64_t udatFileSize = 0;
     size_t fixedWidth = getFixedWidth();
-    AddressSpace enumAddressSpace(getEnumStoreAddressSpaceUsage());
+    vespalib::AddressSpace enumAddressSpace(getEnumStoreAddressSpaceUsage());
 
     if (hasMultiValue()) {
         idxFileSize = headerSize + sizeof(uint32_t) * (docIdLimit + 1);
