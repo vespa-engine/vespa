@@ -89,6 +89,7 @@ public class TestRunner {
                          ProcessBuilder builder = new ProcessBuilder(command);
                          builder.environment().merge("MAVEN_OPTS", " -Djansi.force=true", String::concat);
                          builder.directory(vespaHome.resolve("tmp/test").toFile());
+                         builder.environment().put("SCREWDRIVER", "true");
                          builder.redirectErrorStream(true);
                          return builder;
                      });
