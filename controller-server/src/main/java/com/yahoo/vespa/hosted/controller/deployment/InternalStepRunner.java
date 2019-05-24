@@ -38,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
-import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -625,7 +624,7 @@ public class InternalStepRunner implements StepRunner {
         for (ZoneId zone : zones) {
             controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
                       .filter(endpoints -> ! endpoints.isEmpty())
-                      .or(() -> Optional.of(controller.applications().routingPolicies(new DeploymentId(id, zone)).stream()
+                      .or(() -> Optional.of(controller.applications().routingPolicies().get(id, zone).stream()
                                                       .map(policy -> policy.endpointIn(controller.system()).url())
                                                       .collect(Collectors.toUnmodifiableList()))
                                         .filter(endpoints -> ! endpoints.isEmpty()))

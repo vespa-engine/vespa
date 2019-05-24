@@ -68,7 +68,7 @@ public class RoutingPoliciesTest {
         assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records1.get().get(1).data().asString());
         assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records2.get().get(0).data().asString());
         assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records2.get().get(1).data().asString());
-        assertEquals(2, tester.controller().applications().routingPolicies(app1.id()).iterator().next()
+        assertEquals(2, tester.controller().applications().routingPolicies().get(app1.id()).iterator().next()
                               .rotationEndpointsIn(SystemName.main).asList().size());
 
         // Applications gains a new deployment
@@ -191,8 +191,8 @@ public class RoutingPoliciesTest {
                 "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
-        assertTrue("Removes stale routing policies " + app2, tester.controller().applications().routingPolicies(app2.id()).isEmpty());
-        assertEquals("Keeps routing policies for " + app1, 4, tester.controller().applications().routingPolicies(app1.id()).size());
+        assertTrue("Removes stale routing policies " + app2, tester.controller().applications().routingPolicies().get(app2.id()).isEmpty());
+        assertEquals("Keeps routing policies for " + app1, 4, tester.controller().applications().routingPolicies().get(app1.id()).size());
     }
 
     private Set<RoutingPolicy> policies(Application application) {
