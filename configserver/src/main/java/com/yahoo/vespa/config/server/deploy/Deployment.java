@@ -127,10 +127,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
+            validateSessionStatus(session);
             if ( ! tenant.getApplicationRepo().exists(session.getApplicationId()))
                 throw new IllegalStateException("Application " + session.getApplicationId() + " does not exist");
+            verifyApplicationIsPreparingSession(session, tenant.getApplicationRepo().preparing(session.getApplicationId()));
 
-            validateSessionStatus(session, tenant.getApplicationRepo().preparing(session.getApplicationId()));
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
@@ -165,13 +166,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Exposes the session of this for testing only */
     public LocalSession session() { return session; }
 
-    private void validateSessionStatus(LocalSession localSession, OptionalLong preparing) {
+    private void validateSessionStatus(LocalSession localSession) {
         if (Session.Status.ACTIVATE.equals(localSession.getStatus()))
             throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is already active");
 
         if (Session.Status.NEW.equals(localSession.getStatus()))
             throw new IllegalStateException(localSession.logPre() + "Session " + localSession.getSessionId() + " is not prepared");
+    }
 
+    private void verifyApplicationIsPreparingSession(LocalSession localSession, OptionalLong preparing) {
         if ( ! localSession.getMetaData().isInternalRedeploy())
             return;
 
