@@ -159,7 +159,7 @@ public class StorageMaintainer {
         Map<String, String> tags = new LinkedHashMap<>();
         tags.put("namespace", "Vespa");
         tags.put("role", nodeTypeToRole(context.node().getNodeType()));
-        tags.put("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
+        tags.put("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().region().value()));
         context.node().getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version.toFullString()));
 
         if (! isConfigserverLike(context.nodeType())) {
@@ -261,7 +261,7 @@ public class StorageMaintainer {
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("hostname", context.node().getHostname());
-        attributes.put("region", context.zoneId().regionName().value());
+        attributes.put("region", context.zoneId().region().value());
         attributes.put("environment", context.zoneId().environment().value());
         attributes.put("flavor", context.node().getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));

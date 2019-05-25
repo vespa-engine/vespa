@@ -3,11 +3,12 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -164,7 +165,7 @@ public class StorageMaintainerTest {
                     .build();
             NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec)
                     .fileSystem(TestFileSystem.create())
-                    .zoneId(new ZoneId(SystemName.dev, Environment.prod, RegionName.from("us-north-1"))).build();
+                    .zoneId(ZoneId.from(Environment.prod, RegionName.from("us-north-1"), CloudName.defaultName(), SystemName.defaultSystem())).build();
             Path path = context.pathOnHostFromPathInNode("/etc/yamas-agent");
             uncheck(() -> Files.createDirectories(path));
             storageMaintainer.writeMetricsConfig(context);
