@@ -887,7 +887,7 @@ public class QueryTestCase {
                 tokenIndex.setPlainTokens(true);
             sd.addIndex(tokenIndex);
         }
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         MockLinguistics mockLinguistics = new MockLinguistics();
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, indexFacts, mockLinguistics)));
         q.getModel().getQueryTree(); // cause parsing

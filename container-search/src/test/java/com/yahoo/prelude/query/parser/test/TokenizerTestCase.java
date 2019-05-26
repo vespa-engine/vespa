@@ -316,7 +316,7 @@ public class TokenizerTestCase {
         index2.setExact(true, "()/aa*::*&");
         sd.addIndex(index2);
 
-        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts facts = new IndexFacts(new IndexModel(sd));
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
         Tokenizer tokenizer=new Tokenizer(new SimpleLinguistics());
         List<?> tokens=tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*& b:c", "default", session);
@@ -360,7 +360,7 @@ public class TokenizerTestCase {
         index2.setExact(true, "()/aa*::*&");
         sd.addIndex(index2);
 
-        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts facts = new IndexFacts(new IndexModel(sd));
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&", session);
@@ -397,7 +397,7 @@ public class TokenizerTestCase {
         index2.setExact(true, "()/aa*::*&");
         sd.addIndex(index2);
 
-        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts facts = new IndexFacts(new IndexModel(sd));
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*", session);
@@ -434,7 +434,7 @@ public class TokenizerTestCase {
         index2.setExact(true, "()/aa*::*&");
         sd.addIndex(index2);
 
-        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts facts = new IndexFacts(new IndexModel(sd));
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:!/%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&b:", session);
@@ -472,7 +472,7 @@ public class TokenizerTestCase {
         index2.setExact(true, "()/aa*::*&");
         sd.addIndex(index2);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         IndexFacts.Session facts = indexFacts.newSession(Collections.emptySet(), Collections.emptySet());
 
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());

@@ -171,7 +171,7 @@ public class SortingDegraderTestCase {
         test.addIndex(fastSearchAttribute2);
         test.addIndex(nonFastSearchAttribute);
         test.addIndex(stringAttribute);
-        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(test)));
+        return new IndexFacts(new IndexModel(test));
     }
 
 }

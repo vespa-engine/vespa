@@ -1,18 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import com.yahoo.component.Version;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.language.Language;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
@@ -932,6 +934,126 @@ public class YqlParserTestCase {
 
             assertEquals("title:\\", query.getModel().getQueryTree().toString());
         }
+    }
+
+    @Test
+    public void testUrlHostSearchingDefaultAnchors() {
+        // Simple query syntax, for reference
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com"), false, true, true);
+
+        // YQL query
+        Query yql = new Query();
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\");");
+        assertUrlQuery("urlfield.hostname", yql, false, true, true);
+    }
+
+    @Test
+    public void testUrlHostSearchingNoAnchors() {
+        // Simple query syntax, for reference
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com*"), false, false, true);
+
+        // YQL query
+        Query yql = new Query();
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"endAnchor\": false }]uri(\"google.com\"));");
+        assertUrlQuery("urlfield.hostname", yql, false, false, true);
+    }
+
+    @Test
+    public void testUrlHostSearchingBothAnchors() {
+        // Simple query syntax, for reference
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:%5Egoogle.com"), true, true, true); // %5E = ^
+
+        // YQL query
+        Query yql = new Query();
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"startAnchor\": true }] uri(\"google.com\"));");
+        assertUrlQuery("urlfield.hostname", yql, true, true, true);
+    }
+
+    @Test
+    public void testUriNonHostDoesNotCreateAnchors() {
+        // Simple query syntax, for reference
+        assertUrlQuery("urlfield", new Query("?query=urlfield:google.com"), false, false, false);
+
+        // YQL query
+        Query yql = new Query();
+        yql.properties().set("yql", "select * from sources * where urlfield contains uri(\"google.com\");");
+        assertUrlQuery("urlfield", yql, false, false, false);
+    }
+
+    private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {
+        boolean startAnchorIsDefault = false; // Always
+
+        // Set up
+        SearchDefinition test = new SearchDefinition("test");
+        Index urlField = new Index("urlfield");
+        urlField.setUriIndex(true);
+        test.addIndex(urlField);
+        Index hostField = new Index("urlfield.hostname");
+        hostField.setHostIndex(true);
+        test.addIndex(hostField);
+
+        Chain<Searcher> searchChain = new Chain<>(new MinimalQueryInserter());
+        Execution.Context context = Execution.Context.createContextStub(null,
+                                                                        new IndexFacts(new IndexModel(test)),
+                                                                        new SimpleLinguistics());
+        Execution execution = new Execution(searchChain, context);
+        execution.search(query);
+
+        // Check parsing and serial forms
+        if (endAnchor && startAnchor)
+            assertEquals(field + ":\"^ google com $\"", query.getModel().getQueryTree().toString());
+        else if (startAnchor)
+            assertEquals(field + ":\"^ google com\"", query.getModel().getQueryTree().toString());
+        else if (endAnchor)
+            assertEquals(field + ":\"google com $\"", query.getModel().getQueryTree().toString());
+        else
+            assertEquals(field + ":\"google com\"", query.getModel().getQueryTree().toString());
+
+
+        boolean hasAnnotations = startAnchor != startAnchorIsDefault || endAnchor != endAnchorIsDefault;
+        StringBuilder expectedYql = new StringBuilder("select * from sources * where ");
+        expectedYql.append(field).append(" contains ");
+        if (hasAnnotations)
+            expectedYql.append("([{");
+        if (startAnchor != startAnchorIsDefault)
+            expectedYql.append("\"startAnchor\": " + startAnchor);
+        if (endAnchor != endAnchorIsDefault) {
+            if (startAnchor != startAnchorIsDefault)
+                expectedYql.append(", ");
+            expectedYql.append("\"endAnchor\": " + endAnchor);
+        }
+        if (hasAnnotations)
+            expectedYql.append("}]");
+        expectedYql.append("uri(");
+        if (query.properties().get("yql") != null)
+            expectedYql.append("\"google.com\")"); // source string is preserved when parsing YQL
+        else
+            expectedYql.append("\"google com\")"); // but not with the simple syntax
+        if (hasAnnotations)
+            expectedYql.append(")");
+        expectedYql.append(";");
+        assertEquals(expectedYql.toString(), query.yqlRepresentation());
+
+        assertTrue(query.getModel().getQueryTree().getRoot() instanceof PhraseItem);
+        PhraseItem root = (PhraseItem)query.getModel().getQueryTree().getRoot();
+        int expectedLength = 2;
+        if (startAnchor)
+            expectedLength++;
+        if (endAnchor)
+            expectedLength++;
+        assertEquals(expectedLength, root.getNumWords());
+
+        if (startAnchor)
+            assertEquals(MarkerWordItem.createStartOfHost("urlfield.hostname"), root.getItem(0));
+        if (endAnchor)
+            assertEquals(MarkerWordItem.createEndOfHost("urlfield.hostname"), root.getItem(expectedLength-1));
+
+        // Check YQL parser-serialization roundtrip
+        Query reserialized = new Query();
+        reserialized.properties().set("yql", query.yqlRepresentation());
+        execution = new Execution(searchChain, context);
+        execution.search(reserialized);
+        assertEquals(query.yqlRepresentation(), reserialized.yqlRepresentation());
     }
 
     private void checkWordAlternativesContent(WordAlternativesItem alternatives) {

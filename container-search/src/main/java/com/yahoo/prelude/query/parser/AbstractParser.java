@@ -87,14 +87,10 @@ public abstract class AbstractParser implements CustomParser {
         }
 
         /**
-         * Returns whether we are in a mode which allows explicit anchoring
-         * markers, ^ and $
-         *
-         * @return True if we are doing explicit anchoring.
+         * Returns whether we are in a mode which allows explicit anchoring markers, ^ and $
          */
-        public boolean explicitAnchoring() {
-            return site;
-        }
+        public boolean explicitAnchoring() { return site; }
+
     }
 
     /**

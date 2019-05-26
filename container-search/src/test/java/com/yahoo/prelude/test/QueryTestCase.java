@@ -376,7 +376,7 @@ public class QueryTestCase {
         sd.addIndex(new Index("default"));
         sd.addIndex(new Index("keyword"));
         sd.addIndex(new Index("content"));
-        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        return new IndexFacts(new IndexModel(sd));
     }
 
     private Query newQueryFromEncoded(String encodedQueryString, Language language, Linguistics linguistics) {

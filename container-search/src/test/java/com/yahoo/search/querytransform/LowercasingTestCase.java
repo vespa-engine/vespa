@@ -59,7 +59,7 @@ public class LowercasingTestCase {
         sd.addIndex(defaultIndex);
         sd.addIndex(sarrBamse);
         sd.addIndex(sarrTeddy);
-        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        return new IndexFacts(new IndexModel(sd));
     }
 
     private Execution createExecution() {

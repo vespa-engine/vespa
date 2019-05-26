@@ -140,7 +140,7 @@ public class IndexFactsTestCase {
         index.setExact(true,"^^^");
         sd.addIndex(index);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         Query query = new Query();
         query.getModel().getSources().add("artist");
         assertTrue(indexFacts.newSession(query).getIndex(indexName).isExact());
@@ -187,7 +187,7 @@ public class IndexFactsTestCase {
         sd.addIndex(u_index);
         sd.addIndex(b_index);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         Query query = new Query();
         query.getModel().getSources().add("foobar");
         IndexFacts.Session session = indexFacts.newSession(query);

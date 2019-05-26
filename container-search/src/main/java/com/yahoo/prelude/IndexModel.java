@@ -3,6 +3,7 @@ package com.yahoo.prelude;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,6 +28,11 @@ public final class IndexModel {
     private Map<String, List<String>> masterClusters;
     private Map<String, SearchDefinition> searchDefinitions;
     private SearchDefinition unionSearchDefinition;
+
+    /** Create an index model for a single search definition */
+    public IndexModel(SearchDefinition searchDefinition) {
+        this(Collections.emptyMap(), Collections.singleton(searchDefinition));
+    }
 
     /**
      * Create an index model.

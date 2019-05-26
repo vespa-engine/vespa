@@ -53,32 +53,30 @@ public class Search implements Serializable, ImmutableSearch {
         return RESERVED_NAMES.contains(name);
     }
 
-    // Field sets
     private FieldSets fieldSets = new FieldSets();
 
-    // The unique name of this search definition.
+    /** The unique name of this search definition */
     private String name;
 
-    // True if this doesn't define a search, just some documents.
+    /** True if this doesn't define a search, just a document type */
     private boolean documentsOnly = false;
 
-    // The stemming setting of this search definition. Default is BEST.
+    /** The stemming setting of this search definition. Default is BEST. */
     private Stemming stemming = Stemming.BEST;
 
-    // Documents contained in this definition.
+    /** Documents contained in this definition */
     private SDDocumentType docType;
 
-    // The extra fields of this search definition.
+    /** The extra fields of this search definition */
     private Map<String, SDField> fields = new LinkedHashMap<>();
 
-    // The explicitly defined indices of this search definition.
+    /** The explicitly defined indices of this search definition */
     private Map<String, Index> indices = new LinkedHashMap<>();
 
-    // The explicitly defined summaries of this search definition.
-    // _Must_ preserve order
+    /** The explicitly defined summaries of this search definition. _Must_ preserve order. */
     private Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
-    // Ranking constants of this
+    /** Ranking constants of this */
     private RankingConstants rankingConstants = new RankingConstants();
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());

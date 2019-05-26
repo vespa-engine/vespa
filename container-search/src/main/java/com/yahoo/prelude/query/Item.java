@@ -373,6 +373,7 @@ public abstract class Item implements Cloneable {
     protected abstract void appendBodyString(StringBuilder buffer);
 
     /** Returns a deep copy of this item */
+    @Override
     public Item clone() {
         try {
             Item clone = (Item)super.clone();
@@ -389,6 +390,7 @@ public abstract class Item implements Cloneable {
      * Returns whether this item is of the same class and
      * contains the same state as the given item
      */
+    @Override
     public boolean equals(Object object) {
         if (object == null) {
             return false;
@@ -405,11 +407,11 @@ public abstract class Item implements Cloneable {
         if (this.weight != other.weight) {
             return false;
         }
-        // if (this.termIndex!=other.termIndex) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
         return weight * 29 + creator.code;
     }
@@ -433,12 +435,7 @@ public abstract class Item implements Cloneable {
         this.label = label;
     }
 
-    /**
-     * Obtain the label for this item. This method will return null if
-     * no label has been set.
-     *
-     * @return label for this item
-     **/
+    /** Returns the label for this item. This method will return null if no label has been set. */
     public String getLabel() {
         return label;
     }

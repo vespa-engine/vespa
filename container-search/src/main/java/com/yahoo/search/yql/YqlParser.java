@@ -55,6 +55,7 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
+import com.yahoo.prelude.query.UriItem;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WeightedSetItem;
@@ -91,7 +92,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @author Stian Kristoffersen
  * @author Simon Thoresen Hult
  */
-@Beta
 public class YqlParser implements Parser {
 
     private static final String DESCENDING_HITS_ORDER = "descending";
@@ -127,6 +127,8 @@ public class YqlParser implements Parser {
     private static final String USER_INPUT = "userInput";
     private static final String USER_QUERY = "userQuery";
     private static final String NON_EMPTY = "nonEmpty";
+    public static final String START_ANCHOR = "startAnchor";
+    public static final String END_ANCHOR = "endAnchor";
 
     public static final String SORTING_FUNCTION = "function";
     public static final String SORTING_LOCALE = "locale";
@@ -176,6 +178,7 @@ public class YqlParser implements Parser {
     static final String WEAK_AND = "weakAnd";
     static final String WEIGHTED_SET = "weightedSet";
     static final String WEIGHT = "weight";
+    static final String URI = "uri";
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -316,7 +319,6 @@ public class YqlParser implements Parser {
         }
     }
 
-    @NonNull
     private Item convertExpression(OperatorNode<ExpressionOperator> ast) {
         try {
             annotationStack.addFirst(ast);
@@ -354,7 +356,6 @@ public class YqlParser implements Parser {
         }
     }
 
-    @NonNull
     private Item buildFunctionCall(OperatorNode<ExpressionOperator> ast) {
         List<String> names = ast.getArgument(0);
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
@@ -481,8 +482,8 @@ public class YqlParser implements Parser {
         WandItem out = new WandItem(getIndex(args.get(0)), getAnnotation(ast,
                 TARGET_NUM_HITS, Integer.class, DEFAULT_TARGET_NUM_HITS,
                 "desired number of hits to accumulate in wand"));
-        Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD,
-                Double.class, null, "min score for hit inclusion");
+        Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD, Double.class, null,
+                                              "min score for hit inclusion");
         if (scoreThreshold != null) {
             out.setScoreThreshold(scoreThreshold);
         }
@@ -1056,7 +1057,7 @@ public class YqlParser implements Parser {
 
     private Item buildTermSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
-        String field = getIndex(ast.<OperatorNode<ExpressionOperator>>getArgument(0));
+        String field = getIndex(ast.getArgument(0));
         if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
             userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly", 1);
         }
@@ -1065,11 +1066,11 @@ public class YqlParser implements Parser {
 
     private Item buildRegExpSearch(OperatorNode<ExpressionOperator> ast) {
         assertHasOperator(ast, ExpressionOperator.MATCHES);
-        String field = getIndex(ast.<OperatorNode<ExpressionOperator>>getArgument(0));
+        String field = getIndex(ast.getArgument(0));
         if (userQuery != null && !indexFactsSession.getIndex(field).isAttribute()) {
             userQuery.trace("Field '" + field + "' is indexed, non-literal regular expressions will not be matched", 1);
         }
-        OperatorNode<ExpressionOperator> ast1 = ast.<OperatorNode<ExpressionOperator>> getArgument(1);
+        OperatorNode<ExpressionOperator> ast1 = ast.getArgument(1);
         String wordData = getStringContents(ast1);
         RegExpItem regExp = new RegExpItem(field, true, wordData);
         return leafStyleSettings(ast1, regExp);
@@ -1079,7 +1080,7 @@ public class YqlParser implements Parser {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
 
-        IntItem range = instantiateRangeItem(spec.<List<OperatorNode<ExpressionOperator>>> getArgument(1), spec);
+        IntItem range = instantiateRangeItem(spec.getArgument(1), spec);
         return leafStyleSettings(spec, range);
     }
 
@@ -1101,16 +1102,15 @@ public class YqlParser implements Parser {
         }
     }
 
-    private IntItem instantiateRangeItem(
-            List<OperatorNode<ExpressionOperator>> args,
-            OperatorNode<ExpressionOperator> spec) {
+    private IntItem instantiateRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                         OperatorNode<ExpressionOperator> spec) {
         Preconditions.checkArgument(args.size() == 3,
                 "Expected 3 arguments, got %s.", args.size());
 
         Number lowerArg = getBound(args.get(1));
         Number upperArg = getBound(args.get(2));
         String bounds = getAnnotation(spec, BOUNDS, String.class, null,
-                "whether bounds should be open or closed");
+                                      "whether bounds should be open or closed");
         // TODO: add support for implicit transforms
         if (bounds == null) {
             return new RangeItem(lowerArg, upperArg, getIndex(args.get(0)));
@@ -1127,8 +1127,7 @@ public class YqlParser implements Parser {
                 from = new Limit(lowerArg, true);
                 to = new Limit(upperArg, false);
             } else {
-                throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN,
-                        BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
+                throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
             }
             return new IntItem(from, to, getIndex(args.get(0)));
         }
@@ -1179,9 +1178,34 @@ public class YqlParser implements Parser {
                 return instantiateEquivItem(field, ast);
             case ALTERNATIVES:
                 return instantiateWordAlternativesItem(field, ast);
+            case URI:
+                return instantiateUriItem(field, ast);
             default:
-                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT);
+                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, URI);
         }
+    }
+
+    private Item instantiateEquivItem(String field, OperatorNode<ExpressionOperator> ast) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() >= 2, "Expected 2 or more arguments, got %s.", args.size());
+
+        EquivItem equiv = new EquivItem();
+        equiv.setIndexName(field);
+        for (OperatorNode<ExpressionOperator> arg : args) {
+            switch (arg.getOperator()) {
+                case LITERAL:
+                    equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
+                    break;
+                case CALL:
+                    assertHasFunctionName(arg, PHRASE);
+                    equiv.addItem(instantiatePhraseItem(field, arg));
+                    break;
+                default:
+                    throw newUnexpectedArgumentException(arg.getOperator(),
+                                                         ExpressionOperator.CALL, ExpressionOperator.LITERAL);
+            }
+        }
+        return leafStyleSettings(ast, equiv);
     }
 
     private Item instantiateWordAlternativesItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -1208,27 +1232,30 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, new WordAlternativesItem(field, isFromQuery, origin, terms));
     }
 
-    private Item instantiateEquivItem(String field, OperatorNode<ExpressionOperator> ast) {
-        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        Preconditions.checkArgument(args.size() >= 2, "Expected 2 or more arguments, got %s.", args.size());
+    private UriItem instantiateUriItem(String field, OperatorNode<ExpressionOperator> ast) {
+        UriItem uriItem = new UriItem(field);
 
-        EquivItem equiv = new EquivItem();
-        equiv.setIndexName(field);
-        for (OperatorNode<ExpressionOperator> arg : args) {
-            switch (arg.getOperator()) {
-                case LITERAL:
-                    equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
-                    break;
-                case CALL:
-                    assertHasFunctionName(arg, PHRASE);
-                    equiv.addItem(instantiatePhraseItem(field, arg));
-                    break;
-                default:
-                    throw newUnexpectedArgumentException(arg.getOperator(),
-                                                         ExpressionOperator.CALL, ExpressionOperator.LITERAL);
-            }
-        }
-        return leafStyleSettings(ast, equiv);
+        boolean startAnchorDefault = false;
+        boolean endAnchorDefault = indexFactsSession.getIndex(field).isHostIndex();
+
+        if (getAnnotation(ast, START_ANCHOR, Boolean.class, startAnchorDefault,
+                          "whether uri matching should be anchored to the start"))
+            uriItem.addStartAnchorItem();
+
+        String uriString = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1).get(0).getArgument(0);
+        for (String token : segmenter.segment(uriString, Language.ENGLISH))
+            uriItem.addItem(new WordItem(token, field, true));
+
+        if (getAnnotation(ast, END_ANCHOR, Boolean.class, endAnchorDefault,
+                          "whether uri matching should be anchored to the end"))
+            uriItem.addEndAnchorItem();
+
+        // Aux info to preserve minimal and expected canonical form
+        uriItem.setStartAnchorDefault(startAnchorDefault);
+        uriItem.setEndAnchorDefault(endAnchorDefault);
+        uriItem.setSourceString(uriString);
+
+        return uriItem;
     }
 
     private Item instantiateWordItem(String field, OperatorNode<ExpressionOperator> ast, Class<?> parent) {
