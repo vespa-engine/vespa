@@ -2,9 +2,6 @@
 
 package com.yahoo.jrt;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Logger;
@@ -23,13 +20,13 @@ public class LatencyTest {
         public Network(CryptoEngine crypto, int threads) throws ListenFailedException {
             server = new Supervisor(new Transport(crypto, threads));
             client = new Supervisor(new Transport(crypto, threads));
-            server.addMethod(new Method("inc", "i", "i", this, "rpc_inc"));
+            server.addMethod(new Method("inc", "i", "i", this::rpc_inc));
             acceptor = server.listen(new Spec(0));
         }
         public Target connect() {
             return client.connect(new Spec("localhost", acceptor.port()));
         }
-        public void rpc_inc(Request req) {
+        private void rpc_inc(Request req) {
             req.returnValues().add(new Int32Value(req.parameters().get(0).asInt32() + 1));
         }
         public void close() {

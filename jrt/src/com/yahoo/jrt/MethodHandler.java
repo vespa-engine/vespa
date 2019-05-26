@@ -10,6 +10,7 @@ package com.yahoo.jrt;
  * or with reflection. This choice is reflected by the two different
  * constructors in the {@link Method} class.</p>
  **/
+@FunctionalInterface
 public interface MethodHandler {
 
     /**

@@ -1144,7 +1144,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
-        object.setString("type", tentantType(tenant));
+        object.setString("type", tenantType(tenant));
         switch (tenant.type()) {
             case athenz:
                 AthenzTenant athenzTenant = (AthenzTenant) tenant;
@@ -1181,7 +1181,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void tenantInTenantsListToSlime(Tenant tenant, URI requestURI, Cursor object) {
         object.setString("tenant", tenant.name().value());
         Cursor metaData = object.setObject("metaData");
-        metaData.setString("type", tentantType(tenant));
+        metaData.setString("type", tenantType(tenant));
         switch (tenant.type()) {
             case athenz:
                 AthenzTenant athenzTenant = (AthenzTenant) tenant;
@@ -1389,7 +1389,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return ImmutableSet.of("all", "true", "deployment").contains(request.getProperty("recursive"));
     }
 
-    private static String tentantType(Tenant tenant) {
+    private static String tenantType(Tenant tenant) {
         switch (tenant.type()) {
             case user: return "USER";
             case athenz: return "ATHENS";

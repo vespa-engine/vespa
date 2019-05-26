@@ -48,15 +48,14 @@ public class UrlDownloadRpcServer {
                                                                                      new DaemonThreadFactory("Rpc download executor"));
 
     UrlDownloadRpcServer(Supervisor supervisor) {
-        supervisor.addMethod(new Method("url.waitFor", "s", "s", this, "download")
+        supervisor.addMethod(new Method("url.waitFor", "s", "s", this::download)
                                     .methodDesc("get path to url download")
                                     .paramDesc(0, "url", "url")
                                     .returnDesc(0, "path", "path to file"));
         downloadBaseDir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/download"));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void download(Request req) {
+    private void download(Request req) {
         req.detach();
         rpcDownloadExecutor.execute(() -> downloadFile(req));
     }

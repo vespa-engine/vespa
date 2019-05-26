@@ -25,15 +25,13 @@ public class BackTargetTest {
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
 
-        server.addMethod(new Method("inc", "", "", this, "server_inc"));
-        server.addMethod(new Method("sample_target", "", "", this,
-                                    "server_sample_target"));
-        server.addMethod(new Method("back_inc", "", "", this, "back_inc"));
+        server.addMethod(new Method("inc", "", "", this::server_inc));
+        server.addMethod(new Method("sample_target", "", "", this::server_sample_target));
+        server.addMethod(new Method("back_inc", "", "", this::back_inc));
 
-        client.addMethod(new Method("inc", "", "", this, "client_inc"));
-        client.addMethod(new Method("sample_target", "", "", this,
-                                    "client_sample_target"));
-        client.addMethod(new Method("back_inc", "", "", this, "back_inc"));
+        client.addMethod(new Method("inc", "", "", this::client_inc));
+        client.addMethod(new Method("sample_target", "", "", this::client_sample_target));
+        client.addMethod(new Method("back_inc", "", "", this::back_inc));
 
         serverValue = 0;
         clientValue = 0;
@@ -49,23 +47,23 @@ public class BackTargetTest {
         server.transport().shutdown().join();
     }
 
-    public void server_inc(Request req) {
+    private void server_inc(Request req) {
         serverValue++;
     }
 
-    public void server_sample_target(Request req) {
+    private void server_sample_target(Request req) {
         serverBackTarget = req.target();
     }
 
-    public void client_inc(Request req) {
+    private void client_inc(Request req) {
         clientValue++;
     }
 
-    public void client_sample_target(Request req) {
+    private void client_sample_target(Request req) {
         clientBackTarget = req.target();
     }
 
-    public void back_inc(Request req) {
+    private void back_inc(Request req) {
         Target t = req.target();
         t.invokeVoid(new Request("inc"));
     }

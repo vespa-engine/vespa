@@ -23,9 +23,8 @@ public class InvokeErrorTest {
         client   = new Supervisor(new Transport());
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
-        server.addMethod(new Method("test", "iib", "i", this, "rpc_test"));
-        server.addMethod(new Method("test_barrier", "iib", "i", this,
-                                    "rpc_test_barrier"));
+        server.addMethod(new Method("test", "iib", "i", this::rpc_test));
+        server.addMethod(new Method("test_barrier", "iib", "i", this::rpc_test_barrier));
         barrier = new Test.Barrier();
     }
 
@@ -37,7 +36,7 @@ public class InvokeErrorTest {
         server.transport().shutdown().join();
     }
 
-    public void rpc_test(Request req) {
+    private void rpc_test(Request req) {
         int value = req.parameters().get(0).asInt32();
         int error = req.parameters().get(1).asInt32();
         int extra = req.parameters().get(2).asInt8();
@@ -51,7 +50,7 @@ public class InvokeErrorTest {
         }
     }
 
-    public void rpc_test_barrier(Request req) {
+    private void rpc_test_barrier(Request req) {
         rpc_test(req);
         barrier.waitFor();
     }

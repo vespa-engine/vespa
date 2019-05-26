@@ -331,13 +331,13 @@ public class DummyVdsNode {
     private void addMethods() {
         Method m;
 
-        m = new Method("vespa.storage.connect", "s", "i", this, "rpc_storageConnect");
+        m = new Method("vespa.storage.connect", "s", "i", this::rpc_storageConnect);
         m.methodDesc("Binds connection to a storage API handle");
         m.paramDesc(0, "somearg", "Argument looking like slobrok address of the ones we're asking for some reason");
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 0 = OK");
         supervisor.addMethod(m);
 
-        m = new Method("getnodestate", "", "issi", this, "rpc_getNodeState");
+        m = new Method("getnodestate", "", "issi", this::rpc_getNodeState);
         m.methodDesc("Get nodeState of a node");
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 1 = OK");
         m.returnDesc(1, "returnMessage", "Textual error message if returncode is not ok.");
@@ -345,7 +345,7 @@ public class DummyVdsNode {
         m.returnDesc(3, "progress", "Progress in percent of node initialization");
         supervisor.addMethod(m);
 
-        m = new Method("setsystemstate", "s", "is", this, "rpc_setSystemState");
+        m = new Method("setsystemstate", "s", "is", this::rpc_setSystemState);
         m.methodDesc("Set system state of entire system");
         m.paramDesc(0, "systemState", "new systemstate");
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 1 = OK");
@@ -353,20 +353,20 @@ public class DummyVdsNode {
         supervisor.addMethod(m);
 
         if (stateCommunicationVersion > 0) {
-            m = new Method("getnodestate2", "si", "s", this, "rpc_getNodeState2");
+            m = new Method("getnodestate2", "si", "s", this::rpc_getNodeState2);
             m.methodDesc("Get nodeState of a node, answer when state changes from given state.");
             m.paramDesc(0, "nodeStateIn", "The node state of the given node");
             m.paramDesc(1, "timeout", "Time timeout in milliseconds set by the state requester.");
             m.returnDesc(0, "nodeStateOut", "The node state of the given node");
             supervisor.addMethod(m);
 
-            m = new Method("setsystemstate2", "s", "", this, "rpc_setSystemState2");
+            m = new Method("setsystemstate2", "s", "", this::rpc_setSystemState2);
             m.methodDesc("Set system state of entire system");
             m.paramDesc(0, "systemState", "new systemstate");
             supervisor.addMethod(m);
 
             if (stateCommunicationVersion > 1) {
-                m = new Method("getnodestate3", "sii", "ss", this, "rpc_getNodeState2");
+                m = new Method("getnodestate3", "sii", "ss", this::rpc_getNodeState2);
                 m.methodDesc("Get nodeState of a node, answer when state changes from given state.");
                 m.paramDesc(0, "nodeStateIn", "The node state of the given node");
                 m.paramDesc(1, "timeout", "Time timeout in milliseconds set by the state requester.");
@@ -376,7 +376,7 @@ public class DummyVdsNode {
             }
         }
         if (stateCommunicationVersion >= RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION) {
-            m = new Method(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME, "bix", "", this, "rpc_setDistributionStates");
+            m = new Method(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME, "bix", "", this::rpc_setDistributionStates);
             m.methodDesc("Set distribution states for cluster and bucket spaces");
             m.paramDesc(0, "compressionType", "Compression type for payload");
             m.paramDesc(1, "uncompressedSize", "Uncompressed size of payload");
@@ -384,7 +384,7 @@ public class DummyVdsNode {
             supervisor.addMethod(m);
         }
         if (stateCommunicationVersion >= RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION) {
-            m = new Method(RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME, "i", "i", this, "rpc_activateClusterStateVersion");
+            m = new Method(RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_METHOD_NAME, "i", "i", this::rpc_activateClusterStateVersion);
             m.methodDesc("Activate a given cluster state version");
             m.paramDesc(0, "stateVersion", "Cluster state version to activate");
             m.returnDesc(0, "actualVersion", "Actual cluster state version on node");
@@ -392,7 +392,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void rpc_storageConnect(Request req) {
+    private void rpc_storageConnect(Request req) {
         synchronized(timer) {
             log.log(LogLevel.SPAM, "Dummy node " + this + " got old type handle connect message.");
             req.returnValues().add(new Int32Value(0));
@@ -400,7 +400,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void rpc_getNodeState(Request req) {
+    private void rpc_getNodeState(Request req) {
         synchronized(timer) {
             if (!negotiatedHandle) {
                 req.setError(75000, "Connection not bound to a handle");
@@ -431,7 +431,7 @@ public class DummyVdsNode {
         return false;
     }
 
-    public void rpc_getNodeState2(Request req) {
+    private void rpc_getNodeState2(Request req) {
         log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got " + req.methodName() + " request");
         try{
             String oldState = req.parameters().get(0).asString();
@@ -500,7 +500,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void rpc_setSystemState(Request req) {
+    private void rpc_setSystemState(Request req) {
         try{
             if (shouldFailSetSystemStateRequests()) {
                 req.setError(ErrorCode.GENERAL_ERROR, "Dummy node configured to fail setSystemState() calls");
@@ -527,7 +527,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void rpc_setSystemState2(Request req) {
+    private void rpc_setSystemState2(Request req) {
         try{
             if (shouldFailSetSystemStateRequests()) {
                 req.setError(ErrorCode.GENERAL_ERROR, "Dummy node configured to fail setSystemState2() calls");
@@ -550,7 +550,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void rpc_setDistributionStates(Request req) {
+    private void rpc_setDistributionStates(Request req) {
         try {
             if (shouldFailSetSystemStateRequests()) {
                 req.setError(ErrorCode.GENERAL_ERROR, "Dummy node configured to fail setDistributionStates() calls");
@@ -573,7 +573,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void rpc_activateClusterStateVersion(Request req) {
+    private void rpc_activateClusterStateVersion(Request req) {
         try {
             if (shouldFailSetSystemStateRequests()) {
                 // We assume that failing setDistributionStates also implies failing version activations

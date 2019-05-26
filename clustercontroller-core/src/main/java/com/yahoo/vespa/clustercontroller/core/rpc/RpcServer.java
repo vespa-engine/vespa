@@ -139,25 +139,25 @@ public class RpcServer {
 
 
     public void addMethods() {
-        Method m = new Method("getMaster", "", "is", this, "queueRpcRequest");
+        Method m = new Method("getMaster", "", "is", this::queueRpcRequest);
         m.methodDesc("Get index of current fleetcontroller master");
         m.returnDesc(0, "masterindex", "The index of the current master according to this node, or -1 if there is none.");
         m.returnDesc(1, "description", "A textual field, used for additional information, such as why there is no master.");
         supervisor.addMethod(m);
 
-        m = new Method("getNodeList", "", "SS", this, "queueRpcRequest");
+        m = new Method("getNodeList", "", "SS", this::queueRpcRequest);
         m.methodDesc("Get list of connection-specs to all nodes in the system");
         m.returnDesc(0, "distributors", "connection-spec of all distributor-nodes (empty string for unknown nodes)");
         m.returnDesc(1, "storagenodes", "connection-spec of all storage-nodes, (empty string for unknown nodes)");
         supervisor.addMethod(m);
 
-        m = new Method("getSystemState", "", "ss", this, "queueRpcRequest");
+        m = new Method("getSystemState", "", "ss", this::queueRpcRequest);
         m.methodDesc("Get nodeState of all nodes and the system itself");
         m.returnDesc(0, "systemstate", "nodeState string of system");
         m.returnDesc(1, "nodestate", "nodeState-string for distributor and storage-nodes");
         supervisor.addMethod(m);
 
-        m = new Method("getNodeState", "si", "ssss", this, "queueRpcRequest");
+        m = new Method("getNodeState", "si", "ssss", this::queueRpcRequest);
         m.methodDesc("Get nodeState of a node");
         m.paramDesc(0, "nodeType", "Type of node. Should be 'storage' or 'distributor'");
         m.paramDesc(1, "nodeIndex", "The node index");
@@ -167,7 +167,7 @@ public class RpcServer {
         m.returnDesc(3, "rpcAddress", "This nodes RPC server address");
         supervisor.addMethod(m);
 
-        m = new Method("setNodeState", "ss", "s", this, "queueRpcRequest");
+        m = new Method("setNodeState", "ss", "s", this::queueRpcRequest);
         m.methodDesc("Set nodeState of a node");
         m.paramDesc(0, "slobrokAddress", "Slobrok address of node");
         m.paramDesc(1, "nodeState", "Desired nodeState of the node (complete nodeState string - [key:value ]*)");
@@ -176,7 +176,7 @@ public class RpcServer {
     }
 
     // Called by rpc
-    public void queueRpcRequest(Request req) {
+    private void queueRpcRequest(Request req) {
         synchronized(monitor) {
             req.detach();
             rpcRequests.add(req);

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
+
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
     public static byte[] serializeSearchRequest(Query query, String serverId) {
@@ -87,7 +88,7 @@ public class ProtobufSerialization {
         }
 
         var featureMap = ranking.getFeatures().asMap();
-        MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
+        MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
         mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
@@ -101,8 +102,10 @@ public class ProtobufSerialization {
         }
     }
 
-    public static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query, String serverId, String summaryClass,
-            boolean includeQueryData) {
+    public static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
+                                                                                  String serverId,
+                                                                                  String summaryClass,
+                                                                                  boolean includeQueryData) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
                 .setTimeout((int) query.getTimeLeft())
                 .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
@@ -146,7 +149,7 @@ public class ProtobufSerialization {
         if (ranking.getLocation() != null) {
             builder.setGeoLocation(ranking.getLocation().toString());
         }
-        MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
+        MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
         if (query.getPresentation().getHighlight() != null) {
             MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
@@ -165,8 +168,12 @@ public class ProtobufSerialization {
         return result;
     }
 
-    private static Result convertToResult(Query query, SearchProtocol.SearchReply protobuf, DocumentDatabase documentDatabase, int partId,
-            int distKey, String source) {
+    private static Result convertToResult(Query query,
+                                          SearchProtocol.SearchReply protobuf,
+                                          DocumentDatabase documentDatabase,
+                                          int partId,
+                                          int distKey,
+                                          String source) {
         var result = new Result(query);
 
         result.setTotalHitCount(protobuf.getTotalHitCount());
@@ -269,12 +276,14 @@ public class ProtobufSerialization {
         }
     }
 
-    private static void mergeRankProperties(Ranking ranking, Consumer<StringProperty.Builder> stringProperties,
-            Consumer<TensorProperty.Builder> tensorProperties) {
+    private static void mergeRankProperties(Ranking ranking,
+                                            Consumer<StringProperty.Builder> stringProperties,
+                                            Consumer<TensorProperty.Builder> tensorProperties) {
         MapConverter.convertMultiMap(ranking.getProperties().asMap(), propB -> {
             if (!GetDocSumsPacket.sessionIdKey.equals(propB.getName())) {
                 stringProperties.accept(propB);
             }
         }, tensorProperties);
     }
+
 }

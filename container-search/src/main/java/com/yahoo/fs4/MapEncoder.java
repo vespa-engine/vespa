@@ -64,12 +64,12 @@ public class MapEncoder {
         buffer.putInt(utf8.length);
         buffer.put(utf8);
         buffer.putInt(map.size());
-        for (Map.Entry<String, ?> property : map.entrySet()) {
-            String key = property.getKey();
+        for (Map.Entry<String, ?> entry : map.entrySet()) {
+            String key = entry.getKey();
             utf8 = Utf8.toBytes(key);
             buffer.putInt(utf8.length);
             buffer.put(utf8);
-            Object value = property.getValue();
+            Object value = entry.getValue();
             if (value == null) {
                 utf8 = Utf8.toBytes("");
             } else {

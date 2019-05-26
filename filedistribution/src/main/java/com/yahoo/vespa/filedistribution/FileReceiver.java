@@ -156,27 +156,27 @@ public class FileReceiver {
     }
 
     private void registerMethods() {
-        receiveFileMethod(this).forEach(supervisor::addMethod);
+        receiveFileMethod().forEach(supervisor::addMethod);
     }
 
     // Defined here so that it can be added to supervisor used by client (server will use same connection when calling
     // receiveFile after getting a serveFile method call). handler needs to implement receiveFile* methods
-    private List<Method> receiveFileMethod(Object handler) {
+    private List<Method> receiveFileMethod() {
         List<Method> methods = new ArrayList<>();
-        methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", handler,"receiveFileMeta")
+        methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", this::receiveFileMeta)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
                 .paramDesc(2, "type", "'file' or 'compressed'")
                 .paramDesc(3, "filelength", "length in bytes of file")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
-        methods.add(new Method(RECEIVE_PART_METHOD, "siix", "i", handler,"receiveFilePart")
+        methods.add(new Method(RECEIVE_PART_METHOD, "siix", "i", this::receiveFilePart)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
                 .paramDesc(2, "partid", "relative part number starting at zero")
                 .paramDesc(3, "data", "bytes in this part")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
-        methods.add(new Method(RECEIVE_EOF_METHOD, "silis", "i", handler,"receiveFileEof")
+        methods.add(new Method(RECEIVE_EOF_METHOD, "silis", "i", this::receiveFileEof)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
                 .paramDesc(2, "crc-code", "crc code (xxhash64)")
@@ -209,8 +209,7 @@ public class FileReceiver {
         }
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void receiveFileMeta(Request req) {
+    private void receiveFileMeta(Request req) {
         log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
@@ -235,8 +234,7 @@ public class FileReceiver {
         req.returnValues().add(new Int32Value(sessionId));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void receiveFilePart(Request req) {
+    private void receiveFilePart(Request req) {
         log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
 
         FileReference reference = new FileReference(req.parameters().get(0).asString());
@@ -257,8 +255,7 @@ public class FileReceiver {
         req.returnValues().add(new Int32Value(retval));
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void receiveFileEof(Request req) {
+    private void receiveFileEof(Request req) {
         log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();

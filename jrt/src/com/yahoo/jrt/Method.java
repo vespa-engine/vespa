@@ -83,7 +83,10 @@ public class Method {
      *
      * @throws MethodCreateException if the handler method cannot be
      * resolved.
+     *
+     * @deprecated Use {@link Method#Method(String, String, String, MethodHandler)} instead.
      **/
+    @Deprecated(forRemoval = true)
     public Method(String name, String paramTypes, String returnTypes,
                   Object handler, String handlerMethod) {
 

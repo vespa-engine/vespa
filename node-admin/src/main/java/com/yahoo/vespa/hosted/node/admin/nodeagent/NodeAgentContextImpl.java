@@ -1,13 +1,14 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -238,7 +239,10 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(acl).orElse(Acl.EMPTY),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
                     Optional.ofNullable(dockerNetworking).orElse(DockerNetworking.HOST_NETWORK),
-                    Optional.ofNullable(zoneId).orElseGet(() -> new ZoneId(SystemName.main, Environment.prod, RegionName.defaultName())),
+                    Optional.ofNullable(zoneId).orElseGet(() -> ZoneId.from(Environment.defaultEnvironment(),
+                                                                            RegionName.defaultName(),
+                                                                            CloudName.defaultName(),
+                                                                            SystemName.defaultSystem())),
                     Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
                     Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa")),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
