@@ -44,16 +44,17 @@ public class ContainerResources {
     /**
      * Create container resources from required fields.
      *
-     * @param cpus the amount of vcpu that should be exclusively available to this container. This is a hard limit:
-     *             More than this amlunt will never be available. To allow an unlimited amount use 0.
-     * @param cpuCores the amount of vcpu that should ideally be allocated to this container if there are no other
-     *                 constraints on resources. To allow an unlimited amount use 0.
-     * @param memoryGb the exact amount of memory that must be available to this container.
+     * @param maxVcpu the amount of vcpu that allocation policies should allocate exclusively to this container.
+     *                This is a hard upper limit. To allow an unlimited amount use 0.
+     * @param minVcpu the minimal amount of vcpu dedicated to this container.
+     *                To avoid dedicating any cpu at all, use 0.
+     * @param memoryGb the amount of memory that allocation policies should allocate to this container.
+     *                 This is a hard upper limit. To allow the container to allocate an unlimited amount use 0.
      * @return the container resources encapsulating the parameters
      */
-    public static ContainerResources from(double cpus, double cpuCores, double memoryGb) {
-        return new ContainerResources(cpus,
-                                      (int) Math.round(10 * cpuCores),
+    public static ContainerResources from(double maxVcpu, double minVcpu, double memoryGb) {
+        return new ContainerResources(maxVcpu,
+                                      (int) Math.round(10 * minVcpu),
                                       (long) ((1L << 30) * memoryGb));
     }
 
