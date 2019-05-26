@@ -238,7 +238,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(acl).orElse(Acl.EMPTY),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
                     Optional.ofNullable(dockerNetworking).orElse(DockerNetworking.HOST_NETWORK),
-                    Optional.ofNullable(zoneId).orElseGet(() -> new ZoneId(SystemName.dev, Environment.dev, RegionName.defaultName())),
+                    Optional.ofNullable(zoneId).orElseGet(() -> new ZoneId(SystemName.main, Environment.prod, RegionName.defaultName())),
                     Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
                     Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa")),
                     Optional.ofNullable(vespaUser).orElse("vespa"),

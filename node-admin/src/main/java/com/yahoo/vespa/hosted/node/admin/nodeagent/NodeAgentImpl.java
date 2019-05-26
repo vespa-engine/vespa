@@ -366,8 +366,8 @@ public class NodeAgentImpl implements NodeAgent {
                 .orElse(containerCpuCap)
                 .value() * node.getMinCpuCores();
 
-        if ( contextSupplier.currentContext().zoneId().environment() == Environment.dev)
-            return ContainerResources.from(0, 0, node.getMinMainMemoryAvailableGb()); // Don't limit cpu in dev
+        if ( contextSupplier.currentContext().zoneId().environment() == Environment.dev) // don't limit cpu
+            return ContainerResources.from(0, 0, node.getMinMainMemoryAvailableGb());
         else
             return ContainerResources.from(cpuCap, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
     }
