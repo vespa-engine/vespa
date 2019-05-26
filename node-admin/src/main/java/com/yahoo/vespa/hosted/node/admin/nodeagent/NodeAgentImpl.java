@@ -570,7 +570,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
-                .withMetric("cpu.vcpus", totalNumCpuCores)
+                .withMetric("cpu.vcpus", node.getMinCpuCores())
                 .withMetric("disk.limit", diskTotalBytes);
 
         diskTotalBytesUsed.ifPresent(diskUsed -> systemMetricsBuilder.withMetric("disk.used", diskUsed));
