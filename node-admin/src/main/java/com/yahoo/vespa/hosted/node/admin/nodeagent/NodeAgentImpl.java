@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -365,7 +366,10 @@ public class NodeAgentImpl implements NodeAgent {
                 .orElse(containerCpuCap)
                 .value() * node.getMinCpuCores();
 
-        return ContainerResources.from(cpuCap, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
+        if ( contextSupplier.currentContext().zoneId().environment() == Environment.dev) // don't limit cpu
+            return ContainerResources.from(0, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
+        else
+            return ContainerResources.from(cpuCap, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
     }
 
 

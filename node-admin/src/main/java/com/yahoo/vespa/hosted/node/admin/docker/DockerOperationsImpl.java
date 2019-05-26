@@ -60,7 +60,7 @@ public class DockerOperationsImpl implements DockerOperations {
         // IPv6 - Assume always valid
         Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().getHostname()).orElseThrow(
                 () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().getHostname() +
-                        ". Missing an AAAA DNS entry?"));
+                                           ". Missing an AAAA DNS entry?"));
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 context.node().getWantedDockerImage().get(), context.containerName())
@@ -76,12 +76,6 @@ public class DockerOperationsImpl implements DockerOperations {
                 //
                 // From experience our Vespa processes require a high limit, say 400k. For all other processes,
                 // we would like to use a much lower limit, say 32k.
-                //
-                // Unfortunately, the Vespa processes runs as the yahoo user which is also used by many non-Vespa
-                // processes. This means all yahoo users must use the high limit. For instance, yinst would start
-                // many yahoo processes along with root processes and other processes. It's non-trivial to get this
-                // exactly right. Instead and for now, we just set a high limit here which will apply to all processes
-                // in the container, unless explicitly modified.
                 .withUlimit("nproc", 409_600, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
