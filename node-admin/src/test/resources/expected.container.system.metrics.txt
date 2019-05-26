@@ -15,7 +15,7 @@ s:
         "disk.used": 39625000000,
         "cpu.sys.util": 3.402,
         "disk.util": 15.85,
-        "cpu.vcpus": 8,
+        "cpu.vcpus": 2.0,
         "cpu.util": 5.4,
         "mem.util": 25.0,
         "disk.limit": 250000000000
