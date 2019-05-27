@@ -92,12 +92,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeSpec requestedNodes;
         if ( requestedCapacity.type() == NodeType.tenant) {
             int nodeCount = application.instance().isTester() ? 1 : capacityPolicies.decideSize(requestedCapacity, cluster.type());
-
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            NodeResources resources = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
-            log.log(LogLevel.DEBUG, () -> "Decided node resources for requested tenant nodes: " + resources);
+            NodeResources resources = capacityPolicies.decideNodeResources(requestedCapacity.nodeResources(), cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
             requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());

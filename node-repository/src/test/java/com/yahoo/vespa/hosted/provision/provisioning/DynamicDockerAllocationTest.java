@@ -354,6 +354,25 @@ public class DynamicDockerAllocationTest {
         }
     }
 
+    @Test
+    public void nodeResourcesAreRelaxedInDev() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        NodeResources resources = new NodeResources(1, 1, 1, NodeResources.DiskSpeed.fast);
+
+        List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
+        assertEquals(1, hosts.size());
+        tester.activate(application, hosts);
+        assertEquals(0.1, hosts.get(0).flavor().get().resources().vcpu(), 0.000001);
+        assertEquals("Slow nodes are allowed in dev and preferred because they are cheaper",
+                     NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
+    }
+
     private ApplicationId makeApplicationId(String tenant, String appName) {
         return ApplicationId.from(tenant, appName, "default");
     }
