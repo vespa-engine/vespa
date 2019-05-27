@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/document/util/queue.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -169,12 +170,16 @@ Fusion::mergeFields(vespalib::ThreadExecutor & executor)
 {
     const Schema &schema = getSchema();
     std::atomic<uint32_t> failed(0);
+    uint32_t maxConcurrentThreads = std::max(1ul, executor.getNumThreads()/2);
+    document::Semaphore concurrent(maxConcurrentThreads);
     vespalib::CountDownLatch  done(schema.getNumIndexFields());
     for (SchemaUtil::IndexIterator iter(schema); iter.isValid(); ++iter) {
-        executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done]() {
+        concurrent.wait();
+        executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done, &concurrent]() {
             if (!mergeField(index)) {
                 failed++;
             }
+            concurrent.post();
             done.countDown();
         }));
     }
