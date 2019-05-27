@@ -4,15 +4,15 @@
 
 #include "enumstorebase.h"
 #include <vespa/searchlib/util/foldedstringcompare.h>
+#include <vespa/vespalib/btree/btreenode.h>
+#include <vespa/vespalib/btree/btreenodeallocator.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreebuilder.h>
+#include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
-#include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/btree/btreenode.h>
-#include <vespa/searchlib/btree/btreenodeallocator.h>
-#include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/btree/btreebuilder.h>
 
 namespace search {
 

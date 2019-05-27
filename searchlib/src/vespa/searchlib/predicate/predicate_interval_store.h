@@ -3,8 +3,8 @@
 #pragma once
 
 #include "predicate_ref_cache.h"
-#include <vespa/searchlib/datastore/bufferstate.h>
-#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/vespalib/datastore/bufferstate.h>
+#include <vespa/vespalib/datastore/datastore.h>
 #include <vector>
 
 namespace search::predicate {

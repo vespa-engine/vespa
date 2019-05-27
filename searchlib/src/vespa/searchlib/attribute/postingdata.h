@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/btree_key_data.h>
+#include <vespa/vespalib/btree/btree_key_data.h>
 
 namespace search {
 

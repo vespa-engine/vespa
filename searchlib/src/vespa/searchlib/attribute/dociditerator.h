@@ -3,7 +3,7 @@
 #pragma once
 
 #include "postingdata.h"
-#include <vespa/searchlib/btree/minmaxaggregated.h>
+#include <vespa/vespalib/btree/minmaxaggregated.h>
 #include <algorithm>
 
 namespace search {

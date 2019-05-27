@@ -6,10 +6,12 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     alloc.cpp
     approx.cpp
     array.cpp
+    assert.cpp
     backtrace.cpp
     barrier.cpp
     benchmark_timer.cpp
     blockingthreadstackexecutor.cpp
+    bufferwriter.cpp
     box.cpp
     classname.cpp
     closuretask.cpp

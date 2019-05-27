@@ -14,10 +14,10 @@
 #include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/parsequery/parse.h>

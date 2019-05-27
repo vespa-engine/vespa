@@ -4,7 +4,7 @@
 #include "postinglistsearchcontext.hpp"
 #include "attributeiterators.hpp"
 #include "diversity.hpp"
-#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
 
 namespace search::attribute {
 

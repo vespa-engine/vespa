@@ -9,7 +9,6 @@ vespa_define_module(
 
     TESTS
     src/tests/array
-    src/tests/assert
     src/tests/benchmark
     src/tests/bits
     src/tests/clock

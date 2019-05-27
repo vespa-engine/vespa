@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/btreestore.h>
+#include <vespa/vespalib/btree/btreestore.h>
 
 namespace search::attribute {
 

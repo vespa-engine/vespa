@@ -21,8 +21,10 @@ vespa_define_module(
     src/tests/array
     src/tests/arrayqueue
     src/tests/arrayref
+    src/tests/assert
     src/tests/barrier
     src/tests/benchmark_timer
+    src/tests/btree
     src/tests/box
     src/tests/closure
     src/tests/component
@@ -35,6 +37,11 @@ vespa_define_module(
     src/tests/data/output_writer
     src/tests/data/simple_buffer
     src/tests/data/smart_buffer
+    src/tests/datastore/array_store
+    src/tests/datastore/array_store_config
+    src/tests/datastore/buffer_type
+    src/tests/datastore/datastore
+    src/tests/datastore/unique_store
     src/tests/delegatelist
     src/tests/dotproduct
     src/tests/drop-file-from-cache
@@ -127,9 +134,11 @@ vespa_define_module(
 
     LIBS
     src/vespa/vespalib
+    src/vespa/vespalib/btree
     src/vespa/vespalib/component
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
+    src/vespa/vespalib/datastore
     src/vespa/vespalib/geo
     src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io

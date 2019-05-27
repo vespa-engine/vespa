@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/btree_key_data.h>
+#include <vespa/vespalib/btree/btree_key_data.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/arrayref.h>
 
