@@ -10,6 +10,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -100,11 +101,12 @@ public class RemoteSessionRepoTest {
     public void testBadApplicationRepoOnActivate() {
         long sessionId = 3L;
         TenantName mytenant = TenantName.from("mytenant");
-        TenantApplications applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), mytenant);
+        GlobalComponentRegistry registry = new TestComponentRegistry.Builder().curator(curator).build();
+        TenantApplications applicationRepo = TenantApplications.create(registry, new MockReloadHandler(), mytenant);
         curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
-        Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder().curator(curator).build(), mytenant)
-                .withApplicationRepo(applicationRepo)
-                .build();
+        Tenant tenant = TenantBuilder.create(registry, mytenant)
+                                     .withApplicationRepo(applicationRepo)
+                                     .build();
         curator.create(TenantRepository.getSessionsPath(mytenant));
         remoteSessionRepo = tenant.getRemoteSessionRepo();
         assertThat(remoteSessionRepo.listSessions().size(), is(0));

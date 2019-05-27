@@ -2,8 +2,10 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
@@ -17,6 +19,7 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Interface representing all global config server components used within the config server.
@@ -40,6 +43,7 @@ public interface GlobalComponentRegistry {
     Zone getZone();
     Clock getClock();
     ConfigServerDB getConfigServerDB();
+    StripedExecutor<TenantName> getZkWatcherExecutor();
     FlagSource getFlagSource();
-
+    ExecutorService getZkCacheExecutor();
 }

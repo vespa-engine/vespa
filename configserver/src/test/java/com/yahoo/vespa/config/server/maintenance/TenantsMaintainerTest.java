@@ -37,6 +37,7 @@ public class TenantsMaintainerTest {
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
 
         new TenantsMaintainer(applicationRepository, tester.curator(), Duration.ofDays(1)).run();
+        tenantRepository.updateTenants();
 
         // One tenant should now have been deleted
         assertNull(tenantRepository.getTenant(shouldBeDeleted));

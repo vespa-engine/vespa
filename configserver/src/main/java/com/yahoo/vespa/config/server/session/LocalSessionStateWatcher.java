@@ -2,11 +2,11 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -21,17 +21,18 @@ import java.util.logging.Logger;
 public class LocalSessionStateWatcher {
 
     private static final Logger log = Logger.getLogger(LocalSessionStateWatcher.class.getName());
-    // One thread pool for all instances of this class
-    private static final Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(LocalSessionStateWatcher.class.getName()));
 
     private final Curator.FileCache fileCache;
     private final LocalSession session;
     private final LocalSessionRepo localSessionRepo;
+    private final Executor zkWatcherExecutor;
 
-    LocalSessionStateWatcher(Curator.FileCache fileCache, LocalSession session, LocalSessionRepo localSessionRepo) {
+    LocalSessionStateWatcher(Curator.FileCache fileCache, LocalSession session,
+                             LocalSessionRepo localSessionRepo, Executor zkWatcherExecutor) {
         this.fileCache = fileCache;
         this.session = session;
         this.localSessionRepo = localSessionRepo;
+        this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileCache.start();
         this.fileCache.addListener(this::nodeChanged);
     }
@@ -60,7 +61,7 @@ public class LocalSessionStateWatcher {
     }
 
     public void nodeChanged() {
-        executor.execute(() -> {
+        zkWatcherExecutor.execute(() -> {
             try {
                 ChildData data = fileCache.getCurrentData();
                 if (data != null) {

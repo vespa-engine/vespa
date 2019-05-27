@@ -217,7 +217,7 @@ public class SessionPreparerTest {
         return new SessionContext(app,
                                   new SessionZooKeeperClient(curator, sessionsPath),
                                   app.getAppDir(),
-                                  TenantApplications.create(curator, new MockReloadHandler(), TenantName.from("tenant")),
+                                  TenantApplications.create(componentRegistry, new MockReloadHandler(), TenantName.from("tenant")),
                                   new HostRegistry<>(),
                                   flagSource);
     }

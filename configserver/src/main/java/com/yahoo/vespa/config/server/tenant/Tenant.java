@@ -142,15 +142,20 @@ public class Tenant implements TenantHandlerProvider {
     }
 
     /**
-     * Closes any watchers, thread pools that may react to changes in tenant state, and removes any state
-     * in filesystem and zookeeper
+     * Closes any watchers, thread pools that may react to changes in tenant state,
+     * and removes any session data in filesystem and zookeeper.
+     * Called by watchers as a reaction to {@link #delete()}.
      */
-    public void close() {
-        tenantFileSystemDirs.delete();
-        remoteSessionRepo.close();
-        applicationRepo.close();
-        localSessionRepo.deleteAllSessions();
-        curator.delete(path);
+    void close() {
+        tenantFileSystemDirs.delete();          // Deletes all local files.
+        remoteSessionRepo.close();              // Closes watchers and clears memory.
+        applicationRepo.close();                // Closes watchers.
+        localSessionRepo.deleteAllSessions();   // Closes watchers, clears memory, and deletes some local files and ZK session state.
+    }
+
+    /** Deletes the tenant tree from ZooKeeper (application and session status for the tenant) and triggers {@link #close()}. */
+    void delete() {
+        curator.delete(path);                   // Deletes tenant ZK tree: applications and sessions.
     }
 
 }

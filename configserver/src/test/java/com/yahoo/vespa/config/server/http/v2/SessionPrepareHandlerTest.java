@@ -88,7 +88,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .withSessionFactory(new MockSessionFactory())
                 .withLocalSessionRepo(localRepo)
                 .withRemoteSessionRepo(remoteSessionRepo)
-                .withApplicationRepo(TenantApplications.create(curator, new MockReloadHandler(), tenant));
+                .withApplicationRepo(TenantApplications.create(componentRegistry, new MockReloadHandler(), tenant));
         tenantRepository.addTenant(tenantBuilder);
     }
 

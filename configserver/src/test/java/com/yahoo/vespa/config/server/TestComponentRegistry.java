@@ -3,9 +3,13 @@ package com.yahoo.vespa.config.server;
 
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
@@ -17,6 +21,7 @@ import com.yahoo.vespa.config.server.session.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantRequestHandlerTest;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -28,6 +33,8 @@ import com.yahoo.vespa.model.VespaModelFactory;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
@@ -51,6 +58,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Zone zone;
     private final Clock clock;
     private final ConfigServerDB configServerDB;
+    private final StripedExecutor<TenantName> zkWatcherExecutor;
+    private final ExecutorService zkCacheExecutor;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
@@ -81,6 +90,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
+        this.zkWatcherExecutor = new StripedExecutor<>(new InThreadExecutorService());
+        this.zkCacheExecutor = new InThreadExecutorService();
     }
 
     public static class Builder {
@@ -90,6 +101,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                        .sessionLifetime(5)
                         .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private TenantRequestHandlerTest.MockReloadListener reloadListener = new TenantRequestHandlerTest.MockReloadListener();
@@ -194,8 +206,19 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
+
+    @Override
+    public StripedExecutor<TenantName> getZkWatcherExecutor() {
+        return zkWatcherExecutor;
+    }
+
     @Override
     public FlagSource getFlagSource() { return new InMemoryFlagSource(); }
+
+    @Override
+    public ExecutorService getZkCacheExecutor() {
+        return zkCacheExecutor;
+    }
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
