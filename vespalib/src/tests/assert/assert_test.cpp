@@ -16,19 +16,19 @@ TEST("that it borks the first time.") {
     vespalib::rmdir("var", true);
     ASSERT_TRUE(vespalib::mkdir(assertDir, true));
     {
-        SlaveProc proc("ulimit -c 0 && exec env VESPA_HOME=./ ./staging_vespalib_asserter_app myassert 10000");
+        SlaveProc proc("ulimit -c 0 && exec env VESPA_HOME=./ ./vespalib_asserter_app myassert 10000");
         proc.wait();
         ASSERT_EQUAL(proc.getExitCode() & 0x7f, 6);
     }
     {
-        SlaveProc proc("ulimit -c 0 && exec env VESPA_HOME=./ ./staging_vespalib_asserter_app myassert 10000");
+        SlaveProc proc("ulimit -c 0 && exec env VESPA_HOME=./ ./vespalib_asserter_app myassert 10000");
         proc.readLine(assertName);
         proc.wait();
         ASSERT_EQUAL(proc.getExitCode() & 0x7f, 0);
     }
     ASSERT_EQUAL(0, unlink(assertName.c_str()));
     {
-        SlaveProc proc("ulimit -c 0 && exec env VESPA_HOME=./ ./staging_vespalib_asserter_app myassert 10000");
+        SlaveProc proc("ulimit -c 0 && exec env VESPA_HOME=./ ./vespalib_asserter_app myassert 10000");
         proc.wait();
         ASSERT_EQUAL(proc.getExitCode() & 0x7f, 6);
     }
