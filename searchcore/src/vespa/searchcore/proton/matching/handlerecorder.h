@@ -7,6 +7,8 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/noncopyable.hpp>
 
+namespace search::fef { class MatchData; }
+
 namespace proton::matching {
 
 /**
@@ -37,6 +39,7 @@ public:
     static void register_handle(search::fef::TermFieldHandle handle,
                                 search::fef::MatchDataDetails requested_details);
     vespalib::string to_string() const;
+    void tag_match_data(search::fef::MatchData &match_data);
 private:
     void add(search::fef::TermFieldHandle handle,
              search::fef::MatchDataDetails requested_details);

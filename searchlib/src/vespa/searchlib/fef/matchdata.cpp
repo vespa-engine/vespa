@@ -15,7 +15,7 @@ void
 MatchData::soft_reset()
 {
     for (auto &tfmd: _termFields) {
-        tfmd.resetOnlyDocId(TermFieldMatchData::invalidId()).tagAsNeeded();
+        tfmd.resetOnlyDocId(TermFieldMatchData::invalidId());
     }
     _termwise_limit = 1.0;
 }
