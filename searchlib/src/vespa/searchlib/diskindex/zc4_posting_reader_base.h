@@ -9,7 +9,7 @@
 
 namespace search::diskindex {
 
-class Zc4PostingHeader;
+struct Zc4PostingHeader;
 
 /*
  * Base class for reading posting lists that might have basic skip info.
