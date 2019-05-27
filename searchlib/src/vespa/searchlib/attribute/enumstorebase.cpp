@@ -118,11 +118,11 @@ EnumStoreBase::getMemoryUsage() const
     return _store.getMemoryUsage();
 }
 
-AddressSpace
+vespalib::AddressSpace
 EnumStoreBase::getAddressSpaceUsage() const
 {
     const datastore::BufferState &activeState = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
-    return AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
+    return vespalib::AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
 }
 
 void

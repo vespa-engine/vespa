@@ -3,7 +3,7 @@
 #pragma once
 
 #include "bufferstate.h"
-#include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
@@ -230,7 +230,7 @@ public:
 
     vespalib::MemoryUsage getMemoryUsage() const;
 
-    AddressSpace getAddressSpaceUsage() const;
+    vespalib::AddressSpace getAddressSpaceUsage() const;
 
     /**
      * Get active buffer id for the given type id.

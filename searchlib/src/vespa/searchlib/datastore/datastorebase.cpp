@@ -314,7 +314,7 @@ DataStoreBase::getMemStats() const
     return stats;
 }
 
-AddressSpace
+vespalib::AddressSpace
 DataStoreBase::getAddressSpaceUsage() const
 {
     size_t usedArrays = 0;
@@ -336,7 +336,7 @@ DataStoreBase::getAddressSpaceUsage() const
             LOG_ABORT("should not be reached");
         }
     }
-    return AddressSpace(usedArrays, deadArrays, limitArrays);
+    return vespalib::AddressSpace(usedArrays, deadArrays, limitArrays);
 }
 
 void

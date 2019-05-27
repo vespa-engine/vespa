@@ -4,17 +4,17 @@
 
 namespace proton {
 
-AddressSpaceUsageStats::AddressSpaceUsageStats(const search::AddressSpace & usage)
+AddressSpaceUsageStats::AddressSpaceUsageStats(const vespalib::AddressSpace & usage)
     : _usage(usage),
       _attributeName(),
       _subDbName()
 {
 }
 
-AddressSpaceUsageStats::~AddressSpaceUsageStats() {}
+AddressSpaceUsageStats::~AddressSpaceUsageStats() = default;
 
 void
-AddressSpaceUsageStats::merge(const search::AddressSpace &usage,
+AddressSpaceUsageStats::merge(const vespalib::AddressSpace &usage,
                               const vespalib::string &attributeName,
                               const vespalib::string &subDbName)
 {

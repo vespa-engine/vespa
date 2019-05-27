@@ -790,6 +790,7 @@ EnumStoreTest::requireThatAddressSpaceUsageIsReported()
     const size_t ADDRESS_LIMIT = 34359738368; // NumericEnumStore::DataStoreType::RefType::offsetSize()
     NumericEnumStore store(200, false);
 
+    using vespalib::AddressSpace;
     EXPECT_EQUAL(AddressSpace(16, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     NumericEnumStore::Index idx1 = addEnum(store, 10);
     EXPECT_EQUAL(AddressSpace(32, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());

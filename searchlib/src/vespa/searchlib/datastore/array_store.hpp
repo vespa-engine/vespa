@@ -169,7 +169,7 @@ ArrayStore<EntryT, RefT>::compactWorst(bool compactMemory, bool compactAddressSp
 }
 
 template <typename EntryT, typename RefT>
-AddressSpace
+vespalib::AddressSpace
 ArrayStore<EntryT, RefT>::addressSpaceUsage() const
 {
     return _store.getAddressSpaceUsage();

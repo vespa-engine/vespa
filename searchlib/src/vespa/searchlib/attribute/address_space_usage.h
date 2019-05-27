@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/address_space.h>
 
 namespace search {
 
@@ -12,17 +12,17 @@ namespace search {
 class AddressSpaceUsage
 {
 private:
-    AddressSpace _enumStoreUsage;
-    AddressSpace _multiValueUsage;
+    vespalib::AddressSpace _enumStoreUsage;
+    vespalib::AddressSpace _multiValueUsage;
 
 public:
     AddressSpaceUsage();
-    AddressSpaceUsage(const AddressSpace &enumStoreUsage_,
-                      const AddressSpace &multiValueUsage_);
-    static AddressSpace defaultEnumStoreUsage();
-    static AddressSpace defaultMultiValueUsage();
-    const AddressSpace &enumStoreUsage() const { return _enumStoreUsage; }
-    const AddressSpace &multiValueUsage() const { return _multiValueUsage; }
+    AddressSpaceUsage(const vespalib::AddressSpace &enumStoreUsage_,
+                      const vespalib::AddressSpace &multiValueUsage_);
+    static vespalib::AddressSpace defaultEnumStoreUsage();
+    static vespalib::AddressSpace defaultMultiValueUsage();
+    const vespalib::AddressSpace &enumStoreUsage() const { return _enumStoreUsage; }
+    const vespalib::AddressSpace &multiValueUsage() const { return _multiValueUsage; }
 
 };
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <functional>
 
@@ -24,7 +24,7 @@ protected:
     RefVector _indices;
     size_t    _totalValues;
     vespalib::MemoryUsage _cachedArrayStoreMemoryUsage;
-    AddressSpace _cachedArrayStoreAddressSpaceUsage;
+    vespalib::AddressSpace _cachedArrayStoreAddressSpaceUsage;
 
     MultiValueMappingBase(const vespalib::GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMappingBase();
@@ -36,7 +36,7 @@ public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual vespalib::MemoryUsage getArrayStoreMemoryUsage() const = 0;
-    virtual AddressSpace getAddressSpaceUsage() const = 0;
+    virtual vespalib::AddressSpace getAddressSpaceUsage() const = 0;
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage updateStat();
     size_t getTotalValueCnt() const { return _totalValues; }
