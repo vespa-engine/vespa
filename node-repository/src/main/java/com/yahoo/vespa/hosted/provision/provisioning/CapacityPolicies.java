@@ -61,25 +61,55 @@ public class CapacityPolicies {
         if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
             return requestedResources.get();
 
-        NodeResources defaultResources = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
         if (requestedResources.isEmpty())
-            return defaultResources;
+            return defaultNodeResources();
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultResources;
+            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultNodeResources();
         else {
             switch (zone.environment()) {
-                case dev: case test: case staging: return defaultResources;
+                case dev: case test: case staging: return defaultNodeResources();
                 default:
-                    // Check existence of the legacy specified flavor
-                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get());
+                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
                     // Return this spec containing the legacy flavor name, not the flavor's capacity object
                     // which describes the flavors capacity, as the point of legacy allocation is to match
                     // by name, not by resources
                     return requestedResources.get();
             }
         }
+    }
+
+    private NodeResources defaultNodeResources() {
+        /*
+CD_DEV_CD_US_CENTRAL_1: d_2_8_50
+CD_DEV_CD_US_WEST_1: d_1_4_50
+CD_PROD_AWS_US_EAST_1A: d_2_8_50
+CD_PROD_CD_US_CENTRAL_1: d_2_8_50
+CD_PROD_CD_US_WEST_1: d_2_8_50
+CD_TEST_CD_US_CENTRAL_1: d_4_4_50, admin: d_1_3_50
+CD_STAGING_CD_US_CENTRAL_1: d_4_4_50, admin: d_1_3_50
+MAIN_DEV_AWS_US_EAST_2A: d_2_8_50
+MAIN_DEV_US_EAST_1: d_2_8_50
+MAIN_PERF_US_EAST_3: d_2_8_50
+MAIN_PROD_AWS_US_EAST_1A: d_2_8_50
+MAIN_PROD_AWS_US_EAST_1B: d_2_8_50
+MAIN_PROD_AWS_US_WEST_2A: d_2_8_50
+MAIN_PROD_US_EAST_3: d_2_8_50
+MAIN_TEST_US_EAST_1: d_2_8_50
+MAIN_PROD_US_WEST_1: d_2_8_50
+MAIN_PROD_US_CENTRAL_1: d_2_8_50
+MAIN_PROD_EU_WEST_1: d_2_8_50
+MAIN_PROD_AP_NORTHEAST_1: d_2_8_50
+MAIN_PROD_AP_NORTHEAST_2: d_2_8_50
+MAIN_STAGING_US_EAST_3: d_2_8_50
+MAIN_PROD_AP_SOUTHEAST_1: d_2_8_50
+PUBLIC_CD_PROD_AWS_US_EAST_1C: d_2_8_50
+PUBLIC_CD_TEST_AWS_US_EAST_1C: d_2_8_50, admin: d_1_3_50
+PUBLIC_CD_STAGING_AWS_US_EAST_1C: d_2_8_50, admin: d_1_3_50
+VAAS_DEV_AWS_US_EAST_1B: d_2_8_50
+         */
+
     }
 
     /**
