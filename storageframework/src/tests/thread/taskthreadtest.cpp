@@ -40,7 +40,7 @@ TEST(TaskThreadTest, test_normal_usage)
     t.addTask(Task("d", 4));
     EXPECT_TRUE(t.empty()); // Still empty before critical tick has run
     dynamic_cast<TickingThread&>(t).doCriticalTick(0);
-    EXPECT_TRUE(!t.empty());
+    ASSERT_TRUE(!t.empty());
     EXPECT_EQ(3, t.peek().getPriority());
     std::ostringstream ost;
     while (!t.empty()) {
