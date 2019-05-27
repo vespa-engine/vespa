@@ -1,42 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
-
-struct TickingThreadTest : public CppUnit::TestFixture
-{
-    void testTicksBeforeWaitBasic();
-    void testTicksBeforeWaitLiveUpdate();
-    void testDestroyWithoutStarting();
-    void testVerboseStopping();
-    void testStopOnDeletion();
-    void testLockAllTicks();
-    void testLockCriticalTicks();
-    void testFailsOnStartWithoutThreads();
-    void testBroadcast();
-
-    CPPUNIT_TEST_SUITE(TickingThreadTest);
-    CPPUNIT_TEST(testTicksBeforeWaitBasic);
-    CPPUNIT_TEST(testTicksBeforeWaitLiveUpdate);
-    CPPUNIT_TEST(testDestroyWithoutStarting);
-    CPPUNIT_TEST(testVerboseStopping);
-    CPPUNIT_TEST(testStopOnDeletion);
-    CPPUNIT_TEST(testLockAllTicks);
-    CPPUNIT_TEST(testLockCriticalTicks);
-    CPPUNIT_TEST(testFailsOnStartWithoutThreads);
-    CPPUNIT_TEST(testBroadcast);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(TickingThreadTest);
+namespace storage::framework::defaultimplementation {
 
 namespace {
 
@@ -126,8 +97,7 @@ MyApp::~MyApp() { }
 
 }
 
-void
-TickingThreadTest::testTicksBeforeWaitBasic()
+TEST(TickingThreadTest, test_ticks_before_wait_basic)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -142,12 +112,11 @@ TickingThreadTest::testTicksBeforeWaitBasic()
         FastOS_Thread::Sleep(1);
         totalSleepMs++;
     }
-    CPPUNIT_ASSERT(totalSleepMs > 10);
+    EXPECT_GT(totalSleepMs, 10);
     app._threadPool->stop();
 }
 
-void
-TickingThreadTest::testTicksBeforeWaitLiveUpdate()
+TEST(TickingThreadTest, test_ticks_before_wait_live_update)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -168,13 +137,12 @@ TickingThreadTest::testTicksBeforeWaitLiveUpdate()
         FastOS_Thread::Sleep(1);
     }
 
-    CPPUNIT_ASSERT(maxAttempts>0);
-    CPPUNIT_ASSERT(app.getTotalNonCritTicks() >= ticksBeforeWaitMs);
+    EXPECT_GT(maxAttempts, 0);
+    EXPECT_GE(app.getTotalNonCritTicks(), ticksBeforeWaitMs);
     app._threadPool->stop();
 }
 
-void
-TickingThreadTest::testDestroyWithoutStarting()
+TEST(TickingThreadTest, test_destroy_without_starting)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -182,8 +150,7 @@ TickingThreadTest::testDestroyWithoutStarting()
     MyApp app(threadCount, true);
 }
 
-void
-TickingThreadTest::testVerboseStopping()
+TEST(TickingThreadTest, test_verbose_stopping)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -196,8 +163,7 @@ TickingThreadTest::testVerboseStopping()
     app._threadPool->stop();
 }
 
-void
-TickingThreadTest::testStopOnDeletion()
+TEST(TickingThreadTest, test_stop_on_deletion)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -209,8 +175,7 @@ TickingThreadTest::testStopOnDeletion()
     }
 }
 
-void
-TickingThreadTest::testLockAllTicks()
+TEST(TickingThreadTest, test_lock_all_ticks)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -231,15 +196,14 @@ TickingThreadTest::testLockAllTicks()
         while (app2.getMinCritTick() < 2 * ticks2 / threadCount) {
             FastOS_Thread::Sleep(1);
         }
-        CPPUNIT_ASSERT_EQUAL(ticks1, app1.getTotalTicks());
+        EXPECT_EQ(ticks1, app1.getTotalTicks());
     }
     while (app1.getMinCritTick() < 2 * ticks1 / threadCount) {
         FastOS_Thread::Sleep(1);
     }
 }
 
-void
-TickingThreadTest::testLockCriticalTicks()
+TEST(TickingThreadTest, test_lock_critical_ticks)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -263,13 +227,12 @@ TickingThreadTest::testLockCriticalTicks()
             for (int j=0; j<threadCount; ++j) {
                 ++app._context[j]._critTickCount;
             }
-            CPPUNIT_ASSERT(!app.hasCritOverlap());
+            EXPECT_TRUE(!app.hasCritOverlap());
         }
     }
 }
 
-void
-TickingThreadTest::testFailsOnStartWithoutThreads()
+TEST(TickingThreadTest, test_fails_on_start_without_threads)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -277,11 +240,10 @@ TickingThreadTest::testFailsOnStartWithoutThreads()
     MyApp app(threadCount, true);
     try{
         app.start(testReg.getThreadPoolImpl());
-        CPPUNIT_FAIL("Expected starting without threads to fail");
+        FAIL() << "Expected starting without threads to fail";
     } catch (vespalib::Exception& e) {
-        CPPUNIT_ASSERT_EQUAL(vespalib::string(
-                "Makes no sense to start threadpool without threads"),
-                             e.getMessage());
+        EXPECT_EQ(vespalib::string("Makes no sense to start threadpool without threads"),
+                  e.getMessage());
     }
 }
 
@@ -349,9 +311,7 @@ BroadcastApp::~BroadcastApp() {}
 
 }
 
-
-void
-TickingThreadTest::testBroadcast()
+TEST(TickingThreadTest, test_broadcast)
 {
     TestComponentRegister testReg(
             ComponentRegisterImpl::UP(new ComponentRegisterImpl));
@@ -367,6 +327,4 @@ TickingThreadTest::testBroadcast()
     FastOS_Thread::Sleep(1);
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}
