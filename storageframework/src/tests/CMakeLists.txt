@@ -20,7 +20,6 @@ vespa_add_executable(storageframework_testrunner_app TEST
     SOURCES
     testrunner.cpp
     DEPENDS
-    storageframework_teststatus
     storageframework_testthread
 )
 

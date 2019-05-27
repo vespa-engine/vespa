@@ -26,6 +26,5 @@ vespa_define_module(
     TESTS
     src/tests
     src/tests/clock
-    src/tests/status
     src/tests/thread
 )
