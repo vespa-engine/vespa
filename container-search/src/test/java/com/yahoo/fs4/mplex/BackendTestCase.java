@@ -5,14 +5,11 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
-import com.yahoo.fs4.PacketListener;
 import com.yahoo.fs4.PingPacket;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.mplex.Backend.BackendStatistics;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.search.Query;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,6 +30,7 @@ import static org.junit.Assert.fail;
  * @author Steinar Knutsen
  */
 public class BackendTestCase {
+    private static final long TIMEOUT = 30000;
 
     public static class MockDispatch implements Runnable {
 
@@ -52,7 +50,7 @@ public class BackendTestCase {
                 0,0,0,3, 1,1,1,1,1,1,1,1,1,1,1,1, 0x40,0x37,0,0,0,0,0,23, 0,0,0,7, 0,0,0,36,
                 0,0,0,4, 2,2,2,2,2,2,2,2,2,2,2,2, 0x40,0x35,0,0,0,0,0,21, 0,0,0,8, 0,0,0,37};
 
-        public MockDispatch(ServerSocket socket) {
+        MockDispatch(ServerSocket socket) {
             this.socket = socket;
         }
 
@@ -104,16 +102,6 @@ public class BackendTestCase {
 
     }
 
-    public static class MockPacketListener implements PacketListener {
-
-        @Override
-        public void packetSent(FS4Channel channel, BasicPacket packet, ByteBuffer serializedForm) { }
-
-        @Override
-        public void packetReceived(FS4Channel channel, BasicPacket packet, ByteBuffer serializedForm) { }
-
-    }
-
     public static class MockServer {
         public InetSocketAddress host;
         public Thread worker;
@@ -129,11 +117,11 @@ public class BackendTestCase {
 
     }
 
-    Backend backend;
-    MockServer server;
+    private Backend backend;
+    private MockServer server;
     private Logger logger;
     private boolean initUseParent;
-    FS4ResourcePool listeners;
+    private FS4ResourcePool listeners;
 
     public static final byte[] PONG = new byte[] { 0, 0, 0, 32, 0, 0, 0, 221 - 256,
                                                    0,0,0,1, 0, 0, 0, 42, 0, 0, 0, 127, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
@@ -157,6 +145,15 @@ public class BackendTestCase {
         if (logger !=null) logger.setUseParentHandlers(initUseParent);
     }
 
+    private BasicPacket [] read(FS4Channel channel) throws InvalidChannelException {
+        try {
+            return channel.receivePackets(TIMEOUT, 1);
+        } catch (ChannelTimeoutException e) {
+            fail("Could not get packets from simulated backend.");
+        }
+        return new BasicPacket[1];
+    }
+
     @Test
     public void testAll() throws Exception {
         setUp();
@@ -172,52 +169,38 @@ public class BackendTestCase {
         tearDown();
     }
 
-    public void doTestBackend() throws IOException, InvalidChannelException {
+    private void doTestBackend() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openChannel();
         Query q = new Query("/?query=a");
-        BasicPacket[] b = null;
         int channelId = channel.getChannelId();
         server.dispatch.channelId = channelId;
 
         assertTrue(backend.sendPacket(QueryPacket.create("container.0", q), channelId));
-        try {
-            b = channel.receivePackets(1000, 1);
-        } catch (ChannelTimeoutException e) {
-            fail("Could not get packets from simulated backend.");
-        }
+        BasicPacket[] b = read(channel);
         assertEquals(1, b.length);
         assertEquals(217, b[0].getCode());
         channel.close();
     }
 
-    public void doTestPinging() throws IOException, InvalidChannelException {
+    private void doTestPinging() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openPingChannel();
-        BasicPacket[] b = null;
         server.dispatch.setNoChannel();
         server.dispatch.packetData = PONG;
 
         assertTrue(channel.sendPacket(new PingPacket()));
-        try {
-            b = channel.receivePackets(1000, 1);
-        } catch (ChannelTimeoutException e) {
-            fail("Could not get packets from simulated backend.");
-        }
+        BasicPacket[] b = read(channel);
         assertEquals(1, b.length);
         assertEquals(221, b[0].getCode());
         channel.close();
     }
 
-    public void doRequireStatistics() throws IOException, InvalidChannelException {
+    private void doRequireStatistics() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openPingChannel();
         server.dispatch.channelId = -1;
         server.dispatch.packetData = PONG;
 
         assertTrue(channel.sendPacket(new PingPacket()));
-        try {
-            channel.receivePackets(1000, 1);
-        } catch (ChannelTimeoutException e) {
-            fail("Could not get packets from simulated backend.");
-        }
+        read(channel);
         BackendStatistics stats = backend.getStatistics();
         assertEquals(1, stats.totalConnections());
     }
