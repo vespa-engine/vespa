@@ -209,7 +209,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        dockerOperations.createContainer(context, containerData, getContainerResources(context.node()));
+        dockerOperations.createContainer(context, containerData, getContainerResources(context));
         dockerOperations.startContainer(context);
         lastCpuMetric = new CpuUsageReporter();
 
@@ -221,7 +221,7 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> removeContainerIfNeededUpdateContainerState(
             NodeAgentContext context, Optional<Container> existingContainer) {
         if (existingContainer.isPresent()) {
-            Optional<String> reason = shouldRemoveContainer(context.node(), existingContainer.get());
+            Optional<String> reason = shouldRemoveContainer(context, existingContainer.get());
             if (reason.isPresent()) {
                 removeContainer(context, existingContainer.get(), reason.get(), false);
                 return Optional.empty();
@@ -291,28 +291,29 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private Optional<String> shouldRemoveContainer(NodeSpec node, Container existingContainer) {
-        final NodeState nodeState = node.getState();
+    private Optional<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
+        final NodeState nodeState = context.node().getState();
         if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (node.getWantedDockerImage().isPresent() && !node.getWantedDockerImage().get().equals(existingContainer.image)) {
+        if (context.node().getWantedDockerImage().isPresent() &&
+                !context.node().getWantedDockerImage().get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                    + existingContainer.image.asString() + " -> " + node.getWantedDockerImage().get().asString());
+                    + existingContainer.image.asString() + " -> " + context.node().getWantedDockerImage().get().asString());
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
         }
 
-        if (currentRebootGeneration < node.getWantedRebootGeneration()) {
+        if (currentRebootGeneration < context.node().getWantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
-                    currentRebootGeneration, node.getWantedRebootGeneration()));
+                    currentRebootGeneration, context.node().getWantedRebootGeneration()));
         }
 
         // Even though memory can be easily changed with docker update, we need to restart the container
         // for proton to pick up the change. If/when proton could detect available memory correctly (rather than reading
         // VESPA_TOTAL_MEMORY_MB env. variable set in DockerOperation), it would be enough with a services restart
-        ContainerResources wantedContainerResources = getContainerResources(node);
+        ContainerResources wantedContainerResources = getContainerResources(context);
         if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
             return Optional.of("Container should be running with different memory allocation, wanted: " +
                     wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
@@ -349,7 +350,7 @@ public class NodeAgentImpl implements NodeAgent {
 
 
     private void updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
-        ContainerResources wantedContainerResources = getContainerResources(context.node());
+        ContainerResources wantedContainerResources = getContainerResources(context);
         if (wantedContainerResources.equalsCpu(existingContainer.resources)) return;
         context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
                 wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
@@ -359,17 +360,16 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.updateContainer(context, wantedContainerResources);
     }
 
-    private ContainerResources getContainerResources(NodeSpec node) {
-        double cpuCap = node.getOwner()
-                .map(NodeOwner::asApplicationId)
-                .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
-                .orElse(containerCpuCap)
-                .value() * node.getMinCpuCores();
+    private ContainerResources getContainerResources(NodeAgentContext context) {
+        double cpuCap = context.zoneId().environment() == Environment.dev ?
+                0 :
+                context.node().getOwner()
+                        .map(NodeOwner::asApplicationId)
+                        .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
+                        .orElse(containerCpuCap)
+                        .value() * context.node().getMinCpuCores();
 
-        if ( contextSupplier.currentContext().zoneId().environment() == Environment.dev) // don't limit cpu
-            return ContainerResources.from(0, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
-        else
-            return ContainerResources.from(cpuCap, node.getMinCpuCores(), node.getMinMainMemoryAvailableGb());
+        return ContainerResources.from(cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
     }
 
 

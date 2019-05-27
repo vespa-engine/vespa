@@ -35,8 +35,8 @@ public class ContainerResources {
 
         if (cpus < 0)
             throw new IllegalArgumentException("CPUs must be a positive number or 0 for unlimited, was " + cpus);
-        if (cpuShares < 0)
-            throw new IllegalArgumentException("CPU shares must be a positive integer or 0 for unlimited, was " + cpuShares);
+        if (cpuShares != 0 && (cpuShares < 2 || cpuShares > 262_144))
+            throw new IllegalArgumentException("CPU shares must be a positive integer in [2, 262144] or 0 for unlimited, was " + cpuShares);
         if (memoryBytes < 0)
             throw new IllegalArgumentException("memoryBytes must be a positive integer or 0 for unlimited, was " + memoryBytes);
     }
@@ -54,7 +54,7 @@ public class ContainerResources {
      */
     public static ContainerResources from(double maxVcpu, double minVcpu, double memoryGb) {
         return new ContainerResources(maxVcpu,
-                                      (int) Math.round(10 * minVcpu),
+                                      (int) Math.round(32 * minVcpu),
                                       (long) ((1L << 30) * memoryGb));
     }
 
