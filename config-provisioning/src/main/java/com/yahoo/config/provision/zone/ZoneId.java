@@ -40,7 +40,7 @@ public class ZoneId {
         return new ZoneId(environment, region);
     }
 
-    public static ZoneId from(Environment environment, RegionName region, SystemName system) {
+    public static ZoneId from(SystemName system, Environment environment, RegionName region) {
         return new ZoneId(environment, region, CloudName.defaultName(), system);
     }
 
