@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search::memoryindex {

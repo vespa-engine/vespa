@@ -3,7 +3,7 @@
 #pragma once
 
 #include "multi_value_mapping_base.h"
-#include <vespa/searchlib/datastore/array_store.h>
+#include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/util/address_space.h>
 
 namespace search::attribute {

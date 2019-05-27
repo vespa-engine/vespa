@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
+#include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <iostream>

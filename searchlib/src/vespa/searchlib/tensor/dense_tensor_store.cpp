@@ -6,7 +6,7 @@
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/datastore.hpp>
 
 using search::datastore::Handle;
 using vespalib::tensor::Tensor;

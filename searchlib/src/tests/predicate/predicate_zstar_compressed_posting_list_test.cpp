@@ -3,8 +3,8 @@
 
 #include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>

@@ -2,11 +2,11 @@
 
 #include "predicate_index.h"
 #include "predicate_hash.h"
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreestore.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
 
 using search::datastore::EntryRef;

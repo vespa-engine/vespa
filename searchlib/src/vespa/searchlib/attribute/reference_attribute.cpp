@@ -4,11 +4,11 @@
 #include "reference_attribute_saver.h"
 #include "attributesaver.h"
 #include "readerbase.h"
-#include <vespa/searchlib/datastore/unique_store_builder.h>
-#include <vespa/searchlib/datastore/datastore.hpp>
-#include <vespa/searchlib/datastore/unique_store.hpp>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/vespalib/datastore/unique_store_builder.h>
+#include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/data/fileheader.h>
 
 #include <vespa/log/log.h>

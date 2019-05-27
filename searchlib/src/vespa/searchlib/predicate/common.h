@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/btree.h>
+#include <vespa/vespalib/btree/btree.h>
 
 namespace search::predicate {
 

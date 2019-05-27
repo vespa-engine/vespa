@@ -3,9 +3,9 @@
 #include "document_features_store.h"
 #include "predicate_range_expander.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
 //#include "predicate_index.h"
 

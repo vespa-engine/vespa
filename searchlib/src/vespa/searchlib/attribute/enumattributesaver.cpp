@@ -2,7 +2,7 @@
 
 #include "enumattributesaver.h"
 #include "iattributesavetarget.h"
-#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/util/bufferwriter.h>
 
 namespace search {
 

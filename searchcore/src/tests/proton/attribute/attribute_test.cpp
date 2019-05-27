@@ -45,7 +45,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");

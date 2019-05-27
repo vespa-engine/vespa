@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/searchlib/util/drainingbufferwriter.h>
 #include <vespa/searchlib/util/rand48.h>
 

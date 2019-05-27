@@ -3,7 +3,7 @@
 #pragma once
 
 #include "common.h"
-#include <vespa/searchlib/btree/btreestore.h>
+#include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <experimental/optional>

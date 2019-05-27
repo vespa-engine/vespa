@@ -5,7 +5,7 @@
 #include "not_implemented_attribute.h"
 #include "reference_mappings.h"
 #include "reference.h"
-#include <vespa/searchlib/datastore/unique_store.h>
+#include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search { class IGidToLidMapperFactory; }

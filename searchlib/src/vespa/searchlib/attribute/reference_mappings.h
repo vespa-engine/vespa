@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/btreestore.h>
+#include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <atomic>
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <functional>

@@ -3,12 +3,12 @@
 #include "generic_tensor_store.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/document/util/serializable.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>
-#include <vespa/document/util/serializable.h>
-#include <vespa/document/util/serializableexceptions.h>
-#include <vespa/searchlib/datastore/datastore.hpp>
 
 using document::DeserializeException;
 using search::datastore::Handle;

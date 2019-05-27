@@ -3,12 +3,12 @@
 LOG_SETUP("comparator_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/enumcomparator.h>
-#include <vespa/searchlib/btree/btreeroot.h>
+#include <vespa/vespalib/btree/btreeroot.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 
 namespace search {
 

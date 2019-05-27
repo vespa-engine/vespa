@@ -4,7 +4,7 @@
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/enumstorebase.h>
-#include <vespa/searchlib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/entryref.h>
 
 namespace search
 {

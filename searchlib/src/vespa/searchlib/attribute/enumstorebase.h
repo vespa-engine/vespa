@@ -3,12 +3,12 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchlib/btree/btree.h>
 #include <set>
 #include <atomic>
 

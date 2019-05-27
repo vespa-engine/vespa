@@ -5,12 +5,12 @@
 #include "feature_store.h"
 #include "field_index_remover.h"
 #include "word_store.h"
-#include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/btree/btreenodeallocator.h>
-#include <vespa/searchlib/btree/btreeroot.h>
-#include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/indexbuilder.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreenodeallocator.h>
+#include <vespa/vespalib/btree/btreeroot.h>
+#include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
 

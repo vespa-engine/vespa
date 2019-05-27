@@ -3,8 +3,8 @@
 #pragma once
 
 #include "bucketdatabase.h"
-#include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/datastore/array_store.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/datastore/array_store.h>
 
 namespace storage {
 
