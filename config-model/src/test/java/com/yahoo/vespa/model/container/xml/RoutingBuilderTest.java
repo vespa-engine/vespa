@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
@@ -67,6 +68,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .zone(new Zone(Environment.prod, RegionName.from(region)))
+                .properties(new TestProperties().setHostedVespa(true))
                 .build();
 
         root = new MockRoot("root", deployState);

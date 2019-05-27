@@ -22,12 +22,10 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.handler.SearchHandler;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -38,12 +36,11 @@ import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.util.Map;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import static com.yahoo.application.container.JDiscTest.getListenPort;
 
 /**
  * @author bratseth
@@ -52,7 +49,7 @@ import static com.yahoo.application.container.JDiscTest.getListenPort;
 public class ApplicationTest {
 
     @Test
-    public void minimal_application_can_be_constructed() throws Exception {
+    public void minimal_application_can_be_constructed() {
         try (Application application = Application.fromServicesXml("<jdisc version=\"1.0\"/>", Networking.disable)) {
                 Application unused = application;
         }
@@ -60,7 +57,7 @@ public class ApplicationTest {
 
     /** Tests that an application with search chains referencing a content cluster can be constructed. */
     @Test
-    public void container_and_referenced_content() throws Exception {
+    public void container_and_referenced_content() {
         try (Application application =
                      Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
@@ -294,7 +291,7 @@ public class ApplicationTest {
     }
     
     @Test
-    public void file_distribution() throws Exception {
+    public void file_distribution() {
         try (Application application = Application.fromApplicationPackage(new File("src/test/app-packages/filedistribution/"), Networking.disable)) {
             // Deployment succeeded
             Application unused = application;
@@ -359,6 +356,14 @@ public class ApplicationTest {
         }
     }
 
+    @Test
+    public void athenz_in_deployment_xml() {
+        try (Application application = Application.fromApplicationPackage(new File("src/test/app-packages/athenz-in-deployment-xml/"), Networking.disable)) {
+            // Deployment succeeded
+            Application unused = application;
+        }
+    }
+
     private static int getFreePort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             socket.setReuseAddress(true);
@@ -373,7 +378,7 @@ public class ApplicationTest {
     }
 
     @Test
-    public void application_with_access_control_can_be_constructed() throws Exception {
+    public void application_with_access_control_can_be_constructed() {
         try (Application application = Application.fromServicesXml(servicesXmlWithAccessControl(), Networking.disable)) {
             Application unused = application;
         }

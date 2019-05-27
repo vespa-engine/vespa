@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.vespa.model.container.IdentityProvider;
@@ -34,7 +35,12 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
                 .withDeploymentSpec(deploymentXml)
                 .build();
 
-        createModel(root, DeployState.createTestState(applicationPackage), null, clusterElem);
+        createModel(root, new DeployState.Builder()
+                            .properties(new TestProperties().setHostedVespa(true))
+                            .applicationPackage(applicationPackage)
+                            .build(),
+                    null,
+                    clusterElem);
 
         IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default/component/" + IdentityProvider.CLASS);
         assertEquals("domain", identityConfig.domain());
