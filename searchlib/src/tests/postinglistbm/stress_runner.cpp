@@ -214,6 +214,8 @@ makeSomePostings(FPFactory *postingFactory,
             TermFieldMatchDataArray tfmda;
             tfmda.add(&md);
 
+            md.setNeedNormalFeatures(posting->enable_unpack_normal_features());
+            md.setNeedCheapFeatures(posting->enable_unpack_cheap_features());
             std::unique_ptr<SearchIterator> iterator(posting->createIterator(tfmda));
             if (posting->hasWordPositions()) {
                 if (stride != 0) {

@@ -781,7 +781,14 @@ SearchIterator *
 FakeZc4SkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData, _unpack_normal_features, _unpack_cheap_features).release();
+    if (matchData.valid()) {
+        assert(_unpack_normal_features == matchData[0]->needs_normal_features());
+        assert(_unpack_cheap_features == matchData[0]->needs_cheap_features());
+    } else {
+        assert(!_unpack_normal_features);
+        assert(!_unpack_cheap_features);
+    }
+return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
 
 template <bool bigEndian>

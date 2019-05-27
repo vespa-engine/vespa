@@ -48,10 +48,6 @@ public:
 std::unique_ptr<search::queryeval::SearchIterator>
 create_zc_posocc_iterator(bool bigEndian, const index::PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data);
 
-// Temporarily for unit testing.
-std::unique_ptr<search::queryeval::SearchIterator>
-create_zc_posocc_iterator(bool bigEndian, const index::PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data, bool unpack_normal_features, bool unpack_cheap_features);
-
 extern template class ZcRareWordPosOccIterator<false, false>;
 extern template class ZcRareWordPosOccIterator<false, true>;
 extern template class ZcRareWordPosOccIterator<true, false>;

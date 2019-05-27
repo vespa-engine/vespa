@@ -76,13 +76,22 @@ public:
         return SearchIterator::UP(_fp->createIterator(_tfmda));
     }
 private:
-    mutable TermFieldMatchDataArray _tfmda;
+    TermFieldMatchData _tfmd;
+    TermFieldMatchDataArray _tfmda;
     FakePosting::SP _fp;
 };
 
 Verifier::Verifier(FakePosting::SP fp)
-    : _fp(std::move(fp))
-{ }
+    : _tfmd(),
+      _tfmda(),
+      _fp(std::move(fp))
+{
+    if (_fp) {
+        _tfmd.setNeedNormalFeatures(_fp->enable_unpack_normal_features());
+        _tfmd.setNeedCheapFeatures(_fp->enable_unpack_cheap_features());
+    }
+    _tfmda.add(&_tfmd);
+}
 
 Verifier::~Verifier() = default;
 
