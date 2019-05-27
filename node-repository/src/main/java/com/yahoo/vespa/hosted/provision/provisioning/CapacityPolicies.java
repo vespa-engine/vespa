@@ -44,6 +44,8 @@ public class CapacityPolicies {
     public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
         NodeResources resources = specifiedOrDefaultNodeResources(requestedResources, cluster);
 
+        if (resources.allocateByLegacyName()) return resources; // Modification not possible
+
         // Allow slow disks in zones which are not performance sensitive
         if (zone.system() == SystemName.cd || zone.environment() == Environment.dev || zone.environment() == Environment.test)
             resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
