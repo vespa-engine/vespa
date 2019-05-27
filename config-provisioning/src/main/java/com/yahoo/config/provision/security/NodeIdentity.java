@@ -19,12 +19,14 @@ public class NodeIdentity {
     private final String identityName;
     private final HostName hostname;
     private final ApplicationId applicationId;
+    private final Parent parentNode;
 
-    private NodeIdentity(NodeType nodeType, String identityName, HostName hostname, ApplicationId applicationId) {
+    private NodeIdentity(NodeType nodeType, String identityName, HostName hostname, ApplicationId applicationId, Parent parentNode) {
         this.nodeType = nodeType;
         this.identityName = identityName;
         this.hostname = hostname;
         this.applicationId = applicationId;
+        this.parentNode = parentNode;
     }
 
     public NodeType nodeType() {
@@ -42,6 +44,10 @@ public class NodeIdentity {
 
     public Optional<ApplicationId> applicationId() {
         return Optional.ofNullable(applicationId);
+    }
+
+    public Optional<Parent> parentNode() {
+        return Optional.ofNullable(parentNode);
     }
 
     @Override
@@ -75,6 +81,7 @@ public class NodeIdentity {
         private String identityName;
         private HostName hostname;
         private ApplicationId applicationId;
+        private Parent parentNode;
 
         public Builder(NodeType nodeType) {
             this.nodeType = nodeType;
@@ -95,8 +102,53 @@ public class NodeIdentity {
             return this;
         }
 
+        public Builder parentNode(NodeType nodeType, HostName hostname) {
+            this.parentNode = new Parent(nodeType, hostname);
+            return this;
+        }
+
         public NodeIdentity build() {
-            return new NodeIdentity(nodeType, identityName, hostname, applicationId);
+            return new NodeIdentity(nodeType, identityName, hostname, applicationId, parentNode);
+        }
+    }
+
+    public static class Parent {
+        private final NodeType nodeType;
+        private final HostName hostname;
+
+        private Parent(NodeType nodeType, HostName hostname) {
+            this.nodeType = nodeType;
+            this.hostname = hostname;
+        }
+
+        public NodeType nodeType() {
+            return nodeType;
+        }
+
+        public HostName hostname() {
+            return hostname;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Parent parent = (Parent) o;
+            return nodeType == parent.nodeType &&
+                    Objects.equals(hostname, parent.hostname);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(nodeType, hostname);
+        }
+
+        @Override
+        public String toString() {
+            return "Parent{" +
+                    "nodeType=" + nodeType +
+                    ", hostname=" + hostname +
+                    '}';
         }
     }
 }
