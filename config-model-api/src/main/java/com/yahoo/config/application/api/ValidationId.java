@@ -21,7 +21,8 @@ public enum ValidationId {
     globalDocumentChange("global-document-change"), // Changing global attribute for document types in content clusters
     configModelVersionMismatch("config-model-version-mismatch"), // Internal use
     skipOldConfigModels("skip-old-config-models"), // Internal use
-    forceAutomaticTenantUpgradeTests("force-automatic-tenant-upgrade-test"); // Internal use
+    forceAutomaticTenantUpgradeTests("force-automatic-tenant-upgrade-test"), // Internal use
+    accessControl("access-control"); // Internal use, used in zones where there should be no access-control
 
     private final String id;
 
