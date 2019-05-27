@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/matching/handlerecorder.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -8,7 +9,9 @@
 LOG_SETUP("handle_recorder_test");
 
 using search::fef::MatchDataDetails;
+using search::fef::MatchData;
 using search::fef::TermFieldHandle;
+using search::fef::TermFieldMatchData;
 using namespace proton::matching;
 
 using HandleMap = HandleRecorder::HandleMap;
@@ -51,6 +54,49 @@ TEST(HandleRecorderTest, the_same_handle_can_be_in_both_normal_and_cheap_set)
         register_cheap_handle(3);
     }
     EXPECT_EQ(HandleMap({{3, BothMask}}), recorder.get_handles());
+}
+
+namespace {
+
+void check_tagging(const TermFieldMatchData &tfmd, bool exp_not_needed,
+                   bool exp_needs_normal_features, bool exp_needs_cheap_features)
+{
+    EXPECT_EQ(tfmd.isNotNeeded(), exp_not_needed);
+    EXPECT_EQ(tfmd.needs_normal_features(), exp_needs_normal_features);
+    EXPECT_EQ(tfmd.needs_cheap_features(), exp_needs_cheap_features);
+}
+
+}
+
+TEST(HandleRecorderTest, tagging_of_matchdata_works)
+{
+    HandleRecorder recorder;
+    {
+        HandleRecorder::Binder binder(recorder);
+        register_normal_handle(0);
+        register_cheap_handle(2);
+        register_normal_handle(3);
+        register_cheap_handle(3);
+    }
+    auto md = MatchData::makeTestInstance(4, 4);
+    recorder.tag_match_data(*md);
+    check_tagging(*md->resolveTermField(0), false, true, false);
+    check_tagging(*md->resolveTermField(1), true, false, false);
+    check_tagging(*md->resolveTermField(2), false, false, true);
+    check_tagging(*md->resolveTermField(3), false, true, true);
+    HandleRecorder recorder2;
+    {
+        HandleRecorder::Binder binder(recorder2);
+        register_normal_handle(0);
+        register_cheap_handle(0);
+        register_normal_handle(1);
+        register_cheap_handle(3);
+    }
+    recorder2.tag_match_data(*md);
+    check_tagging(*md->resolveTermField(0), false, true, true);
+    check_tagging(*md->resolveTermField(1), false, true, false);
+    check_tagging(*md->resolveTermField(2), true, false, false);
+    check_tagging(*md->resolveTermField(3), false, false, true);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

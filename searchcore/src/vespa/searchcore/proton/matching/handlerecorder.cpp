@@ -115,7 +115,8 @@ HandleRecorder::add(TermFieldHandle handle,
 }
 
 void
-HandleRecorder::tag_match_data(MatchData &match_data) {
+HandleRecorder::tag_match_data(MatchData &match_data)
+{
     for (TermFieldHandle handle = 0; handle < match_data.getNumTermFields(); ++handle) {
         auto &tfmd = *match_data.resolveTermField(handle);
         auto recorded = _handles.find(handle);
