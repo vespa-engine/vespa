@@ -20,6 +20,20 @@ using search::index::Schema;
 
 namespace search::memoryindex {
 
+namespace {
+
+void set_cheap_features(DocIdAndFeatures &features)
+{
+    // Set cheap features based on normal features.
+    // TODO: Update when proper cheap features are present in memory index.
+    assert(!features.elements().empty());
+    const auto &element = features.elements().front();
+    features.set_field_length(element.getElementLen());
+    features.set_num_occs(element.getNumOccs());
+}
+
+}
+
 using datastore::EntryRef;
 
 vespalib::asciistream &
@@ -172,6 +186,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
                 features.set_doc_id(docId);
+                set_cheap_features(features);
                 indexBuilder.add_document(features);
             }
         } else {
@@ -184,6 +199,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
                 features.set_doc_id(docId);
+                set_cheap_features(features);
                 indexBuilder.add_document(features);
             }
         }

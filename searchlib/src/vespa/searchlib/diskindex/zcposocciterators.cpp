@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zcposocciterators.h"
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include "zc4_posting_params.h"
 
 namespace search::diskindex {
@@ -75,19 +76,8 @@ create_zc_posocc_iterator(const PostingListCounts &counts, bitcompression::Posit
 std::unique_ptr<search::queryeval::SearchIterator>
 create_zc_posocc_iterator(bool bigEndian, const PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data)
 {
-    bool unpack_normal_features = true;
-    bool unpack_cheap_features = true;
-    if (bigEndian) {
-        return create_zc_posocc_iterator<true>(counts, start, bit_length, posting_params, fields_params, match_data, unpack_normal_features, unpack_cheap_features);
-    } else {
-        return create_zc_posocc_iterator<false>(counts, start, bit_length, posting_params, fields_params, match_data, unpack_normal_features, unpack_cheap_features);
-    }
-}
-
-// Temporarily for unit testing.
-std::unique_ptr<search::queryeval::SearchIterator>
-create_zc_posocc_iterator(bool bigEndian, const PostingListCounts &counts, bitcompression::Position start, uint64_t bit_length, const Zc4PostingParams &posting_params, const bitcompression::PosOccFieldsParams &fields_params, const fef::TermFieldMatchDataArray &match_data, bool unpack_normal_features, bool unpack_cheap_features)
-{
+    bool unpack_normal_features = match_data.valid() ? match_data[0]->needs_normal_features() : false;
+    bool unpack_cheap_features = match_data.valid() ? match_data[0]->needs_cheap_features() : false;
     if (bigEndian) {
         return create_zc_posocc_iterator<true>(counts, start, bit_length, posting_params, fields_params, match_data, unpack_normal_features, unpack_cheap_features);
     } else {
