@@ -20,7 +20,7 @@ TermFieldMatchData::TermFieldMatchData() :
 TermFieldMatchData::TermFieldMatchData(const TermFieldMatchData & rhs) :
     _docId(rhs._docId),
     _fieldId(rhs._fieldId),
-    _flags(UNPACK_ALL_FEATURES_MASK),
+    _flags(rhs._flags),
     _sz(0),
     _numOccs(0),
     _fieldLength(0)
