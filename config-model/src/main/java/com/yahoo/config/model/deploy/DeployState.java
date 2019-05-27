@@ -123,7 +123,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         this.validationOverrides =
                 zone.environment().isManuallyDeployed()
-                ? ValidationOverrides.all // Don't protect manually deployed zones
+                ? new ValidationOverrides.AllowAllValidationOverrides(deployLogger) // Don't protect manually deployed zones
                 : applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                     .orElse(ValidationOverrides.empty);
 

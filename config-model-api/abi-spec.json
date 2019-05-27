@@ -467,6 +467,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.application.api.ValidationOverrides$AllowAllValidationOverrides": {
+    "superClass": "com.yahoo.config.application.api.ValidationOverrides",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.config.application.api.DeployLogger)",
+      "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
+      "public java.lang.String xmlForm()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.application.api.ValidationOverrides$ValidationException": {
     "superClass": "java.lang.IllegalArgumentException",
     "interfaces": [],

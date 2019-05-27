@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -172,16 +173,26 @@ public class ValidationOverrides {
 
     }
 
-    private static class AllowAllValidationOverrides extends ValidationOverrides {
+    public static class AllowAllValidationOverrides extends ValidationOverrides {
 
+        private final DeployLogger logger;
+
+        /** Create an instance of this which doesn't log */
         public AllowAllValidationOverrides() {
+            this(null);
+        }
+
+        /** Creates an instance of this which logs what is allows to the given deploy logger */
+        public AllowAllValidationOverrides(DeployLogger logger) {
             super(List.of());
+            this.logger = logger;
         }
 
         /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
         @Override
         public boolean allows(ValidationId validationId, Instant now) {
-            log.warning("Possibly destructive change '" + validationId + "' allowed");
+            if (logger != null)
+                logger.log(Level.WARNING, "Possibly destructive change '" + validationId + "' allowed");
             return true;
         }
 
