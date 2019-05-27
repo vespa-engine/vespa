@@ -70,7 +70,8 @@ public class ApplicationSerializer {
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
     private final String pemDeployKeyField = "pemDeployKey";
-    private final String rotationField = "rotation";
+    private final String rotationsField = "rotations";
+    private final String deprecatedRotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
 
     // Deployment fields
@@ -162,7 +163,8 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
-        application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.asString()));
+        Cursor rotations = root.setArray(rotationsField);
+        application.rotations().forEach(rotation -> rotations.addString(rotation.asString()));
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
         return slime;
     }
@@ -329,12 +331,12 @@ public class ApplicationSerializer {
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<String> pemDeployKey = optionalString(root.field(pemDeployKeyField));
-        Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
+        List<RotationId> rotations = rotationsFromSlime(root);
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
                                deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, rotation, rotationStatus);
+                               pemDeployKey, rotations, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -514,7 +516,25 @@ public class ApplicationSerializer {
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
 
-    private Optional<RotationId> rotationFromSlime(Inspector field) {
+    private List<RotationId> rotationsFromSlime(Inspector root) {
+        final var rotations = rotationListFromSlime(root.field(rotationsField));
+        final var legacyRotation = legacyRotationFromSlime(root.field(deprecatedRotationField));
+        legacyRotation.ifPresent(rotations::add);
+        return rotations;
+    }
+
+    private List<RotationId> rotationListFromSlime(Inspector field) {
+        final var rotations = new ArrayList<RotationId>();
+
+        for (int i = 0; i < field.entries(); ++i) {
+            var entry = field.entry(i);
+            rotations.add(new RotationId(entry.asString()));
+        }
+
+        return rotations;
+    }
+
+    private Optional<RotationId> legacyRotationFromSlime(Inspector field) {
         return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 

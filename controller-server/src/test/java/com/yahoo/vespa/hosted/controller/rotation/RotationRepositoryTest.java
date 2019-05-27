@@ -14,10 +14,11 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Oyvind Gronnesby
@@ -64,7 +65,7 @@ public class RotationRepositoryTest {
         Rotation expected = new Rotation(new RotationId("foo-1"), "foo-1.com");
 
         application = tester.applications().require(application.id());
-        assertEquals(expected.id(), application.rotation().get());
+        assertEquals(List.of(expected.id()), application.rotations());
         assertEquals(URI.create("https://app1--tenant1.global.vespa.oath.cloud:4443/"),
                      application.endpointsIn(SystemName.main).main().get().url());
         try (RotationLock lock = repository.lock()) {
@@ -80,7 +81,7 @@ public class RotationRepositoryTest {
                 .searchDefinition("search foo { }") // Update application package so there is something to deploy
                 .build();
         tester.deployCompletely(application, applicationPackage, 43);
-        assertEquals(expected.id(), tester.applications().require(application.id()).rotation().get());
+        assertEquals(List.of(expected.id()), tester.applications().require(application.id()).rotations());
     }
     
     @Test
@@ -139,8 +140,7 @@ public class RotationRepositoryTest {
                 .build();
         tester.deployCompletely(application, applicationPackage);
         Application app = tester.applications().require(application.id());
-        Optional<RotationId> rotation = app.rotation();
-        assertFalse(rotation.isPresent());
+        assertTrue(app.rotations().isEmpty());
     }
 
     @Test
@@ -153,7 +153,7 @@ public class RotationRepositoryTest {
         Application application = tester.createApplication("app2", "tenant2", 22L,
                                                            2L);
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(new RotationId("foo-1"), tester.applications().require(application.id()).rotation().get());
+        assertEquals(List.of(new RotationId("foo-1")), tester.applications().require(application.id()).rotations());
         assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/", tester.applications().require(application.id())
                 .endpointsIn(SystemName.cd).main().get().url().toString());
     }

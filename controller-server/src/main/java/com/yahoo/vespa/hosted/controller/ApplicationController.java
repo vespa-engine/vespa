@@ -328,7 +328,7 @@ public class ApplicationController {
                 // Include global DNS names
                 cnames = app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).collect(Collectors.toSet());
                 // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
-                app.rotation().map(RotationId::asString).ifPresent(cnames::add);
+                app.rotations().stream().map(RotationId::asString).forEach(cnames::add);
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion

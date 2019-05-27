@@ -115,7 +115,7 @@ public class ApplicationSerializerTest {
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               Optional.of(new RotationId("my-rotation")),
+                                               List.of(new RotationId("my-rotation")),
                                                rotationStatus);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
@@ -151,7 +151,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.change(), serialized.change());
         assertEquals(original.pemDeployKey(), serialized.pemDeployKey());
 
-        assertEquals(original.rotation().get(), serialized.rotation().get());
+        assertEquals(original.rotations(), serialized.rotations());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
 
         // Test cluster utilization
