@@ -8,7 +8,7 @@
 
 namespace logdemon {
 
-class Metrics;
+struct Metrics;
 
 /**
  * Class used to subscribe for logd config.

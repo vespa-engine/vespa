@@ -17,7 +17,7 @@ class FNET_Scheduler;
 class FRT_RPCInvoker;
 class FRT_IRequestWait;
 
-namespace vespalib { class CryptoEngine; }
+namespace vespalib { struct CryptoEngine; }
 
 
 class FRT_Supervisor : public FNET_IServerAdapter,
