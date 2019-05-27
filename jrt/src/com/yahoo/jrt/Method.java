@@ -28,9 +28,7 @@ package com.yahoo.jrt;
  **/
 public class Method {
 
-    private MethodHandler            handler; // option 1: interface
-    private Object                   object;  // option 2: reflection
-    private java.lang.reflect.Method method;  // option 2: reflection
+    private final MethodHandler            handler;
 
     private String name;
     private String paramTypes;
@@ -43,7 +41,6 @@ public class Method {
     private String[] returnDesc;
 
     private static final String undocumented = "???";
-    private static final Class<?>[] handlerParams = { Request.class };
 
 
     private void init(String name, String paramTypes, String returnTypes) {
@@ -68,42 +65,6 @@ public class Method {
     /**
      * Create a new Method. The parameters define the name of the
      * method, the parameter types, the return value types and also
-     * what method in which object should be invoked to perform the
-     * method. Please refer to the {@link Method} class description
-     * for an explanation of type strings.
-     *
-     * @param name method name
-     * @param paramTypes a type string defining the parameter types
-     * @param returnTypes a type string defining the return value types
-     * @param handler the object handling this RPC method
-     * @param handlerMethod the name of the method in the handler that
-     * should be used to handle invocations of this RPC method. This
-     * method must be public, return void and take a {@link Request}
-     * as its only parameter.
-     *
-     * @throws MethodCreateException if the handler method cannot be
-     * resolved.
-     *
-     * @deprecated Use {@link Method#Method(String, String, String, MethodHandler)} instead.
-     **/
-    @Deprecated(forRemoval = true)
-    public Method(String name, String paramTypes, String returnTypes,
-                  Object handler, String handlerMethod) {
-
-        this.handler = null;
-        this.object  = handler;
-        try {
-            this.method = this.object.getClass().getMethod(handlerMethod,
-                                                           handlerParams);
-        } catch (Exception e) {
-            throw new MethodCreateException("Method lookup failed", e);
-        }
-        init(name, paramTypes, returnTypes);
-    }
-
-    /**
-     * Create a new Method. The parameters define the name of the
-     * method, the parameter types, the return value types and also
      * the handler for the method. Please refer to the {@link Method}
      * class description for an explanation of type strings.
      *
@@ -118,8 +79,6 @@ public class Method {
                   MethodHandler handler) {
 
         this.handler = handler;
-        this.object  = null;
-        this.method  = null;
         if (this.handler == null) {
             throw new MethodCreateException("Handler is null");
         }
@@ -275,12 +234,7 @@ public class Method {
      **/
     void invoke(Request req) {
         try {
-            if (handler != null) {
-                handler.invoke(req);
-            } else {
-                Object[] args = { req };
-                method.invoke(object, args);
-            }
+            handler.invoke(req);
         } catch (Exception e) {
             req.setError(ErrorCode.METHOD_FAILED, e.toString());
         }
