@@ -60,6 +60,10 @@ public class NodeResources {
         return new NodeResources(vcpu, memoryGb, diskGb, speed);
     }
 
+    public NodeResources withVcpu(double vcpu) {
+        return new NodeResources(vcpu, memoryGb, diskGb, diskSpeed);
+    }
+
     public NodeResources subtract(NodeResources other) {
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");

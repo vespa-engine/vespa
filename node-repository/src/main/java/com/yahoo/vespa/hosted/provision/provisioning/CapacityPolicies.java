@@ -41,15 +41,21 @@ public class CapacityPolicies {
         }
     }
 
-    public NodeResources decideNodeResources(Capacity requestedCapacity, ClusterSpec cluster) {
-        NodeResources resources = decideNodeResources(requestedCapacity.nodeResources(), cluster);
-        if (zone.system() == SystemName.cd)
-            return resources.withDiskSpeed(NodeResources.DiskSpeed.any);
-        else
-            return resources;
+    public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
+        NodeResources resources = specifiedOrDefaultNodeResources(requestedResources, cluster);
+
+        // Allow slow disks in zones which are not performance sensitive
+        if (zone.system() == SystemName.cd || zone.environment() == Environment.dev || zone.environment() == Environment.test)
+            resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
+
+        // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
+        if (zone.environment() == Environment.dev)
+            resources = resources.withVcpu(0.1);
+
+        return resources;
     }
 
-    private NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
+    private NodeResources specifiedOrDefaultNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
         if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
             return requestedResources.get();
 
