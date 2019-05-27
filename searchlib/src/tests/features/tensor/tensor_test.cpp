@@ -15,7 +15,6 @@
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -36,7 +35,6 @@ using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
-using vespalib::tensor::TensorFactory;
 using vespalib::tensor::test::makeTensor;
 
 using AVC = search::attribute::Config;

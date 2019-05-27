@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
@@ -13,11 +12,17 @@ using search::attribute::IAttributeVector;
 using search::tensor::ITensorAttribute;
 using search::tensor::TensorAttribute;
 using vespalib::eval::ValueType;
-using vespalib::tensor::DenseTensorCells;
+using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
-using vespalib::tensor::TensorFactory;
+using vespalib::tensor::DefaultTensorEngine;
+
+Tensor::UP createTensor(const TensorSpec &spec) {
+    auto value = DefaultTensorEngine::ref().from_spec(spec);
+    Tensor *tensor = dynamic_cast<Tensor*>(value.get());
+    ASSERT_TRUE(tensor != nullptr);
+    value.release();
+    return Tensor::UP(tensor);
+}
 
 namespace search::attribute {
 
@@ -482,32 +487,23 @@ TEST("onSerializeForDescendingSort() is forwarded with remapped LID to target ve
 }
 
 struct TensorAttrFixture : Fixture {
-    vespalib::tensor::DefaultTensor::builder builder;
     std::shared_ptr<Tensor> tensor1;
     std::shared_ptr<Tensor> tensor2;
 
     TensorAttrFixture(bool dense)
         : Fixture(),
-          builder(),
           tensor1(),
           tensor2()
     {
         setup(dense);
     }
-    Tensor::UP createTensor(const TensorCells &cells,
-                            const TensorDimensions &dimensions) {
-        return TensorFactory::create(cells, dimensions, builder);
-    }
-    Tensor::UP createDenseTensor(const DenseTensorCells &cells) const {
-        return TensorFactory::createDense(cells);
-    }
     void setup(bool dense) {
         if (dense) {
-            tensor1 = createDenseTensor({ {{{"x",1}}, 11} });
-            tensor2 = createDenseTensor({ {{{"x",0}}, 12}, {{{"x", 1}}, 0} });
+            tensor1 = createTensor(TensorSpec("tensor(x[2])").add({{"x", 1}}, 11));
+            tensor2 = createTensor(TensorSpec("tensor(x[2])").add({{"x", 0}}, 12).add({{"x", 1}}, 0));
         } else {
-            tensor1 = createTensor({ {{{"x","1"}}, 11} }, { "x" });
-            tensor2 = createTensor({ {{{"x","0"}}, 12} }, { "x" });
+            tensor1 = createTensor(TensorSpec("tensor(x{})").add({{"x", "1"}}, 11));
+            tensor2 = createTensor(TensorSpec("tensor(x{})").add({{"x", "0"}}, 12));
         }
         const std::vector<ImportedAttributeFixture::LidToLidMapping<std::shared_ptr<Tensor>>> mappings =
             {   {DocId(2), dummy_gid(3), DocId(3), tensor1 },

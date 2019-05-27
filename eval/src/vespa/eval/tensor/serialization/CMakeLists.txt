@@ -3,6 +3,5 @@ vespa_add_library(eval_tensor_serialization OBJECT
     SOURCES
     sparse_binary_format.cpp
     dense_binary_format.cpp
-    slime_binary_format.cpp
     typed_binary_format.cpp
 )

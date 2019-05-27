@@ -25,9 +25,9 @@ namespace  {
 constexpr uint32_t SPARSE_BINARY_FORMAT_TYPE = 1u;
 constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
 constexpr uint32_t MIXED_BINARY_FORMAT_TYPE = 3u;
-constexpr uint32_t SPARSE_BINARY_FORMAT_WITH_CELLTYPE = 5u; //Future
+constexpr uint32_t SPARSE_BINARY_FORMAT_WITH_CELLTYPE = 5u;
 constexpr uint32_t DENSE_BINARY_FORMAT_WITH_CELLTYPE = 6u;
-constexpr uint32_t MIXED_BINARY_FORMAT_WITH_CELLTYPE = 7u; //Future
+constexpr uint32_t MIXED_BINARY_FORMAT_WITH_CELLTYPE = 7u;
 
 constexpr uint32_t DOUBLE_VALUE_TYPE = 0;
 constexpr uint32_t FLOAT_VALUE_TYPE = 1;
@@ -91,10 +91,11 @@ TypedBinaryFormat::deserialize(nbostream &stream)
     if (formatId == DENSE_BINARY_FORMAT_TYPE) {
         return DenseBinaryFormat(SerializeFormat::DOUBLE).deserialize(stream);
     }
-    if (formatId == DENSE_BINARY_FORMAT_WITH_CELLTYPE) {
-        return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserialize(stream);
-    }
-    if (formatId == MIXED_BINARY_FORMAT_TYPE) {
+    if ((formatId == SPARSE_BINARY_FORMAT_WITH_CELLTYPE) ||
+        (formatId == DENSE_BINARY_FORMAT_WITH_CELLTYPE) ||
+        (formatId == MIXED_BINARY_FORMAT_TYPE) ||
+        (formatId == MIXED_BINARY_FORMAT_WITH_CELLTYPE))
+    {
         stream.adjustReadPos(read_pos - stream.rp());
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::decode(stream));
     }

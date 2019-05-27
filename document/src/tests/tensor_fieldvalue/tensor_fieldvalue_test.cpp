@@ -9,8 +9,7 @@ LOG_SETUP("fieldvalue_test");
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/test/test_utils.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
@@ -19,6 +18,7 @@ using namespace document;
 using namespace vespalib::tensor;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::test::makeTensor;
 
 namespace
@@ -27,10 +27,12 @@ namespace
 TensorDataType xSparseTensorDataType(ValueType::from_spec("tensor(x{})"));
 TensorDataType xySparseTensorDataType(ValueType::from_spec("tensor(x{},y{})"));
 
-Tensor::UP
-createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+Tensor::UP createTensor(const TensorSpec &spec) {
+    auto value = DefaultTensorEngine::ref().from_spec(spec);
+    Tensor *tensor = dynamic_cast<Tensor*>(value.get());
+    ASSERT_TRUE(tensor != nullptr);
+    value.release();
+    return Tensor::UP(tensor);
 }
 
 std::unique_ptr<Tensor>
@@ -54,10 +56,10 @@ TEST("require that TensorFieldValue can be assigned tensors and cloned") {
     TensorFieldValue noTensorValue(xySparseTensorDataType);
     TensorFieldValue emptyTensorValue(xySparseTensorDataType);
     TensorFieldValue twoCellsTwoDimsValue(xySparseTensorDataType);
-    emptyTensorValue = createTensor({}, {"x", "y"});
-    twoCellsTwoDimsValue = createTensor({ {{{"y", "3"}}, 3},
-                                             {{{"x", "4"}, {"y", "5"}}, 7} },
-                                        {"x", "y"});
+    emptyTensorValue = createTensor(TensorSpec("tensor(x{},y{})"));
+    twoCellsTwoDimsValue = createTensor(TensorSpec("tensor(x{},y{})")
+                                        .add({{"x", ""}, {"y", "3"}}, 3)
+                                        .add({{"x", "4"}, {"y", "5"}}, 7));
     EXPECT_NOT_EQUAL(noTensorValue, emptyTensorValue);
     EXPECT_NOT_EQUAL(noTensorValue, twoCellsTwoDimsValue);
     EXPECT_NOT_EQUAL(emptyTensorValue, noTensorValue);
@@ -74,10 +76,9 @@ TEST("require that TensorFieldValue can be assigned tensors and cloned") {
     EXPECT_NOT_EQUAL(*twoClone, *noneClone);
     EXPECT_NOT_EQUAL(*twoClone, *emptyClone);
     TensorFieldValue twoCellsTwoDimsValue2(xySparseTensorDataType);
-    twoCellsTwoDimsValue2 =
-        createTensor({ {{{"y", "3"}}, 3},
-                          {{{"x", "4"}, {"y", "5"}}, 7} },
-                     {"x", "y"});
+    twoCellsTwoDimsValue2 = createTensor(TensorSpec("tensor(x{},y{})")
+                                         .add({{"x", ""}, {"y", "3"}}, 3)
+                                         .add({{"x", "4"}, {"y", "5"}}, 7));
     EXPECT_NOT_EQUAL(*noneClone, twoCellsTwoDimsValue2);
     EXPECT_NOT_EQUAL(*emptyClone, twoCellsTwoDimsValue2);
     EXPECT_EQUAL(*twoClone, twoCellsTwoDimsValue2);
@@ -87,8 +88,8 @@ TEST("require that TensorFieldValue::toString works")
 {
     TensorFieldValue tensorFieldValue(xSparseTensorDataType);
     EXPECT_EQUAL("{TensorFieldValue: null}", tensorFieldValue.toString());
-    tensorFieldValue = createTensor({{{{"x","a"}}, 3}}, {"x"});
-    EXPECT_EQUAL("{TensorFieldValue: {\"dimensions\":[\"x\"],\"cells\":[{\"address\":{\"x\":\"a\"},\"value\":3}]}}", tensorFieldValue.toString());
+    tensorFieldValue = createTensor(TensorSpec("tensor(x{})").add({{"x", "a"}}, 3));
+    EXPECT_EQUAL("{TensorFieldValue: spec(tensor(x{})) {\n  [a]: 3\n}}", tensorFieldValue.toString());
 }
 
 TEST("require that wrong tensor type for special case assign throws exception")

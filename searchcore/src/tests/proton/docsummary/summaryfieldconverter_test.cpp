@@ -47,8 +47,7 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using document::Annotation;
@@ -95,12 +94,12 @@ using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
 using vespalib::Slime;
 using vespalib::eval::ValueType;
+using vespalib::eval::TensorSpec;
 using vespalib::geo::ZCurve;
 using vespalib::slime::Cursor;
 using vespalib::string;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
+using vespalib::tensor::DefaultTensorEngine;
 
 using namespace search::docsummary;
 
@@ -676,11 +675,9 @@ Test::requireThatPredicateIsPrinted()
                 SFC::convertSummaryField(false, *doc.getValue("predicate")).get());
 }
 
-
-Tensor::UP
-createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
 }
 
 void
@@ -688,14 +685,14 @@ Test::requireThatTensorIsNotConverted()
 {
     TensorDataType tensorDataType(ValueType::from_spec("tensor(x{},y{})"));
     TensorFieldValue tensorFieldValue(tensorDataType);
-    tensorFieldValue = createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
-                                    {"x", "y"});
+    tensorFieldValue = make_tensor(TensorSpec("tensor(x{},y{})")
+                                   .add({{"x", "4"}, {"y", "5"}}, 7));
     Document doc(getDocType(), DocumentId("doc:scheme:"));
     doc.setRepo(*_documentRepo);
     doc.setValue("tensor", tensorFieldValue);
 
-    TEST_CALL(checkTensor(createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
-                                       {"x", "y"}),
+    TEST_CALL(checkTensor(make_tensor(TensorSpec("tensor(x{},y{})")
+                                      .add({{"x", "4"}, {"y", "5"}}, 7)),
                           SFC::convertSummaryField(false,
                                                    *doc.getValue("tensor")).get()));
     doc.setValue("tensor", TensorFieldValue());

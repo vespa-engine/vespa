@@ -44,7 +44,6 @@ vespa_define_module(
     src/tests/tensor/tensor_performance
     src/tests/tensor/tensor_remove_operation
     src/tests/tensor/tensor_serialization
-    src/tests/tensor/tensor_slime_serialization
     src/tests/tensor/typed_cells
     src/tests/tensor/vector_from_doubles_function
 
