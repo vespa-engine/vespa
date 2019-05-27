@@ -28,7 +28,7 @@ package com.yahoo.jrt;
  **/
 public class Method {
 
-    private final MethodHandler            handler; // option 1: interface
+    private final MethodHandler            handler;
 
     private String name;
     private String paramTypes;
