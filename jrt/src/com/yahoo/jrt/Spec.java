@@ -126,7 +126,7 @@ public class Spec implements Comparable<Spec> {
      *
      * @return socket address
      */
-    SocketAddress address() {
+    SocketAddress resolveAddress() {
         return !malformed ? createAddress(host, port) : null;
     }
 

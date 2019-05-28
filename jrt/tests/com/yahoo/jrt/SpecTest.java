@@ -19,7 +19,7 @@ public class SpecTest {
         assertFalse(spec.malformed());
         assertEquals(457, spec.port());
         assertNull(spec.host());
-        assertTrue(addr.equals(spec.address()));
+        assertTrue(addr.equals(spec.resolveAddress()));
     }
 
     @org.junit.Test
@@ -32,7 +32,7 @@ public class SpecTest {
         assertFalse(spec.malformed());
         assertEquals(457, spec.port());
         assertEquals(host, spec.host());
-        assertTrue(addr.equals(spec.address()));
+        assertTrue(addr.equals(spec.resolveAddress()));
     }
 
     @org.junit.Test
@@ -45,7 +45,7 @@ public class SpecTest {
         assertFalse(spec.malformed());
         assertEquals(457, spec.port());
         assertEquals(host, spec.host());
-        assertTrue(addr.equals(spec.address()));
+        assertTrue(addr.equals(spec.resolveAddress()));
     }
 
     @org.junit.Test
@@ -57,7 +57,7 @@ public class SpecTest {
         assertFalse(spec.malformed());
         assertEquals(8080, spec.port());
         assertEquals("localhost", spec.host());
-        assertTrue(addr.equals(spec.address()));
+        assertTrue(addr.equals(spec.resolveAddress()));
     }
 
     @org.junit.Test
@@ -69,7 +69,7 @@ public class SpecTest {
         assertFalse(spec.malformed());
         assertEquals(8080, spec.port());
         assertNull(spec.host());
-        assertTrue(addr.equals(spec.address()));
+        assertTrue(addr.equals(spec.resolveAddress()));
     }
 
     @org.junit.Test
@@ -80,7 +80,7 @@ public class SpecTest {
         assertTrue(spec.malformed());
         assertEquals(0, spec.port());
         assertNull(spec.host());
-        assertNull(spec.address());
+        assertNull(spec.resolveAddress());
     }
 
     @org.junit.Test
@@ -91,7 +91,7 @@ public class SpecTest {
         assertTrue(spec.malformed());
         assertEquals(0, spec.port());
         assertNull(spec.host());
-        assertNull(spec.address());
+        assertNull(spec.resolveAddress());
     }
 
     @org.junit.Test
@@ -102,7 +102,7 @@ public class SpecTest {
         assertTrue(spec.malformed());
         assertEquals(0, spec.port());
         assertNull(spec.host());
-        assertNull(spec.address());
+        assertNull(spec.resolveAddress());
     }
 
 }
