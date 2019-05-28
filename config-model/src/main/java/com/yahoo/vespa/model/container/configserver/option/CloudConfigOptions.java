@@ -36,10 +36,6 @@ public interface CloudConfigOptions {
     Optional<String> environment();
     Optional<String> region();
     Optional<String> system();
-    Optional<String> defaultFlavor();
-    Optional<String> defaultAdminFlavor();
-    Optional<String> defaultContainerFlavor();
-    Optional<String> defaultContentFlavor();
     Optional<Boolean> useVespaVersionInRequest();
     Optional<Integer> numParallelTenantLoaders();
     Optional<String> loadBalancerAddress();

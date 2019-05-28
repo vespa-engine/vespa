@@ -96,26 +96,6 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     @Override
-    public Optional<String> defaultFlavor() {
-        return getInstallVariable("default_flavor");
-    }
-
-    @Override
-    public Optional<String> defaultAdminFlavor() {
-        return getInstallVariable("default_admin_flavor");
-    }
-
-    @Override
-    public Optional<String> defaultContainerFlavor() {
-        return getInstallVariable("default_container_flavor");
-    }
-
-    @Override
-    public Optional<String> defaultContentFlavor() {
-        return getInstallVariable("default_content_flavor");
-    }
-
-    @Override
     public Optional<Boolean> useVespaVersionInRequest() {
         return getInstallVariable("use_vespa_version_in_request", Boolean::parseBoolean);
     }

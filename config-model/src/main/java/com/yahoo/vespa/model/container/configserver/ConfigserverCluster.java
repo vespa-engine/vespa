@@ -117,18 +117,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.system().isPresent()) {
             builder.environment(options.system().get());
         }
-        if (options.defaultFlavor().isPresent()) {
-            builder.defaultFlavor(options.defaultFlavor().get());
-        }
-        if (options.defaultAdminFlavor().isPresent()) {
-            builder.defaultAdminFlavor(options.defaultAdminFlavor().get());
-        }
-        if (options.defaultContainerFlavor().isPresent()) {
-            builder.defaultContainerFlavor(options.defaultContainerFlavor().get());
-        }
-        if (options.defaultContentFlavor().isPresent()) {
-            builder.defaultContentFlavor(options.defaultContentFlavor().get());
-        }
 
         builder.serverId(HostName.getLocalhost());
         if (!containerCluster.getHttp().getHttpServer().getConnectorFactories().isEmpty()) {
