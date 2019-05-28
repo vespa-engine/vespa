@@ -6,6 +6,5 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import java.util.concurrent.Callable;
 
 public interface PingFactory {
-    public abstract Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor);
-
+    Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor);
 }

@@ -65,7 +65,7 @@ public class Dispatcher extends AbstractComponent {
 
     public static Dispatcher create(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize,
             VipStatus vipStatus, Metric metric) {
-        var searchCluster =new SearchCluster(clusterId, dispatchConfig, containerClusterSize, vipStatus);
+        var searchCluster = new SearchCluster(clusterId, dispatchConfig, containerClusterSize, vipStatus);
         var rpcFactory = new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster, !dispatchConfig.useFdispatchByDefault());
         var pingFactory = dispatchConfig.useFdispatchByDefault()? new FS4PingFactory(fs4ResourcePool) : rpcFactory;
 
