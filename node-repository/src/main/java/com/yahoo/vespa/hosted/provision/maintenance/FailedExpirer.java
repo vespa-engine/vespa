@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.document.datatypes.Array;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -77,7 +77,10 @@ public class FailedExpirer extends Maintainer {
 
     @Override
     protected void maintain() {
-        List<Node> remainingNodes = new ArrayList<>(nodeRepository.getNodes(Node.State.failed));
+        List<Node> remainingNodes = new ArrayList<>(nodeRepository.list()
+                .state(Node.State.failed)
+                .nodeType(NodeType.tenant, NodeType.host)
+                .asList());
 
         recycleIf(remainingNodes, node -> node.allocation().isEmpty());
         recycleIf(remainingNodes, node ->
