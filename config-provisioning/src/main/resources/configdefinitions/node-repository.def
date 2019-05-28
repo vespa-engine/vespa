@@ -5,4 +5,6 @@ namespace=config.provisioning
 # version. Example: my-docker-registry.domain.tld:8080/dist/vespa
 dockerImage string default="dummyImage"
 
+serverNodeType enum {config, controller} default=config
+
 useCuratorClientCache bool default=false

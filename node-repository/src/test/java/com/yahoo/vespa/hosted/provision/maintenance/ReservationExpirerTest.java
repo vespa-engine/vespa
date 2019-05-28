@@ -48,6 +48,7 @@ public class ReservationExpirerTest {
         NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                           NodeType.config,
                                                            true);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 

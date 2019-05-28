@@ -36,6 +36,7 @@ public class MaintenanceTester {
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                                    NodeType.config,
                                                                     true);
 
     public NodeRepository nodeRepository() { return nodeRepository; }
