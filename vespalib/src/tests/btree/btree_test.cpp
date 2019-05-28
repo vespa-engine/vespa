@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("btree_test");
 #include <vespa/vespalib/testkit/testapp.h>
-#include <string>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -19,6 +16,9 @@ LOG_SETUP("btree_test");
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/test/btree/btree_printer.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("btree_test");
 
 using vespalib::GenerationHandler;
 using search::datastore::EntryRef;
@@ -990,8 +990,8 @@ Test::requireThatTreeIteratorSeekWorks()
     {
         MyTree::Iterator itr = tree2.begin();
         MyTree::Iterator itr2 = tree2.begin();
-        itr.binarySeek(5); // outside
-        itr2.linearSeek(5); // outside
+        itr.binarySeek<false>(5); // outside
+        itr2.linearSeek<false>(5); // outside
         EXPECT_TRUE(!itr.valid());
         EXPECT_TRUE(!itr2.valid());
     }
