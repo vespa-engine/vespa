@@ -204,6 +204,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addAthensCopperArgos(ApplicationContainerCluster cluster, ConfigModelContext context) {
+        if ( ! context.getDeployState().isHosted()) return;
         app.getDeployment().map(DeploymentSpec::fromXml)
                 .ifPresent(deploymentSpec -> {
                     addIdentityProvider(cluster,

@@ -110,7 +110,7 @@ public class LbServicesProducerTest {
         Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
                                                                                 .zone(zone)
-                                                                                .properties(new TestProperties()));
+                                                                                .properties(new TestProperties().setHostedVespa(true)));
         return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
 
@@ -123,7 +123,9 @@ public class LbServicesProducerTest {
 
     @Test
     public void testConfigAliasesWithRotations() throws IOException, SAXException {
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
+                                                                                  .rotations(rotations)
+                                                                                  .properties(new TestProperties().setHostedVespa(true)));
         RegionName regionName = RegionName.from("us-east-1");
         LbServicesConfig conf = getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
         final LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").hosts("foo.foo.yahoo.com").services(QRSERVER.serviceName);

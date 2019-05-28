@@ -1,0 +1,7 @@
+<deployment version="1.0" athenz-domain="foo" athenz-service="bar">
+  <test />
+  <staging />
+  <prod>
+     <region active="true">us-west-1</region>
+   </prod>
+</deployment>
