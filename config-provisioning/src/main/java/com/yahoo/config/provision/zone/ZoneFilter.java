@@ -19,6 +19,9 @@ public interface ZoneFilter {
     /** Zones which are upgraded by the controller. */
     ZoneList controllerUpgraded();
 
+    /** Zones which support direct routing through exclusive load balancers. */
+    ZoneList directlyRouted();
+
     /** Zones where config servers are up and running. */
     ZoneList reachable();
 
