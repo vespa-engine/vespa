@@ -95,8 +95,8 @@ public class CuratorDatabase {
 
     /** Creates a path in curator and all its parents as necessary. If the path already exists this does nothing. */
     void create(Path path) {
-        curator.create(path);
-        changeGenerationCounter.next(); // Increment counter to ensure getChildren sees any change.
+        if (curator.create(path))
+            changeGenerationCounter.next(); // Increment counter to ensure getChildren sees any change.
     }
 
     /** Returns whether given path exists */
