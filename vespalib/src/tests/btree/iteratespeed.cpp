@@ -177,30 +177,18 @@ IterateSpeed::Main()
     using DefTraits = BTreeDefaultTraits;
     using LargeTraits = BTreeTraits<32, 16, 10, true>;
     using HugeTraits = BTreeTraits<64, 16, 10, true>;
-    workLoop<SmallTraits, IterateMethod::FORWARD>(loops, forwards, backwards,
-                                                  lambda, leafSlots);
-    workLoop<DefTraits, IterateMethod::FORWARD>(loops, forwards, backwards,
-                                                lambda, leafSlots);
-    workLoop<LargeTraits, IterateMethod::FORWARD>(loops, forwards, backwards,
-                                                  lambda, leafSlots);
-    workLoop<HugeTraits, IterateMethod::FORWARD>(loops, forwards, backwards,
-                                                 lambda, leafSlots);
-    workLoop<SmallTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards,
-                                                    lambda, leafSlots);
-    workLoop<DefTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards,
-                                                  lambda, leafSlots);
-    workLoop<LargeTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards,
-                                                    lambda, leafSlots);
-    workLoop<HugeTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards,
-                                                   lambda, leafSlots);
-    workLoop<SmallTraits, IterateMethod::LAMBDA>(loops, forwards, backwards,
-                                                 lambda, leafSlots);
-    workLoop<DefTraits, IterateMethod::LAMBDA>(loops, forwards, backwards,
-                                               lambda, leafSlots);
-    workLoop<LargeTraits, IterateMethod::LAMBDA>(loops, forwards, backwards,
-                                                 lambda, leafSlots);
-    workLoop<HugeTraits, IterateMethod::LAMBDA>(loops, forwards, backwards,
-                                                lambda, leafSlots);
+    workLoop<SmallTraits, IterateMethod::FORWARD>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<DefTraits, IterateMethod::FORWARD>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<LargeTraits, IterateMethod::FORWARD>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<HugeTraits, IterateMethod::FORWARD>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<SmallTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<DefTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<LargeTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<HugeTraits, IterateMethod::BACKWARDS>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<SmallTraits, IterateMethod::LAMBDA>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<DefTraits, IterateMethod::LAMBDA>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<LargeTraits, IterateMethod::LAMBDA>(loops, forwards, backwards, lambda, leafSlots);
+    workLoop<HugeTraits, IterateMethod::LAMBDA>(loops, forwards, backwards, lambda, leafSlots);
     return 0;
 }
 

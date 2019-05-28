@@ -58,7 +58,7 @@ toNotVal(uint32_t key)
 
 }
 
-typedef BTreeTraits<4, 4, 31, false> MyTraits;
+using MyTraits = BTreeTraits<4, 4, 31, false>;
 
 #define KEYWRAP
 

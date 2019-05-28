@@ -594,6 +594,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
+    template <bool STRICT_SEEK=true>
     void
     seek(const KeyType &key, CompareT comp = CompareT());
 
@@ -607,6 +608,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
+    template <bool STRICT_SEEK=true>
     void
     binarySeek(const KeyType &key, CompareT comp = CompareT());
 
@@ -620,6 +622,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
+    template <bool STRICT_SEEK=true>
     void
     linearSeek(const KeyType &key, CompareT comp = CompareT());
 
@@ -634,6 +637,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
+    template <bool STRICT_SEEK=true>
     void
     seekPast(const KeyType &key, CompareT comp = CompareT());
 
@@ -647,6 +651,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
+    template <bool STRICT_SEEK=true>
     void
     binarySeekPast(const KeyType &key, CompareT comp = CompareT());
 
@@ -660,6 +665,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
+    template <bool STRICT_SEEK=true>
     void
     linearSeekPast(const KeyType &key, CompareT comp = CompareT());
 

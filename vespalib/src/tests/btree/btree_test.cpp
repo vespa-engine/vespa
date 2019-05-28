@@ -23,8 +23,7 @@ LOG_SETUP("btree_test");
 using vespalib::GenerationHandler;
 using search::datastore::EntryRef;
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 namespace {
 
@@ -80,12 +79,8 @@ typedef std::less<int> MyComp;
 #define UNWRAP(key) (key)
 #endif
 
-typedef BTree<MyKey, std::string,
-              btree::NoAggregated,
-              MyComp, MyTraits> MyTree;
-typedef BTreeStore<MyKey, std::string,
-                   btree::NoAggregated,
-                   MyComp, MyTraits> MyTreeStore;
+using MyTree = BTree<MyKey, std::string, btree::NoAggregated, MyComp, MyTraits>;
+using MyTreeStore = BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp, MyTraits>;
 typedef MyTree::Builder               MyTreeBuilder;
 typedef MyTree::LeafNodeType          MyLeafNode;
 typedef MyTree::InternalNodeType      MyInternalNode;
@@ -1520,7 +1515,6 @@ Test::Main()
     TEST_DONE();
 }
 
-}
 }
 
 TEST_APPHOOK(search::btree::Test);
