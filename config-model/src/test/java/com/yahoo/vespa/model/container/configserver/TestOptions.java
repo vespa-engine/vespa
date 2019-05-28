@@ -99,18 +99,6 @@ public class TestOptions implements CloudConfigOptions {
     public Optional<String> system() { return Optional.empty(); }
 
     @Override
-    public Optional<String> defaultFlavor() { return defaultFlavor; }
-
-    @Override
-    public Optional<String> defaultAdminFlavor() { return defaultAdminFlavor; }
-
-    @Override
-    public Optional<String> defaultContainerFlavor() { return defaultContainerFlavor; }
-
-    @Override
-    public Optional<String> defaultContentFlavor() { return defaultContentFlavor; }
-
-    @Override
     public Optional<Boolean> useVespaVersionInRequest() { return useVespaVersionInRequest; }
 
     @Override

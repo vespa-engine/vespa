@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -282,7 +283,7 @@ public class NodeFailerTest {
         }
 
         // A new node is available
-        tester.createReadyNodes(1, 16);
+        tester.createReadyNodes(1, 16, NodeFailTester.nodeResources);
         tester.clock.advance(Duration.ofDays(1));
         tester.allNodesMakeAConfigRequestExcept();
         tester.failer.run();
@@ -302,7 +303,8 @@ public class NodeFailerTest {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // Add ready docker node
-        tester.createReadyNodes(1, 16, "docker");
+        NodeResources newNodeResources = new NodeResources(3,4,5);
+        tester.createReadyNodes(1, 16, newNodeResources);
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
@@ -316,9 +318,9 @@ public class NodeFailerTest {
 
         // Two ready nodes and a ready docker node die, but only 2 of those are failed out
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerNode = ready.stream().filter(node -> node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER).findFirst().get();
+        Node dockerNode = ready.stream().filter(node -> node.flavor().resources().equals(newNodeResources)).findFirst().get();
         List<Node> otherNodes = ready.stream()
-                               .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                               .filter(node -> ! node.flavor().resources().equals(newNodeResources))
                                .collect(Collectors.toList());
         tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
         tester.failer.run();

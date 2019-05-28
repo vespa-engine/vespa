@@ -37,10 +37,6 @@ cloud string default="default"
 environment string default="prod"
 region string default="default"
 system string default="main"
-defaultFlavor string default="default"
-defaultAdminFlavor string default="default"
-defaultContainerFlavor string default="default"
-defaultContentFlavor string default="default"
 
 # RPC protocol
 maxgetconfigclients int default=1000000

@@ -28,14 +28,15 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
-   <p>A document definition is a list of fields. Documents may inherit other documents,
-   implicitly acquiring their fields as it's own. If a document is not set to inherit
-   any document, it will always inherit the document "document.0".</p>
-
-   @author  <a href="thomasg@yahoo-inc.com">Thomas Gundersen</a>
-   @author  bratseth
-*/
+ * A document definition is a list of fields. Documents may inherit other documents,
+ * implicitly acquiring their fields as it's own. If a document is not set to inherit
+ * any document, it will always inherit the document "document.0".
+ *
+ * @author  Thomas Gundersen
+ * @author  bratseth
+ */
 public class SDDocumentType implements Cloneable, Serializable {
+
     public static final SDDocumentType VESPA_DOCUMENT;
     private Map<DataTypeName, SDDocumentType> inheritedTypes = new HashMap<>();
     private Map<NewDocumentType.Name, SDDocumentType> ownedTypes = new HashMap<>();
@@ -315,18 +316,12 @@ public class SDDocumentType implements Cloneable, Serializable {
         return docType;
     }
     
-    /**
-     * The field sets defined for this type and its {@link Search}
-     * @return fieldsets 
-     */
+    /** The field sets defined for this type and its {@link Search} */
     public FieldSets getFieldSets() {
         return fieldSets;
     }
 
-    /**
-     * Sets the field sets for this
-     * @param fieldSets field sets to set for this object
-     */
+    /** Sets the field sets for this */
     public void setFieldSets(FieldSets fieldSets) {
         this.fieldSets = fieldSets;
     }

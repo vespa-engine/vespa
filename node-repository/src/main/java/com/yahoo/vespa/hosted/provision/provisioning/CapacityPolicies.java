@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
@@ -61,25 +62,34 @@ public class CapacityPolicies {
         if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
             return requestedResources.get();
 
-        NodeResources defaultResources = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
         if (requestedResources.isEmpty())
-            return defaultResources;
+            return defaultNodeResources(cluster.type());
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultResources;
+            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get()
+                                                                               : defaultNodeResources(cluster.type());
         else {
             switch (zone.environment()) {
-                case dev: case test: case staging: return defaultResources;
+                case dev: case test: case staging: return defaultNodeResources(cluster.type());
                 default:
-                    // Check existence of the legacy specified flavor
-                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get());
+                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
                     // Return this spec containing the legacy flavor name, not the flavor's capacity object
                     // which describes the flavors capacity, as the point of legacy allocation is to match
                     // by name, not by resources
                     return requestedResources.get();
             }
         }
+    }
+
+    private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
+        if (clusterType == ClusterSpec.Type.admin)
+            return new NodeResources(0.5, 3, 50);
+
+        if (zone.system() == SystemName.cd && zone.environment().isTest())
+            new NodeResources(4, 4, 50);
+
+        return new NodeResources(2, 8, 50);
     }
 
     /**

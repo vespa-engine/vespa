@@ -8,9 +8,11 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -63,7 +65,7 @@ public class OperatorChangeApplicationMaintainerTest {
                                                  true);
         this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
 
-        createReadyNodes(15, nodeRepository, nodeFlavors);
+        createReadyNodes(15, this.fixture.nodeResources, nodeRepository);
         createHostNodes(2, nodeRepository, nodeFlavors);
 
         // Create applications
@@ -91,9 +93,16 @@ public class OperatorChangeApplicationMaintainerTest {
     }
 
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
+        createReadyNodes(count, nodeFlavors.getFlavorOrThrow("default"), nodeRepository);
+    }
+    private void createReadyNodes(int count, NodeResources resources, NodeRepository nodeRepository) {
+        createReadyNodes(count, new Flavor(resources), nodeRepository);
+    }
+
+    private void createReadyNodes(int count, Flavor flavor, NodeRepository nodeRepository) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
@@ -110,6 +119,7 @@ public class OperatorChangeApplicationMaintainerTest {
 
     private class Fixture {
 
+        final NodeResources nodeResources = new NodeResources(2, 8, 50);
         final NodeRepository nodeRepository;
         final NodeRepositoryProvisioner provisioner;
         final Curator curator;
@@ -136,14 +146,14 @@ public class OperatorChangeApplicationMaintainerTest {
 
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
             apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1,
-                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
+                                                               Capacity.fromCount(wantedNodesApp1, nodeResources), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
-                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
+                                                               Capacity.fromCount(wantedNodesApp2, nodeResources), 1));
             this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
         }
 
         private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount, NodeRepositoryProvisioner provisioner) {
-            List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(nodeCount), 1, null);
+            List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodeCount, nodeResources), 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, hosts);
             transaction.commit();

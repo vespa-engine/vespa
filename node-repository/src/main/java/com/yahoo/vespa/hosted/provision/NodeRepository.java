@@ -569,7 +569,7 @@ public class NodeRepository extends AbstractComponent {
      * @return List of all the nodes that have been removed
      */
     public List<Node> removeRecursively(String hostname) {
-        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
         return removeRecursively(node, false);
     }
 

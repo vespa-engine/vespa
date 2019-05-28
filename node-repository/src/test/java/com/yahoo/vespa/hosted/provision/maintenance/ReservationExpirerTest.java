@@ -6,7 +6,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
@@ -50,8 +52,8 @@ public class ReservationExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 
         List<Node> nodes = new ArrayList<>(2);
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant));
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
@@ -61,7 +63,7 @@ public class ReservationExpirerTest {
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
-        provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1, null);
+        provisioner.prepare(applicationId, cluster, Capacity.fromCount(2, new NodeResources(2, 8, 50)), 1, null);
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
 
         // Reservation times out
