@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
@@ -62,14 +63,15 @@ public class CapacityPolicies {
             return requestedResources.get();
 
         if (requestedResources.isEmpty())
-            return defaultNodeResources();
+            return defaultNodeResources(cluster.type());
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultNodeResources();
+            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get()
+                                                                               : defaultNodeResources(cluster.type());
         else {
             switch (zone.environment()) {
-                case dev: case test: case staging: return defaultNodeResources();
+                case dev: case test: case staging: return defaultNodeResources(cluster.type());
                 default:
                     flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
                     // Return this spec containing the legacy flavor name, not the flavor's capacity object
@@ -80,36 +82,18 @@ public class CapacityPolicies {
         }
     }
 
-    private NodeResources defaultNodeResources() {
-        /*
-CD_DEV_CD_US_CENTRAL_1: d_2_8_50
-CD_DEV_CD_US_WEST_1: d_1_4_50
-CD_PROD_AWS_US_EAST_1A: d_2_8_50
-CD_PROD_CD_US_CENTRAL_1: d_2_8_50
-CD_PROD_CD_US_WEST_1: d_2_8_50
-CD_TEST_CD_US_CENTRAL_1: d_4_4_50, admin: d_1_3_50
-CD_STAGING_CD_US_CENTRAL_1: d_4_4_50, admin: d_1_3_50
-MAIN_DEV_AWS_US_EAST_2A: d_2_8_50
-MAIN_DEV_US_EAST_1: d_2_8_50
-MAIN_PERF_US_EAST_3: d_2_8_50
-MAIN_PROD_AWS_US_EAST_1A: d_2_8_50
-MAIN_PROD_AWS_US_EAST_1B: d_2_8_50
-MAIN_PROD_AWS_US_WEST_2A: d_2_8_50
-MAIN_PROD_US_EAST_3: d_2_8_50
-MAIN_TEST_US_EAST_1: d_2_8_50
-MAIN_PROD_US_WEST_1: d_2_8_50
-MAIN_PROD_US_CENTRAL_1: d_2_8_50
-MAIN_PROD_EU_WEST_1: d_2_8_50
-MAIN_PROD_AP_NORTHEAST_1: d_2_8_50
-MAIN_PROD_AP_NORTHEAST_2: d_2_8_50
-MAIN_STAGING_US_EAST_3: d_2_8_50
-MAIN_PROD_AP_SOUTHEAST_1: d_2_8_50
-PUBLIC_CD_PROD_AWS_US_EAST_1C: d_2_8_50
-PUBLIC_CD_TEST_AWS_US_EAST_1C: d_2_8_50, admin: d_1_3_50
-PUBLIC_CD_STAGING_AWS_US_EAST_1C: d_2_8_50, admin: d_1_3_50
-VAAS_DEV_AWS_US_EAST_1B: d_2_8_50
-         */
+    private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
+        if (zone.system() == SystemName.PublicCd && clusterType == ClusterSpec.Type.admin && zone.environment() != Environment.prod)
+            return new NodeResources(1, 3, 50);
 
+        if (zone.system() == SystemName.cd && zone.environment() == Environment.dev && zone.region().value().equals("cd-us-west-1"))
+            return new NodeResources(1, 4, 50);
+
+        if (zone.system() == SystemName.cd && zone.environment() == Environment.test || zone.environment() == Environment.staging)
+            return clusterType == ClusterSpec.Type.admin ? new NodeResources(1, 3, 50)
+                                                         : new NodeResources(4, 4, 50);
+
+        return new NodeResources(2, 8, 50);
     }
 
     /**

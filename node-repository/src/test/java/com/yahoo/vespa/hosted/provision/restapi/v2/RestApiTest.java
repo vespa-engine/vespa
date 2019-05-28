@@ -359,15 +359,6 @@ public class RestApiTest {
     }
 
     @Test
-    public void setting_node_to_ready_will_reset_certain_fields() throws Exception {
-        final String hostname = "host55.yahoo.com";
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
-                        new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved " + hostname + " to ready\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "node55-after-changes.json");
-    }
-
-    @Test
     public void acl_request_by_tenant_node() throws Exception {
         String hostname = "foo.yahoo.com";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -411,7 +402,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        400,
-                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set failed node host1.yahoo.com allocated to tenant1.application1.instance1 as 'container/id1/0/0' ready. It is not provisioned or dirty.\"}");
+                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host1.yahoo.com available for new allocation, must be in state dirty, but was in failed\"}");
 
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host1.yahoo.com",
@@ -427,7 +418,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host2.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set parked node host2.yahoo.com allocated to tenant2.application2.instance2 as 'content/id2/0/0' ready. It is not provisioned or dirty.\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host2.yahoo.com available for new allocation, must be in state dirty, but was in parked\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -436,10 +427,10 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host2.yahoo.com to ready\"}");
 
-        // Attempt to DELETE a node which is not put in a deletable state first
+        // Attempt to DELETE a node which has been removed
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host2.yahoo.com: Node host2.yahoo.com can only be removed from following states: provisioned, failed, parked\"}");
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'host2.yahoo.com'\"}");
 
         // Attempt to DELETE allocated node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -456,10 +447,10 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"flavor\": 1}"), Request.Method.PATCH),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'flavor': Expected a STRING value, got a LONG\"}");
 
-        // Attempt to set unallocated node active
+        // Attempt to set nonexisting node to active
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host2.yahoo.com",
-                                   new byte[0], Request.Method.PUT), 400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com active. It has no allocation.\"}");
+                                   new byte[0], Request.Method.PUT), 404,
+                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not move host2.yahoo.com to active: Node not found\"}");
 
         // Attempt to POST duplicate nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -522,13 +513,6 @@ public class RestApiTest {
 
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
-    }
-
-    @Test
-    public void test_disallow_setting_currentDockerImage_for_non_docker_node() throws IOException {
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com",
-                        Utf8.toBytes("{\"currentDockerImage\": \"ignored-image-name:4443/vespa/ci:6.45.0\"}"), Request.Method.PATCH),
-                400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'currentDockerImage': Docker image can only be set for docker containers\"}");
     }
 
     @Test

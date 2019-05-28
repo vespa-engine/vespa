@@ -227,8 +227,15 @@ public class ProvisioningTester {
         return makeReadyNodes(n, flavor, NodeType.tenant);
     }
 
+    public List<Node> makeReadyNodes(int n, NodeResources resources) {
+        return makeReadyNodes(n, resources, NodeType.tenant);
+    }
+
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
         return makeReadyNodes(n, asFlavor(flavor, type), type);
+    }
+    public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
+        return makeReadyNodes(n, new Flavor(resources), type, 0);
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type) {
         return makeReadyNodes(n, flavor, type, 0);

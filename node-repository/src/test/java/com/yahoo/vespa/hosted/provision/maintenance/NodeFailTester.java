@@ -57,6 +57,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class NodeFailTester {
 
+    public static final NodeResources nodeResources = new NodeResources(2, 8, 50);
+
     // Immutable components
     public static final ApplicationId nodeAdminApp = ApplicationId.from(TenantName.from("hosted-vespa"), ApplicationName.from("routing"), InstanceName.from("default"));
     public static final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
@@ -100,7 +102,7 @@ public class NodeFailTester {
     public static NodeFailTester withTwoApplications(ConfigserverConfig configserverConfig) {
         NodeFailTester tester = new NodeFailTester(configserverConfig);
         
-        tester.createReadyNodes(16);
+        tester.createReadyNodes(16, nodeResources);
         tester.createHostNodes(3);
 
         // Create applications
@@ -114,8 +116,8 @@ public class NodeFailTester {
         assertEquals(wantedNodesApp2, tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false, true), 1));
-        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false, true), 1));
+        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromCount(wantedNodesApp1, nodeResources, false, true), 1));
+        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromCount(wantedNodesApp2, nodeResources, false, true), 1));
         tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
@@ -227,6 +229,10 @@ public class NodeFailTester {
         return createReadyNodes(count, 0);
     }
 
+    public List<Node> createReadyNodes(int count, NodeResources resources) {
+        return createReadyNodes(count, 0, resources);
+    }
+
     public List<Node> createReadyNodes(int count, NodeType nodeType) {
         return createReadyNodes(count, 0, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), nodeType);
     }
@@ -237,6 +243,14 @@ public class NodeFailTester {
 
     public List<Node> createReadyNodes(int count, int startIndex, String flavor) {
         return createReadyNodes(count, startIndex, Optional.empty(), nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant);
+    }
+
+    public List<Node> createReadyNodes(int count, int startIndex, NodeResources resources) {
+        return createReadyNodes(count, startIndex, Optional.empty(), new Flavor(resources), NodeType.tenant);
+    }
+
+    public List<Node> createReadyNodes(int count, int startIndex, Flavor flavor) {
+        return createReadyNodes(count, startIndex, Optional.empty(), flavor, NodeType.tenant);
     }
 
     private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
@@ -261,6 +275,7 @@ public class NodeFailTester {
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount) {
         activate(applicationId, cluster, Capacity.fromNodeCount(nodeCount));
     }
+
     private void activate(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
         List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));

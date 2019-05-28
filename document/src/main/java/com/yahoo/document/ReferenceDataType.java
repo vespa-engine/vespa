@@ -10,7 +10,6 @@ import com.yahoo.vespa.objects.Ids;
  * {@link ReferenceFieldValue} instance binds to.
  *
  * @author vekterli
- * @since 6.65
  */
 public class ReferenceDataType extends DataType {
 

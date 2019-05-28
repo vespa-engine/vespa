@@ -69,11 +69,11 @@ public class MockNodeRepository extends NodeRepository {
 
         // Regular nodes
         nodes.add(createNode("node1", "host1.yahoo.com", ipConfig(1), Optional.empty(), Optional.empty(),
-                             flavors.getFlavorOrThrow("default"), NodeType.tenant));
+                             new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant));
         nodes.add(createNode("node2", "host2.yahoo.com", ipConfig(2), Optional.empty(), Optional.empty(),
-                             flavors.getFlavorOrThrow("default"), NodeType.tenant));
+                             new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant));
         nodes.add(createNode("node3", "host3.yahoo.com", ipConfig(3), Optional.empty(), Optional.empty(),
-                             flavors.getFlavorOrThrow("expensive"), NodeType.tenant));
+                             new Flavor(new NodeResources(0.5, 48, 500)), NodeType.tenant));
         Node node4 = createNode("node4", "host4.yahoo.com", ipConfig(4), Optional.of("dockerhost1.yahoo.com"), Optional.empty(),
                                 new Flavor(new NodeResources(1, 1, 100)), NodeType.tenant);
         node4 = node4.with(node4.status()
@@ -89,14 +89,14 @@ public class MockNodeRepository extends NodeRepository {
 
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipConfig(6), Optional.empty(), Optional.empty(),
-                             flavors.getFlavorOrThrow("default"), NodeType.tenant));
+                             new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant));
         Node node7 = createNode("node7", "host7.yahoo.com", ipConfig(7), Optional.empty(), Optional.empty(),
-                                flavors.getFlavorOrThrow("default"), NodeType.tenant);
+                                new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant);
         nodes.add(node7);
 
         // 8, 9, 11 and 12 are added by web service calls
         Node node10 = createNode("node10", "host10.yahoo.com", ipConfig(10), Optional.of("parent1.yahoo.com"), Optional.empty(),
-                                 flavors.getFlavorOrThrow("default"), NodeType.tenant);
+                                 new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
                 .withVespaVersion(Version.fromString("5.104.142"))
@@ -104,15 +104,8 @@ public class MockNodeRepository extends NodeRepository {
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 
-        Node node13 = createNode("node13", "host13.yahoo.com", ipConfig(13), Optional.empty(), Optional.empty(),
-                                 flavors.getFlavorOrThrow("large"), NodeType.tenant);
-        Node node14 = createNode("node14", "host14.yahoo.com", ipConfig(14), Optional.empty(), Optional.empty(),
-                                 flavors.getFlavorOrThrow("large"), NodeType.tenant);
-        nodes.add(node13);
-        nodes.add(node14);
-
         Node node55 = createNode("node55", "host55.yahoo.com", ipConfig(55), Optional.empty(), Optional.empty(),
-                                 flavors.getFlavorOrThrow("default"), NodeType.tenant);
+                                 new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant);
         nodes.add(node55.with(node55.status().withWantToRetire(true).withWantToDeprovision(true)));
 
         /* Setup docker hosts (two of these will be reserved for spares */
@@ -151,20 +144,19 @@ public class MockNodeRepository extends NodeRepository {
                                                       Set.of(RotationName.from("us-cluster")));
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
 
-
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container,
                                                    ClusterSpec.Id.from("id1"),
                                                    Version.fromString("6.42"),
                                                    false, Collections.emptySet());
-        provisioner.prepare(app1, cluster1, Capacity.fromNodeCount(2), 1, null);
+        provisioner.prepare(app1, cluster1, Capacity.fromCount(2, new NodeResources(2, 8, 50)), 1, null);
 
         ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
         ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content,
                                                    ClusterSpec.Id.from("id2"),
                                                    Version.fromString("6.42"),
                                                    false, Collections.emptySet());
-        activate(provisioner.prepare(app2, cluster2, Capacity.fromNodeCount(2), 1, null), app2, provisioner);
+        activate(provisioner.prepare(app2, cluster2, Capacity.fromCount(2, new NodeResources(2, 8, 50)), 1, null), app2, provisioner);
 
         ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
         ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content,
@@ -173,12 +165,19 @@ public class MockNodeRepository extends NodeRepository {
                                                    false, Collections.emptySet());
         activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 1, 100), false, true), 1, null), app3, provisioner);
 
+        List<Node> largeNodes = new ArrayList<>();
+        largeNodes.add(createNode("node13", "host13.yahoo.com", ipConfig(13), Optional.empty(), Optional.empty(),
+                                  new Flavor(new NodeResources(10, 48, 500)), NodeType.tenant));
+        largeNodes.add(createNode("node14", "host14.yahoo.com", ipConfig(14), Optional.empty(), Optional.empty(),
+                                  new Flavor(new NodeResources(10, 48, 500)), NodeType.tenant));
+        addNodes(largeNodes);
+        setReady(largeNodes, Agent.system, getClass().getSimpleName());
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container,
                                                    ClusterSpec.Id.from("id4"),
                                                    Version.fromString("6.42"),
                                                    false, Collections.emptySet());
-        activate(provisioner.prepare(app4, cluster4, Capacity.fromNodeCount(2, Optional.of("large"), false, true), 1, null), app4, provisioner);
+        activate(provisioner.prepare(app4, cluster4, Capacity.fromCount(2, new NodeResources(10, 48, 500), false, true), 1, null), app4, provisioner);
     }
 
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {

@@ -53,7 +53,7 @@ public class DocumentReferenceResolver {
         if (search == null) {
             throw new IllegalArgumentException(
                     String.format("The field '%s' is an invalid document reference. " +
-                            "Could not find document with '%s' in any search definitions", field.getName(), targetDocumentName));
+                                  "Could not find document with '%s' in any search definitions", field.getName(), targetDocumentName));
         }
         return new DocumentReference(field, search);
     }

@@ -74,12 +74,17 @@ public final class Capacity {
         return fromNodeCount(capacity, Optional.empty(), false, true);
     }
 
-    public static Capacity fromCount(int nodeCount, NodeResources flavor, boolean required, boolean canFail) {
-        return new Capacity(nodeCount, Optional.of(flavor), required, canFail, NodeType.tenant);
+    /** Create a non-required, failable capacity request */
+    public static Capacity fromCount(int nodeCount, NodeResources resources) {
+        return fromCount(nodeCount, resources, false, true);
     }
 
-    public static Capacity fromCount(int nodeCount, Optional<NodeResources> flavor, boolean required, boolean canFail) {
-        return new Capacity(nodeCount, flavor, required, canFail, NodeType.tenant);
+    public static Capacity fromCount(int nodeCount, NodeResources resources, boolean required, boolean canFail) {
+        return new Capacity(nodeCount, Optional.of(resources), required, canFail, NodeType.tenant);
+    }
+
+    public static Capacity fromCount(int nodeCount, Optional<NodeResources> resources, boolean required, boolean canFail) {
+        return new Capacity(nodeCount, resources, required, canFail, NodeType.tenant);
     }
 
     public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {

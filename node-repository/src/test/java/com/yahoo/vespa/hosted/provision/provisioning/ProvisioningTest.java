@@ -292,31 +292,6 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void application_deployment_multiple_flavors_default_per_type() {
-        ConfigserverConfig.Builder config = new ConfigserverConfig.Builder();
-        config.environment("prod");
-        config.region("us-east");
-        config.defaultFlavor("not-used");
-        config.defaultContainerFlavor("small");
-        config.defaultContentFlavor("large");
-        ProvisioningTester tester = new ProvisioningTester.Builder()
-                .zone(new Zone(new ConfigserverConfig(config), new NodeFlavors(new FlavorsConfig.Builder().build()))).build();
-
-        ApplicationId application1 = tester.makeApplicationId();
-
-        tester.makeReadyNodes(10, "small");
-        tester.makeReadyNodes(9, "large");
-
-        // deploy
-        SystemState state1 = prepare(application1, 2, 3, 4, 5, null, tester);
-        tester.activate(application1, state1.allHosts);
-        assertEquals("'small' nodes are used for containers",
-                     2 + 3, tester.getNodes(application1, Node.State.active).flavor("small").size());
-        assertEquals("'large' nodes are used for content",
-                     4 + 5, tester.getNodes(application1, Node.State.active).flavor("large").size());
-    }
-
-    @Test
     public void application_deployment_multiple_flavors_with_replacement() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
@@ -871,7 +846,7 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.fromNodeCount(count, Optional.empty(), required, true);
+        Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, Optional.empty(), required, true);
         int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0.type());
         int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1.type());
         int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0.type());
