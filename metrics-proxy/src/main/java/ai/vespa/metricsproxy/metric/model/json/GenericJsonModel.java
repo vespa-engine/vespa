@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
@@ -36,7 +37,7 @@ public class GenericJsonModel {
         try {
             return mapper.writeValueAsString(this);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.WARNING, "Got exception when rendering metrics:", e);
             throw new RuntimeException("Could not render metrics. Check the log for details.");
         }
     }
