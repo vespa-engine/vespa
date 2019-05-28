@@ -28,8 +28,8 @@ public class InstanceResourceTest {
     private static final ApplicationId APPLICATION_ID = ApplicationId.from(
             "tenant", "app", "instance");
     private static final List<Mirror.Entry> ENTRIES = Arrays.asList(
-            new Mirror.Entry("name1", "spec1"),
-            new Mirror.Entry("name2", "spec2"));
+            new Mirror.Entry("name1", "tcp/spec:1"),
+            new Mirror.Entry("name2", "tcp/spec:2"));
     private static final ClusterId CLUSTER_ID = new ClusterId("cluster-id");
 
     private final SlobrokApi slobrokApi = mock(SlobrokApi.class);
@@ -85,7 +85,7 @@ public class InstanceResourceTest {
         ObjectMapper mapper = new ObjectMapper();
         String actualJson = mapper.writeValueAsString(response);
         assertEquals(
-                "[{\"name\":\"name1\",\"spec\":\"spec1\"},{\"name\":\"name2\",\"spec\":\"spec2\"}]",
+                "[{\"name\":\"name1\",\"spec\":\"tcp/spec:1\"},{\"name\":\"name2\",\"spec\":\"tcp/spec:2\"}]",
                 actualJson);
     }
 }

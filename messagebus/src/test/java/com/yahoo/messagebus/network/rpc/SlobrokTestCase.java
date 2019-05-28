@@ -11,9 +11,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -69,7 +67,7 @@ public class SlobrokTestCase {
             System.out.printf("  { EMPTY }\n");
         } else {
             for (Mirror.Entry entry : actual) {
-                System.out.printf("  { %s, %s }\n", entry.getName(), entry.getSpec());
+                System.out.printf("  { %s, %s }\n", entry.getName(), entry.getSpecString());
             }
         }
         System.out.printf("expected values:\n");
@@ -77,7 +75,7 @@ public class SlobrokTestCase {
             System.out.printf("  { EMPTY }\n");
         } else {
             for (Mirror.Entry entry : expect) {
-                System.out.printf("  { %s, %s }\n", entry.getName(),  entry.getSpec());
+                System.out.printf("  { %s, %s }\n", entry.getName(),  entry.getSpecString());
             }
         }
         assertTrue(false);

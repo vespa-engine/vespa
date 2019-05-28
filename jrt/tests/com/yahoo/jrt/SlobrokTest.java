@@ -88,14 +88,14 @@ public class SlobrokTest {
             err("  { EMPTY }");
         }
         for (Entry e : actual) {
-            err("  {" + e.getName() + ", " + e.getSpec() + "}");
+            err("  {" + e.getName() + ", " + e.getSpecString() + "}");
         }
         err("expected values:");
         if (expect.isEmpty()) {
             err("  { EMPTY }");
         }
         for (Entry e : expect) {
-            err("  {" + e.getName() + ", " + e.getSpec() + "}");
+            err("  {" + e.getName() + ", " + e.getSpecString() + "}");
         }
     }
 
@@ -119,9 +119,7 @@ public class SlobrokTest {
         assertFalse(one.equals(null));
         assertFalse(one.equals(register));
         assertTrue(one.getName().equals(wantName));
-        assertTrue(one.getSpec().equals(mySpec));
-        int wantHC = mySpec.hashCode() + wantName.hashCode();
-        assertTrue(one.hashCode() == wantHC);
+        assertTrue(one.getSpecString().equals(mySpec));
 
         register.registerName("B/x");
         check("B/x", new SpecList().add("B/x", mySpec));

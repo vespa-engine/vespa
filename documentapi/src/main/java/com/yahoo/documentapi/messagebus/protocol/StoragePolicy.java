@@ -144,12 +144,12 @@ public class StoragePolicy extends SlobrokPolicy {
             if (arr.isEmpty()) return null;
             if (distributor != null) {
                 if (arr.size() == 1) {
-                    return convertSlobrokNameToSessionName(arr.get(0).getSpec());
+                    return convertSlobrokNameToSessionName(arr.get(0).getSpecString());
                 } else {
                     log.log(LogLevel.WARNING, "Got " + arr.size() + " matches for a distributor.");
                 }
             } else {
-                return convertSlobrokNameToSessionName(arr.get(randomizer.nextInt(arr.size())).getSpec());
+                return convertSlobrokNameToSessionName(arr.get(randomizer.nextInt(arr.size())).getSpecString());
             }
             return null;
         }

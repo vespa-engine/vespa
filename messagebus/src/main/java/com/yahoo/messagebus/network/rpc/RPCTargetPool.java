@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class RPCTargetPool {
 
-    private final Map<String, Entry> targets = new HashMap<>();
+    private final Map<Spec, Entry> targets = new HashMap<>();
     private final Timer timer;
     private final long expireMillis;
     private final int numTargetsPerSpec;
@@ -86,33 +86,32 @@ public class RPCTargetPool {
      */
     public RPCTarget getTarget(Supervisor orb, RPCServiceAddress address) {
         Spec spec = address.getConnectionSpec();
-        String key = spec.toString();
         long now = timer.milliTime();
         synchronized (this) {
-            Entry entry = targets.get(key);
+            Entry entry = targets.get(spec);
             if (entry != null) {
                 RPCTarget target = entry.getTarget(now);
                 if (target != null) {
                     return target;
                 }
-                dropTarget(entry, key);
+                dropTarget(entry, spec);
             }
-            return createAndAddTarget(orb, spec, key, now);
+            return createAndAddTarget(orb, spec, now);
         }
     }
 
-    private void dropTarget(Entry entry, String key) {
+    private void dropTarget(Entry entry, Spec key) {
         entry.close();
         targets.remove(key);
     }
 
-    private RPCTarget createAndAddTarget(Supervisor orb, Spec spec, String key, long now) {
+    private RPCTarget createAndAddTarget(Supervisor orb, Spec spec,  long now) {
         RPCTarget [] tmpTargets = new RPCTarget[numTargetsPerSpec];
         for (int i=0; i < tmpTargets.length; i++) {
             tmpTargets[i] = new RPCTarget(spec, orb);
         }
         Entry entry = new Entry(tmpTargets, now);
-        targets.put(key, entry);
+        targets.put(spec, entry);
         return entry.getTarget(now);
     }
 

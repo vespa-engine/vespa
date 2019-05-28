@@ -53,7 +53,10 @@ public class RPCService {
                 addressList = mirror.lookup(pattern);
             }
             if (addressList != null && !addressList.isEmpty()) {
-                addressIdx = ++addressIdx % addressList.size();
+                ++addressIdx;
+                if (addressIdx >= addressList.size()) {
+                    addressIdx = 0;
+                }
                 Mirror.Entry entry = addressList.get(addressIdx);
                 return new RPCServiceAddress(entry.getName(), entry.getSpec());
             }

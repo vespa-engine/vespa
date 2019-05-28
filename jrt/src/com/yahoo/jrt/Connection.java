@@ -171,7 +171,7 @@ class Connection extends Target {
             return this;
         }
         try {
-            socket = parent.transport().createCryptoSocket(SocketChannel.open(spec.address()), false);
+            socket = parent.transport().createCryptoSocket(SocketChannel.open(spec.resolveAddress()), false);
         } catch (Exception e) {
             setLostReason(e);
         }

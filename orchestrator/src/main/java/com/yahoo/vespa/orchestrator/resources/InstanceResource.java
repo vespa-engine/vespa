@@ -105,7 +105,7 @@ public class InstanceResource {
 
         List<Mirror.Entry> entries = slobrokApi.lookup(applicationId, pattern);
         return entries.stream()
-                .map(entry -> new SlobrokEntryResponse(entry.getName(), entry.getSpec()))
+                .map(entry -> new SlobrokEntryResponse(entry.getName(), entry.getSpecString()))
                 .collect(Collectors.toList());
     }
 
