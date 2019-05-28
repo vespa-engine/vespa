@@ -1,6 +1,5 @@
 /Makefile
 /dirconfig.tmp
 /test.vlog
-/testrunner
 /vdsroot
-storageserver_testrunner_app
+storageserver_gtest_runner_app
