@@ -204,7 +204,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addAthensCopperArgos(ApplicationContainerCluster cluster, ConfigModelContext context) {
-        // Some apps may have deployment.xml, but it should be ignored in some cases, e.g. in unit tests
         if ( ! context.getDeployState().isHosted()) return;
         app.getDeployment().map(DeploymentSpec::fromXml)
                 .ifPresent(deploymentSpec -> {
