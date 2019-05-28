@@ -27,4 +27,10 @@ public class GenericNode {
     @JsonProperty("metrics")
     public List<GenericMetrics> metrics;
 
+    public GenericNode() { }
+
+    GenericNode(Long timestamp, List<GenericMetrics> metrics) {
+        this.timestamp = timestamp;
+        this.metrics = metrics;
+    }
 }

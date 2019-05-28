@@ -39,7 +39,7 @@ public class ExternalMetrics {
     public static final DimensionId STATE_DIMENSION = toDimensionId("state");
     public static final DimensionId ORCHESTRATOR_STATE_DIMENSION = toDimensionId("orchestratorState");
 
-    static final ServiceId VESPA_NODE_SERVICE_ID = toServiceId("vespa.node");
+    public static final ServiceId VESPA_NODE_SERVICE_ID = toServiceId("vespa.node");
 
     private volatile List<MetricsPacket.Builder> metrics = new ArrayList<>();
     private final MetricsConsumers consumers;

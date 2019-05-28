@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
@@ -34,9 +35,25 @@ public class GenericService {
     @JsonProperty("metrics")
     public List<GenericMetrics> metrics;
 
+    public GenericService() { }
+
+    GenericService(String name, Long timestamp, List<GenericMetrics> metrics) {
+        this.name = name;
+        this.timestamp = timestamp;
+        status = new Status("up");
+        this.metrics = metrics;
+    }
+
+
     @JsonInclude(NON_EMPTY)
     @JsonPropertyOrder({ "code", "description" })
     public static class Status {
+        public Status() { }
+
+        Status(String code) {
+            this.code = code;
+        }
+
         @JsonProperty("code")
         public String code;
 
