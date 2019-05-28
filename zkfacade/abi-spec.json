@@ -78,7 +78,7 @@
       "public com.yahoo.vespa.curator.Curator$FileCache createFileCache(java.lang.String, boolean)",
       "public boolean exists(com.yahoo.path.Path)",
       "public void set(com.yahoo.path.Path, byte[])",
-      "public void create(com.yahoo.path.Path)",
+      "public boolean create(com.yahoo.path.Path)",
       "public varargs void createAtomically(com.yahoo.path.Path[])",
       "public void delete(com.yahoo.path.Path)",
       "public java.util.List getChildren(com.yahoo.path.Path)",
