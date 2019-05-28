@@ -39,24 +39,24 @@ public class NameServiceForwarder {
     }
 
     /** Create or update a CNAME record with given name and data */
-    public Record createCname(RecordName name, RecordData canonicalName, NameServiceQueue.Priority priority) {
-        return forward(new CreateRecord(new Record(Record.Type.CNAME, name, canonicalName)), priority).affectedRecords().get(0);
+    public void createCname(RecordName name, RecordData canonicalName, NameServiceQueue.Priority priority) {
+        forward(new CreateRecord(new Record(Record.Type.CNAME, name, canonicalName)), priority);
     }
 
     /** Create or update an ALIAS record with given name and targets */
-    public List<Record> createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
+    public void createAlias(RecordName name, Set<AliasTarget> targets, NameServiceQueue.Priority priority) {
         var records = targets.stream().map(AliasTarget::asData)
                              .map(data -> new Record(Record.Type.ALIAS, name, data))
                              .collect(Collectors.toList());
-        return forward(new CreateRecords(records), priority).affectedRecords();
+        forward(new CreateRecords(records), priority);
     }
 
     /** Create or update a TXT record with given name and data */
-    public List<Record> createTxt(RecordName name, List<RecordData> txtData, NameServiceQueue.Priority priority) {
+    public void createTxt(RecordName name, List<RecordData> txtData, NameServiceQueue.Priority priority) {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
                              .collect(Collectors.toList());
-        return forward(new CreateRecords(records), priority).affectedRecords();
+        forward(new CreateRecords(records), priority);
     }
 
     /** Remove all records of given type and name */
@@ -69,7 +69,7 @@ public class NameServiceForwarder {
         forward(new RemoveRecords(type, data), priority);
     }
 
-    private NameServiceRequest forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
+    private void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
         try (Lock lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
@@ -80,7 +80,6 @@ public class NameServiceForwarder {
             }
             db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
         }
-        return request;
     }
 
 }

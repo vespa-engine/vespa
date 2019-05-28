@@ -61,11 +61,6 @@ public class RemoveRecords implements NameServiceRequest {
     }
 
     @Override
-    public List<Record> affectedRecords() {
-        return List.of();
-    }
-
-    @Override
     public String toString() {
         return "remove records of type " + type + ", by " +
                name.map(n -> "name " + n).orElse("") +
