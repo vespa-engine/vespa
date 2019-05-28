@@ -12,6 +12,7 @@ using fef::FeatureExecutor;
 using fef::FieldInfo;
 using fef::ITermData;
 using fef::ITermFieldData;
+using fef::MatchDataDetails;
 
 Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
                            const fef::IQueryEnvironment& env)
@@ -29,7 +30,7 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
             const ITermFieldData& term_field = term->field(j);
             if (field.id() == term_field.getFieldId()) {
                 // TODO: Add proper calculation of IDF
-                _terms.emplace_back(term_field.getHandle(), 1.0);
+                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Cheap), 1.0);
             }
         }
     }
