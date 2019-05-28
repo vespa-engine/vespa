@@ -225,9 +225,10 @@ public class Curator implements AutoCloseable {
     /**
      * Creates an empty node at a path, creating any parents as necessary.
      * If the node already exists nothing is done.
+     * Returns whether a change was attempted.
      */
-    public void create(Path path) {
-        if (exists(path)) return;
+    public boolean create(Path path) {
+        if (exists(path)) return false;
 
         String absolutePath = path.getAbsolute();
         try {
@@ -237,6 +238,7 @@ public class Curator implements AutoCloseable {
         } catch (Exception e) {
             throw new RuntimeException("Could not create " + absolutePath, e);
         }
+        return true;
     }
 
     /**
