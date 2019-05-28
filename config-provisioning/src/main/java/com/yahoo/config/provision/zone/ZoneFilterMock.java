@@ -48,6 +48,11 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
+    public ZoneList directlyRouted() {
+        return all();
+    }
+
+    @Override
     public ZoneList reachable() {
         return all();
     }

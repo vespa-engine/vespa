@@ -70,6 +70,8 @@ public class RoutingPolicies {
      * load balancers for given application have changed.
      */
     public void refresh(ApplicationId application, ZoneId zone) {
+        // TODO: Use this to decide how apply routing policies for shared routing layer
+        if (!controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) return;
         var lbs = new LoadBalancers(application, zone, controller.applications().configServer()
                                                                  .getLoadBalancers(application, zone));
         removeObsoleteEndpointsFromDns(lbs);
