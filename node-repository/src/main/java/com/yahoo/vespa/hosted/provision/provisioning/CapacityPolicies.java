@@ -83,15 +83,11 @@ public class CapacityPolicies {
     }
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
-        if (zone.system() != SystemName.cd && clusterType == ClusterSpec.Type.admin)
+        if (clusterType == ClusterSpec.Type.admin)
             return new NodeResources(0.5, 3, 50);
 
-        if (zone.system() == SystemName.PublicCd && clusterType == ClusterSpec.Type.admin && zone.environment() != Environment.prod)
-            return new NodeResources(1, 3, 50);
-
-        if (zone.system() == SystemName.cd && zone.environment() == Environment.test || zone.environment() == Environment.staging)
-            return clusterType == ClusterSpec.Type.admin ? new NodeResources(1, 3, 50)
-                                                         : new NodeResources(4, 4, 50);
+        if (zone.system() == SystemName.cd && zone.environment().isTest())
+            new NodeResources(4, 4, 50);
 
         return new NodeResources(2, 8, 50);
     }
