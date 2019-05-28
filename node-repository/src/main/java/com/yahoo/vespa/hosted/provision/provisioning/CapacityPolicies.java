@@ -89,9 +89,6 @@ public class CapacityPolicies {
         if (zone.system() == SystemName.PublicCd && clusterType == ClusterSpec.Type.admin && zone.environment() != Environment.prod)
             return new NodeResources(1, 3, 50);
 
-        if (zone.system() == SystemName.cd && zone.environment() == Environment.dev && zone.region().value().equals("cd-us-west-1"))
-            return new NodeResources(1, 4, 50);
-
         if (zone.system() == SystemName.cd && zone.environment() == Environment.test || zone.environment() == Environment.staging)
             return clusterType == ClusterSpec.Type.admin ? new NodeResources(1, 3, 50)
                                                          : new NodeResources(4, 4, 50);
