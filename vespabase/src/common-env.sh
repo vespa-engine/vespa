@@ -229,7 +229,14 @@ drop_caches () {
 
 no_transparent_hugepages () {
     # Should probably also be done on host.
-    dn=/sys/kernel/mm/redhat_transparent_hugepage
+    if grep -q "release 6" /etc/redhat-release; then
+        dn=/sys/kernel/mm/redhat_transparent_hugepage
+        khugepaged_defrag=yes
+    else
+        dn=/sys/kernel/mm/transparent_hugepage
+        khugepaged_defrag=1
+    fi
+
     if [ -w $dn/enabled ]; then
 	echo always > $dn/enabled
     fi
@@ -237,7 +244,7 @@ no_transparent_hugepages () {
 	echo never > $dn/defrag
     fi
     if [ -w $dn/khugepaged/defrag ]; then
-	echo yes > $dn/khugepaged/defrag
+	echo $khugepaged_defrag > $dn/khugepaged/defrag
     fi
 }
 
