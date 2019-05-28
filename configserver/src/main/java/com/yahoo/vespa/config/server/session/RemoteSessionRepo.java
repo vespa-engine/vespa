@@ -187,7 +187,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(LogLevel.DEBUG, () -> "Found active application for session " + session.getSessionId() + " , loading it");
                 reloadHandler.reloadConfig(session.ensureApplicationLoaded());
-                log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId);
+                log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }
         }
