@@ -780,6 +780,7 @@
       "public static com.yahoo.config.provision.SystemName defaultSystem()",
       "public static com.yahoo.config.provision.SystemName from(java.lang.String)",
       "public java.lang.String value()",
+      "public boolean isCd()",
       "public static java.util.Set all()"
     ],
     "fields": [

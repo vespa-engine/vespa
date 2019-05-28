@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -55,6 +56,10 @@ public enum SystemName {
             case vaas: return "vaas";
             default : throw new IllegalStateException();
         }
+    }
+
+    public boolean isCd() {
+        return List.of(cd, PublicCd).contains(this);
     }
 
     public static Set<SystemName> all() {

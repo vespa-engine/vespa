@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
@@ -376,8 +375,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private boolean noCpuCap(ZoneId zoneId) {
         return zoneId.environment() == Environment.dev
-                // TODO: Add other cd systems, not ideal when having just SystemName here
-                || (zoneId.system() == SystemName.cd && zoneId.environment() != Environment.prod);
+                || (zoneId.system().isCd() && zoneId.environment() != Environment.prod);
     }
 
     private void scheduleDownLoadIfNeeded(NodeSpec node, Optional<Container> container) {
