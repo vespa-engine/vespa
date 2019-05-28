@@ -155,7 +155,7 @@ public enum JobType {
             case test: return Optional.of(systemTest);
             case staging: return Optional.of(stagingTest);
         }
-        return from(system, ZoneId.from(environment, region));
+        return from(system, ZoneId.from(system, environment, region));
     }
 
 }
