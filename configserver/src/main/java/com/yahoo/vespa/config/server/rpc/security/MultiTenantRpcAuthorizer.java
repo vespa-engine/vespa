@@ -88,6 +88,8 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     try {
                         getPeerIdentity(request)
                                 .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
+                        log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                                                                   request.methodName(), request.target().toString()));
                     } catch (Throwable t) {
                         handleAuthorizationFailure(request, t);
                     }
@@ -155,7 +157,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     }
 
     private void handleAuthorizationFailure(Request request, Throwable throwable) {
-        String errorMessage = String.format("For request from '%s': %s", request.target().toString(), throwable.getMessage());
+        String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
         log.log(LogLevel.WARNING, errorMessage, throwable);
         if (mode == Mode.ENFORCE) {
             JrtErrorCode error = throwable instanceof AuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
