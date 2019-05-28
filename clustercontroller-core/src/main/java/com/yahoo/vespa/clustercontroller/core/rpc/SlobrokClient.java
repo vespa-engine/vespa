@@ -206,7 +206,7 @@ public class SlobrokClient implements NodeLookup {
             String service = (st.hasMoreTokens() ? st.nextToken() : ""); // skip
             assert(addressType.equals("storage"));
             Node n = new Node(nodeType, nodeIndex);
-            result.put(n, new SlobrokData(n, entry.getSpec()));
+            result.put(n, new SlobrokData(n, entry.getSpecString()));
         }
         return result;
     }

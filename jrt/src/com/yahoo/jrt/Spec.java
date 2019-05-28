@@ -3,15 +3,15 @@ package com.yahoo.jrt;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Objects;
 
 
 /**
  * A Spec is a network address used for either listening or
  * connecting.
  */
-public class Spec {
+public class Spec implements Comparable<Spec> {
 
-    private final SocketAddress address;
     private final String        host;
     private final int           port;
     private final boolean       malformed;
@@ -57,13 +57,11 @@ public class Spec {
             port = portNum;
             malformed = ! correct;
             host = correct ? hostStr : null;
-            address = correct ? createAddress(host, port) : null;
             asString = correct ? createString(host, port) : "MALFORMED";
         } else {
             malformed = true;
             port = 0;
             host = null;
-            address = null;
             asString = "MALFORMED";
         }
     }
@@ -79,7 +77,6 @@ public class Spec {
         this.port = port;
         malformed = false;
         asString = createString(host, port);
-        address = createAddress(host, port);
     }
 
     /**
@@ -130,7 +127,7 @@ public class Spec {
      * @return socket address
      */
     SocketAddress address() {
-        return address;
+        return !malformed ? createAddress(host, port) : null;
     }
 
     /**
@@ -143,4 +140,34 @@ public class Spec {
         return asString;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Spec spec = (Spec) o;
+        return port == spec.port &&
+                malformed == spec.malformed &&
+                Objects.equals(host, spec.host);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(host, port, malformed);
+    }
+
+    @Override
+    public int compareTo(Spec o) {
+        int cmp = 0;
+        if ((host != null) && (o.host != null)) {
+            cmp = host.compareTo(o.host);
+        } else if (host != null) {
+            return -1;
+        } else if (o.host != null) {
+            return 1;
+        }
+        return (cmp == 0)
+                ? Integer.compare(port, o.port)
+                : cmp;
+
+    }
 }

@@ -58,7 +58,7 @@ public class LoadBalancerPolicy extends SlobrokPolicy {
         if (node != null) {
             context.setContext(node);
             Route route = new Route(context.getRoute());
-            route.setHop(0, Hop.parse(node.entry.getSpec() + "/" + session));
+            route.setHop(0, Hop.parse(node.entry.getSpecString() + "/" + session));
             context.addChild(route);
         } else {
             context.setError(ErrorCode.NO_ADDRESS_FOR_SERVICE, "Could not resolve any nodes to send to in pattern " + pattern);

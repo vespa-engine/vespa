@@ -315,12 +315,12 @@ public class Mirror implements IMirror {
     public static final class Entry implements Comparable<Entry> {
 
         private final String name;
-        private final String spec;
+        private final Spec spec;
         private final char [] nameArray;
 
         public Entry(String name, String spec) {
             this.name = name;
-            this.spec = spec;
+            this.spec = new Spec(spec);
             this.nameArray = name.toCharArray();
         }
 
@@ -343,7 +343,8 @@ public class Mirror implements IMirror {
 
         char [] getNameArray() { return nameArray; }
         public String getName() { return name; }
-        public String getSpec() { return spec; }
+        public Spec getSpec() { return spec; }
+        public String getSpecString() { return spec.toString(); }
 
     }
 
