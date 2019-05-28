@@ -229,26 +229,24 @@ CryptoEngine::SP create_default_crypto_engine() {
     return tls;
 }
 
-} // namespace vespalib::<unnamed>
+CryptoEngine::SP try_create_default_crypto_engine() {
+    try {
+        return create_default_crypto_engine();
+    } catch (net::tls::CryptoException &e) {
+        LOG(error, "failed to create default crypto engine: %s", e.what());
+        std::quick_exit(78);
+    }
+}
 
-std::mutex CryptoEngine::_shared_lock;
-CryptoEngine::SP CryptoEngine::_shared_default(nullptr);
+} // namespace vespalib::<unnamed>
 
 CryptoEngine::~CryptoEngine() = default;
 
 CryptoEngine::SP
 CryptoEngine::get_default()
 {
-    std::lock_guard guard(_shared_lock);
-    if (!_shared_default) {
-        try {
-            _shared_default = create_default_crypto_engine();
-        } catch (net::tls::CryptoException &e) {
-            LOG(error, "failed to create default crypto engine: %s", e.what());
-            std::quick_exit(78);
-        }
-    }
-    return _shared_default;
+    static const CryptoEngine::SP shared_default = try_create_default_crypto_engine();
+    return shared_default;
 }
 
 CryptoSocket::UP
