@@ -377,7 +377,7 @@ public class NodeAgentImpl implements NodeAgent {
     private boolean noCpuCap(ZoneId zoneId) {
         return zoneId.environment() == Environment.dev
                 // TODO: Add other cd systems, not ideal when having just SystemName here
-                || zoneId.system() == SystemName.cd;
+                || (zoneId.system() == SystemName.cd && zoneId.environment() != Environment.prod);
     }
 
     private void scheduleDownLoadIfNeeded(NodeSpec node, Optional<Container> container) {
