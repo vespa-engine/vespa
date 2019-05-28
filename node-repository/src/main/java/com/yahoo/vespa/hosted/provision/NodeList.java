@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -68,9 +69,10 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false));
     }
 
-    /** Returns the subset of nodes matching the given node type */
-    public NodeList nodeType(NodeType nodeType) {
-        return filter(node -> node.type() == nodeType);
+    /** Returns the subset of nodes matching the given node type(s) */
+    public NodeList nodeType(NodeType first, NodeType... rest) {
+        EnumSet<NodeType> nodeTypes = EnumSet.of(first, rest);
+        return filter(node -> nodeTypes.contains(node.type()));
     }
 
     /** Returns the subset of nodes that are parents */
@@ -87,9 +89,10 @@ public class NodeList implements Iterable<Node> {
         return childrenOf(parent.hostname());
     }
 
-    /** Returns the subset of nodes that are in a given state */
-    public NodeList state(Node.State state) {
-        return filter(node -> node.state() == state);
+    /** Returns the subset of nodes that are in a given state(s) */
+    public NodeList state(Node.State first, Node.State... rest) {
+        EnumSet<Node.State> nodeStates = EnumSet.of(first, rest);
+        return filter(node -> nodeStates.contains(node.state()));
     }
 
     /** Returns the parent nodes of the given child nodes */
