@@ -22,15 +22,28 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.net.BindException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,6 +66,8 @@ import static com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.CLOSE;
 import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
+import static com.yahoo.security.KeyAlgorithm.RSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static org.cthul.matchers.CthulMatchers.containsPattern;
 import static org.cthul.matchers.CthulMatchers.matchesPattern;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -70,6 +85,9 @@ import static org.mockito.Mockito.when;
  * @author Simon Thoresen Hult
  */
 public class HttpServerTest {
+
+    @Rule
+    public TemporaryFolder tmpFolder = new TemporaryFolder();
 
     @Test
     public void requireThatServerCanListenToRandomPort() throws Exception {
@@ -452,7 +470,18 @@ public class HttpServerTest {
 
     @Test
     public void requireThatServerCanRespondToSslRequest() throws Exception {
-        final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler());
+        KeyPair keyPair = KeyUtils.generateKeypair(RSA, 2048);
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+
+        X509Certificate certificate = X509CertificateBuilder
+                .fromKeypair(
+                        keyPair, new X500Principal("CN=localhost"), Instant.EPOCH, Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), SHA256_WITH_RSA, BigInteger.ONE)
+                .build();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
+
+        final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
