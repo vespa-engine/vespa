@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public class TestUtil {
 
-    public static String getContents(String filename) {
+    public static String getFileContents(String filename) {
         InputStream in = TestUtil.class.getClassLoader().getResourceAsStream(filename);
         if (in == null) {
             throw new RuntimeException("File not found: " + filename);

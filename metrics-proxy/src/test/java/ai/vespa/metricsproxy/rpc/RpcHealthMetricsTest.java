@@ -4,7 +4,6 @@
 
 package ai.vespa.metricsproxy.rpc;
 
-import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.HealthMetric;
 import ai.vespa.metricsproxy.service.MockHttpServer;
 import ai.vespa.metricsproxy.service.VespaService;
@@ -18,6 +17,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -30,11 +30,11 @@ import static org.junit.Assert.assertThat;
 public class RpcHealthMetricsTest {
 
     private static final String HEALTH_OK_RESPONSE =
-            TestUtil.getContents("health-check.response.json");
+            getFileContents("health-check.response.json");
     private static final String HEALTH_FAILED_RESPONSE =
-            TestUtil.getContents("health-check-failed.response.json");
+            getFileContents("health-check-failed.response.json");
     private static final String WANTED_RPC_RESPONSE =
-            TestUtil.getContents("rpc-json-output-check.json").trim();
+            getFileContents("rpc-json-output-check.json").trim();
 
     // see factory/doc/port-ranges.txt
     private static final int httpPort = 18635;

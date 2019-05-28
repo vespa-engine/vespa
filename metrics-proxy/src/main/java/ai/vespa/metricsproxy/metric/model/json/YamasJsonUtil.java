@@ -27,8 +27,8 @@ import static java.util.logging.Level.WARNING;
 /**
  * @author gjoranv
  */
-public class JsonUtil {
-    private static final Logger log = Logger.getLogger(JsonUtil.class.getName());
+public class YamasJsonUtil {
+    private static final Logger log = Logger.getLogger(YamasJsonUtil.class.getName());
 
     static final String YAMAS_ROUTING = "yamas";
 

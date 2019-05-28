@@ -59,7 +59,7 @@ public class YamasJsonModelTest {
     @Test
     public void deserialize_serialize_roundtrip_with_metrics_packet() throws IOException {
         YamasJsonModel jsonModel = getYamasJsonModel("yamas-array.json");
-        MetricsPacket metricsPacket = JsonUtil.toMetricsPacketBuilder(jsonModel).build();
+        MetricsPacket metricsPacket = YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build();
 
         // Do some sanity checking
         assertEquals(toServiceId("vespa.searchnode"), metricsPacket.service);
@@ -67,7 +67,7 @@ public class YamasJsonModelTest {
         assertEquals(5.555555555E9, metricsPacket.metrics().get(toMetricId("memory_rss")).doubleValue(), 0.1d); //Not using custom double rendrer
 
         // Serialize and verify
-        YamasArrayJsonModel yamasArray = JsonUtil.toYamasArray(Collections.singleton(metricsPacket), true);
+        YamasArrayJsonModel yamasArray = YamasJsonUtil.toYamasArray(Collections.singleton(metricsPacket), true);
         String string = yamasArray.serialize();
         assertEquals(EXPECTED_JSON, string);
     }

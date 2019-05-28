@@ -4,7 +4,6 @@
 
 package ai.vespa.metricsproxy.rpc;
 
-import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
@@ -22,6 +21,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.CUSTOM_CONSUMER_ID;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertThat;
 public class RpcMetricsTest {
 
     private static final String METRICS_RESPONSE_CCL =
-            TestUtil.getContents("metrics-storage-simple.json").trim();
+            getFileContents("metrics-storage-simple.json").trim();
 
     // see factory/doc/port-ranges.txt
     private static final int httpPort = 18633;

@@ -4,14 +4,12 @@
 
 package ai.vespa.metricsproxy.service;
 
-import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metrics;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-
+import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -24,7 +22,7 @@ public class VespaServiceTest {
     private static final String response;
 
     static {
-        response = TestUtil.getContents("metrics-state.json");
+        response = getFileContents("metrics-state.json");
         HttpMetricFetcher.CONNECTION_TIMEOUT = 60000; // 60 secs in unit tests
     }
 

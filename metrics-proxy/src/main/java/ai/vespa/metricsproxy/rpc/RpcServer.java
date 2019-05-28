@@ -12,10 +12,7 @@ import ai.vespa.metricsproxy.service.VespaServices;
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
-import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,8 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
-import static ai.vespa.metricsproxy.metric.model.json.JsonUtil.toMetricsPackets;
-import static ai.vespa.metricsproxy.metric.model.json.JsonUtil.toYamasArray;
+import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toMetricsPackets;
+import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toYamasArray;
 import static com.yahoo.collections.CollectionUtil.mkString;
 import static com.yahoo.log.LogLevel.DEBUG;
 import static java.util.logging.Level.INFO;
