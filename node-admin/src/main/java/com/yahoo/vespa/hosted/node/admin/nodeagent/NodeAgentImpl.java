@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -361,7 +363,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
-        double cpuCap = context.zoneId().environment() == Environment.dev ?
+        double cpuCap = noCpuCap(context.zoneId()) ?
                 0 :
                 context.node().getOwner()
                         .map(NodeOwner::asApplicationId)
@@ -372,6 +374,11 @@ public class NodeAgentImpl implements NodeAgent {
         return ContainerResources.from(cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
     }
 
+    private boolean noCpuCap(ZoneId zoneId) {
+        return zoneId.environment() == Environment.dev
+                // TODO: Add other cd systems, not ideal when having just SystemName here
+                || (zoneId.system() == SystemName.cd && zoneId.environment() != Environment.prod);
+    }
 
     private void scheduleDownLoadIfNeeded(NodeSpec node, Optional<Container> container) {
         if (node.getWantedDockerImage().equals(container.map(c -> c.image))) return;
