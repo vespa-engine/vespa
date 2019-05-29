@@ -241,7 +241,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         String [] expectedServices = {
                 "logd", "configproxy", "config-sentinel", "configserver", "logserver",
                 "slobrok", "storagenode", "distributor","searchnode","transactionlogserver",
-                CLUSTERCONTROLLER_CONTAINER.serviceName, METRICS_PROXY_CONTAINER.serviceName
+                CLUSTERCONTROLLER_CONTAINER.serviceName
         };
         assertServices(h, expectedServices);
 
