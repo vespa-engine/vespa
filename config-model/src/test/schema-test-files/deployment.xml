@@ -20,4 +20,10 @@
             <region active='true'>us-south-2</region>
         </parallel>
     </prod>
+    <endpoints>
+        <endpoint id="foo" container-id="bar">
+            <region>us-east</region>
+        </endpoint>
+        <endpoint container-id="bar" />
+    </endpoints>
 </deployment>

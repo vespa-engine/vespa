@@ -10,6 +10,7 @@ start = element deployment {
    Upgrade? &
    BlockChange* &
    Notifications? &
+   Endpoints? &
    Test? &
    Staging? &
    Prod*
@@ -72,4 +73,19 @@ Delay = element delay {
 
 Parallel = element parallel {
     Region*
+}
+
+
+EndpointRegion = element region {
+    text
+}
+
+Endpoint = element endpoint {
+    attribute id { xsd:string }? &
+    attribute container-id { xsd:string } &
+    EndpointRegion*
+}
+
+Endpoints = element endpoints {
+    Endpoint*
 }
