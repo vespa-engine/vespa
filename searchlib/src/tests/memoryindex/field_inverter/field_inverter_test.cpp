@@ -98,6 +98,15 @@ makeDoc16(DocBuilder &b)
     return b.endDocument();
 }
 
+Document::UP
+makeDoc17(DocBuilder &b)
+{
+    b.startDocument("doc::17");
+    b.startIndexField("f2").startElement(1).addStr("foo").addStr("bar").endElement().startElement(1).addStr("bar").endElement().endField();
+    b.startIndexField("f3").startElement(3).addStr("foo2").addStr("bar2").endElement().startElement(4).addStr("bar2").endElement().endField();
+    return b.endDocument();
+}
+
 }
 
 struct Fixture
@@ -323,6 +332,20 @@ TEST_F("require that multiple words at same position works", Fixture)
                  f._inserter.toStr());
 }
 
+TEST_F("require that cheap features are calculated", Fixture)
+{
+    f.invertDocument(17, *makeDoc17(f._b));
+    f._inserter.setVerbose();
+    f._inserter.set_show_cheap_features();
+    f.pushDocuments();
+    EXPECT_EQUAL("f=2,"
+                 "w=bar,a=17(fl=3,occs=2,e=0,w=1,l=2[1],e=1,w=1,l=1[0]),"
+                 "w=foo,a=17(fl=3,occs=1,e=0,w=1,l=2[0]),"
+                 "f=3,"
+                 "w=bar2,a=17(fl=3,occs=2,e=0,w=3,l=2[1],e=1,w=4,l=1[0]),"
+                 "w=foo2,a=17(fl=3,occs=1,e=0,w=3,l=2[0])",
+                 f._inserter.toStr());
+}
 
 } // namespace memoryindex
 } // namespace search

@@ -279,6 +279,29 @@ FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
 }
 
 void
+FieldInverter::endDoc()
+{
+    uint32_t field_length = 0;
+    if (_elem > 0) {
+        auto itr = _elems.end() - _elem;
+        while (itr != _elems.end()) {
+            field_length += itr->_len;
+            ++itr;
+        }
+        itr = _elems.end() - _elem;
+        while (itr != _elems.end()) {
+            itr->set_field_length(field_length);
+            ++itr;
+        }
+    }
+    uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
+    _pendingDocs.insert({ _docId,
+                             { _oldPosSize, newPosSize - _oldPosSize } });
+    _docId = 0;
+    _oldPosSize = newPosSize;
+}
+
+void
 FieldInverter::processNormalDocTextField(const StringFieldValue &field)
 {
     startElement(1);
@@ -500,6 +523,7 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
         (void) numWordIds;
         if (lastWordNum != i._wordNum || lastDocId != i._docId) {
             if (!emptyFeatures) {
+                _features.set_num_occs(_features.word_positions().size());
                 inserter.add(lastDocId, _features);
                 emptyFeatures = true;
             }
@@ -520,6 +544,8 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
                 _features.clear(lastDocId);
                 lastElemId = NO_ELEMENT_ID;
                 lastWordPos = NO_WORD_POS;
+                const ElemInfo &elem = _elems[i._elemRef];
+                _features.set_field_length(elem.get_field_length());
             } else {
                 continue; // ignore dup remove
             }
@@ -539,6 +565,7 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
     }
 
     if (!emptyFeatures) {
+        _features.set_num_occs(_features.word_positions().size());
         inserter.add(lastDocId, _features);
     }
     inserter.flush();
