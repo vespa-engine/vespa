@@ -202,7 +202,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
         Slime deployLog = createDeployLog();
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
-
         ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
@@ -574,6 +573,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        tenant.getApplicationRepo().createApplication(applicationId);
         LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         SessionFactory sessionFactory = tenant.getSessionFactory();
         LocalSession session = sessionFactory.createSession(applicationDirectory, applicationId, timeoutBudget);

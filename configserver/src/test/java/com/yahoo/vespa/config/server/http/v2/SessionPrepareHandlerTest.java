@@ -30,7 +30,6 @@ import com.yahoo.vespa.config.server.configchange.MockRefeedAction;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
 import com.yahoo.vespa.config.server.http.*;
 import com.yahoo.vespa.config.server.session.*;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
