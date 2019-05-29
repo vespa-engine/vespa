@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
+import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.Role;
 import com.yahoo.config.application.api.Notifications.When;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +42,8 @@ public class DeploymentSpecXmlReader {
     private static final String stagingTag = "staging";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
+    private static final String endpointsTag = "endpoints";
+    private static final String endpointTag = "endpoint";
 
     private final boolean validate;
 
@@ -123,7 +127,8 @@ public class DeploymentSpecXmlReader {
                                   xmlForm,
                                   athenzDomain,
                                   athenzService,
-                                  readNotifications(root));
+                                  readNotifications(root),
+                                  readEndpoints(root));
     }
 
     private Notifications readNotifications(Element root) {
@@ -150,6 +155,35 @@ public class DeploymentSpecXmlReader {
             roleAttribute.ifPresent(role -> emailRoles.get(when).add(role));
         }
         return Notifications.of(emailAddresses, emailRoles);
+    }
+
+    private List<Endpoint> readEndpoints(Element root) {
+        final var endpointsElement = XML.getChild(root, endpointsTag);
+        if (endpointsElement == null) { return Collections.emptyList(); }
+
+        final var endpoints = new ArrayList<Endpoint>();
+
+        for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
+            final Optional<String> rotationId = stringAttribute("id", endpointElement);
+            final Optional<String> containerId = stringAttribute("container-id", endpointElement);
+            final var regions = new HashSet<String>();
+
+            if (containerId.isEmpty()) {
+                throw new IllegalArgumentException("Missing 'container-id' from 'endpoint' tag.");
+            }
+
+            for (var regionElement : XML.getChildren(endpointElement, "region")) {
+                var region = regionElement.getTextContent();
+                if (region == null || region.isEmpty() || region.isBlank()) {
+                    throw new IllegalArgumentException("Empty 'region' element in 'endpoint' tag.");
+                }
+                regions.add(regionElement.getTextContent());
+            }
+
+            endpoints.add(new Endpoint(rotationId, containerId.get(), regions));
+        }
+
+        return endpoints;
     }
 
     /**

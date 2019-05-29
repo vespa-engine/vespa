@@ -46,7 +46,8 @@ public class DeploymentSpec {
                                                                   "<deployment version='1.0'/>",
                                                                   Optional.empty(),
                                                                   Optional.empty(),
-                                                                  Notifications.none());
+                                                                  Notifications.none(),
+                                                                  Collections.emptyList());
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
@@ -57,10 +58,12 @@ public class DeploymentSpec {
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
     private final Notifications notifications;
+    private final List<Endpoint> endpoints;
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService, Notifications notifications) {
+                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService, Notifications notifications,
+                          List<Endpoint> endpoints) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
@@ -71,6 +74,7 @@ public class DeploymentSpec {
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.notifications = notifications;
+        this.endpoints = Objects.requireNonNull(endpoints, "Missing endpoints parameter");
         validateZones(this.steps);
         validateAthenz();
     }
@@ -101,16 +105,16 @@ public class DeploymentSpec {
      */
     private void validateAthenz() {
         // If athenz domain is not set, athenz service cannot be set on any level
-        if (! athenzDomain.isPresent()) {
+        if (athenzDomain.isEmpty()) {
             for (DeclaredZone zone : zones()) {
                 if(zone.athenzService().isPresent()) {
                     throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
                 }
             }
         // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
-        } else if(! athenzService.isPresent()) {
+        } else if (athenzService.isEmpty()) {
             for (DeclaredZone zone : zones()) {
-                if(! zone.athenzService().isPresent()) {
+                if (zone.athenzService().isEmpty()) {
                     throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
                 }
             }
@@ -198,6 +202,9 @@ public class DeploymentSpec {
 
     /** Returns the notification configuration */
     public Notifications notifications() { return notifications; }
+
+    /** Returns the rotations configuration */
+    public List<Endpoint> endpoints() { return Collections.unmodifiableList(endpoints); }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
@@ -369,7 +376,7 @@ public class DeploymentSpec {
                             Optional<AthenzService> athenzService, Optional<String> testerFlavor) {
             if (environment != Environment.prod && region.isPresent())
                 throw new IllegalArgumentException("Non-prod environments cannot specify a region");
-            if (environment == Environment.prod && ! region.isPresent())
+            if (environment == Environment.prod && region.isEmpty())
                 throw new IllegalArgumentException("Prod environments must be specified with a region");
             this.environment = environment;
             this.region = region;
@@ -417,7 +424,7 @@ public class DeploymentSpec {
         
         @Override
         public String toString() {
-            return environment + ( region.isPresent() ? "." + region.get() : "");
+            return environment + (region.map(regionName -> "." + regionName).orElse(""));
         }
 
     }
