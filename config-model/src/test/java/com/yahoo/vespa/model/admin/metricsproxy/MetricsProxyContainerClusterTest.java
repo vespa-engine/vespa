@@ -6,8 +6,10 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
+import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
@@ -62,6 +64,17 @@ public class MetricsProxyContainerClusterTest {
         BundlesConfig config = builder.build();
         assertEquals(1, config.bundle().size());
         assertThat(config.bundle(0).value(), endsWith(METRICS_PROXY_BUNDLE_FILE.toString()));
+    }
+
+    @Test
+    public void cluster_is_prepared_so_that_application_metadata_config_is_produced() {
+        VespaModel model = getModel(servicesWithAdminOnly());
+        var builder = new ApplicationMetadataConfig.Builder();
+        model.getConfig(builder, CLUSTER_CONFIG_ID);
+        ApplicationMetadataConfig config = builder.build();
+        assertEquals(MockApplicationPackage.APPLICATION_GENERATION, config.generation());
+        assertEquals(MockApplicationPackage.APPLICATION_NAME, config.name());
+        assertEquals(MockApplicationPackage.DEPLOYED_BY_USER, config.user());
     }
 
     @Test
