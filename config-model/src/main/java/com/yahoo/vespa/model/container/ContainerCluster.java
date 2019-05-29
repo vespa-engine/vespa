@@ -69,6 +69,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -506,23 +507,16 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        QrStartConfig.Jvm.Builder jvmBuilder = new QrStartConfig.Jvm.Builder();
+        QrStartConfig.Jvm.Builder jvmBuilder = builder.jvm;
         if (getMemoryPercentage().isPresent()) {
             jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
         } else if (isHostedVespa()) {
             jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
         }
-        if (jvmGCOptions != null) {
-            jvmBuilder.gcopts(jvmGCOptions);
-        } else {
-            jvmBuilder.gcopts(G1GC);
-        }
+        jvmBuilder.gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));
         if (environmentVars != null) {
-            QrStartConfig.Qrs.Builder qrsBuilder = new QrStartConfig.Qrs.Builder();
-            qrsBuilder.env(environmentVars);
-            builder.qrs(qrsBuilder);
+            builder.qrs.env(environmentVars);
         }
-        builder.jvm(jvmBuilder);
     }
 
     @Override
