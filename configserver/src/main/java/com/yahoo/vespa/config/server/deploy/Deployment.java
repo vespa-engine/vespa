@@ -131,6 +131,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             if ( ! tenant.getApplicationRepo().exists(session.getApplicationId()))
                 throw new IllegalStateException("Application " + session.getApplicationId() + " does not exist");
             verifyApplicationIsPreparingSession(session, tenant.getApplicationRepo().preparing(session.getApplicationId()));
+            tenant.getApplicationRepo().clearPreparingSession(session.getApplicationId());
 
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
