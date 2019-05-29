@@ -81,6 +81,13 @@ public class InfraDeployerImpl implements InfraDeployer {
             try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
                 NodeType nodeType = application.getCapacity().type();
 
+                Optional<Version> targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
+                if (targetVersion.isEmpty()) {
+                    logger.log(LogLevel.DEBUG, "No target version set for " + nodeType + ", removing application");
+                    removeApplication(application.getApplicationId());
+                    return;
+                }
+
                 candidateNodes = nodeRepository
                         .getNodes(nodeType, Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive);
                 if (candidateNodes.isEmpty()) {
@@ -89,11 +96,10 @@ public class InfraDeployerImpl implements InfraDeployer {
                     return;
                 }
 
-                Version targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
-                if (!allActiveNodesOn(targetVersion, candidateNodes)) {
+                if (!allActiveNodesOn(targetVersion.get(), candidateNodes)) {
                     hostSpecs = provisioner.prepare(
                             application.getApplicationId(),
-                            application.getClusterSpecWithVersion(targetVersion),
+                            application.getClusterSpecWithVersion(targetVersion.get()),
                             application.getCapacity(),
                             1, // groups
                             logger::log);

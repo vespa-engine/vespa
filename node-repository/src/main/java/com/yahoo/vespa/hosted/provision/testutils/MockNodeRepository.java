@@ -52,7 +52,6 @@ public class MockNodeRepository extends NodeRepository {
         super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-              NodeType.config,
               true);
         this.flavors = flavors;
 

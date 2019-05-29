@@ -54,7 +54,6 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           NodeType.config,
                                                            true);
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
@@ -116,7 +115,6 @@ public class MetricsReporterTest {
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                                           NodeType.config,
                                                            true);
 
         // Allow 4 containers
