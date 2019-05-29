@@ -67,8 +67,8 @@ public class Container {
 
     private void deconstructObsoleteComponents(ComponentGraph oldGraph, ComponentGraph newGraph) {
         IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
-        oldGraph.allComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
-        newGraph.allComponentsAndProviders().forEach(oldComponents::remove);
+        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
+        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
         oldComponents.keySet().forEach(componentDeconstructor::deconstruct);
     }
 
@@ -226,7 +226,7 @@ public class Container {
     }
 
     private void constructComponents(ComponentGraph graph) {
-        graph.nodes().forEach(Node::newOrCachedInstance);
+        graph.nodes().forEach(Node::constructInstance);
     }
 
     public void shutdown(ComponentGraph graph, ComponentDeconstructor deconstructor) {
@@ -246,7 +246,7 @@ public class Container {
     }
 
     private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
-        graph.allComponentsAndProviders().forEach(deconstructor::deconstruct);
+        graph.allConstructedComponentsAndProviders().forEach(deconstructor::deconstruct);
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,

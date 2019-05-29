@@ -138,7 +138,7 @@ public class ComponentNode extends Node {
         List<Object> actualArguments = new ArrayList<>();
         for (Object ob : arguments) {
             if (ob instanceof Node) {
-                actualArguments.add(((Node) ob).newOrCachedInstance());
+                actualArguments.add(((Node) ob).component());
             } else if (ob instanceof ConfigKey) {
                 actualArguments.add(availableConfigs.get(ob));
             } else {

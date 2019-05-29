@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  * @author ollivir
  */
 public class CloudSubscriberFactory implements SubscriberFactory {
+
     private static final Logger log = Logger.getLogger(CloudSubscriberFactory.class.getName());
 
     private final ConfigSource configSource;
@@ -46,7 +47,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
         }
         CloudSubscriber subscriber = new CloudSubscriber(subscriptionKeys, configSource);
 
-        testGeneration.ifPresent(subscriber.subscriber::reload); //TODO: test specific code, remove
+        testGeneration.ifPresent(subscriber.subscriber::reload); // TODO: test specific code, remove
         activeSubscribers.put(subscriber, 0);
 
         return subscriber;
@@ -112,7 +113,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
              * component is removed, so this old config generation will soon be replaced by a new one. */
             boolean gotNextGen = false;
             int numExceptions = 0;
-            while (!gotNextGen) {
+            while ( ! gotNextGen) {
                 try {
                     if (subscriber.nextGeneration()) {
                         gotNextGen = true;
@@ -136,8 +137,8 @@ public class CloudSubscriberFactory implements SubscriberFactory {
         public void close() {
             subscriber.close();
         }
-    }
 
+    }
 
     public static class Provider implements com.google.inject.Provider<SubscriberFactory> {
         @Override
@@ -145,4 +146,5 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             return new CloudSubscriberFactory(ConfigSourceSet.createDefault());
         }
     }
+
 }
