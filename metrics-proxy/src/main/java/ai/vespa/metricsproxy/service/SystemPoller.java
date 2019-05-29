@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * @author Eirik Nygaard
  */
 public class SystemPoller implements ServiceListener {
-    final private static Logger log = Logger.getLogger(SystemPoller.class.getPackage().getName());
+    final private static Logger log = Logger.getLogger(SystemPoller.class.getName());
 
     private final int pollingIntervalSecs;
     private volatile List<VespaService> services;
@@ -169,7 +169,7 @@ public class SystemPoller implements ServiceListener {
         try {
             in = new BufferedReader(new FileReader("/proc/" + pid + "/stat"));
         } catch (FileNotFoundException ex) {
-            log.log(LogLevel.DEBUG, "Unable to find pid in proc directory " + pid);
+            log.log(LogLevel.DEBUG, "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
             service.setAlive(false);
             return 0;
         }
