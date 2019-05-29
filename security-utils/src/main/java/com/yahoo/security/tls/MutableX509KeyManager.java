@@ -85,12 +85,14 @@ public class MutableX509KeyManager extends X509ExtendedKeyManager {
 
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
+        if (alias == null) return null; // this method can be called with 'null' alias prior to any alias getter methods.
         return getThreadLocalManager()
                 .getCertificateChain(alias);
     }
 
     @Override
     public PrivateKey getPrivateKey(String alias) {
+        if (alias == null) return null; // this method can be called with 'null' alias prior to any alias getter methods.
         return getThreadLocalManager()
                 .getPrivateKey(alias);
     }
