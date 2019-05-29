@@ -36,8 +36,9 @@ public class VespaServices {
 
     @Inject
     public VespaServices(VespaServicesConfig config, MonitoringConfig monitoringConfig, ConfigSentinelClient sentinel) {
-        this.services = createServices(config, monitoringConfig.systemName());
         this.sentinel = sentinel;
+        this.services = createServices(config, monitoringConfig.systemName());
+        updateServices(services);
     }
 
     @VisibleForTesting
@@ -49,13 +50,12 @@ public class VespaServices {
     private List<VespaService> createServices(VespaServicesConfig servicesConfig, String monitoringSystemName) {
         List<VespaService> services = new ArrayList<>();
         for (Service s : servicesConfig.service()) {
-            log.log(DEBUG, "Re-configuring service " + s.name());
+            log.log(DEBUG, "Creating service " + s.name());
             VespaService vespaService = VespaService.create(s.name(), s.configId(), s.port(), monitoringSystemName,
                                                             createServiceDimensions(s));
             services.add(vespaService);
         }
         log.log(DEBUG, "Created new services: " + services.size());
-        updateServices(services);
         return services;
     }
 
@@ -63,7 +63,7 @@ public class VespaServices {
      * Sets 'alive=false' for services that are no longer running.
      * Note that the status is updated in-place for the given services.
      */
-    public void updateServices(List<VespaService> services) {
+    public final void updateServices(List<VespaService> services) {
         if (sentinel != null) {
             log.log(DEBUG, "Updating services ");
             sentinel.updateServiceStatuses(services);

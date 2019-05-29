@@ -47,7 +47,7 @@ public class ConfigSentinelClient {
      *
      * @param s The service to update the status for
      */
-    public synchronized void ping(VespaService s) {
+    synchronized void ping(VespaService s) {
         List<VespaService> services = new ArrayList<>();
         services.add(s);
         log.log(LogLevel.DEBUG, "Ping for service " + s);
@@ -66,7 +66,6 @@ public class ConfigSentinelClient {
      */
     protected synchronized void setStatus(List<VespaService> services) throws Exception {
         InputStream in;
-        PrintStream out;
         client.connect();
 
         in = client.getInputStream();
