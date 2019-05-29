@@ -33,9 +33,9 @@ public class InfrastructureVersionsTest {
         assertEquals(version, infrastructureVersions.getTargetVersionFor(NodeType.config));
 
         // Upgrading to new version without force is fine
-        Version new_version = Version.fromString("6.123.457"); // version + 1
-        infrastructureVersions.setTargetVersion(NodeType.config, new_version, false);
-        assertEquals(new_version, infrastructureVersions.getTargetVersionFor(NodeType.config));
+        Version newVersion = Version.fromString("6.123.457"); // version + 1
+        infrastructureVersions.setTargetVersion(NodeType.config, newVersion, false);
+        assertEquals(newVersion, infrastructureVersions.getTargetVersionFor(NodeType.config));
 
         // Downgrading to old version without force fails
         assertThrows(IllegalArgumentException.class,
