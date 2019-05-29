@@ -43,7 +43,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
 
     @Override
     public void applicationActivated(ApplicationInfo application) {
-        if (!wouldMonitor(application.getApplicationId())) {
+        if (wouldNotMonitor(application.getApplicationId())) {
             return;
         }
 
@@ -57,7 +57,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
 
     @Override
     public void applicationRemoved(ApplicationId id) {
-        if (!wouldMonitor(id)) {
+        if (wouldNotMonitor(id)) {
             return;
         }
 
@@ -89,7 +89,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
                                        ClusterId clusterId,
                                        ServiceType serviceType,
                                        ConfigId configId) {
-        if (!wouldMonitor(applicationId)) {
+        if (wouldNotMonitor(applicationId)) {
             return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
         }
 
@@ -108,12 +108,8 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
         }
     }
 
-    private boolean wouldMonitor(ApplicationId applicationId) {
-        if (duperModel.isSupportedInfraApplication(applicationId)) {
-            return false;
-        }
-
-        return true;
+    private boolean wouldNotMonitor(ApplicationId applicationId) {
+        return duperModel.isSupportedInfraApplication(applicationId);
     }
 
     /**
@@ -139,6 +135,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
             case "qrserver":
             case "container":
             case "container-clustercontroller":
+            case "logserver-container":
             case "metricsproxy-container":
                 return Optional.of("vespa/service/" + configId.s());
 
