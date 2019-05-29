@@ -45,9 +45,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private final boolean isHostedVespa;
     private final Monitoring monitoring;
-    private final Metrics metrics;
-    private MetricSet additionalDefaultMetrics = emptyMetricSet();
     private final List<Configserver> configservers = new ArrayList<>();
+
+    private final Metrics metrics;
+    private MetricsProxyContainerCluster metricsProxyCluster;
+    private MetricSet additionalDefaultMetrics = emptyMetricSet();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
     private Configserver defaultConfigserver;
@@ -98,6 +100,10 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     public Metrics getUserMetrics() { return metrics; }
+
+    public MetricsProxyContainerCluster getMetricsProxyCluster() {
+        return metricsProxyCluster;
+    }
 
     public void setAdditionalDefaultMetrics(MetricSet additionalDefaultMetrics) {
         if (additionalDefaultMetrics == null) return;
@@ -213,7 +219,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     private void addMetricsProxyCluster(List<HostResource> hosts, DeployState deployState) {
-        var metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
+        metricsProxyCluster = new MetricsProxyContainerCluster(this, "metrics", deployState);
         int index = 0;
         for (var host : hosts) {
             var container = new MetricsProxyContainer(metricsProxyCluster, index++, deployState.isHosted());

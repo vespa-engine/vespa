@@ -49,8 +49,8 @@ public class AdminModel extends ConfigModel {
     public void prepare(ConfigModelRepo configModelRepo, DeployState deployState) {
         verifyClusterControllersOnlyDefinedForContent(configModelRepo);
         if (admin == null) return;
-        if (admin.getClusterControllers() != null)
-            admin.getClusterControllers().prepare(deployState);
+        if (admin.getClusterControllers() != null) admin.getClusterControllers().prepare(deployState);
+        if (admin.getMetricsProxyCluster() != null) admin.getMetricsProxyCluster().prepare(deployState);
         admin.getLogServerContainerCluster().ifPresent((ContainerCluster cc) -> cc.prepare(deployState));
     }
 
