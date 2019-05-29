@@ -202,7 +202,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
 
-        addMetricsProxyCluster(hosts, deployState);
+        if (deployState.getProperties().enableMetricsProxyContainer())
+            addMetricsProxyCluster(hosts, deployState);
 
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
