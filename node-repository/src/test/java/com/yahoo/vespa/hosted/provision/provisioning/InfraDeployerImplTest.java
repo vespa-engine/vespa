@@ -9,6 +9,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -50,9 +51,10 @@ public class InfraDeployerImplTest {
         );
     }
 
-    private final NodeRepositoryTester tester;
-    private final InfrastructureVersions infrastructureVersions;
+    private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final Provisioner provisioner = mock(Provisioner.class);
+    private final NodeRepository nodeRepository = tester.nodeRepository();
+    private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfraDeployerImpl infraDeployer;
 
@@ -69,9 +71,16 @@ public class InfraDeployerImplTest {
         when(duperModelInfraApi.getSupportedInfraApplications()).thenReturn(List.of(application));
         this.application = application;
         this.nodeType = application.getCapacity().type();
-        this.tester = new NodeRepositoryTester(nodeType);
-        this.infrastructureVersions = tester.nodeRepository().infrastructureVersions();
-        this.infraDeployer = new InfraDeployerImpl(tester.nodeRepository(), provisioner, duperModelInfraApi);
+        this.infraDeployer = new InfraDeployerImpl(nodeRepository, provisioner, duperModelInfraApi);
+    }
+
+    @Test
+    public void remove_application_if_without_target_version() {
+        addNode(1, Node.State.active, Optional.of(target));
+        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
+        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
+        verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
+        verifyRemoved(1);
     }
 
     @Test
@@ -230,7 +239,7 @@ public class InfraDeployerImplTest {
             Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), false);
             return node.with(allocation);
         });
-        return tester.nodeRepository().database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());
+        return nodeRepository.database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());
     }
 
 }

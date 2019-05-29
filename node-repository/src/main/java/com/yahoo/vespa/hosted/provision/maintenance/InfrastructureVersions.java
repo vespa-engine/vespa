@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -24,30 +23,25 @@ public class InfrastructureVersions {
     private static final Logger logger = Logger.getLogger(InfrastructureVersions.class.getName());
 
     private final CuratorDatabaseClient db;
-    private final NodeType serverNodeType;
-    private final Version defaultVersion;
 
-    public InfrastructureVersions(CuratorDatabaseClient db, NodeType serverNodeType) {
-        this(db, serverNodeType, Vtag.currentVersion);
-    }
-
-    InfrastructureVersions(CuratorDatabaseClient db, NodeType serverNodeType, Version defaultVersion) {
+    public InfrastructureVersions(CuratorDatabaseClient db) {
         this.db = db;
-        this.serverNodeType = serverNodeType;
-        this.defaultVersion = defaultVersion;
     }
 
     public void setTargetVersion(NodeType nodeType, Version newTargetVersion, boolean force) {
-        if (!isNodeTypeAllowedForTargetVersion(nodeType))
-            throw new IllegalArgumentException("Cannot set version for type " + nodeType);
-
-        if (!isNodeTypeAllowedForThisServer(nodeType))
-            throw new IllegalArgumentException(
-                    "Cannot set version for " + nodeType + " on a " + serverNodeType.description());
-
-        if (newTargetVersion.isEmpty())
+        switch (nodeType) {
+            case config:
+            case confighost:
+            case proxyhost:
+            case controller:
+            case controllerhost:
+                break;
+            default:
+                throw new IllegalArgumentException("Cannot set version for type " + nodeType);
+        }
+        if (newTargetVersion.isEmpty()) {
             throw new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
-
+        }
 
         try (Lock lock = db.lockInfrastructureVersions()) {
             Map<NodeType, Version> infrastructureVersions = db.readInfrastructureVersions();
@@ -70,44 +64,11 @@ public class InfrastructureVersions {
         }
     }
 
-    /**
-     * @return the target version for a given nodeType. If the nodeType has no target version set, current version
-     * of this server will be set and returned
-     * @throws IllegalArgumentException if the given nodeType is not allowed to have a target version on this server
-     */
-    public Version getTargetVersionFor(NodeType nodeType) {
-        if (!isNodeTypeAllowedForTargetVersion(nodeType) || !isNodeTypeAllowedForThisServer(nodeType))
-            throw new IllegalArgumentException(nodeType + " has no target version");
-
-        return Optional.ofNullable(db.readInfrastructureVersions().get(nodeType)).orElseGet(() -> {
-            // Target version has never been set for this node type, set it to the default version of this server.
-            // We need to set the version (in ZK) to prevent another config server from returning a different version.
-            // No lock needed since this is only an issue in bootstrap case and in a potential race, all versions
-            // are equally valid
-            setTargetVersion(nodeType, defaultVersion, false);
-            return defaultVersion;
-        });
+    public Optional<Version> getTargetVersionFor(NodeType nodeType) {
+        return Optional.ofNullable(db.readInfrastructureVersions().get(nodeType));
     }
 
-    /** @return all set target versions from db */
     public Map<NodeType, Version> getTargetVersions() {
         return Collections.unmodifiableMap(db.readInfrastructureVersions());
-    }
-
-    private boolean isNodeTypeAllowedForThisServer(NodeType nodeType) {
-        return nodeType == NodeType.proxyhost ||
-                nodeType == serverNodeType || (nodeType.isDockerHost() && nodeType.childNodeType() == serverNodeType);
-    }
-
-    private static boolean isNodeTypeAllowedForTargetVersion(NodeType nodeType) {
-        switch (nodeType) {
-            case config:
-            case confighost:
-            case proxyhost:
-            case controller:
-            case controllerhost:
-                return true;
-        }
-        return false;
     }
 }

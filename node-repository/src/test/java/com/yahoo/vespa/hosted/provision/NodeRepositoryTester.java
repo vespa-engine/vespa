@@ -27,12 +27,9 @@ public class NodeRepositoryTester {
     private final NodeRepository nodeRepository;
     private final Clock clock;
     private final MockCurator curator;
-
+    
+    
     public NodeRepositoryTester() {
-        this(NodeType.config);
-    }
-
-    public NodeRepositoryTester(NodeType nodeType) {
         nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
         curator = new MockCurator();
@@ -40,7 +37,6 @@ public class NodeRepositoryTester {
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
-                                            nodeType,
                                             true);
     }
     

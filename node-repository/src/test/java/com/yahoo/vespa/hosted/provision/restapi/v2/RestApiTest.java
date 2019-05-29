@@ -636,10 +636,15 @@ public class RestApiTest {
                         Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                         Request.Method.PATCH),
                 "{\"message\":\"Set version to 6.123.456 for nodes of type confighost\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/controller",
+                                   Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set version to 6.123.456 for nodes of type controller\"}");
+
 
         // Verify versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
         // Setting empty version fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -654,13 +659,6 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set version for type tenant\"}");
-
-        // Setting version for controller on a config server fails
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/controller",
-                        Utf8.toBytes("{\"version\": \"6.123.456\"}"),
-                        Request.Method.PATCH),
-                400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set version for controller on a Config server\"}");
 
         // Omitting version field fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -685,7 +683,7 @@ public class RestApiTest {
 
         // Verify version has been updated
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"},\"osVersions\":{},\"dockerImages\":{}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
         // Upgrade OS for confighost and host
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -699,7 +697,7 @@ public class RestApiTest {
 
         // OS versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
+                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
 
         // Upgrade OS and Vespa together
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -745,7 +743,7 @@ public class RestApiTest {
                 "{\"message\":\"Set docker image to my-repo.my-domain.example:1234/repo/image for nodes of type config\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.124.42\"},\"osVersions\":{\"host\":\"7.5.2\"},\"dockerImages\":{\"tenant\":\"my-repo.my-domain.example:1234/repo/tenant\",\"config\":\"my-repo.my-domain.example:1234/repo/image\"}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.124.42\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\"},\"dockerImages\":{\"tenant\":\"my-repo.my-domain.example:1234/repo/tenant\",\"config\":\"my-repo.my-domain.example:1234/repo/image\"}}");
 
         // Cannot set docker image for non docker node type
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",

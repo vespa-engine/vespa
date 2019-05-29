@@ -97,8 +97,7 @@ public class NodeRepository extends AbstractComponent {
      */
     @Inject
     public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()),
-                NodeType.valueOf(config.serverNodeType().name()), config.useCuratorClientCache());
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), DockerImage.fromString(config.dockerImage()), config.useCuratorClientCache());
     }
 
     /**
@@ -106,14 +105,14 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
-                          DockerImage dockerImage, NodeType serverNodeType, boolean useCuratorClientCache) {
+                          DockerImage dockerImage, boolean useCuratorClientCache) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
         this.osVersions = new OsVersions(db);
-        this.infrastructureVersions = new InfrastructureVersions(db, serverNodeType);
+        this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
         this.jobControl = new JobControl(db);
@@ -129,7 +128,7 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the Docker image to use for nodes in this */
     public DockerImage dockerImage(NodeType nodeType) { return dockerImages.dockerImageFor(nodeType); }
 
-    /** Returns the name resolver used to resolve hostname and ip addresses */
+    /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }
 
     /** Returns the OS versions to use for nodes in this */
