@@ -11,6 +11,7 @@ import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -80,6 +81,10 @@ class MetricsProxyModelTester {
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {
         return new ApplicationDimensionsConfig((ApplicationDimensionsConfig.Builder) model.getConfig(new ApplicationDimensionsConfig.Builder(), CLUSTER_CONFIG_ID));
+    }
+
+    static QrStartConfig getQrStartConfig(VespaModel model) {
+        return new QrStartConfig((QrStartConfig.Builder) model.getConfig(new QrStartConfig.Builder(), CLUSTER_CONFIG_ID));
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model) {

@@ -10,6 +10,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
@@ -31,6 +32,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getQrStartConfig;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
@@ -39,6 +41,7 @@ import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricS
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -75,6 +78,13 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(MockApplicationPackage.APPLICATION_GENERATION, config.generation());
         assertEquals(MockApplicationPackage.APPLICATION_NAME, config.name());
         assertEquals(MockApplicationPackage.DEPLOYED_BY_USER, config.user());
+    }
+
+    @Test
+    public void verbose_gc_logging_is_disabled() {
+        VespaModel model = getModel(servicesWithAdminOnly());
+        QrStartConfig config = getQrStartConfig(model);
+        assertFalse(config.jvm().verbosegc());
     }
 
     @Test
