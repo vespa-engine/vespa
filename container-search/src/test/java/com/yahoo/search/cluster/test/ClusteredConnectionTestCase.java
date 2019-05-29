@@ -196,6 +196,7 @@ public class ClusteredConnectionTestCase {
 
         public SimpleQuery(int hashValue) {
             this.hashValue = hashValue;
+            this.setTimeout(50);
         }
 
         @Override

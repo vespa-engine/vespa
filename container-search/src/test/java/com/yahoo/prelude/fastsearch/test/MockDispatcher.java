@@ -2,9 +2,8 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.prelude.fastsearch.FS4InvokerFactory;
+import com.yahoo.prelude.fastsearch.FS4PingFactory;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
-import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
@@ -31,8 +30,8 @@ class MockDispatcher extends Dispatcher {
 
     private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
             RpcResourcePool rpcResourcePool) {
-        super(searchCluster, dispatchConfig, new FS4InvokerFactory(fs4ResourcePool, searchCluster),
-                new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig.dispatchWithProtobuf()), new MockMetric());
+        super(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, !dispatchConfig.useFdispatchByDefault()),
+                new FS4PingFactory(fs4ResourcePool), new MockMetric());
     }
 
     private static DispatchConfig toDispatchConfig(List<Node> nodes) {
@@ -49,8 +48,4 @@ class MockDispatcher extends Dispatcher {
         }
         return new DispatchConfig(dispatchConfigBuilder);
     }
-
-    public void fill(Result result, String summaryClass) {
-    }
-
 }

@@ -13,6 +13,7 @@ import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.Optional;
@@ -21,7 +22,7 @@ import java.util.concurrent.Callable;
 /**
  * @author ollivir
  */
-public class RpcInvokerFactory extends InvokerFactory {
+public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
     /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 

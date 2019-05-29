@@ -10,7 +10,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
-import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
@@ -46,7 +45,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final ImmutableList<Group> orderedGroups;
     private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
-    private InvokerFactory pingFactory;
+    private PingFactory pingFactory;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -89,7 +88,7 @@ public class SearchCluster implements NodeManager<Node> {
         this.clusterMonitor = new ClusterMonitor<>(this);
     }
 
-    public void startClusterMonitoring(InvokerFactory pingFactory) {
+    public void startClusterMonitoring(PingFactory pingFactory) {
         this.pingFactory = pingFactory;
 
         for (var group : orderedGroups) {
