@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
@@ -48,7 +47,7 @@ public class CapacityPolicies {
         if (resources.allocateByLegacyName()) return resources; // Modification not possible
 
         // Allow slow disks in zones which are not performance sensitive
-        if (zone.system() == SystemName.cd || zone.environment() == Environment.dev || zone.environment() == Environment.test)
+        if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
             resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
@@ -86,7 +85,7 @@ public class CapacityPolicies {
         if (clusterType == ClusterSpec.Type.admin)
             return new NodeResources(0.5, 3, 50);
 
-        if (zone.system() == SystemName.cd && zone.environment().isTest())
+        if (zone.system().isCd() && zone.environment().isTest())
             new NodeResources(4, 4, 50);
 
         return new NodeResources(1.5, 8, 50);
