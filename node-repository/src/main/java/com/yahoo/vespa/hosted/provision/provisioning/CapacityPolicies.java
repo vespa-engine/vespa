@@ -89,7 +89,7 @@ public class CapacityPolicies {
         if (zone.system() == SystemName.cd && zone.environment().isTest())
             new NodeResources(4, 4, 50);
 
-        return new NodeResources(2, 8, 50);
+        return new NodeResources(1.5, 8, 50);
     }
 
     /**

@@ -379,6 +379,26 @@ public class DynamicDockerAllocationTest {
                      NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
     }
 
+    @Test
+    public void testSwitchingFromLegacyFlavorSyntaxToResourcesDoesNotCauseReallocation() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(5, 20, 140)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+
+        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromNodeCount(2, Optional.of("d-2-8-50"), false, true), 1);
+        tester.activate(application, hosts1);
+
+        NodeResources resources = new NodeResources(1.5, 8, 50);
+        System.out.println("Redeploying with " + resources);
+        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, resources), 1);
+        tester.activate(application, hosts2);
+
+        assertEquals(hosts1, hosts2);
+    }
+
     private ApplicationId makeApplicationId(String tenant, String appName) {
         return ApplicationId.from(tenant, appName, "default");
     }
@@ -420,6 +440,7 @@ public class DynamicDockerAllocationTest {
         b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-2-8-50", 2, 8, 50, Flavor.Type.DOCKER_CONTAINER);
         return b.build();
     }
 
