@@ -51,11 +51,12 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
                                     HostRegistries hostRegistries,
                                     RequestHandlerProvider handlerProvider,
-                                    Mode mode) {
+                                    Mode mode,
+                                    int threadPoolSize) {
         this(nodeIdentifier,
              hostRegistries.getTenantHostRegistry(),
              handlerProvider,
-             Executors.newFixedThreadPool(4, new DaemonThreadFactory("RPC-Authorizer-")),
+             Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("multi-tenant-rpc-authorizer-")),
              mode);
     }
 

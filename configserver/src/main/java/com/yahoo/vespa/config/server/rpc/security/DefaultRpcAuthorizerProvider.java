@@ -31,7 +31,7 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
                 TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa() && !authorizerMode.equals("disable");
         this.rpcAuthorizer =
                 useMultiTenantAuthorizer
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider, toMultiTenantRpcAuthorizerMode(authorizerMode))
+                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider, toMultiTenantRpcAuthorizerMode(authorizerMode), getThreadPoolSize(config))
                         : new NoopRpcAuthorizer();
     }
 
@@ -41,6 +41,10 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
             case "enforce": return MultiTenantRpcAuthorizer.Mode.ENFORCE;
             default: throw new IllegalArgumentException("Invalid authorizer mode: " + authorizerMode);
         }
+    }
+
+    private static int getThreadPoolSize(ConfigserverConfig config) {
+        return config.numRpcThreads() != 0 ? config.numRpcThreads() : 8;
     }
 
     @Override
