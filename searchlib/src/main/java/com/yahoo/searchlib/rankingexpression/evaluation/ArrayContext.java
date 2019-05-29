@@ -107,7 +107,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     @Override
     public final double getDouble(int index) {
         double value = doubleValues()[index];
-        if (value == Double.NaN)
+        if (Double.isNaN(value))
             throw new UnsupportedOperationException("Value at " + index + " has no double representation");
         return value;
     }
@@ -119,7 +119,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     public ArrayContext clone() {
         ArrayContext clone = (ArrayContext)super.clone();
         clone.values = new Value[nameToIndex().size()];
-        Arrays.fill(values, constantZero);
+        Arrays.fill(clone.values, constantZero);
         return clone;
     }
 
