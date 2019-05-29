@@ -12,28 +12,28 @@ import java.util.Set;
 public enum SystemName {
 
     /** Continuous deployment system */
-    cd(SystemType.MAIN, true),
+    cd(false, true),
 
     /** Production system */
-    main(SystemType.MAIN, false),
+    main(false, false),
 
     /** System accessible to the public */
-    Public(SystemType.PUBLIC, false),
+    Public(true, false),
 
     /** Continuous deployment system for testing the Public system */
-    PublicCd(SystemType.PUBLIC, true),
+    PublicCd(true, true),
 
     /** Local development system */
-    dev(SystemType.MAIN, false),
+    dev(false, false),
 
     /** VaaS */
-    vaas(SystemType.PUBLIC, true); // TODO: Remove this and use public everywhere
+    vaas(true, true); // TODO: Remove this and use public everywhere
 
-    private final SystemType type;
+    private final boolean isPublic;
     private final boolean isCd;
 
-    SystemName(SystemType type, boolean isCd) {
-        this.type = type;
+    SystemName(boolean isPublic, boolean isCd) {
+        this.isPublic = isPublic;
         this.isCd = isCd;
     }
 
@@ -65,7 +65,11 @@ public enum SystemName {
         }
     }
 
-    public SystemType getType() { return type; }
+    /** Whether the system is similar to Public, e.g. PublicCd. */
+    public boolean isPublic() { return isPublic; }
+
+    /** Whether the system is used for continuous deployment. */
     public boolean isCd() { return isCd; }
+
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 }
