@@ -102,6 +102,7 @@ Document::UP
 makeDoc17(DocBuilder &b)
 {
     b.startDocument("doc::17");
+    b.startIndexField("f1").addStr("foo0").addStr("bar0").endField();
     b.startIndexField("f2").startElement(1).addStr("foo").addStr("bar").endElement().startElement(1).addStr("bar").endElement().endField();
     b.startIndexField("f3").startElement(3).addStr("foo2").addStr("bar2").endElement().startElement(4).addStr("bar2").endElement().endField();
     return b.endDocument();
@@ -338,7 +339,10 @@ TEST_F("require that cheap features are calculated", Fixture)
     f._inserter.setVerbose();
     f._inserter.set_show_cheap_features();
     f.pushDocuments();
-    EXPECT_EQUAL("f=2,"
+    EXPECT_EQUAL("f=1,"
+                 "w=bar0,a=17(fl=2,occs=1,e=0,w=1,l=2[1]),"
+                 "w=foo0,a=17(fl=2,occs=1,e=0,w=1,l=2[0]),"
+                 "f=2,"
                  "w=bar,a=17(fl=3,occs=2,e=0,w=1,l=2[1],e=1,w=1,l=1[0]),"
                  "w=foo,a=17(fl=3,occs=1,e=0,w=1,l=2[0]),"
                  "f=3,"
