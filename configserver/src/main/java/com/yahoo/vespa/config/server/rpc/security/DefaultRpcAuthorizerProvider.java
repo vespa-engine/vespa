@@ -8,6 +8,8 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 /**
  * A provider for {@link RpcAuthorizer}. The instance provided is dependent on the configuration of the configserver.
@@ -22,11 +24,23 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
     public DefaultRpcAuthorizerProvider(ConfigserverConfig config,
                                         NodeIdentifier nodeIdentifier,
                                         HostRegistries hostRegistries,
-                                        RequestHandlerProvider handlerProvider) {
+                                        RequestHandlerProvider handlerProvider,
+                                        FlagSource flagSource) {
+        String authorizerMode = Flags.CONFIGSERVER_RPC_AUTHORIZER.bindTo(flagSource).value();
+        boolean useMultiTenantAuthorizer =
+                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa() && !authorizerMode.equals("disable");
         this.rpcAuthorizer =
-                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa()
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider)
+                useMultiTenantAuthorizer
+                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider, toMultiTenantRpcAuthorizerMode(authorizerMode))
                         : new NoopRpcAuthorizer();
+    }
+
+    private static MultiTenantRpcAuthorizer.Mode toMultiTenantRpcAuthorizerMode(String authorizerMode) {
+        switch (authorizerMode) {
+            case "log-only": return MultiTenantRpcAuthorizer.Mode.LOG_ONLY;
+            case "enforce": return MultiTenantRpcAuthorizer.Mode.ENFORCE;
+            default: throw new IllegalArgumentException("Invalid authorizer mode: " + authorizerMode);
+        }
     }
 
     @Override
