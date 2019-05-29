@@ -2,7 +2,6 @@
 package com.yahoo.config.provision;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -12,23 +11,31 @@ import java.util.Set;
  */
 public enum SystemName {
 
-    /** Local development system */
-    dev,
-
     /** Continuous deployment system */
-    cd,
+    cd(SystemType.MAIN, true),
 
     /** Production system */
-    main,
+    main(SystemType.MAIN, false),
 
-    /** System accessible for the public */
-    Public,
+    /** System accessible to the public */
+    Public(SystemType.PUBLIC, false),
 
     /** Continuous deployment system for testing the Public system */
-    PublicCd,
+    PublicCd(SystemType.PUBLIC, true),
+
+    /** Local development system */
+    dev(SystemType.MAIN, false),
 
     /** VaaS */
-    vaas; // TODO: Remove this and use public everywhere
+    vaas(SystemType.PUBLIC, true); // TODO: Remove this and use public everywhere
+
+    private final SystemType type;
+    private final boolean isCd;
+
+    SystemName(SystemType type, boolean isCd) {
+        this.type = type;
+        this.isCd = isCd;
+    }
 
     public static SystemName defaultSystem() {
         return main;
@@ -58,12 +65,7 @@ public enum SystemName {
         }
     }
 
-    public boolean isCd() {
-        return List.of(cd, PublicCd).contains(this);
-    }
-
-    public static Set<SystemName> all() {
-        return EnumSet.allOf(SystemName.class);
-    }
-
+    public SystemType getType() { return type; }
+    public boolean isCd() { return isCd; }
+    public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 }

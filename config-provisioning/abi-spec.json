@@ -781,16 +781,34 @@
       "public static com.yahoo.config.provision.SystemName defaultSystem()",
       "public static com.yahoo.config.provision.SystemName from(java.lang.String)",
       "public java.lang.String value()",
+      "public com.yahoo.config.provision.SystemType getType()",
       "public boolean isCd()",
       "public static java.util.Set all()"
     ],
     "fields": [
-      "public static final enum com.yahoo.config.provision.SystemName dev",
       "public static final enum com.yahoo.config.provision.SystemName cd",
       "public static final enum com.yahoo.config.provision.SystemName main",
       "public static final enum com.yahoo.config.provision.SystemName Public",
       "public static final enum com.yahoo.config.provision.SystemName PublicCd",
+      "public static final enum com.yahoo.config.provision.SystemName dev",
       "public static final enum com.yahoo.config.provision.SystemName vaas"
+    ]
+  },
+  "com.yahoo.config.provision.SystemType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.provision.SystemType[] values()",
+      "public static com.yahoo.config.provision.SystemType valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.provision.SystemType MAIN",
+      "public static final enum com.yahoo.config.provision.SystemType PUBLIC"
     ]
   },
   "com.yahoo.config.provision.TenantName": {
