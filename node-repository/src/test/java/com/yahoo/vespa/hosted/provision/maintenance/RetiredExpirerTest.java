@@ -65,7 +65,7 @@ public class RetiredExpirerTest {
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     private final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
             new MockNameResolver().mockAnyLookup(),
-            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
+            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), NodeType.config, true);
     private final NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 

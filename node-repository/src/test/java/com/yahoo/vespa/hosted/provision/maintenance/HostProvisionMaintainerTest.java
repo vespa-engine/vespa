@@ -132,7 +132,8 @@ public class HostProvisionMaintainerTest {
 
         private final ManualClock clock = new ManualClock();
         private final NodeRepository nodeRepository = new NodeRepository(
-                nodeFlavors, new MockCurator(), clock, Zone.defaultZone(), new MockNameResolver().mockAnyLookup(), DockerImage.fromString("docker-image"), true);
+                nodeFlavors, new MockCurator(), clock, Zone.defaultZone(), new MockNameResolver().mockAnyLookup(),
+                DockerImage.fromString("docker-image"), NodeType.config, true);
 
         Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, Optional<ApplicationId> application) {
             Node node = createNode(hostname, parentHostname, nodeType, state, application);

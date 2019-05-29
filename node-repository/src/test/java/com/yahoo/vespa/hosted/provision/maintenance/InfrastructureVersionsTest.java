@@ -6,9 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -19,9 +17,10 @@ import static org.junit.Assert.fail;
  */
 public class InfrastructureVersionsTest {
 
+    private final Version defaultVersion = Version.fromString("6.13.37");
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final InfrastructureVersions infrastructureVersions =
-            new InfrastructureVersions(tester.nodeRepository().database());
+            new InfrastructureVersions(tester.nodeRepository().database(), NodeType.config, defaultVersion);
 
     private final Version version = Version.fromString("6.123.456");
 
@@ -29,23 +28,21 @@ public class InfrastructureVersionsTest {
     public void can_only_downgrade_with_force() {
         assertTrue(infrastructureVersions.getTargetVersions().isEmpty());
 
-        assertEquals(Optional.empty(), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        assertEquals(defaultVersion, infrastructureVersions.getTargetVersionFor(NodeType.config));
         infrastructureVersions.setTargetVersion(NodeType.config, version, false);
-        assertEquals(Optional.of(version), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        assertEquals(version, infrastructureVersions.getTargetVersionFor(NodeType.config));
 
         // Upgrading to new version without force is fine
-        Version new_version = Version.fromString("6.123.457"); // version + 1
-        infrastructureVersions.setTargetVersion(NodeType.config, new_version, false);
-        assertEquals(Optional.of(new_version), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        Version newVersion = Version.fromString("6.123.457"); // version + 1
+        infrastructureVersions.setTargetVersion(NodeType.config, newVersion, false);
+        assertEquals(newVersion, infrastructureVersions.getTargetVersionFor(NodeType.config));
 
         // Downgrading to old version without force fails
-        try {
-            infrastructureVersions.setTargetVersion(NodeType.config, version, false);
-            fail("Should not be able to downgrade without force");
-        } catch (IllegalArgumentException ignored) { }
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.config, version, false));
 
         infrastructureVersions.setTargetVersion(NodeType.config, version, true);
-        assertEquals(Optional.of(version), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        assertEquals(version, infrastructureVersions.getTargetVersionFor(NodeType.config));
     }
 
     @Test
@@ -53,35 +50,61 @@ public class InfrastructureVersionsTest {
         // We can set version for config
         infrastructureVersions.setTargetVersion(NodeType.config, version, false);
 
-        try {
-            infrastructureVersions.setTargetVersion(NodeType.tenant, version, false);
-            fail("Should not be able to set version for tenant nodes");
-        } catch (IllegalArgumentException ignored) { }
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.tenant, version, false));
 
-        try {
-            // Using 'force' does not help, force only applies to version downgrade
-            infrastructureVersions.setTargetVersion(NodeType.tenant, version, true);
-            fail("Should not be able to set version for tenant nodes");
-        } catch (IllegalArgumentException ignored) { }
+        // Using 'force' does not help, force only applies to version downgrade
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.tenant, version, true));
     }
 
     @Test
-    public void can_store_multiple_versions() {
-        Version version2 = Version.fromString("6.456.123");
-
+    public void store_all_valid_for_config() {
         infrastructureVersions.setTargetVersion(NodeType.config, version, false);
-        infrastructureVersions.setTargetVersion(NodeType.confighost, version2, false);
+        infrastructureVersions.setTargetVersion(NodeType.confighost, version, false);
         infrastructureVersions.setTargetVersion(NodeType.proxyhost, version, false);
-        infrastructureVersions.setTargetVersion(NodeType.controller, version, false);
-        infrastructureVersions.setTargetVersion(NodeType.controllerhost, version2, false);
 
-        Map<NodeType, Version> expected = new HashMap<>();
-        expected.put(NodeType.config, version);
-        expected.put(NodeType.confighost, version2);
-        expected.put(NodeType.proxyhost, version);
-        expected.put(NodeType.controller, version);
-        expected.put(NodeType.controllerhost, version2);
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.controller, version, false));
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.controllerhost, version, false));
+
+        Map<NodeType, Version> expected = Map.of(
+                NodeType.config, version,
+                NodeType.confighost, version,
+                NodeType.proxyhost, version);
 
         assertEquals(expected, infrastructureVersions.getTargetVersions());
+    }
+
+    @Test
+    public void store_all_valid_for_controller() {
+        InfrastructureVersions infrastructureVersions =
+                new InfrastructureVersions(tester.nodeRepository().database(), NodeType.controller, defaultVersion);
+
+        infrastructureVersions.setTargetVersion(NodeType.controller, version, false);
+        infrastructureVersions.setTargetVersion(NodeType.controllerhost, version, false);
+        infrastructureVersions.setTargetVersion(NodeType.proxyhost, version, false);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.config, version, false));
+        assertThrows(IllegalArgumentException.class,
+                () -> infrastructureVersions.setTargetVersion(NodeType.confighost, version, false));
+
+        Map<NodeType, Version> expected = Map.of(
+                NodeType.controller, version,
+                NodeType.controllerhost, version,
+                NodeType.proxyhost, version);
+
+        assertEquals(expected, infrastructureVersions.getTargetVersions());
+    }
+
+    private static void assertThrows(Class<? extends Throwable> clazz, Runnable runnable) {
+        try {
+            runnable.run();
+            fail("Expected " + clazz);
+        } catch (Throwable e) {
+            if (!clazz.isInstance(e)) throw e;
+        }
     }
 }
