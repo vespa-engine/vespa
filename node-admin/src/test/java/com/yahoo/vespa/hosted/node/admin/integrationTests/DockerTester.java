@@ -133,7 +133,7 @@ public class DockerTester implements AutoCloseable {
     }
 
     <T> T inOrder(T t) {
-        return inOrder.verify(t, timeout(1000));
+        return inOrder.verify(t, timeout(5000));
     }
 
     @Override
