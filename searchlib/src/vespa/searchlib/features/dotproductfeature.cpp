@@ -775,21 +775,22 @@ attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property 
 }
 
 vespalib::string
-make_key(const vespalib::string & base, const vespalib::string & queryVector) {
+make_queryvector_key(const vespalib::string & base, const vespalib::string & subKey) {
     vespalib::string key(base);
-    key.append('.');
-    key.append(queryVector);
+    key.append(".vector.");
+    key.append(subKey);
+    return key;
+}
+
+vespalib::string
+make_attribute_key(const vespalib::string & base, const vespalib::string & subKey) {
+    vespalib::string key(base);
+    key.append(".attribute.");
+    key.append(subKey);
     return key;
 }
 
 } // anon ns
-
-DotProductBlueprint::SharedState::SharedState(const IAttributeVector * attribute, fef::Anything::UP arguments)
-    : _attribute(attribute),
-      _arguments(std::move(arguments))
-{}
-
-DotProductBlueprint::SharedState::~SharedState() = default;
 
 const IAttributeVector *
 DotProductBlueprint::upgradeIfNecessary(const IAttributeVector * attribute, const IQueryEnvironment & env) const {
@@ -802,16 +803,15 @@ DotProductBlueprint::upgradeIfNecessary(const IAttributeVector * attribute, cons
     return attribute;
 }
 
-void
-DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
-{
-    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
-    if (attribute == nullptr) return;
+namespace {
 
-    attribute = upgradeIfNecessary(attribute, env);
+fef::Anything::UP
+createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attribute,
+                  const vespalib::string & baseName, const vespalib::string & queryVector)
+{
     fef::Anything::UP arguments;
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
-        Property tensorBlob = env.getProperties().lookup(getBaseName(), _queryVector, "tensor");
+        Property tensorBlob = env.getProperties().lookup(baseName, queryVector, "tensor");
         if (attribute->isFloatingPointType() && tensorBlob.found() && !tensorBlob.get().empty()) {
             const Property::Value & blob = tensorBlob.get();
             vespalib::nbostream stream(blob.data(), blob.size());
@@ -821,13 +821,13 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
                 arguments = std::make_unique<ArrayParam<double>>(stream);
             }
         } else {
-            Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
+            Property prop = env.getProperties().lookup(baseName, queryVector);
             if (prop.found() && !prop.get().empty()) {
                 arguments = attemptParseArrayQueryVector(*attribute, prop);
             }
         }
     } else if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
-        Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
+        Property prop = env.getProperties().lookup(baseName, queryVector);
         if (prop.found() && !prop.get().empty()) {
             if (attribute->isStringType() && attribute->hasEnum()) {
                 dotproduct::wset::EnumVector vector(attribute);
@@ -844,30 +844,50 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
             // TODO actually use the parsed output for wset operations!
         }
     }
-    store.add(make_key(getBaseName(), _queryVector), std::make_unique<SharedState>(attribute, std::move(arguments)));
+    return arguments;
+}
+
+}
+
+void
+DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
+{
+    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+    if (attribute == nullptr) return;
+
+    vespalib::string queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
+    const fef::Anything * queryVector = env.getObjectStore().get(queryVectorKey);
+    if (queryVector == nullptr) {
+        fef::Anything::UP arguments = createQueryVector(env, attribute, getBaseName(), _queryVector);
+        if (arguments) {
+            store.add(queryVectorKey, std::move(arguments));
+        }
+    }
+
+    attribute = upgradeIfNecessary(attribute, env);
+
+    vespalib::string attributeKey = make_attribute_key(getBaseName(), _defaultAttribute);
+    if (store.get(attributeKey) == nullptr) {
+        store.add(attributeKey, std::make_unique<fef::AnyWrapper<const IAttributeVector *>>(attribute));
+    }
 }
 
 FeatureExecutor &
 DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    const IAttributeVector * attribute = nullptr;
-    const SharedState * sharedState = nullptr;
-    const fef::Anything * argument = env.getObjectStore().get(make_key(getBaseName(), _queryVector));
-    if (argument != nullptr) {
-        sharedState = static_cast<const SharedState *>(argument);
-        attribute = sharedState->_attribute;
-    }
-    if (attribute == nullptr) {
-        attribute = env.getAttributeContext().getAttribute(getAttribute(env));
-    }
+    const fef::Anything * attributeArg = env.getObjectStore().get(make_attribute_key(getBaseName(), _defaultAttribute));
+    const IAttributeVector * attribute = (attributeArg != nullptr)
+                                       ? static_cast<const fef::AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
+                                       : env.getAttributeContext().getAttribute(getAttribute(env));
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
     attribute = upgradeIfNecessary(attribute, env);
-    if ((sharedState != nullptr) && sharedState->_arguments) {
-        return createFromObject(attribute, *sharedState->_arguments, stash);
+    const fef::Anything * queryVectorArg = env.getObjectStore().get(make_queryvector_key(getBaseName(), _queryVector));
+    if (queryVectorArg != nullptr) {
+        return createFromObject(attribute, *queryVectorArg, stash);
     } else {
         Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
         if (prop.found() && !prop.get().empty()) {
