@@ -60,6 +60,7 @@ public class AuditLogSerializer {
         switch (method) {
             case POST: return "POST";
             case PATCH: return "PATCH";
+            case PUT: return "PUT";
             case DELETE: return "DELETE";
             default: throw new IllegalArgumentException("No serialization defined for method " + method);
         }
@@ -69,6 +70,7 @@ public class AuditLogSerializer {
         switch (field.asString()) {
             case "POST": return AuditLog.Entry.Method.POST;
             case "PATCH": return AuditLog.Entry.Method.PATCH;
+            case "PUT": return AuditLog.Entry.Method.PUT;
             case "DELETE": return AuditLog.Entry.Method.DELETE;
             default: throw new IllegalArgumentException("Unknown serialized value '" + field.asString() + "'");
         }
