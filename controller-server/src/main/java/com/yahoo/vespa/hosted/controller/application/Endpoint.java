@@ -119,7 +119,7 @@ public class Endpoint {
     private static String separator(SystemName system, boolean directRouting, boolean tls) {
         if (!tls) return ".";
         if (directRouting) return ".";
-        if (isPublic(system)) return ".";
+        if (system.isPublic()) return ".";
         return "--";
     }
 
@@ -141,7 +141,7 @@ public class Endpoint {
     }
 
     private static String systemPart(SystemName system, String separator) {
-        if (system == SystemName.main || isPublic(system)) return "";
+        if (!system.isCd()) return "";
         return system.value() + separator;
     }
 
@@ -158,10 +158,6 @@ public class Endpoint {
                 return PUBLIC_CD_DNS_SUFFIX;
             default: throw new IllegalArgumentException("No DNS suffix declared for system " + system);
         }
-    }
-
-    private static boolean isPublic(SystemName system) { // TODO: Remove and inline once we're down to one
-        return system == SystemName.Public || system == SystemName.vaas;
     }
 
     /** An endpoint's scope */
@@ -277,7 +273,7 @@ public class Endpoint {
             } else {
                 throw new IllegalArgumentException("Must set either cluster or rotation target");
             }
-            if (isPublic(system) && !directRouting) {
+            if (system.isPublic() && !directRouting) {
                 throw new IllegalArgumentException("Public system only supports direct routing endpoints");
             }
             if (directRouting && !port.isDefault()) {
