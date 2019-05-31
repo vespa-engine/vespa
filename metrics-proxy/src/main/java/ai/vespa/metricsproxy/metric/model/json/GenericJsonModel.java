@@ -38,8 +38,13 @@ public class GenericJsonModel {
             return mapper.writeValueAsString(this);
         } catch (IOException e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);
-            throw new RuntimeException("Could not render metrics. Check the log for details.");
+            throw new JsonMetricsRenderingException("Could not render metrics. Check the log for details.");
         }
     }
 
+    public static class JsonMetricsRenderingException extends RuntimeException {
+        JsonMetricsRenderingException(String message) {
+            super(message);
+        }
+    }
 }

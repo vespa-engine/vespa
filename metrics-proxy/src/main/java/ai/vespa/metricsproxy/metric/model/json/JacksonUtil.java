@@ -20,12 +20,12 @@ import java.util.Locale;
  * @author smorgrav
  * @author gjoranv
  */
-class JacksonUtil {
+public class JacksonUtil {
 
     /**
      * Returns an object mapper with a custom floating point serializer to avoid scientific notation
      */
-    static ObjectMapper createObjectMapper() {
+    public static ObjectMapper createObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule("DoubleSerializer",
                                                new Version(1, 0, 0, "", null, null));

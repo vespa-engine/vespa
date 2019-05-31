@@ -33,6 +33,7 @@ public class VespaService implements Comparable<VespaService> {
 
     private volatile int pid = -1;
     private volatile String state = "UNKNOWN";
+    private volatile boolean isAlive;
 
     // Used to keep the last polled system metrics for service
     private Metrics systemMetrics;
@@ -42,7 +43,6 @@ public class VespaService implements Comparable<VespaService> {
     private final RemoteHealthMetricFetcher remoteHealthMetricFetcher;
     private final RemoteMetricsFetcher remoteMetricsFetcher;
 
-    private boolean isAlive;
 
     // Used to keep track of log level when health or metrics requests fail
     private AtomicInteger metricsFetchCount = new AtomicInteger(0);
