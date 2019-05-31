@@ -9,6 +9,7 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
+import ai.vespa.metricsproxy.http.GenericMetricsHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -20,6 +21,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
@@ -27,6 +29,7 @@ import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.Handler;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,6 +69,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
+    private static final String METRICS_HANDLER_BINDING = "/metrics/v1/values";
+
     static final class AppDimensionNames {
         static final String ZONE = "zone";
         static final String APPLICATION_ID = "applicationId";  // tenant.app.instance
@@ -90,6 +95,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
+        addGenericMetricsHandler();
     }
 
     private void addClusterComponents() {
@@ -101,6 +107,14 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(RpcServer.class);
         addMetricsProxyComponent(SystemPollerProvider.class);
         addMetricsProxyComponent(VespaMetrics.class);
+    }
+
+    private void addGenericMetricsHandler() {
+        Handler<AbstractConfigProducer<?>> metricsHandler = new Handler<>(
+                new ComponentModel(GenericMetricsHandler.class.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
+        metricsHandler.addServerBindings("http://*" + METRICS_HANDLER_BINDING,
+                                         "http://*" + METRICS_HANDLER_BINDING + "/*");
+        addComponent(metricsHandler);
     }
 
     @Override
