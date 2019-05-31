@@ -1,0 +1,10 @@
+model example {
+
+    input1: tensor(name{}, x[10])
+
+
+    function foo() {
+        expression: var1 * var2
+    }
+
+}

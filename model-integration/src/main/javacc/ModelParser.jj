@@ -1,0 +1,352 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// --------------------------------------------------------------------------------
+//
+// JavaCC options. When this file is changed, run "mvn generate-sources" to rebuild
+// the parser classes.
+//
+// --------------------------------------------------------------------------------
+options {
+    UNICODE_INPUT = true;
+    CACHE_TOKENS  = false;
+    DEBUG_PARSER = false;
+    ERROR_REPORTING = true;
+    FORCE_LA_CHECK = true;
+    USER_CHAR_STREAM = true;
+}
+
+// --------------------------------------------------------------------------------
+//
+// Parser body.
+//
+// --------------------------------------------------------------------------------
+PARSER_BEGIN(ModelParser)
+
+package ai.vespa.rankingexpression.importer.vespa.parser;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+import java.util.ArrayList;
+import ai.vespa.rankingexpression.importer.ImportedModel;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+
+/**
+ * Parser of Vespa ML model files: Ranking expression functions enclosed in brackets.
+ *
+ * @author bratseth
+ */
+public class ModelParser {
+
+    /** The model we are importing into */
+    private ImportedModel model;
+
+    /** Creates a parser of a string */
+    public ModelParser(String input, ImportedModel model) {
+        this(new SimpleCharStream(input), model);
+    }
+
+    /** Creates a parser */
+    public ModelParser(SimpleCharStream input, ImportedModel model) {
+        this(input);
+        this.model = model;
+    }
+
+}
+
+PARSER_END(ModelParser)
+
+
+// --------------------------------------------------------------------------------
+//
+// Token declarations.
+//
+// --------------------------------------------------------------------------------
+
+// Declare white space characters. These do not include newline because it has
+// special meaning in several of the production rules.
+SKIP :
+{
+  " " | "\t" | "\r" | "\f"
+}
+
+// Declare all tokens to be recognized. When a word token is added it MUST be
+// added to the identifier() production rule.
+TOKEN :
+{
+  < NL: "\n" >
+| < FUNCTION: "function" >
+| < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
+| < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
+| < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < COLON: ":" >
+| < DOT: "." >
+| < COMMA: "," >
+| < MODEL: "model" >
+| < TYPE: "type" >
+| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
+| < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
+| < #BRACE_SL_CONTENT: (~["{","}","\n"])* >
+| < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
+| < #BRACE_ML_CONTENT: (~["{","}"])* >
+| < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
+| < CONSTANTS: "constants" >
+| < FILE: "file" >
+| < URI: "uri" >
+| < IDENTIFIER:           ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
+| < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
+| < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
+| < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
+| < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
+| < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] (["s","S"])? >
+| < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
+}
+
+// Declare a special skip token for comments.
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* >
+}
+
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+void model() :
+{
+    String name;
+}
+{
+    (<NL>)*
+    <MODEL>
+    (<NL>)*
+    name = identifier()
+    (<NL>)*
+    <LBRACE> modelContent() <RBRACE>
+    (<NL>)*
+    <EOF>
+    {
+        if ( ! name.equals(model.name()))
+            throw new IllegalArgumentException("Model '" + name + "' must be saved in a file named '" + name + ".model'");
+    }
+}
+
+void modelContent() :
+{
+}
+{
+    ( <NL> | input() | function() )*
+}
+
+/** Declared input variables (aka features). All non-scalar inputs must be declared. */
+void input() :
+{
+    String name;
+    TensorType type;
+}
+{
+    name = identifier() <COLON> type = tensorType("Input parameter '" + name + "'")
+    { model.input(name, type); }
+}
+
+/** A function */
+void function() :
+{
+    String name, expression, parameter;
+    List parameters = new ArrayList();
+}
+{
+    (  <FUNCTION> name = identifier()
+      "("
+          [ parameter = identifier()         { parameters.add(parameter); }
+          ( <COMMA> parameter = identifier() { parameters.add(parameter); } )* ]
+      ")"
+      lbrace() expression = expression() (<NL>)* <RBRACE> )
+    {
+        try {
+            model.expression(name, new RankingExpression(expression));
+        }
+        catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+            throw new IllegalArgumentException("Could not parse function '" + name + "'", e);
+        }
+    }
+}
+
+/** Consumes a constant block of model. */
+/*
+void rankingConstant() :
+{
+    String name;
+    RankingConstant constant;
+}
+{
+    ( <CONSTANT> name = identifier()
+        {
+//            constant = new RankingConstant(name);
+        }
+      lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
+    {
+    }
+}
+*/
+
+/** Consumes a constant block. */
+/*
+void rankingConstantItem(RankingConstant constant) :
+{
+    String path = null;
+    TensorType type = null;
+}
+{
+    ( (<FILE> <COLON> path = filePath() { } (<NL>)*) { constant.setFileName(path); }
+      | (<URI> <COLON> path = uriPath() { } (<NL>)*) { constant.setUri(path); }
+      | type = tensorTypeWithPrefix(rankingConstantErrorMessage(constant.getName())) (<NL>)* { constant.setType(type); }
+    )
+    {
+        return null;
+    }
+}
+*/
+
+String rankingConstantErrorMessage(String name) : {}
+{
+    { return "For ranking constant ' " + name + "'"; }
+}
+
+String filePath() : { }
+{
+    ( <FILE_PATH> | <STRING> | <IDENTIFIER>)
+    { return token.image; }
+}
+
+String uriPath() : { }
+{
+    ( <URI_PATH> )
+    { return token.image; }
+}
+
+/** Consumes the constants of this model. */
+void constants(ImportedModel model) :
+{
+    String name;
+}
+{
+    <CONSTANTS> <LBRACE> (<NL>)*
+      ( name = identifier() ( constantDouble(name) |
+                              constantTensor(name) ) (<NL>)* )*
+    <RBRACE>
+}
+
+void constantDouble(String name) :
+{
+    Token value;
+}
+{
+    <COLON> value = <DOUBLE> { model.smallConstant(name, Tensor.from(Double.parseDouble(token.image))); }
+}
+
+void constantTensor(String name) :
+{
+    String tensorString = "";
+    TensorType tensorType = null;
+}
+{
+    <LBRACE> (<NL>)*
+      (( tensorString = tensorValue() |
+         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(model.name(), name)) ) (<NL>)* )* <RBRACE>
+    {
+        if (tensorType != null) {
+            model.smallConstant(name, Tensor.from(tensorType, tensorString));
+        } else {
+            model.smallConstant(name, Tensor.from(tensorString));
+        }
+    }
+}
+
+String constantTensorErrorMessage(String model, String constantTensorName) : {}
+{
+    { return "For constant tensor '" + constantTensorName + "' in model '" + model + "'"; }
+}
+
+String tensorValue() :
+{
+    String tensor;
+}
+{
+    ( <TENSOR_VALUE_SL> { tensor = token.image.substring(token.image.indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { tensor = token.image.substring(token.image.indexOf("{") + 1,
+                                                         token.image.lastIndexOf("}")); } )
+    {
+        return tensor;
+    }
+}
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{
+    TensorType type;
+}
+{
+    <TYPE> <COLON> type= tensorType(errorMessage)
+    { return type; }
+}
+
+TensorType tensorType(String errorMessage) :
+{
+    String tensorTypeString;
+}
+{
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
+    }
+}
+
+/** Consumes an expression token and returns its image. */
+String expression() :
+{
+    String exp;
+}
+{
+    ( <EXPRESSION_SL> { exp = token.image.substring(token.image.indexOf(":") + 1); } |
+      <EXPRESSION_ML> { exp = token.image.substring(token.image.indexOf("{") + 1,
+                                                    token.image.lastIndexOf("}")); } )
+    { return exp; }
+}
+
+/** Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as identifiers. */
+String identifier() : { }
+{
+    (
+        <IDENTIFIER>
+      | <DOUBLE>
+      | <FILE>
+      | <URI>
+      | <MODEL>
+      | <TYPE>
+      | <CONSTANTS>
+    )
+    { return token.image; }
+}
+
+/** Consumes an opening brace with leading and trailing newline tokens. */
+void lbrace() : { }
+{
+    (<NL>)* <LBRACE> (<NL>)*
+}
