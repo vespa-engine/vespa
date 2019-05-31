@@ -1,0 +1,3 @@
+VESPA_TLS_CA_CERT=/path/to/cacerts; export VESPA_TLS_CA_CERT;
+VESPA_TLS_CERT=/path/to/certificate; export VESPA_TLS_CERT;
+VESPA_TLS_PRIVATE_KEY=/path/to/key; export VESPA_TLS_PRIVATE_KEY;
