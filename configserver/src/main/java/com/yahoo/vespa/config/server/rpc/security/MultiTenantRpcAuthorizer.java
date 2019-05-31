@@ -112,10 +112,10 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                 } else {
                     String hostname = configRequest.getClientHostName();
                     Optional<RequestHandler> tenantHandler =
-                            Optional.of(hostRegistry.getKeyForHost(hostname))
+                            Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
                                     .flatMap(this::getTenantHandler);
                     if (tenantHandler.isEmpty()) {
-                        return; // unknown tenant
+                        return; // unknown host
                     }
                     ApplicationId resolvedApplication = tenantHandler.get().resolveApplicationId(hostname);
                     ApplicationId peerOwner = applicationId(peerIdentity);
