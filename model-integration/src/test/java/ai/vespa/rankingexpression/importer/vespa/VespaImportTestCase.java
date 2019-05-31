@@ -17,10 +17,16 @@ public class VespaImportTestCase {
     public void testExample() {
         ImportedModel model = importModel("example");
 
-        assertEquals(1, model.inputs().size());
-        assertEquals("tensor(name{},x[10])", model.inputs().get("input1").toString());
+        assertEquals(2, model.inputs().size());
+        assertEquals("tensor(name{},x[3])", model.inputs().get("input1").toString());
+        assertEquals("tensor(x[3])", model.inputs().get("input2").toString());
 
-        assertEquals("var1 * var2", model.expressions().get("foo").getRoot().toString());
+        assertEquals(2, model.smallConstants().size());
+        assertEquals("tensor(x[3]):{{x:0}:0.5,{x:1}:1.5,{x:2}:2.5}", model.smallConstants().get("constant1"));
+        assertEquals("tensor():{3.0}", model.smallConstants().get("constant2"));
+
+        assertEquals("max(reduce(input1 * input2, sum, name),x) * constant2",
+                     model.expressions().get("foo").getRoot().toString());
     }
 
     @Test

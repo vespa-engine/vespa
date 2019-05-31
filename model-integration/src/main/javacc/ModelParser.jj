@@ -78,6 +78,7 @@ TOKEN :
   < NL: "\n" >
 | < FUNCTION: "function" >
 | < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
+| < TENSORVALUE: (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
 | < LBRACE: "{" >
@@ -146,7 +147,7 @@ void modelContent() :
 {
 }
 {
-    ( <NL> | input() | function() )*
+    ( <NL> | input() | constants() | function() )*
 }
 
 /** Declared input variables (aka features). All non-scalar inputs must be declared. */
@@ -183,9 +184,85 @@ void function() :
     }
 }
 
+/** Consumes the constants of this model. */
+void constants() :
+{
+    String name;
+}
+{
+    <CONSTANTS> <LBRACE> (<NL>)*
+      ( name = identifier() <COLON> ( constantDouble(name) | constantTensor(name) ) (<NL>)* )*
+    <RBRACE>
+}
+
+void constantDouble(String name) :
+{
+    Token value;
+}
+{
+    value = <DOUBLE> { model.smallConstant(name, Tensor.from(Double.parseDouble(value.image))); }
+}
+
+void constantTensor(String name) :
+{
+    TensorType type;
+    Token value;
+}
+{
+     type = tensorType("constant '" + name + "'") value = <TENSORVALUE>
+     {
+         model.smallConstant(name, Tensor.from(type, value.image.substring(1)));
+     }
+}
+
+String constantTensorErrorMessage(String model, String constantTensorName) : {}
+{
+    { return "For constant tensor '" + constantTensorName + "' in model '" + model + "'"; }
+}
+
+String tensorValue() :
+{
+    String tensor;
+}
+{
+    ( <TENSOR_VALUE_SL> { tensor = token.image.substring(token.image.indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { tensor = token.image.substring(token.image.indexOf("{") + 1,
+                                                         token.image.lastIndexOf("}")); } )
+    {
+        return tensor;
+    }
+}
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{
+    TensorType type;
+}
+{
+    <TYPE> <COLON> type=tensorType(errorMessage)
+    { return type; }
+}
+
+TensorType tensorType(String errorMessage) :
+{
+    String tensorTypeString;
+}
+{
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
+    }
+}
+
+//----------------------------------------
 /** Consumes a constant block of model. */
 /*
-void rankingConstant() :
+void largeConstant() :
 {
     String name;
     RankingConstant constant;
@@ -235,88 +312,7 @@ String uriPath() : { }
     ( <URI_PATH> )
     { return token.image; }
 }
-
-/** Consumes the constants of this model. */
-void constants(ImportedModel model) :
-{
-    String name;
-}
-{
-    <CONSTANTS> <LBRACE> (<NL>)*
-      ( name = identifier() ( constantDouble(name) |
-                              constantTensor(name) ) (<NL>)* )*
-    <RBRACE>
-}
-
-void constantDouble(String name) :
-{
-    Token value;
-}
-{
-    <COLON> value = <DOUBLE> { model.smallConstant(name, Tensor.from(Double.parseDouble(token.image))); }
-}
-
-void constantTensor(String name) :
-{
-    String tensorString = "";
-    TensorType tensorType = null;
-}
-{
-    <LBRACE> (<NL>)*
-      (( tensorString = tensorValue() |
-         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(model.name(), name)) ) (<NL>)* )* <RBRACE>
-    {
-        if (tensorType != null) {
-            model.smallConstant(name, Tensor.from(tensorType, tensorString));
-        } else {
-            model.smallConstant(name, Tensor.from(tensorString));
-        }
-    }
-}
-
-String constantTensorErrorMessage(String model, String constantTensorName) : {}
-{
-    { return "For constant tensor '" + constantTensorName + "' in model '" + model + "'"; }
-}
-
-String tensorValue() :
-{
-    String tensor;
-}
-{
-    ( <TENSOR_VALUE_SL> { tensor = token.image.substring(token.image.indexOf(":") + 1); } |
-      <TENSOR_VALUE_ML> { tensor = token.image.substring(token.image.indexOf("{") + 1,
-                                                         token.image.lastIndexOf("}")); } )
-    {
-        return tensor;
-    }
-}
-
-TensorType tensorTypeWithPrefix(String errorMessage) :
-{
-    TensorType type;
-}
-{
-    <TYPE> <COLON> type= tensorType(errorMessage)
-    { return type; }
-}
-
-TensorType tensorType(String errorMessage) :
-{
-    String tensorTypeString;
-}
-{
-    <TENSOR_TYPE> { tensorTypeString = token.image; }
-    {
-        TensorType tensorType;
-        try {
-            tensorType = TensorType.fromSpec(tensorTypeString);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
-        }
-        return tensorType;
-    }
-}
+//----------------------------------------
 
 /** Consumes an expression token and returns its image. */
 String expression() :
@@ -340,7 +336,6 @@ String identifier() : { }
       | <URI>
       | <MODEL>
       | <TYPE>
-      | <CONSTANTS>
     )
     { return token.image; }
 }
