@@ -52,11 +52,6 @@ public class CreateRecords implements NameServiceRequest {
     }
 
     @Override
-    public List<Record> affectedRecords() {
-        return records();
-    }
-
-    @Override
     public String toString() {
         return "create records " + records();
     }

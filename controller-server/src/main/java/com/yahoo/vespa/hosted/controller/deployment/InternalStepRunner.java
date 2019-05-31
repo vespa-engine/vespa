@@ -519,7 +519,7 @@ public class InternalStepRunner implements StepRunner {
             });
         }
         catch (IllegalStateException e) {
-            logger.log(INFO, "Job '" + id.type() + "'no longer supposed to run?:", e);
+            logger.log(INFO, "Job '" + id.type() + "' no longer supposed to run?", e);
             return Optional.of(error);
         }
         return Optional.of(running);

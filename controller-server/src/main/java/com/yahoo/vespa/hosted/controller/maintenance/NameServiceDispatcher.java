@@ -41,6 +41,7 @@ public class NameServiceDispatcher extends Maintainer {
         try (Lock lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             NameServiceQueue remaining = queue.dispatchTo(nameService, requestCount);
+            if (queue == remaining) return; // Queue unchanged
             db.writeNameServiceQueue(remaining);
         }
     }
