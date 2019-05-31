@@ -469,6 +469,9 @@ public class DeploymentSpecTest {
     public void someEndpoints() {
         final var spec = DeploymentSpec.fromXml("" +
                 "<deployment>" +
+                "  <prod>" +
+                "    <region active=\"true\">us-east</region>" +
+                "  </prod>" +
                 "  <endpoints>" +
                 "    <endpoint id=\"foo\" container-id=\"bar\">" +
                 "      <region>us-east</region>" +
@@ -488,6 +491,6 @@ public class DeploymentSpecTest {
                 spec.endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
         );
 
-        assertEquals(Set.of("us-east"), spec.endpoints().get(0).regions());
+        assertEquals(Set.of(RegionName.from("us-east")), spec.endpoints().get(0).regions());
     }
 }

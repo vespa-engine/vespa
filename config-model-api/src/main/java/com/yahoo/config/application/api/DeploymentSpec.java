@@ -47,7 +47,7 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   Notifications.none(),
-                                                                  Collections.emptyList());
+                                                                  List.of());
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
@@ -74,9 +74,10 @@ public class DeploymentSpec {
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.notifications = notifications;
-        this.endpoints = Objects.requireNonNull(endpoints, "Missing endpoints parameter");
+        this.endpoints = List.copyOf(Objects.requireNonNull(endpoints, "Missing endpoints parameter"));
         validateZones(this.steps);
         validateAthenz();
+        validateEndpoints(this.steps, globalServiceId, this.endpoints);
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -96,6 +97,26 @@ public class DeploymentSpec {
         for (Step step : steps)
             for (DeclaredZone zone : step.zones())
                 ensureUnique(zone, zones);
+    }
+
+    /** Throw an IllegalArgumentException if an endpoint refers to a region that is not declared in 'prod' */
+    private void validateEndpoints(List<Step> steps, Optional<String> globalServiceId, List<Endpoint> endpoints) {
+        if (globalServiceId.isPresent() && ! endpoints.isEmpty()) {
+            throw new IllegalArgumentException("Providing both 'endpoints' and 'global-service-id'. Use only 'endpoints'.");
+        }
+
+        var stepZones = steps.stream()
+                .flatMap(s -> s.zones().stream())
+                .flatMap(z -> z.region.stream())
+                .collect(Collectors.toSet());
+
+        for (var endpoint : endpoints){
+            for (var endpointRegion : endpoint.regions()) {
+                if (! stepZones.contains(endpointRegion)) {
+                    throw new IllegalArgumentException("Region used in endpoint that is not declared in 'prod': " + endpointRegion);
+                }
+            }
+        }
     }
 
     /*
@@ -204,7 +225,7 @@ public class DeploymentSpec {
     public Notifications notifications() { return notifications; }
 
     /** Returns the rotations configuration */
-    public List<Endpoint> endpoints() { return Collections.unmodifiableList(endpoints); }
+    public List<Endpoint> endpoints() { return endpoints; }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
