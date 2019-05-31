@@ -36,15 +36,15 @@ TEST(FieldLengthCalculatorTest, startup_is_average)
     EXPECT_DOUBLE_EQ((3 + 4 + 7)/3.0, calc.get_average_field_length());
     EXPECT_EQ(3, calc.get_num_samples());
     calc.add_field_length(9);
-    EXPECT_DOUBLE_EQ(5.75, calc.get_average_field_length());
+    EXPECT_DOUBLE_EQ((3 + 4 + 7 + 9)/4.0, calc.get_average_field_length());
     EXPECT_EQ(4, calc.get_num_samples());
 }
 
 TEST(FieldLengthCalculatorTest, average_until_max_num_samples)
 {
-    FieldLengthCalculator calc;
+    const uint32_t max_num_samples = 5;
+    FieldLengthCalculator calc(0.0, 0, max_num_samples);
     static constexpr double epsilon = 0.000000001; // Allowed difference
-    const uint32_t max_num_samples = calc.get_max_num_samples();
     for (uint32_t i = 0; i + 1 < max_num_samples; ++i) {
         calc.add_field_length(i + 1);
     }
@@ -59,7 +59,7 @@ TEST(FieldLengthCalculatorTest, average_until_max_num_samples)
     // No longer arithmetic average
     EXPECT_LT(arith_avg(max_num_samples + 1), calc.get_average_field_length());
     // Switched to exponential decay
-    EXPECT_NEAR((arith_avg(max_num_samples) * (max_num_samples - 1) + max_num_samples + 1) / max_num_samples, calc.get_average_field_length(), 0.000000001);
+    EXPECT_NEAR((arith_avg(max_num_samples) * (max_num_samples - 1) + max_num_samples + 1) / max_num_samples, calc.get_average_field_length(), epsilon);
     EXPECT_EQ(max_num_samples, calc.get_num_samples());
 }
 
