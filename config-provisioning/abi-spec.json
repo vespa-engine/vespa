@@ -783,7 +783,8 @@
       "public java.lang.String value()",
       "public boolean isPublic()",
       "public boolean isCd()",
-      "public static java.util.Set all()"
+      "public static java.util.Set all()",
+      "public static java.util.Set allOf(java.util.function.Predicate)"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.SystemName cd",

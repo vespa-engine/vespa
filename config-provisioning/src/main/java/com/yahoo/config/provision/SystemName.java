@@ -3,6 +3,9 @@ package com.yahoo.config.provision;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Systems in hosted Vespa
@@ -72,4 +75,8 @@ public enum SystemName {
     public boolean isCd() { return isCd; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
+
+    public static Set<SystemName> allOf(Predicate<SystemName> predicate) {
+        return Stream.of(values()).filter(predicate::test).collect(Collectors.toSet());
+    }
 }
