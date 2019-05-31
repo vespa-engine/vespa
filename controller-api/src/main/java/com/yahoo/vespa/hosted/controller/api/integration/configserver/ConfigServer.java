@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -72,7 +73,12 @@ public interface ConfigServer {
     NodeRepository nodeRepository();
 
     /** Get service convergence status for given deployment */
-    Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment);
+    default Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment) {
+        return serviceConvergence(deployment, Optional.empty());
+    }
+
+    /** Get service convergence status for given deployment, using the nodes in the model at the given Vespa version. */
+    Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment, Optional<Version> version);
 
     /** Get all load balancers in given zone */
     List<LoadBalancer> getLoadBalancers(ZoneId zone);

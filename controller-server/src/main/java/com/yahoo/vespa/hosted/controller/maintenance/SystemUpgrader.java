@@ -42,7 +42,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     protected boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
         return    minVersion(zone, application, Node::currentVersion).map(target::equals)
                                                                      .orElse(true)
-               && application.configConvergedIn(zone, controller());
+               && application.configConvergedIn(zone, controller(), Optional.of(target));
     }
 
     @Override

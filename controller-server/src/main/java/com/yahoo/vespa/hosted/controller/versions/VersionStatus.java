@@ -157,7 +157,7 @@ public class VersionStatus {
         ListMap<Version, HostName> versions = new ListMap<>();
         for (ZoneId zone : zones) {
             for (SystemApplication application : SystemApplication.all()) {
-                boolean configConverged = application.configConvergedIn(zone, controller);
+                boolean configConverged = application.configConvergedIn(zone, controller, Optional.empty());
                 if (!configConverged) {
                     log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone + " has not converged");
                 }

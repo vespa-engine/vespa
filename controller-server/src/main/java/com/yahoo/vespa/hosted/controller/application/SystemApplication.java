@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -9,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -61,11 +63,11 @@ public enum SystemApplication {
     }
 
     /** Returns whether config for this application has converged in given zone */
-    public boolean configConvergedIn(ZoneId zone, Controller controller) {
+    public boolean configConvergedIn(ZoneId zone, Controller controller, Optional<Version> version) {
         if (!hasApplicationPackage()) {
             return true;
         }
-        return controller.configServer().serviceConvergence(new DeploymentId(id(), zone))
+        return controller.configServer().serviceConvergence(new DeploymentId(id(), zone), version)
                          .map(ServiceConvergence::converged)
                          .orElse(false);
     }
