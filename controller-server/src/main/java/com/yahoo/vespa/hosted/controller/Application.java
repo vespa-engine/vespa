@@ -99,7 +99,7 @@ public class Application {
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.pemDeployKey = pemDeployKey;
-        this.rotations = Objects.requireNonNull(rotations, "rotations cannot be null");
+        this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
     }
 
@@ -197,7 +197,7 @@ public class Application {
 
     /** Returns the global rotation id of this, if present */
     public List<RotationId> rotations() {
-        return Collections.unmodifiableList(rotations);
+        return rotations;
     }
 
     /** Returns the default global endpoints for this in given system */
