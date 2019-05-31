@@ -75,15 +75,6 @@ public class InfraDeployerImplTest {
     }
 
     @Test
-    public void remove_application_if_without_target_version() {
-        addNode(1, Node.State.active, Optional.of(target));
-        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-        verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-        verifyRemoved(1);
-    }
-
-    @Test
     public void remove_application_if_without_nodes() {
         remove_application_without_nodes(true);
     }

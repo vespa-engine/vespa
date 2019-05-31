@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -23,22 +24,19 @@ public class InfrastructureVersions {
     private static final Logger logger = Logger.getLogger(InfrastructureVersions.class.getName());
 
     private final CuratorDatabaseClient db;
+    private final Version defaultVersion;
 
     public InfrastructureVersions(CuratorDatabaseClient db) {
+        this(db, Vtag.currentVersion);
+    }
+
+    InfrastructureVersions(CuratorDatabaseClient db, Version defaultVersion) {
         this.db = db;
+        this.defaultVersion = defaultVersion;
     }
 
     public void setTargetVersion(NodeType nodeType, Version newTargetVersion, boolean force) {
-        switch (nodeType) {
-            case config:
-            case confighost:
-            case proxyhost:
-            case controller:
-            case controllerhost:
-                break;
-            default:
-                throw new IllegalArgumentException("Cannot set version for type " + nodeType);
-        }
+        assertLegalNodeTypeForTargetVersion(nodeType);
         if (newTargetVersion.isEmpty()) {
             throw new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
         }
@@ -64,11 +62,34 @@ public class InfrastructureVersions {
         }
     }
 
-    public Optional<Version> getTargetVersionFor(NodeType nodeType) {
-        return Optional.ofNullable(db.readInfrastructureVersions().get(nodeType));
+    public Version getTargetVersionFor(NodeType nodeType) {
+        assertLegalNodeTypeForTargetVersion(nodeType);
+
+        return Optional.ofNullable(db.readInfrastructureVersions().get(nodeType)).orElseGet(() -> {
+            // Target version has never been set for this node type, set it to the default version of this server.
+            // We need to set the version (in ZK) to prevent another config server from returning a different version.
+            // No lock needed since this is only an issue in bootstrap case and in a potential race, all versions
+            // are equally valid
+            setTargetVersion(nodeType, defaultVersion, false);
+            return defaultVersion;
+        });
     }
 
     public Map<NodeType, Version> getTargetVersions() {
         return Collections.unmodifiableMap(db.readInfrastructureVersions());
+    }
+
+    private static void assertLegalNodeTypeForTargetVersion(NodeType nodeType) {
+        switch (nodeType) {
+            case config:
+            case confighost:
+            case controller:
+            case controllerhost:
+            case proxyhost:
+            case host:
+                break;
+            default:
+                throw new IllegalArgumentException("Target version for type " + nodeType + " is not allowed");
+        }
     }
 }

@@ -658,7 +658,7 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                                    Request.Method.PATCH),
                        400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set version for type tenant\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Target version for type tenant is not allowed\"}");
 
         // Omitting version field fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
