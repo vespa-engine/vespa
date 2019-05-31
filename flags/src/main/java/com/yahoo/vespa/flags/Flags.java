@@ -158,6 +158,11 @@ public class Flags {
             "Takes effect only at bootstrap of config server/controller",
             HOSTNAME);
 
+    public static final UnboundStringFlag CONFIGSERVER_RPC_AUTHORIZER = defineStringFlag(
+            "configserver-rpc-authorizer", "log-only",
+            "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
+            "Takes effect on restart of configserver");
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

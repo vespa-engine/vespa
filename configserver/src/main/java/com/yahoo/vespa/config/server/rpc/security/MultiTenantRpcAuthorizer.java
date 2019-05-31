@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc.security;
 
-import com.google.inject.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -49,15 +48,16 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     private final Executor executor;
     private final Mode mode;
 
-    @Inject
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
                                     HostRegistries hostRegistries,
-                                    RequestHandlerProvider handlerProvider) {
+                                    RequestHandlerProvider handlerProvider,
+                                    Mode mode,
+                                    int threadPoolSize) {
         this(nodeIdentifier,
              hostRegistries.getTenantHostRegistry(),
              handlerProvider,
-             Executors.newFixedThreadPool(4, new DaemonThreadFactory("RPC-Authorizer-")),
-             Mode.LOG_ONLY); // TODO Change default mode
+             Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("multi-tenant-rpc-authorizer-")),
+             mode);
     }
 
     MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
