@@ -294,6 +294,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
                 context.pathInNodeUnderVespaHome("var/jdisc_core"),
                 context.pathInNodeUnderVespaHome("var/maven"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when vespa-routing is no more
                 context.pathInNodeUnderVespaHome("var/run"),
                 context.pathInNodeUnderVespaHome("var/scoreboards"),
                 context.pathInNodeUnderVespaHome("var/service"),
