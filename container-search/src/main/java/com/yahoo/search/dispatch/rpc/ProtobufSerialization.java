@@ -5,6 +5,8 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.yahoo.data.access.simple.Value;
+import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.io.GrowableByteBuffer;
@@ -23,6 +25,7 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
@@ -221,7 +224,12 @@ public class ProtobufSerialization {
         if(sorting != null) {
             result.hits().setSorted(true);
         }
-
+        var slimeTrace = protobuf.getSlimeTrace();
+        if (slimeTrace != null && !slimeTrace.isEmpty()) {
+            var traces = new Value.ArrayValue();
+            traces.add(new SlimeAdapter(BinaryFormat.decode(slimeTrace.toByteArray()).get()));
+            query.trace(traces, query.getTraceLevel());
+        }
         return result;
     }
 
