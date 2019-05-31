@@ -197,6 +197,19 @@ MaintenanceController::newConfig(const DocumentDBMaintenanceConfig::SP &config)
     restart();
 }
 
+namespace {
+
+void
+assert_equal_meta_store_instances(const MaintenanceDocumentSubDB& old_db,
+                                  const MaintenanceDocumentSubDB& new_db)
+{
+    if (old_db.valid() && new_db.valid()) {
+        assert(old_db.meta_store().get() == new_db.meta_store().get());
+    }
+}
+
+}
+
 void
 MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
                                   const MaintenanceDocumentSubDB &remSubDB,
@@ -206,11 +219,16 @@ MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
     bool oldValid = _readySubDB.valid();
     assert(readySubDB.valid());
     assert(remSubDB.valid());
+    // Document meta store instances should not change. Maintenance jobs depend on this fact.
+    assert_equal_meta_store_instances(_readySubDB, readySubDB);
+    assert_equal_meta_store_instances(_remSubDB, remSubDB);
+    assert_equal_meta_store_instances(_notReadySubDB, notReadySubDB);
     _readySubDB = readySubDB;
     _remSubDB = remSubDB;
     _notReadySubDB = notReadySubDB;
-    if (!oldValid && _started)
+    if (!oldValid && _started) {
         restart();
+    }
 }
 
 

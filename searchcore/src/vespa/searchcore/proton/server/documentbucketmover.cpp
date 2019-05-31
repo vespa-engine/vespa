@@ -24,12 +24,12 @@ DocumentBucketMover::moveDocument(DocumentIdT lid,
                                   const document::GlobalId &gid,
                                   Timestamp timestamp)
 {
-    Document::SP doc(_source->_retriever->getDocument(lid).release());
+    Document::SP doc(_source->retriever()->getDocument(lid).release());
     if (!doc || doc->getId().getGlobalId() != gid)
         return; // Failed to retrieve document, removed or changed identity
     // TODO(geirst): what if doc is NULL?
     BucketId bucketId = _bucket.stripUnused();
-    MoveOperation op(bucketId, timestamp, doc, DbDocumentId(_source->_subDbId, lid), _targetSubDbId);
+    MoveOperation op(bucketId, timestamp, doc, DbDocumentId(_source->sub_db_id(), lid), _targetSubDbId);
 
     // We cache the bucket for the document we are going to move to avoid getting
     // inconsistent bucket info (getBucketInfo()) while moving between ready and not-ready
@@ -103,16 +103,16 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
     if (_bucketDone) {
         return;
     }
-    Iterator itr = (_lastGidValid ? _source->_metaStore->upperBound(_lastGid)
-                    : _source->_metaStore->lowerBound(_bucket));
-    const Iterator end = _source->_metaStore->upperBound(_bucket);
+    Iterator itr = (_lastGidValid ? _source->meta_store()->upperBound(_lastGid)
+                    : _source->meta_store()->lowerBound(_bucket));
+    const Iterator end = _source->meta_store()->upperBound(_bucket);
     size_t docsMoved = 0;
     size_t docsSkipped = 0; // In absence of a proper cost metric
     typedef std::vector<MoveKey> MoveVec;
     MoveVec toMove;
     for (; itr != end && docsMoved < maxDocsToMove; ++itr) {
         DocumentIdT lid = itr.getKey();
-        const RawDocumentMetaData &metaData = _source->_metaStore->getRawMetaData(lid);
+        const RawDocumentMetaData &metaData = _source->meta_store()->getRawMetaData(lid);
         if (metaData.getBucketUsedBits() != _bucket.getUsedBits()) {
             ++docsSkipped;
             if (docsSkipped >= 50) {

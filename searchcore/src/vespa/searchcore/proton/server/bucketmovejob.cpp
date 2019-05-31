@@ -88,9 +88,9 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
     const MaintenanceDocumentSubDB &source(wantReady ? _notReady : _ready);
     const MaintenanceDocumentSubDB &target(wantReady ? _ready : _notReady);
     LOG(debug, "checkBucket(): mover.setupForBucket(%s, source:%u, target:%u)",
-        bucket.toString().c_str(), source._subDbId, target._subDbId);
-    mover.setupForBucket(bucket, &source, target._subDbId,
-                         _moveHandler, _ready._metaStore->getBucketDB());
+        bucket.toString().c_str(), source.sub_db_id(), target.sub_db_id());
+    mover.setupForBucket(bucket, &source, target.sub_db_id(),
+                         _moveHandler, _ready.meta_store()->getBucketDB());
 }
 
 BucketMoveJob::ScanResult
@@ -98,7 +98,7 @@ BucketMoveJob::scanBuckets(size_t maxBucketsToScan, IFrozenBucketHandler::Exclus
 {
     size_t bucketsScanned = 0;
     bool passDone = false;
-    ScanIterator itr(_ready._metaStore->getBucketDB().takeGuard(),
+    ScanIterator itr(_ready.meta_store()->getBucketDB().takeGuard(),
             _scanPass, _scanPos._lastBucket, _endPos._lastBucket);
     BucketId bucket;
     for (; itr.valid() &&
@@ -250,7 +250,7 @@ BucketMoveJob::deactivateBucket(BucketId bucket)
 void
 BucketMoveJob::activateBucket(BucketId bucket)
 {
-    BucketDBOwner::Guard notReadyBdb(_notReady._metaStore->getBucketDB().takeGuard());
+    BucketDBOwner::Guard notReadyBdb(_notReady.meta_store()->getBucketDB().takeGuard());
     if (notReadyBdb->get(bucket).getDocumentCount() == 0) {
         return; // notready bucket already empty. This is the normal case.
     }
@@ -291,7 +291,7 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
     while (!_delayedBuckets.empty() && _delayedMover.bucketDone()) {
         const BucketId bucket = *_delayedBuckets.begin();
         _delayedBuckets.erase(_delayedBuckets.begin());
-        ScanIterator itr(_ready._metaStore->getBucketDB().takeGuard(), bucket);
+        ScanIterator itr(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
         if (itr.getBucket() == bucket) {
             checkBucket(bucket, itr, _delayedMover, bucketGuard);
         }

@@ -139,18 +139,21 @@ wrapRetriever(const IDocumentRetriever::SP &retriever, ICommitable &commit)
 
 void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommitable &commit) {
     RetrieversSP retrievers = getRetrievers();
-    MaintenanceDocumentSubDB readySubDB(
-            getReadySubDB()->getDocumentMetaStoreContext().getSP(),
-            wrapRetriever((*retrievers)[_readySubDbId], commit),
-            _readySubDbId);
-    MaintenanceDocumentSubDB remSubDB(
-            getRemSubDB()->getDocumentMetaStoreContext().getSP(),
-            (*retrievers)[_remSubDbId],
-            _remSubDbId);
-    MaintenanceDocumentSubDB notReadySubDB(
-            getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
-            wrapRetriever((*retrievers)[_notReadySubDbId], commit),
-            _notReadySubDbId);
+    MaintenanceDocumentSubDB readySubDB(getReadySubDB()->getName(),
+                                        _readySubDbId,
+                                        getReadySubDB()->getDocumentMetaStoreContext().getSP(),
+                                        wrapRetriever((*retrievers)[_readySubDbId], commit),
+                                        getReadySubDB()->getFeedView());
+    MaintenanceDocumentSubDB remSubDB(getRemSubDB()->getName(),
+                                      _remSubDbId,
+                                      getRemSubDB()->getDocumentMetaStoreContext().getSP(),
+                                      (*retrievers)[_remSubDbId],
+                                      getRemSubDB()->getFeedView());
+    MaintenanceDocumentSubDB notReadySubDB(getNotReadySubDB()->getName(),
+                                           _notReadySubDbId,
+                                           getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
+                                           wrapRetriever((*retrievers)[_notReadySubDbId], commit),
+                                           getNotReadySubDB()->getFeedView());
     mc.syncSubDBs(readySubDB, remSubDB, notReadySubDB);
 }
 
