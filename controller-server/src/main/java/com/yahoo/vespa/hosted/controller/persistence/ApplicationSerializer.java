@@ -526,10 +526,10 @@ public class ApplicationSerializer {
     private List<RotationId> rotationListFromSlime(Inspector field) {
         final var rotations = new ArrayList<RotationId>();
 
-        for (int i = 0; i < field.entries(); ++i) {
-            var entry = field.entry(i);
-            rotations.add(new RotationId(entry.asString()));
-        }
+        field.traverse((ArrayTraverser) (idx, inspector) -> {
+            final var rotation = new RotationId(inspector.asString());
+            rotations.add(rotation);
+        });
 
         return rotations;
     }
