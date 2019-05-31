@@ -64,7 +64,7 @@ public class GenericJsonModelTest {
         assertNotNull(jsonModel.node);
         assertEquals(1, jsonModel.node.metrics.size());
         GenericMetrics nodeMetrics = jsonModel.node.metrics.get(0);
-        assertEquals(1.234, jsonModel.node.metrics.get(0).values.get("node-metric"), 0.001d);
+        assertEquals(1.234, nodeMetrics.values.get("node-metric"), 0.001d);
         assertEquals("node-dim-value", nodeMetrics.dimensions.get("node-dim"));
 
         assertEquals(1, jsonModel.services.size());

@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.core;
 
+import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.Metric;
@@ -56,7 +57,8 @@ public class MetricsManagerTest {
 
     @Before
     public void setupMetricsManager() {
-        metricsManager = getMetricsManager();
+        metricsManager = TestUtil.createMetricsManager(new VespaServices(testServices), getMetricsConsumers(),
+                                                       getApplicationDimensions(), getNodeDimensions());
     }
 
     @Test
@@ -199,15 +201,6 @@ public class MetricsManagerTest {
         MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId("foo"))
                 .timestamp(metricTime.getEpochSecond());
         return MetricsManager.adjustTimestamp(builder, startTime).getTimestamp();
-    }
-
-    private MetricsManager getMetricsManager() {
-        VespaServices vespaServices = new VespaServices(testServices);
-        MetricsConsumers consumers = getMetricsConsumers();
-        VespaMetrics metrics = new VespaMetrics(consumers, vespaServices);
-
-        return new MetricsManager(vespaServices, metrics, new ExternalMetrics(consumers),
-                                  getApplicationDimensions(),getNodeDimensions());
     }
 
     private static MetricsConsumers getMetricsConsumers() {
