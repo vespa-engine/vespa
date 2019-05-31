@@ -207,7 +207,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     // Forward changes of cluster state to bucket handler
     _clusterStateHandler.addClusterStateChangedHandler(&_bucketHandler);
 
-    // Lid space compaction handlers are added in the same order as sub dbs are defined in DocumentSubDbCollection.
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getReadySubDB(), _docTypeName.getName()));
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getRemSubDB(), _docTypeName.getName()));
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
