@@ -3,6 +3,7 @@ package com.yahoo.security.tls;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -19,27 +20,47 @@ public class TransportSecurityUtils {
     private TransportSecurityUtils() {}
 
     public static boolean isTransportSecurityEnabled() {
-        return getConfigFile().isPresent();
+        return isTransportSecurityEnabled(System.getenv());
+    }
+
+    public static boolean isTransportSecurityEnabled(Map<String, String> envVariables) {
+        return getConfigFile(envVariables).isPresent();
     }
 
     public static MixedMode getInsecureMixedMode() {
-        return getEnvironmentVariable(INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE)
+        return getInsecureMixedMode(System.getenv());
+    }
+
+    public static MixedMode getInsecureMixedMode(Map<String, String> envVariables) {
+        return getEnvironmentVariable(envVariables, INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE)
                 .map(MixedMode::fromConfigValue)
                 .orElse(MixedMode.defaultValue());
     }
 
     public static AuthorizationMode getInsecureAuthorizationMode() {
-        return getEnvironmentVariable(INSECURE_AUTHORIZATION_MODE_ENVIRONMENT_VARIABLE)
+        return getInsecureAuthorizationMode(System.getenv());
+    }
+
+    public static AuthorizationMode getInsecureAuthorizationMode(Map<String, String> envVariables) {
+        return getEnvironmentVariable(envVariables, INSECURE_AUTHORIZATION_MODE_ENVIRONMENT_VARIABLE)
                 .map(AuthorizationMode::fromConfigValue)
                 .orElse(AuthorizationMode.defaultValue());
     }
 
     public static Optional<Path> getConfigFile() {
-        return getEnvironmentVariable(CONFIG_FILE_ENVIRONMENT_VARIABLE).map(Paths::get);
+        return getConfigFile(System.getenv());
+    }
+
+    public static Optional<Path> getConfigFile(Map<String, String> envVariables) {
+        return getEnvironmentVariable(envVariables, CONFIG_FILE_ENVIRONMENT_VARIABLE).map(Paths::get);
     }
 
     public static Optional<TransportSecurityOptions> getOptions() {
-        return getConfigFile()
+        return getOptions(System.getenv());
+    }
+
+    public static Optional<TransportSecurityOptions> getOptions(Map<String, String> envVariables) {
+        return getConfigFile(envVariables)
                 .map(TransportSecurityOptions::fromJsonFile);
     }
 
@@ -48,8 +69,8 @@ public class TransportSecurityUtils {
                 .map(configFile -> new ReloadingTlsContext(configFile, getInsecureAuthorizationMode()));
     }
 
-    private static Optional<String> getEnvironmentVariable(String environmentVariable) {
-        return Optional.ofNullable(System.getenv(environmentVariable))
+    private static Optional<String> getEnvironmentVariable(Map<String, String> environmentVariables, String variableName) {
+        return Optional.ofNullable(environmentVariables.get(variableName))
                 .filter(var -> !var.isEmpty());
     }
 }
