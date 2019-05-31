@@ -1,8 +1,11 @@
 package com.yahoo.config.application.api;
 
+import com.yahoo.config.provision.RegionName;
+
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a (global) endpoint in 'deployments.xml'.  It contains the name of the
@@ -14,12 +17,15 @@ import java.util.Set;
 public class Endpoint {
     private final Optional<String> endpointId;
     private final String containerId;
-    private final Set<String> regions;
+    private final Set<RegionName> regions;
 
     public Endpoint(Optional<String> endpointId, String containerId, Set<String> regions) {
         this.endpointId = endpointId;
         this.containerId = containerId;
-        this.regions = Set.copyOf(regions);
+        this.regions = Set.copyOf(
+                Objects.requireNonNull(
+                        regions.stream().map(RegionName::from).collect(Collectors.toList()),
+                        "Missing 'regions' parameter"));
     }
 
     public String endpointId() {
@@ -30,7 +36,7 @@ public class Endpoint {
         return containerId;
     }
 
-    public Set<String> regions() {
+    public Set<RegionName> regions() {
         return regions;
     }
 
