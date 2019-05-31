@@ -70,7 +70,7 @@ public class ApplicationSerializer {
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
     private final String pemDeployKeyField = "pemDeployKey";
-    private final String rotationsField = "rotations";
+    private final String rotationsField = "endpoints";
     private final String deprecatedRotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
 

@@ -257,7 +257,7 @@ public class ApplicationSerializerTest {
 
         cursor.setString("rotation", "single-rotation");
 
-        final var rotations = cursor.setArray("rotations");
+        final var rotations = cursor.setArray("endpoints");
         rotations.addString("multiple-rotation-1");
         rotations.addString("multiple-rotation-2");
 
