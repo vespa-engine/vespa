@@ -36,18 +36,21 @@ public class ZoneId {
         this(environment, region, CloudName.defaultName(), SystemName.defaultSystem());
     }
 
-    public static ZoneId from(Environment environment, RegionName region) {
-        return new ZoneId(environment, region);
-    }
-
     public static ZoneId from(SystemName system, Environment environment, RegionName region) {
         return new ZoneId(environment, region, CloudName.defaultName(), system);
     }
 
+    /** DEPRECATED: Use {@link #from(SystemName, Environment, RegionName)} instead. */
+    public static ZoneId from(Environment environment, RegionName region) {
+        return new ZoneId(environment, region);
+    }
+
+    /** DEPRECATED: Use {@link #from(SystemName, Environment, RegionName)} instead. */
     public static ZoneId from(Environment environment, RegionName region, CloudName cloud, SystemName system) {
         return new ZoneId(environment, region, cloud, system);
     }
 
+    /** DEPRECATED: Use {@link #from(SystemName, Environment, RegionName)} instead. */
     public static ZoneId from(String environment, String region) {
         return from(Environment.from(environment), RegionName.from(region));
     }
@@ -65,14 +68,17 @@ public class ZoneId {
         }
     }
 
+    /** DEPRECATED: Use {@link #from(SystemName, Environment, RegionName)} instead. */
     public static ZoneId from(Environment environment, RegionName region, CloudName cloud) {
         return new ZoneId(environment, region, cloud, SystemName.defaultSystem());
     }
 
+    /** DEPRECATED: Use {@link #from(SystemName, Environment, RegionName)} instead. */
     public static ZoneId from(String environment, String region, String cloud) {
         return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud), SystemName.defaultSystem());
     }
 
+    /** DEPRECATED: Use {@link #from(SystemName, Environment, RegionName)} instead. */
     public static ZoneId from(String environment, String region, String cloud, String system) {
         return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud), SystemName.from(system));
     }

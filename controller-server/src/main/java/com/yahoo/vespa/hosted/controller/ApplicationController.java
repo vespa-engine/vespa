@@ -690,8 +690,11 @@ public class ApplicationController {
         deploymentSpec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {
-                    if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
-                                                                         zone.region().orElse(null)))) {
+                    ZoneId zoneId = ZoneId.from(
+                            controller.system(),
+                            zone.environment(),
+                            zone.region().orElse(null));
+                    if ( ! controller.zoneRegistry().hasZone(zoneId)) {
                         throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
                     }
                 });
