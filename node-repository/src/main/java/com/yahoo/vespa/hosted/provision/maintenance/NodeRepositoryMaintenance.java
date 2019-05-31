@@ -184,7 +184,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             hostProvisionerInterval = Duration.ofMinutes(5);
             hostDeprovisionerInterval = Duration.ofMinutes(5);
 
-            if (zone.environment().equals(Environment.prod) && zone.system() != SystemName.cd) {
+            if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
