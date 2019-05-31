@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.glassfish.jersey.client.ClientProperties;
@@ -43,6 +44,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER
  */
 public class ConfigConvergenceChecker extends AbstractComponent {
 
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigConvergenceChecker.class.getName());
     private static final ApplicationId routingApplicationId = ApplicationId.from("hosted-vespa", "routing", "default");
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
@@ -68,6 +70,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Check all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse servicesToCheck(Application application, URI requestUrl, Duration timeoutPerService) {
+        log.log(LogLevel.INFO, "Finding services to check config convergence for in '" + application);
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -62,7 +63,8 @@ public class ApplicationHandler extends HttpHandler {
         if (isServiceConvergeRequest(request)) {
             // Expects both hostname and port in the request (hostname:port)
             String hostAndPort = getHostNameFromRequest(request);
-            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(), timeout);
+            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(),
+                                                                          timeout, getVespaVersionFromRequest(request));
         }
 
         if (isClusterControllerStatusRequest(request)) {
@@ -89,7 +91,8 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(), timeout);
+            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(), timeout,
+                                                                             getVespaVersionFromRequest(request));
         }
 
         if (isFiledistributionStatusRequest(request)) {
@@ -223,6 +226,13 @@ public class ApplicationHandler extends HttpHandler {
             .tenant(tenant)
             .applicationName(application).instanceName(instance)
             .build();
+    }
+
+    private static Optional<Version> getVespaVersionFromRequest(HttpRequest request) {
+        String vespaVersion = request.getProperty("vespaVersion");
+        return (vespaVersion == null || vespaVersion.isEmpty())
+                ? Optional.empty()
+                : Optional.of(Version.fromString(vespaVersion));
     }
 
     private static class DeleteApplicationResponse extends JSONResponse {
