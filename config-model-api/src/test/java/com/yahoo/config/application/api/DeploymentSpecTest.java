@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
@@ -11,7 +9,11 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -452,4 +454,43 @@ public class DeploymentSpecTest {
         assertEquals(Optional.of("d-2-8-50"), spec.steps().get(2).zones().get(0).testerFlavor());
     }
 
+    @Test
+    public void noEndpoints() {
+        assertEquals(Collections.emptyList(), DeploymentSpec.fromXml("<deployment />").endpoints());
+    }
+
+    @Test
+    public void emptyEndpoints() {
+        final var spec = DeploymentSpec.fromXml("<deployment><endpoints/></deployment>");
+        assertEquals(Collections.emptyList(), spec.endpoints());
+    }
+
+    @Test
+    public void someEndpoints() {
+        final var spec = DeploymentSpec.fromXml("" +
+                "<deployment>" +
+                "  <prod>" +
+                "    <region active=\"true\">us-east</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint id=\"foo\" container-id=\"bar\">" +
+                "      <region>us-east</region>" +
+                "    </endpoint>" +
+                "    <endpoint id=\"nalle\" container-id=\"frosk\" />" +
+                "    <endpoint container-id=\"quux\" />" +
+                "  </endpoints>" +
+                "</deployment>");
+
+        assertEquals(
+                List.of("foo", "nalle", "quux"),
+                spec.endpoints().stream().map(Endpoint::endpointId).collect(Collectors.toList())
+        );
+
+        assertEquals(
+                List.of("bar", "frosk", "quux"),
+                spec.endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
+        );
+
+        assertEquals(Set.of(RegionName.from("us-east")), spec.endpoints().get(0).regions());
+    }
 }
