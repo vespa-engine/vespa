@@ -37,28 +37,29 @@ public class InfrastructureVersions {
 
     public void setTargetVersion(NodeType nodeType, Version newTargetVersion, boolean force) {
         assertLegalNodeTypeForTargetVersion(nodeType);
-        if (newTargetVersion.isEmpty()) {
-            throw new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
-        }
 
         try (Lock lock = db.lockInfrastructureVersions()) {
             Map<NodeType, Version> infrastructureVersions = db.readInfrastructureVersions();
-            Optional<Version> currentTargetVersion = Optional.ofNullable(infrastructureVersions.get(nodeType));
+            Version currentTargetVersion = Optional.ofNullable(infrastructureVersions.get(nodeType))
+                    .orElse(Version.emptyVersion);
 
             // Trying to set the version to the current version, skip
-            if (currentTargetVersion.equals(Optional.of(newTargetVersion))) return;
+            if (currentTargetVersion.equals(newTargetVersion)) return;
 
             // If we don't force the set, we must set the new version to higher than the already set version
-            if (!force && currentTargetVersion.isPresent()) {
-                if (currentTargetVersion.get().isAfter(newTargetVersion))
-                    throw new IllegalArgumentException(String.format("Cannot downgrade version without setting 'force'. " +
-                            "Current target version: %s, attempted to set target version: %s",
-                            currentTargetVersion.get().toFullString(), newTargetVersion.toFullString()));
+            if (!force && currentTargetVersion.isAfter(newTargetVersion)) {
+                throw new IllegalArgumentException(String.format("Cannot downgrade version without setting 'force'. Current target version: %s, attempted to set target version: %s",
+                        currentTargetVersion.toFullString(), newTargetVersion.toFullString()));
             }
 
-            infrastructureVersions.put(nodeType, newTargetVersion);
+            if (newTargetVersion.isEmpty()) {
+                infrastructureVersions.remove(nodeType);
+                logger.info("Removing target version for " + nodeType);
+            } else {
+                infrastructureVersions.put(nodeType, newTargetVersion);
+                logger.info("Setting target version for " + nodeType + " to " + newTargetVersion.toFullString());
+            }
             db.writeInfrastructureVersions(infrastructureVersions);
-            logger.info("Set target version for " + nodeType + " to " + newTargetVersion.toFullString());
         }
     }
 

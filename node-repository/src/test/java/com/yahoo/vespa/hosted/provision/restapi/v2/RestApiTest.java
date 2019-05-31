@@ -646,13 +646,6 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
                 "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
-        // Setting empty version fails
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                   Utf8.toBytes("{\"version\": null}"),
-                                   Request.Method.PATCH),
-                       400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid target version: 0.0.0\"}");
-
         // Setting version for unsupported node type fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/tenant",
                                    Utf8.toBytes("{\"version\": \"6.123.456\"}"),
@@ -685,6 +678,22 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
                 "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
+        // Setting empty version without force fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": null}"),
+                        Request.Method.PATCH),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade version without setting 'force'. Current target version: 6.123.1, attempted to set target version: 0.0.0\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": null, \"force\": true}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version to 0.0.0 for nodes of type confighost\"}");
+
+        // Verify version has been removed
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
+
         // Upgrade OS for confighost and host
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
                                    Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
@@ -697,7 +706,7 @@ public class RestApiTest {
 
         // OS versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
+                       "{\"versions\":{\"config\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
 
         // Upgrade OS and Vespa together
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
