@@ -160,51 +160,59 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     virtual void removeListener(IBucketFreezeListener *) override { }
 };
 
-struct MyFeedView : public test::DummyFeedView
-{
-    MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &repo)
-        : test::DummyFeedView(repo)
+struct MyFeedView : public test::DummyFeedView {
+    MyFeedView(std::shared_ptr<const DocumentTypeRepo> repo)
+        : test::DummyFeedView(std::move(repo))
     {
     }
 };
 
-struct MyDocumentStore : public test::DummyDocumentStore
-{
+struct MyDocumentStore : public test::DummyDocumentStore {
     Document::SP _readDoc;
     mutable uint32_t _readLid;
     MyDocumentStore() : _readDoc(), _readLid(0) {}
-    virtual document::Document::UP
-    read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const override {
+    ~MyDocumentStore();
+    document::Document::UP read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const override {
         _readLid = lid;
         return Document::UP(_readDoc->clone());
     }
 };
 
-struct MySummaryManager : public test::DummySummaryManager
-{
-    MyDocumentStore _store;
-    MySummaryManager() : _store() {}
-    virtual search::IDocumentStore &getBackingStore() override { return _store; }
-};
+MyDocumentStore::~MyDocumentStore() = default;
 
-struct MySubDb : public test::DummyDocumentSubDb
-{
-    std::shared_ptr<const DocumentTypeRepo> _repo;
-    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB);
-    ~MySubDb();
-    virtual IFeedView::SP getFeedView() const override {
-        return IFeedView::SP(new MyFeedView(_repo));
+struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
+    std::shared_ptr<const DocumentTypeRepo> repo;
+    const MyDocumentStore& store;
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in)
+        : repo(repo_in),
+          store(store_in)
+    {
     }
+    const document::DocumentTypeRepo& getDocumentTypeRepo() const override { return *repo; }
+    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector& ) const override { abort(); }
+    DocumentMetaData getDocumentMetaData(const DocumentId& ) const override { abort(); }
+    Document::UP getDocument(DocumentIdT lid) const override {
+        return store.read(lid, *repo);
+    }
+    CachedSelect::SP parseSelect(const vespalib::string &) const override { abort(); }
 };
 
+struct MySubDb {
+    test::DummyDocumentSubDb sub_db;
+    MaintenanceDocumentSubDB maintenance_sub_db;
+    MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, std::shared_ptr<const DocumentTypeRepo> repo);
+    ~MySubDb();
+};
 
-MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB)
-    : test::DummyDocumentSubDb(bucketDB, SUBDB_ID),
-      _repo(repo)
+MySubDb::MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, std::shared_ptr<const DocumentTypeRepo> repo)
+    : sub_db(std::move(bucket_db), SUBDB_ID),
+      maintenance_sub_db(sub_db.getName(), sub_db.getSubDbId(), sub_db.getDocumentMetaStoreContext().getSP(),
+                         std::make_shared<MyDocumentRetriever>(repo, store),
+                         std::make_shared<MyFeedView>(repo))
 {
-    _summaryManager.reset(new MySummaryManager());
 }
-MySubDb::~MySubDb() {}
+
+MySubDb::~MySubDb() = default;
 
 struct MyDirectJobRunner : public IMaintenanceJobRunner {
     IMaintenanceJob &_job;
@@ -350,17 +358,15 @@ struct HandlerFixture
 {
     DocBuilder _docBuilder;
     std::shared_ptr<BucketDBOwner> _bucketDB;
+    MyDocumentStore _docStore;
     MySubDb _subDb;
-    MySummaryManager &_summaryMgr;
-    MyDocumentStore &_docStore;
     LidSpaceCompactionHandler _handler;
     HandlerFixture()
         : _docBuilder(Schema()),
           _bucketDB(std::make_shared<BucketDBOwner>()),
-          _subDb(_docBuilder.getDocumentTypeRepo(), _bucketDB),
-          _summaryMgr(static_cast<MySummaryManager &>(*_subDb.getSummaryManager())),
-          _docStore(_summaryMgr._store),
-          _handler(_subDb, "test")
+          _docStore(),
+          _subDb(_bucketDB, _docStore, _docBuilder.getDocumentTypeRepo()),
+          _handler(_subDb.maintenance_sub_db, "test")
     {
         _docStore._readDoc = _docBuilder.startDocument(DOC_ID).endDocument();
     }

@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "bootstrapconfig.h"
 #include "combiningfeedview.h"
 #include "commit_and_wait_document_retriever.h"
 #include "document_meta_store_read_guards.h"
@@ -7,29 +8,29 @@
 #include "documentdb.h"
 #include "documentdbconfigscout.h"
 #include "idocumentdbowner.h"
+#include "idocumentsubdb.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
-#include "bootstrapconfig.h"
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
+#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
-#include <vespa/searchcore/proton/docsummary/isummarymanager.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -205,9 +206,12 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _clusterStateHandler.addClusterStateChangedHandler(this);
     // Forward changes of cluster state to bucket handler
     _clusterStateHandler.addClusterStateChangedHandler(&_bucketHandler);
-    for (auto subDb : _subDBs) {
-        _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(*subDb, _docTypeName.getName()));
-    }
+
+    // Lid space compaction handlers are added in the same order as sub dbs are defined in DocumentSubDbCollection.
+    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getReadySubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getRemSubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
+
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
     fastos::TimeStamp visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
     _visibility.setVisibilityDelay(visibilityDelay);

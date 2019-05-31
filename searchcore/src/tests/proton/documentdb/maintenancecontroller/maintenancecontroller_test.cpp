@@ -523,9 +523,10 @@ MyDocumentSubDB::getSubDB()
 {
     IDocumentRetriever::SP retriever(new MyDocumentRetriever(*this));
 
-    return MaintenanceDocumentSubDB(_metaStoreSP,
+    return MaintenanceDocumentSubDB("my_sub_db", _subDBId,
+                                    _metaStoreSP,
                                     retriever,
-                                    _subDBId);
+                                    IFeedView::SP());
 }
 
 

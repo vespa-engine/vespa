@@ -111,8 +111,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
         controller.registerJobInMasterThread(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
     }
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
-    MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB._metaStore,
-                                                mRemSubDB._subDbId, docTypeName, prdHandler, fbHandler));
+    MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
+                                                mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler));
     controller.registerJobInMasterThread(
             trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {

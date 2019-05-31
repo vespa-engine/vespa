@@ -16,8 +16,8 @@ using storage::spi::Timestamp;
 
 namespace proton {
 
-LidSpaceCompactionHandler::LidSpaceCompactionHandler(IDocumentSubDB &subDb,
-                                                     const vespalib::string &docTypeName)
+LidSpaceCompactionHandler::LidSpaceCompactionHandler(const MaintenanceDocumentSubDB& subDb,
+                                                     const vespalib::string& docTypeName)
     : _subDb(subDb),
       _docTypeName(docTypeName)
 {
@@ -26,27 +26,24 @@ LidSpaceCompactionHandler::LidSpaceCompactionHandler(IDocumentSubDB &subDb,
 LidUsageStats
 LidSpaceCompactionHandler::getLidStatus() const
 {
-    return _subDb.getDocumentMetaStoreContext().get().getLidUsageStats();
+    return _subDb.meta_store()->getLidUsageStats();
 }
 
 IDocumentScanIterator::UP
 LidSpaceCompactionHandler::getIterator() const
 {
-    return IDocumentScanIterator::UP(new DocumentScanIterator(
-            _subDb.getDocumentMetaStoreContext().get()));
+    return std::make_unique<DocumentScanIterator>(*_subDb.meta_store());
 }
 
 MoveOperation::UP
 LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const
 {
-    IFeedView::SP feedView = _subDb.getFeedView();
-    const ISummaryManager::SP &summaryMan = _subDb.getSummaryManager();
     const uint32_t moveFromLid = document.lid;
-    Document::UP doc = summaryMan->getBackingStore().read(moveFromLid, *feedView->getDocumentTypeRepo());
-    MoveOperation::UP op(new MoveOperation(document.bucketId, document.timestamp,
-                                           Document::SP(doc.release()),
-                                           DbDocumentId(_subDb.getSubDbId(), moveFromLid),
-                                           _subDb.getSubDbId()));
+    auto doc = _subDb.retriever()->getDocument(moveFromLid);
+    auto op = std::make_unique<MoveOperation>(document.bucketId, document.timestamp,
+                                              Document::SP(doc.release()),
+                                              DbDocumentId(_subDb.sub_db_id(), moveFromLid),
+                                              _subDb.sub_db_id());
     op->setTargetLid(moveToLid);
     return op;
 }
@@ -54,14 +51,14 @@ LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &d
 void
 LidSpaceCompactionHandler::handleMove(const MoveOperation& op, IDestructorCallback::SP doneCtx)
 {
-    _subDb.getFeedView()->handleMove(op, std::move(doneCtx));
+    _subDb.feed_view()->handleMove(op, std::move(doneCtx));
 }
 
 void
 LidSpaceCompactionHandler::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 {
-    assert(_subDb.getSubDbId() == op.getSubDbId());
-    _subDb.getFeedView()->handleCompactLidSpace(op);
+    assert(_subDb.sub_db_id() == op.getSubDbId());
+    _subDb.feed_view()->handleCompactLidSpace(op);
 }
 
 } // namespace proton

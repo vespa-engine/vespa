@@ -2,7 +2,7 @@
 #pragma once
 
 #include "i_lid_space_compaction_handler.h"
-#include "idocumentsubdb.h"
+#include "maintenancedocumentsubdb.h"
 
 namespace proton {
 
@@ -12,18 +12,18 @@ namespace proton {
 class LidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 {
 private:
-    IDocumentSubDB  &_subDb;
+    const MaintenanceDocumentSubDB& _subDb;
     vespalib::string _docTypeName;
 
 public:
-    LidSpaceCompactionHandler(IDocumentSubDB &subDb,
-                              const vespalib::string &docTypeName);
+    LidSpaceCompactionHandler(const MaintenanceDocumentSubDB& subDb,
+                              const vespalib::string& docTypeName);
 
     // Implements ILidSpaceCompactionHandler
     virtual vespalib::string getName() const override {
-        return _docTypeName + "." + _subDb.getName();
+        return _docTypeName + "." + _subDb.name();
     }
-    virtual uint32_t getSubDbId() const override { return _subDb.getSubDbId(); }
+    virtual uint32_t getSubDbId() const override { return _subDb.sub_db_id(); }
     virtual search::LidUsageStats getLidStatus() const override;
     virtual IDocumentScanIterator::UP getIterator() const override;
     virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const override;

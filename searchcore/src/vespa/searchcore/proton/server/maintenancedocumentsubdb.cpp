@@ -5,26 +5,37 @@
 namespace proton {
 
 MaintenanceDocumentSubDB::MaintenanceDocumentSubDB()
-    : _metaStore(),
-      _retriever(),
-      _subDbId(0u)
-{ }
+    : _name(""),
+      _sub_db_id(0),
+      _meta_store(nullptr),
+      _retriever(nullptr),
+      _feed_view(nullptr)
+{
+}
 
-MaintenanceDocumentSubDB::~MaintenanceDocumentSubDB() { }
+MaintenanceDocumentSubDB::~MaintenanceDocumentSubDB() = default;
 
-MaintenanceDocumentSubDB::MaintenanceDocumentSubDB(const IDocumentMetaStore::SP & metaStore,
-                                                   const IDocumentRetriever::SP & retriever,
-                                                   uint32_t subDbId)
-    : _metaStore(metaStore),
-      _retriever(retriever),
-      _subDbId(subDbId)
-{ }
+MaintenanceDocumentSubDB::MaintenanceDocumentSubDB(const vespalib::string& name,
+                                                   uint32_t sub_db_id,
+                                                   IDocumentMetaStore::SP meta_store,
+                                                   IDocumentRetriever::SP retriever,
+                                                   IFeedView::SP feed_view)
+    : _name(name),
+      _sub_db_id(sub_db_id),
+      _meta_store(std::move(meta_store)),
+      _retriever(std::move(retriever)),
+      _feed_view(std::move(feed_view))
+{
+}
 
 void
-MaintenanceDocumentSubDB::clear() {
-    _metaStore.reset();
+MaintenanceDocumentSubDB::clear()
+{
+    _name = "";
+    _sub_db_id = 0;
+    _meta_store.reset();
     _retriever.reset();
-    _subDbId = 0u;
-} 
+    _feed_view.reset();
+}
 
-} // namespace proton
+}
