@@ -195,7 +195,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment) {
+    public Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment, Optional<Version> version) {
         return Optional.ofNullable(serviceStatus.get(deployment));
     }
 

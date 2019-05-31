@@ -268,7 +268,7 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
         if (   nodesConverged(id.application(), id.type(), platform, logger)
-            && servicesConverged(id.application(), id.type(), logger)) {
+            && servicesConverged(id.application(), id.type(), platform, logger)) {
             if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
                 logger.log("Installation succeeded!");
                 return Optional.of(running);
@@ -298,7 +298,7 @@ public class InternalStepRunner implements StepRunner {
         Version platform = controller.jobController().run(id).get().versions().targetPlatform();
         logger.log("Checking installation of tester container ...");
         if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
-            && servicesConverged(id.tester().id(), id.type(), logger)) {
+            && servicesConverged(id.tester().id(), id.type(), platform, logger)) {
             if (endpointsAvailable(id.tester().id(), id.type().zone(controller.system()), logger)) {
                 logger.log("Tester container successfully installed!");
                 return Optional.of(running);
@@ -354,9 +354,10 @@ public class InternalStepRunner implements StepRunner {
                                                && node.rebootGeneration() >= node.wantedRebootGeneration());
     }
 
-    private boolean servicesConverged(ApplicationId id, JobType type, DualLogger logger) {
-        Optional<ServiceConvergence> convergence = controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())));
-        if ( ! convergence.isPresent()) {
+    private boolean servicesConverged(ApplicationId id, JobType type, Version platform, DualLogger logger) {
+        var convergence = controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())),
+                                                                       Optional.of(platform));
+        if (convergence.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
             return false;
         }
