@@ -534,6 +534,7 @@ public class ApplicationSerializer {
         return rotations;
     }
 
+    // TODO: Remove after June 2019 once the 'rotation' field is gone from storage
     private Optional<RotationId> legacyRotationFromSlime(Inspector field) {
         return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
