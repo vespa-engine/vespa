@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -115,7 +116,7 @@ public class ApplicationSerializerTest {
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               Optional.of(new RotationId("my-rotation")),
+                                               List.of(new RotationId("my-rotation")),
                                                rotationStatus);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
@@ -151,7 +152,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.change(), serialized.change());
         assertEquals(original.pemDeployKey(), serialized.pemDeployKey());
 
-        assertEquals(original.rotation().get(), serialized.rotation().get());
+        assertEquals(original.rotations(), serialized.rotations());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
 
         // Test cluster utilization
@@ -244,4 +245,32 @@ public class ApplicationSerializerTest {
         // ok if no error
     }
 
+    /** TODO: Test can be removed after June 2019 - once legacy field for single rotation is retired */
+    @Test
+    public void testParsingLegacyRotationElement() throws IOException {
+        // Use the 'complete-application.json' as a baseline
+        final var applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
+        final var slime = SlimeUtils.jsonToSlime(applicationJson);
+
+        // Add the necessary fields to the Slime representation of the application
+        final var cursor = slime.get();
+
+        cursor.setString("rotation", "single-rotation");
+
+        final var rotations = cursor.setArray("endpoints");
+        rotations.addString("multiple-rotation-1");
+        rotations.addString("multiple-rotation-2");
+
+        // Parse and test the output from parsing contains both legacy rotation and multiple rotations
+        final var application = applicationSerializer.fromSlime(slime);
+
+        assertEquals(
+                List.of(
+                    new RotationId("multiple-rotation-1"),
+                    new RotationId("multiple-rotation-2"),
+                    new RotationId("single-rotation")
+                ),
+                application.rotations()
+        );
+    }
 }

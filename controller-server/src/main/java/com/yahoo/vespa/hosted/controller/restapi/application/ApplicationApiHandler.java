@@ -496,7 +496,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                    .map(URI::toString)
                    .forEach(globalRotationsArray::addString);
 
-        application.rotation().ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
+
+        application.rotations().stream().findFirst().ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(application.id());
@@ -515,7 +516,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
 
-            if (application.rotation().isPresent() && deployment.zone().environment() == Environment.prod) {
+            if ((! application.rotations().isEmpty()) && deployment.zone().environment() == Environment.prod) {
                 toSlime(application.rotationStatus(deployment), deploymentObject);
             }
 
@@ -707,7 +708,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         Application application = controller.applications().require(applicationId);
         ZoneId zone = ZoneId.from(environment, region);
-        if (!application.rotation().isPresent()) {
+        if (application.rotations().isEmpty()) {
             throw new NotExistsException("global rotation does not exist for " + application);
         }
         Deployment deployment = application.deployments().get(zone);
