@@ -451,12 +451,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Application getApplication(ApplicationId applicationId) {
+        return getApplication(applicationId, Optional.empty());
+    }
+
+    private Application getApplication(ApplicationId applicationId, Optional<Version> version) {
         try {
             Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
             if (tenant == null) throw new IllegalArgumentException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
-            return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
+            return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
@@ -500,12 +504,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Convergence ----------------------------------------------------------------
 
-    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri, Duration timeout) {
-        return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri, timeout);
+    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri,
+                                                         Duration timeout, Optional<Version> vespaVersion) {
+        return convergeChecker.checkService(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
     }
 
-    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeoutPerService) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeoutPerService);
+    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri,
+                                                            Duration timeoutPerService, Optional<Version> vespaVersion) {
+        return convergeChecker.servicesToCheck(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
     }
 
     // ---------------- Logs ----------------------------------------------------------------
