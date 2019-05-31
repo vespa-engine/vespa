@@ -177,7 +177,10 @@ public class DeploymentSpecXmlReader {
                 if (region == null || region.isEmpty() || region.isBlank()) {
                     throw new IllegalArgumentException("Empty 'region' element in 'endpoint' tag.");
                 }
-                regions.add(regionElement.getTextContent());
+                if (regions.contains(region)) {
+                    throw new IllegalArgumentException("Duplicate 'region' element in 'endpoint' tag: " + region);
+                }
+                regions.add(region);
             }
 
             endpoints.add(new Endpoint(rotationId, containerId.get(), regions));
