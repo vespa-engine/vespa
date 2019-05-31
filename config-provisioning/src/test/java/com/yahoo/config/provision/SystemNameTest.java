@@ -3,6 +3,8 @@ package com.yahoo.config.provision;
 
 import org.junit.Test;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -14,5 +16,11 @@ public class SystemNameTest {
         for (SystemName name : SystemName.values()) {
             assertEquals(name, SystemName.from(name.value()));
         }
+    }
+
+    @Test
+    public void allOf() {
+        assertEquals(Set.of(SystemName.cd, SystemName.PublicCd, SystemName.vaas), SystemName.allOf(SystemName::isCd));
+        assertEquals(Set.of(SystemName.PublicCd, SystemName.Public, SystemName.vaas), SystemName.allOf(SystemName::isPublic));
     }
 }
