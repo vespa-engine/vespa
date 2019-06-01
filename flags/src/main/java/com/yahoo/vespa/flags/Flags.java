@@ -145,6 +145,11 @@ public class Flags {
             "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
             "Takes effect on restart of configserver");
 
+    public static final UnboundBooleanFlag ENABLE_TENANT_HOST_APP = defineFeatureFlag(
+            "enable-tenant-host-app", false,
+            "Enable tenant host infrastructure application",
+            "Takes effect immediately");
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
