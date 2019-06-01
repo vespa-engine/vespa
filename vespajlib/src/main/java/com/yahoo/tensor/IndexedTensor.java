@@ -234,13 +234,29 @@ public abstract class IndexedTensor implements Tensor {
             else
                 return new UnboundBuilder(type);
         }
-        public static Builder of(TensorType type, float [] values) {
+
+        /**
+         * Creates a builder initialized with the given values
+         *
+         * @param type the type of the tensor to build
+         * @param values the initial values of the tensor. This <b>transfers ownership</b> of the value array - it
+         *               must not be further mutated by the caller
+         */
+        public static Builder of(TensorType type, float[] values) {
             if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
                 return of(type, BoundBuilder.dimensionSizesOf(type), values);
             else
                 return new UnboundBuilder(type);
         }
-        public static Builder of(TensorType type, double [] values) {
+
+        /**
+         * Creates a builder initialized with the given values
+         *
+         * @param type the type of the tensor to build
+         * @param values the initial values of the tensor. This <b>transfers ownership</b> of the value array - it
+         *               must not be further mutated by the caller
+         */
+        public static Builder of(TensorType type, double[] values) {
             if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
                 return of(type, BoundBuilder.dimensionSizesOf(type), values);
             else
@@ -262,7 +278,15 @@ public abstract class IndexedTensor implements Tensor {
             else
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes); // Default
         }
-        public static Builder of(TensorType type, DimensionSizes sizes, float [] values) {
+
+        /**
+         * Creates a builder initialized with the given values
+         *
+         * @param type the type of the tensor to build
+         * @param values the initial values of the tensor. This <b>transfers ownership</b> of the value array - it
+         *               must not be further mutated by the caller
+         */
+        public static Builder of(TensorType type, DimensionSizes sizes, float[] values) {
             validate(type, sizes);
             validateSizes(sizes, values.length);
 
@@ -273,7 +297,15 @@ public abstract class IndexedTensor implements Tensor {
             else
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes).fill(values); // Default
         }
-        public static Builder of(TensorType type, DimensionSizes sizes, double [] values) {
+
+        /**
+         * Creates a builder initialized with the given values
+         *
+         * @param type the type of the tensor to build
+         * @param values the initial values of the tensor. This <b>transfers ownership</b> of the value array - it
+         *               must not be further mutated by the caller
+         */
+        public static Builder of(TensorType type, DimensionSizes sizes, double[] values) {
             validate(type, sizes);
             validateSizes(sizes, values.length);
 
@@ -284,12 +316,14 @@ public abstract class IndexedTensor implements Tensor {
             else
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes, values); // Default
         }
+
         private static void validateSizes(DimensionSizes sizes, int length) {
             if (sizes.totalSize() != length) {
                 throw new IllegalArgumentException("Invalid size(" + length + ") of supplied value vector." +
                         " Type specifies that size should be " + sizes.totalSize());
             }
         }
+
         private static void validate(TensorType type, DimensionSizes sizes) {
             // validate
             if (sizes.dimensions() != type.dimensions().size())
