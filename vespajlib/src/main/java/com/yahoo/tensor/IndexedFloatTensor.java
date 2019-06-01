@@ -43,8 +43,15 @@ class IndexedFloatTensor extends IndexedTensor {
         private float[] values;
 
         BoundFloatBuilder(TensorType type, DimensionSizes sizes) {
+            this(type, sizes, new float[(int)sizes.totalSize()]);
+        }
+        BoundFloatBuilder(TensorType type, DimensionSizes sizes, float [] values) {
             super(type, sizes);
-            values = new float[(int)sizes.totalSize()];
+            if (sizes.totalSize() != values.length) {
+                throw new IllegalArgumentException("Invalid size("  + values.length + ") of supplied value vector." +
+                                                   " Type specifies that size should be " + sizes.totalSize());
+            }
+            this.values = values;
         }
 
         @Override

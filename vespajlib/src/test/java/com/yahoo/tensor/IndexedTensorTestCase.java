@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -40,6 +41,37 @@ public class IndexedTensorTestCase {
         assertEquals("tensor():{3.5}", singleValueFromString.toString());
         assertTrue(singleValueFromString instanceof IndexedTensor);
         assertEquals(singleValue, singleValueFromString);
+    }
+
+    private void verifyFloat(String spec) {
+        float [] floats = {1.0f, 2.0f, 3.0f};
+        Tensor tensor = IndexedTensor.Builder.of(TensorType.fromSpec(spec), floats).build();
+        int index = 0;
+        for (Double cell : tensor.cells().values()) {
+            assertEquals(cell, Double.valueOf(floats[index++]));
+        }
+    }
+    private void verifyDouble(String spec) {
+        double [] values = {1.0, 2.0, 3.0};
+        Tensor tensor = IndexedTensor.Builder.of(TensorType.fromSpec(spec), values).build();
+        int index = 0;
+        for (Double cell : tensor.cells().values()) {
+            assertEquals(cell, Double.valueOf(values[index++]));
+        }
+    }
+
+    @Test
+    public void testBoundHandoverBuilding() {
+        verifyFloat("tensor<float>(x[3])");
+        verifyDouble("tensor<float>(x[3])");
+        verifyFloat("tensor<double>(x[3])");
+        verifyDouble("tensor<double>(x[3])");
+        try {
+            verifyDouble("tensor<double>(x[4])");
+            fail("Expect IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid size(3) of supplied value vector. Type specifies that size should be 4", e.getMessage());
+        }
     }
     
     @Test
