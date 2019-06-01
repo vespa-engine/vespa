@@ -788,7 +788,11 @@
     ],
     "methods": [
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, float[])",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, double[])",
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes)",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes, float[])",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes, double[])",
       "public varargs abstract com.yahoo.tensor.IndexedTensor$Builder cell(double, long[])",
       "public varargs abstract com.yahoo.tensor.IndexedTensor$Builder cell(float, long[])",
       "public com.yahoo.tensor.TensorType type()",
