@@ -31,7 +31,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/eval/tensor/serialization/slime_binary_format.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
