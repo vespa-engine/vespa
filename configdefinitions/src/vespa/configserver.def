@@ -64,3 +64,4 @@ sleepTimeWhenRedeployingFails long default=30
 buildMinimalSetOfConfigModels bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true
 canReturnEmptySentinelConfig bool default=false
+serverNodeType enum {config, controller} default=config
