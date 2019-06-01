@@ -11,8 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceCon
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * This represents a system-level application in hosted Vespa. All infrastructure nodes in a hosted Vespa zones are
@@ -25,23 +23,17 @@ public enum SystemApplication {
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
     configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
-    zone(ApplicationId.from("hosted-vespa", "routing", "default"), Set.of(NodeType.proxy, NodeType.host),
+    tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host),
+    zone(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy,
          configServerHost, proxyHost, configServer);
 
     private final ApplicationId id;
-    private final Set<NodeType> nodeTypes;
+    private final NodeType nodeType;
     private final List<SystemApplication> dependencies;
 
     SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... dependencies) {
-        this(id, Set.of(nodeType), dependencies);
-    }
-
-    SystemApplication(ApplicationId id, Set<NodeType> nodeTypes, SystemApplication... dependencies) {
-        if (nodeTypes.isEmpty()) {
-            throw new IllegalArgumentException("Node types must be non-empty");
-        }
         this.id = id;
-        this.nodeTypes = Set.copyOf(nodeTypes);
+        this.nodeType = nodeType;
         this.dependencies = List.of(dependencies);
     }
 
@@ -49,9 +41,9 @@ public enum SystemApplication {
         return id;
     }
 
-    /** The node type(s) that are implicitly allocated to this */
-    public Set<NodeType> nodeTypes() {
-        return nodeTypes;
+    /** The node type that is implicitly allocated to this */
+    public NodeType nodeType() {
+        return nodeType;
     }
 
     /** Returns the system applications that should upgrade before this */
@@ -73,8 +65,8 @@ public enum SystemApplication {
     }
 
     /** Returns the node types of this that should receive OS upgrades */
-    public Set<NodeType> nodeTypesWithUpgradableOs() {
-        return nodeTypes().stream().filter(NodeType::isDockerHost).collect(Collectors.toSet());
+    public boolean isEligibleForOsUpgrades() {
+        return nodeType.isDockerHost();
     }
 
     /** All known system applications */
@@ -84,7 +76,7 @@ public enum SystemApplication {
 
     @Override
     public String toString() {
-        return String.format("system application %s of type %s", id, nodeTypes);
+        return String.format("system application %s of type %s", id, nodeType);
     }
 
 }

@@ -67,8 +67,8 @@ public class OsVersionStatus {
         controller.osVersions().forEach(osVersion -> versions.put(osVersion, new ArrayList<>()));
 
         for (SystemApplication application : SystemApplication.all()) {
-            if (application.nodeTypesWithUpgradableOs().isEmpty()) {
-                continue; // Avoid querying applications that do not contain nodes with upgradable OS
+            if (!application.isEligibleForOsUpgrades()) {
+                continue; // Avoid querying applications that are not eligible for OS upgrades
             }
             for (ZoneId zone : zonesToUpgrade(controller)) {
                 controller.configServer().nodeRepository().list(zone, application.id()).stream()

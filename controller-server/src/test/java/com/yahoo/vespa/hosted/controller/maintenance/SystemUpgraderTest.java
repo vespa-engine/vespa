@@ -15,7 +15,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -184,7 +183,7 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4), SystemApplication.all(), Optional.empty());
+        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4), SystemApplication.all());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
@@ -198,7 +197,8 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         List<SystemApplication> allExceptZone = List.of(SystemApplication.configServerHost,
                                                         SystemApplication.configServer,
-                                                        SystemApplication.proxyHost);
+                                                        SystemApplication.proxyHost,
+                                                        SystemApplication.tenantHost);
         completeUpgrade(allExceptZone, version2, zone1);
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);

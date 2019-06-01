@@ -395,7 +395,7 @@ public class ApplicationController {
             deploySystemApplicationPackage(application, zone, version);
         } else {
             // Deploy by calling node repository directly
-            application.nodeTypes().forEach(nodeType -> configServer().nodeRepository().upgrade(zone, nodeType, version));
+            configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
         }
     }
 
@@ -406,7 +406,7 @@ public class ApplicationController {
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
             DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
+            return deploy(application.id(), applicationPackage, zone, options, Set.of(), Set.of());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }

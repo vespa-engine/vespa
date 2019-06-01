@@ -67,7 +67,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
-        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all(), Optional.empty());
+        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
     }
 
     /** Sets the ConfigChangeActions that will be returned on next deployment. */
@@ -90,28 +90,22 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
-        bootstrap(zones, List.of(applications), Optional.empty());
+        bootstrap(zones, List.of(applications));
     }
 
-    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
+    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications) {
         nodeRepository().clear();
-        addNodes(zones, applications, type);
+        addNodes(zones, applications);
     }
 
-    public void addNodes(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
+    public void addNodes(List<ZoneId> zones, List<SystemApplication> applications) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
-                NodeType nodeType = type.orElseGet(() -> {
-                    // Zone application has two node types. Use proxy
-                    if (application == SystemApplication.zone) return NodeType.proxy;
-                    if (application.nodeTypes().size() != 1) throw new IllegalArgumentException(application + " has several node types. Unable to detect type automatically");
-                    return application.nodeTypes().iterator().next();
-                });
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    Node.State.active, nodeType,
+                                                    Node.State.active, application.nodeType(),
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion
