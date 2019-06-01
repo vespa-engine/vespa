@@ -7,7 +7,6 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +26,6 @@ public class SlobrokMonitorManagerImplTest {
     @SuppressWarnings("unchecked")
     private final Supplier<SlobrokMonitor> slobrokMonitorFactory = mock(Supplier.class);
 
-    private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
     private final DuperModelManager duperModelManager = mock(DuperModelManager.class);
     private final SlobrokMonitorManagerImpl slobrokMonitorManager =
             new SlobrokMonitorManagerImpl(slobrokMonitorFactory, duperModelManager);
@@ -38,7 +36,6 @@ public class SlobrokMonitorManagerImplTest {
 
     @Before
     public void setup() {
-        when(duperModelManager.getConfigServerApplication()).thenReturn(configServerApplication);
         when(slobrokMonitorFactory.get()).thenReturn(slobrokMonitor);
         when(application.getApplicationId()).thenReturn(applicationId);
     }
