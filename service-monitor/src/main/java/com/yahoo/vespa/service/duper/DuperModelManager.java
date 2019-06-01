@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -92,6 +93,11 @@ public class DuperModelManager implements DuperModelInfraApi {
     @Override
     public List<InfraApplicationApi> getSupportedInfraApplications() {
         return new ArrayList<>(supportedInfraApplications.values());
+    }
+
+    @Override
+    public Optional<InfraApplicationApi> getInfraApplication(ApplicationId applicationId) {
+        return Optional.ofNullable(supportedInfraApplications.get(applicationId));
     }
 
     /**

@@ -68,7 +68,7 @@ public class InfraDeployerImplTest {
     private final NodeType nodeType;
 
     public InfraDeployerImplTest(InfraApplicationApi application) {
-        when(duperModelInfraApi.getSupportedInfraApplications()).thenReturn(List.of(application));
+        when(duperModelInfraApi.getInfraApplication(eq(application.getApplicationId()))).thenReturn(Optional.of(application));
         this.application = application;
         this.nodeType = application.getCapacity().type();
         this.infraDeployer = new InfraDeployerImpl(nodeRepository, provisioner, duperModelInfraApi);

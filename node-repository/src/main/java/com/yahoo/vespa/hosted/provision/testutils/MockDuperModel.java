@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,6 +28,11 @@ public class MockDuperModel implements DuperModelInfraApi {
     @Override
     public List<InfraApplicationApi> getSupportedInfraApplications() {
         return new ArrayList<>(supportedInfraApps.values());
+    }
+
+    @Override
+    public Optional<InfraApplicationApi> getInfraApplication(ApplicationId applicationId) {
+        return Optional.ofNullable(supportedInfraApps.get(applicationId));
     }
 
     @Override

@@ -23,7 +23,6 @@ import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -38,7 +37,6 @@ public class InfraDeployerImpl implements InfraDeployer {
     private final Provisioner provisioner;
     private final InfrastructureVersions infrastructureVersions;
     private final DuperModelInfraApi duperModel;
-    private final Map<ApplicationId, InfraApplicationApi> infraApplicationApiByApplicationId;
 
     @Inject
     public InfraDeployerImpl(NodeRepository nodeRepository, Provisioner provisioner, DuperModelInfraApi duperModel) {
@@ -46,21 +44,17 @@ public class InfraDeployerImpl implements InfraDeployer {
         this.provisioner = provisioner;
         this.infrastructureVersions = nodeRepository.infrastructureVersions();
         this.duperModel = duperModel;
-        this.infraApplicationApiByApplicationId = duperModel.getSupportedInfraApplications().stream()
-                .collect(Collectors.toUnmodifiableMap(
-                        InfraApplicationApi::getApplicationId,
-                        Function.identity()));
     }
-
 
     @Override
     public Optional<Deployment> getDeployment(ApplicationId application) {
-        return Optional.ofNullable(infraApplicationApiByApplicationId.get(application)).map(InfraDeployment::new);
+        return duperModel.getInfraApplication(application).map(InfraDeployment::new);
     }
 
     @Override
-    public List<ApplicationId> getSupportedInfraApplications() {
-        return List.copyOf(infraApplicationApiByApplicationId.keySet());
+    public Map<ApplicationId, Deployment> getSupportedInfraDeployments() {
+        return duperModel.getSupportedInfraApplications().stream()
+                .collect(Collectors.toMap(InfraApplicationApi::getApplicationId, InfraDeployment::new));
     }
 
     private class InfraDeployment implements Deployment {
