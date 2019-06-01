@@ -3,6 +3,6 @@ vespa_add_executable(vespalib_rcuvector_test_app TEST
     SOURCES
     rcuvector_test.cpp
     DEPENDS
-    searchlib
+    vespalib
 )
 vespa_add_test(NAME vespalib_rcuvector_test_app COMMAND vespalib_rcuvector_test_app)
