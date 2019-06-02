@@ -82,7 +82,7 @@ public class OsUpgraderTest {
         assertWanted(version1, SystemApplication.tenantHost, zone1);
 
         // Other zones remain on previous version (none)
-        assertWanted(Version.emptyVersion, SystemApplication.zone, zone2, zone3, zone4);
+        assertWanted(Version.emptyVersion, SystemApplication.proxy, zone2, zone3, zone4);
 
         // zone 1: completes upgrade
         completeUpgrade(version1, SystemApplication.tenantHost, zone1);
@@ -92,7 +92,7 @@ public class OsUpgraderTest {
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.zone, zone2, zone3);
+        assertWanted(version1, SystemApplication.proxy, zone2, zone3);
 
         // zone 4: still on previous version
         assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4);

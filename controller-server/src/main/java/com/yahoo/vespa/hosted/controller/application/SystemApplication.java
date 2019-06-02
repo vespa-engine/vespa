@@ -21,10 +21,10 @@ import java.util.Optional;
 public enum SystemApplication {
 
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
+    configServer(ApplicationId.from("hosted-vespa", "proxy-config-servers", "default"), NodeType.config),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
-    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
-    tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host),
-    zone(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy, proxyHost, configServer);
+    proxy(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy, proxyHost, configServer),
+    tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host);
 
     private final ApplicationId id;
     private final NodeType nodeType;
@@ -50,7 +50,7 @@ public enum SystemApplication {
 
     /** Returns whether this system application has an application package */
     public boolean hasApplicationPackage() {
-        return this == zone;
+        return this == proxy;
     }
 
     /** Returns whether config for this application has converged in given zone */
