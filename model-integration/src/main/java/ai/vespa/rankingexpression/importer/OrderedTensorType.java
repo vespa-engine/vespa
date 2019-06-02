@@ -110,22 +110,23 @@ public class OrderedTensorType {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof OrderedTensorType)) {
-            return false;
-        }
-        OrderedTensorType other = (OrderedTensorType) obj;
-        if (dimensions.size() != dimensions.size()) {
-            return false;
-        }
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof OrderedTensorType)) return false;
+
         List<TensorType.Dimension> thisDimensions = this.dimensions();
-        List<TensorType.Dimension> otherDimensions = other.dimensions();
+        List<TensorType.Dimension> otherDimensions = ((OrderedTensorType)other).dimensions();
+        if (thisDimensions.size() != otherDimensions.size()) return false;
+
         for (int i = 0; i < thisDimensions.size(); ++i) {
-            if (!thisDimensions.get(i).equals(otherDimensions.get(i))) {
-                return false;
-            }
+            if ( ! thisDimensions.get(i).equals(otherDimensions.get(i))) return false;
         }
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode();
     }
 
     public OrderedTensorType rename(DimensionRenamer renamer) {

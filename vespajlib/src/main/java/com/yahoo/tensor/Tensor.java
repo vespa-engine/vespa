@@ -367,6 +367,13 @@ public interface Tensor {
         return TensorParser.tensorFrom(tensorString, Optional.empty());
     }
 
+    /**
+     * Returns a double as a tensor: A dimensionless tensor containing the value as its cell
+     */
+    static Tensor from(double value) {
+        return Tensor.Builder.of(TensorType.empty).cell(value).build();
+    }
+
     class Cell implements Map.Entry<TensorAddress, Double> {
 
         private final TensorAddress address;

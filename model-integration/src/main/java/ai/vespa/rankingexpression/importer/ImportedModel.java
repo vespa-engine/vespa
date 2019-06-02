@@ -4,7 +4,6 @@ package ai.vespa.rankingexpression.importer;
 import com.google.common.collect.ImmutableMap;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
-import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -184,7 +183,6 @@ public class ImportedModel implements ImportedMlModel {
         private final Map<String, String> inputs = new LinkedHashMap<>();
         private final Map<String, String> outputs = new LinkedHashMap<>();
         private final Map<String, String> skippedOutputs = new HashMap<>();
-        private final List<String> importWarnings = new ArrayList<>();
 
         Signature(String name) {
             this.name = name;
@@ -206,7 +204,7 @@ public class ImportedModel implements ImportedMlModel {
             ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
             // Note: We're naming inputs by their actual name (used in the expression, given by what the input maps *to*
             // in the model, as these are the names which must actually be bound, if we are to avoid creating an
-            // "input mapping" to accomodate this complexity in
+            // "input mapping" to accommodate this complexity
             for (Map.Entry<String, String> inputEntry : inputs().entrySet())
                 inputs.put(inputEntry.getValue(), owner().inputs().get(inputEntry.getValue()));
             return inputs.build();
@@ -224,9 +222,6 @@ public class ImportedModel implements ImportedMlModel {
          */
         public Map<String, String> skippedOutputs() { return Collections.unmodifiableMap(skippedOutputs); }
 
-        /** Returns an immutable list of possibly non-fatal warnings encountered during import. */
-        public List<String> importWarnings() { return Collections.unmodifiableList(importWarnings); }
-
         /** Returns the expression this output references as an imported function */
         public ImportedMlFunction outputFunction(String outputName, String functionName) {
             return new ImportedMlFunction(functionName,
@@ -242,7 +237,6 @@ public class ImportedModel implements ImportedMlModel {
         void input(String inputName, String argumentName) { inputs.put(inputName, argumentName); }
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
-        void importWarning(String warning) { importWarnings.add(warning); }
 
     }
 

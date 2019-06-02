@@ -8,3 +8,4 @@
 <component id="ai.vespa.rankingexpression.importer.onnx.OnnxImporter" bundle="model-integration" />
 <component id="ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter" bundle="model-integration" />
 <component id="ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter" bundle="model-integration" />
+<component id="ai.vespa.rankingexpression.importer.vespa.VespaImporter" bundle="model-integration" />

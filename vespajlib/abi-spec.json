@@ -1180,7 +1180,8 @@
       "public static boolean approxEquals(double, double)",
       "public static com.yahoo.tensor.Tensor from(com.yahoo.tensor.TensorType, java.lang.String)",
       "public static com.yahoo.tensor.Tensor from(java.lang.String, java.lang.String)",
-      "public static com.yahoo.tensor.Tensor from(java.lang.String)"
+      "public static com.yahoo.tensor.Tensor from(java.lang.String)",
+      "public static com.yahoo.tensor.Tensor from(double)"
     ],
     "fields": []
   },

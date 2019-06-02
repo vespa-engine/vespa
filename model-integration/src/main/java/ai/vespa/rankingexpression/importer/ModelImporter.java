@@ -187,8 +187,7 @@ public abstract class ModelImporter implements MlModelImporter {
             TensorFunction function = operation.rankingExpressionFunction().get();
             try {
                 model.function(operation.rankingExpressionFunctionName(),
-                               new RankingExpression(operation.rankingExpressionFunctionName(),
-                                                     function.toString()));
+                               new RankingExpression(operation.rankingExpressionFunctionName(), function.toString()));
             }
             catch (ParseException e) {
                 throw new RuntimeException("Model function " + function +
@@ -210,7 +209,7 @@ public abstract class ModelImporter implements MlModelImporter {
 
     private static void reportWarnings(IntermediateOperation operation, ImportedModel model) {
         for (String warning : operation.warnings()) {
-            model.defaultSignature().importWarning(warning);
+            // If we want to report warnings, that code goes here
         }
         for (IntermediateOperation input : operation.inputs()) {
             reportWarnings(input, model);
