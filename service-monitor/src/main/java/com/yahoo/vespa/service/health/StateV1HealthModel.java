@@ -33,18 +33,15 @@ public class StateV1HealthModel implements AutoCloseable {
     private final Duration requestTimeout;
     private final Duration connectionKeepAlive;
     private final RunletExecutor executor;
-    private final boolean monitorTenantHostHealth;
 
     StateV1HealthModel(Duration targetHealthStaleness,
                        Duration requestTimeout,
                        Duration connectionKeepAlive,
-                       RunletExecutor executor,
-                       boolean monitorTenantHostHealth) {
+                       RunletExecutor executor) {
         this.targetHealthStaleness = targetHealthStaleness;
         this.requestTimeout = requestTimeout;
         this.connectionKeepAlive = connectionKeepAlive;
         this.executor = executor;
-        this.monitorTenantHostHealth = monitorTenantHostHealth;
     }
 
     Map<ServiceId, HealthEndpoint> extractHealthEndpoints(ApplicationInfo application) {
@@ -57,7 +54,7 @@ public class StateV1HealthModel implements AutoCloseable {
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
 
                 boolean isNodeAdmin = false;
-                if (monitorTenantHostHealth && isZoneApplication) {
+                if (isZoneApplication) {
                     if (ZoneApplication.isNodeAdminServiceInfo(application.getApplicationId(), serviceInfo)) {
                         isNodeAdmin = true;
                     } else {

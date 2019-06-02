@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -19,9 +18,10 @@ import static org.junit.Assert.fail;
  */
 public class InfrastructureVersionsTest {
 
+    private final Version defaultVersion = Version.fromString("6.13.37");
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final InfrastructureVersions infrastructureVersions =
-            new InfrastructureVersions(tester.nodeRepository().database());
+            new InfrastructureVersions(tester.nodeRepository().database(), defaultVersion);
 
     private final Version version = Version.fromString("6.123.456");
 
@@ -29,14 +29,14 @@ public class InfrastructureVersionsTest {
     public void can_only_downgrade_with_force() {
         assertTrue(infrastructureVersions.getTargetVersions().isEmpty());
 
-        assertEquals(Optional.empty(), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        assertEquals(defaultVersion, infrastructureVersions.getTargetVersionFor(NodeType.config));
         infrastructureVersions.setTargetVersion(NodeType.config, version, false);
-        assertEquals(Optional.of(version), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        assertEquals(version, infrastructureVersions.getTargetVersionFor(NodeType.config));
 
         // Upgrading to new version without force is fine
-        Version new_version = Version.fromString("6.123.457"); // version + 1
-        infrastructureVersions.setTargetVersion(NodeType.config, new_version, false);
-        assertEquals(Optional.of(new_version), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        Version newVersion = Version.fromString("6.123.457"); // version + 1
+        infrastructureVersions.setTargetVersion(NodeType.config, newVersion, false);
+        assertEquals(newVersion, infrastructureVersions.getTargetVersionFor(NodeType.config));
 
         // Downgrading to old version without force fails
         try {
@@ -45,7 +45,7 @@ public class InfrastructureVersionsTest {
         } catch (IllegalArgumentException ignored) { }
 
         infrastructureVersions.setTargetVersion(NodeType.config, version, true);
-        assertEquals(Optional.of(version), infrastructureVersions.getTargetVersionFor(NodeType.config));
+        assertEquals(version, infrastructureVersions.getTargetVersionFor(NodeType.config));
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The DuperModel's API for infrastructure applications.
@@ -14,6 +15,9 @@ import java.util.List;
 public interface DuperModelInfraApi {
     /** Returns the list of supported infrastructure applications. */
     List<InfraApplicationApi> getSupportedInfraApplications();
+
+    /** Returns a supported infrastructure with the given application id or empty if not found */
+    Optional<InfraApplicationApi> getInfraApplication(ApplicationId applicationId);
 
     /** Returns true if the DuperModel has registered the infrastructure application as active. */
     boolean infraApplicationIsActive(ApplicationId applicationId);

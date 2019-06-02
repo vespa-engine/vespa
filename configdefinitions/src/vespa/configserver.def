@@ -49,9 +49,6 @@ loadBalancerAddress string default=""
 athenzDnsSuffix string default=""
 ztsUrl string default=""
 
-# Node admin
-nodeAdminInContainer bool default=false
-
 # Maintainers
 maintainerIntervalMinutes int default=30
 # TODO: Default set to a high value (1 year) => maintainer will not run, change when maintainer verified out in prod
@@ -67,3 +64,4 @@ sleepTimeWhenRedeployingFails long default=30
 buildMinimalSetOfConfigModels bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true
 canReturnEmptySentinelConfig bool default=false
+serverNodeType enum {config, controller} default=config

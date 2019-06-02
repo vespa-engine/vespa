@@ -502,7 +502,7 @@
     ],
     "methods": [
       "public abstract java.util.Optional getDeployment(com.yahoo.config.provision.ApplicationId)",
-      "public abstract java.util.List getSupportedInfraApplications()"
+      "public abstract java.util.Map getSupportedInfraDeployments()"
     ],
     "fields": []
   },

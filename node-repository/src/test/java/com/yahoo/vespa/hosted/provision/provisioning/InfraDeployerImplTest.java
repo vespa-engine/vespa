@@ -68,19 +68,10 @@ public class InfraDeployerImplTest {
     private final NodeType nodeType;
 
     public InfraDeployerImplTest(InfraApplicationApi application) {
-        when(duperModelInfraApi.getSupportedInfraApplications()).thenReturn(List.of(application));
+        when(duperModelInfraApi.getInfraApplication(eq(application.getApplicationId()))).thenReturn(Optional.of(application));
         this.application = application;
         this.nodeType = application.getCapacity().type();
         this.infraDeployer = new InfraDeployerImpl(nodeRepository, provisioner, duperModelInfraApi);
-    }
-
-    @Test
-    public void remove_application_if_without_target_version() {
-        addNode(1, Node.State.active, Optional.of(target));
-        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-        verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-        verifyRemoved(1);
     }
 
     @Test
