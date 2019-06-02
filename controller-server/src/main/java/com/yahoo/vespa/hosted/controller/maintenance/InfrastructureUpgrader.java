@@ -66,9 +66,12 @@ public abstract class InfrastructureUpgrader extends Maintainer {
         boolean converged = true;
         for (SystemApplication application : applications) {
             if (convergedOn(target, application.dependencies(), zone)) {
-                upgrade(target, application, zone);
+                boolean currentAppConverged = convergedOn(target, application, zone);
+                if (!currentAppConverged) {
+                    upgrade(target, application, zone);
+                }
+                converged &= currentAppConverged;
             }
-            converged &= convergedOn(target, application, zone);
         }
         return converged;
     }
