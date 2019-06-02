@@ -24,8 +24,7 @@ public enum SystemApplication {
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
     configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
     tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host),
-    zone(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy,
-         configServerHost, proxyHost, configServer);
+    zone(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy, proxyHost, configServer);
 
     private final ApplicationId id;
     private final NodeType nodeType;
