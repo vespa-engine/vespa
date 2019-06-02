@@ -70,8 +70,8 @@ public class DockerHostCapacity {
                        .filter(n -> n.type().equals(NodeType.host))
                        .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
                        .map(n -> freeCapacityOf(n, false))
-                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add)
-                       .withDiskSpeed(speed); // Set speed to 'any' if necessary
+                       .map(resources -> resources.withDiskSpeed(speed)) // Set speed to 'any' if necessary
+                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add);
     }
 
     /** Return total capacity for a given disk speed (or for any disk speed) */
@@ -80,8 +80,8 @@ public class DockerHostCapacity {
                        .filter(n -> n.type().equals(NodeType.host))
                        .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
                        .map(host -> host.flavor().resources())
-                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add)
-                       .withDiskSpeed(speed); // Set speed to 'any' if necessary
+                       .map(resources -> resources.withDiskSpeed(speed)) // Set speed to 'any' if necessary
+                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add);
     }
 
     public int freeCapacityInFlavorEquivalence(Flavor flavor) {
