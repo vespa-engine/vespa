@@ -26,6 +26,8 @@ public class JsonFormatTestCase {
                      "{\"address\":{\"x\":\"c\",\"y\":\"d\"},\"value\":3.0}" +
                      "]}",
                      new String(json, StandardCharsets.UTF_8));
+        Tensor decoded = JsonFormat.decode(tensor.type(), json);
+        assertEquals(tensor, decoded);
     }
 
     @Test
@@ -44,6 +46,8 @@ public class JsonFormatTestCase {
                      "{\"address\":{\"x\":\"1\",\"y\":\"1\"},\"value\":7.0}" +
                      "]}",
                      new String(json, StandardCharsets.UTF_8));
+        Tensor decoded = JsonFormat.decode(tensor.type(), json);
+        assertEquals(tensor, decoded);
     }
 
 }

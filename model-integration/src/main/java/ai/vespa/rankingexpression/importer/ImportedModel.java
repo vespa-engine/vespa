@@ -204,7 +204,7 @@ public class ImportedModel implements ImportedMlModel {
             ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
             // Note: We're naming inputs by their actual name (used in the expression, given by what the input maps *to*
             // in the model, as these are the names which must actually be bound, if we are to avoid creating an
-            // "input mapping" to accommodate this complexity in
+            // "input mapping" to accommodate this complexity
             for (Map.Entry<String, String> inputEntry : inputs().entrySet())
                 inputs.put(inputEntry.getValue(), owner().inputs().get(inputEntry.getValue()));
             return inputs.build();

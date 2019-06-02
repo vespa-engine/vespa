@@ -23,13 +23,16 @@ PARSER_BEGIN(ModelParser)
 
 package ai.vespa.rankingexpression.importer.vespa.parser;
 
+import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.ArrayList;
 import ai.vespa.rankingexpression.importer.ImportedModel;
+import com.yahoo.io.IOUtils;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 
 /**
@@ -99,6 +102,7 @@ TOKEN :
 | < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
 | < #BRACE_ML_CONTENT: (~["{","}"])* >
 | < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
+| < CONSTANT: "constant" >
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
 | < URI: "uri" >
@@ -147,7 +151,7 @@ void modelContent() :
 {
 }
 {
-    ( <NL> | input() | constants() | function() )*
+    ( <NL> | input() | constants() | largeConstant() | function() )*
 }
 
 /** Declared input variables (aka features). All non-scalar inputs must be declared. */
@@ -233,15 +237,6 @@ String tensorValue() :
     }
 }
 
-TensorType tensorTypeWithPrefix(String errorMessage) :
-{
-    TensorType type;
-}
-{
-    <TYPE> <COLON> type=tensorType(errorMessage)
-    { return type; }
-}
-
 TensorType tensorType(String errorMessage) :
 {
     String tensorTypeString;
@@ -259,46 +254,37 @@ TensorType tensorType(String errorMessage) :
     }
 }
 
-//----------------------------------------
-/** Consumes a constant block of model. */
-/*
+/** Consumes a large constant. */
 void largeConstant() :
 {
     String name;
-    RankingConstant constant;
+    Tensor value;
 }
 {
-    ( <CONSTANT> name = identifier()
-        {
-//            constant = new RankingConstant(name);
-        }
-      lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
-    {
-    }
+    ( <CONSTANT> name = identifier() lbrace() value = largeConstantBody(name) <RBRACE> )
+    { model.largeConstant(name, value); }
 }
-*/
 
-/** Consumes a constant block. */
-/*
-void rankingConstantItem(RankingConstant constant) :
+// TODO: Add support in ImportedModel for passing a large tensor through as a file/Uri pointer instead of reading it here
+Tensor largeConstantBody(String name) :
 {
     String path = null;
     TensorType type = null;
 }
 {
-    ( (<FILE> <COLON> path = filePath() { } (<NL>)*) { constant.setFileName(path); }
-      | (<URI> <COLON> path = uriPath() { } (<NL>)*) { constant.setUri(path); }
-      | type = tensorTypeWithPrefix(rankingConstantErrorMessage(constant.getName())) (<NL>)* { constant.setType(type); }
-    )
+    (   <FILE> <COLON> path = filePath()
+//      | (<URI> <COLON> path = uriPath() TODO
+      | <TYPE> <COLON> type = tensorType("Constant '" + name + "'")
+      | <NL>
+    )+
     {
-        return null;
+        try {
+            return JsonFormat.decode(type, IOUtils.readFileBytes(new File(new File(model.source()).getParent(), path)));
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException("Could not read constant '" + name + "'", e);
+        }
     }
-}
-*/
-
-String rankingConstantErrorMessage(String name) : {}
-{
-    { return "For ranking constant ' " + name + "'"; }
 }
 
 String filePath() : { }
@@ -312,7 +298,6 @@ String uriPath() : { }
     ( <URI_PATH> )
     { return token.image; }
 }
-//----------------------------------------
 
 /** Consumes an expression token and returns its image. */
 String expression() :

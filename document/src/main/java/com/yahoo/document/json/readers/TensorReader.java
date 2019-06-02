@@ -10,7 +10,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.*;
 
 /**
  * Reads the tensor format described at
- * http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor
+ * http://docs.vespa.ai/documentation/reference/document-json-format.html#tensor
  */
 public class TensorReader {
 
@@ -20,6 +20,7 @@ public class TensorReader {
     public static final String TENSOR_VALUE = "value";
 
     public static void fillTensor(TokenBuffer buffer, TensorFieldValue tensorFieldValue) {
+        // TODO: Switch implementation to om.yahoo.tensor.serialization.JsonFormat.decode
         Tensor.Builder tensorBuilder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
