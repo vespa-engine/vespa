@@ -189,7 +189,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private static ApplicationId applicationId(NodeIdentity peerIdentity) {
         return peerIdentity.applicationId()
-                .orElseThrow(() -> new AuthorizationException("Peer node is not associated with an application"));
+                .orElseThrow(() -> new AuthorizationException("Peer node is not associated with an application: " + peerIdentity.toString()));
     }
 
     private RequestHandler getTenantHandler(TenantName tenantName) {
