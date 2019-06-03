@@ -74,7 +74,8 @@ public class VespaImportTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Model 'expectedname' must be saved in a file named 'expectedname.model'", e.getMessage());
+            assertEquals("Unexpected model name 'misnamed': " +
+                         "Model 'expectedname' must be saved in a file named 'expectedname.model'", e.getMessage());
         }
     }
 
