@@ -182,7 +182,9 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
             throw new IllegalStateException("Client authentication is not enforced!"); // clients should be required to authenticate when TLS is enabled
         }
         try {
-            return Optional.of(nodeIdentifier.identifyNode(certChain));
+            NodeIdentity identity = nodeIdentifier.identifyNode(certChain);
+            log.log(LogLevel.DEBUG, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
+            return Optional.of(identity);
         } catch (NodeIdentifierException e) {
             throw new AuthorizationException("Failed to identity peer: " + e.getMessage(), e);
         }
