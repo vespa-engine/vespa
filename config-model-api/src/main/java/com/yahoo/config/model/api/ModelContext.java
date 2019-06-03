@@ -54,7 +54,6 @@ public interface ModelContext {
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault();
-        boolean dispatchWithProtobuf();
         boolean useAdaptiveDispatch();
         boolean enableMetricsProxyContainer();
     }
