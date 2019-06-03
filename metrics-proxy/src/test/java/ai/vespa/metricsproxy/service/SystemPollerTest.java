@@ -25,8 +25,7 @@ public class SystemPollerTest {
 
         SystemPoller poller = new SystemPoller(services, 60*5);
         assertThat(s.isAlive(), is(false));
-        services.remove(0);
-        poller.setServices(services);
+
         long n = poller.getPidJiffies(s);
         assertThat(n, is(0L));
         long[] memusage = poller.getMemoryUsage(s);

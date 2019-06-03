@@ -26,11 +26,11 @@ import java.util.logging.Logger;
  *
  * @author Eirik Nygaard
  */
-public class SystemPoller implements ServiceListener {
+public class SystemPoller {
     final private static Logger log = Logger.getLogger(SystemPoller.class.getName());
 
     private final int pollingIntervalSecs;
-    private volatile List<VespaService> services;
+    private final List<VespaService> services;
 
     private final int memoryTypeVirtual = 0;
     private final int memoryTypeResident = 1;
@@ -43,12 +43,6 @@ public class SystemPoller implements ServiceListener {
         this.services = services;
         this.pollingIntervalSecs = pollingIntervalSecs;
         systemPollTimer = new Timer("systemPollTimer", true);
-    }
-
-    @Override
-    public void setServices(List<VespaService> services) {
-        log.log(LogLevel.DEBUG, "Setting services in SystemPoller to: " + services);
-        this.services = services;
     }
 
     void stop() {
