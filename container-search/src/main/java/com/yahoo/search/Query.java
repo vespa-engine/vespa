@@ -401,8 +401,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
         prefix = prefix + getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
-            String fullName = prefix + field.getName();
+
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
+                CompoundName fullName = new CompoundName(prefix + field.getName());
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
                     try {
                         properties().set(fullName + "." + entry.getKey(), entry.getValue(), context);
@@ -415,6 +416,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
             }
             else {
+                CompoundName fullName = new CompoundName(prefix + field.getName());
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     try {
