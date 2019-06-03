@@ -52,6 +52,7 @@ public class Main {
             Map<OutputVariable, String> outputVariables = new TreeMap<>();
             Optional<TransportSecurityOptions> options = TransportSecurityUtils.getOptions(envVars);
             if (options.isPresent()) {
+                outputVariables.put(OutputVariable.TLS_ENABLED, "1");
                 options.get().getCaCertificatesFile()
                         .ifPresent(caCertFile -> outputVariables.put(OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
                 MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);

@@ -7,6 +7,7 @@ package com.yahoo.vespa.security.tool.securityenv;
  * @author bjorncs
  */
 enum OutputVariable {
+    TLS_ENABLED("VESPA_TLS_ENABLED", "Set to '1' if TLS is enabled in Vespa"),
     CA_CERTIFICATE("VESPA_TLS_CA_CERT", "Path to CA certificates file"),
     CERTIFICATE("VESPA_TLS_CERT", "Path to certificate file"),
     PRIVATE_KEY("VESPA_TLS_PRIVATE_KEY", "Path to private key file");
