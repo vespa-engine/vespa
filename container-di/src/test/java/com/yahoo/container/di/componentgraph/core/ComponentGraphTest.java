@@ -39,6 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -51,6 +52,7 @@ import static org.junit.Assert.fail;
  * @author ollivir
  */
 public class ComponentGraphTest {
+
     public static class ConfigMap extends HashMap<ConfigKey<? extends ConfigInstance>, ConfigInstance> {
         public ConfigMap() {
             super();
@@ -240,7 +242,8 @@ public class ComponentGraphTest {
 
         Integer instance1 = componentGraph.getInstance(Integer.class);
         Integer instance2 = componentGraph.getInstance(Integer.class);
-        assertThat(instance1, not(equalTo(instance2)));
+        assertEquals(1, instance1.intValue());
+        assertEquals(2, instance2.intValue());
     }
 
     @Test
@@ -266,7 +269,7 @@ public class ComponentGraphTest {
 
         componentGraph.add(mockComponentNode(ComponentTakingExecutor.class));
         componentGraph.add(mockComponentNode(ExecutorProvider.class));
-        componentGraph.add(mockComponentNode(IntProvider.class));
+        componentGraph.add(mockComponentNode(FailOnGetIntProvider.class));
         componentGraph.complete();
 
         assertNotNull(componentGraph.getInstance(ComponentTakingExecutor.class));
@@ -559,21 +562,23 @@ public class ComponentGraphTest {
     public static class DerivedExecutorProvider extends ExecutorProvider {
     }
 
-    public static class IntProvider implements Provider<Integer> {
+    public static class FailOnGetIntProvider implements Provider<Integer> {
+
         public Integer get() {
-            throw new AssertionError("Should never be called.");
+            fail("Should never be called.");
+            return null;
         }
 
         public void deconstruct() {
         }
+
     }
 
     public static class NewIntProvider implements Provider<Integer> {
         int i = 0;
 
         public Integer get() {
-            i++;
-            return i;
+            return ++i;
         }
 
         public void deconstruct() {
@@ -590,6 +595,7 @@ public class ComponentGraphTest {
     }
 
     public static class ComponentWithInjectConstructor {
+
         public ComponentWithInjectConstructor(TestConfig c, Test2Config c2) {
             throw new RuntimeException("Should not be called");
         }
@@ -597,9 +603,11 @@ public class ComponentGraphTest {
         @Inject
         public ComponentWithInjectConstructor(Test2Config c) {
         }
+
     }
 
     public static class ComponentWithMultipleConstructors {
+
         private ComponentWithMultipleConstructors(int dummy) {
         }
 
@@ -615,6 +623,7 @@ public class ComponentGraphTest {
         public ComponentWithMultipleConstructors(Test2Config c) {
             this();
         }
+
     }
 
     public static class ComponentTakingComponentId {
