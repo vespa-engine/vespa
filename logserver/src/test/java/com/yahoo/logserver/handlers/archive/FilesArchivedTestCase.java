@@ -23,80 +23,104 @@ public class FilesArchivedTestCase {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private void makeLogfile(File dir, String name, long hours) throws IOException {
-        File f = new File(dir, name);
+    File tmpDir;
+
+    private void makeLogfile(String name, long hours) throws IOException {
+        File f = new File(tmpDir, name);
         f.getParentFile().mkdirs();
         new FileWriter(f).write("foo bar baz\n");
         long now = System.currentTimeMillis();
         f.setLastModified(now - (hours * 3600 * 1000));
     }
 
-    void checkExist(File dir, String name) {
-        assertTrue(new File(dir, name).isFile());
+    void checkExist(String name) {
+        assertTrue(new File(tmpDir, name).isFile());
     }
-    void checkNoExist(File dir, String name) {
-        assertFalse(new File(dir, name).isFile());
+    void checkNoExist(String name) {
+        assertFalse(new File(tmpDir, name).isFile());
     }
 
     @Test
     public void testMaintenance() throws java.io.IOException {
-        File tmpDir = temporaryFolder.newFolder();
+        tmpDir = temporaryFolder.newFolder();
 
-        makeLogfile(tmpDir, "foo/bar", 35*24); // non-matching file
+        makeLogfile("foo/bar", 35*24); // non-matching file
 
-        makeLogfile(tmpDir, "2018/11/20/13-0", 35*24);
-        makeLogfile(tmpDir, "2018/11/21/13-0", 34*24);
-        makeLogfile(tmpDir, "2018/12/28/13-0", 3*24);
-        makeLogfile(tmpDir, "2018/12/29/13-0", 2*24);
-        makeLogfile(tmpDir, "2018/12/30/13-0", 1*24);
-        makeLogfile(tmpDir, "2018/12/31/14-0", 3);
-        makeLogfile(tmpDir, "2018/12/31/16-0", 1);
-        makeLogfile(tmpDir, "2018/12/31/17-0", 0);
-        dumpFiles(tmpDir, "before archive maintenance");
+        makeLogfile("2018/11/20/13-0", 35*24);
+        makeLogfile("2018/11/21/13-0", 34*24);
+        makeLogfile("2018/12/28/13-0", 3*24);
+        makeLogfile("2018/12/29/13-0", 2*24);
+        makeLogfile("2018/12/30/13-0", 1*24);
+        makeLogfile("2018/12/31/14-0", 3);
+        makeLogfile("2018/12/31/16-0", 1);
+        makeLogfile("2018/12/31/17-0", 0);
+        dumpFiles("before archive maintenance");
         FilesArchived a = new FilesArchived(tmpDir);
-        dumpFiles(tmpDir, "after archive maintenance");
-        checkExist(tmpDir, "foo/bar");
-        checkExist(tmpDir, "2018/12/31/17-0");
-        checkExist(tmpDir, "2018/12/31/16-0");
-        checkExist(tmpDir, "2018/12/31/14-0.gz");
-        checkExist(tmpDir, "2018/12/28/13-0.gz");
-        checkExist(tmpDir, "2018/12/29/13-0.gz");
-        checkExist(tmpDir, "2018/12/30/13-0.gz");
+        dumpFiles("also before archive maintenance");
 
-        checkNoExist(tmpDir, "2018/12/31/17-0.gz");
-        checkNoExist(tmpDir, "2018/12/31/16-0.gz");
-        checkNoExist(tmpDir, "2018/12/31/14-0");
-        checkNoExist(tmpDir, "2018/12/28/13-0");
-        checkNoExist(tmpDir, "2018/12/29/13-0");
-        checkNoExist(tmpDir, "2018/12/30/13-0");
+        checkExist("foo/bar");
+        checkExist("2018/11/20/13-0");
+        checkExist("2018/11/21/13-0");
+        checkExist("2018/12/28/13-0");
+        checkExist("2018/12/29/13-0");
+        checkExist("2018/12/30/13-0");
+        checkExist("2018/12/31/14-0");
+        checkExist("2018/12/31/16-0");
+        checkExist("2018/12/31/17-0");
+        checkNoExist("2018/11/20/13-0.gz");
+        checkNoExist("2018/11/21/13-0.gz");
+        checkNoExist("2018/12/28/13-0.gz");
+        checkNoExist("2018/12/29/13-0.gz");
+        checkNoExist("2018/12/30/13-0.gz");
+        checkNoExist("2018/12/31/14-0.gz");
+        checkNoExist("2018/12/31/16-0.gz");
+        checkNoExist("2018/12/31/17-0.gz");
 
-        checkNoExist(tmpDir, "2018/11/20/13-0");
-        checkNoExist(tmpDir, "2018/11/20/13-0.gz");
-        checkNoExist(tmpDir, "2018/11/21/13-0");
-        checkNoExist(tmpDir, "2018/11/21/13-0.gz");
-
-        makeLogfile(tmpDir, "2018/12/31/16-0", 3);
-        makeLogfile(tmpDir, "2018/12/31/17-0", 3);
-        makeLogfile(tmpDir, "2018/12/31/17-1", 1);
-        makeLogfile(tmpDir, "2018/12/31/17-2", 0);
-
-        dumpFiles(tmpDir, "before second archive maintenance");
         a.maintenance();
-        dumpFiles(tmpDir, "after second archive maintenance");
 
-        checkExist(tmpDir, "2018/12/31/17-2");
-        checkExist(tmpDir, "2018/12/31/17-1");
-        checkExist(tmpDir, "2018/12/31/16-0.gz");
-        checkExist(tmpDir, "2018/12/31/17-0.gz");
+        dumpFiles("after archive maintenance");
+        checkExist("foo/bar");
+        checkExist("2018/12/31/17-0");
+        checkExist("2018/12/31/16-0");
+        checkExist("2018/12/31/14-0.gz");
+        checkExist("2018/12/28/13-0.gz");
+        checkExist("2018/12/29/13-0.gz");
+        checkExist("2018/12/30/13-0.gz");
 
-        checkNoExist(tmpDir, "2018/12/31/16-0");
-        checkNoExist(tmpDir, "2018/12/31/17-0");
-        checkExist(tmpDir, "foo/bar");
+        checkNoExist("2018/12/31/17-0.gz");
+        checkNoExist("2018/12/31/16-0.gz");
+        checkNoExist("2018/12/31/14-0");
+        checkNoExist("2018/12/28/13-0");
+        checkNoExist("2018/12/29/13-0");
+        checkNoExist("2018/12/30/13-0");
+
+        checkNoExist("2018/11/20/13-0");
+        checkNoExist("2018/11/20/13-0.gz");
+        checkNoExist("2018/11/21/13-0");
+        checkNoExist("2018/11/21/13-0.gz");
+
+        makeLogfile("2018/12/31/16-0", 3);
+        makeLogfile("2018/12/31/17-0", 3);
+        makeLogfile("2018/12/31/17-1", 1);
+        makeLogfile("2018/12/31/17-2", 0);
+
+        dumpFiles("before second archive maintenance");
+        a.maintenance();
+        dumpFiles("after second archive maintenance");
+
+        checkExist("2018/12/31/17-2");
+        checkExist("2018/12/31/17-1");
+        checkExist("2018/12/31/16-0.gz");
+        checkExist("2018/12/31/17-0.gz");
+
+        checkNoExist("2018/12/31/16-0");
+        checkNoExist("2018/12/31/17-0");
+        checkExist("foo/bar");
     }
 
-    private void dumpFiles(File dir, String header) {
+    private void dumpFiles(String header) {
         System.out.println(">>> " + header + " >>> :");
-        List<String> seen = scanDir(dir);
+        List<String> seen = scanDir(tmpDir);
         seen.sort(null);
         for (String s : seen) {
             System.err.println("   " + s);
