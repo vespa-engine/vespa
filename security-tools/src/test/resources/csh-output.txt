@@ -1,0 +1,3 @@
+setenv VESPA_TLS_CA_CERT "/path/to/cacerts";
+setenv VESPA_TLS_CERT "/path/to/certificate";
+setenv VESPA_TLS_PRIVATE_KEY "/path/to/key";

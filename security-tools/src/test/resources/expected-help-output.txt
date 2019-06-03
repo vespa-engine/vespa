@@ -1,0 +1,10 @@
+usage: vespa-security-env <options>
+Generates shell commands that defines environments variables based on the
+content of VESPA_TLS_CONFIG_FILE.
+ -h,--help          Show help
+ -s,--shell <arg>   Shell type. Shell type is auto-detected if option not
+                    present. Valid values: ['bourne', 'cshell'].
+The output may include the following variables:
+ - 'VESPA_TLS_CA_CERT': Path to CA certificates file
+ - 'VESPA_TLS_CERT': Path to certificate file
+ - 'VESPA_TLS_PRIVATE_KEY': Path to private key file
