@@ -5,6 +5,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
@@ -45,14 +46,15 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
 
-    public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
+    public ContainerSearch(ApplicationContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
-        cluster.addComponent(getFS4ResourcePool());
 
+        // TODO: Should be added to container instead of cluster to get proper configId for qr config.
+        cluster.addComponent(getFS4ResourcePool());
     }
 
-    private Component<?, ComponentModel> getFS4ResourcePool() {
+    private static Component<?, ComponentModel> getFS4ResourcePool() {
         BundleInstantiationSpecification spec = BundleInstantiationSpecification.
                 getInternalSearcherSpecificationFromStrings(FS4ResourcePool.class.getName(), null);
         return new Component<>(new ComponentModel(spec));
