@@ -7,21 +7,20 @@ import javax.xml.XMLConstants;
 import javax.xml.validation.SchemaFactory;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
 @Deprecated
 public class SchemaFactoryProvider implements Provider<SchemaFactory> {
+
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory";
 
     @Override
     public SchemaFactory get() {
-        return SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI,
-                                         FACTORY_CLASS,
-                                         this.getClass().getClassLoader());
+        return SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI, FACTORY_CLASS, this.getClass().getClassLoader());
     }
 
     @Override
     public void deconstruct() { }
+
 }

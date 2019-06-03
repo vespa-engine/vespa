@@ -6,12 +6,12 @@ import com.yahoo.container.di.componentgraph.Provider;
 import javax.xml.stream.XMLEventFactory;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
 @Deprecated
 public class XMLEventFactoryProvider implements Provider<XMLEventFactory> {
+
     public static final String FACTORY_CLASS = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
 
     @Override
@@ -23,4 +23,5 @@ public class XMLEventFactoryProvider implements Provider<XMLEventFactory> {
 
     @Override
     public void deconstruct() { }
+
 }

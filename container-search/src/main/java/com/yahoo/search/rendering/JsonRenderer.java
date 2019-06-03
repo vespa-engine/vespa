@@ -171,7 +171,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
-        private void doVisit(final long timestamp, final Object payload, final boolean hasChildren) throws IOException {
+        private void doVisit(long timestamp, Object payload, boolean hasChildren) throws IOException {
             boolean dirty = false;
             if (timestamp != 0L) {
                 header();

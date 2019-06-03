@@ -7,12 +7,12 @@ import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
 @Deprecated
 public class XPathFactoryProvider implements Provider<XPathFactory> {
+
     public static final String FACTORY_CLASS = "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl";
 
     @Override
@@ -28,4 +28,5 @@ public class XPathFactoryProvider implements Provider<XPathFactory> {
 
     @Override
     public void deconstruct() { }
+
 }
