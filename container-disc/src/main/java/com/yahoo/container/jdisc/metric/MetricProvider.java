@@ -32,8 +32,6 @@ public final class MetricProvider implements Provider<Metric> {
     }
 
     @Override
-    public void deconstruct() {
-
-    }
+    public void deconstruct() { }
 
 }

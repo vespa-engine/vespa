@@ -6,20 +6,20 @@ import com.yahoo.container.di.componentgraph.Provider;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
 @Deprecated
 public class DocumentBuilderFactoryProvider implements Provider<DocumentBuilderFactory> {
+
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
 
     @Override
     public DocumentBuilderFactory get() {
-        return DocumentBuilderFactory.newInstance(FACTORY_CLASS,
-                                                  this.getClass().getClassLoader());
+        return DocumentBuilderFactory.newInstance(FACTORY_CLASS, this.getClass().getClassLoader());
     }
 
     @Override
     public void deconstruct() { }
+
 }

@@ -14,12 +14,12 @@ import com.yahoo.language.opennlp.OpenNlpLinguistics;
  *
  * @author bratseth
  */
+@SuppressWarnings("unused") // Injected
 public class DefaultLinguisticsProvider implements Provider<Linguistics> {
 
     // Use lazy initialization to avoid expensive (memory-wise) instantiation f
     private volatile Supplier<Linguistics> linguisticsSupplier = Suppliers.memoize(OpenNlpLinguistics::new);
 
-    @SuppressWarnings("deprecation")
     @Inject
     public DefaultLinguisticsProvider() { }
 
