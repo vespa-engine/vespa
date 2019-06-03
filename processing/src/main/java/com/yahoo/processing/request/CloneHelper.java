@@ -111,7 +111,7 @@ public class CloneHelper {
      * Clones a map by deep cloning each value which is cloneable and shallow copying all other values.
      */
     public Map<CompoundName, Object> cloneMap(Map<CompoundName, Object> map) {
-        Map<CompoundName, Object> cloneMap = new HashMap<>();
+        Map<CompoundName, Object> cloneMap = new HashMap<>(map.size());
         for (Map.Entry<CompoundName, Object> entry : map.entrySet()) {
             Object cloneValue = clone(entry.getValue());
             if (cloneValue == null)
