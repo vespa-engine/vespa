@@ -4,7 +4,6 @@
 #include "tensor.h"
 #include "tensor_visitor.h"
 #include "tensor_address_element_iterator.h"
-#include "default_tensor.h"
 #include "wrapped_simple_tensor.h"
 #include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
@@ -259,7 +258,7 @@ std::unique_ptr<Tensor>
 TensorMapper::map(const Tensor &tensor) const
 {
     if (_type.is_sparse()) {
-        return mapToSparse<DefaultTensor::type>(tensor, _type);
+        return mapToSparse<SparseTensor>(tensor, _type);
     } else if (_type.is_dense()) {
         return mapToDense(tensor, _type);
     } else {

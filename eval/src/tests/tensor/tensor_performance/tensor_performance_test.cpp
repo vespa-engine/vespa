@@ -8,7 +8,7 @@
 #include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 
@@ -137,17 +137,19 @@ TEST("SMOKETEST - require that matrix product benchmark expression produces expe
 
 //-----------------------------------------------------------------------------
 
-struct DummyBuilder : TensorBuilder {
-    Dimension define_dimension(const vespalib::string &) override { return 0; }
-    TensorBuilder &add_label(Dimension, const vespalib::string &) override { return *this; }
-    TensorBuilder &add_cell(double) override { return *this; }
-    tensor::Tensor::UP build() override { return tensor::Tensor::UP(); }
+struct DummySparseBuilder
+{
+    using Dimension = SparseTensorBuilder::Dimension;
+    Dimension define_dimension(const vespalib::string &) { return 0; }
+    DummySparseBuilder &add_label(Dimension, const vespalib::string &) { return *this; }
+    DummySparseBuilder &add_cell(double) { return *this; }
+    tensor::Tensor::UP build() { return tensor::Tensor::UP(); }
 };
 
 
 struct DummyDenseTensorBuilder
 {
-    using Dimension = TensorBuilder::Dimension;
+    using Dimension = SparseTensorBuilder::Dimension;
     Dimension defineDimension(const vespalib::string &, size_t) { return 0; }
     DummyDenseTensorBuilder &addLabel(Dimension, size_t) { return *this; }
     DummyDenseTensorBuilder &addCell(double) { return *this; }
@@ -163,9 +165,10 @@ struct DimensionSpec {
 };
 
 struct StringBinding {
-    TensorBuilder::Dimension dimension;
+    SparseTensorBuilder::Dimension dimension;
     vespalib::string label;
-    StringBinding(TensorBuilder &builder, const DimensionSpec &dimension_in)
+    template <typename Builder>
+    StringBinding(Builder &builder, const DimensionSpec &dimension_in)
         : dimension(builder.define_dimension(dimension_in.name)),
           label()
     {
@@ -173,16 +176,18 @@ struct StringBinding {
     void set_label(size_t id) {
         label = vespalib::make_string("%zu", id);
     }
-    static void add_cell(TensorBuilder &builder, double value) {
+    template <typename Builder>
+    static void add_cell(Builder &builder, double value) {
         builder.add_cell(value);
     }
-    void add_label(TensorBuilder &builder) const {
+    template <typename Builder>
+    void add_label(Builder &builder) const {
         builder.add_label(dimension, label);
     }
 };
 
 struct NumberBinding {
-    TensorBuilder::Dimension dimension;
+    SparseTensorBuilder::Dimension dimension;
     size_t label;
     template <typename Builder>
     NumberBinding(Builder &builder, const DimensionSpec &dimension_in)
@@ -226,12 +231,12 @@ void build_tensor(Builder &builder, const std::vector<DimensionSpec> &dimensions
     }
 }
 
-template <typename Builder, typename IBuilder, typename Binding>
+template <typename Builder, typename Binding>
 tensor::Tensor::UP make_tensor_impl(const std::vector<DimensionSpec> &dimensions) {
     Builder builder;
     std::vector<Binding> bindings;
     bindings.reserve(dimensions.size());
-    build_tensor<IBuilder, Binding>(builder, dimensions, bindings);
+    build_tensor<Builder, Binding>(builder, dimensions, bindings);
     return builder.build();
 }
 
@@ -258,17 +263,14 @@ const char *name(BuilderType type) {
 tensor::Tensor::UP make_tensor(BuilderType type, const std::vector<DimensionSpec> &dimensions) {
     switch (type) {
     case BuilderType::DUMMY:
-        return make_tensor_impl<DummyBuilder, TensorBuilder, StringBinding>
+        return make_tensor_impl<DummySparseBuilder, StringBinding>
             (dimensions);
     case BuilderType::SPARSE:
-        return make_tensor_impl<SparseTensorBuilder, TensorBuilder,
-            StringBinding>(dimensions);
+        return make_tensor_impl<SparseTensorBuilder, StringBinding>(dimensions);
     case BuilderType::NUMBERDUMMY:
-        return make_tensor_impl<DummyDenseTensorBuilder,
-            DummyDenseTensorBuilder, NumberBinding>(dimensions);
+        return make_tensor_impl<DummyDenseTensorBuilder, NumberBinding>(dimensions);
     case BuilderType::DENSE:
-        return make_tensor_impl<DenseTensorBuilder, DenseTensorBuilder,
-            NumberBinding>(dimensions);
+        return make_tensor_impl<DenseTensorBuilder, NumberBinding>(dimensions);
     }
     abort();
 }

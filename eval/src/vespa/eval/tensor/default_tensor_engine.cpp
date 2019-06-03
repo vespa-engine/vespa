@@ -2,9 +2,9 @@
 
 #include "default_tensor_engine.h"
 #include "tensor.h"
-#include "default_tensor.h"
 #include "wrapped_simple_tensor.h"
 #include "serialization/typed_binary_format.h"
+#include "sparse/sparse_tensor_builder.h"
 #include "dense/dense_tensor.h"
 #include "dense/dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
@@ -142,8 +142,8 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
         }
         return builder.build();
     } else if (type.is_sparse()) {
-        DefaultTensor::builder builder;
-        std::map<vespalib::string,DefaultTensor::builder::Dimension> dimension_map;
+        SparseTensorBuilder builder;
+        std::map<vespalib::string,SparseTensorBuilder::Dimension> dimension_map;
         for (const auto &dimension: type.dimensions()) {
             dimension_map[dimension.name] = builder.define_dimension(dimension.name);
         }

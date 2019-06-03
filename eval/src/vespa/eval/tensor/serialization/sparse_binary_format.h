@@ -7,7 +7,7 @@ namespace vespalib { class nbostream; }
 namespace vespalib::tensor {
 
 class Tensor;
-class TensorBuilder;
+class SparseTensorBuilder;
 
 /**
  * Class for serializing a tensor.
@@ -16,7 +16,7 @@ class SparseBinaryFormat
 {
 public:
     static void serialize(nbostream &stream, const Tensor &tensor);
-    static void deserialize(nbostream &stream, TensorBuilder &builder);
+    static void deserialize(nbostream &stream, SparseTensorBuilder &builder);
 };
 
 }

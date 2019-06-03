@@ -13,7 +13,6 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/eval/value_type.h>
 
 #include <vespa/log/log.h>
@@ -23,8 +22,7 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::DefaultTensor;
-using vespalib::tensor::TensorBuilder;
+using vespalib::tensor::SparseTensorBuilder;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -106,8 +104,8 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
     if (prop.found() && !prop.get().empty()) {
         WeightedStringVector vector;
         WeightedSetParser::parse(prop.get(), vector);
-        DefaultTensor::builder tensorBuilder;
-        TensorBuilder::Dimension dimensionEnum = tensorBuilder.define_dimension(dimension);
+        SparseTensorBuilder tensorBuilder;
+        SparseTensorBuilder::Dimension dimensionEnum = tensorBuilder.define_dimension(dimension);
         for (const auto &elem : vector._data) {
             tensorBuilder.add_label(dimensionEnum, elem.value());
             tensorBuilder.add_cell(elem.weight());

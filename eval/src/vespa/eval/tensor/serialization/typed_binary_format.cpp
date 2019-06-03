@@ -4,7 +4,7 @@
 #include "sparse_binary_format.h"
 #include "dense_binary_format.h"
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/eval/simple_tensor.h>
@@ -84,7 +84,7 @@ TypedBinaryFormat::deserialize(nbostream &stream)
     auto read_pos = stream.rp();
     auto formatId = stream.getInt1_4Bytes();
     if (formatId == SPARSE_BINARY_FORMAT_TYPE) {
-        DefaultTensor::builder builder;
+        SparseTensorBuilder builder;
         SparseBinaryFormat::deserialize(stream, builder);
         return builder.build();
     }

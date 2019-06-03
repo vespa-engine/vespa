@@ -5,7 +5,8 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 
 namespace search::features {
 
@@ -40,8 +41,8 @@ void
 TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
 {
     _attrBuffer.fill(*_attribute, docId);
-    vespalib::tensor::DefaultTensor::builder builder;
-    vespalib::tensor::TensorBuilder::Dimension dimensionEnum = builder.define_dimension(_dimension);
+    vespalib::tensor::SparseTensorBuilder builder;
+    vespalib::tensor::SparseTensorBuilder::Dimension dimensionEnum = builder.define_dimension(_dimension);
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {
         builder.add_label(dimensionEnum, vespalib::string(_attrBuffer[i].value()));
         builder.add_cell(_attrBuffer[i].weight());
