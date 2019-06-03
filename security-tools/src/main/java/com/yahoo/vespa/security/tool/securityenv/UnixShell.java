@@ -18,9 +18,9 @@ enum UnixShell {
         void writeOutputVariables(PrintStream out, Map<String, String> outputVariables) {
             outputVariables.forEach((name, value) -> {
                 out.print(name);
-                out.print('=');
+                out.print("=\"");
                 out.print(value); // note: value is assumed to need no escaping
-                out.print("; export ");
+                out.print("\"; export ");
                 out.print(name);
                 out.println(';');
             });
@@ -32,9 +32,9 @@ enum UnixShell {
             outputVariables.forEach((name, value) -> {
                 out.print("setenv ");
                 out.print(name);
-                out.print(' ');
+                out.print(" \"");
                 out.print(value); // note: value is assumed to need no escaping
-                out.println(';');
+                out.println("\";");
             });
         }
     };
