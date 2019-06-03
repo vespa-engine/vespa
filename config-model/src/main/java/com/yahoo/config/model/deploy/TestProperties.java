@@ -35,6 +35,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useFdispatchByDefault = true;
+    private boolean dispatchWithProtobuf = true;
     private boolean useAdaptiveDispatch = false;
     private boolean enableMetricsProxyContainer = false;
 
@@ -53,6 +54,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
+    @Override public boolean dispatchWithProtobuf() { return dispatchWithProtobuf; }
     @Override public boolean enableMetricsProxyContainer() { return enableMetricsProxyContainer; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
