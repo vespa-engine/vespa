@@ -111,13 +111,10 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     return; // global config access ok
                 } else {
                     String hostname = configRequest.getClientHostName();
-                    Optional<RequestHandler> tenantHandler =
-                            Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
-                                    .flatMap(this::getTenantHandler);
-                    if (tenantHandler.isEmpty()) {
-                        return; // unknown host
-                    }
-                    ApplicationId resolvedApplication = tenantHandler.get().resolveApplicationId(hostname);
+                    TenantName tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
+                            .orElseThrow(() -> new AuthorizationException(String.format("Host '%s' not found in host registry", hostname)));
+                    RequestHandler tenantHandler = getTenantHandler(tenantName);
+                    ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
                     ApplicationId peerOwner = applicationId(peerIdentity);
                     if (peerOwner.equals(resolvedApplication)) {
                         return; // allowed to access
@@ -141,11 +138,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
             case host:
                 ApplicationId peerOwner = applicationId(peerIdentity);
                 FileReference requestedFile = new FileReference(request.parameters().get(0).asString());
-                RequestHandler tenantHandler = getTenantHandler(peerOwner.tenant())
-                        .orElseThrow(() -> new AuthorizationException(
-                                String.format(
-                                        "Application '%s' does not exist - unable to verify file ownership for '%s'",
-                                        peerOwner.toShortString(), requestedFile.value())));
+                RequestHandler tenantHandler = getTenantHandler(peerOwner.tenant());
                 Set<FileReference> filesOwnedByApplication = tenantHandler.listFileReferences(peerOwner);
                 if (filesOwnedByApplication.contains(requestedFile)) {
                     return; // allowed to access
@@ -182,7 +175,9 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
             throw new IllegalStateException("Client authentication is not enforced!"); // clients should be required to authenticate when TLS is enabled
         }
         try {
-            return Optional.of(nodeIdentifier.identifyNode(certChain));
+            NodeIdentity identity = nodeIdentifier.identifyNode(certChain);
+            log.log(LogLevel.DEBUG, () -> String.format("Client '%s' identified as %s", request.target().toString(), identity.toString()));
+            return Optional.of(identity);
         } catch (NodeIdentifierException e) {
             throw new AuthorizationException("Failed to identity peer: " + e.getMessage(), e);
         }
@@ -194,11 +189,12 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private static ApplicationId applicationId(NodeIdentity peerIdentity) {
         return peerIdentity.applicationId()
-                .orElseThrow(() -> new AuthorizationException("Peer node is not associated with an application"));
+                .orElseThrow(() -> new AuthorizationException("Peer node is not associated with an application: " + peerIdentity.toString()));
     }
 
-    private Optional<RequestHandler> getTenantHandler(TenantName tenantName) {
-        return handlerProvider.getRequestHandler(tenantName);
+    private RequestHandler getTenantHandler(TenantName tenantName) {
+        return handlerProvider.getRequestHandler(tenantName)
+                .orElseThrow(() -> new AuthorizationException(String.format("No handler exists for tenant '%s'", tenantName.value())));
     }
 
     @SuppressWarnings("unchecked")
