@@ -174,6 +174,46 @@ public class MultiTenantRpcAuthorizerTest {
                 .get();
     }
 
+    @Test
+    public void tenant_node_must_be_registered_in_host_registry() throws ExecutionException, InterruptedException {
+        NodeIdentity identity = new NodeIdentity.Builder(NodeType.tenant)
+                .applicationId(EVIL_APP_ID)
+                .build();
+
+        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+
+        RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
+
+        Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
+
+        exceptionRule.expectMessage("Host 'myhostname' not found in host registry");
+        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
+
+        authorizer.authorizeConfigRequest(configRequest)
+                .get();
+    }
+
+    @Test
+    public void tenant_must_have_a_request_handler() throws ExecutionException, InterruptedException {
+        NodeIdentity identity = new NodeIdentity.Builder(NodeType.tenant)
+                .applicationId(EVIL_APP_ID)
+                .build();
+
+        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+        hostRegistry.update(EVIL_APP_ID.tenant(), List.of(HOSTNAME.value()));
+
+        RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
+
+        Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
+
+        exceptionRule.expectMessage("No handler exists for tenant 'malice'");
+        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
+
+        authorizer.authorizeConfigRequest(configRequest)
+                .get();
+    }
+
+
     private static RpcAuthorizer createAuthorizer(NodeIdentity identity, HostRegistry<TenantName> hostRegistry) {
         return new MultiTenantRpcAuthorizer(
                 new StaticNodeIdentifier(identity),
@@ -199,6 +239,7 @@ public class MultiTenantRpcAuthorizerTest {
 
         RequestHandlerProvider handlerProvider = mock(RequestHandlerProvider.class);
         when(handlerProvider.getRequestHandler(APPLICATION_ID.tenant())).thenReturn(Optional.of(requestHandler));
+        when(handlerProvider.getRequestHandler(EVIL_APP_ID.tenant())).thenReturn(Optional.empty());
         return handlerProvider;
     }
 
