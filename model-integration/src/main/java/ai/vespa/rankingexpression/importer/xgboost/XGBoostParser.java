@@ -69,8 +69,15 @@ class XGBoostParser {
                 trueExp = treeToRankExp(node.getChildren().get(1));
                 falseExp = treeToRankExp(node.getChildren().get(0));
             }
-            return "if (" + node.getSplit() + " < " + Double.toString(node.getSplit_condition()) + ", " + trueExp + ", "
-                    + falseExp + ")";
+
+            String condition;
+            if (node.getMissing() == node.getNo()) {
+                condition = node.getSplit() + " < " + Double.toString(node.getSplit_condition());
+            } else {
+                condition = "!(" + node.getSplit() + " >= " + Double.toString(node.getSplit_condition()) + ")";
+            }
+
+            return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
         }
     }
 
