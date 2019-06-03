@@ -54,13 +54,13 @@ public class Main {
             }
             Map<OutputVariable, String> outputVariables = new TreeMap<>();
             options.get().getCaCertificatesFile()
-                    .ifPresent(caCertFile -> addOutputVariable(outputVariables, OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
+                    .ifPresent(caCertFile -> outputVariables.put(OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
             MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
             if (mixedMode != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
                 options.get().getCertificatesFile()
-                        .ifPresent(certificateFile -> addOutputVariable(outputVariables, OutputVariable.CERTIFICATE, certificateFile.toString()));
+                        .ifPresent(certificateFile -> outputVariables.put(OutputVariable.CERTIFICATE, certificateFile.toString()));
                 options.get().getPrivateKeyFile()
-                        .ifPresent(privateKeyFile -> addOutputVariable(outputVariables, OutputVariable.PRIVATE_KEY, privateKeyFile.toString()));
+                        .ifPresent(privateKeyFile -> outputVariables.put(OutputVariable.PRIVATE_KEY, privateKeyFile.toString()));
             }
             shell.writeOutputVariables(stdOut, outputVariables);
             return 0;
@@ -71,10 +71,6 @@ public class Main {
         } catch (Exception e) {
             return handleException("Failed to generate security environment variables: " + e.getMessage(), e, debugMode);
         }
-    }
-
-    private static void addOutputVariable(Map<OutputVariable, String> outputVariables, OutputVariable variable, String value) {
-        outputVariables.put(variable, value);
     }
 
     private int handleException(String message, Exception exception, boolean debugMode) {
