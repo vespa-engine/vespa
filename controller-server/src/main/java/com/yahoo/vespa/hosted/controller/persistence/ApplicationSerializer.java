@@ -163,6 +163,7 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
+        application.legacyRotation().ifPresent(rotation -> root.setString(deprecatedRotationField, rotation.asString()));
         Cursor rotations = root.setArray(rotationsField);
         application.rotations().forEach(rotation -> rotations.addString(rotation.asString()));
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
@@ -331,12 +332,13 @@ public class ApplicationSerializer {
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<String> pemDeployKey = optionalString(root.field(pemDeployKeyField));
+        Optional<RotationId> legacyRotation = optionalString(root.field(deprecatedRotationField)).map(RotationId::new);
         List<RotationId> rotations = rotationsFromSlime(root);
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
                                deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, rotations, rotationStatus);
+                               pemDeployKey, legacyRotation, rotations, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -519,7 +521,11 @@ public class ApplicationSerializer {
     private List<RotationId> rotationsFromSlime(Inspector root) {
         final var rotations = rotationListFromSlime(root.field(rotationsField));
         final var legacyRotation = legacyRotationFromSlime(root.field(deprecatedRotationField));
-        legacyRotation.ifPresent(rotations::add);
+
+        if (legacyRotation.isPresent() && ! rotations.contains(legacyRotation.get())) {
+            rotations.add(legacyRotation.get());
+        }
+
         return rotations;
     }
 
