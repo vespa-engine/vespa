@@ -19,6 +19,9 @@ distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 # Should fdispatch be used as the default dispatcher
 useFdispatchByDefault bool default=true
 
+# Should protobuf/jrt be preferred over fs4
+dispatchWithProtobuf bool default=false
+
 # Is multi-level dispatch configured for this cluster
 useMultilevelDispatch bool default=false
 
