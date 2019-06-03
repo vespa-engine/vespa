@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Definition of some unix shell variants and how to export environments variable for those supported.
@@ -25,6 +26,14 @@ enum UnixShell {
                 out.println(';');
             });
         }
+        @Override
+        void unsetVariables(PrintStream out, Set<OutputVariable> variables) {
+            variables.forEach(variable -> {
+                out.print("unset ");
+                out.print(variable.variableName());
+                out.println(';');
+            });
+        }
     },
     CSHELL("cshell", List.of("csh", "fish")) {
         @Override
@@ -35,6 +44,14 @@ enum UnixShell {
                 out.print(" \"");
                 out.print(value); // note: value is assumed to need no escaping
                 out.println("\";");
+            });
+        }
+        @Override
+        void unsetVariables(PrintStream out, Set<OutputVariable> variables) {
+            variables.forEach(variable -> {
+                out.print("unsetenv ");
+                out.print(variable.variableName());
+                out.println(';');
             });
         }
     };
@@ -50,6 +67,7 @@ enum UnixShell {
     }
 
     abstract void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables);
+    abstract void unsetVariables(PrintStream out, Set<OutputVariable> variables);
 
     String configName() {
         return configName;

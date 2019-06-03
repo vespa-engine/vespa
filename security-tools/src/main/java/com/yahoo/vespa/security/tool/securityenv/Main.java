@@ -8,6 +8,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 
 import java.io.PrintStream;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -48,21 +49,24 @@ public class Main {
                     ? UnixShell.fromConfigName(arguments.getOptionValue(SHELL_OPTION))
                     : UnixShell.detect(envVars.get("SHELL"));
 
-            Optional<TransportSecurityOptions> options = TransportSecurityUtils.getOptions(envVars);
-            if (options.isEmpty()) {
-                return 0;
-            }
             Map<OutputVariable, String> outputVariables = new TreeMap<>();
-            options.get().getCaCertificatesFile()
-                    .ifPresent(caCertFile -> outputVariables.put(OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
-            MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
-            if (mixedMode != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
-                options.get().getCertificatesFile()
-                        .ifPresent(certificateFile -> outputVariables.put(OutputVariable.CERTIFICATE, certificateFile.toString()));
-                options.get().getPrivateKeyFile()
-                        .ifPresent(privateKeyFile -> outputVariables.put(OutputVariable.PRIVATE_KEY, privateKeyFile.toString()));
+            Optional<TransportSecurityOptions> options = TransportSecurityUtils.getOptions(envVars);
+            if (options.isPresent()) {
+                options.get().getCaCertificatesFile()
+                        .ifPresent(caCertFile -> outputVariables.put(OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
+                MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
+                if (mixedMode != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
+                    options.get().getCertificatesFile()
+                            .ifPresent(certificateFile -> outputVariables.put(OutputVariable.CERTIFICATE, certificateFile.toString()));
+                    options.get().getPrivateKeyFile()
+                            .ifPresent(privateKeyFile -> outputVariables.put(OutputVariable.PRIVATE_KEY, privateKeyFile.toString()));
+                }
             }
             shell.writeOutputVariables(stdOut, outputVariables);
+            EnumSet<OutputVariable> unusedVariables = outputVariables.isEmpty()
+                    ? EnumSet.allOf(OutputVariable.class)
+                    : EnumSet.complementOf(EnumSet.copyOf(outputVariables.keySet()));
+            shell.unsetVariables(stdOut, unusedVariables);
             return 0;
         } catch (ParseException e) {
             return handleException("Failed to parse command line arguments: " + e.getMessage(), e, debugMode);
