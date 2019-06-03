@@ -87,9 +87,5 @@ public class IdentityDocumentGenerator {
         }
     }
 
-    private static String toZoneDnsSuffix(Zone zone, String dnsSuffix) {
-        return zone.environment().value() + "-" + zone.region().value() + "." + dnsSuffix;
-    }
-
 }
 
