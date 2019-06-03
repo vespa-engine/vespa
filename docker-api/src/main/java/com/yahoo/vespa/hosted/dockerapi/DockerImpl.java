@@ -360,6 +360,7 @@ public class DockerImpl implements Docker {
                 logger.log(LogLevel.INFO, "Download completed: " + dockerImage.asString());
                 removeScheduledPoll(dockerImage);
             } else {
+                numberOfDockerDaemonFails.add();
                 throw new DockerClientException("Could not download image: " + dockerImage);
             }
         }
