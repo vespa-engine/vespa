@@ -24,6 +24,7 @@ import static com.yahoo.log.LogLevel.SPAM;
  * @author ollivir
  */
 public abstract class Node {
+
     private final static Logger log = Logger.getLogger(Node.class.getName());
 
     private final ComponentId componentId;
@@ -43,25 +44,23 @@ public abstract class Node {
 
     protected abstract Object newInstance();
 
-    public Object newOrCachedInstance() {
-        Object inst;
-        if (instance.isPresent()) {
-            inst = instance.get();
-            log.log(SPAM, "Reusing instance for component with ID " + componentId);
-        } else {
-            log.log(DEBUG, "Creating new instance for component with ID " + componentId);
-            inst = newInstance();
-            instance = Optional.of(inst);
-        }
-        return component(inst);
+    /** Constructs the instance represented by this node, if not already done. */
+    public void constructInstance() {
+        if ( ! instance.isPresent())
+            instance = Optional.of(newInstance());
     }
 
-    private Object component(Object instance) {
-        if (instance instanceof Provider) {
-            Provider<?> provider = (Provider<?>) instance;
+    /**
+     * Returns the component represented by this - which is either the instance, or if the instance is a provider,
+     * the component returned by it.
+     */
+    public Object component() {
+        constructInstance();
+        if (instance.get() instanceof Provider) {
+            Provider<?> provider = (Provider<?>) instance.get();
             return provider.get();
         } else {
-            return instance;
+            return instance.get();
         }
     }
 
@@ -139,13 +138,13 @@ public abstract class Node {
         return componentId;
     }
 
-    public Optional<?> instance() {
+    /** Returns the already constructed instance in this, if any */
+    public Optional<?> constructedInstance() {
         return instance;
     }
 
     /**
-     * @param identityObject
-     *            The identifying object that makes the Node unique
+     * @param identityObject he identifying object that makes the Node unique
      */
     protected static ComponentId syntheticComponentId(String className, Object identityObject, ComponentId namespace) {
         String name = className + "_" + System.identityHashCode(identityObject);
