@@ -2,4 +2,5 @@
 install_fat_java_artifact(security-tools)
 
 vespa_install_script(src/main/sh/vespa-security-env vespa-security-env bin)
+vespa_install_script(src/main/sh/vespa-curl-wrapper vespa-curl-wrapper libexec/vespa)
 
