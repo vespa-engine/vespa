@@ -839,8 +839,6 @@ BucketDBUpdater::MergingNodeRemover::has_unavailable_nodes(const storage::Bucket
 BucketDatabase::MergingProcessor::Result
 BucketDBUpdater::MergingNodeRemover::merge(storage::BucketDatabase::Merger& merger)
 {
-    using Result = BucketDatabase::MergingProcessor::Result;
-
     document::BucketId bucketId(merger.bucket_id());
     LOG(spam, "Check for remove: bucket %s", bucketId.toString().c_str());
     if (!distributorOwnsBucket(bucketId)) {
