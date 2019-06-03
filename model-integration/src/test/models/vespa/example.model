@@ -15,11 +15,11 @@ model example {
     }
 
     function foo1() {
-        expression: max(sum(input1 * input2, name) * constant1, x) * constant2
+        expression: reduce(sum(input1 * input2, name) * constant1, max, x) * constant2
     }
 
     function foo2() {
-        expression: max(sum(input1 * input2, name) * constant1asLarge, x) * constant2
+        expression: reduce(sum(input1 * input2, name) * constant1asLarge, max, x) * constant2
     }
 
 }
