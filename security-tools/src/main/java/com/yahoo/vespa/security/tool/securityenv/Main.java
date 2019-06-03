@@ -52,7 +52,7 @@ public class Main {
             if (options.isEmpty()) {
                 return 0;
             }
-            Map<String, String> outputVariables = new TreeMap<>();
+            Map<OutputVariable, String> outputVariables = new TreeMap<>();
             options.get().getCaCertificatesFile()
                     .ifPresent(caCertFile -> addOutputVariable(outputVariables, OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
             MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
@@ -73,8 +73,8 @@ public class Main {
         }
     }
 
-    private static void addOutputVariable(Map<String, String> outputVariables, OutputVariable variable, String value) {
-        outputVariables.put(variable.variableName(), value);
+    private static void addOutputVariable(Map<OutputVariable, String> outputVariables, OutputVariable variable, String value) {
+        outputVariables.put(variable, value);
     }
 
     private int handleException(String message, Exception exception, boolean debugMode) {

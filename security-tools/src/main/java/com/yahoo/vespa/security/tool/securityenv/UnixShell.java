@@ -15,23 +15,23 @@ import java.util.Map;
 enum UnixShell {
     BOURNE("bourne", List.of("bash", "sh")) {
         @Override
-        void writeOutputVariables(PrintStream out, Map<String, String> outputVariables) {
-            outputVariables.forEach((name, value) -> {
-                out.print(name);
+        void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables) {
+            variables.forEach((variable, value) -> {
+                out.print(variable.variableName());
                 out.print("=\"");
                 out.print(value); // note: value is assumed to need no escaping
                 out.print("\"; export ");
-                out.print(name);
+                out.print(variable.variableName());
                 out.println(';');
             });
         }
     },
     CSHELL("cshell", List.of("csh", "fish")) {
         @Override
-        void writeOutputVariables(PrintStream out, Map<String, String> outputVariables) {
-            outputVariables.forEach((name, value) -> {
+        void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables) {
+            variables.forEach((variable, value) -> {
                 out.print("setenv ");
-                out.print(name);
+                out.print(variable.variableName());
                 out.print(" \"");
                 out.print(value); // note: value is assumed to need no escaping
                 out.println("\";");
@@ -49,7 +49,7 @@ enum UnixShell {
         this.knownShellBinaries = knownShellBinaries;
     }
 
-    abstract void writeOutputVariables(PrintStream out, Map<String, String> outputVariables);
+    abstract void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables);
 
     String configName() {
         return configName;
