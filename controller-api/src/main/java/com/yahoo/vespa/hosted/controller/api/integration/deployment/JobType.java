@@ -91,6 +91,9 @@ public enum JobType {
     devAwsUsEast1b         ("dev-aws-us-east-1b",
                             Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b"))),
 
+    devAwsUsEast1c         ("dev-aws-us-east-1c",
+                            Map.of(PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
+
     perfUsEast3            ("perf-us-east-3",
                             Map.of(main, ZoneId.from("perf"   , "us-east-3")));
 
