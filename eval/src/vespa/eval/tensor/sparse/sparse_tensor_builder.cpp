@@ -6,8 +6,7 @@
 namespace vespalib::tensor {
 
 SparseTensorBuilder::SparseTensorBuilder()
-    : TensorBuilder(),
-      _addressBuilder(),
+    : _addressBuilder(),
       _normalizedAddressBuilder(),
       _cells(),
       _stash(SparseTensor::STASH_CHUNK_SIZE),
@@ -37,7 +36,7 @@ SparseTensorBuilder::makeType()
 }
 
 
-TensorBuilder::Dimension
+SparseTensorBuilder::Dimension
 SparseTensorBuilder::define_dimension(const vespalib::string &dimension)
 {
     auto it = _dimensionsEnum.find(dimension);
@@ -55,7 +54,7 @@ SparseTensorBuilder::define_dimension(const vespalib::string &dimension)
     return res;
 }
 
-TensorBuilder &
+SparseTensorBuilder &
 SparseTensorBuilder::add_label(Dimension dimension,
                                 const vespalib::string &label)
 {
@@ -64,7 +63,7 @@ SparseTensorBuilder::add_label(Dimension dimension,
     return *this;
 }
 
-TensorBuilder &
+SparseTensorBuilder &
 SparseTensorBuilder::add_cell(double value)
 {
     if (!_type_made) {

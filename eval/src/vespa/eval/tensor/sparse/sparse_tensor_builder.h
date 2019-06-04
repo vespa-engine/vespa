@@ -5,7 +5,6 @@
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_unsorted_address_builder.h"
-#include <vespa/eval/tensor/tensor_builder.h>
 #include <vespa/eval/tensor/tensor_address.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stash.h>
@@ -15,8 +14,11 @@ namespace vespalib::tensor {
 /**
  * A builder of sparse tensors.
  */
-class SparseTensorBuilder : public TensorBuilder
+class SparseTensorBuilder
 {
+public:
+    using Dimension = uint32_t;
+private:
     SparseTensorUnsortedAddressBuilder _addressBuilder; // unsorted dimensions
     SparseTensorAddressBuilder _normalizedAddressBuilder; // sorted dimensions
     SparseTensor::Cells _cells;
@@ -29,12 +31,12 @@ class SparseTensorBuilder : public TensorBuilder
     void makeType();
 public:
     SparseTensorBuilder();
-    ~SparseTensorBuilder() override;
+    ~SparseTensorBuilder();
 
-    Dimension define_dimension(const vespalib::string &dimension) override;
-    TensorBuilder & add_label(Dimension dimension, const vespalib::string &label) override;
-    TensorBuilder &add_cell(double value) override;
-    Tensor::UP build() override;
+    Dimension define_dimension(const vespalib::string &dimension);
+    SparseTensorBuilder & add_label(Dimension dimension, const vespalib::string &label);
+    SparseTensorBuilder &add_cell(double value);
+    Tensor::UP build();
 };
 
 }

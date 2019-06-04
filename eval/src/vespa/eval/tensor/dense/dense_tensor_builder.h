@@ -4,7 +4,7 @@
 
 #include "dense_tensor.h"
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 
 namespace vespalib::tensor {
 
@@ -14,7 +14,7 @@ namespace vespalib::tensor {
 class DenseTensorBuilder
 {
 public:
-    using Dimension = TensorBuilder::Dimension;
+    using Dimension = SparseTensorBuilder::Dimension;
 private:
     vespalib::hash_map<vespalib::string, size_t> _dimensionsEnum;
     std::vector<eval::ValueType::Dimension> _dimensions;

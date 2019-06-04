@@ -38,7 +38,7 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/fileutil.h>

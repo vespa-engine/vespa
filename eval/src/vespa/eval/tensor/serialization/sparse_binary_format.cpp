@@ -3,7 +3,7 @@
 #include "sparse_binary_format.h"
 #include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <sstream>
@@ -92,11 +92,11 @@ SparseBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 
 
 void
-SparseBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
+SparseBinaryFormat::deserialize(nbostream &stream, SparseTensorBuilder &builder)
 {
     vespalib::string str;
     size_t dimensionsSize = stream.getInt1_4Bytes();
-    std::vector<TensorBuilder::Dimension> dimensions;
+    std::vector<SparseTensorBuilder::Dimension> dimensions;
     while (dimensions.size() < dimensionsSize) {
         stream.readSmallString(str);
         dimensions.emplace_back(builder.define_dimension(str));
