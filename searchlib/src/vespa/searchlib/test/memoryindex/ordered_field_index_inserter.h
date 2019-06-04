@@ -93,6 +93,7 @@ public:
     }
 
     virtual void flush() override { }
+    virtual void commit() override { }
     virtual void rewind() override {
         addComma();
         _ss << "f=" << _fieldId;

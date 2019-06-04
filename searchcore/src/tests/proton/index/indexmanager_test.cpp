@@ -364,7 +364,7 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     SequencedTaskExecutor invertThreads(2);
     SequencedTaskExecutor pushThreads(2);
     search::memoryindex::DocumentInverter inverter(schema, invertThreads,
-                                                   pushThreads);
+                                                   pushThreads, fic);
 
     uint64_t fixed_index_size = fic.getMemoryUsage().allocatedBytes();
     uint64_t index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
@@ -378,8 +378,7 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     Document::UP doc = f.addDocument(docid);
     inverter.invertDocument(docid, *doc);
     invertThreads.sync();
-    inverter.pushDocuments(fic,
-                           std::shared_ptr<search::IDestructorCallback>());
+    inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
     pushThreads.sync();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
@@ -398,8 +397,7 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     doc = f.addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
     invertThreads.sync();
-    inverter.pushDocuments(fic,
-                           std::shared_ptr<search::IDestructorCallback>());
+    inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
     pushThreads.sync();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.

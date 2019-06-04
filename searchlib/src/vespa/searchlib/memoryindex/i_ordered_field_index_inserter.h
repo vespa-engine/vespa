@@ -39,6 +39,11 @@ public:
      */
     virtual void flush() = 0;
 
+    /*
+     * Make current state visible to readers.
+     */
+    virtual void commit() = 0;
+
     /**
      * Rewind to prepare for another set of (word, docId) tuples.
      */

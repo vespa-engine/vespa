@@ -6,6 +6,7 @@
 #include "field_index_remover.h"
 #include "word_store.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/indexbuilder.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -91,6 +92,7 @@ private:
     uint32_t                _fieldId;
     FieldIndexRemover       _remover;
     std::unique_ptr<OrderedFieldIndexInserter> _inserter;
+    index::FieldLengthCalculator _calculator;
 
 public:
     datastore::EntryRef addWord(const vespalib::stringref word) {
@@ -113,6 +115,7 @@ public:
     const FeatureStore & getFeatureStore() const { return _featureStore; }
     const WordStore &getWordStore() const { return _wordStore; }
     OrderedFieldIndexInserter &getInserter() const { return *_inserter; }
+    index::FieldLengthCalculator &get_calculator() { return _calculator; }
 
 private:
     void freeze() {

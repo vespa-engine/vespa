@@ -59,10 +59,10 @@ MemoryIndex::MemoryIndex(const Schema &schema,
     : _schema(schema),
       _invertThreads(invertThreads),
       _pushThreads(pushThreads),
-      _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
-      _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
-      _inverter(_inverter0.get()),
       _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema)),
+      _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
+      _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
+      _inverter(_inverter0.get()),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved
       _numDocs(0),
@@ -114,7 +114,7 @@ MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
 {
     _invertThreads.sync(); // drain inverting into this inverter
     _pushThreads.sync(); // drain use of other inverter
-    _inverter->pushDocuments(*_fieldIndexes, onWriteDone);
+    _inverter->pushDocuments(onWriteDone);
     flipInverter();
 }
 

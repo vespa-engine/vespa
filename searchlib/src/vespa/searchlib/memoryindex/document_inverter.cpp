@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_inverter.h"
-#include "field_index_collection.h"
+#include "i_field_index_collection.h"
 #include "field_inverter.h"
 #include "ordered_field_index_inserter.h"
 #include "url_field_inverter.h"
@@ -38,10 +38,12 @@ using document::SpanNode;
 using index::DocIdAndPosOccFeatures;
 using index::Schema;
 using search::util::URL;
+using search::index::FieldLengthCalculator;
 
 DocumentInverter::DocumentInverter(const Schema &schema,
                                    ISequencedTaskExecutor &invertThreads,
-                                   ISequencedTaskExecutor &pushThreads)
+                                   ISequencedTaskExecutor &pushThreads,
+                                   IFieldIndexCollection &fieldIndexes)
     : _schema(schema),
       _indexedFieldPaths(),
       _dataType(nullptr),
@@ -55,7 +57,10 @@ DocumentInverter::DocumentInverter(const Schema &schema,
 
     for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
          ++fieldId) {
-        _inverters.push_back(std::make_unique<FieldInverter>(_schema, fieldId));
+        auto &remover(fieldIndexes.get_remover(fieldId));
+        auto &inserter(fieldIndexes.get_inserter(fieldId));
+        auto &calculator(fieldIndexes.get_calculator(fieldId));
+        _inverters.push_back(std::make_unique<FieldInverter>(_schema, fieldId, remover, inserter, calculator));
     }
     for (auto &urlField : _schemaIndexFields._uriFields) {
         Schema::CollectionType collectionType =
@@ -171,22 +176,15 @@ DocumentInverter::removeDocument(uint32_t docId)
 }
 
 void
-DocumentInverter::pushDocuments(FieldIndexCollection &fieldIndexes,
-                                const std::shared_ptr<IDestructorCallback> &onWriteDone)
+DocumentInverter::pushDocuments(const std::shared_ptr<IDestructorCallback> &onWriteDone)
 {
-    auto indexFieldIterator = fieldIndexes.getFieldIndexes().begin();
     uint32_t fieldId = 0;
     for (auto &inverter : _inverters) {
-        FieldIndex &fieldIndex(**indexFieldIterator);
-        FieldIndexRemover &remover(fieldIndex.getDocumentRemover());
-        OrderedFieldIndexInserter &inserter(fieldIndex.getInserter());
         _pushThreads.execute(fieldId,
-                             [inverter(inverter.get()), &remover, &inserter,
-                              &fieldIndex, onWriteDone]()
-                             { inverter->applyRemoves(remover);
-                                 inverter->pushDocuments(inserter);
-                                 fieldIndex.commit(); });
-        ++indexFieldIterator;
+                             [inverter(inverter.get()),
+                              onWriteDone]()
+                             {   inverter->applyRemoves();
+                                 inverter->pushDocuments(); });
         ++fieldId;
     }
 }

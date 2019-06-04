@@ -63,6 +63,9 @@ public:
      */
     void flush() override;
 
+
+    void commit() override;
+
     /**
      * Rewind iterator, to start new pass.
      */

@@ -39,10 +39,10 @@ private:
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
+    std::unique_ptr<FieldIndexCollection> _fieldIndexes;
     std::unique_ptr<DocumentInverter>  _inverter0;
     std::unique_ptr<DocumentInverter>  _inverter1;
     DocumentInverter                  *_inverter;
-    std::unique_ptr<FieldIndexCollection> _fieldIndexes;
     bool              _frozen;
     uint32_t          _maxDocId;
     uint32_t          _numDocs;

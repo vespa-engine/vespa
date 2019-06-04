@@ -2,6 +2,7 @@
 
 #include "field_index_collection.h"
 #include "field_inverter.h"
+#include "ordered_field_index_inserter.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
 #include <vespa/vespalib/btree/btreenode.hpp>
@@ -58,6 +59,24 @@ FieldIndexCollection::getMemoryUsage() const
         usage.merge(fieldIndex->getMemoryUsage());
     }
     return usage;
+}
+
+FieldIndexRemover &
+FieldIndexCollection::get_remover(uint32_t field_id)
+{
+    return _fieldIndexes[field_id]->getDocumentRemover();
+}
+
+IOrderedFieldIndexInserter &
+FieldIndexCollection::get_inserter(uint32_t field_id)
+{
+    return _fieldIndexes[field_id]->getInserter();
+}
+
+index::FieldLengthCalculator &
+FieldIndexCollection::get_calculator(uint32_t field_id)
+{
+    return _fieldIndexes[field_id]->get_calculator();
 }
 
 }
