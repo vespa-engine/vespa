@@ -6,7 +6,7 @@
 #include "serialization/typed_binary_format.h"
 #include "sparse/sparse_tensor_builder.h"
 #include "dense/dense_tensor.h"
-#include "dense/dense_tensor_builder.h"
+#include "dense/direct_dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
 #include "dense/dense_xw_product_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
@@ -21,6 +21,7 @@
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -36,11 +37,15 @@ using eval::TensorFunction;
 using eval::TensorSpec;
 using eval::Value;
 using eval::ValueType;
+using vespalib::IllegalArgumentException;
+using vespalib::make_string;
 
 using map_fun_t = eval::TensorEngine::map_fun_t;
 using join_fun_t = eval::TensorEngine::join_fun_t;
 
 namespace {
+
+constexpr size_t UNDEFINED_IDX = std::numeric_limits<size_t>::max();
 
 const eval::TensorEngine &simple_engine() { return eval::SimpleTensorEngine::ref(); }
 const eval::TensorEngine &default_engine() { return DefaultTensorEngine::ref(); }
@@ -103,6 +108,27 @@ const Value &fallback_reduce(const Value &a, eval::Aggr aggr, const std::vector<
     return to_default(simple_engine().reduce(to_simple(a, stash), aggr, dimensions, stash), stash);
 }
 
+size_t calculate_cell_index(const ValueType &type, const TensorSpec::Address &address) {
+    if (type.dimensions().size() != address.size()) {
+        return UNDEFINED_IDX;
+    }
+    size_t d = 0;
+    size_t idx = 0;
+    for (const auto &binding: address) {
+        const auto &dim = type.dimensions()[d++];
+        if ((dim.name != binding.first) || (binding.second.index >= dim.size)) {
+            return UNDEFINED_IDX;
+        }
+        idx *= dim.size;
+        idx += binding.second.index;
+    }
+    return idx;
+}
+
+void bad_spec(const TensorSpec &spec) {
+    throw IllegalArgumentException(make_string("malformed tensor spec: %s", spec.to_string().c_str()));
+}
+
 } // namespace vespalib::tensor::<unnamed>
 
 const DefaultTensorEngine DefaultTensorEngine::_engine;
@@ -128,17 +154,14 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
     if (!tensor::Tensor::supported({type})) {
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
     } else if (type.is_dense()) {
-        DenseTensorBuilder builder;
-        std::map<vespalib::string,DenseTensorBuilder::Dimension> dimension_map;
-        for (const auto &dimension: type.dimensions()) {
-            dimension_map[dimension.name] = builder.defineDimension(dimension.name, dimension.size);
-        }
+        DirectDenseTensorBuilder builder(type);
         for (const auto &cell: spec.cells()) {
             const auto &address = cell.first;
-            for (const auto &binding: address) {
-                builder.addLabel(dimension_map[binding.first], binding.second.index);
+            size_t cell_idx = calculate_cell_index(type, address);
+            if (cell_idx == UNDEFINED_IDX) {
+                bad_spec(spec);
             }
-            builder.addCell(cell.second);
+            builder.insertCell(cell_idx, cell.second);
         }
         return builder.build();
     } else if (type.is_sparse()) {
