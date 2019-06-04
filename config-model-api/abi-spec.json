@@ -493,7 +493,8 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void <init>(com.yahoo.config.application.api.DeployLogger)",
+      "public void <init>(com.yahoo.config.application.api.ValidationOverrides, com.yahoo.config.application.api.DeployLogger)",
+      "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
       "public java.lang.String xmlForm()",
       "public java.lang.String toString()"
@@ -520,7 +521,7 @@
     ],
     "methods": [
       "public void <init>(java.util.List)",
-      "public final void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
+      "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public final boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
       "public java.lang.String xmlForm()",
