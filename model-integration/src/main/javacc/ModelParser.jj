@@ -142,8 +142,9 @@ void model() :
     (<NL>)*
     <EOF>
     {
-        if ( ! name.equals(model.name()))
-            throw new IllegalArgumentException("Model '" + name + "' must be saved in a file named '" + name + ".model'");
+        if ( ! model.name().endsWith(name))
+            throw new IllegalArgumentException("Unexpected model name '" + model.name() +
+                                               "': Model '" + name + "' must be saved in a file named '" + name + ".model'");
     }
 }
 
