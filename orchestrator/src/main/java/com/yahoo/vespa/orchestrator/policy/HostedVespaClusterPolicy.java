@@ -80,6 +80,11 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return ConcurrentSuspensionLimitForCluster.ALL_NODES;
         }
 
+        if (clusterApi.getApplication().applicationId().equals(VespaModelUtil.TENANT_HOST_APPLICATION_ID)) {
+            return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+        }
+
+        // TODO: Remove after removing tenant hosts from zone-app
         if (clusterApi.getApplication().applicationId().equals(VespaModelUtil.ZONE_APPLICATION_ID) &&
                 clusterApi.clusterId().equals(VespaModelUtil.NODE_ADMIN_CLUSTER_ID)) {
             return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;

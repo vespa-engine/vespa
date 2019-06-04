@@ -122,18 +122,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_LB_STATUS_FILE = defineFeatureFlag(
-            "use-lb-status-file", false,
-            "Serve status.html from the new path",
-            "Takes effect on restart of Docker container",
-            APPLICATION_ID, HOSTNAME);
-
-    public static final UnboundBooleanFlag USE_NEW_LOGROTATE_CONFIGURATION = defineFeatureFlag(
-            "use-new-logrotate-configuration", false,
-            "Set up logrotate configuration without using any proprietary software",
-            "Takes effect on restart of Docker container",
-            APPLICATION_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
             "use-https-load-balancer-upstream", false,
             "Use https between load balancer and upstream containers",
@@ -156,6 +144,11 @@ public class Flags {
             "configserver-rpc-authorizer", "log-only",
             "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
             "Takes effect on restart of configserver");
+
+    public static final UnboundBooleanFlag ENABLE_TENANT_HOST_APP = defineFeatureFlag(
+            "enable-tenant-host-app", false,
+            "Enable tenant host infrastructure application",
+            "Takes effect immediately");
 
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

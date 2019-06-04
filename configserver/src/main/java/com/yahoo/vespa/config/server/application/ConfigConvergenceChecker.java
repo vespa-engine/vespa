@@ -75,6 +75,8 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
+
+                                        // TODO: Remove after removing tenant hosts from zone-app
                                         .filter(service -> ! isHostAdminService(application.getId(), service))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 

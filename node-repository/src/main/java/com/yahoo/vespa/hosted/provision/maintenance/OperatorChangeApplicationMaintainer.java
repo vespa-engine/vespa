@@ -61,6 +61,7 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
     private Optional<ApplicationId> owner(Node node) {
         if (node.allocation().isPresent()) return node.allocation().map(Allocation::owner);
 
+        // TODO: Remove after removing tenant hosts from zone-app
         return node.type() == NodeType.host ? Optional.of(ZONE_APPLICATION_ID) : Optional.empty();
     }
 

@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -605,7 +606,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
-                .filter(tenantName -> !tenantName.equals(TenantRepository.HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
+                .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
                 .filter(tenantName -> tenantRepository.getTenant(tenantName).getCreatedTime().isBefore(now.minus(ttlForUnusedTenant)))
                 .peek(tenantRepository::deleteTenant)
                 .collect(Collectors.toSet());
@@ -777,7 +778,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
         if (     environment.isManuallyDeployed()
             &&   sessionVersion.getMajor() == Vtag.currentVersion.getMajor()
-            && ! "hosted-vespa".equals(application.tenant().value()) // Never change version of system applications
+            && ! HOSTED_VESPA_TENANT.equals(application.tenant()) // Never change version of system applications
             && ! application.instance().isTester() // Never upgrade tester containers
             && ! bootstrap) { // Do not use current version when bootstrapping config server
             return Vtag.currentVersion;
