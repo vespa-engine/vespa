@@ -20,9 +20,14 @@ public final class DimensionSizes {
     /**
      * Returns the length of this in the nth dimension
      *
-     * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
+     * @throws IllegalArgumentException if the index is larger than the number of dimensions in this tensor minus one
      */
-    public long size(int dimensionIndex) { return sizes[dimensionIndex]; }
+    public long size(int dimensionIndex) {
+        if (dimensionIndex <0 || dimensionIndex >= sizes.length)
+            throw new IllegalArgumentException("Illegal dimension index " + dimensionIndex +
+                                               ": This has " + sizes.length + " dimensions");
+        return sizes[dimensionIndex];
+    }
 
     /** Returns the number of dimensions this provides the size of */
     public int dimensions() { return sizes.length; }
@@ -65,9 +70,14 @@ public final class DimensionSizes {
         /**
          * Returns the length of this in the nth dimension
          *
-         * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
+         * @throws IllegalArgumentException if the index is larger than the number of dimensions in this tensor minus one
          */
-        public long size(int dimensionIndex) { return sizes[dimensionIndex]; }
+        public long size(int dimensionIndex) {
+            if (dimensionIndex <0 || dimensionIndex >= sizes.length)
+                throw new IllegalArgumentException("Illegal dimension index " + dimensionIndex +
+                                                   ": This has " + sizes.length + " dimensions");
+            return sizes[dimensionIndex];
+        }
 
         /** Returns the number of dimensions this provides the size of */
         public int dimensions() { return sizes.length; }

@@ -64,7 +64,7 @@ public class JsonFormatTestCase {
             fail("Excpected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("cell address (2) is not within bounds of tensor(x[2])", e.getMessage());
+            assertEquals("cell address (2) is not within the bounds of tensor(x[2])", e.getMessage());
         }
     }
 
