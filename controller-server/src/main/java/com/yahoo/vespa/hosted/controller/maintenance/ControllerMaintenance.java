@@ -46,7 +46,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
-    private final DnsMaintainer dnsMaintainer;
     private final SystemUpgrader systemUpgrader;
     private final List<OsUpgrader> osUpgraders;
     private final OsVersionStatusUpdater osVersionStatusUpdater;
@@ -78,7 +77,6 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
-        dnsMaintainer = new DnsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofMinutes(2), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
@@ -107,7 +105,6 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterInfoMaintainer.deconstruct();
         deploymentMetricsMaintainer.deconstruct();
         applicationOwnershipConfirmer.deconstruct();
-        dnsMaintainer.deconstruct();
         systemUpgrader.deconstruct();
         osUpgraders.forEach(Maintainer::deconstruct);
         osVersionStatusUpdater.deconstruct();

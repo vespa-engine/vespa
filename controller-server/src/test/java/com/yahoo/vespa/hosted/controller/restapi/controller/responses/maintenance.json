@@ -28,9 +28,6 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
-      "name": "DnsMaintainer"
-    },
-    {
       "name": "JobRunner"
     },
     {
