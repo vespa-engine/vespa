@@ -125,7 +125,6 @@ class GraphImporter {
 
         IntermediateOperation op = new NoOp(modelName, node.getName(), inputs);
         op.warning("Operation '" + node.getOp() + "' is currently not implemented");
-        System.out.println(node.getName() + ": operation '" + node.getOp() + "' is currently not implemented");
         return op;
     }
 
