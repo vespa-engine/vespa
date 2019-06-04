@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -21,20 +20,8 @@ public class DockerHostCapacity {
 
     private final LockedNodeList allNodes;
 
-    public DockerHostCapacity(LockedNodeList allNodes) {
+    DockerHostCapacity(LockedNodeList allNodes) {
         this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
-    }
-
-    /**
-     * Compare hosts on free capacity.
-     * Used in prioritizing hosts for allocation in <b>descending</b> order.
-     */
-    int compare(Node hostA, Node hostB) {
-        int result = compare(freeCapacityOf(hostB, false), freeCapacityOf(hostA, false));
-        if (result != 0) return result;
-
-        // If resources are equal we want to assign to the one with the most IPaddresses free
-        return freeIPs(hostB) - freeIPs(hostA);
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
@@ -62,57 +49,6 @@ public class DockerHostCapacity {
      */
     int freeIPs(Node dockerHost) {
         return dockerHost.ipAddressPool().findUnused(allNodes).size();
-    }
-
-    /** Return total free capacity for a given disk speed (or for any disk speed) */
-    public NodeResources getFreeCapacityTotal(NodeResources.DiskSpeed speed) {
-        return allNodes.asList().stream()
-                       .filter(n -> n.type().equals(NodeType.host))
-                       .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
-                       .map(n -> freeCapacityOf(n, false))
-                       .map(resources -> resources.withDiskSpeed(speed)) // Set speed to 'any' if necessary
-                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add);
-    }
-
-    /** Return total capacity for a given disk speed (or for any disk speed) */
-    public NodeResources getCapacityTotal(NodeResources.DiskSpeed speed) {
-        return allNodes.asList().stream()
-                       .filter(n -> n.type().equals(NodeType.host))
-                       .filter(n -> speed == NodeResources.DiskSpeed.any || n.flavor().resources().diskSpeed() == speed)
-                       .map(host -> host.flavor().resources())
-                       .map(resources -> resources.withDiskSpeed(speed)) // Set speed to 'any' if necessary
-                       .reduce(new NodeResources(0, 0, 0, speed), NodeResources::add);
-    }
-
-    public int freeCapacityInFlavorEquivalence(Flavor flavor) {
-        return allNodes.asList().stream()
-                       .filter(n -> n.type().equals(NodeType.host))
-                       .map(n -> canFitNumberOf(n, flavor))
-                       .reduce(0, (a, b) -> a + b);
-    }
-
-    public long getNofHostsAvailableFor(Flavor flavor) {
-        return allNodes.asList().stream()
-                       .filter(n -> n.type().equals(NodeType.host))
-                       .filter(n -> hasCapacity(n, flavor.resources()))
-                       .count();
-    }
-
-    private int canFitNumberOf(Node node, Flavor flavor) {
-        NodeResources freeCapacity = freeCapacityOf(node, false);
-        int capacityFactor = freeCapacityInFlavorEquivalence(freeCapacity, flavor);
-        int ips = freeIPs(node);
-        return Math.min(capacityFactor, ips);
-    }
-
-    int freeCapacityInFlavorEquivalence(NodeResources freeCapacity, Flavor flavor) {
-        if ( ! freeCapacity.satisfies(flavor.resources())) return 0;
-
-        double cpuFactor = Math.floor(freeCapacity.vcpu() / flavor.getMinCpuCores());
-        double memoryFactor = Math.floor(freeCapacity.memoryGb() / flavor.getMinMainMemoryAvailableGb());
-        double diskFactor =  Math.floor(freeCapacity.diskGb() / flavor.getMinDiskAvailableGb());
-
-        return (int) Math.min(Math.min(memoryFactor, cpuFactor), diskFactor);
     }
 
     /**
