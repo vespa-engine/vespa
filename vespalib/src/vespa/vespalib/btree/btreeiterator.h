@@ -302,8 +302,7 @@ protected:
      *
      * @param pathSize     New tree height (number of levels of internal nodes)
      */
-    void
-    clearPath(uint32_t pathSize);
+    VESPA_DLL_LOCAL void clearPath(uint32_t pathSize);
 public:
 
     bool
@@ -396,8 +395,7 @@ public:
     /**
      * Setup iterator to be empty and not be associated with any tree.
      */
-    void
-    setupEmpty();
+    VESPA_DLL_LOCAL void setupEmpty();
 
     /**
      * Move iterator to beyond last element in the current tree.
