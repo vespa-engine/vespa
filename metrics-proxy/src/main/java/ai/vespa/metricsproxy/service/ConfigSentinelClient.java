@@ -97,7 +97,7 @@ public class ConfigSentinelClient {
         client.disconnect();
     }
 
-    protected static VespaService parseServiceString(String line, List<VespaService> services) {
+    static VespaService parseServiceString(String line, List<VespaService> services) {
         String[] parts = line.split(" ");
         if (parts.length < 3)
             return null;
