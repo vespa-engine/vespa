@@ -21,7 +21,6 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,12 +121,8 @@ public class MetricsReporter extends Maintainer {
 
         metric.set("wantToRetire", node.status().wantToRetire() ? 1 : 0, context);
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
-        metric.set("hardwareFailure",
-                node.status().hardwareFailureDescription().isPresent() ? 1 : 0,
-                context);
-        metric.set("hardwareDivergence",
-                node.status().hardwareDivergence().isPresent() ? 1 : 0,
-                context);
+        metric.set("hardwareFailure", node.status().hardwareFailureDescription().isPresent() ? 1 : 0, context);
+        metric.set("hardwareDivergence", node.status().hardwareDivergence().isPresent() ? 1 : 0, context);
 
         orchestrator.apply(new HostName(node.hostname()))
                     .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN ? 1 : 0)
@@ -183,34 +178,25 @@ public class MetricsReporter extends Maintainer {
     }
 
     private Metric.Context getContextAt(String... point) {
-        if (point.length % 2 != 0) {
+        if (point.length % 2 != 0)
             throw new IllegalArgumentException("Dimension specification comes in pairs");
-        }
 
         Map<String, String> dimensions = new HashMap<>();
         for (int i = 0; i < point.length; i += 2) {
             dimensions.put(point[i], point[i + 1]);
         }
 
-        Metric.Context context = contextMap.get(dimensions);
-        if (context != null) {
-            return context;
-        }
-
-        context = metric.createContext(dimensions);
-        contextMap.put(dimensions, context);
-        return context;
+        return contextMap.computeIfAbsent(dimensions, metric::createContext);
     }
 
     private void updateStateMetrics(LockedNodeList nodes) {
-        Map<Node.State, List<Node>> nodesByState = nodes.asList().stream()
+        Map<Node.State, List<Node>> nodesByState = nodes.nodeType(NodeType.tenant).asList().stream()
                 .collect(Collectors.groupingBy(Node::state));
 
         // Metrics pr state
         for (Node.State state : Node.State.values()) {
-            List<Node> nodesInState = nodesByState.getOrDefault(state, new ArrayList<>());
-            long size = nodesInState.stream().filter(node -> node.type() == NodeType.tenant).count();
-            metric.set("hostedVespa." + state.name() + "Hosts", size, null);
+            List<Node> nodesInState = nodesByState.getOrDefault(state, List.of());
+            metric.set("hostedVespa." + state.name() + "Hosts", nodesInState.size(), null);
         }
     }
 
