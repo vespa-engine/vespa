@@ -112,7 +112,7 @@ public abstract class IndexedTensor implements Tensor {
     public double get(TensorAddress address) {
         // optimize for fast lookup within bounds:
         try {
-            return get((int)toValueIndex(address, dimensionSizes));
+            return get((int)toValueIndex(address, dimensionSizes, type));
         }
         catch (IndexOutOfBoundsException e) {
             return Double.NaN;
@@ -151,14 +151,13 @@ public abstract class IndexedTensor implements Tensor {
         return valueIndex;
     }
 
-    static long toValueIndex(TensorAddress address, DimensionSizes sizes) {
+    static long toValueIndex(TensorAddress address, DimensionSizes sizes, TensorType type) {
         if (address.isEmpty()) return 0;
 
         long valueIndex = 0;
         for (int i = 0; i < address.size(); i++) {
-            if (address.numericLabel(i) >= sizes.size(i)) {
-                throw new IndexOutOfBoundsException();
-            }
+            if (address.numericLabel(i) >= sizes.size(i))
+                throw new IllegalArgumentException(address + " is not within bounds of " + type);
             valueIndex += productOfDimensionsAfter(i, sizes) * address.numericLabel(i);
         }
         return valueIndex;

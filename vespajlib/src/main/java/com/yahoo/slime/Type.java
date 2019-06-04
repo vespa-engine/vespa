@@ -5,6 +5,7 @@ package com.yahoo.slime;
  * Enumeration of all possibly Slime data types.
  **/
 public enum Type {
+
     NIX(0),
     BOOL(1),
     LONG(2),
@@ -15,8 +16,9 @@ public enum Type {
     OBJECT(7);
 
     public final byte ID;
-    private Type(int id) { this.ID = (byte)id; }
+    Type(int id) { this.ID = (byte)id; }
 
     private static final Type[] types = values();
     static Type asType(int id) { return types[id]; }
+
 }

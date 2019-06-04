@@ -78,7 +78,7 @@ class IndexedFloatTensor extends IndexedTensor {
 
         @Override
         public Builder cell(TensorAddress address, float value) {
-            values[(int)toValueIndex(address, sizes())] = value;
+            values[(int)toValueIndex(address, sizes(), type)] = value;
             return this;
         }
 
