@@ -13,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -143,7 +142,7 @@ public class SystemUpgraderTest {
         SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         // Bootstrap system
-        tester.configServer().bootstrap(Collections.singletonList(zone1), SystemApplication.configServer,
+        tester.configServer().bootstrap(List.of(zone1), SystemApplication.configServer,
                                         SystemApplication.proxy);
         Version version1 = Version.fromString("6.5");
         tester.upgradeSystem(version1);
@@ -275,6 +274,21 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         assertWantedVersion(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost,
                                     SystemApplication.configServer, SystemApplication.proxy), version1, zone2);
+    }
+
+    @Test
+    public void does_not_deploy_proxy_app_in_zones_without_proxy() {
+        List<SystemApplication> applications = List.of(
+                SystemApplication.configServerHost, SystemApplication.configServer, SystemApplication.tenantHost);
+        tester.configServer().bootstrap(List.of(zone1), applications);
+        tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
+
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
+
+        Version version1 = Version.fromString("6.5");
+        tester.upgradeSystem(version1);
+        systemUpgrader.maintain();
+        assertCurrentVersion(applications, version1, zone1);
     }
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */

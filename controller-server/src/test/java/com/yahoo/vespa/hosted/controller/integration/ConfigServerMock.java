@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
@@ -21,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -54,6 +54,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
+    private final Set<ApplicationId> disallowConvergenceCheckApplications = new HashSet<>();
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
@@ -190,7 +191,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment, Optional<Version> version) {
+        if (disallowConvergenceCheckApplications.contains(deployment.applicationId()))
+            throw new IllegalStateException(deployment.applicationId() + " should not ask for service convergence");
+
         return Optional.ofNullable(serviceStatus.get(deployment));
+    }
+
+    public void disallowConvergenceCheck(ApplicationId applicationId) {
+        disallowConvergenceCheckApplications.add(applicationId);
     }
 
     @Override
