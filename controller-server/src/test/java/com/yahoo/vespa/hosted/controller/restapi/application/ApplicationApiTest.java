@@ -16,6 +16,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -1308,14 +1309,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .data(asJson(job.type(JobType.systemTest).report()))
                 .userIdentity(HOSTED_VESPA_OPERATOR)
                 .get();
-        tester.assertResponse(request, new File("jobreport-unexpected-system-test-completion.json"), 400);
+        tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Notified of completion " +
+                                       "of system-test for tenant1.application1, but that has not been triggered; last was " +
+                                       controllerTester.controller().applications().require(app.id()).deploymentJobs().jobStatus().get(JobType.systemTest).lastTriggered().get().at() + "\"}", 400);
 
         // Notifying about unknown job fails
         request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                 .data(asJson(job.type(JobType.productionUsEast3).report()))
                 .userIdentity(HOSTED_VESPA_OPERATOR)
                 .get();
-        tester.assertResponse(request, new File("jobreport-unexpected-completion.json"), 400);
+        tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Notified of completion " +
+                                       "of production-us-east-3 for tenant1.application1, but that has not been triggered; last was never\"}",
+                              400);
 
         // ... and assert it was recorded
         JobStatus recordedStatus =
