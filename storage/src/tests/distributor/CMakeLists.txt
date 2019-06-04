@@ -43,20 +43,27 @@ vespa_add_library(storage_testdistributor TEST
     storage_testhostreporter
 )
 
-vespa_add_library(storage_gtestdistributor TEST
+vespa_add_executable(storage_distributor_gtest_runner_app TEST
     SOURCES
     btree_bucket_database_test.cpp
     bucketdatabasetest.cpp
     bucketdbupdatertest.cpp
     mapbucketdatabasetest.cpp
     putoperationtest.cpp
+    # TODO: Depend on storage_testdistributor when all tests have been migrated
     # Fixture etc. dupes with non-gtest runner :
     distributortestutil.cpp
     bucket_db_prune_elision_test.cpp
     messagesenderstub.cpp
+    gtest_runner.cpp
     DEPENDS
     storage_distributor
     storage_testcommon
     storage_testhostreporter
     gtest
+)
+
+vespa_add_test(
+    NAME storage_distributor_gtest_runner_app
+    COMMAND storage_distributor_gtest_runner_app
 )

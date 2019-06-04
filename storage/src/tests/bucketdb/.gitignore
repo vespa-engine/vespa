@@ -10,3 +10,4 @@
 .libs
 Makefile
 testrunner
+storage_bucketdb_gtest_runner_app
