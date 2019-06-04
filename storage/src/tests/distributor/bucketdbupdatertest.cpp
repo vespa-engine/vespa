@@ -544,6 +544,10 @@ public:
     }
 
     uint32_t populate_bucket_db_via_request_bucket_info_for_benchmarking();
+
+    void complete_recovery_mode() {
+        _distributor->scanAllBuckets();
+    }
 };
 
 BucketDBUpdaterTest::BucketDBUpdaterTest()
@@ -1900,8 +1904,8 @@ TEST_F(BucketDBUpdaterTest, testClusterStateAlwaysSendsFullFetchWhenDistribution
 TEST_F(BucketDBUpdaterTest, testChangedDistributionConfigTriggersRecoveryMode) {
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:6 storage:6"), messageCount(6), 20));
     _sender.clear();
-    // First cluster state; implicit scan of all buckets which does not
-    // use normal recovery mode ticking-path.
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    complete_recovery_mode();
     EXPECT_FALSE(_distributor->isInRecoveryMode());
 
     std::string distConfig(getDistConfig6Nodes4Groups());
@@ -1920,6 +1924,8 @@ TEST_F(BucketDBUpdaterTest, testChangedDistributionConfigTriggersRecoveryMode) {
     // Pending cluster state (i.e. distribution) has been enabled, which should
     // cause recovery mode to be entered.
     EXPECT_TRUE(_distributor->isInRecoveryMode());
+    complete_recovery_mode();
+    EXPECT_FALSE(_distributor->isInRecoveryMode());
 }
 
 namespace {
