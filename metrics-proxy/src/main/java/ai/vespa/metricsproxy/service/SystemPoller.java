@@ -66,7 +66,7 @@ public class SystemPoller {
         try {
             br = new BufferedReader(new FileReader("/proc/" + pid + "/smaps"));
         } catch (FileNotFoundException ex) {
-            markDead(service);
+            service.setAlive(false);
             return size;
         }
         String line;
@@ -88,15 +88,6 @@ public class SystemPoller {
         }
 
         return size;
-    }
-
-    /**
-     * Mark a service as dead.
-     *
-     * @param service The service to mark as dead.
-     */
-    private static void markDead(VespaService service) {
-        service.setAlive(false);
     }
 
     /**

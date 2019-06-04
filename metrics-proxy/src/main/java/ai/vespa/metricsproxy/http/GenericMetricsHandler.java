@@ -6,14 +6,12 @@ package ai.vespa.metricsproxy.http;
 
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
-import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
+import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,6 +19,8 @@ import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executor;
+
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 
 /**
  * Handler exposing the generic metrics format via http.
@@ -43,9 +43,9 @@ public class GenericMetricsHandler extends ThreadedHttpRequestHandler {
     public HttpResponse handle(HttpRequest request) {
         try {
             List<MetricsPacket> metrics = metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());
-            return new Response(200, GenericJsonUtil.toGenericJsonModel(metrics).serialize());
-        } catch (GenericJsonModel.JsonMetricsRenderingException e) {
-            return new ErrorResponse(500, Exceptions.toMessageString(e));
+            return new Response(200, toGenericJsonModel(metrics).serialize());
+        } catch (JsonRenderingException e) {
+            return new Response(500, e.getMessageAsJson());
         }
     }
 
@@ -65,12 +65,6 @@ public class GenericMetricsHandler extends ThreadedHttpRequestHandler {
         @Override
         public void render(OutputStream outputStream) throws IOException {
             outputStream.write(data);
-        }
-    }
-
-    private static class ErrorResponse extends Response {
-        ErrorResponse(int code, String data) {
-            super(code, "{\"error\":\"" + data + "\"}");
         }
     }
 
