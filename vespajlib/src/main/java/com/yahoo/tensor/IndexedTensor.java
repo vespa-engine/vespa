@@ -114,7 +114,7 @@ public abstract class IndexedTensor implements Tensor {
         try {
             return get((int)toValueIndex(address, dimensionSizes, type));
         }
-        catch (IndexOutOfBoundsException e) {
+        catch (IllegalArgumentException e) {
             return Double.NaN;
         }
     }
