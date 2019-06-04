@@ -12,7 +12,7 @@ class FieldIndexRemover;
 class IOrderedFieldIndexInserter;
 
 /**
- * Interface class for a field index collection which can be used ot
+ * Interface class for a field index collection which can be used to
  * get the parts needed for wiring in field inverters.
  */
 class IFieldIndexCollection {
