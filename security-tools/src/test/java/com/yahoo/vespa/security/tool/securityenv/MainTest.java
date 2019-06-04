@@ -41,10 +41,11 @@ public class MainTest {
     }
 
     @Test
-    public void prints_no_output_when_no_security_config() {
+    public void unsets_all_variables_when_no_security_config() throws IOException {
         int exitCode = runMain(List.of(), Map.of());
         assertThat(exitCode).isEqualTo(0);
         assertThat(stdErr()).isEmpty();
+        assertThat(stdOut()).isEqualTo(readTestResource("no-security-output.txt"));
     }
 
     @Test

@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Definition of some unix shell variants and how to export environments variable for those supported.
@@ -15,26 +16,42 @@ import java.util.Map;
 enum UnixShell {
     BOURNE("bourne", List.of("bash", "sh")) {
         @Override
-        void writeOutputVariables(PrintStream out, Map<String, String> outputVariables) {
-            outputVariables.forEach((name, value) -> {
-                out.print(name);
+        void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables) {
+            variables.forEach((variable, value) -> {
+                out.print(variable.variableName());
                 out.print("=\"");
                 out.print(value); // note: value is assumed to need no escaping
                 out.print("\"; export ");
-                out.print(name);
+                out.print(variable.variableName());
+                out.println(';');
+            });
+        }
+        @Override
+        void unsetVariables(PrintStream out, Set<OutputVariable> variables) {
+            variables.forEach(variable -> {
+                out.print("unset ");
+                out.print(variable.variableName());
                 out.println(';');
             });
         }
     },
     CSHELL("cshell", List.of("csh", "fish")) {
         @Override
-        void writeOutputVariables(PrintStream out, Map<String, String> outputVariables) {
-            outputVariables.forEach((name, value) -> {
+        void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables) {
+            variables.forEach((variable, value) -> {
                 out.print("setenv ");
-                out.print(name);
+                out.print(variable.variableName());
                 out.print(" \"");
                 out.print(value); // note: value is assumed to need no escaping
                 out.println("\";");
+            });
+        }
+        @Override
+        void unsetVariables(PrintStream out, Set<OutputVariable> variables) {
+            variables.forEach(variable -> {
+                out.print("unsetenv ");
+                out.print(variable.variableName());
+                out.println(';');
             });
         }
     };
@@ -49,7 +66,8 @@ enum UnixShell {
         this.knownShellBinaries = knownShellBinaries;
     }
 
-    abstract void writeOutputVariables(PrintStream out, Map<String, String> outputVariables);
+    abstract void writeOutputVariables(PrintStream out, Map<OutputVariable, String> variables);
+    abstract void unsetVariables(PrintStream out, Set<OutputVariable> variables);
 
     String configName() {
         return configName;

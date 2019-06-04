@@ -5,6 +5,7 @@ content of VESPA_TLS_CONFIG_FILE.
  -s,--shell <arg>   Shell type. Shell type is auto-detected if option not
                     present. Valid values: ['bourne', 'cshell'].
 The output may include the following variables:
+ - 'VESPA_TLS_ENABLED': Set to '1' if TLS is enabled in Vespa
  - 'VESPA_TLS_CA_CERT': Path to CA certificates file
  - 'VESPA_TLS_CERT': Path to certificate file
  - 'VESPA_TLS_PRIVATE_KEY': Path to private key file
