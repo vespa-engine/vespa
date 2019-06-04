@@ -10,3 +10,4 @@
 Makefile
 testrunner
 testrunner.core
+storage_visiting_gtest_runner_app

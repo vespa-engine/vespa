@@ -11,3 +11,16 @@ vespa_add_library(storage_testcommon TEST
     DEPENDS
     storage
 )
+
+vespa_add_executable(storage_common_gtest_runner_app TEST
+    SOURCES
+    gtest_runner.cpp
+    DEPENDS
+    storage
+    gtest
+)
+
+vespa_add_test(
+    NAME storage_common_gtest_runner_app
+    COMMAND storage_common_gtest_runner_app
+)

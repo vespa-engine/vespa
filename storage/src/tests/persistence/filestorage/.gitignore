@@ -11,3 +11,4 @@ Makefile
 persistence
 testrunner
 testrunner.core
+storage_filestorage_gtest_runner_app

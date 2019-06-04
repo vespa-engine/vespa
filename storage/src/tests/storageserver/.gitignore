@@ -11,3 +11,4 @@ Makefile
 filestorage
 testrunner
 testrunner.core
+storage_storageserver_gtest_runner_app

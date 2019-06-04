@@ -7,3 +7,16 @@ vespa_add_library(storage_testhostreporter TEST
     DEPENDS
     storage
 )
+
+vespa_add_executable(storage_hostreporter_gtest_runner_app TEST
+    SOURCES
+    gtest_runner.cpp
+    DEPENDS
+    storage
+    gtest
+)
+
+vespa_add_test(
+    NAME storage_hostreporter_gtest_runner_app
+    COMMAND storage_hostreporter_gtest_runner_app
+)

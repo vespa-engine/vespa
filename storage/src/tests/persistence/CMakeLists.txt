@@ -16,3 +16,18 @@ vespa_add_library(storage_testpersistence TEST
     storage_testdistributor
     storage_testpersistence_common
 )
+
+vespa_add_executable(storage_persistence_gtest_runner_app TEST
+    SOURCES
+    gtest_runner.cpp
+    DEPENDS
+    storage
+    storage_testdistributor
+    storage_testpersistence_common
+    gtest
+)
+
+vespa_add_test(
+    NAME storage_persistence_gtest_runner_app
+    COMMAND storage_persistence_gtest_runner_app
+)
