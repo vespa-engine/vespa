@@ -163,27 +163,6 @@ public class MetricsReporterTest {
         assertEquals(6.0, metric.values.get("hostedVespa.docker.freeCapacityDisk"));
         assertEquals(3.0, metric.values.get("hostedVespa.docker.freeCapacityMem"));
         assertEquals(4.0, metric.values.get("hostedVespa.docker.freeCapacityCpu"));
-
-        assertContext(metric, "hostedVespa.docker.freeCapacityFlavor", 1, 0);
-        assertContext(metric, "hostedVespa.docker.hostsAvailableFlavor", 1l, 0l);
-    }
-
-    private void assertContext(TestMetric metric, String key, Number dockerValue, Number docker2Value) {
-        List<Metric.Context> freeCapacityFlavor = metric.context.get(key);
-        assertEquals(freeCapacityFlavor.size(), 2);
-
-        // Get the value for the two flavors
-        TestMetric.TestContext contextFlavorDocker = (TestMetric.TestContext)freeCapacityFlavor.get(0);
-        TestMetric.TestContext contextFlavorDocker2 = (TestMetric.TestContext)freeCapacityFlavor.get(1);
-        if (!contextFlavorDocker.properties.containsValue("docker")) {
-            TestMetric.TestContext temp = contextFlavorDocker;
-            contextFlavorDocker = contextFlavorDocker2;
-            contextFlavorDocker2 = temp;
-        }
-
-        assertEquals(dockerValue, contextFlavorDocker.value);
-        assertEquals(docker2Value, contextFlavorDocker2.value);
-
     }
 
     private ApplicationId app(String tenant) {
