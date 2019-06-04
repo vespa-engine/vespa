@@ -13,7 +13,8 @@ import java.util.logging.Logger;
 import static java.util.logging.Level.WARNING;
 
 /**
- * An exception whose message is always valid json or, if all fails, a plain text string.
+ * An exception to be thrown upon errors in json rendering, and that can deliver its message wrapped
+ * in an "error" json object.
  *
  * @author gjoranv
  */
@@ -25,6 +26,10 @@ public class JsonRenderingException extends RuntimeException {
         super(message);
     }
 
+    /**
+     * Returns the message wrapped in an "error" json object. In the unlikely case that json rendering of the
+     * error message fails, a plain text string will be returned instead.
+     */
     public String getMessageAsJson() {
         return wrap(getMessage());
     }
