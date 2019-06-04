@@ -150,7 +150,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private boolean shouldHaveSlobrok(ContainerModel containerModel) {
         // Avoid Slobroks on node-admin container cluster, as node-admin is migrating
-        // TODO: Remove this hack once node-admin has migrated out the zone app
+        // TODO: Remove after removing tenant hosts from zone-app
 
         ApplicationId applicationId = context.getDeployState().getProperties().applicationId();
         if (!applicationId.equals(ZONE_APPLICATION_ID)) {

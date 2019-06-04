@@ -35,6 +35,7 @@ public class VespaModelUtil {
     public static final ApplicationId TENANT_HOST_APPLICATION_ID =
             ApplicationId.from("hosted-vespa", "tenant-host", "default");
 
+    // TODO: Remove after removing tenant hosts from zone-app
     public static final ApplicationId ZONE_APPLICATION_ID =
             ApplicationId.from("hosted-vespa", "routing", "default");
     public static final ClusterId ADMIN_CLUSTER_ID = new ClusterId("admin");
