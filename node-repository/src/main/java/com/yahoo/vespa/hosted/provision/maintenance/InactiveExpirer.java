@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -50,7 +51,8 @@ public class InactiveExpirer extends Expirer {
     @Override
     protected boolean isExpired(Node node) {
         return    super.isExpired(node)
-               || node.allocation().get().owner().instance().isTester();
+               || node.allocation().get().owner().instance().isTester()
+               || node.type() == NodeType.host; // TODO: Remove after removing tenant hosts from zone-app
     }
 
 }
