@@ -21,7 +21,7 @@ import java.util.Optional;
 public enum SystemApplication {
 
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
-    configServer(ApplicationId.from("hosted-vespa", "proxy-config-servers", "default"), NodeType.config),
+    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
     proxy(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy, proxyHost, configServer),
     tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host);
