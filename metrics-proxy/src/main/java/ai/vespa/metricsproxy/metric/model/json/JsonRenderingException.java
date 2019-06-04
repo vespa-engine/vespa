@@ -4,9 +4,9 @@
 
 package ai.vespa.metricsproxy.metric.model.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -32,7 +32,7 @@ public class JsonRenderingException extends RuntimeException {
     private static String wrap(String message) {
         try {
             return new ObjectMapper().writeValueAsString(Map.of("error", message));
-        } catch (IOException e) {
+        } catch (JsonProcessingException e) {
             log.log(WARNING, "Could not encode error message to json:", e);
             return "Could not encode error message to json, check the log for details.";
         }
