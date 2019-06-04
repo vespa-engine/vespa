@@ -83,24 +83,69 @@ public:
             EntryProcessor&,
             const document::BucketId& after = document::BucketId()) const = 0;
 
+    /**
+     * Database implementation-specific interface for appending entries
+     * during a merge() operation.
+     */
     struct TrailingInserter {
         virtual ~TrailingInserter() = default;
+        /**
+         * Insert a new database entry at the end of the current bucket space.
+         *
+         * Precondition: the entry's bucket ID must sort after all entries that
+         * have already been iterated over or inserted via insert_at_end().
+         */
         virtual void insert_at_end(const Entry&) = 0;
     };
 
+    /**
+     * Database implementation-specific interface for accessing bucket
+     * entries and prepending entries during a merge() operation.
+     */
     struct Merger {
         virtual ~Merger() = default;
-        // Visibility of changes to this object when MergingProcessor::Result::Update
-        // is _not_ returned is undefined.
+
         // TODO this should ideally be separated into read/write functions, but this
         // will suffice for now to avoid too many changes.
+
+        /**
+         * Bucket key/ID of the currently iterated entry. Unless the information stored
+         * in the DB Entry is needed, using one of these methods should be preferred to
+         * getting the bucket ID via current_entry(). The underlying DB is expected to
+         * have cheap access to the ID but _may_ have expensive access to the entry itself.
+         */
         virtual uint64_t bucket_key() const noexcept = 0;
         virtual document::BucketId bucket_id() const noexcept = 0;
+        /**
+         * Returns a mutable representation of the currently iterated database
+         * entry. If changes are made to this object, Result::Update must be
+         * returned from merge(). Otherwise, mutation visibility is undefined.
+         */
         virtual Entry& current_entry() = 0;
+        /**
+         * Insert a new entry into the bucket database that is ordered before the
+         * currently iterated entry.
+         *
+         * Preconditions:
+         *  - The entry's bucket ID must sort _before_ the currently iterated
+         *    entry's bucket ID, in "reversed bits" bucket key order.
+         *  - The entry's bucket ID must sort _after_ any entries previously
+         *    inserted with insert_before_current().
+         *  - The entry's bucket ID must not be the same as a bucket that was
+         *    already iterated over as part of the DB merge() call or inserted
+         *    via a previous call to insert_before_current().
+         *    Such buckets must be handled by explicitly updating the provided
+         *    entry for the iterated bucket and returning Result::Update.
+         */
         virtual void insert_before_current(const Entry&) = 0;
     };
 
+    /**
+     * Interface to be implemented by callers that wish to receive callbacks
+     * during a bucket merge() operation.
+     */
     struct MergingProcessor {
+        // See merge() for semantics on enum values.
         enum class Result {
             Update,
             KeepUnchanged,
@@ -108,10 +153,51 @@ public:
         };
 
         virtual ~MergingProcessor() = default;
+        /**
+         * Invoked for each existing bucket in the database, in bucket key order.
+         * The provided Merge instance may be used to access the current entry
+         * and prepend entries to the DB.
+         *
+         * Return value semantics:
+         *  - Result::Update:
+         *      when merge() returns, the changes made to the current entry will
+         *      become visible in the bucket database.
+         *  - Result::KeepUnchanged:
+         *      when merge() returns, the entry will remain in the same state as
+         *      it was when merge() was originally called.
+         *  - Result::Skip:
+         *      when merge() returns, the entry will no longer be part of the DB.
+         *      Any entries added via insert_before_current() _will_ be present.
+         *
+         */
         virtual Result merge(Merger&) = 0;
+        /**
+         * Invoked once after all existing buckets have been iterated over.
+         * The provided TrailingInserter instance may be used to append
+         * an arbitrary number of entries to the database.
+         *
+         * This is used to handle elements remaining at the end of a linear
+         * merge operation.
+         */
         virtual void insert_remaining_at_end(TrailingInserter&) {}
     };
 
+    /**
+     * Iterate over the bucket database in bucket key order, allowing an arbitrary
+     * number of buckets to be inserted, updated and skipped in a way that is
+     * optimized for the backing DB implementation.
+     *
+     * Merging happens in two stages:
+     *  1) The MergeProcessor argument's merge() function is invoked for each existing
+     *     bucket in the database. At this point new buckets ordered before the iterated
+     *     bucket may be inserted and the iterated bucket may be skipped or updated.
+     *  2) The MergeProcessor argument's insert_remaining_at_end() function is invoked
+     *     once when all buckets have been iterated over. This enables the caller to
+     *     insert new buckets that sort after the last iterated bucket.
+     *
+     * Changes made to the database are not guaranteed to be visible until
+     * merge() returns.
+     */
     virtual void merge(MergingProcessor&) = 0;
 
     /**
