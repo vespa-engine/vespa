@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.google.common.base.Joiner;
+
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -118,9 +121,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             return new StringTensorAddress(labels);
         }
 
+
         @Override
         public String toString() {
-            return Arrays.toString(labels);
+            return "cell address (" + String.join(",", labels) + ")";
         }
 
     }
@@ -151,7 +155,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         @Override
         public String toString() {
-            return Arrays.toString(labels);
+            return "cell address (" + Arrays.stream(labels).mapToObj(String::valueOf).collect(Collectors.joining(",")) + ")";
         }
 
     }

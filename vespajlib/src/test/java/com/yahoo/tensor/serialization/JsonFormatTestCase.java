@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -15,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class JsonFormatTestCase {
 
     @Test
-    public void testJsonEncodingOfSparseTensor() {
+    public void testSparseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
         builder.cell().label("x", "a").label("y", "b").value(2.0);
         builder.cell().label("x", "c").label("y", "d").value(3.0);
@@ -31,7 +32,7 @@ public class JsonFormatTestCase {
     }
 
     @Test
-    public void testJsonEncodingOfDenseTensor() {
+    public void testDenseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
         builder.cell().label("x", 0).label("y", 0).value(2.0);
         builder.cell().label("x", 0).label("y", 1).value(3.0);
@@ -48,6 +49,23 @@ public class JsonFormatTestCase {
                      new String(json, StandardCharsets.UTF_8));
         Tensor decoded = JsonFormat.decode(tensor.type(), json);
         assertEquals(tensor, decoded);
+    }
+
+    @Test
+    public void testTooManyCells() {
+        TensorType x2 = TensorType.fromSpec("tensor(x[2])");
+        String json = "{\"cells\":[" +
+                      "{\"address\":{\"x\":\"0\"},\"value\":2.0}," +
+                      "{\"address\":{\"x\":\"1\"},\"value\":3.0}," +
+                      "{\"address\":{\"x\":\"2\"},\"value\":5.0}" +
+                      "]}";
+        try {
+            JsonFormat.decode(x2, json.getBytes(StandardCharsets.UTF_8));
+            fail("Excpected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("cell address (2) is not within bounds of tensor(x[2])", e.getMessage());
+        }
     }
 
 }

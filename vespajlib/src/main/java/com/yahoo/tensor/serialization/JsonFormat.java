@@ -7,6 +7,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -41,18 +42,26 @@ public class JsonFormat {
     }
 
     /** Deserializes the given tensor from JSON format */
-    // TODO: Add explicit validation (valid() checks) below
     public static Tensor decode(TensorType type, byte[] jsonTensorValue) {
         Tensor.Builder tensorBuilder = Tensor.Builder.of(type);
         Inspector root = new JsonDecoder().decode(new Slime(), jsonTensorValue).get();
         Inspector cells = root.field("cells");
+        if ( cells.type() != Type.ARRAY)
+            throw new IllegalArgumentException("Excepted an array item named 'cells' at the top level");
         cells.traverse((ArrayTraverser) (__, cell) -> decodeCell(cell, tensorBuilder.cell()));
         return tensorBuilder.build();
     }
 
     private static void decodeCell(Inspector cell, Tensor.Builder.CellBuilder cellBuilder) {
-        cell.field("address").traverse((ObjectTraverser) (dimension, label) -> cellBuilder.label(dimension, label.asString()));
-        cellBuilder.value(cell.field("value").asDouble());
+        Inspector address = cell.field("address");
+        if ( address.type() != Type.OBJECT)
+            throw new IllegalArgumentException("Excepted a cell to contain an object called 'address'");
+        address.traverse((ObjectTraverser) (dimension, label) -> cellBuilder.label(dimension, label.asString()));
+
+        Inspector value = cell.field("value");
+        if (value.type() != Type.LONG && value.type() != Type.DOUBLE)
+            throw new IllegalArgumentException("Excepted a cell to contain a numeric value called 'value'");
+        cellBuilder.value(value.asDouble());
     }
 
 }
