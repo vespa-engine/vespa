@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
@@ -17,6 +19,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstanceInformation {
     public List<URI> serviceUrls;
+    public List<Endpoint> endpoints;
     public URI nodes;
     public URI yamasUrl;
     public RevisionId revision;
@@ -27,4 +30,28 @@ public class InstanceInformation {
     public GitRepository gitRepository;
     public GitBranch gitBranch;
     public GitCommit gitCommit;
+
+    public static class Endpoint {
+        public String cluster;
+        public boolean tls;
+        public URI url;
+
+        @JsonCreator
+        public Endpoint(@JsonProperty("cluster") String cluster ,
+                        @JsonProperty("tls") boolean tls,
+                        @JsonProperty("url") URI url) {
+            this.cluster = cluster;
+            this.tls = tls;
+            this.url = url;
+        }
+
+        @Override
+        public String toString() {
+            return "Endpoint {" +
+                    "cluster=" + cluster+
+                    ", tls='" + tls + '\'' +
+                    ", url='" + url+ '\'' +
+                    '}';
+        }
+    }
 }
