@@ -2,7 +2,7 @@
 
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcorespi/index/warmupindexcollection.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -15,11 +15,10 @@ using namespace proton;
 using namespace searchcorespi;
 using searchcorespi::index::WarmupConfig;
 
-namespace {
-
-class Test : public vespalib::TestApp,
-             public IWarmupDone
+class IndexCollectionTest : public ::testing::Test,
+                            public IWarmupDone
 {
+public:
     std::shared_ptr<ISourceSelector> _selector;
     std::shared_ptr<IndexSearchable> _source1;
     std::shared_ptr<IndexSearchable> _source2;
@@ -27,102 +26,93 @@ class Test : public vespalib::TestApp,
     vespalib::ThreadStackExecutor    _executor;
     std::shared_ptr<IndexSearchable> _warmup;
 
-    void requireThatSearchablesCanBeAppended(IndexCollection::UP fsc);
-    void requireThatSearchablesCanBeReplaced(IndexCollection::UP fsc);
-    void requireThatReplaceAndRenumberUpdatesCollectionAfterFusion();
-    IndexCollection::UP createWarmup(const IndexCollection::SP & prev, const IndexCollection::SP & next);
+    void expect_searchable_can_be_appended(IndexCollection::UP collection) {
+        const uint32_t id = 42;
+
+        collection->append(id, _source1);
+        EXPECT_EQ(1u, collection->getSourceCount());
+        EXPECT_EQ(id, collection->getSourceId(0));
+    }
+
+    void expect_searchable_can_be_replaced(IndexCollection::UP collection) {
+        const uint32_t id = 42;
+
+        collection->append(id, _source1);
+        EXPECT_EQ(1u, collection->getSourceCount());
+        EXPECT_EQ(id, collection->getSourceId(0));
+        EXPECT_EQ(_source1.get(), &collection->getSearchable(0));
+
+        collection->replace(id, _source2);
+        EXPECT_EQ(1u, collection->getSourceCount());
+        EXPECT_EQ(id, collection->getSourceId(0));
+        EXPECT_EQ(_source2.get(), &collection->getSearchable(0));
+    }
+
+    IndexCollection::UP create_warmup(const IndexCollection::SP& prev, const IndexCollection::SP& next) {
+        return std::make_unique<WarmupIndexCollection>(WarmupConfig(1.0, false), prev, next, *_warmup, _executor, *this);
+    }
+
     virtual void warmupDone(ISearchableIndexCollection::SP current) override {
         (void) current;
     }
 
-public:
-    Test() : _selector(new FixedSourceSelector(0, "fs1")),
-             _source1(new FakeIndexSearchable),
-             _source2(new FakeIndexSearchable),
-             _fusion_source(new FakeIndexSearchable),
-             _executor(1, 128*1024),
-             _warmup(new FakeIndexSearchable)
+    IndexCollectionTest()
+        : _selector(new FixedSourceSelector(0, "fs1")),
+          _source1(new FakeIndexSearchable),
+          _source2(new FakeIndexSearchable),
+          _fusion_source(new FakeIndexSearchable),
+          _executor(1, 128*1024),
+          _warmup(new FakeIndexSearchable)
     {}
-    ~Test() {}
-
-    int Main() override;
+    ~IndexCollectionTest() {}
 };
 
 
-IndexCollection::UP
-Test::createWarmup(const IndexCollection::SP & prev, const IndexCollection::SP & next)
+TEST_F(IndexCollectionTest, searchable_can_be_appended_to_normal_collection)
 {
-    return IndexCollection::UP(new WarmupIndexCollection(WarmupConfig(1.0, false), prev, next, *_warmup, _executor, *this));
+    expect_searchable_can_be_appended(std::make_unique<IndexCollection>(_selector));
 }
 
-int
-Test::Main()
+TEST_F(IndexCollectionTest, searchable_can_be_replaced_in_normal_collection)
 {
-    TEST_INIT("indexcollection_test");
-
-    TEST_DO(requireThatSearchablesCanBeAppended(IndexCollection::UP(new IndexCollection(_selector))));
-    TEST_DO(requireThatSearchablesCanBeReplaced(IndexCollection::UP(new IndexCollection(_selector))));
-    TEST_DO(requireThatReplaceAndRenumberUpdatesCollectionAfterFusion());
-    {
-        IndexCollection::SP prev(new IndexCollection(_selector));
-        IndexCollection::SP next(new IndexCollection(_selector));
-        requireThatSearchablesCanBeAppended(createWarmup(prev, next));
-        EXPECT_EQUAL(0u, prev->getSourceCount());
-        EXPECT_EQUAL(1u, next->getSourceCount());
-    }
-    {
-        IndexCollection::SP prev(new IndexCollection(_selector));
-        IndexCollection::SP next(new IndexCollection(_selector));
-        requireThatSearchablesCanBeReplaced(createWarmup(prev, next));
-        EXPECT_EQUAL(0u, prev->getSourceCount());
-        EXPECT_EQUAL(1u, next->getSourceCount());
-    }
-
-    TEST_DONE();
+    expect_searchable_can_be_replaced(std::make_unique<IndexCollection>(_selector));
 }
 
-void Test::requireThatSearchablesCanBeAppended(IndexCollection::UP fsc) {
-    const uint32_t id = 42;
-
-    fsc->append(id, _source1);
-    EXPECT_EQUAL(1u, fsc->getSourceCount());
-    EXPECT_EQUAL(id, fsc->getSourceId(0));
+TEST_F(IndexCollectionTest, searchable_can_be_appended_to_warmup_collection)
+{
+    auto prev = std::make_shared<IndexCollection>(_selector);
+    auto next = std::make_shared<IndexCollection>(_selector);
+    expect_searchable_can_be_appended(create_warmup(prev, next));
+    EXPECT_EQ(0u, prev->getSourceCount());
+    EXPECT_EQ(1u, next->getSourceCount());
 }
 
-void Test::requireThatSearchablesCanBeReplaced(IndexCollection::UP fsc) {
-    const uint32_t id = 42;
-
-    fsc->append(id, _source1);
-    EXPECT_EQUAL(1u, fsc->getSourceCount());
-    EXPECT_EQUAL(id, fsc->getSourceId(0));
-    EXPECT_EQUAL(_source1.get(), &fsc->getSearchable(0));
-
-    fsc->replace(id, _source2);
-    EXPECT_EQUAL(1u, fsc->getSourceCount());
-    EXPECT_EQUAL(id, fsc->getSourceId(0));
-    EXPECT_EQUAL(_source2.get(), &fsc->getSearchable(0));
+TEST_F(IndexCollectionTest, searchable_can_be_replaced_in_warmup_collection)
+{
+    auto prev = std::make_shared<IndexCollection>(_selector);
+    auto next = std::make_shared<IndexCollection>(_selector);
+    expect_searchable_can_be_replaced(create_warmup(prev, next));
+    EXPECT_EQ(0u, prev->getSourceCount());
+    EXPECT_EQ(1u, next->getSourceCount());
 }
 
-void Test::requireThatReplaceAndRenumberUpdatesCollectionAfterFusion() {
+TEST_F(IndexCollectionTest, replace_and_renumber_updates_collection_after_fusion)
+{
     IndexCollection fsc(_selector);
 
     fsc.append(0, _source1);
     fsc.append(1, _source1);
     fsc.append(2, _source1);
     fsc.append(3, _source2);
-    EXPECT_EQUAL(4u, fsc.getSourceCount());
+    EXPECT_EQ(4u, fsc.getSourceCount());
 
     const uint32_t id_diff = 2;
-    IndexCollection::UP new_fsc =
-        IndexCollection::replaceAndRenumber(
-                _selector, fsc, id_diff, _fusion_source);
-    EXPECT_EQUAL(2u, new_fsc->getSourceCount());
-    EXPECT_EQUAL(0u, new_fsc->getSourceId(0));
-    EXPECT_EQUAL(_fusion_source.get(), &new_fsc->getSearchable(0));
-    EXPECT_EQUAL(1u, new_fsc->getSourceId(1));
-    EXPECT_EQUAL(_source2.get(), &new_fsc->getSearchable(1));
+    auto new_fsc = IndexCollection::replaceAndRenumber(_selector, fsc, id_diff, _fusion_source);
+    EXPECT_EQ(2u, new_fsc->getSourceCount());
+    EXPECT_EQ(0u, new_fsc->getSourceId(0));
+    EXPECT_EQ(_fusion_source.get(), &new_fsc->getSearchable(0));
+    EXPECT_EQ(1u, new_fsc->getSourceId(1));
+    EXPECT_EQ(_source2.get(), &new_fsc->getSearchable(1));
 }
 
-}  // namespace
-
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()
