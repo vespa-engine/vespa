@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DockerImpl implements Docker {
@@ -257,15 +256,6 @@ public class DockerImpl implements Docker {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to update container '" + containerName.asString() + "' to " + resources, e);
         }
-    }
-
-    @Override
-    public List<Container> getAllContainersManagedBy(String manager) {
-        return listAllContainers().stream()
-                .filter(container -> isManagedBy(container, manager))
-                .map(com.github.dockerjava.api.model.Container::getId)
-                .flatMap(this::asContainer)
-                .collect(Collectors.toList());
     }
 
     @Override
