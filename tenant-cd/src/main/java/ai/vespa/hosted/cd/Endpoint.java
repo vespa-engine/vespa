@@ -1,6 +1,6 @@
 package ai.vespa.hosted.cd;
 
-import ai.vespa.hosted.cd.metrics.Metrics;
+import ai.vespa.hosted.cd.metric.Metrics;
 
 /**
  * An endpoint in a Vespa application {@link Deployment}, which allows document and metrics retrieval.

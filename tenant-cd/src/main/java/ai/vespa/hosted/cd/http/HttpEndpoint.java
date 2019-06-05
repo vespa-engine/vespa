@@ -10,7 +10,7 @@ import ai.vespa.hosted.cd.Search;
 import ai.vespa.hosted.cd.Selection;
 import ai.vespa.hosted.cd.TestEndpoint;
 import ai.vespa.hosted.cd.Visit;
-import ai.vespa.hosted.cd.metrics.Metrics;
+import ai.vespa.hosted.cd.metric.Metrics;
 
 import java.net.URI;
 import java.net.http.HttpClient;

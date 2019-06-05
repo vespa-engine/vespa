@@ -1,4 +1,4 @@
-package ai.vespa.hosted.cd.metrics;
+package ai.vespa.hosted.cd.metric;
 
 import java.util.HashMap;
 import java.util.Map;
