@@ -13,6 +13,7 @@ LOG_SETUP(".searchcorespi.index.indexcollection");
 using namespace search::queryeval;
 using namespace search::query;
 using search::attribute::IAttributeContext;
+using search::index::FieldLengthInfo;
 
 namespace searchcorespi {
 
@@ -236,6 +237,15 @@ IndexCollection::createBlueprint(const IRequestContext & requestContext,
     CreateBlueprintVisitor visitor(*this, fields, requestContext);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
+}
+
+FieldLengthInfo
+IndexCollection::get_field_length_info(const vespalib::string& field_name) const
+{
+    if (_sources.empty()) {
+        return FieldLengthInfo();
+    }
+    return _sources.back().source_wrapper->get_field_length_info(field_name);
 }
 
 }  // namespace searchcorespi

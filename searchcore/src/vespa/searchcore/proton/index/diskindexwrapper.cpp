@@ -5,6 +5,7 @@
 #include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 
 using search::TuneFileSearch;
+using search::index::FieldLengthInfo;
 using searchcorespi::index::IndexReadUtilities;
 
 namespace proton {
@@ -43,6 +44,14 @@ void
 DiskIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
 {
     visitor.visit(*this);
+}
+
+FieldLengthInfo
+DiskIndexWrapper::get_field_length_info(const vespalib::string& field_name) const
+{
+    // TODO: implement
+    (void) field_name;
+    return FieldLengthInfo();
 }
 
 }  // namespace proton

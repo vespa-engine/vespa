@@ -52,6 +52,9 @@ public:
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
 
+    // Implements IFieldLengthInspector
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
+
     // Implements ISearchableIndexCollection
     void append(uint32_t id, const IndexSearchable::SP &source) override;
     void replace(uint32_t id, const IndexSearchable::SP &source) override;

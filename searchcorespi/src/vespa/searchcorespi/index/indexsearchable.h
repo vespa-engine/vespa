@@ -4,6 +4,7 @@
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
@@ -26,7 +27,8 @@ class IndexSearchableVisitor;
  * that let the components access a per query attribute context that expose
  * attribute vectors that can be utilized during query evaluation.
  **/
-class IndexSearchable : public search::queryeval::Searchable {
+class IndexSearchable : public search::queryeval::Searchable,
+                        public search::index::IFieldLengthInspector {
 protected:
     using IRequestContext = search::queryeval::IRequestContext;
     using FieldSpec = search::queryeval::FieldSpec;

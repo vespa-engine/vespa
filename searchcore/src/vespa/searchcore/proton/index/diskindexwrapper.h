@@ -41,6 +41,11 @@ public:
     void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
 
     /**
+     * Implements IFieldLengthInspector
+     */
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
+
+    /**
      * Implements proton::IDiskIndex
      */
     const vespalib::string &getIndexDir() const override { return _index.getIndexDir(); }
