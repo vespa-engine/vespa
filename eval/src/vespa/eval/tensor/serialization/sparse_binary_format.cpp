@@ -1,15 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sparse_binary_format.h"
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_address_builder.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <sstream>
 #include <cassert>
 
 using vespalib::nbostream;
+using vespalib::eval::ValueType;
 
 namespace vespalib::tensor {
 
@@ -91,28 +94,36 @@ SparseBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 }
 
 
-void
-SparseBinaryFormat::deserialize(nbostream &stream, SparseTensorBuilder &builder)
+std::unique_ptr<Tensor>
+SparseBinaryFormat::deserialize(nbostream &stream)
 {
     vespalib::string str;
     size_t dimensionsSize = stream.getInt1_4Bytes();
-    std::vector<SparseTensorBuilder::Dimension> dimensions;
+    std::vector<ValueType::Dimension> dimensions;
     while (dimensions.size() < dimensionsSize) {
         stream.readSmallString(str);
-        dimensions.emplace_back(builder.define_dimension(str));
+        dimensions.emplace_back(str);
     }
+    ValueType type = ValueType::tensor_type(std::move(dimensions));
+    DirectSparseTensorBuilder builder(type);
+    SparseTensorAddressBuilder address;
+
     size_t cellsSize = stream.getInt1_4Bytes();
     double cellValue = 0.0;
     for (size_t cellIdx = 0; cellIdx < cellsSize; ++cellIdx) {
+        address.clear();
         for (size_t dimension = 0; dimension < dimensionsSize; ++dimension) {
             stream.readSmallString(str);
             if (!str.empty()) {
-                builder.add_label(dimensions[dimension], str);
+                address.add(str);
+            } else {
+                address.addUndefined();
             }
         }
         stream >> cellValue;
-        builder.add_cell(cellValue);
+        builder.insertCell(address, cellValue);
     }
+    return builder.build();
 }
 
 

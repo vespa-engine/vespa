@@ -4,7 +4,8 @@
 #include "tensor.h"
 #include "wrapped_simple_tensor.h"
 #include "serialization/typed_binary_format.h"
-#include "sparse/sparse_tensor_builder.h"
+#include "sparse/sparse_tensor_address_builder.h"
+#include "sparse/direct_sparse_tensor_builder.h"
 #include "dense/dense_tensor.h"
 #include "dense/direct_dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
@@ -125,6 +126,24 @@ size_t calculate_cell_index(const ValueType &type, const TensorSpec::Address &ad
     return idx;
 }
 
+bool build_cell_address(const ValueType &type, const TensorSpec::Address &address,
+                        SparseTensorAddressBuilder &builder)
+{
+    if (type.dimensions().size() != address.size()) {
+        return false;
+    }
+    size_t d = 0;
+    builder.clear();
+    for (const auto &binding: address) {
+        const auto &dim = type.dimensions()[d++];
+        if (dim.name != binding.first) {
+            return false;
+        }
+        builder.add(binding.second.name);
+    }
+    return true;
+}
+
 void bad_spec(const TensorSpec &spec) {
     throw IllegalArgumentException(make_string("malformed tensor spec: %s", spec.to_string().c_str()));
 }
@@ -165,17 +184,15 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
         }
         return builder.build();
     } else if (type.is_sparse()) {
-        SparseTensorBuilder builder;
-        std::map<vespalib::string,SparseTensorBuilder::Dimension> dimension_map;
-        for (const auto &dimension: type.dimensions()) {
-            dimension_map[dimension.name] = builder.define_dimension(dimension.name);
-        }
+        DirectSparseTensorBuilder builder(type);
+        SparseTensorAddressBuilder address_builder;
         for (const auto &cell: spec.cells()) {
             const auto &address = cell.first;
-            for (const auto &binding: address) {
-                builder.add_label(dimension_map[binding.first], binding.second.name);
+            if (build_cell_address(type, address, address_builder)) {
+                builder.insertCell(address_builder, cell.second);
+            } else {
+                bad_spec(spec);
             }
-            builder.add_cell(cell.second);
         }
         return builder.build();
     } else if (type.is_double()) {

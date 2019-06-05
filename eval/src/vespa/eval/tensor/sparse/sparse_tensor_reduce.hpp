@@ -3,7 +3,6 @@
 #pragma once
 
 #include "sparse_tensor_address_reducer.h"
-#include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "direct_sparse_tensor_builder.h"
 
 namespace vespalib::tensor::sparse {
@@ -11,7 +10,7 @@ namespace vespalib::tensor::sparse {
 template <typename Function>
 std::unique_ptr<Tensor>
 reduceAll(const SparseTensor &tensor,
-          DirectTensorBuilder<SparseTensor> &builder, Function &&func)
+          DirectSparseTensorBuilder &builder, Function &&func)
 {
     auto itr = tensor.cells().begin();
     auto itrEnd = tensor.cells().end();
@@ -31,7 +30,7 @@ template <typename Function>
 std::unique_ptr<Tensor>
 reduceAll(const SparseTensor &tensor, Function &&func)
 {
-    DirectTensorBuilder<SparseTensor> builder;
+    DirectSparseTensorBuilder builder;
     return reduceAll(tensor, builder, func);
 }
 
@@ -43,7 +42,7 @@ reduce(const SparseTensor &tensor,
     if (dimensions.empty()) {
         return reduceAll(tensor, func);
     }
-    DirectTensorBuilder<SparseTensor> builder(tensor.fast_type().reduce(dimensions));
+    DirectSparseTensorBuilder builder(tensor.fast_type().reduce(dimensions));
     if (builder.fast_type().dimensions().empty()) {
         return reduceAll(tensor, builder, func);
     }

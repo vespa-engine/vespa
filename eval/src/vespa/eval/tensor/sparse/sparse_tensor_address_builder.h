@@ -43,6 +43,12 @@ public:
     }
     void addUndefined() { _address.push_back('\0'); }
     void clear() { _address.clear(); }
+    void set(std::initializer_list<vespalib::stringref> labels) {
+        clear();
+        for (const auto &label: labels) {
+            add(label);
+        }
+    }
     SparseTensorAddressRef getAddressRef() const {
         return SparseTensorAddressRef(&_address[0], _address.size());
     }

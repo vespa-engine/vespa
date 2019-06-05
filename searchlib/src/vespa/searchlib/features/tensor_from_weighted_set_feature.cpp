@@ -22,7 +22,8 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::SparseTensorBuilder;
+using vespalib::tensor::DirectSparseTensorBuilder;
+using vespalib::tensor::SparseTensorAddressBuilder;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -100,19 +101,21 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
                     const vespalib::string &queryKey,
                     const vespalib::string &dimension, vespalib::Stash &stash)
 {
+    ValueType type = ValueType::tensor_type({{dimension}});
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
         WeightedStringVector vector;
         WeightedSetParser::parse(prop.get(), vector);
-        SparseTensorBuilder tensorBuilder;
-        SparseTensorBuilder::Dimension dimensionEnum = tensorBuilder.define_dimension(dimension);
+        DirectSparseTensorBuilder tensorBuilder(type);
+        SparseTensorAddressBuilder address;
         for (const auto &elem : vector._data) {
-            tensorBuilder.add_label(dimensionEnum, elem.value());
-            tensorBuilder.add_cell(elem.weight());
+            address.clear();
+            address.add(elem.value());
+            tensorBuilder.insertCell(address, elem.weight());
         }
         return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+    return ConstantTensorExecutor::createEmpty(type, stash);
 }
 
 }

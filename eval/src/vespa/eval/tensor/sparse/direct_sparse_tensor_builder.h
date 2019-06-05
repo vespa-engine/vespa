@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_address_padder.h"
@@ -14,11 +13,10 @@ namespace vespalib::tensor {
  * Utility class to build tensors of type SparseTensor, to be used by
  * tensor operations.
  */
-template <> class DirectTensorBuilder<SparseTensor>
+class DirectSparseTensorBuilder
 {
 public:
-    using TensorImplType = SparseTensor;
-    using Cells = typename TensorImplType::Cells;
+    using Cells = SparseTensor::Cells;
     using AddressBuilderType = SparseTensorAddressBuilder;
     using AddressRefType = SparseTensorAddressRef;
 
@@ -50,32 +48,32 @@ public:
         }
     }
 
-    DirectTensorBuilder()
-        : _stash(TensorImplType::STASH_CHUNK_SIZE),
+    DirectSparseTensorBuilder()
+        : _stash(SparseTensor::STASH_CHUNK_SIZE),
           _type(eval::ValueType::double_type()),
           _cells()
     {
     }
 
-    DirectTensorBuilder(const eval::ValueType &type_in)
-        : _stash(TensorImplType::STASH_CHUNK_SIZE),
+    DirectSparseTensorBuilder(const eval::ValueType &type_in)
+        : _stash(SparseTensor::STASH_CHUNK_SIZE),
           _type(type_in),
           _cells()
     {
     }
 
-    DirectTensorBuilder(const eval::ValueType &type_in, const Cells &cells_in)
-        : _stash(TensorImplType::STASH_CHUNK_SIZE),
+    DirectSparseTensorBuilder(const eval::ValueType &type_in, const Cells &cells_in)
+        : _stash(SparseTensor::STASH_CHUNK_SIZE),
           _type(type_in),
           _cells()
     {
         copyCells(cells_in);
     }
 
-    DirectTensorBuilder(const eval::ValueType &type_in,
+    DirectSparseTensorBuilder(const eval::ValueType &type_in,
                         const Cells &cells_in,
                         const eval::ValueType &cells_in_type)
-        : _stash(TensorImplType::STASH_CHUNK_SIZE),
+        : _stash(SparseTensor::STASH_CHUNK_SIZE),
           _type(type_in),
           _cells()
     {
@@ -86,7 +84,7 @@ public:
         }
     }
 
-    ~DirectTensorBuilder() {}
+    ~DirectSparseTensorBuilder() {};
 
     Tensor::UP build() {
         return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
