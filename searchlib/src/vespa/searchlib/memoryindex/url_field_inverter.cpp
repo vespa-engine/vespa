@@ -341,11 +341,13 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
 void
 UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
 {
-    startDoc(docId);
     if (val) {
+        startDoc(docId);
         invertUrlField(*val);
+        endDoc();
+    } else {
+        removeDocument(docId);
     }
-    endDoc();
 }
 
 void

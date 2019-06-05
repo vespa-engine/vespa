@@ -120,7 +120,7 @@ struct Fixture
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
-    FieldLengthCalculator           _calculator;
+    std::vector<std::unique_ptr<FieldLengthCalculator>> _calculators;
     std::vector<std::unique_ptr<FieldInverter> > _inverters;
 
     static Schema
@@ -140,16 +140,17 @@ struct Fixture
           _word_store(),
           _remover(_word_store),
           _inserter(),
-          _calculator(),
+          _calculators(),
           _inverters()
     {
         for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
              ++fieldId) {
+            _calculators.emplace_back(std::make_unique<FieldLengthCalculator>());
             _inverters.push_back(std::make_unique<FieldInverter>(_schema,
                                                                  fieldId,
                                                                  _remover,
                                                                  _inserter,
-                                                                 _calculator));
+                                                                 *_calculators.back()));
         }
     }
 
@@ -182,6 +183,14 @@ struct Fixture
             inverter->removeDocument(docId);
         }
     }
+
+    void assert_calculator(uint32_t field_id, double exp_avg, uint32_t exp_samples) {
+        double epsilon = 0.000000001;
+        const auto &calc = *_calculators[field_id];
+        EXPECT_APPROX(exp_avg, calc.get_average_field_length(), epsilon);
+        EXPECT_EQUAL(exp_samples, calc.get_num_samples());
+    }
+
 };
 
 
@@ -361,6 +370,22 @@ TEST_F("require that cheap features are calculated", Fixture)
                  "w=bar2,a=17(fl=3,occs=2,e=0,w=3,l=2[1],e=1,w=4,l=1[0]),"
                  "w=foo2,a=17(fl=3,occs=1,e=0,w=3,l=2[0])",
                  f._inserter.toStr());
+}
+
+TEST_F("require that average field length is calculated", Fixture)
+{
+    f.invertDocument(10, *makeDoc10(f._b));
+    f.pushDocuments();
+    TEST_DO(f.assert_calculator(0, 4.0, 1));
+    TEST_DO(f.assert_calculator(1, 0.0, 0));
+    f.invertDocument(11, *makeDoc11(f._b));
+    f.pushDocuments();
+    TEST_DO(f.assert_calculator(0, (4.0 + 4.0)/2, 2));
+    TEST_DO(f.assert_calculator(1, 2.0, 1));
+    f.invertDocument(12, *makeDoc12(f._b));
+    f.pushDocuments();
+    TEST_DO(f.assert_calculator(0, (4.0 + 4.0 + 2.0)/3, 3));
+    TEST_DO(f.assert_calculator(1, 2.0, 1));
 }
 
 } // namespace memoryindex
