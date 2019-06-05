@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,13 +30,6 @@ public class DockerMock implements Docker {
     @Override
     public CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName) {
         return new StartContainerCommandMock(dockerImage, containerName);
-    }
-
-    @Override
-    public List<Container> getAllContainersManagedBy(String manager) {
-        synchronized (monitor) {
-            return new ArrayList<>(containersByContainerName.values());
-        }
     }
 
     @Override
