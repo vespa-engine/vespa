@@ -3,6 +3,7 @@
 #include "fakewordset.h"
 #include "fakeword.h"
 #include <vespa/fastos/time.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <sstream>
 
 #include <vespa/log/log.h>

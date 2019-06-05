@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include "zc4_posting_params.h"
 

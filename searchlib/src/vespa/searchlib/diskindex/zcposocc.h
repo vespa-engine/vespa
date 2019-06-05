@@ -4,6 +4,7 @@
 
 #include "zcposting.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 
 namespace search::diskindex {
 

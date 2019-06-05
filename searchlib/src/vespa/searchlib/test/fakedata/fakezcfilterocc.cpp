@@ -2,6 +2,7 @@
 
 #include "fakezcfilterocc.h"
 #include "fpfactory.h"
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
 #include <vespa/searchlib/diskindex/zc4_posting_header.h>
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
