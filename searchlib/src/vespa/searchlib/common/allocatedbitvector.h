@@ -32,7 +32,7 @@ public:
     AllocatedBitVector(Index numberOfElements, Alloc buffer, size_t offset);
 
     /**
-     * Creates a new bitvector with room for numberOfElements bits.
+     * Creates a new bitvector with size of numberOfElements bits and at least a capacity of capacity.
      * Copies what it can from the original vector. This is used for extending vector.
      */
     AllocatedBitVector(Index numberOfElements, Index capacity, const void * rhsBuf, size_t rhsSize);

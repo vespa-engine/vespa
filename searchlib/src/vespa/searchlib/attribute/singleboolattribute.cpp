@@ -25,24 +25,28 @@ SingleBoolAttribute::~SingleBoolAttribute()
     getGenerationHolder().clearHoldLists();
 }
 
+void
+SingleBoolAttribute::ensureRoom(DocId docIdLimit) {
+    if (_bv.capacity() < docIdLimit) {
+        const GrowStrategy & gs = this->getConfig().getGrowStrategy();
+        uint32_t newSize = docIdLimit + (docIdLimit * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
+        bool incGen = _bv.reserve(newSize);
+        if (incGen) {
+            incGeneration();
+        }
+    }
+}
+
 bool
 SingleBoolAttribute::addDoc(DocId & doc) {
-    size_t needSize = getNumDocs() + 1;
-    bool incGen = false;
-    if (_bv.capacity() < needSize) {
-        const GrowStrategy & gs = this->getConfig().getGrowStrategy();
-        uint32_t newSize = needSize + (needSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
-        incGen = _bv.reserve(newSize);
-    }
-    incGen = _bv.extend(needSize) || incGen;
+    DocId docIdLimit = getNumDocs()+1;
+    ensureRoom(docIdLimit);
+    bool incGen = _bv.extend(docIdLimit);
+    assert( ! incGen);
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
-    if (incGen) {
-        incGeneration();
-    } else {
-        removeAllOldGenerations();
-    }
+    removeAllOldGenerations();
     return true;
 }
 
@@ -85,7 +89,7 @@ SingleBoolAttribute::onCommit() {
 
 void
 SingleBoolAttribute::onAddDocs(DocId docIdLimit) {
-    _bv.reserve(docIdLimit);
+    ensureRoom(docIdLimit);
 }
 
 void
