@@ -423,12 +423,13 @@ AttributeBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::
 }
 
 fef::FeatureExecutor &
-AttributeBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::Stash &stash) const
+AttributeBlueprint::createExecutor(const fef::IQueryEnvironment & env, vespalib::Stash &stash) const
 {
+    const IAttributeVector * attribute = (_attribute != nullptr) ? _attribute : env.getAttributeContext().getAttribute(_attrName);
     if (_tensorType.is_tensor()) {
-        return createTensorAttributeExecutor(_attribute, _attrName, _tensorType, stash);
+        return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
-        return createAttributeExecutor(_attribute, _attrName, _extra, stash);
+        return createAttributeExecutor(attribute, _attrName, _extra, stash);
     }
 }
 
