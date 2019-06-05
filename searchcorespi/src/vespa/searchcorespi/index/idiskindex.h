@@ -1,18 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Interface for a disk index as seen from an index maintainer.
  */
 struct IDiskIndex : public IndexSearchable {
-    typedef std::shared_ptr<IDiskIndex> SP;
+    using SP = std::shared_ptr<IDiskIndex>;
     virtual ~IDiskIndex() {}
 
     /**
@@ -27,7 +26,6 @@ struct IDiskIndex : public IndexSearchable {
     virtual const search::index::Schema &getSchema() const = 0;
 };
 
-} // namespace index
-} // namespace searchcorespi
+}
 
 

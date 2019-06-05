@@ -1,27 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "indexmaintainer.h"
 #include "diskindexcleaner.h"
 #include "eventlogger.h"
 #include "fusionrunner.h"
 #include "indexflushtarget.h"
 #include "indexfusiontarget.h"
+#include "indexmaintainer.h"
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
+#include <vespa/fastos/file.h>
+#include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/autoclosurecaller.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <sstream>
-#include <vespa/searchcorespi/flush/closureflushtask.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/array.hpp>
-#include <vespa/fastos/file.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.indexmaintainer");
 
 using document::Document;
@@ -42,13 +42,11 @@ using vespalib::Executor;
 using vespalib::LockGuard;
 using vespalib::Runnable;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 namespace {
 
-class ReconfigRunnable : public Runnable
-{
+class ReconfigRunnable : public Runnable {
 public:
     bool &_result;
     IIndexManager::Reconfigurer &_reconfigurer;
@@ -1250,5 +1248,4 @@ IndexMaintainer::setMaxFlushed(uint32_t maxFlushed)
     _maxFlushed = maxFlushed;
 }
 
-}  // namespace index
-}  // namespace searchcorespi
+}
