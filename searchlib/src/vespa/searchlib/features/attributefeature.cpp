@@ -36,7 +36,6 @@ using search::fef::FeatureType;
 using namespace search::fef::indexproperties;
 
 namespace {
-
 template <typename X, typename Y>
 bool equals(X lhs, Y rhs) {
     return lhs == rhs;
@@ -93,7 +92,9 @@ considerUndefined<ConstCharPtr>(ConstCharPtr value, BasicType::Type )
     return search::features::util::getAsFeature(value);
 }
 
+
 }
+
 
 namespace search::features {
 
@@ -116,7 +117,7 @@ public:
 
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
 private:
-    const IAttributeVector & _attribute;
+    const attribute::IAttributeVector & _attribute;
 
 public:
     /**
@@ -124,7 +125,7 @@ public:
      *
      * @param attribute The attribute vector to use.
      */
-    CountOnlyAttributeExecutor(const IAttributeVector & attribute) : _attribute(attribute) { }
+    CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
     void execute(uint32_t docId) override;
 };
 /**
@@ -133,8 +134,8 @@ public:
 template <typename T>
 class AttributeExecutor : public fef::FeatureExecutor {
 private:
-    const IAttributeVector * _attribute;
-    BasicType::Type _attrType;
+    const attribute::IAttributeVector * _attribute;
+    attribute::BasicType::Type _attrType;
     uint32_t _idx;
     T _buffer; // used when fetching values from the attribute
     feature_t _defaultCount;
@@ -146,7 +147,7 @@ public:
      * @param attribute The attribute vector to use.
      * @param idx       The index used for an array attribute.
      */
-    AttributeExecutor(const IAttributeVector * attribute, uint32_t idx);
+    AttributeExecutor(const search::attribute::IAttributeVector * attribute, uint32_t idx);
     void execute(uint32_t docId) override;
 };
 
@@ -157,8 +158,8 @@ public:
 template <typename BT, typename T>
 class WeightedSetAttributeExecutor : public fef::FeatureExecutor {
 private:
-    const IAttributeVector * _attribute;
-    BasicType::Type _attrType;
+    const attribute::IAttributeVector * _attribute;
+    attribute::BasicType::Type _attrType;
     BT   _buffer; // used when fetching values and weights from the attribute
     T    _key;    // the key to find a weight for
     bool _useKey;
@@ -171,7 +172,7 @@ public:
      * @param key      The key to find a corresponding weight for.
      * @param useKey   Whether we should consider the key.
      */
-    WeightedSetAttributeExecutor(const IAttributeVector * attribute, T key, bool useKey);
+    WeightedSetAttributeExecutor(const search::attribute::IAttributeVector * attribute, T key, bool useKey);
     void execute(uint32_t docId) override;
 };
 
@@ -182,7 +183,7 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
     typename T::LoadedValueType v = _attribute.getFast(docId);
     // value
     outputs().set_number(0, __builtin_expect(attribute::isUndefined(v), false)
-                         ? attribute::getUndefined<feature_t>()
+                         ? attribute::getUndefined<search::feature_t>()
                          : util::getAsFeature(v));
     outputs().set_number(1, 0.0f);  // weight
     outputs().set_number(2, 0.0f);  // contains
@@ -266,25 +267,24 @@ WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
 
 
 AttributeBlueprint::AttributeBlueprint() :
-    fef::Blueprint("attribute"),
+    search::fef::Blueprint("attribute"),
     _attrName(),
     _extra(),
-    _tensorType(ValueType::double_type()),
-    _attribute(nullptr)
+    _tensorType(ValueType::double_type())
 {
 }
 
 AttributeBlueprint::~AttributeBlueprint() = default;
 
 void
-AttributeBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
-                                      fef::IDumpFeatureVisitor &) const
+AttributeBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
+                                      search::fef::IDumpFeatureVisitor &) const
 {
 }
 
 bool
-AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
-                          const fef::ParameterList & params)
+AttributeBlueprint::setup(const search::fef::IIndexEnvironment & env,
+                          const search::fef::ParameterList & params)
 {
     // params[0] = attribute name
     // params[1] = index (array attribute) or key (weighted set attribute)
@@ -315,20 +315,20 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
     return !_tensorType.is_error();
 }
 
-fef::Blueprint::UP
+search::fef::Blueprint::UP
 AttributeBlueprint::createInstance() const
 {
-    return std::make_unique<AttributeBlueprint>();
+    return search::fef::Blueprint::UP(new AttributeBlueprint());
 }
 
 #define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
-    if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != nullptr) { \
+    if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != NULL) { \
         return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
     }
 
 namespace {
 
-fef::FeatureExecutor &
+search::fef::FeatureExecutor &
 createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == NULL) {
@@ -375,7 +375,7 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
     }
 }
 
-fef::FeatureExecutor &
+search::fef::FeatureExecutor &
 createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName,
                               const ValueType &tensorType,
                               vespalib::Stash &stash)
@@ -385,8 +385,8 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    if (attribute->getCollectionType() != CollectionType::SINGLE ||
-            attribute->getBasicType() != BasicType::TENSOR) {
+    if (attribute->getCollectionType() != search::attribute::CollectionType::SINGLE ||
+            attribute->getBasicType() != search::attribute::BasicType::TENSOR) {
         LOG(warning, "The attribute vector '%s' is NOT of type tensor."
                 " Returning empty tensor.", attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
@@ -413,20 +413,10 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
 
 }
 
-void
-AttributeBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore &) const
+search::fef::FeatureExecutor &
+AttributeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    //Ensure that we remember it the whole query
-    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attrName);
-    if (_attribute == nullptr) {
-        _attribute = attribute;
-    }
-}
-
-fef::FeatureExecutor &
-AttributeBlueprint::createExecutor(const fef::IQueryEnvironment & env, vespalib::Stash &stash) const
-{
-    const IAttributeVector * attribute = (_attribute != nullptr) ? _attribute : env.getAttributeContext().getAttribute(_attrName);
+    const IAttributeVector *attribute = env.getAttributeContext().getAttribute(_attrName);
     if (_tensorType.is_tensor()) {
         return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
