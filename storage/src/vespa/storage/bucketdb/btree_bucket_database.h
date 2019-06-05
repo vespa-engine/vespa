@@ -39,6 +39,8 @@ public:
     BTreeBucketDatabase();
     ~BTreeBucketDatabase() override;
 
+    void merge(MergingProcessor&) override;
+
     // Ye olde bucket DB API:
     Entry get(const document::BucketId& bucket) const override;
     void remove(const document::BucketId& bucket) override;
@@ -48,7 +50,6 @@ public:
                 std::vector<Entry>& entries) const override;
     void update(const Entry& newEntry) override;
     void forEach(EntryProcessor&, const document::BucketId& after) const override;
-    void forEach(MutableEntryProcessor&, const document::BucketId& after) override;
     Entry upperBound(const document::BucketId& value) const override;
     uint64_t size() const override;
     void clear() override;
@@ -60,11 +61,17 @@ public:
                const std::string& indent) const override;
 
 private:
+    Entry entry_from_value(uint64_t bucket_key, uint64_t value) const;
     Entry entry_from_iterator(const BTree::ConstIterator& iter) const;
+    ConstEntryRef const_entry_ref_from_iterator(const BTree::ConstIterator& iter) const;
     document::BucketId bucket_from_valid_iterator(const BTree::ConstIterator& iter) const;
     void commit_tree_changes();
     BTree::ConstIterator find_parents_internal(const document::BucketId& bucket,
                                                std::vector<Entry>& entries) const;
+
+    friend struct BTreeBuilderMerger;
+    friend struct BTreeMergingBuilder;
+    friend struct BTreeTrailingInserter;
 };
 
 }

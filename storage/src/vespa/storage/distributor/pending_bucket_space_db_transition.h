@@ -20,7 +20,7 @@ class DistributorBucketSpace;
  * reply result within a bucket space and apply it to the distributor
  * bucket database when switching to the pending cluster state.
  */
-class PendingBucketSpaceDbTransition : public BucketDatabase::MutableEntryProcessor
+class PendingBucketSpaceDbTransition : public BucketDatabase::MergingProcessor
 {
 public:
     using Entry = dbtransition::Entry;
@@ -51,8 +51,8 @@ private:
     bool                                      _bucketOwnershipTransfer;
     std::unordered_map<uint16_t, size_t>      _rejectedRequests;
 
-    // BucketDataBase::MutableEntryProcessor API
-    bool process(BucketDatabase::Entry& e) override;
+    BucketDatabase::MergingProcessor::Result merge(BucketDatabase::Merger&) override;
+    void insert_remaining_at_end(BucketDatabase::TrailingInserter&) override;
 
     /**
      * Skips through all entries for the same bucket and returns
@@ -63,7 +63,8 @@ private:
 
     std::vector<BucketCopy> getCopiesThatAreNewOrAltered(BucketDatabase::Entry& info, const Range& range);
     void insertInfo(BucketDatabase::Entry& info, const Range& range);
-    void addToBucketDB(BucketDatabase& db, const Range& range);
+    void addToMerger(BucketDatabase::Merger& merger, const Range& range);
+    void addToInserter(BucketDatabase::TrailingInserter& inserter, const Range& range);
 
     bool nodeIsOutdated(uint16_t node) const {
         return (_outdatedNodes.find(node) != _outdatedNodes.end());
@@ -75,8 +76,8 @@ private:
     bool removeCopiesFromNodesThatWereRequested(BucketDatabase::Entry& e, const document::BucketId& bucketId);
 
     // Helper methods for iterating over _entries
-    bool databaseIteratorHasPassedBucketInfoIterator(const document::BucketId& bucketId) const;
-    bool bucketInfoIteratorPointsToBucket(const document::BucketId& bucketId) const;
+    bool databaseIteratorHasPassedBucketInfoIterator(uint64_t bucket_key) const;
+    bool bucketInfoIteratorPointsToBucket(uint64_t bucket_key) const;
     std::string requestNodesToString();
 
     bool distributorChanged();
@@ -99,7 +100,7 @@ public:
                                    std::shared_ptr<const ClusterInformation> clusterInfo,
                                    const lib::ClusterState &newClusterState,
                                    api::Timestamp creationTimestamp);
-    ~PendingBucketSpaceDbTransition();
+    ~PendingBucketSpaceDbTransition() override;
 
     // Merges all the results with the corresponding bucket database.
     void mergeIntoBucketDatabase();
