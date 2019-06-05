@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
@@ -10,13 +11,20 @@ import org.junit.Test;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CostReportMaintainerTest {
 
     @Test
     public void maintain() {
         ControllerTester tester = new ControllerTester();
+        List<ZoneId> zones = new ArrayList<>();
+        zones.add(ZoneId.from("prod", "us-east-3", "yahoo"));
+        zones.add(ZoneId.from("prod", "us-west-1", "yahoo"));
+        zones.add(ZoneId.from("prod", "us-central-1", "yahoo"));
+        zones.add(ZoneId.from("prod", "eu-west-1", "yahoo"));
+        tester.zoneRegistry().setZones(zones);
 
         CostReportConsumer mockConsumer = csv -> Assert.assertEquals(csv,
                 "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n" +
@@ -42,7 +50,7 @@ public class CostReportMaintainerTest {
                 mockConsumer,
                 new JobControl(tester.curator()),
                 new NodeRepositoryClientMock(),
-                Clock.fixed(Instant.EPOCH, ZoneId.of("UTC")),
+                Clock.fixed(Instant.EPOCH, java.time.ZoneId.of("UTC")),
                 costConfig);
         maintainer.maintain();
     }

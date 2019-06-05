@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -44,7 +45,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                                    Clock clock,
                                    Metric metric,
                                    ResourceSnapshotConsumer resourceSnapshotConsumer) {
-        super(controller, interval, jobControl, ResourceMeterMaintainer.class.getSimpleName(), Set.of(SystemName.cd));
+        super(controller, interval, jobControl, ResourceMeterMaintainer.class.getSimpleName(), Set.of(SystemName.cd, SystemName.main));
         this.clock = clock;
         this.nodeRepository = nodeRepository;
         this.metric = metric;
@@ -77,6 +78,7 @@ public class ResourceMeterMaintainer extends Maintainer {
 
     private List<NodeRepositoryNode> getNodes() {
         return controller().zoneRegistry().zones()
+                .ofCloud(CloudName.from("aws"))
                 .reachable().ids().stream()
                 .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId, true).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
