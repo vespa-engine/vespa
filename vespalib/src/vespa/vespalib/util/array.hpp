@@ -12,7 +12,7 @@ template <typename T>
 void construct(T * dest, const T * source, size_t sz, std::tr1::false_type)
 {
     for (size_t i(0); i < sz; i++) {
-        std::_Construct(dest + i, *(source + i));
+        ::new (static_cast<void *>(dest + i)) T(*(source + i));
     }
 }
 
@@ -115,7 +115,7 @@ void Array<T>::resize(size_t n)
     if (n > _sz) {
         construct(array(_sz), n-_sz, std::tr1::has_trivial_destructor<T>());
     } else if (n < _sz) {
-        std::_Destroy(array(n), array(_sz));
+        std::destroy(array(n), array(_sz));
     }
     _sz = n;
 }
@@ -124,8 +124,8 @@ template <typename T>
 void move(T * dest, T * source, size_t sz, std::tr1::false_type)
 {
     for (size_t i(0); i < sz; i++) {
-        std::_Construct(dest + i, std::move(*(source + i)));
-        std::_Destroy(source + i);
+        ::new (static_cast<void *>(dest + i)) T(std::move(*(source + i)));
+        std::destroy_at(source + i);
     }
 }
 
@@ -200,7 +200,7 @@ Array<T>::~Array()
 template <typename T>
 void Array<T>::cleanup()
 {
-    std::_Destroy(array(0), array(_sz));
+    std::destroy(array(0), array(_sz));
     _sz = 0;
     Alloc().swap(_array);
 }
