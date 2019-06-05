@@ -91,7 +91,7 @@ public abstract class IndexedTensor implements Tensor {
      * Returns the value at the given indexes as a double
      *
      * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
-     * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
+     * @throws IllegalArgumentException if any of the indexes are out of bound or a wrong number of indexes are given
      */
     public double get(long ... indexes) {
         return get((int)toValueIndex(indexes, dimensionSizes));
@@ -101,7 +101,7 @@ public abstract class IndexedTensor implements Tensor {
      * Returns the value at the given indexes as a float
      *
      * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
-     * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
+     * @throws IllegalArgumentException if any of the indexes are out of bound or a wrong number of indexes are given
      */
     public float getFloat(long ... indexes) {
         return getFloat((int)toValueIndex(indexes, dimensionSizes));
@@ -124,7 +124,7 @@ public abstract class IndexedTensor implements Tensor {
      * if you know the underlying data layout.
      *
      * @param valueIndex the direct index into the underlying data.
-     * @throws IndexOutOfBoundsException if index is out of bounds
+     * @throws IllegalArgumentException if index is out of bounds
      */
     public abstract double get(long valueIndex);
 
@@ -133,7 +133,7 @@ public abstract class IndexedTensor implements Tensor {
      * if you know the underlying data layout.
      *
      * @param valueIndex the direct index into the underlying data.
-     * @throws IndexOutOfBoundsException if index is out of bounds
+     * @throws IllegalArgumentException if index is out of bounds
      */
     public abstract float getFloat(long valueIndex);
 
@@ -144,7 +144,7 @@ public abstract class IndexedTensor implements Tensor {
         long valueIndex = 0;
         for (int i = 0; i < indexes.length; i++) {
             if (indexes[i] >= sizes.size(i)) {
-                throw new IndexOutOfBoundsException();
+                throw new IllegalArgumentException(indexes + " are not within bounds");
             }
             valueIndex += productOfDimensionsAfter(i, sizes) * indexes[i];
         }
@@ -157,7 +157,7 @@ public abstract class IndexedTensor implements Tensor {
         long valueIndex = 0;
         for (int i = 0; i < address.size(); i++) {
             if (address.numericLabel(i) >= sizes.size(i))
-                throw new IllegalArgumentException(address + " is not within bounds of " + type);
+                throw new IllegalArgumentException(address + " is not within the bounds of " + type);
             valueIndex += productOfDimensionsAfter(i, sizes) * address.numericLabel(i);
         }
         return valueIndex;
@@ -562,7 +562,7 @@ public abstract class IndexedTensor implements Tensor {
             try {
                 return get(count++);
             }
-            catch (IndexOutOfBoundsException e) {
+            catch (IllegalArgumentException e) {
                 throw new NoSuchElementException("No element at position " + count);
             }
         }
