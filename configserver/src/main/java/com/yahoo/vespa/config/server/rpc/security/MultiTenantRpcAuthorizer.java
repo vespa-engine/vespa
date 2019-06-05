@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc.security;
 
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -83,6 +84,13 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private void doConfigRequestAuthorization(Request request) {
         try {
+            JRTServerConfigRequestV3 configRequest = JRTServerConfigRequestV3.createFromRequest(request);
+            ConfigKey<?> configKey = configRequest.getConfigKey();
+            String hostname = configRequest.getClientHostName();
+            TenantName tenantName = hostRegistry.getKeyForHost(hostname);
+            if (isConfigKeyForSentinelConfig(configKey) && tenantName == null) {
+                return; // request for sentinel config from unknown node is allowed
+            }
             getPeerIdentity(request)
                     .ifPresent(peerIdentity -> {
                         switch (peerIdentity.nodeType()) {
@@ -91,20 +99,18 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                             case proxy:
                             case tenant:
                             case host:
-                                JRTServerConfigRequestV3 configRequest = JRTServerConfigRequestV3.createFromRequest(request);
-                                ConfigKey<?> configKey = configRequest.getConfigKey();
                                 if (isConfigKeyForGlobalConfig(configKey)) {
                                     GlobalConfigAuthorizationPolicy.verifyAccessAllowed(configKey, peerIdentity.nodeType());
                                     return; // global config access ok
                                 } else {
-                                    String hostname = configRequest.getClientHostName();
-                                    TenantName tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
-                                            .orElseThrow(() -> new AuthorizationException(String.format("Host '%s' not found in host registry", hostname)));
+                                    if (tenantName == null) {
+                                        throw new AuthorizationException(String.format("Host '%s' not found in host registry", hostname));
+                                    }
                                     RequestHandler tenantHandler = getTenantHandler(tenantName);
                                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
                                     ApplicationId peerOwner = applicationId(peerIdentity);
                                     if (peerOwner.equals(resolvedApplication)) {
-                                        return; // allowed to access
+                                        return; // node allowed to access its own config
                                     }
                                     throw new AuthorizationException(
                                             String.format(
@@ -187,6 +193,12 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private static boolean isConfigKeyForGlobalConfig(ConfigKey<?> configKey) {
         return "*".equals(configKey.getConfigId());
+    }
+
+    private static boolean isConfigKeyForSentinelConfig(ConfigKey<?> configKey) {
+        return !isConfigKeyForGlobalConfig(configKey)
+                && configKey.getName().equals(SentinelConfig.getDefName())
+                && configKey.getNamespace().equals(SentinelConfig.getDefNamespace());
     }
 
     private static ApplicationId applicationId(NodeIdentity peerIdentity) {

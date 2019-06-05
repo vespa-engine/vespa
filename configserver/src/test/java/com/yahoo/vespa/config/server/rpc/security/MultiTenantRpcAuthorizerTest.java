@@ -2,6 +2,7 @@ package com.yahoo.vespa.config.server.rpc.security;// Copyright 2018 Yahoo Holdi
 
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.RoutingConfig;
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -213,6 +214,32 @@ public class MultiTenantRpcAuthorizerTest {
                 .get();
     }
 
+    @Test
+    public void unknown_node_is_allowed_to_get_sentinel_config() throws ExecutionException, InterruptedException {
+        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+
+        RpcAuthorizer authorizer = createAuthorizer(null, hostRegistry);
+
+        Request configRequest = createConfigRequest(new ConfigKey<>(SentinelConfig.CONFIG_DEF_NAME, "configid", SentinelConfig.CONFIG_DEF_NAMESPACE), HOSTNAME);
+
+        authorizer.authorizeConfigRequest(configRequest)
+                .get();
+    }
+
+    @Test
+    public void unknown_node_cannot_access_non_sentinel_config() throws ExecutionException, InterruptedException {
+        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+
+        RpcAuthorizer authorizer = createAuthorizer(null, hostRegistry);
+
+        Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
+
+        exceptionRule.expectMessage("Failed to identity peer: Unknown node");
+        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
+
+        authorizer.authorizeConfigRequest(configRequest)
+                .get();
+    }
 
     private static RpcAuthorizer createAuthorizer(NodeIdentity identity, HostRegistry<TenantName> hostRegistry) {
         return new MultiTenantRpcAuthorizer(
@@ -300,8 +327,10 @@ public class MultiTenantRpcAuthorizerTest {
 
         @Override
         public NodeIdentity identifyNode(List<X509Certificate> peerCertificateChain) throws NodeIdentifierException {
+            if (identity == null ) throw new NodeIdentifierException("Unknown node");
             return identity;
         }
+
     }
 
 }
