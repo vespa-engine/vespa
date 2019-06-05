@@ -1,24 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import static org.junit.Assert.*;
-
+import com.google.common.base.Charsets;
+import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.search.grouping.GroupingRequest;
-
-import org.apache.http.client.utils.URIBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.yahoo.collections.Tuple2;
-import com.yahoo.component.Version;
-import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.Sorting.AttributeSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.LowerCaseSorter;
@@ -26,11 +16,19 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import org.apache.http.client.utils.URIBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Smoke test for first generation YQL+ integration.
@@ -261,6 +259,23 @@ public class MinimalQueryInserterTestCase {
         execution.search(query);
         assertEquals(51L, query.getTimeout());
         assertEquals("select * from sources * where title contains \"madonna\" timeout 51;", query.yqlRepresentation());
+    }
+
+    @Test
+    public void testTimeoutWithGrouping() {
+        var select = "select x, y, z from sources * "
+                + "where (x > 0 AND y contains \"foo\" AND z contains \"bar\") "
+                + "order by x limit 20 offset 10 timeout 30 "
+                + "| all(group(y) max(3) each(output(count())));";
+        Query query = new Query("search/?yql="+ URLEncoder.encode(select, Charsets.UTF_8));
+        execution.search(query);
+
+        assertEquals(10, query.getHits());
+        assertEquals(10, query.getOffset());
+        assertEquals(30, query.getTimeout());
+
+        var parsed = query.yqlRepresentation(true);
+        assertEquals(select, parsed);
     }
 
     @Test

@@ -738,8 +738,8 @@ public class YqlParser implements Parser {
         assertHasOperator(ast, StatementOperator.EXECUTE);
 
         ast = ast.getArgument(0);
-        ast = fetchTimeout(ast);
         ast = fetchPipe(ast);
+        ast = fetchTimeout(ast);
         ast = fetchSummaryFields(ast);
         ast = fetchOffsetAndHits(ast);
         ast = fetchSorting(ast);
