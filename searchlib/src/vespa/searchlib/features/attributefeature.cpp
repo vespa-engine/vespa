@@ -269,7 +269,8 @@ AttributeBlueprint::AttributeBlueprint() :
     fef::Blueprint("attribute"),
     _attrName(),
     _extra(),
-    _tensorType(ValueType::double_type())
+    _tensorType(ValueType::double_type()),
+    _attribute(nullptr)
 {
 }
 
