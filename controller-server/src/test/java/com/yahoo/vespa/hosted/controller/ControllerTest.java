@@ -384,16 +384,17 @@ public class ControllerTest {
                            tester.applications().rotationRepository().availableRotations(lock)
                                  .containsKey(new RotationId("rotation-id-01")));
             }
+            tester.flushDnsRequests();
 
-            // Records remain
+            // Records are removed
             record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
+            assertTrue(record.isEmpty());
 
             record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
-            assertTrue(record.isPresent());
+            assertTrue(record.isEmpty());
 
             record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
+            assertTrue(record.isEmpty());
         }
 
         // Application 2 is deployed and assigned same rotation as application 1 had before deletion
@@ -406,7 +407,7 @@ public class ControllerTest {
                     .region("us-central-1")
                     .build();
             tester.deployCompletely(app2, applicationPackage);
-            assertEquals(6, tester.controllerTester().nameService().records().size());
+            assertEquals(3, tester.controllerTester().nameService().records().size());
 
             Optional<Record> record = tester.controllerTester().findCname("app2--tenant2.global.vespa.yahooapis.com");
             assertTrue(record.isPresent());
@@ -438,7 +439,7 @@ public class ControllerTest {
             app1 = tester.applications().require(app1.id());
             assertEquals("rotation-id-02", app1.rotations().get(0).asString());
 
-            // Existing DNS records are updated to point to the newly assigned rotation
+            // DNS records are created for the newly assigned rotation
             assertEquals(6, tester.controllerTester().nameService().records().size());
 
             Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");

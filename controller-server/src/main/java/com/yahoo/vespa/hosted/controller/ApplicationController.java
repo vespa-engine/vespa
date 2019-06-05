@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
@@ -570,6 +571,9 @@ public class ApplicationController {
             curator.removeApplication(id);
             applicationStore.removeAll(id);
             applicationStore.removeAll(TesterId.of(id));
+
+            EndpointList endpoints = application.get().endpointsIn(controller.system());
+            endpoints.asList().stream().map(Endpoint::dnsName).forEach(name -> controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal));
 
             log.info("Deleted " + application);
         }));
