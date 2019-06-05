@@ -27,7 +27,14 @@ SingleBoolAttribute::~SingleBoolAttribute()
 
 bool
 SingleBoolAttribute::addDoc(DocId & doc) {
-    bool incGen = _bv.extend(getNumDocs() + 1);
+    size_t needSize = getNumDocs() + 1;
+    bool incGen = false;
+    if (_bv.capacity() < needSize) {
+        const GrowStrategy & gs = this->getConfig().getGrowStrategy();
+        uint32_t newSize = needSize + (needSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
+        incGen = _bv.reserve(newSize);
+    }
+    incGen = _bv.extend(needSize) || incGen;
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
