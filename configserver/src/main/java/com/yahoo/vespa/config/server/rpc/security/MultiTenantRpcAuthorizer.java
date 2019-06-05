@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 
@@ -74,78 +73,81 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     @Override
     public CompletableFuture<Void> authorizeConfigRequest(Request request) {
-        return doAsyncAuthorization(request, this::doConfigRequestAuthorization);
+        return CompletableFuture.runAsync(() -> doConfigRequestAuthorization(request), executor);
     }
 
     @Override
     public CompletableFuture<Void> authorizeFileRequest(Request request) {
-        return doAsyncAuthorization(request, this::doFileRequestAuthorization);
+        return CompletableFuture.runAsync(() -> doFileRequestAuthorization(request), executor);
     }
 
-    private CompletableFuture<Void> doAsyncAuthorization(Request request, BiConsumer<Request, NodeIdentity> authorizer) {
-        return CompletableFuture.runAsync(
-                () -> {
-                    try {
-                        getPeerIdentity(request)
-                                .ifPresent(peerIdentity -> authorizer.accept(request, peerIdentity));
-                        log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
-                                                                   request.methodName(), request.target().toString()));
-                    } catch (Throwable t) {
-                        handleAuthorizationFailure(request, t);
-                    }
-                },
-                executor);
-    }
-
-    private void doConfigRequestAuthorization(Request request, NodeIdentity peerIdentity) {
-        switch (peerIdentity.nodeType()) {
-            case config:
-                return; // configserver is allowed to access all config
-            case proxy:
-            case tenant:
-            case host:
-                JRTServerConfigRequestV3 configRequest = JRTServerConfigRequestV3.createFromRequest(request);
-                ConfigKey<?> configKey = configRequest.getConfigKey();
-                if (isConfigKeyForGlobalConfig(configKey)) {
-                    GlobalConfigAuthorizationPolicy.verifyAccessAllowed(configKey, peerIdentity.nodeType());
-                    return; // global config access ok
-                } else {
-                    String hostname = configRequest.getClientHostName();
-                    TenantName tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
-                            .orElseThrow(() -> new AuthorizationException(String.format("Host '%s' not found in host registry", hostname)));
-                    RequestHandler tenantHandler = getTenantHandler(tenantName);
-                    ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
-                    ApplicationId peerOwner = applicationId(peerIdentity);
-                    if (peerOwner.equals(resolvedApplication)) {
-                        return; // allowed to access
-                    }
-                    throw new AuthorizationException(
-                            String.format(
-                                    "Peer is not allowed to access config for owned by %s. Peer is owned by %s",
-                                    resolvedApplication.toShortString(), peerOwner.toShortString()));
-                }
-            default:
-                throw new AuthorizationException(String.format("'%s' nodes are not allowed to access config", peerIdentity.nodeType()));
+    private void doConfigRequestAuthorization(Request request) {
+        try {
+            getPeerIdentity(request)
+                    .ifPresent(peerIdentity -> {
+                        switch (peerIdentity.nodeType()) {
+                            case config:
+                                return; // configserver is allowed to access all config
+                            case proxy:
+                            case tenant:
+                            case host:
+                                JRTServerConfigRequestV3 configRequest = JRTServerConfigRequestV3.createFromRequest(request);
+                                ConfigKey<?> configKey = configRequest.getConfigKey();
+                                if (isConfigKeyForGlobalConfig(configKey)) {
+                                    GlobalConfigAuthorizationPolicy.verifyAccessAllowed(configKey, peerIdentity.nodeType());
+                                    return; // global config access ok
+                                } else {
+                                    String hostname = configRequest.getClientHostName();
+                                    TenantName tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
+                                            .orElseThrow(() -> new AuthorizationException(String.format("Host '%s' not found in host registry", hostname)));
+                                    RequestHandler tenantHandler = getTenantHandler(tenantName);
+                                    ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
+                                    ApplicationId peerOwner = applicationId(peerIdentity);
+                                    if (peerOwner.equals(resolvedApplication)) {
+                                        return; // allowed to access
+                                    }
+                                    throw new AuthorizationException(
+                                            String.format(
+                                                    "Peer is not allowed to access config for owned by %s. Peer is owned by %s",
+                                                    resolvedApplication.toShortString(), peerOwner.toShortString()));
+                                }
+                            default:
+                                throw new AuthorizationException(String.format("'%s' nodes are not allowed to access config", peerIdentity.nodeType()));
+                        }
+                    });
+            log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                                                        request.methodName(), request.target().toString()));
+        } catch (Throwable t) {
+            handleAuthorizationFailure(request, t);
         }
     }
 
-    private void doFileRequestAuthorization(Request request, NodeIdentity peerIdentity) {
-        switch (peerIdentity.nodeType()) {
-            case config:
-                return; // configserver is allowed to access all files
-            case proxy:
-            case tenant:
-            case host:
-                ApplicationId peerOwner = applicationId(peerIdentity);
-                FileReference requestedFile = new FileReference(request.parameters().get(0).asString());
-                RequestHandler tenantHandler = getTenantHandler(peerOwner.tenant());
-                Set<FileReference> filesOwnedByApplication = tenantHandler.listFileReferences(peerOwner);
-                if (filesOwnedByApplication.contains(requestedFile)) {
-                    return; // allowed to access
-                }
-                throw new AuthorizationException("Peer is not allowed to access file " + requestedFile.value());
-            default:
-                throw new AuthorizationException(String.format("'%s' nodes are not allowed to access files", peerIdentity.nodeType()));
+    private void doFileRequestAuthorization(Request request) {
+        try {
+            getPeerIdentity(request)
+                    .ifPresent(peerIdentity -> {
+                        switch (peerIdentity.nodeType()) {
+                            case config:
+                                return; // configserver is allowed to access all files
+                            case proxy:
+                            case tenant:
+                            case host:
+                                ApplicationId peerOwner = applicationId(peerIdentity);
+                                FileReference requestedFile = new FileReference(request.parameters().get(0).asString());
+                                RequestHandler tenantHandler = getTenantHandler(peerOwner.tenant());
+                                Set<FileReference> filesOwnedByApplication = tenantHandler.listFileReferences(peerOwner);
+                                if (filesOwnedByApplication.contains(requestedFile)) {
+                                    return; // allowed to access
+                                }
+                                throw new AuthorizationException("Peer is not allowed to access file " + requestedFile.value());
+                            default:
+                                throw new AuthorizationException(String.format("'%s' nodes are not allowed to access files", peerIdentity.nodeType()));
+                        }
+                    });
+            log.log(LogLevel.DEBUG, () -> String.format("Authorization succeeded for request '%s' from '%s'",
+                                                        request.methodName(), request.target().toString()));
+        } catch (Throwable t) {
+            handleAuthorizationFailure(request, t);
         }
     }
 
