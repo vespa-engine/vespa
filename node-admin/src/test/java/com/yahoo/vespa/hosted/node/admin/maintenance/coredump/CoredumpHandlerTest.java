@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -53,8 +53,9 @@ public class CoredumpHandlerTest {
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
     @SuppressWarnings("unchecked")
+    private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
-            crashPathInContainer, doneCoredumpsPath);
+            crashPathInContainer, doneCoredumpsPath, coredumpIdSupplier);
 
 
     @Test
@@ -66,9 +67,7 @@ public class CoredumpHandlerTest {
         Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve(".bash.core.431")), FileTime.from(Instant.now()));
 
         assertFolderContents(crashPathOnHost, ".bash.core.431");
-        UUID coredumpId = UUID.randomUUID();
-
-        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(coredumpId, crashPathOnHost, processingDir);
+        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
         assertEquals(Optional.empty(), enqueuedPath);
 
         // bash.core.431 finished writing... and 2 more have since been written
@@ -76,27 +75,30 @@ public class CoredumpHandlerTest {
         Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-proton.core.119")), FileTime.from(Instant.now().minus(Duration.ofMinutes(10))));
         Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-slobrok.core.673")), FileTime.from(Instant.now().minus(Duration.ofMinutes(5))));
 
-        enqueuedPath = coredumpHandler.enqueueCoredump(coredumpId, crashPathOnHost, processingDir);
-        assertEquals(Optional.of(processingDir.resolve(coredumpId.toString())), enqueuedPath);
+        when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
+        enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
         assertFolderContents(crashPathOnHost, "bash.core.431", "vespa-slobrok.core.673");
-        assertFolderContents(processingDir, coredumpId.toString());
-        assertFolderContents(processingDir.resolve(coredumpId.toString()), "dump_vespa-proton.core.119");
+        assertFolderContents(processingDir, "id-123");
+        assertFolderContents(processingDir.resolve("id-123"), "dump_vespa-proton.core.119");
+        verify(coredumpIdSupplier, times(1)).get();
 
         // Enqueue another
-        enqueuedPath = coredumpHandler.enqueueCoredump(coredumpId, crashPathOnHost, processingDir);
-        assertEquals(Optional.of(processingDir.resolve(coredumpId.toString())), enqueuedPath);
+        enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-321")), enqueuedPath);
         assertFolderContents(crashPathOnHost, "bash.core.431");
-        assertFolderContents(processingDir, coredumpId.toString());
-        assertFolderContents(processingDir.resolve(coredumpId.toString()), "dump_vespa-proton.core.119", "dump_vespa-slobrok.core.673");
+        assertFolderContents(processingDir, "id-123", "id-321");
+        assertFolderContents(processingDir.resolve("id-321"), "dump_vespa-slobrok.core.673");
+        verify(coredumpIdSupplier, times(2)).get();
     }
 
     @Test
     public void coredump_to_process_test() throws IOException {
         final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
         final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
-        UUID coredumpId = UUID.randomUUID();
+
         // Initially there are no core dumps
-        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(coredumpId, crashPathOnHost, processingDir);
+        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
         assertEquals(Optional.empty(), enqueuedPath);
 
         // 3 core dumps occur
@@ -105,12 +107,14 @@ public class CoredumpHandlerTest {
         Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-proton.core.119")), FileTime.from(Instant.now().minus(Duration.ofMinutes(10))));
         Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-slobrok.core.673")), FileTime.from(Instant.now().minus(Duration.ofMinutes(5))));
 
-        enqueuedPath = coredumpHandler.getCoredumpToProcess(coredumpId, crashPathOnHost, processingDir);
-        assertEquals(Optional.of(processingDir.resolve(coredumpId.toString())), enqueuedPath);
+        when(coredumpIdSupplier.get()).thenReturn("id-123");
+        enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
 
         // Running this again wont enqueue new core dumps as we are still processing the one enqueued previously
-        enqueuedPath = coredumpHandler.getCoredumpToProcess(coredumpId, crashPathOnHost, processingDir);
-        assertEquals(Optional.of(processingDir.resolve(coredumpId.toString())), enqueuedPath);
+        enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
+        verify(coredumpIdSupplier, times(1)).get();
     }
 
     @Test
