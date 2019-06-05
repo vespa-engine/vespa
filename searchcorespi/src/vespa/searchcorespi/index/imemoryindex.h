@@ -5,26 +5,19 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
-namespace search
-{
+namespace search { class IDestructorCallback; }
 
-class IDestructorCallback;
-
-}
-
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Interface for a memory index as seen from an index maintainer.
  */
 struct IMemoryIndex : public searchcorespi::IndexSearchable {
-    typedef std::shared_ptr<IMemoryIndex> SP;
-    using OnWriteDoneType =
-        const std::shared_ptr<search::IDestructorCallback> &;
+    using SP = std::shared_ptr<IMemoryIndex>;
+    using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
     virtual ~IMemoryIndex() {}
 
     /**
@@ -81,7 +74,6 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
     virtual search::index::Schema::SP getPrunedSchema() const = 0;
 };
 
-} // namespace index
-} // namespace searchcorespi
+}
 
 
