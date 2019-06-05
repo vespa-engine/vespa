@@ -52,7 +52,7 @@ public class HttpEndpoint implements TestEndpoint {
                                              .uri(target)
                                              .build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            if (response.statusCode() / 100 != 2)
+            if (response.statusCode() / 100 != 2) // TODO consider allowing 504 if specified.
                 throw new RuntimeException("Non-OK status code " + response.statusCode() + " at " + target +
                                            ", with response \n" + new String(response.body()));
 
