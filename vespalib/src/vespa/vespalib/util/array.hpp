@@ -4,12 +4,12 @@
 #include "array.h"
 #include <cstdlib>
 #include <cstring>
-#include <tr1/type_traits>
+#include <type_traits>
 
 namespace vespalib {
 
 template <typename T>
-void construct(T * dest, const T * source, size_t sz, std::tr1::false_type)
+void construct(T * dest, const T * source, size_t sz, std::false_type)
 {
     for (size_t i(0); i < sz; i++) {
         ::new (static_cast<void *>(dest + i)) T(*(source + i));
@@ -17,13 +17,13 @@ void construct(T * dest, const T * source, size_t sz, std::tr1::false_type)
 }
 
 template <typename T>
-void construct(T * dest, const T * source, size_t sz, std::tr1::true_type)
+void construct(T * dest, const T * source, size_t sz, std::true_type)
 {
     memcpy(dest, source, sz*sizeof(T));
 }
 
 template <typename T>
-void construct(T * dest, size_t sz, std::tr1::false_type)
+void construct(T * dest, size_t sz, std::false_type)
 {
     for (size_t i(0); i < sz; i++) {
         void *ptr = &dest[i];
@@ -32,14 +32,14 @@ void construct(T * dest, size_t sz, std::tr1::false_type)
 }
 
 template <typename T>
-void construct(T * dest, size_t sz, std::tr1::true_type)
+void construct(T * dest, size_t sz, std::true_type)
 {
     (void) dest;
     (void) sz;
 }
 
 template <typename T>
-void construct(T * dest, size_t sz, T val, std::tr1::false_type)
+void construct(T * dest, size_t sz, T val, std::false_type)
 {
     for (size_t i(0); i < sz; i++) {
         void *ptr = &dest[i];
@@ -48,7 +48,7 @@ void construct(T * dest, size_t sz, T val, std::tr1::false_type)
 }
 
 template <typename T>
-void construct(T * dest, size_t sz, T val, std::tr1::true_type)
+void construct(T * dest, size_t sz, T val, std::true_type)
 {
     for (size_t i(0); i < sz; i++) {
         dest[i] = val;
@@ -60,7 +60,7 @@ Array<T>::Array(const Array & rhs)
     : _array(rhs._array.create(rhs.size() * sizeof(T))),
       _sz(rhs.size())
 {
-    construct(array(0), rhs.array(0), _sz, std::tr1::has_trivial_destructor<T>());
+    construct(array(0), rhs.array(0), _sz, std::is_trivially_copyable<T>());
 }
 
 template <typename T>
@@ -113,7 +113,7 @@ void Array<T>::resize(size_t n)
         reserve(n);
     }
     if (n > _sz) {
-        construct(array(_sz), n-_sz, std::tr1::has_trivial_destructor<T>());
+        construct(array(_sz), n-_sz, std::is_trivially_default_constructible<T>());
     } else if (n < _sz) {
         std::destroy(array(n), array(_sz));
     }
@@ -121,7 +121,7 @@ void Array<T>::resize(size_t n)
 }
 
 template <typename T>
-void move(T * dest, T * source, size_t sz, std::tr1::false_type)
+void move(T * dest, T * source, size_t sz, std::false_type)
 {
     for (size_t i(0); i < sz; i++) {
         ::new (static_cast<void *>(dest + i)) T(std::move(*(source + i)));
@@ -130,7 +130,7 @@ void move(T * dest, T * source, size_t sz, std::tr1::false_type)
 }
 
 template <typename T>
-void move(T * dest, const T * source, size_t sz, std::tr1::true_type)
+void move(T * dest, const T * source, size_t sz, std::true_type)
 {
     memcpy(dest, source, sz*sizeof(T));
 }
@@ -140,7 +140,7 @@ void Array<T>::increase(size_t n)
 {
     Alloc newArray(_array.create(sizeof(T)*n));
     if (capacity() > 0) {
-        move(static_cast<T *>(newArray.get()), array(0), _sz, std::tr1::has_trivial_destructor<T>());
+        move(static_cast<T *>(newArray.get()), array(0), _sz, std::is_trivially_copyable<T>());
     }
     _array.swap(newArray);
 }
@@ -172,7 +172,7 @@ Array<T>::Array(size_t sz, const Alloc & initial) :
     _array(initial.create(sz * sizeof(T))),
     _sz(sz)
 {
-    construct(array(0), _sz, std::tr1::has_trivial_destructor<T>());
+    construct(array(0), _sz, std::is_trivially_default_constructible<T>());
 }
 
 template <typename T>
@@ -180,7 +180,7 @@ Array<T>::Array(size_t sz, T value, const Alloc & initial) :
     _array(initial.create(sz * sizeof(T))),
     _sz(sz)
 {
-    construct(array(0), _sz, value, std::tr1::has_trivial_destructor<T>());
+    construct(array(0), _sz, value, std::is_trivially_copyable<T>());
 }
 
 template <typename T>
@@ -188,7 +188,7 @@ Array<T>::Array(const_iterator begin_, const_iterator end_, const Alloc & initia
     _array(initial.create(begin_ != end_ ? sizeof(T) * (end_-begin_) : 0)),
     _sz(end_-begin_)
 {
-    construct(array(0), begin_, _sz, std::tr1::has_trivial_destructor<T>());
+    construct(array(0), begin_, _sz, std::is_trivially_copyable<T>());
 }
 
 template <typename T>
