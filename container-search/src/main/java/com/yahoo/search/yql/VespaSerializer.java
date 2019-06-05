@@ -1227,8 +1227,13 @@ public class VespaSerializer {
     }
 
     public static String serialize(Query query) {
+        return serialize(query, "");
+    }
+
+    public static String serialize(Query query, String insertBeforeGrouping) {
         StringBuilder out = new StringBuilder();
         serialize(query.getModel().getQueryTree().getRoot(), out);
+        out.append(insertBeforeGrouping);
         for (GroupingRequest request : query.getSelect().getGrouping()) {
             out.append(" | ");
             serialize(request, out);

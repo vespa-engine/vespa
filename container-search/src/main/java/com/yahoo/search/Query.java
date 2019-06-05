@@ -858,23 +858,29 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             commaSeparated(yql, sources);
         }
         yql.append(" where ");
-        yql.append(VespaSerializer.serialize(this));
+        String insert = serializeSortingAndLimits(includeHitsAndOffset);
+        yql.append(VespaSerializer.serialize(this, insert));
+        yql.append(';');
+        return yql.toString();
+    }
+
+    private String serializeSortingAndLimits(boolean includeHitsAndOffset) {
+        StringBuilder insert = new StringBuilder();
         if (getRanking().getSorting() != null && getRanking().getSorting().fieldOrders().size() > 0) {
-            serializeSorting(yql);
+            serializeSorting(insert);
         }
         if (includeHitsAndOffset) {
             if (getOffset() != 0) {
-                yql.append(" limit ").append(getHits() + getOffset())
-                   .append(" offset ").append(getOffset());
+                insert.append(" limit ").append(getHits() + getOffset())
+                    .append(" offset ").append(getOffset());
             } else if (getHits() != 10) {
-                yql.append(" limit ").append(getHits());
+                insert.append(" limit ").append(getHits());
             }
         }
         if (getTimeout() != defaultTimeout) {
-            yql.append(" timeout ").append(getTimeout());
+            insert.append(" timeout ").append(getTimeout());
         }
-        yql.append(';');
-        return yql.toString();
+        return insert.toString();
     }
 
     private void serializeSorting(StringBuilder yql) {
