@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("enumstore_test");
 #include <vespa/vespalib/testkit/testapp.h>
-//#define LOG_ENUM_STORE
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <limits>
 #include <string>
 #include <iostream>
+
+#include <vespa/log/log.h>
+LOG_SETUP("enumstore_test");
 
 namespace search {
 
