@@ -203,8 +203,6 @@ public class ArchiverHandlerTestCase {
 
     @Test
     public void testCacheEldestEntry() throws IOException {
-        try {
-
         LogWriterLRUCache cache = new LogWriterLRUCache(5, (float) 0.75);
         String d = "target/tmp/logarchive";
         FilesArchived archive = new FilesArchived(new File(d));
@@ -212,11 +210,6 @@ public class ArchiverHandlerTestCase {
             cache.put(i, new LogWriter(d+"/2018/12/31/17", 5, archive));
         }
         assertEquals(cache.size(), cache.maxEntries);
-
-        } catch (NullPointerException e) {
-            System.err.println("null: "+e);
-            e.printStackTrace();
-        }
     }
 
     @Test
