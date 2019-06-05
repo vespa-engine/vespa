@@ -37,19 +37,38 @@ public class FilesArchived {
     private long maxAgeDays = 30; // GDPR rules: max 30 days
     private long sizeLimit = 30L * (1L << 30); // 30 GB
 
+    private void run() {
+        try {
+            Thread.sleep(125000); // 2 m 5 s
+            while (true) {
+                while (maintenance()) {
+                    Thread.sleep(2000); // 2 s
+                }
+                Thread.sleep(299000); // approx 5 min
+            }
+        } catch (Exception e) {
+            // just exit thread on exception, nothing is safe afterwards
+            System.err.println("Fatal exception in FilesArchived-maintainer thread: "+e);
+        }
+    }
+
     /**
-     * Creates an FilesArchive managing the given directory
+     * Creates an instance of FilesArchive managing the given directory
      */
     public FilesArchived(File rootDir) {
         this.root = rootDir;
-        maintenance();
+        rescan();
+        Thread thread = new Thread(this::run);
+        thread.setDaemon(true);
+        thread.setName("FilesArchived-maintainer");
+        thread.start();
     }
 
     public String toString() {
         return FilesArchived.class.getName() + ": root=" + root;
     }
 
-    public int highestGen(String prefix) {
+    public synchronized int highestGen(String prefix) {
         int gen = 0;
         for (LogFile lf : knownFiles) {
             if (prefix.equals(lf.prefix)) {
@@ -59,14 +78,25 @@ public class FilesArchived {
         return gen;
     }
 
-    public synchronized void maintenance() {
+    public synchronized boolean maintenance() {
+        boolean action = false;
         rescan();
-        if (removeOlderThan(maxAgeDays)) rescan();
-        if (compressOldFiles()) rescan();
+        if (removeOlderThan(maxAgeDays)) {
+            action = true;
+            rescan();
+        }
+        if (compressOldFiles()) {
+            action = true;
+            rescan();
+        }
         long days = maxAgeDays;
         while (tooMuchDiskUsage() && (--days > 1)) {
-            if (removeOlderThan(days)) rescan();
+            if (removeOlderThan(days)) {
+                action = true;
+                rescan();
+            }
         }
+        return action;
     }
 
     private void rescan() {
@@ -133,7 +163,7 @@ public class FilesArchived {
         }
     }
 
-    public long sumFileSizes() {
+    long sumFileSizes() {
         long sum = 0;
         for (LogFile lf : knownFiles) {
             sum += lf.path.length();
@@ -222,4 +252,3 @@ public class FilesArchived {
         }
     }
 }
-
