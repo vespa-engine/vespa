@@ -2,6 +2,7 @@ package com.yahoo.vespa.config.server.rpc.security;// Copyright 2018 Yahoo Holdi
 
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.RoutingConfig;
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -208,6 +209,22 @@ public class MultiTenantRpcAuthorizerTest {
 
         exceptionRule.expectMessage("No handler exists for tenant 'malice'");
         exceptionRule.expectCause(instanceOf(AuthorizationException.class));
+
+        authorizer.authorizeConfigRequest(configRequest)
+                .get();
+    }
+
+    @Test
+    public void tenant_node_not_in_hostregistry_allowed_to_access_sentinel_config() throws ExecutionException, InterruptedException {
+        NodeIdentity identity = new NodeIdentity.Builder(NodeType.tenant)
+                .applicationId(APPLICATION_ID)
+                .build();
+
+        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+
+        RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
+
+        Request configRequest = createConfigRequest(new ConfigKey<>(SentinelConfig.CONFIG_DEF_NAME, "configid", SentinelConfig.CONFIG_DEF_NAMESPACE), HOSTNAME);
 
         authorizer.authorizeConfigRequest(configRequest)
                 .get();
