@@ -935,11 +935,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
         /*
-         * Special handling of the zone application (the only system application with an application package)
+         * Special handling of the proxy application (the only system application with an application package)
          * Setting any other deployOptions here is not supported for now (e.g. specifying version), but
          * this might be handy later to handle emergency downgrades.
          */
-        boolean isZoneApplication = SystemApplication.zone.id().equals(applicationId);
+        boolean isZoneApplication = SystemApplication.proxy.id().equals(applicationId);
         if (isZoneApplication) { // TODO jvenstad: Separate out.
             // Make it explicit that version is not yet supported here
             String versionStr = deployOptions.field("vespaVersion").asString();
@@ -957,7 +957,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 throw new IllegalArgumentException("Deployment of system applications is not permitted until system version is determined");
             }
             ActivateResult result = controller.applications()
-                    .deploySystemApplicationPackage(SystemApplication.zone, zone, systemVersion.get().versionNumber());
+                    .deploySystemApplicationPackage(SystemApplication.proxy, zone, systemVersion.get().versionNumber());
             return new SlimeJsonResponse(toSlime(result));
         }
 

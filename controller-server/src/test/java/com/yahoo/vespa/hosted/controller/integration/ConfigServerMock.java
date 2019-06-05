@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
@@ -21,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -54,6 +54,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
+    private final Set<ApplicationId> disallowConvergenceCheckApplications = new HashSet<>();
     private final Version initialVersion = new Version(6, 1, 0);
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
@@ -67,7 +68,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
-        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all(), Optional.empty());
+        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
     }
 
     /** Sets the ConfigChangeActions that will be returned on next deployment. */
@@ -90,28 +91,22 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
-        bootstrap(zones, List.of(applications), Optional.empty());
+        bootstrap(zones, List.of(applications));
     }
 
-    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
+    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications) {
         nodeRepository().clear();
-        addNodes(zones, applications, type);
+        addNodes(zones, applications);
     }
 
-    public void addNodes(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
+    public void addNodes(List<ZoneId> zones, List<SystemApplication> applications) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
-                NodeType nodeType = type.orElseGet(() -> {
-                    // Zone application has two node types. Use proxy
-                    if (application == SystemApplication.zone) return NodeType.proxy;
-                    if (application.nodeTypes().size() != 1) throw new IllegalArgumentException(application + " has several node types. Unable to detect type automatically");
-                    return application.nodeTypes().iterator().next();
-                });
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    Node.State.active, nodeType,
+                                                    Node.State.active, application.nodeType(),
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion
@@ -196,7 +191,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment, Optional<Version> version) {
+        if (disallowConvergenceCheckApplications.contains(deployment.applicationId()))
+            throw new IllegalStateException(deployment.applicationId() + " should not ask for service convergence");
+
         return Optional.ofNullable(serviceStatus.get(deployment));
+    }
+
+    public void disallowConvergenceCheck(ApplicationId applicationId) {
+        disallowConvergenceCheckApplications.add(applicationId);
     }
 
     @Override

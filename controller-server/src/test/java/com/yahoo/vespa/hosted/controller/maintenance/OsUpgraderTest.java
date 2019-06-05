@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -60,17 +59,15 @@ public class OsUpgraderTest {
 
         // Bootstrap system
         tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4, zone5),
-                                        singletonList(SystemApplication.zone),
-                                        Optional.of(NodeType.host));
+                                        List.of(SystemApplication.tenantHost));
 
         // Add system applications that exist in a real system, but are currently not upgraded
         tester.configServer().addNodes(List.of(zone1, zone2, zone3, zone4, zone5),
-                                       Collections.singletonList(SystemApplication.configServer),
-                                       Optional.empty());
+                                       List.of(SystemApplication.configServer));
 
         // Fail a few nodes. Failed nodes should not affect versions
-        failNodeIn(zone1, SystemApplication.zone);
-        failNodeIn(zone3, SystemApplication.zone);
+        failNodeIn(zone1, SystemApplication.tenantHost);
+        failNodeIn(zone3, SystemApplication.tenantHost);
 
         // New OS version released
         Version version1 = Version.fromString("7.1");
@@ -82,37 +79,37 @@ public class OsUpgraderTest {
 
         // zone 1: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.zone, zone1);
+        assertWanted(version1, SystemApplication.tenantHost, zone1);
 
         // Other zones remain on previous version (none)
-        assertWanted(Version.emptyVersion, SystemApplication.zone, zone2, zone3, zone4);
+        assertWanted(Version.emptyVersion, SystemApplication.proxy, zone2, zone3, zone4);
 
         // zone 1: completes upgrade
-        completeUpgrade(version1, SystemApplication.zone, zone1);
+        completeUpgrade(version1, SystemApplication.tenantHost, zone1);
         statusUpdater.maintain();
         assertEquals(2, nodesOn(version1).size());
         assertEquals(11, nodesOn(Version.emptyVersion).size());
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.zone, zone2, zone3);
+        assertWanted(version1, SystemApplication.proxy, zone2, zone3);
 
         // zone 4: still on previous version
-        assertWanted(Version.emptyVersion, SystemApplication.zone, zone4);
+        assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4);
 
         // zone 2 and 3: completes upgrade
-        completeUpgrade(version1, SystemApplication.zone, zone2, zone3);
+        completeUpgrade(version1, SystemApplication.tenantHost, zone2, zone3);
 
         // zone 4: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.zone, zone4);
+        assertWanted(version1, SystemApplication.tenantHost, zone4);
 
         // zone 4: completes upgrade
-        completeUpgrade(version1, SystemApplication.zone, zone4);
+        completeUpgrade(version1, SystemApplication.tenantHost, zone4);
 
         // Next run does nothing as all zones are upgraded
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.zone, zone1, zone2, zone3, zone4);
+        assertWanted(version1, SystemApplication.tenantHost, zone1, zone2, zone3, zone4);
         statusUpdater.maintain();
         assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud).stream()
                                                         .allMatch(node -> node.version().equals(version1)));

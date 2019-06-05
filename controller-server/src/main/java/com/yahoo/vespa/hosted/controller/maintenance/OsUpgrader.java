@@ -39,12 +39,11 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
-        if (wantedVersion(zone, application, target).equals(target)) {
+        if (!application.isEligibleForOsUpgrades() || wantedVersion(zone, application, target).equals(target)) {
             return;
         }
         log.info(String.format("Upgrading OS of %s to version %s in %s", application.id(), target, zone));
-        application.nodeTypesWithUpgradableOs().forEach(nodeType -> controller().configServer().nodeRepository()
-                                                                                .upgradeOs(zone, nodeType, target));
+        controller().configServer().nodeRepository().upgradeOs(zone, application.nodeType(), target);
     }
 
     @Override
@@ -77,7 +76,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
     /** Returns whether node in application should be upgraded by this */
     public static boolean eligibleForUpgrade(Node node, SystemApplication application) {
         return upgradableNodeStates.contains(node.state()) &&
-               application.nodeTypesWithUpgradableOs().contains(node.type());
+               application.isEligibleForOsUpgrades();
     }
 
     private static String name(CloudName cloud) {

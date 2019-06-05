@@ -40,9 +40,12 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
-        return    minVersion(zone, application, Node::currentVersion).map(target::equals)
-                                                                     .orElse(true)
-               && application.configConvergedIn(zone, controller(), Optional.of(target));
+        Optional<Version> minVersion = minVersion(zone, application, Node::currentVersion);
+        // Skip application convergence check if there are no nodes belonging to the application in the zone
+        if (minVersion.isEmpty()) return true;
+
+        return     minVersion.get().equals(target)
+                && application.configConvergedIn(zone, controller(), Optional.of(target));
     }
 
     @Override
