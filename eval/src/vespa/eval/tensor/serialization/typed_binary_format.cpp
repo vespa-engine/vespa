@@ -99,7 +99,7 @@ TypedBinaryFormat::deserialize(nbostream &stream)
         stream.adjustReadPos(read_pos - stream.rp());
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::decode(stream));
     }
-    abort();
+    throw IllegalArgumentException(make_string("Received unknown tensor format type = %du.", formatId));
 }
 
 template <typename T>
