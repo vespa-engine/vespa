@@ -46,8 +46,9 @@ public class FilesArchived {
                 }
                 Thread.sleep(299000); // approx 5 min
             }
-        } catch (InterruptedException e) {
-            // just exit thread on interrupt
+        } catch (Exception e) {
+            // just exit thread on exception, nothing is safe afterwards
+            System.err.println("Fatal exception in FilesArchived-maintainer thread: "+e);
         }
     }
 
@@ -59,6 +60,7 @@ public class FilesArchived {
         rescan();
         Thread thread = new Thread(this::run);
         thread.setDaemon(true);
+        thread.setName("FilesArchived-maintainer");
         thread.start();
     }
 
