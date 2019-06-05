@@ -428,11 +428,13 @@ FieldInverter::trimAbortedDocs()
 void
 FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
 {
-    startDoc(docId);
     if (val) {
+        startDoc(docId);
         invertNormalDocTextField(*val);
+        endDoc();
+    } else {
+        removeDocument(docId);
     }
-    endDoc();
 }
 
 void
