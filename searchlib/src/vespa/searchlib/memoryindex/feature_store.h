@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/vespalib/datastore/datastore.h>
 
 namespace search::memoryindex {

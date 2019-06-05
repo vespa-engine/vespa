@@ -4,6 +4,7 @@
 #include <vector>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 
 namespace search { class Rand48; }
 

@@ -58,75 +58,7 @@ public:
 
 namespace search::bitcompression {
 
-class PosOccFieldParams
-{
-public:
-    typedef index::PostingListParams PostingListParams;
-    typedef index::Schema Schema;
-
-    enum CollectionType
-    {
-        SINGLE,
-        ARRAY,
-        WEIGHTEDSET
-    };
-
-    uint8_t _elemLenK;
-    bool    _hasElements;
-    bool    _hasElementWeights;
-    uint32_t _avgElemLen;
-    CollectionType _collectionType;
-    vespalib::string _name;
-
-    PosOccFieldParams();
-
-    bool operator==(const PosOccFieldParams &rhs) const;
-    static vespalib::string getParamsPrefix(uint32_t idx);
-    void getParams(PostingListParams &params, uint32_t idx) const;
-    void setParams(const PostingListParams &params, uint32_t idx);
-    void setSchemaParams(const Schema &schema, uint32_t fieldId);
-    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
-    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
-};
-
-
-class PosOccFieldsParams
-{
-    // Cache pointers.
-    uint32_t _numFields;
-    const PosOccFieldParams *_fieldParams;
-
-    // Storage
-    std::vector<PosOccFieldParams> _params;
-
-public:
-    typedef index::PostingListParams PostingListParams;
-    typedef index::Schema Schema;
-
-    PosOccFieldsParams();
-    PosOccFieldsParams(const PosOccFieldsParams &rhs);
-
-    PosOccFieldsParams &operator=(const PosOccFieldsParams &rhs);
-    bool operator==(const PosOccFieldsParams &rhs) const;
-
-    void cacheParamsRef() {
-        _numFields = _params.size();
-        _fieldParams = _params.empty() ? nullptr : &_params[0];
-    }
-
-    void assertCachedParamsRef() const {
-        assert(_numFields == _params.size());
-        assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
-    }
-
-    uint32_t getNumFields() const { return _numFields; }
-    const PosOccFieldParams *getFieldParams() const { return _fieldParams; }
-    void getParams(PostingListParams &params) const;
-    void setParams(const PostingListParams &params);
-    void setSchemaParams(const Schema &schema, const uint32_t indexId);
-    void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
-    void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
-};
+class PosOccFieldsParams;
 
 template <bool bigEndian>
 class EG2PosOccDecodeContext : public FeatureDecodeContext<bigEndian>
