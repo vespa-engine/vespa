@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_field_index_collection.h"
 #include "field_index.h"
 
 namespace search::memoryindex {
@@ -15,7 +16,7 @@ class FieldInverter;
  * Provides functions to create a posting list iterator (used for searching)
  * for a given word in a given field.
  */
-class FieldIndexCollection {
+class FieldIndexCollection : public IFieldIndexCollection {
 public:
     using PostingList = FieldIndex::PostingList;
 
@@ -56,6 +57,10 @@ public:
     const std::vector<std::unique_ptr<FieldIndex>> &getFieldIndexes() const { return _fieldIndexes; }
 
     uint32_t getNumFields() const { return _numFields; }
+
+    FieldIndexRemover &get_remover(uint32_t field_id) override;
+    IOrderedFieldIndexInserter &get_inserter(uint32_t field_id) override;
+    index::FieldLengthCalculator &get_calculator(uint32_t field_id) override;
 };
 
 }

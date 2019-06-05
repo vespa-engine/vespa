@@ -22,7 +22,7 @@ namespace search::memoryindex {
 
 class FieldInverter;
 class UrlFieldInverter;
-class FieldIndexCollection;
+class IFieldIndexCollection;
 
 /**
  * Class used to invert the fields for a set of documents, preparing for pushing changes info field indexes.
@@ -66,7 +66,8 @@ public:
      */
     DocumentInverter(const index::Schema &schema,
                      ISequencedTaskExecutor &invertThreads,
-                     ISequencedTaskExecutor &pushThreads);
+                     ISequencedTaskExecutor &pushThreads,
+                     IFieldIndexCollection &fieldIndexes);
 
     ~DocumentInverter();
 
@@ -82,7 +83,7 @@ public:
      * NOTE: The caller of this function should sync the 'invert threads' executor first,
      * to ensure that inverting is completed before pushing starts.
      */
-    void pushDocuments(FieldIndexCollection &fieldIndexes, const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void pushDocuments(const std::shared_ptr<IDestructorCallback> &onWriteDone);
 
     /**
      * Invert (add) the given document.

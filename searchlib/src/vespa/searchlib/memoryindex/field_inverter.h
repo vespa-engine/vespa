@@ -13,6 +13,8 @@
 #include <map>
 #include <set>
 
+namespace search::index { class FieldLengthCalculator; }
+
 namespace search::memoryindex {
 
 class IOrderedFieldIndexInserter;
@@ -184,6 +186,10 @@ private:
     std::map<uint32_t, PositionRange> _pendingDocs;
     std::vector<uint32_t>             _removeDocs;
 
+    FieldIndexRemover                &_remover;
+    IOrderedFieldIndexInserter       &_inserter;
+    index::FieldLengthCalculator     &_calculator;
+
     void
     invertNormalDocTextField(const document::FieldValue &val);
 
@@ -281,7 +287,10 @@ public:
     /**
      * Create a new field inverter for the given fieldId, using the given schema.
      */
-    FieldInverter(const index::Schema &schema, uint32_t fieldId);
+    FieldInverter(const index::Schema &schema, uint32_t fieldId,
+                  FieldIndexRemover &remover,
+                  IOrderedFieldIndexInserter &inserter,
+                  index::FieldLengthCalculator &calculator);
 
     /**
      * Apply pending removes using the given remover.
@@ -289,12 +298,12 @@ public:
      * The remover is tracking all {word, docId} tuples that should removed,
      * and forwards this to the remove() function in this class (via IFieldIndexRemoveListener interface).
      */
-    void applyRemoves(FieldIndexRemover &remover);
+    void applyRemoves();
 
     /**
      * Push the current batch of inverted documents to the FieldIndex using the given inserter.
      */
-    void pushDocuments(IOrderedFieldIndexInserter &inserter);
+    void pushDocuments();
 
     /**
      * Invert a normal text field, based on annotations.

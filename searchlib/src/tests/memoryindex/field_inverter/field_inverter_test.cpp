@@ -2,7 +2,10 @@
 
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/field_length_calculator.h>
+#include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
+#include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -114,8 +117,11 @@ struct Fixture
 {
     Schema _schema;
     DocBuilder _b;
-    std::vector<std::unique_ptr<FieldInverter> > _inverters;
+    WordStore                       _word_store;
+    FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
+    FieldLengthCalculator           _calculator;
+    std::vector<std::unique_ptr<FieldInverter> > _inverters;
 
     static Schema
     makeSchema()
@@ -131,13 +137,19 @@ struct Fixture
     Fixture()
         : _schema(makeSchema()),
           _b(_schema),
-          _inverters(),
-          _inserter()
+          _word_store(),
+          _remover(_word_store),
+          _inserter(),
+          _calculator(),
+          _inverters()
     {
         for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
              ++fieldId) {
             _inverters.push_back(std::make_unique<FieldInverter>(_schema,
-                                                                 fieldId));
+                                                                 fieldId,
+                                                                 _remover,
+                                                                 _inserter,
+                                                                 _calculator));
         }
     }
 
@@ -159,7 +171,7 @@ struct Fixture
         uint32_t fieldId = 0;
         for (auto &inverter : _inverters) {
             _inserter.setFieldId(fieldId);
-            inverter->pushDocuments(_inserter);
+            inverter->pushDocuments();
             ++fieldId;
         }
     }

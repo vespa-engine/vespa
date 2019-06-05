@@ -54,9 +54,9 @@ public:
 namespace {
 
 void
-myPushDocument(DocumentInverter &inv, FieldIndexCollection &fieldIndexes)
+myPushDocument(DocumentInverter &inv)
 {
-    inv.pushDocuments(fieldIndexes, std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(std::shared_ptr<IDestructorCallback>());
 }
 
 }
@@ -272,7 +272,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
     DocBuilder b(schema);
     SequencedTaskExecutor invertThreads(2);
     SequencedTaskExecutor pushThreads(2);
-    DocumentInverter inv(schema, invertThreads, pushThreads);
+    DocumentInverter inv(schema, invertThreads, pushThreads, fic);
     Document::UP doc;
 
     b.startDocument("doc::10");
@@ -295,7 +295,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
     doc = b.endDocument();
     inv.invertDocument(10, *doc);
     invertThreads.sync();
-    myPushDocument(inv, fic);
+    myPushDocument(inv);
     pushThreads.sync();
 
     b.startDocument("doc::11").
@@ -305,7 +305,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
     doc = b.endDocument();
     inv.invertDocument(11, *doc);
     invertThreads.sync();
-    myPushDocument(inv, fic);
+    myPushDocument(inv);
     pushThreads.sync();
 
     b.startDocument("doc::12").
@@ -315,7 +315,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
     doc = b.endDocument();
     inv.invertDocument(12, *doc);
     invertThreads.sync();
-    myPushDocument(inv, fic);
+    myPushDocument(inv);
     pushThreads.sync();
 
     IndexBuilder ib(schema);

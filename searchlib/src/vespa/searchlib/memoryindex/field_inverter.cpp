@@ -294,6 +294,7 @@ FieldInverter::endDoc()
             ++itr;
         }
     }
+    _calculator.add_field_length(field_length);
     uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
     _pendingDocs.insert({ _docId,
                              { _oldPosSize, newPosSize - _oldPosSize } });
@@ -340,7 +341,10 @@ FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue 
     }
 }
 
-FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId)
+FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId,
+                             FieldIndexRemover &remover,
+                             IOrderedFieldIndexInserter &inserter,
+                             index::FieldLengthCalculator &calculator)
     : _fieldId(fieldId),
       _elem(0u),
       _wpos(0u),
@@ -356,7 +360,10 @@ FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId)
       _terms(),
       _abortedDocs(),
       _pendingDocs(),
-      _removeDocs()
+      _removeDocs(),
+      _remover(remover),
+      _inserter(inserter),
+      _calculator(calculator)
 {
 }
 
@@ -482,16 +489,16 @@ struct FullRadix {
 }
 
 void
-FieldInverter::applyRemoves(FieldIndexRemover &remover)
+FieldInverter::applyRemoves()
 {
     for (auto docId : _removeDocs) {
-        remover.remove(docId, *this);
+        _remover.remove(docId, *this);
     }
     _removeDocs.clear();
 }
 
 void
-FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
+FieldInverter::pushDocuments()
 {
     trimAbortedDocs();
 
@@ -516,7 +523,7 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
     vespalib::stringref word;
     bool emptyFeatures = true;
 
-    inserter.rewind();
+    _inserter.rewind();
 
     for (auto &i : _positions) {
         assert(i._wordNum <= numWordIds);
@@ -524,17 +531,17 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
         if (lastWordNum != i._wordNum || lastDocId != i._docId) {
             if (!emptyFeatures) {
                 _features.set_num_occs(_features.word_positions().size());
-                inserter.add(lastDocId, _features);
+                _inserter.add(lastDocId, _features);
                 emptyFeatures = true;
             }
             if (lastWordNum != i._wordNum) {
                 lastWordNum = i._wordNum;
                 word = getWordFromNum(lastWordNum);
-                inserter.setNextWord(word);
+                _inserter.setNextWord(word);
             }
             lastDocId = i._docId;
             if (i.removed()) {
-                inserter.remove(lastDocId);
+                _inserter.remove(lastDocId);
                 continue;
             }
         }
@@ -566,9 +573,10 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
 
     if (!emptyFeatures) {
         _features.set_num_occs(_features.word_positions().size());
-        inserter.add(lastDocId, _features);
+        _inserter.add(lastDocId, _features);
     }
-    inserter.flush();
+    _inserter.flush();
+    _inserter.commit();
     reset();
 }
 

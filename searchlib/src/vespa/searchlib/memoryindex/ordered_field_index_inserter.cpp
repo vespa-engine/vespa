@@ -39,10 +39,7 @@ OrderedFieldIndexInserter::OrderedFieldIndexInserter(FieldIndex &fieldIndex)
 {
 }
 
-OrderedFieldIndexInserter::~OrderedFieldIndexInserter()
-{
-    flush();
-}
+OrderedFieldIndexInserter::~OrderedFieldIndexInserter() = default;
 
 void
 OrderedFieldIndexInserter::flushWord()
@@ -72,6 +69,12 @@ OrderedFieldIndexInserter::flush()
 {
     flushWord();
     _listener.flush();
+}
+
+void
+OrderedFieldIndexInserter::commit()
+{
+    _fieldIndex.commit();
 }
 
 void

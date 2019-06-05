@@ -3,8 +3,12 @@
 
 
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
+#include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
+#include <vespa/searchlib/memoryindex/i_field_index_collection.h>
+#include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -90,14 +94,46 @@ makeDoc15(DocBuilder &b)
 
 }
 
+class MockFieldIndexCollection : public IFieldIndexCollection
+{
+    FieldIndexRemover               &_remover;
+    test::OrderedFieldIndexInserter &_inserter;
+    FieldLengthCalculator           &_calculator;
+
+public:
+    MockFieldIndexCollection(FieldIndexRemover &remover,
+                             test::OrderedFieldIndexInserter &inserter,
+                             FieldLengthCalculator &calculator)
+        : _remover(remover),
+          _inserter(inserter),
+          _calculator(calculator)
+    {
+    }
+
+    FieldIndexRemover &get_remover(uint32_t) override {
+        return _remover;
+    }
+    IOrderedFieldIndexInserter &get_inserter(uint32_t) override {
+        return _inserter;
+    }
+    index::FieldLengthCalculator &get_calculator(uint32_t) override {
+        return _calculator;
+    }
+};
+
+
 struct Fixture
 {
     Schema _schema;
     DocBuilder _b;
     SequencedTaskExecutor _invertThreads;
     SequencedTaskExecutor _pushThreads;
-    DocumentInverter _inv;
+    WordStore                       _word_store;
+    FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
+    FieldLengthCalculator           _calculator;
+    MockFieldIndexCollection        _fic;
+    DocumentInverter                _inv;
 
     static Schema
     makeSchema()
@@ -115,8 +151,12 @@ struct Fixture
           _b(_schema),
           _invertThreads(2),
           _pushThreads(2),
-          _inv(_schema, _invertThreads, _pushThreads),
-          _inserter()
+          _word_store(),
+          _remover(_word_store),
+          _inserter(),
+          _calculator(),
+          _fic(_remover, _inserter, _calculator),
+          _inv(_schema, _invertThreads, _pushThreads, _fic)
     {
     }
 
@@ -127,7 +167,7 @@ struct Fixture
         uint32_t fieldId = 0;
         for (auto &inverter : _inv.getInverters()) {
             _inserter.setFieldId(fieldId);
-            inverter->pushDocuments(_inserter);
+            inverter->pushDocuments();
             ++fieldId;
         }
         _pushThreads.sync();

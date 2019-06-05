@@ -370,12 +370,12 @@ public:
 MyInserter::~MyInserter() = default;
 
 void
-myremove(uint32_t docId, DocumentInverter &inv, FieldIndexCollection &fieldIndexes,
+myremove(uint32_t docId, DocumentInverter &inv,
          ISequencedTaskExecutor &invertThreads)
 {
     inv.removeDocument(docId);
     invertThreads.sync();
-    inv.pushDocuments(fieldIndexes, std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(std::shared_ptr<IDestructorCallback>());
 }
 
 class MyDrainRemoves : IFieldIndexRemoveListener {
@@ -399,9 +399,9 @@ public:
 };
 
 void
-myPushDocument(DocumentInverter &inv, FieldIndexCollection &fieldIndexes)
+myPushDocument(DocumentInverter &inv)
 {
-    inv.pushDocuments(fieldIndexes, std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(std::shared_ptr<IDestructorCallback>());
 }
 
 const FeatureStore *
@@ -759,7 +759,7 @@ public:
           _b(_schema),
           _invertThreads(2),
           _pushThreads(2),
-          _inv(_schema, _invertThreads, _pushThreads)
+          _inv(_schema, _invertThreads, _pushThreads, _fic)
     {
     }
 };
@@ -780,7 +780,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     doc = _b.endDocument();
     _inv.invertDocument(10, *doc);
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
     _pushThreads.sync();
 
     _b.startDocument("doc::20");
@@ -790,7 +790,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     doc = _b.endDocument();
     _inv.invertDocument(20, *doc);
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
     _pushThreads.sync();
 
     _b.startDocument("doc::30");
@@ -821,7 +821,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     doc = _b.endDocument();
     _inv.invertDocument(30, *doc);
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
     _pushThreads.sync();
 
     _b.startDocument("doc::40");
@@ -832,7 +832,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     doc = _b.endDocument();
     _inv.invertDocument(40, *doc);
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
     _pushThreads.sync();
 
     _b.startDocument("doc::999");
@@ -862,7 +862,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     for (uint32_t docId = 10000; docId < 20000; ++docId) {
         _inv.invertDocument(docId, *doc);
         _invertThreads.sync();
-        myPushDocument(_inv, _fic);
+        myPushDocument(_inv);
         _pushThreads.sync();
     }
 
@@ -981,7 +981,7 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     Document::UP doc1 = _b.endDocument();
     _inv.invertDocument(1, *doc1.get());
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
     _pushThreads.sync();
 
     _b.startDocument("doc::2");
@@ -989,7 +989,7 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     Document::UP doc2 = _b.endDocument();
     _inv.invertDocument(2, *doc2.get());
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
     _pushThreads.sync();
 
     EXPECT_TRUE(assertPostingList("[1]", _fic.find("a", 0)));
@@ -998,7 +998,7 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     EXPECT_TRUE(assertPostingList("[1]", _fic.find("a", 1)));
     EXPECT_TRUE(assertPostingList("[1]", _fic.find("c", 1)));
 
-    myremove(1, _inv, _fic, _invertThreads);
+    myremove(1, _inv, _invertThreads);
     _pushThreads.sync();
 
     EXPECT_TRUE(assertPostingList("[]", _fic.find("a", 0)));
@@ -1150,7 +1150,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
     doc = _b.endDocument();
     _inv.invertDocument(10, *doc);
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
 
     _pushThreads.sync();
 
@@ -1234,7 +1234,7 @@ TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
     doc = _b.endDocument();
     _inv.invertDocument(10, *doc);
     _invertThreads.sync();
-    myPushDocument(_inv, _fic);
+    myPushDocument(_inv);
 
     _pushThreads.sync();
 
@@ -1316,8 +1316,8 @@ struct RemoverTest : public FieldIndexCollectionTest {
         EXPECT_TRUE(assertPostingList(e3, fic.find("b", 1)));
     }
     void remove(uint32_t docId) {
-        DocumentInverter inv(schema, _invertThreads, _pushThreads);
-        myremove(docId, inv, fic, _invertThreads);
+        DocumentInverter inv(schema, _invertThreads, _pushThreads, fic);
+        myremove(docId, inv, _invertThreads);
         _pushThreads.sync();
         EXPECT_FALSE(fic.getFieldIndex(0u)->getDocumentRemover().
                      getStore().get(docId).valid());

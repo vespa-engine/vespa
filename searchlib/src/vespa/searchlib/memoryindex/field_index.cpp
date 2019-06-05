@@ -52,7 +52,8 @@ FieldIndex::FieldIndex(const Schema & schema, uint32_t fieldId)
       _featureStore(schema),
       _fieldId(fieldId),
       _remover(_wordStore),
-      _inserter(std::make_unique<OrderedFieldIndexInserter>(*this))
+      _inserter(std::make_unique<OrderedFieldIndexInserter>(*this)),
+      _calculator()
 { }
 
 FieldIndex::~FieldIndex()
