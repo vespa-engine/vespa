@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc.security;
 
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -111,9 +112,14 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     return; // global config access ok
                 } else {
                     String hostname = configRequest.getClientHostName();
-                    TenantName tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname))
-                            .orElseThrow(() -> new AuthorizationException(String.format("Host '%s' not found in host registry", hostname)));
-                    RequestHandler tenantHandler = getTenantHandler(tenantName);
+                    Optional<TenantName> tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname));
+                    if (tenantName.isEmpty()) {
+                        if (isConfigKeyForSentinelConfig(configKey)) {
+                            return; // config processor will return empty sentinel config for unknown nodes
+                        }
+                        throw new AuthorizationException(String.format("Host '%s' not found in host registry", hostname));
+                    }
+                    RequestHandler tenantHandler = getTenantHandler(tenantName.get());
                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
                     ApplicationId peerOwner = applicationId(peerIdentity);
                     if (peerOwner.equals(resolvedApplication)) {
@@ -185,6 +191,11 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     private static boolean isConfigKeyForGlobalConfig(ConfigKey<?> configKey) {
         return "*".equals(configKey.getConfigId());
+    }
+
+    private static boolean isConfigKeyForSentinelConfig(ConfigKey<?> configKey) {
+        return SentinelConfig.getDefName().equals(configKey.getName())
+                && SentinelConfig.getDefNamespace().equals(configKey.getNamespace());
     }
 
     private static ApplicationId applicationId(NodeIdentity peerIdentity) {
