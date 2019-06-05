@@ -18,6 +18,7 @@ private:
     vespalib::string _attrName; // the name of the attribute vector
     vespalib::string _extra;    // the index or key
     vespalib::eval::ValueType _tensorType;
+    mutable const search::attribute::IAttributeVector * _attribute;
 
 public:
     AttributeBlueprint();
@@ -28,6 +29,7 @@ public:
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
     fef::ParameterDescriptions getDescriptions() const  override;
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
 };
 
 }
