@@ -53,7 +53,7 @@ public class ZipBuilderTest {
         try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(zippedContent))) {
             for (ZipEntry entry = zin.getNextEntry(); entry != null; entry = zin.getNextEntry()) {
                 if (entry.isDirectory()) continue;
-                contents.put(entry.getName(), IOUtils.toString(zin, StandardCharsets.UTF_8));
+                contents.put(entry.getName(), IOUtils.toString(zin));
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to read zipped content", e);

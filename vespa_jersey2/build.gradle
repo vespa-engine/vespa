@@ -1,0 +1,13 @@
+
+dependencies {
+    compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
+    compile 'org.glassfish.jersey.containers:jersey-container-servlet-core:2.25'
+    compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.25'
+    compile 'org.glassfish.jersey.media:jersey-media-json-jackson:2.25'
+    compile 'org.glassfish.jersey.media:jersey-media-multipart:2.25'
+    compile 'org.glassfish.jersey.ext:jersey-proxy-client:2.25'
+    compile 'org.glassfish.jersey.core:jersey-client:2.25'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.8.11'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.11'
+}
+

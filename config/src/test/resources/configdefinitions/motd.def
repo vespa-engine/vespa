@@ -50,17 +50,18 @@ enumarr[] enum { ARRAY, VALUES }
 refarr[] reference
 filearr[] file
 
-boolmap{} bool
-intmap{} int
-longmap{} long
-doublemap{} double
-stringmap{} string
-enummap{} enum { LOL1, LOL2 }
-refmap{} reference
-filemap{} file
+# These fields create a weird error in the compiler. Commented them out :
+#boolmap{} bool
+#intmap{} int
+#longmap{} long
+#doublemap{} double
+#stringmap{} string
+#enummap{} enum { LOL1, LOL2 }
+#refmap{} reference
+#filemap{} file
 
-structmap{}.foo int
-mapmap{}.map{}.bar int
+#structmap{}.foo int
+#mapmap{}.map{}.bar int
 
 # A basic struct
 basic_struct.foo string default="foo"

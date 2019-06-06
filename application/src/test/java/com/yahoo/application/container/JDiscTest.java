@@ -72,7 +72,14 @@ public class JDiscTest {
                 "</services>", Networking.disable)) {
             fail("expected exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("container id='', jdisc id='id1', jdisc id=''"));
+        	Throwable cause = e.getCause();
+        	// A weird case of Guice throwing an exception when calling the e.getMessage() method
+        	// The condition here is enforced by asserting on the message of the cause Throwable.
+        	if (cause != null && cause.getMessage().contains("container id='', jdisc id='id1', jdisc id=''")) {
+        		// success
+        	} else {
+        		assertThat(e.getMessage(), containsString("container id='', jdisc id='id1', jdisc id=''"));
+        	}
         }
     }
 
