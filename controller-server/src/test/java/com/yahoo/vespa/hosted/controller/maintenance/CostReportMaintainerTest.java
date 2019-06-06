@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 import org.junit.Assert;
@@ -19,12 +20,11 @@ public class CostReportMaintainerTest {
     @Test
     public void maintain() {
         ControllerTester tester = new ControllerTester();
-        List<ZoneId> zones = new ArrayList<>();
-        zones.add(ZoneId.from("prod", "us-east-3", "yahoo"));
-        zones.add(ZoneId.from("prod", "us-west-1", "yahoo"));
-        zones.add(ZoneId.from("prod", "us-central-1", "yahoo"));
-        zones.add(ZoneId.from("prod", "eu-west-1", "yahoo"));
-        tester.zoneRegistry().setZones(zones);
+        tester.zoneRegistry().setZones(
+                ZoneApiMock.newBuilder().withId("prod.us-east-3").withCloud("yahoo").build(),
+                ZoneApiMock.newBuilder().withId("prod.us-west-1").withCloud("yahoo").build(),
+                ZoneApiMock.newBuilder().withId("prod.us-central-1").withCloud("yahoo").build(),
+                ZoneApiMock.newBuilder().withId("prod.eu-west-1").withCloud("yahoo").build());
 
         CostReportConsumer mockConsumer = csv -> Assert.assertEquals(csv,
                 "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n" +
