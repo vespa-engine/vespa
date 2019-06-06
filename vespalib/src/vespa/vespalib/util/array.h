@@ -107,14 +107,14 @@ public:
      * Returns true if it was possible to unreserve memory, false if not.
      */
     bool try_unreserve(size_t n);
-    void push_back(const T & v)             { std::_Construct(push_back(), v); }
+    void push_back(const T & v)             { ::new (static_cast<void *>(push_back())) T(v); }
     iterator push_back()                    { extend(size()+1); return array(_sz++); }
     iterator push_back_fast()               { return array(_sz++); }
     void push_back_fast(const T & v)        { *array(_sz++) = v; }
 
     void pop_back() {
         _sz--;
-        std::_Destroy(array(_sz));
+        std::destroy_at(array(_sz));
     }
 
     T & back()                              { return *array(_sz-1); }
@@ -132,7 +132,7 @@ public:
     size_t byteCapacity() const             { return _array.size(); }
     size_t capacity() const                 { return _array.size()/sizeof(T); }
     void clear() {
-        std::_Destroy(array(0), array(_sz));
+        std::destroy(array(0), array(_sz));
         _sz = 0;
     }
     bool empty() const                      { return _sz == 0; }
