@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
@@ -82,6 +83,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                 .reachable().ids().stream()
                 .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId, true).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
+                .filter(node -> node.getState() == NodeState.active)
                 .collect(Collectors.toList());
     }
 
