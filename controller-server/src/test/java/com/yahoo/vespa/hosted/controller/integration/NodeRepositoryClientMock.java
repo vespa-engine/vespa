@@ -64,6 +64,7 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
         membership.clusterid = "clusterA";
         membership.clustertype = "container";
         node.setMembership(membership);
+        node.setState(NodeState.active);
         return node;
     }
 
@@ -84,6 +85,7 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
         membership.clusterid = "clusterB";
         membership.clustertype = "content";
         node.setMembership(membership);
+        node.setState(NodeState.active);
         return node;
     }
 
