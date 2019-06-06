@@ -4,9 +4,10 @@ package com.yahoo.vespa.hosted.controller.restapi.cost;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -22,9 +23,9 @@ public class CostApiTest extends ControllerContainerTest {
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
     private static final CloudName cloud1 = CloudName.from("yahoo");
     private static final CloudName cloud2 = CloudName.from("cloud2");
-    private static final ZoneId zone1 = ZoneId.from("prod", "us-east-3", cloud1.value());
-    private static final ZoneId zone2 = ZoneId.from("prod", "us-west-1", cloud1.value());
-    private static final ZoneId zone3 = ZoneId.from("prod", "eu-west-1", cloud2.value());
+    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1).build();
+    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1).build();
+    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2).build();
 
     private ContainerControllerTester tester;
 

@@ -12,7 +12,6 @@ import com.yahoo.config.provision.zone.ZoneList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
@@ -25,15 +24,15 @@ import java.util.stream.Collectors;
  */
 public class ZoneFilterMock implements ZoneList {
 
-    private final List<ZoneId> zones;
+    private final List<ZoneApi> zones;
     private final boolean negate;
 
-    private ZoneFilterMock(List<ZoneId> zones, boolean negate) {
-        this.negate = negate;
+    private ZoneFilterMock(List<ZoneApi> zones, boolean negate) {
         this.zones = zones;
+        this.negate = negate;
     }
 
-    public static ZoneFilter from(Collection<ZoneId> zones) {
+    public static ZoneFilter from(Collection<ZoneApi> zones) {
         return new ZoneFilterMock(new ArrayList<>(zones), false);
     }
 
@@ -79,12 +78,12 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public List<? extends ZoneApi> zones() {
-        throw new UnsupportedOperationException();
+        return List.copyOf(zones);
     }
 
     @Override
     public List<ZoneId> ids() {
-        return Collections.unmodifiableList(zones);
+        return List.copyOf(zones.stream().map(ZoneApi::toDeprecatedId).collect(Collectors.toList()));
     }
 
     @Override
@@ -93,7 +92,13 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     private ZoneFilterMock filter(Predicate<ZoneId> condition) {
-        return new ZoneFilterMock(zones.stream().filter(negate ? condition.negate() : condition).collect(Collectors.toList()), false);
+        return new ZoneFilterMock(
+                zones.stream()
+                        .filter(zoneApi -> negate ?
+                                condition.negate().test(zoneApi.toDeprecatedId()) :
+                                condition.test(zoneApi.toDeprecatedId()))
+                        .collect(Collectors.toList()),
+                false);
     }
 
 }
