@@ -1,0 +1,1 @@
+reduce(sum(input1 * input2, name) * constant1, max, x) * constant2
