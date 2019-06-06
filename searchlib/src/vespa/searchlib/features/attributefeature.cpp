@@ -290,7 +290,7 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
     // params[0] = attribute name
     // params[1] = index (array attribute) or key (weighted set attribute)
     _attrName = params[0].getValue();
-    _attrKey = getBaseName() + "." + _attrName;
+    _attrKey = createAttributeKey(_attrName);
     if (params.size() == 2) {
         _extra = params[1].getValue();
     }
@@ -418,22 +418,13 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
 void
 AttributeBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore & store) const
 {
-    if (store.get(_attrKey) == nullptr) {
-        const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attrName);
-        store.add(_attrKey, std::make_unique<fef::AnyWrapper<const IAttributeVector *>>(attribute));
-    }
+    lookupAndStoreAttribute(_attrKey, _attrName, env, store);
 }
 
 fef::FeatureExecutor &
 AttributeBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    const fef::Anything * attributeArg = env.getObjectStore().get(_attrKey);
-    const IAttributeVector * attribute = (attributeArg != nullptr)
-                                       ? static_cast<const fef::AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
-                                       : nullptr;
-    if (attribute == nullptr) {
-        attribute = env.getAttributeContext().getAttribute(_attrName);
-    }
+    const IAttributeVector * attribute = lookupAttribute(_attrKey, _attrName, env);
     if (_tensorType.is_tensor()) {
         return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
