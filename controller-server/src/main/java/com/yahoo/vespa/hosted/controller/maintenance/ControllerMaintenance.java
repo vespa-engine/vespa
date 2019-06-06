@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
@@ -117,8 +118,8 @@ public class ControllerMaintenance extends AbstractComponent {
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
     private static List<OsUpgrader> osUpgraders(Controller controller, JobControl jobControl) {
-        return controller.zoneRegistry().zones().controllerUpgraded().ids().stream()
-                         .map(ZoneId::cloud)
+        return controller.zoneRegistry().zones().controllerUpgraded().zones().stream()
+                         .map(ZoneApi::getCloudName)
                          .distinct()
                          .sorted()
                          .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), jobControl, cloud))
