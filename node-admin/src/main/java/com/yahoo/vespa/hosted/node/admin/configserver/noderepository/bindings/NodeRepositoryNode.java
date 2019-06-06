@@ -62,10 +62,6 @@ public class NodeRepositoryNode {
     public Boolean fastDisk;
     @JsonProperty("bandwidth")
     public Double bandwidth;
-    @JsonProperty("hardwareFailure")
-    public Boolean hardwareFailure;
-    @JsonProperty("hardwareFailureDescription")
-    public String hardwareFailureDescription;
     @JsonProperty("environment")
     public String environment;
     @JsonProperty("type")
@@ -118,8 +114,6 @@ public class NodeRepositoryNode {
                 ", failCount=" + failCount +
                 ", fastDisk=" + fastDisk +
                 ", bandwidth=" + bandwidth +
-                ", hardwareFailure=" + hardwareFailure +
-                ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
                 ", environment='" + environment + '\'' +
                 ", type='" + type + '\'' +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +

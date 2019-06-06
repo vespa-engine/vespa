@@ -201,7 +201,6 @@ public class RealNodeRepository implements NodeRepository {
                 node.bandwidth,
                 node.ipAddresses,
                 node.additionalIpAddresses,
-                Optional.ofNullable(node.hardwareFailureDescription),
                 reports,
                 Optional.ofNullable(node.parentHostname));
     }
@@ -226,7 +225,6 @@ public class RealNodeRepository implements NodeRepository {
         node.vespaVersion = nodeAttributes.getVespaVersion().map(Version::toFullString).orElse(null);
         node.currentOsVersion = nodeAttributes.getCurrentOsVersion().map(Version::toFullString).orElse(null);
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
-        node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
 
         Map<String, JsonNode> reports = nodeAttributes.getReports();
