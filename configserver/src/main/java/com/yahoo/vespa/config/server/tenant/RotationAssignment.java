@@ -8,6 +8,17 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 
 import java.util.Objects;
 
+/**
+ * RotationAssignment is an immutable dataclass that contains the
+ * tuple for [endpoint, cluster, rotation].  This information is used
+ * to keep track of
+ *
+ *  - Name of an endpoint used externally.
+ *  - The container cluster that endpoint should point to.
+ *  - The rotation used to give availability to that cluster endpoint.
+ *
+ * @author ogronnesby
+ */
 public class RotationAssignment {
     private final String endpointId;
     private final Rotation rotation;

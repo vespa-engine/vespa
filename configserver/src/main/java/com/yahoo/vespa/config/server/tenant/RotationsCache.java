@@ -16,6 +16,15 @@ import java.util.Map;
 
 
 /**
+ * Persists assignment of rotations to an application to ZooKeeper.
+ * The entries are RotationAssignments, which keep track of the container
+ * cluster that is the target, the endpoint name, and the rotation used to
+ * give availability to that cluster.
+ *
+ * This is v2 of that storage in a new directory.  Previously we only stored
+ * the name of the rotation, since all the other information could be
+ * calculated runtime.
+ *
  * @author ogronnesby
  */
 public class RotationsCache {
