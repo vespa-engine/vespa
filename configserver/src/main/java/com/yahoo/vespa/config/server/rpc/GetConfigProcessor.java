@@ -164,7 +164,7 @@ class GetConfigProcessor implements Runnable {
     }
 
     private void returnEmpty(JRTServerConfigRequest request) {
-        log.log(LogLevel.INFO, "Returning empty sentinel config for request from " + request.getClientHostName());
+        log.log(LogLevel.DEBUG, () -> "Returning empty sentinel config for request from " + request.getClientHostName());
         ConfigPayload emptyPayload = ConfigPayload.empty();
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
         ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, null, 0, false, configMd5);
