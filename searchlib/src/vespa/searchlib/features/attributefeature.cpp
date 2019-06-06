@@ -320,7 +320,7 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
 fef::Blueprint::UP
 AttributeBlueprint::createInstance() const
 {
-    return fef::Blueprint::UP(new AttributeBlueprint());
+    return std::make_unique<AttributeBlueprint>();
 }
 
 #define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
