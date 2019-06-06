@@ -37,7 +37,7 @@ public class RotationsCache {
         this.curator = curator;
     }
 
-    public Map<ClusterId, RotationAssignment> getRotationAssignment(ApplicationId applicationId) {
+    public Map<ClusterId, RotationAssignment> readAssignment(ApplicationId applicationId) {
         final var optionalData = curator.getData(applicationPath(applicationId));
         return optionalData
                 .map(SlimeUtils::jsonToSlime)
@@ -45,7 +45,7 @@ public class RotationsCache {
                 .orElse(Collections.emptyMap());
     }
 
-    public void putRotationAssignment(ApplicationId applicationId, Map<ClusterId, RotationAssignment> assignments) {
+    public void writeAssignment(ApplicationId applicationId, Map<ClusterId, RotationAssignment> assignments) {
         if (assignments.isEmpty()) return;
         try {
             curator.set(
