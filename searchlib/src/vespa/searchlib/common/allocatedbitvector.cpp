@@ -13,9 +13,6 @@ namespace {
 
 size_t computeCapacity(size_t capacity, size_t allocatedBytes) {
     size_t possibleCapacity = (allocatedBytes * 8) - 1;
-    if (possibleCapacity < capacity) {
-       printf("capacity=%ld bytes=%ld possible=%ld\n", capacity, allocatedBytes, possibleCapacity);
-    }
     assert(possibleCapacity >= capacity);
     return possibleCapacity;
 }
