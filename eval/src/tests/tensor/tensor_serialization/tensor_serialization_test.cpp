@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
