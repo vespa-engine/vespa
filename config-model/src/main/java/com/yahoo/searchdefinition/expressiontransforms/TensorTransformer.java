@@ -69,7 +69,7 @@ public class TensorTransformer extends ExpressionTransformer<RankProfileTransfor
         ExpressionNode arg1 = node.children().get(0);
         Optional<String> dimension = dimensionName(node.children().get(1));
         if (dimension.isPresent()) {
-            TensorType type = arg1.type(context.rankProfile().typeContext(context.queryProfiles()));
+            TensorType type = arg1.type(context.types());
             if (type.dimension(dimension.get()).isPresent()) {
                 return replaceMaxAndMinFunction(node);
             }

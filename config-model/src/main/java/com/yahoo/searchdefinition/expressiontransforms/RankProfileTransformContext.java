@@ -3,7 +3,9 @@ package com.yahoo.searchdefinition.expressiontransforms;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
@@ -22,6 +24,7 @@ public class RankProfileTransformContext extends TransformContext {
     private final ImportedMlModels importedModels;
     private final Map<String, RankProfile.RankingExpressionFunction> inlineFunctions;
     private final Map<String, String> rankProperties = new HashMap<>();
+    private final MapEvaluationTypeContext types;
 
     public RankProfileTransformContext(RankProfile rankProfile,
                                        QueryProfileRegistry queryProfiles,
@@ -33,6 +36,7 @@ public class RankProfileTransformContext extends TransformContext {
         this.queryProfiles = queryProfiles;
         this.importedModels = importedModels;
         this.inlineFunctions = inlineFunctions;
+        this.types = rankProfile.typeContext(queryProfiles);
     }
 
     public RankProfile rankProfile() { return rankProfile; }
@@ -40,5 +44,11 @@ public class RankProfileTransformContext extends TransformContext {
     public ImportedMlModels importedModels() { return importedModels; }
     public Map<String, RankProfile.RankingExpressionFunction> inlineFunctions() { return inlineFunctions; }
     public Map<String, String> rankProperties() { return rankProperties; }
+
+    /**
+     * Returns the types known in this context. We may have type information for references
+     * for which no value is available
+     */
+    public MapEvaluationTypeContext types() { return types; }
 
 }
