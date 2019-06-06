@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
@@ -15,9 +12,13 @@
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/util/filekit.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fusion_test");
@@ -28,12 +29,13 @@ using document::Document;
 using fef::FieldPositionsIterator;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
-using memoryindex::FieldIndexCollection;
 using memoryindex::DocumentInverter;
+using memoryindex::FieldIndexCollection;
 using queryeval::SearchIterator;
 using search::common::FileHeaderContext;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
+using search::index::test::MockFieldLengthInspector;
 
 using namespace index;
 
@@ -268,7 +270,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
                                addField("f0").addField("f1").
                                addField("f2").addField("f3").
                                addField("f4"));
-    FieldIndexCollection fic(schema);
+    FieldIndexCollection fic(schema, MockFieldLengthInspector());
     DocBuilder b(schema);
     SequencedTaskExecutor invertThreads(2);
     SequencedTaskExecutor pushThreads(2);

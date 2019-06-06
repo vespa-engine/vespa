@@ -104,7 +104,8 @@ public:
         return _featureStore.addFeatures(_fieldId, features).first;
     }
 
-    FieldIndex(const index::Schema &schema, uint32_t fieldId);
+    FieldIndex(const index::Schema& schema, uint32_t fieldId);
+    FieldIndex(const index::Schema& schema, uint32_t fieldId, const index::FieldLengthInfo& info);
     ~FieldIndex();
     PostingList::Iterator find(const vespalib::stringref word) const;
 

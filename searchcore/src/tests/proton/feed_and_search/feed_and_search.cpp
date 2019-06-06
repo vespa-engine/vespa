@@ -1,27 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("feed_and_search_test");
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchlib/memoryindex/memory_index.h>
+#include <vespa/searchlib/common/documentsummary.h>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
+#include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <sstream>
-#include <vespa/searchlib/diskindex/fusion.h>
-#include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("feed_and_search_test");
 
 using document::DataType;
 using document::Document;
@@ -32,25 +34,26 @@ using search::TuneFileSearch;
 using search::diskindex::DiskIndex;
 using search::diskindex::IndexBuilder;
 using search::diskindex::SelectorArray;
+using search::docsummary::DocumentSummary;
 using search::fef::FieldPositionsIterator;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::index::DocBuilder;
-using search::index::Schema;
 using search::index::DummyFileHeaderContext;
+using search::index::Schema;
+using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::MemoryIndex;
 using search::query::SimpleStringTerm;
 using search::queryeval::Blueprint;
+using search::queryeval::FakeRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
-using search::queryeval::FakeRequestContext;
 using std::ostringstream;
 using vespalib::string;
-using search::docsummary::DocumentSummary;
 
 namespace {
 
@@ -148,7 +151,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
     search::SequencedTaskExecutor indexFieldInverter(2);
     search::SequencedTaskExecutor indexFieldWriter(2);
-    MemoryIndex memory_index(schema, indexFieldInverter, indexFieldWriter);
+    MemoryIndex memory_index(schema, MockFieldLengthInspector(), indexFieldInverter, indexFieldWriter);
     DocBuilder doc_builder(schema);
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);

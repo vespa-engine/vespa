@@ -63,6 +63,14 @@ TEST(FieldLengthCalculatorTest, average_until_max_num_samples)
     EXPECT_EQ(max_num_samples, calc.get_num_samples());
 }
 
+TEST(FieldLengthCalculatorTest, calculator_can_return_info_object)
+{
+    FieldLengthCalculator calc(3, 5);
+    auto info = calc.get_info();
+    EXPECT_EQ(3, info.get_average_field_length());
+    EXPECT_EQ(5, info.get_num_samples());
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

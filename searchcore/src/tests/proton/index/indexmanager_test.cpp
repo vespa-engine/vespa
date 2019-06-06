@@ -19,6 +19,7 @@
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -41,6 +42,7 @@ using search::index::DocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
 using search::index::schema::DataType;
+using search::index::test::MockFieldLengthInspector;
 using vespalib::makeLambdaTask;
 using search::memoryindex::CompactWordsStore;
 using search::memoryindex::FieldIndexCollection;
@@ -58,8 +60,7 @@ using namespace searchcorespi::index;
 
 namespace {
 
-class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
-{
+class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer {
     virtual bool
     reconfigure(vespalib::Closure0<bool>::UP closure) override
     {
@@ -360,7 +361,7 @@ TEST_F("requireThatSourceSelectorIsFlushed", Fixture) {
 
 TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     Schema schema(getSchema());
-    FieldIndexCollection fic(schema);
+    FieldIndexCollection fic(schema, MockFieldLengthInspector());
     SequencedTaskExecutor invertThreads(2);
     SequencedTaskExecutor pushThreads(2);
     search::memoryindex::DocumentInverter inverter(schema, invertThreads,

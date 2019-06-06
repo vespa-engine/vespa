@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -16,7 +14,10 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -33,6 +34,7 @@ using document::Document;
 using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
+using search::index::test::MockFieldLengthInspector;
 using vespalib::GenerationHandler;
 
 namespace memoryindex {
@@ -294,7 +296,7 @@ public:
     MyInserter(const Schema &schema)
         : _wordStoreScan(),
           _mock(),
-          _fieldIndexes(schema),
+          _fieldIndexes(schema, MockFieldLengthInspector()),
           _features(),
           _inserter(nullptr)
     {
@@ -490,7 +492,7 @@ struct FieldIndexCollectionTest : public ::testing::Test {
     FieldIndexCollection fic;
     FieldIndexCollectionTest()
         : schema(make_multi_field_schema()),
-          fic(schema)
+          fic(schema, MockFieldLengthInspector())
     {
     }
     ~FieldIndexCollectionTest() {}
@@ -755,7 +757,7 @@ public:
 
     InverterTest(const Schema& schema)
         : _schema(schema),
-          _fic(_schema),
+          _fic(_schema, MockFieldLengthInspector()),
           _b(_schema),
           _invertThreads(2),
           _pushThreads(2),

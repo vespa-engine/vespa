@@ -5,6 +5,8 @@
 #include "i_field_index_collection.h"
 #include "field_index.h"
 
+namespace search::index { class IFieldLengthInspector; }
+
 namespace search::memoryindex {
 
 class IFieldIndexRemoveListener;
@@ -27,7 +29,7 @@ private:
     uint32_t                _numFields;
 
 public:
-    FieldIndexCollection(const index::Schema &schema);
+    FieldIndexCollection(const index::Schema& schema, const index::IFieldLengthInspector& inspector);
     ~FieldIndexCollection();
     PostingList::Iterator find(const vespalib::stringref word,
                                uint32_t fieldId) const {

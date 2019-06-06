@@ -1,19 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for fusionrunner.
 
+#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcorespi/index/fusionrunner.h>
-#include <vespa/searchlib/memoryindex/memory_index.h>
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fastos/file.h>
 #include <set>
 
 using document::Document;
@@ -35,6 +35,7 @@ using search::index::DocBuilder;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
 using search::index::schema::DataType;
+using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::MemoryIndex;
 using search::query::SimpleStringTerm;
 using search::queryeval::Blueprint;
@@ -171,7 +172,8 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
 
     Schema schema = getSchema();
     DocBuilder doc_builder(schema);
-    MemoryIndex memory_index(schema, _threadingService.indexFieldInverter(),
+    MemoryIndex memory_index(schema, MockFieldLengthInspector(),
+                             _threadingService.indexFieldInverter(),
                              _threadingService.indexFieldWriter());
     addDocument(doc_builder, memory_index, *_selector, id, id + 0, term);
     addDocument(doc_builder, memory_index, *_selector, id, id + 1, "bar");

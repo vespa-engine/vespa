@@ -870,11 +870,11 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
         _selector.reset(getSourceSelector().cloneAndSubtract(ost.str(), id_diff).release());
         assert(_last_fusion_id == _selector->getBaseId());
     }
-    _current_index = operations.createMemoryIndex(_schema, _current_serial_num);
     _current_index_id = getNewAbsoluteId() - _last_fusion_id;
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
     _selector->setDefaultSource(_current_index_id);
     ISearchableIndexCollection::UP sourceList(loadDiskIndexes(spec, ISearchableIndexCollection::UP(new IndexCollection(_selector))));
+    _current_index = operations.createMemoryIndex(_schema, *sourceList, _current_serial_num);
     LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
     sourceList->append(_current_index_id, _current_index);
     sourceList->setCurrentIndex(_current_index_id);
@@ -900,7 +900,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         _current_serial_num = std::max(_current_serial_num, serialNum);
     }
 
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), _current_serial_num));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), *_current_index, _current_serial_num));
     FlushArgs args;
     args.stats = stats;
     scheduleCommit();
@@ -1208,7 +1208,7 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     pruneRemovedFields(schema, serialNum);
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, *_current_index, _current_serial_num));
     SetSchemaArgs args;
 
     args._newSchema = schema;

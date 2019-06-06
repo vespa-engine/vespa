@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace search::index {
 
 /**

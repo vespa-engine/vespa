@@ -24,11 +24,11 @@ private:
     const search::TuneFileIndexing _tuneFileIndexing;
 
 public:
-    MemoryIndexWrapper(const search::index::Schema &schema,
-                       const search::common::FileHeaderContext &fileHeaderContext,
-                       const search::TuneFileIndexing &tuneFileIndexing,
-                       searchcorespi::index::IThreadingService &
-                       threadingService,
+    MemoryIndexWrapper(const search::index::Schema& schema,
+                       const search::index::IFieldLengthInspector& inspector,
+                       const search::common::FileHeaderContext& fileHeaderContext,
+                       const search::TuneFileIndexing& tuneFileIndexing,
+                       searchcorespi::index::IThreadingService& threadingService,
                        SerialNum serialNum);
 
     /**

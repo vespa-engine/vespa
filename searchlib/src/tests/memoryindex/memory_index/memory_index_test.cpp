@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
@@ -24,6 +25,8 @@ using document::Document;
 using document::FieldValue;
 using search::ScheduleTaskCallback;
 using search::index::schema::DataType;
+using search::index::FieldLengthInfo;
+using search::index::IFieldLengthInspector;
 using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
@@ -35,12 +38,25 @@ using namespace search::queryeval;
 
 //-----------------------------------------------------------------------------
 
-struct MySetup {
+struct MySetup : public IFieldLengthInspector {
     Schema schema;
+    std::map<vespalib::string, FieldLengthInfo> field_lengths;
     MySetup &field(const std::string &name) {
         schema.addIndexField(Schema::IndexField(name, DataType::STRING));
         return *this;
     }
+    MySetup& field_length(const vespalib::string& field_name, const FieldLengthInfo& info) {
+        field_lengths[field_name] = info;
+        return *this;
+    }
+    FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+        auto itr = field_lengths.find(field_name);
+        if (itr != field_lengths.end()) {
+            return itr->second;
+        }
+        return FieldLengthInfo();
+    }
+
 };
 
 //-----------------------------------------------------------------------------
@@ -109,7 +125,7 @@ Index::Index(const MySetup &setup)
       _executor(1, 128 * 1024),
       _invertThreads(2),
       _pushThreads(2),
-      index(schema, _invertThreads, _pushThreads),
+      index(schema, setup, _invertThreads, _pushThreads),
       builder(schema),
       docid(1),
       currentField()
@@ -443,6 +459,22 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
         search->initFullRange();
         EXPECT_EQ("1,3", toString(*search));
     }
+}
+
+TEST(MemoryIndexTest, field_length_info_can_be_retrieved_per_field)
+{
+    Index index(MySetup().field(title).field(body)
+                        .field_length("title", FieldLengthInfo(3, 5))
+                        .field_length("body", FieldLengthInfo(7, 11)));
+
+    EXPECT_EQ(3, index.index.get_field_length_info("title").get_average_field_length());
+    EXPECT_EQ(5, index.index.get_field_length_info("title").get_num_samples());
+
+    EXPECT_EQ(7, index.index.get_field_length_info("body").get_average_field_length());
+    EXPECT_EQ(11, index.index.get_field_length_info("body").get_num_samples());
+
+    EXPECT_EQ(0, index.index.get_field_length_info("na").get_average_field_length());
+    EXPECT_EQ(0, index.index.get_field_length_info("na").get_num_samples());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
