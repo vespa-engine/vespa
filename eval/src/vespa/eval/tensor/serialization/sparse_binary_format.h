@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include <memory>
+
 namespace vespalib { class nbostream; }
 
 namespace vespalib::tensor {
 
 class Tensor;
-class SparseTensorBuilder;
 
 /**
  * Class for serializing a tensor.
@@ -16,7 +17,7 @@ class SparseBinaryFormat
 {
 public:
     static void serialize(nbostream &stream, const Tensor &tensor);
-    static void deserialize(nbostream &stream, SparseTensorBuilder &builder);
+    static std::unique_ptr<Tensor> deserialize(nbostream &stream);
 };
 
 }

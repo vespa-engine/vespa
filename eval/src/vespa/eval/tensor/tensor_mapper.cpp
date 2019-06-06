@@ -23,7 +23,7 @@ namespace {
 template <class TensorT>
 class SparseTensorMapper : public TensorVisitor
 {
-    using Builder = DirectTensorBuilder<TensorT>;
+    using Builder = DirectSparseTensorBuilder;
     using AddressBuilderType = typename Builder::AddressBuilderType;
 
     Builder _builder;

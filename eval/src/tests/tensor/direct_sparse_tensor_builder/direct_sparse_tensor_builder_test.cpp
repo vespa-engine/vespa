@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor_builder.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor_address_combiner.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -40,15 +40,12 @@ assertCellValue(double expValue, const TensorAddress &address,
 Tensor::UP
 buildTensor()
 {
-    SparseTensorBuilder builder;
-    builder.define_dimension("c");
-    builder.define_dimension("d");
-    builder.define_dimension("a");
-    builder.define_dimension("b");
-    builder.add_label(builder.define_dimension("a"), "1").
-        add_label(builder.define_dimension("b"), "2").add_cell(10).
-        add_label(builder.define_dimension("c"), "3").
-        add_label(builder.define_dimension("d"), "4").add_cell(20);
+    DirectSparseTensorBuilder builder(ValueType::from_spec("tensor(a{},b{},c{},d{})"));
+    SparseTensorAddressBuilder address;
+    address.set({"1", "2", "", ""});
+    builder.insertCell(address, 10);
+    address.set({"", "", "3", "4"});
+    builder.insertCell(address, 20);
     return builder.build();
 }
 
@@ -75,23 +72,15 @@ TEST("require that tensor can be converted to tensor spec")
 
 TEST("require that dimensions are extracted")
 {
-    SparseTensorBuilder builder;
-    builder.define_dimension("c");
-    builder.define_dimension("a");
-    builder.define_dimension("b");
-    builder.
-        add_label(builder.define_dimension("a"), "1").
-        add_label(builder.define_dimension("b"), "2").add_cell(10).
-        add_label(builder.define_dimension("b"), "3").
-        add_label(builder.define_dimension("c"), "4").add_cell(20);
-    Tensor::UP tensor = builder.build();
+    Tensor::UP tensor = buildTensor();
     const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
     const auto &dims = sparseTensor.type().dimensions();
-    EXPECT_EQUAL(3u, dims.size());
+    EXPECT_EQUAL(4u, dims.size());
     EXPECT_EQUAL("a", dims[0].name);
     EXPECT_EQUAL("b", dims[1].name);
     EXPECT_EQUAL("c", dims[2].name);
-    EXPECT_EQUAL("tensor(a{},b{},c{})", sparseTensor.type().to_spec());
+    EXPECT_EQUAL("d", dims[3].name);
+    EXPECT_EQUAL("tensor(a{},b{},c{},d{})", sparseTensor.type().to_spec());
 }
 
 void verifyAddressCombiner(const ValueType & a, const ValueType & b, size_t numDim, size_t numOverlapping) {
