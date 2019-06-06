@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class RotationsCache {
                     SlimeUtils.toJsonBytes(entryToSlime(assignments))
             );
         } catch (IOException e) {
-            throw new RuntimeException("Error writing rotations of: " + applicationId, e);
+            throw new UncheckedIOException("Error writing rotations of: " + applicationId, e);
         }
     }
 
