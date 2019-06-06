@@ -6,7 +6,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -63,8 +65,18 @@ public abstract class ControllerHttpClient {
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
+    public static ControllerHttpClient withSignatureKey(URI endpoint, String privateKey, ApplicationId id) {
+        return new SigningControllerHttpClient(endpoint, privateKey, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
     public static ControllerHttpClient withSignatureKey(URI endpoint, Path privateKeyFile, ApplicationId id) {
         return new SigningControllerHttpClient(endpoint, privateKeyFile, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
+    public static ControllerHttpClient withKeyAndCertificate(URI endpoint, String privateKey, String certificate) {
+        return new MutualTlsControllerHttpClient(endpoint, privateKey, certificate);
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
@@ -299,9 +311,13 @@ public abstract class ControllerHttpClient {
 
         private final RequestSigner signer;
 
-        private SigningControllerHttpClient(URI endpoint, Path privateKeyFile, ApplicationId id) {
+        private SigningControllerHttpClient(URI endpoint, String privateKey, ApplicationId id) {
             super(endpoint, HttpClient.newBuilder());
-            this.signer = new RequestSigner(unchecked(() -> Files.readString(privateKeyFile, UTF_8)), id.serializedForm());
+            this.signer = new RequestSigner(privateKey, id.serializedForm());
+        }
+
+        private SigningControllerHttpClient(URI endpoint, Path privateKeyFile, ApplicationId id) {
+            this(endpoint, unchecked(() -> Files.readString(privateKeyFile, UTF_8)), id);
         }
 
         @Override
@@ -317,7 +333,18 @@ public abstract class ControllerHttpClient {
 
         private MutualTlsControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
             super(endpoint,
-                  HttpClient.newBuilder().sslContext(new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile).build()));
+                  HttpClient.newBuilder()
+                            .sslContext(new SslContextBuilder().withKeyStore(privateKeyFile,
+                                                                             certificateFile)
+                                                               .build()));
+        }
+
+        private MutualTlsControllerHttpClient(URI endpoint, String privateKey, String certificate) {
+            super(endpoint,
+                  HttpClient.newBuilder()
+                            .sslContext(new SslContextBuilder().withKeyStore(KeyUtils.fromPemEncodedPrivateKey(privateKey),
+                                                                             X509CertificateUtils.certificateListFromPem(certificate))
+                                                               .build()));
         }
 
     }
