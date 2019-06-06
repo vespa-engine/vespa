@@ -2,16 +2,15 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchdefinition.FeatureNames;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.NameNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,8 +19,6 @@ import java.util.List;
  * @author geirst
  */
 public class ConstantTensorTransformer extends ExpressionTransformer<RankProfileTransformContext> {
-
-    public static final String CONSTANT = "constant";
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -52,17 +49,18 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
     }
 
     private ExpressionNode transformConstantReference(ReferenceNode node, RankProfileTransformContext context) {
+        Reference constantReference = FeatureNames.asConstantFeature(node.getName());
         Value value = context.constants().get(node.getName());
         if (value == null || value.type().rank() == 0) {
+            if (context.rankProfile().rankingConstants().get(node.getName()) != null) // Large constants: Transform reference but don't add value
+                return new ReferenceNode(constantReference);
             return node;
         }
         TensorValue tensorValue = (TensorValue)value;
-        String featureName = CONSTANT + "(" + node.getName() + ")";
         String tensorType = tensorValue.asTensor().type().toString();
-        context.rankProperties().put(featureName + ".value", tensorValue.toString());
-        context.rankProperties().put(featureName + ".type", tensorType);
-        // TODO: This allows us to reference constant "a" as "a" instead of "constant(a)", but we shouldn't allow that
-        return new ReferenceNode(CONSTANT, Arrays.asList(new NameNode(node.getName())), null);
+        context.rankProperties().put(constantReference.toString() + ".value", tensorValue.toString());
+        context.rankProperties().put(constantReference.toString() + ".type", tensorType);
+        return new ReferenceNode(constantReference);
     }
 
 }

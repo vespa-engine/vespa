@@ -147,9 +147,6 @@ public class ImportedModel implements ImportedMlModel {
      */
     public File relativeFile(String relativePath, String descriptionOfPath) {
         File file = new File(new File(source()).getParent(), relativePath);
-        if (file.isAbsolute())
-            throw new IllegalArgumentException(descriptionOfPath + " uses the absolute file path '" + relativePath +
-                                               "'. File paths must be relative to the directory referencing them");
         if ( ! file.exists())
             throw new IllegalArgumentException(descriptionOfPath + " references '" + relativePath +
                                                "', but this file does not exist");

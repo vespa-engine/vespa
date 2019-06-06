@@ -30,7 +30,7 @@ public class VespaMlModelTestCase {
             "rankingExpression(foo1).rankingScript : reduce(reduce(input1 * input2, sum, name) * constant(constant1), max, x) * 3.0\n" +
             "rankingExpression(foo1).input2.type : tensor(x[3])\n" +
             "rankingExpression(foo1).input1.type : tensor(name{},x[3])\n" +
-            "rankingExpression(foo2).rankingScript : max(reduce(input1 * input2, sum, name) * constant1asLarge,x) * 3.0\n" +
+            "rankingExpression(foo2).rankingScript : reduce(reduce(input1 * input2, sum, name) * constant(constant1asLarge), max, x) * 3.0\n" +
             "rankingExpression(foo2).input2.type : tensor(x[3])\n" +
             "rankingExpression(foo2).input1.type : tensor(name{},x[3])\n";
 
