@@ -1,28 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/memoryindex/memory_index.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
-#include <vespa/searchlib/queryeval/fake_search.h>
-#include <vespa/searchlib/queryeval/fake_searchable.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/common/sequencedtaskexecutor.h>
-#include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/document/repo/documenttyperepo.h>
+
+#include <vespa/document/annotation/spanlist.h>
+#include <vespa/document/annotation/spantree.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spantree.h>
+#include <vespa/searchlib/common/scheduletaskcallback.h>
+#include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/fake_search.h>
+#include <vespa/searchlib/queryeval/fake_searchable.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memoryindexstress_test");
@@ -36,17 +39,18 @@ using document::FieldValue;
 using document::Span;
 using document::SpanList;
 using document::StringFieldValue;
-using search::ScheduleTaskCallback;
-using search::index::schema::DataType;
-using vespalib::makeLambdaTask;
-using search::query::Node;
-using search::query::SimplePhrase;
-using search::query::SimpleStringTerm;
 using namespace search::fef;
 using namespace search::index;
 using namespace search::memoryindex;
 using namespace search::queryeval;
+using search::ScheduleTaskCallback;
+using search::index::schema::DataType;
+using search::query::Node;
+using search::query::SimplePhrase;
+using search::query::SimpleStringTerm;
+using search::index::test::MockFieldLengthInspector;
 using vespalib::asciistream;
+using vespalib::makeLambdaTask;
 
 namespace {
 
@@ -189,8 +193,6 @@ Node::UP makePhrase(const std::string &term1, const std::string &term2) {
 
 }  // namespace
 
-
-
 struct Fixture {
     Schema       schema;
     DocumentTypeRepo  repo;
@@ -249,7 +251,7 @@ Fixture::Fixture(uint32_t readThreads)
       _executor(1, 128 * 1024),
       _invertThreads(2),
       _pushThreads(2),
-      index(schema, _invertThreads, _pushThreads),
+      index(schema, MockFieldLengthInspector(), _invertThreads, _pushThreads),
       _readThreads(readThreads),
       _writer(1, 128 * 1024),
       _readers(readThreads, 128 * 1024),

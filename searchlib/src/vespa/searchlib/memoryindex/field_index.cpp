@@ -43,7 +43,12 @@ operator<<(vespalib::asciistream & os, const FieldIndex::WordKey & rhs)
     return os;
 }
 
-FieldIndex::FieldIndex(const Schema & schema, uint32_t fieldId)
+FieldIndex::FieldIndex(const index::Schema& schema, uint32_t fieldId)
+    : FieldIndex(schema, fieldId, index::FieldLengthInfo())
+{
+}
+
+FieldIndex::FieldIndex(const index::Schema& schema, uint32_t fieldId, const index::FieldLengthInfo& info)
     : _wordStore(),
       _numUniqueWords(0),
       _generationHandler(),
@@ -53,8 +58,9 @@ FieldIndex::FieldIndex(const Schema & schema, uint32_t fieldId)
       _fieldId(fieldId),
       _remover(_wordStore),
       _inserter(std::make_unique<OrderedFieldIndexInserter>(*this)),
-      _calculator()
-{ }
+      _calculator(info)
+{
+}
 
 FieldIndex::~FieldIndex()
 {

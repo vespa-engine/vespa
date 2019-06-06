@@ -17,13 +17,13 @@ using vespalib::IllegalStateException;
 
 namespace proton {
 
-MemoryIndexWrapper::MemoryIndexWrapper(const search::index::Schema &schema,
-                                       const search::common::FileHeaderContext &fileHeaderContext,
-                                       const TuneFileIndexing &tuneFileIndexing,
-                                       searchcorespi::index::IThreadingService &
-                                       threadingService,
+MemoryIndexWrapper::MemoryIndexWrapper(const search::index::Schema& schema,
+                                       const search::index::IFieldLengthInspector& inspector,
+                                       const search::common::FileHeaderContext& fileHeaderContext,
+                                       const TuneFileIndexing& tuneFileIndexing,
+                                       searchcorespi::index::IThreadingService& threadingService,
                                        search::SerialNum serialNum)
-    : _index(schema, threadingService.indexFieldInverter(),
+    : _index(schema, inspector, threadingService.indexFieldInverter(),
              threadingService.indexFieldWriter()),
       _serialNum(serialNum),
       _fileHeaderContext(fileHeaderContext),
@@ -62,9 +62,7 @@ MemoryIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
 FieldLengthInfo
 MemoryIndexWrapper::get_field_length_info(const vespalib::string& field_name) const
 {
-    // TODO: implement
-    (void) field_name;
-    return FieldLengthInfo();
+    return _index.get_field_length_info(field_name);
 }
 
 } // namespace proton

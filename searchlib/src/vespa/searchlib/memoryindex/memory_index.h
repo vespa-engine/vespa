@@ -2,13 +2,17 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/idestructorcallback.h>
-#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/index/field_length_info.h>
+#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
-namespace search::index { class IndexBuilder; }
+namespace search::index {
+    class IFieldLengthInspector;
+    class IndexBuilder;
+}
 
 namespace search { class ISequencedTaskExecutor; }
 
@@ -82,13 +86,15 @@ public:
      * Create a new memory index based on the given schema.
      *
      * @param schema        the schema with which text and uri fields to keep in the index.
+     * @param inspector     the inspector used to lookup initial field length info for all index fields.
      * @param invertThreads the executor with threads for doing document inverting.
      * @param pushThreads   the executor with threads for doing pushing of changes (inverted documents)
      *                      to corresponding field indexes.
      */
-    MemoryIndex(const index::Schema &schema,
-                ISequencedTaskExecutor &invertThreads,
-                ISequencedTaskExecutor &pushThreads);
+    MemoryIndex(const index::Schema& schema,
+                const index::IFieldLengthInspector& inspector,
+                ISequencedTaskExecutor& invertThreads,
+                ISequencedTaskExecutor& pushThreads);
 
     ~MemoryIndex();
 
@@ -165,6 +171,8 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const;
 
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
+
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
 };
 
 }

@@ -25,6 +25,8 @@ using vespalib::GenerationHandler;
 namespace search {
 
 using fef::TermFieldMatchDataArray;
+using index::FieldLengthInfo;
+using index::IFieldLengthInspector;
 using index::IndexBuilder;
 using index::Schema;
 using index::SchemaUtil;
@@ -53,13 +55,14 @@ using queryeval::IRequestContext;
 
 namespace search::memoryindex {
 
-MemoryIndex::MemoryIndex(const Schema &schema,
-                         ISequencedTaskExecutor &invertThreads,
-                         ISequencedTaskExecutor &pushThreads)
+MemoryIndex::MemoryIndex(const Schema& schema,
+                         const IFieldLengthInspector& inspector,
+                         ISequencedTaskExecutor& invertThreads,
+                         ISequencedTaskExecutor& pushThreads)
     : _schema(schema),
       _invertThreads(invertThreads),
       _pushThreads(pushThreads),
-      _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema)),
+      _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema, inspector)),
       _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
       _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
       _inverter(_inverter0.get()),
@@ -288,6 +291,16 @@ MemoryIndex::getPrunedSchema() const
 {
     LockGuard lock(_lock);
     return _prunedSchema;
+}
+
+FieldLengthInfo
+MemoryIndex::get_field_length_info(const vespalib::string& field_name) const
+{
+    uint32_t field_id = _schema.getIndexFieldId(field_name);
+    if (field_id != Schema::UNKNOWN_FIELD_ID) {
+        return _fieldIndexes->get_calculator(field_id).get_info();
+    }
+    return FieldLengthInfo();
 }
 
 }

@@ -37,9 +37,11 @@ IndexManager::MaintainerOperations::MaintainerOperations(const FileHeaderContext
 }
 
 IMemoryIndex::SP
-IndexManager::MaintainerOperations::createMemoryIndex(const Schema &schema, SerialNum serialNum)
+IndexManager::MaintainerOperations::createMemoryIndex(const Schema& schema,
+                                                      const IFieldLengthInspector& inspector,
+                                                      SerialNum serialNum)
 {
-    return std::make_shared<MemoryIndexWrapper>(schema, _fileHeaderContext, _tuneFileIndexing,
+    return std::make_shared<MemoryIndexWrapper>(schema, inspector, _fileHeaderContext, _tuneFileIndexing,
                                                 _threadingService, serialNum);
 }
 
