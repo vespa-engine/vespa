@@ -108,8 +108,8 @@ public class RotationsCacheTest {
                 )
         );
 
-        rotations.writeAssignment(ApplicationId.defaultId(), assignments);
-        final var fetched = rotations.readAssignment(ApplicationId.defaultId());
+        rotations.write(ApplicationId.defaultId(), assignments);
+        final var fetched = rotations.read(ApplicationId.defaultId());
 
         assertEquals(assignments, fetched);
     }
