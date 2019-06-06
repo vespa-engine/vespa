@@ -5,11 +5,12 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -29,12 +30,11 @@ public class ZoneApiTest extends ControllerContainerTest {
 
     private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/zone/v2/responses/";
-    private static final List<ZoneId> zones = List.of(
-            ZoneId.from(Environment.prod, RegionName.from("us-north-1")),
-            ZoneId.from(Environment.dev, RegionName.from("us-north-2")),
-            ZoneId.from(Environment.test, RegionName.from("us-north-3")),
-            ZoneId.from(Environment.staging, RegionName.from("us-north-4"))
-                                                           );
+    private static final List<ZoneApi> zones = List.of(
+            ZoneApiMock.fromId("prod.us-north-1"),
+            ZoneApiMock.fromId("dev.us-north-2"),
+            ZoneApiMock.fromId("test.us-north-3"),
+            ZoneApiMock.fromId("staging.us-north-4"));
 
     private ContainerControllerTester tester;
     private ConfigServerProxyMock proxy;

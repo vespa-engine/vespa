@@ -3,22 +3,21 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,11 +29,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class OsUpgraderTest {
 
-    private static final ZoneId zone1 = ZoneId.from("prod", "eu-west-1");
-    private static final ZoneId zone2 = ZoneId.from("prod", "us-west-1");
-    private static final ZoneId zone3 = ZoneId.from("prod", "us-central-1");
-    private static final ZoneId zone4 = ZoneId.from("prod", "us-east-3");
-    private static final ZoneId zone5 = ZoneId.from("prod", "us-north-1", "other");
+    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").build();
+    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").build();
+    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.us-central-1").build();
+    private static final ZoneApi zone4 = ZoneApiMock.newBuilder().withId("prod.us-east-3").build();
+    private static final ZoneApi zone5 = ZoneApiMock.newBuilder().withId("prod.us-north-1").withCloud("other").build();
 
     private DeploymentTester tester;
     private OsVersionStatusUpdater statusUpdater;
@@ -50,24 +49,24 @@ public class OsUpgraderTest {
     public void upgrade_os() {
         OsUpgrader osUpgrader = osUpgrader(
                 UpgradePolicy.create()
-                             .upgrade(zone1)
-                             .upgradeInParallel(zone2, zone3)
-                             .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
-                             .upgrade(zone4),
+                             .upgrade(zone1.toDeprecatedId())
+                             .upgradeInParallel(zone2.toDeprecatedId(), zone3.toDeprecatedId())
+                             .upgrade(zone5.toDeprecatedId()) // Belongs to a different cloud and is ignored by this upgrader
+                             .upgrade(zone4.toDeprecatedId()),
                 SystemName.cd
         );
 
         // Bootstrap system
-        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4, zone5),
+        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId(), zone5.toDeprecatedId()),
                                         List.of(SystemApplication.tenantHost));
 
         // Add system applications that exist in a real system, but are currently not upgraded
-        tester.configServer().addNodes(List.of(zone1, zone2, zone3, zone4, zone5),
+        tester.configServer().addNodes(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId(), zone5.toDeprecatedId()),
                                        List.of(SystemApplication.configServer));
 
         // Fail a few nodes. Failed nodes should not affect versions
-        failNodeIn(zone1, SystemApplication.tenantHost);
-        failNodeIn(zone3, SystemApplication.tenantHost);
+        failNodeIn(zone1.toDeprecatedId(), SystemApplication.tenantHost);
+        failNodeIn(zone3.toDeprecatedId(), SystemApplication.tenantHost);
 
         // New OS version released
         Version version1 = Version.fromString("7.1");
@@ -79,37 +78,37 @@ public class OsUpgraderTest {
 
         // zone 1: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.tenantHost, zone1);
+        assertWanted(version1, SystemApplication.tenantHost, zone1.toDeprecatedId());
 
         // Other zones remain on previous version (none)
-        assertWanted(Version.emptyVersion, SystemApplication.proxy, zone2, zone3, zone4);
+        assertWanted(Version.emptyVersion, SystemApplication.proxy, zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId());
 
         // zone 1: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone1);
+        completeUpgrade(version1, SystemApplication.tenantHost, zone1.toDeprecatedId());
         statusUpdater.maintain();
         assertEquals(2, nodesOn(version1).size());
         assertEquals(11, nodesOn(Version.emptyVersion).size());
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.proxy, zone2, zone3);
+        assertWanted(version1, SystemApplication.proxy, zone2.toDeprecatedId(), zone3.toDeprecatedId());
 
         // zone 4: still on previous version
-        assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4);
+        assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4.toDeprecatedId());
 
         // zone 2 and 3: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone2, zone3);
+        completeUpgrade(version1, SystemApplication.tenantHost, zone2.toDeprecatedId(), zone3.toDeprecatedId());
 
         // zone 4: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.tenantHost, zone4);
+        assertWanted(version1, SystemApplication.tenantHost, zone4.toDeprecatedId());
 
         // zone 4: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone4);
+        completeUpgrade(version1, SystemApplication.tenantHost, zone4.toDeprecatedId());
 
         // Next run does nothing as all zones are upgraded
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.tenantHost, zone1, zone2, zone3, zone4);
+        assertWanted(version1, SystemApplication.tenantHost, zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId());
         statusUpdater.maintain();
         assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud).stream()
                                                         .allMatch(node -> node.version().equals(version1)));

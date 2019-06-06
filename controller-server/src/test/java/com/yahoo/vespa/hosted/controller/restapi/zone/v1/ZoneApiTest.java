@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
-import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,10 +22,12 @@ import java.util.Set;
 public class ZoneApiTest extends ControllerContainerCloudTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/zone/v1/responses/";
-    private static final List<ZoneId> zones = List.of(ZoneId.from(Environment.prod, RegionName.from("us-north-1")),
-                                                      ZoneId.from(Environment.dev, RegionName.from("us-north-2")),
-                                                      ZoneId.from(Environment.test, RegionName.from("us-north-3")),
-                                                      ZoneId.from(Environment.staging, RegionName.from("us-north-4")));
+    private static final List<ZoneApi> zones = List.of(
+            ZoneApiMock.fromId("prod.us-north-1"),
+            ZoneApiMock.fromId("dev.us-north-2"),
+            ZoneApiMock.fromId("test.us-north-3"),
+            ZoneApiMock.fromId("staging.us-north-4"));
+
     private static final Set<Role> everyone = Set.of(Role.everyone());
 
     private ContainerControllerTester tester;

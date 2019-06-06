@@ -17,4 +17,8 @@ public interface ZoneApi {
     default RegionName getRegionName() { return getId().region(); }
 
     CloudName getCloudName();
+
+    default ZoneId toDeprecatedId() {
+        return ZoneId.from(getEnvironment(), getRegionName(), getCloudName(), getSystemName());
+    }
 }

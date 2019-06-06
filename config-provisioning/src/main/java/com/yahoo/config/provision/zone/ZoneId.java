@@ -77,6 +77,10 @@ public class ZoneId {
         return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud), SystemName.from(system));
     }
 
+    public static ZoneId defaultId() {
+        return new ZoneId(Environment.defaultEnvironment(), RegionName.defaultName());
+    }
+
     public Environment environment() {
         return environment;
     }
