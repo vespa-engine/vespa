@@ -141,6 +141,12 @@ public class UnixPath {
         return this;
     }
 
+    public UnixPath createDirectories() {
+        uncheck(() -> Files.createDirectories(path));
+        return this;
+    }
+
+
     public UnixPath createDirectory(String permissions) {
         Set<PosixFilePermission> set = getPosixFilePermissionsFromString(permissions);
         FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(set);

@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 
 import java.io.IOException;
@@ -152,6 +153,10 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void startContainer(NodeAgentContext context) {
         context.log(logger, "Starting container");
+        // TODO: Remove after all nodes are on Vespa 7
+        new UnixPath(context.pathOnHostFromPathInNode("/opt/splunkforwarder/var/log"))
+                .createDirectories()
+                .setOwner(context.vespaUser());
         docker.startContainer(context.containerName());
     }
 
