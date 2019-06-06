@@ -156,7 +156,7 @@ public class DockerOperationsImpl implements DockerOperations {
         // TODO: Remove after all nodes are on Vespa 7
         new UnixPath(context.pathOnHostFromPathInNode("/opt/splunkforwarder/var/log"))
                 .createDirectories()
-                .setOwner(context.vespaUser());
+                .setOwner(context.vespaUserOnHost());
         docker.startContainer(context.containerName());
     }
 
