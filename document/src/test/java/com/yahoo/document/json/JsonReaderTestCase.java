@@ -53,7 +53,6 @@ import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -64,8 +63,8 @@ import org.mockito.internal.matchers.Contains;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -603,10 +602,24 @@ public class JsonReaderTestCase {
 
     @Test
     public void testRaw() throws IOException {
-        String stuff = new String(new JsonStringEncoder().quoteAsString(new Base64().encodeToString(Utf8.toBytes("smoketest"))));
+        String base64 = new String(new JsonStringEncoder().quoteAsString(
+                Base64.getEncoder().encodeToString(Utf8.toBytes("smoketest"))));
+        String s = fieldStringFromBase64RawContent(base64);
+        assertEquals("smoketest", s);
+    }
+
+    @Test
+    public void can_read_legacy_chunked_base64_raw_field_encoding() throws IOException {
+        String expected = "this is a string with an impressive length. it's long enough to reach the end of the line, wow!";
+        String base64withDelims = "dGhpcyBpcyBhIHN0cmluZyB3aXRoIGFuIGltcHJlc3NpdmUgbGVuZ3RoLiBpdCdzIGxvbmcgZW5v\\r\\n" +
+                "dWdoIHRvIHJlYWNoIHRoZSBlbmQgb2YgdGhlIGxpbmUsIHdvdyE=\\r\\n";
+        assertEquals(expected, fieldStringFromBase64RawContent(base64withDelims));
+    }
+
+    private String fieldStringFromBase64RawContent(String base64data) throws IOException {
         JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testraw::whee',",
                         "  'fields': {",
-                        "    'actualraw': '" + stuff + "' }}"));
+                        "    'actualraw': '" + base64data + "' }}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
@@ -615,8 +628,7 @@ public class JsonReaderTestCase {
         FieldValue f = doc.getFieldValue(doc.getField("actualraw"));
         assertSame(Raw.class, f.getClass());
         Raw s = (Raw) f;
-        ByteBuffer b = s.getByteBuffer();
-        assertEquals("smoketest", Utf8.toString(b));
+        return Utf8.toString(s.getByteBuffer());
     }
 
     @Test

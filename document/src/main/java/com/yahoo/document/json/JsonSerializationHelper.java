@@ -32,10 +32,10 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.objects.FieldBase;
-import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +45,7 @@ import java.util.Set;
  * @author Vegard Sjonfjell
  */
 public class JsonSerializationHelper {
-    private final static Base64 base64Encoder = new Base64();
+    private final static Base64.Encoder base64Encoder = Base64.getEncoder(); // Important: _basic_ format
 
     static class JsonSerializationException extends RuntimeException {
         public JsonSerializationException(Exception base) {
