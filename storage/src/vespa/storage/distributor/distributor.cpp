@@ -359,12 +359,10 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
     if (!_doneInitializing &&
         baselineState.getNodeState(myNode).getState() == lib::State::UP)
     {
-        scanAllBuckets();
         _doneInitializing = true;
         _doneInitializeHandler.notifyDoneInitializing();
-    } else {
-        enterRecoveryMode();
     }
+    enterRecoveryMode();
 
     // Clear all active messages on nodes that are down.
     for (uint16_t i = 0; i < baselineState.getNodeCount(lib::NodeType::STORAGE); ++i) {

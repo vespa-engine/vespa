@@ -1072,6 +1072,7 @@ void Distributor_Test::leaving_recovery_mode_immediately_sends_getnodestate_repl
 
 void Distributor_Test::do_test_pending_merge_getnodestate_reply_edge(BucketSpace space) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
     // 2 buckets with missing replicas triggering merge pending stats
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a");
     addNodesToBucketDB(Bucket(space, BucketId(16, 2)), "0=1/1/1/t/a");
@@ -1079,29 +1080,30 @@ void Distributor_Test::do_test_pending_merge_getnodestate_reply_edge(BucketSpace
     CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
     const auto space_name = FixedBucketSpaces::to_string(space);
     assertBucketSpaceStats(2, 0, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    // First completed scan sends off merge stats et al to cluster controller
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
 
     // Edge not triggered when 1 bucket with missing replica left
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a,1=1/1/1/t");
     tickDistributorNTimes(3);
     assertBucketSpaceStats(1, 1, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
 
     // Edge triggered when no more buckets with requiring merge
     addNodesToBucketDB(Bucket(space, BucketId(16, 2)), "0=1/1/1/t/a,1=1/1/1/t");
     tickDistributorNTimes(3);
     assertBucketSpaceStats(0, 2, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    CPPUNIT_ASSERT_EQUAL(size_t(2), explicit_node_state_reply_send_invocations());
 
     // Should only send when edge happens, not in subsequent DB iterations
     tickDistributorNTimes(10);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    CPPUNIT_ASSERT_EQUAL(size_t(2), explicit_node_state_reply_send_invocations());
 
     // Going back to merges pending should _not_ send a getnodestate reply (at least for now)
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a");
     tickDistributorNTimes(3);
     assertBucketSpaceStats(1, 1, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    CPPUNIT_ASSERT_EQUAL(size_t(2), explicit_node_state_reply_send_invocations());
 }
 
 void Distributor_Test::pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies() {
