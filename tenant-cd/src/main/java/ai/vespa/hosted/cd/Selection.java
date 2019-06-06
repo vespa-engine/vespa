@@ -14,7 +14,7 @@ public class Selection {
     private final String cluster;
     private final int concurrency;
 
-    public Selection(String selection, String namespace, String type, String group, String cluster, int concurrency) {
+    private Selection(String selection, String namespace, String type, String group, String cluster, int concurrency) {
         this.selection = selection;
         this.namespace = namespace;
         this.type = type;
