@@ -11,8 +11,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
-import com.yahoo.config.provision.zone.ZoneFilterMock;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author mpolden
@@ -35,7 +36,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
-    private List<ZoneId> zones = new ArrayList<>();
+    private List<ZoneApi> zones = new ArrayList<>();
     private SystemName system;
     private UpgradePolicy upgradePolicy = null;
     private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
@@ -51,10 +52,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
-        zones.add(ZoneId.from("prod", "us-east-3"));
-        zones.add(ZoneId.from("prod", "us-west-1"));
-        zones.add(ZoneId.from("prod", "us-central-1"));
-        zones.add(ZoneId.from("prod", "eu-west-1"));
+        setZones(List.of(
+                ZoneApiMock.fromId("prod.us-east-3"),
+                ZoneApiMock.fromId("prod.us-west-1"),
+                ZoneApiMock.fromId("prod.us-central-1"),
+                ZoneApiMock.fromId("prod.eu-west-1")));
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -67,12 +69,12 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
-    public ZoneRegistryMock setZones(List<ZoneId> zones) {
+    public ZoneRegistryMock setZones(List<ZoneApi> zones) {
         this.zones = zones;
         return this;
     }
 
-    public ZoneRegistryMock setZones(ZoneId... zone) {
+    public ZoneRegistryMock setZones(ZoneApi... zone) {
         return setZones(List.of(zone));
     }
 
@@ -98,7 +100,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneFilter zones() {
-        return ZoneFilterMock.from(Collections.unmodifiableList(zones));
+        return ZoneFilterMock.from(List.copyOf(zones));
     }
 
     public AthenzService getConfigServerAthenzIdentity(ZoneId zone) {
@@ -147,7 +149,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public boolean hasZone(ZoneId zoneId) {
-        return zones.contains(zoneId);
+        return zones.stream().anyMatch(zone -> zone.getId().equals(zoneId));
     }
 
     @Override

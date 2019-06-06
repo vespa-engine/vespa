@@ -8,6 +8,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
@@ -315,8 +316,8 @@ public class Controller extends AbstractComponent {
     }
 
     private Set<CloudName> clouds() {
-        return zoneRegistry.zones().all().ids().stream()
-                           .map(ZoneId::cloud)
+        return zoneRegistry.zones().all().zones().stream()
+                           .map(ZoneApi::getCloudName)
                            .collect(Collectors.toUnmodifiableSet());
     }
 

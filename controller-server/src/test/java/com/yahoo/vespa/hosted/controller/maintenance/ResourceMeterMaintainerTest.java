@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapsh
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -32,12 +33,12 @@ public class ResourceMeterMaintainerTest {
     @Test
     public void testMaintainer() {
         ControllerTester tester = new ControllerTester();
-        List<ZoneId> zones = new ArrayList<>();
-        zones.add(ZoneId.from("prod", "us-east-3"));
-        zones.add(ZoneId.from("prod", "us-west-1"));
-        zones.add(ZoneId.from("prod", "us-central-1"));
-        zones.add(ZoneId.from("prod", "aws-us-east-1", "aws"));
-        tester.zoneRegistry().setZones(zones);
+        tester.zoneRegistry().setZones(
+                ZoneApiMock.newBuilder().withId("prod.us-east-3").build(),
+                ZoneApiMock.newBuilder().withId("prod.us-west-1").build(),
+                ZoneApiMock.newBuilder().withId("prod.us-central-1").build(),
+                ZoneApiMock.newBuilder().withId("prod.aws-us-east-1").withCloud("aws").build());
+
         ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), nodeRepository, tester.clock(), metrics, snapshotConsumer);
         resourceMeterMaintainer.maintain();
         Map<ApplicationId, ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();

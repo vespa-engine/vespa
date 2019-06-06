@@ -29,6 +29,9 @@ public interface ZoneList extends ZoneFilter {
     /** Only the given zones — combine with not() for best effect! */
     ZoneList among(ZoneId... zones);
 
+    /** Returns the ZoneApi of all zones in this list. */
+    List<? extends ZoneApi> zones();
+
     /** Returns the id of all zones in this list as — you guessed it — a list. */
     List<ZoneId> ids();
 
