@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
@@ -73,6 +74,11 @@ public class ZoneFilterMock implements ZoneList {
     @Override
     public ZoneList among(ZoneId... zones) {
         return filter(zoneId -> new HashSet<>(Arrays.asList(zones)).contains(zoneId));
+    }
+
+    @Override
+    public List<? extends ZoneApi> zones() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
