@@ -39,6 +39,11 @@ public:
         (void) visitor;
     }
 
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+        (void) field_name;
+        return search::index::FieldLengthInfo();
+    }
+
 };
 
 }  // namespace searchcorespi

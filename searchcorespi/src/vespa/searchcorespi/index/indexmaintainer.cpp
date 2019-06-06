@@ -124,6 +124,13 @@ public:
     }
 
     /**
+     * Implements IFieldLengthInspector
+     */
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+        return _index->get_field_length_info(field_name);
+    }
+
+    /**
      * Implements IDiskIndex
      */
     const vespalib::string &getIndexDir() const override { return _index->getIndexDir(); }

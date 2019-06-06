@@ -1,17 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryindexwrapper.h"
+#include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 
+using search::SerialNum;
 using search::TuneFileIndexing;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
-using search::index::Schema;
 using search::diskindex::IndexBuilder;
-using search::SerialNum;
+using search::index::FieldLengthInfo;
+using search::index::Schema;
 using vespalib::IllegalStateException;
 
 namespace proton {
@@ -56,6 +57,14 @@ void
 MemoryIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
 {
     visitor.visit(*this);
+}
+
+FieldLengthInfo
+MemoryIndexWrapper::get_field_length_info(const vespalib::string& field_name) const
+{
+    // TODO: implement
+    (void) field_name;
+    return FieldLengthInfo();
 }
 
 } // namespace proton

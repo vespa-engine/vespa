@@ -12,16 +12,17 @@ LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 
 namespace searchcorespi {
 
+using fastos::ClockSystem;
+using fastos::TimeStamp;
+using index::IDiskIndex;
+using search::fef::MatchDataLayout;
+using search::index::FieldLengthInfo;
 using search::query::StringBase;
 using search::queryeval::Blueprint;
-using search::fef::MatchDataLayout;
-using search::queryeval::SearchIterator;
 using search::queryeval::ISourceSelector;
-using vespalib::makeTask;
+using search::queryeval::SearchIterator;
 using vespalib::makeClosure;
-using index::IDiskIndex;
-using fastos::TimeStamp;
-using fastos::ClockSystem;
+using vespalib::makeTask;
 using TermMap = vespalib::hash_set<vespalib::string>;
 
 class FieldTermMap : public vespalib::hash_map<uint32_t, TermMap>
@@ -196,6 +197,11 @@ WarmupIndexCollection::accept(IndexSearchableVisitor &visitor) const
     _next->accept(visitor);
 }
 
+FieldLengthInfo
+WarmupIndexCollection::get_field_length_info(const vespalib::string& field_name) const
+{
+    return _next->get_field_length_info(field_name);
+}
 
 void
 WarmupIndexCollection::append(uint32_t id, const IndexSearchable::SP &source)
