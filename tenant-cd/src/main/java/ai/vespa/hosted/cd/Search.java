@@ -1,6 +1,6 @@
 package ai.vespa.hosted.cd;
 
-import java.util.SortedMap;
+import java.util.Map;
 
 /**
  * The immutable result of sending a {@link Query} to a Vespa {@link Endpoint}.
@@ -16,8 +16,8 @@ public class Search {
     // results?
     // resultsFull?
 
-    /** Returns the documents that were returned as the result, with an iteration order of decreasing relevance. */
-    SortedMap<DocumentId, Document> documents() {
+    /** Returns the documents that were returned as the result, with iteration order as returned. */
+    Map<DocumentId, Document> documents() {
         return null;
     }
 
