@@ -156,7 +156,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     }
 
     private void handleAuthorizationFailure(Request request, Throwable throwable) {
-        String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
+        String errorMessage = String.format("For request '%s' from '%s' (mode=%s): %s", request.methodName(), request.target().toString(), mode.toString(), throwable.getMessage());
         log.log(LogLevel.WARNING, errorMessage);
         log.log(LogLevel.DEBUG, throwable, throwable::getMessage);
         if (mode == Mode.ENFORCE) {
