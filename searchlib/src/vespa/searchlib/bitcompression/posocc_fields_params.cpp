@@ -129,4 +129,11 @@ PosOccFieldsParams::writeHeader(vespalib::GenericHeader &header,
     }
 }
 
+void
+PosOccFieldsParams::set_field_length_info(const index::FieldLengthInfo &field_length_info)
+{
+    assert(!_params.empty());
+    _params.front().set_field_length_info(field_length_info);
+}
+
 }

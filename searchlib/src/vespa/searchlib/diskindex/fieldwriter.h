@@ -71,6 +71,7 @@ public:
               bool dynamicKPosOccFormat,
               bool encode_cheap_features,
               const Schema &schema, uint32_t indexId,
+              const index::FieldLengthInfo &field_length_info,
               const TuneFileSeqWrite &tuneFileWrite,
               const search::common::FileHeaderContext &fileHeaderContext);
 

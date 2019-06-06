@@ -10,6 +10,7 @@ namespace search {
 }
 
 namespace search::index { 
+    class FieldLengthInfo;
     class PostingListParams;
     class PostingListCountFileSeqWrite;
     class PostingListCountFileSeqRead;
@@ -33,7 +34,8 @@ makePosOccWrite(index::PostingListCountFileSeqWrite *const posOccCountWrite,
                 const index::PostingListParams &params,
                 const index::PostingListParams &featureParams,
                 const index::Schema &schema,
-                uint32_t indexId);
+                uint32_t indexId,
+                const index::FieldLengthInfo &field_length_info);
 
 std::unique_ptr<index::PostingListFileSeqRead>
 makePosOccRead(const vespalib::string &name,

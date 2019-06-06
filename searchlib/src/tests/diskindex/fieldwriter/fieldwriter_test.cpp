@@ -6,6 +6,7 @@
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/index/postinglisthandle.h>
 #include <vespa/searchlib/diskindex/zcposocc.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
@@ -38,6 +39,7 @@ using search::fakedata::FakeWord;
 using search::fakedata::FakeWordSet;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
+using search::index::FieldLengthInfo;
 using search::index::DummyFileHeaderContext;
 using search::index::PostingListCounts;
 using search::index::PostingListOffsetAndCounts;
@@ -200,6 +202,7 @@ WrappedFieldWriter::open()
                        minSkipDocs, minChunkDocs,
                        _dynamicK, _encode_cheap_features,
                        _schema, _indexId,
+                       FieldLengthInfo(4.5, 42),
                        tuneFileWrite, fileHeaderContext);
 }
 
@@ -427,6 +430,10 @@ readField(FakeWordSet &wordSet,
     if (istate._fieldReader->isValid())
         istate._fieldReader->read();
 
+    auto field_length_info = istate._fieldReader->get_field_length_info();
+    assert(4.5 == field_length_info.get_average_field_length());
+    assert(42u == field_length_info.get_num_samples());
+
     TermFieldMatchData mdfield1;
 
     unsigned int wordNum = 1;
@@ -503,6 +510,9 @@ randReadField(FakeWordSet &wordSet,
     bool openPostingRes = postingFile->open(pname, tuneFileRandRead);
     assert(openPostingRes);
     (void) openPostingRes;
+    auto field_length_info = postingFile->get_field_length_info();
+    assert(4.5 == field_length_info.get_average_field_length());
+    assert(42u == field_length_info.get_num_samples());
 
     for (int loop = 0; loop < 1; ++loop) {
         unsigned int wordNum = 1;

@@ -172,7 +172,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     const uint64_t num_words = memory_index.getNumWords();
     search::TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    index_builder.open(docIdLimit, num_words, tuneFileIndexing, fileHeaderContext);
+    index_builder.open(docIdLimit, num_words, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
     memory_index.dump(index_builder);
     index_builder.close();
 

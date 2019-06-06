@@ -740,7 +740,7 @@ TEST_F(FieldIndexCollectionTest, require_that_dumping_words_with_no_docs_to_inde
         b.setPrefix("dump");
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
-        b.open(5, 2, tuneFileIndexing, fileHeaderContext);
+        b.open(5, 2, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
         fic.dump(b);
         b.close();
     }
@@ -1210,7 +1210,9 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
         dib.setPrefix("urldump");
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
-        dib.open(11, _fic.getNumUniqueWords(), tuneFileIndexing,
+        dib.open(11, _fic.getNumUniqueWords(),
+                 MockFieldLengthInspector(),
+                 tuneFileIndexing,
                  fileHeaderContext);
         _fic.dump(dib);
         dib.close();

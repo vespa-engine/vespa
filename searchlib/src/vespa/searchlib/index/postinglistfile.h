@@ -13,6 +13,7 @@ namespace search::common { class FileHeaderContext; }
 namespace search::index {
 
 class DocIdAndFeatures;
+class FieldLengthInfo;
 
 /**
  * Interface for posting list files containing document ids and features
@@ -60,6 +61,8 @@ public:
      * Get current (word, docid) feature parameters.
      */
     virtual void getFeatureParams(PostingListParams &params);
+
+    virtual const FieldLengthInfo &get_field_length_info() const = 0;
 };
 
 /**
@@ -168,6 +171,8 @@ public:
      * Close posting list file.
      */
     virtual bool close() = 0;
+
+    virtual const FieldLengthInfo &get_field_length_info() const = 0;
 
     bool getMemoryMapped() const { return _memoryMapped; }
 

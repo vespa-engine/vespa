@@ -2,6 +2,8 @@
 
 #include "indexbuilder.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/field_length_info.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -19,6 +21,8 @@ namespace {
 
 using common::FileHeaderContext;
 using index::DocIdAndFeatures;
+using index::FieldLengthInfo;
+using index::IFieldLengthInspector;
 using index::PostingListCounts;
 using index::Schema;
 using index::SchemaUtil;
@@ -37,6 +41,7 @@ public:
     void open(vespalib::stringref dir,
               const SchemaUtil::IndexIterator &index,
               uint32_t docIdLimit, uint64_t numWordIds,
+              const FieldLengthInfo &field_length_info,
               const TuneFileSeqWrite &tuneFileWrite,
               const FileHeaderContext &fileHeaderContext);
 
@@ -69,6 +74,7 @@ public:
     const vespalib::string &getName();
     vespalib::string getDir();
     void open(uint32_t docIdLimit, uint64_t numWordIds,
+              const FieldLengthInfo &field_length_info,
               const TuneFileSeqWrite &tuneFileWrite,
               const FileHeaderContext &fileHeaderContext);
     void close();
@@ -90,6 +96,7 @@ void
 FileHandle::open(vespalib::stringref dir,
                  const SchemaUtil::IndexIterator &index,
                  uint32_t docIdLimit, uint64_t numWordIds,
+                 const FieldLengthInfo &field_length_info,
                  const TuneFileSeqWrite &tuneFileWrite,
                  const FileHeaderContext &fileHeaderContext)
 {
@@ -100,6 +107,7 @@ FileHandle::open(vespalib::stringref dir,
     if (!_fieldWriter->open(dir + "/", 64, 262144u, false,
                             index.use_experimental_posting_list_format(),
                             index.getSchema(), index.getIndex(),
+                            field_length_info,
                             tuneFileWrite, fileHeaderContext)) {
         LOG(error, "Could not open term writer %s for write (%s)",
             vespalib::string(dir).c_str(), getLastErrorString().c_str());
@@ -170,12 +178,15 @@ IndexBuilder::FieldHandle::getDir()
 
 void
 IndexBuilder::FieldHandle::open(uint32_t docIdLimit, uint64_t numWordIds,
+                                const FieldLengthInfo &field_length_info,
                                 const TuneFileSeqWrite &tuneFileWrite,
                                 const FileHeaderContext &fileHeaderContext)
 {
     _file.open(getDir(),
                SchemaUtil::IndexIterator(*_schema, getIndexId()),
-               docIdLimit, numWordIds, tuneFileWrite, fileHeaderContext);
+               docIdLimit, numWordIds,
+               field_length_info,
+               tuneFileWrite, fileHeaderContext);
 }
 
 void
@@ -278,6 +289,7 @@ IndexBuilder::appendToPrefix(vespalib::stringref name)
 
 void
 IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
+                   const IFieldLengthInspector &field_length_inspector,
                    const TuneFileIndexing &tuneFileIndexing,
                    const FileHeaderContext &fileHeaderContext)
 {
@@ -294,7 +306,9 @@ IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
             continue;
         }
         vespalib::mkdir(fh.getDir(), false);
-        fh.open(docIdLimit, numWordIds, tuneFileIndexing._write,
+        fh.open(docIdLimit, numWordIds,
+                field_length_inspector.get_field_length_info(fh.getName()),
+                tuneFileIndexing._write,
                  fileHeaderContext);
         indexes.push_back(fh.getIndexId());
     }

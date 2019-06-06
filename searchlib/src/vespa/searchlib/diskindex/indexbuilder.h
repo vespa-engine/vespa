@@ -8,6 +8,7 @@
 #include <vector>
 
 namespace search::common { class FileHeaderContext; }
+namespace search::index { class IFieldLengthInspector; }
 
 namespace search::diskindex {
 
@@ -64,6 +65,7 @@ public:
     vespalib::string appendToPrefix(vespalib::stringref name);
 
     void open(uint32_t docIdLimit, uint64_t numWordIds,
+              const index::IFieldLengthInspector &field_length_inspector,
               const TuneFileIndexing &tuneFileIndexing,
               const common::FileHeaderContext &fileHandleContext);
 

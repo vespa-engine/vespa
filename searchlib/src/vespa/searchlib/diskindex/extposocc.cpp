@@ -57,14 +57,15 @@ makePosOccWrite(PostingListCountFileSeqWrite *const posOccCountWrite,
                 const PostingListParams &params,
                 const PostingListParams &featureParams,
                 const Schema &schema,
-                uint32_t indexId)
+                uint32_t indexId,
+                const index::FieldLengthInfo &field_length_info)
 {
     std::unique_ptr<PostingListFileSeqWrite> posOccWrite;
 
     if (dynamicK) {
-        posOccWrite = std::make_unique<ZcPosOccSeqWrite>(schema, indexId, posOccCountWrite);
+        posOccWrite = std::make_unique<ZcPosOccSeqWrite>(schema, indexId, field_length_info, posOccCountWrite);
     } else {
-        posOccWrite = std::make_unique<Zc4PosOccSeqWrite>(schema, indexId, posOccCountWrite);
+        posOccWrite = std::make_unique<Zc4PosOccSeqWrite>(schema, indexId, field_length_info, posOccCountWrite);
     }
 
     posOccWrite->setFeatureParams(featureParams);

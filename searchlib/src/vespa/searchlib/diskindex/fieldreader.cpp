@@ -18,6 +18,7 @@ vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
 }
 
 using vespalib::getLastErrorString;
+using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::SchemaUtil;
 using search::bitcompression::PosOccFieldParams;
@@ -179,6 +180,11 @@ FieldReader::getFeatureParams(PostingListParams &params)
     _oldposoccfile->getFeatureParams(params);
 }
 
+const FieldLengthInfo &
+FieldReader::get_field_length_info() const
+{
+    return _oldposoccfile->get_field_length_info();
+}
 
 std::unique_ptr<FieldReader>
 FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,

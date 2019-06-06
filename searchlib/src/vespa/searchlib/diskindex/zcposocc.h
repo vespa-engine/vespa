@@ -19,6 +19,7 @@ public:
     Zc4PosOccSeqRead(index::PostingListCountFileSeqRead *countFile);
     void setFeatureParams(const PostingListParams &params) override;
     static const vespalib::string &getSubIdentifier();
+    const index::FieldLengthInfo &get_field_length_info() const override;
 };
 
 
@@ -31,7 +32,9 @@ private:
 public:
     typedef index::Schema Schema;
 
-    Zc4PosOccSeqWrite(const Schema &schema, uint32_t indexId, index::PostingListCountFileSeqWrite *countFile);
+    Zc4PosOccSeqWrite(const Schema &schema, uint32_t indexId,
+                      const index::FieldLengthInfo &field_length_info,
+                      index::PostingListCountFileSeqWrite *countFile);
 };
 
 
@@ -45,6 +48,7 @@ public:
     ZcPosOccSeqRead(index::PostingListCountFileSeqRead *countFile);
     void setFeatureParams(const PostingListParams &params) override;
     static const vespalib::string &getSubIdentifier();
+    const index::FieldLengthInfo &get_field_length_info() const override;
 };
 
 
@@ -55,7 +59,9 @@ private:
     bitcompression::EGPosOccEncodeContext<true> _realEncodeFeatures;
 public:
     typedef index::Schema Schema;
-    ZcPosOccSeqWrite(const Schema &schema, uint32_t indexId, index::PostingListCountFileSeqWrite *countFile);
+    ZcPosOccSeqWrite(const Schema &schema, uint32_t indexId,
+                     const index::FieldLengthInfo &field_length_info,
+                     index::PostingListCountFileSeqWrite *countFile);
 };
 
 }

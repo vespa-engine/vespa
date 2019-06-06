@@ -17,6 +17,7 @@ using search::bitcompression::EGPosOccDecodeContext;
 using search::bitcompression::EGPosOccDecodeContextCooked;
 using search::bitcompression::PosOccFieldsParams;
 using search::bitcompression::FeatureDecodeContext;
+using search::index::FieldLengthInfo;
 using search::index::PostingListCounts;
 using search::index::PostingListHandle;
 using search::ComprFileReadContext;
@@ -246,6 +247,11 @@ ZcPosOccRandRead::getSubIdentifier()
     return d.getIdentifier();
 }
 
+const FieldLengthInfo &
+ZcPosOccRandRead::get_field_length_info() const
+{
+    return _fieldsParams.getFieldParams()->get_field_length_info();
+}
 
 Zc4PosOccRandRead::
 Zc4PosOccRandRead()

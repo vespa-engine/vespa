@@ -21,7 +21,8 @@ PosOccFieldParams::PosOccFieldParams()
       _hasElementWeights(false),
       _avgElemLen(512),
       _collectionType(SINGLE),
-      _name()
+      _name(),
+      _field_length_info()
 { }
 
 
@@ -128,14 +129,37 @@ PosOccFieldParams::setSchemaParams(const Schema &schema, uint32_t fieldId)
     _name = field.getName();
 }
 
+namespace {
+
+vespalib::string field_length_infix = "field_length.";
+
+struct FieldLengthKeys {
+    vespalib::string _average;
+    vespalib::string _samples;
+    FieldLengthKeys(const vespalib::string &prefix);
+    ~FieldLengthKeys();
+};
+
+FieldLengthKeys::FieldLengthKeys(const vespalib::string &prefix)
+    : _average(prefix + field_length_infix + "average"),
+      _samples(prefix + field_length_infix + "samples")
+{
+}
+
+FieldLengthKeys::~FieldLengthKeys() = default;
+
+}
 
 void
-PosOccFieldParams::readHeader(const vespalib::GenericHeader &header,
+PosOccFieldParams::readHeader(const GenericHeader &header,
                               const vespalib::string &prefix)
 {
+    using Tag = GenericHeader::Tag;
     vespalib::string nameKey(prefix + "fieldName");
     vespalib::string collKey(prefix + "collectionType");
     vespalib::string avgElemLenKey(prefix + "avgElemLen");
+    FieldLengthKeys field_length_keys(prefix);
+
     _name = header.getTag(nameKey).asString();
     Schema::CollectionType ct = schema::collectionTypeFromName(header.getTag(collKey).asString());
     switch (ct) {
@@ -158,17 +182,28 @@ PosOccFieldParams::readHeader(const vespalib::GenericHeader &header,
         LOG_ABORT("Bad collection type when reading field param in header");
     }
     _avgElemLen = header.getTag(avgElemLenKey).asInteger();
+    if (header.hasTag(field_length_keys._average) &&
+        header.hasTag(field_length_keys._samples)) {
+        const auto &average_field_length_tag = header.getTag(field_length_keys._average);
+        const auto &field_length_samples_tag = header.getTag(field_length_keys._samples);
+        if (average_field_length_tag.getType() == Tag::Type::TYPE_FLOAT &&
+            field_length_samples_tag.getType() == Tag::Type::TYPE_INTEGER) {
+            _field_length_info = index::FieldLengthInfo(average_field_length_tag.asFloat(), field_length_samples_tag.asInteger());
+        }
+    }
 }
 
 
 void
-PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
+PosOccFieldParams::writeHeader(GenericHeader &header,
                                const vespalib::string &prefix) const
 {
+    using Tag = GenericHeader::Tag;
     vespalib::string nameKey(prefix + "fieldName");
     vespalib::string collKey(prefix + "collectionType");
     vespalib::string avgElemLenKey(prefix + "avgElemLen");
-    header.putTag(GenericHeader::Tag(nameKey, _name));
+    FieldLengthKeys field_length_keys(prefix);
+    header.putTag(Tag(nameKey, _name));
     Schema::CollectionType ct(schema::CollectionType::SINGLE);
     switch (_collectionType) {
     case SINGLE:
@@ -183,8 +218,10 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
     default:
         LOG_ABORT("Bad collection type when writing field param in header");
     }
-    header.putTag(GenericHeader::Tag(collKey, schema::getTypeName(ct)));
-    header.putTag(GenericHeader::Tag(avgElemLenKey, _avgElemLen));
+    header.putTag(Tag(collKey, schema::getTypeName(ct)));
+    header.putTag(Tag(avgElemLenKey, _avgElemLen));
+    header.putTag(Tag(field_length_keys._average, _field_length_info.get_average_field_length()));
+    header.putTag(Tag(field_length_keys._samples, static_cast<int64_t>(_field_length_info.get_num_samples())));
 }
 
 }

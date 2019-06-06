@@ -4,6 +4,7 @@
 #include "fieldreader.h"
 #include "dictionarywordreader.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -26,6 +27,7 @@ using search::common::FileHeaderContext;
 using search::diskindex::DocIdMapping;
 using search::diskindex::WordNumMapping;
 using search::docsummary::DocumentSummary;
+using search::index::FieldLengthInfo;
 using search::index::PostingListParams;
 using search::index::Schema;
 using search::index::SchemaUtil;
@@ -324,13 +326,15 @@ Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index, const Word
 
 
 bool
-Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter &writer)
+Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter &writer, const FieldLengthInfo &field_length_info)
 {
     vespalib::string dir = _outDir + "/" + index.getName();
 
     if (!writer.open(dir + "/", 64, 262144, _dynamicKPosIndexFormat,
                      index.use_experimental_posting_list_format(), index.getSchema(),
-                     index.getIndex(), _tuneFileIndexing._write, _fileHeaderContext)) {
+                     index.getIndex(),
+                     field_length_info,
+                     _tuneFileIndexing._write, _fileHeaderContext)) {
         throw IllegalArgumentException(make_string("Could not open output posocc + dictionary in %s", dir.c_str()));
     }
     return true;
@@ -368,7 +372,11 @@ Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index, const WordNum
     if (!openInputFieldReaders(index, list, readers)) {
         return false;
     }
-    if (!openFieldWriter(index, fieldWriter)) {
+    FieldLengthInfo field_length_info;
+    if (!readers.empty()) {
+        field_length_info = readers.back()->get_field_length_info();
+    }
+    if (!openFieldWriter(index, fieldWriter, field_length_info)) {
         return false;
     }
     if (!setupMergeHeap(readers, fieldWriter, heap)) {
