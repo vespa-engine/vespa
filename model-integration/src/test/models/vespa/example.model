@@ -15,7 +15,7 @@ model example {
     }
 
     function foo1() {
-        expression: reduce(sum(input1 * input2, name) * constant1, max, x) * constant2
+        expression: file:test.expression
     }
 
     function foo2() {

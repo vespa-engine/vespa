@@ -45,15 +45,13 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Optional<String> modelName = path.segment(2);
 
         try {
-            if ( ! apiName.isPresent() || ! apiName.get().equalsIgnoreCase(API_ROOT)) {
+            if ( apiName.isEmpty() || ! apiName.get().equalsIgnoreCase(API_ROOT))
                 throw new IllegalArgumentException("unknown API");
-            }
-            if ( ! version.isPresent() || ! version.get().equalsIgnoreCase(VERSION_V1)) {
+            if ( version.isEmpty() || ! version.get().equalsIgnoreCase(VERSION_V1))
                 throw new IllegalArgumentException("unknown API version");
-            }
-            if ( ! modelName.isPresent()) {
+            if ( modelName.isEmpty())
                 return listAllModels(request);
-            }
+
             Model model = modelsEvaluator.requireModel(modelName.get());
 
             Optional<Integer> evalSegment = path.lastIndexOf(EVALUATE);

@@ -180,12 +180,7 @@ void function() :
       ")"
       lbrace() expression = expression() (<NL>)* <RBRACE> )
     {
-        try {
-            model.expression(name, new RankingExpression(expression));
-        }
-        catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
-            throw new IllegalArgumentException("Could not parse function '" + name + "'", e);
-        }
+        model.expression(name, expression);
     }
 }
 
@@ -280,7 +275,7 @@ Tensor largeConstantBody(String name) :
     )+
     {
         try {
-            return JsonFormat.decode(type, IOUtils.readFileBytes(new File(new File(model.source()).getParent(), path)));
+            return JsonFormat.decode(type, IOUtils.readFileBytes(model.relativeFile(path, "constant '" + name + "'")));
         }
         catch (Exception e) {
             throw new IllegalArgumentException("Could not read constant '" + name + "'", e);
