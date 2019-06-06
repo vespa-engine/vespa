@@ -230,7 +230,15 @@
                             <excludedGroups />
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
-			    <trimStackTrace>false</trimStackTrace>
+                            <trimStackTrace>false</trimStackTrace>
+                            <systemPropertyVariables>
+                                <application>${application}</application>
+                                <tenant>${tenant}</tenant>
+                                <instance>${instance}</instance>
+                                <endpoint>${endpoint}</endpoint>
+                                <privateKeyFile>${privateKeyFile}</privateKeyFile>
+                                <certificateFile>${certificateFile}</certificateFile>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -259,6 +267,14 @@
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
 			    <trimStackTrace>false</trimStackTrace>
+                            <systemPropertyVariables>
+                                <application>${application}</application>
+                                <tenant>${tenant}</tenant>
+                                <instance>${instance}</instance>
+                                <endpoint>${endpoint}</endpoint>
+                                <privateKeyFile>${privateKeyFile}</privateKeyFile>
+                                <certificateFile>${certificateFile}</certificateFile>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -287,6 +303,14 @@
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
 			    <trimStackTrace>false</trimStackTrace>
+                            <systemPropertyVariables>
+                                <application>${application}</application>
+                                <tenant>${tenant}</tenant>
+                                <instance>${instance}</instance>
+                                <endpoint>${endpoint}</endpoint>
+                                <privateKeyFile>${privateKeyFile}</privateKeyFile>
+                                <certificateFile>${certificateFile}</certificateFile>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -372,6 +396,14 @@
                 <version>${surefire_version}</version>
                 <configuration>
                     <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                    <systemPropertyVariables>
+                        <application>${application}</application>
+                        <tenant>${tenant}</tenant>
+                        <instance>${instance}</instance>
+                        <endpoint>${endpoint}</endpoint>
+                        <privateKeyFile>${privateKeyFile}</privateKeyFile>
+                        <certificateFile>${certificateFile}</certificateFile>
+                    </systemPropertyVariables>
                     <excludedGroups>
                         ai.vespa.hosted.cd.SystemTest,
                         ai.vespa.hosted.cd.StagingTest,
