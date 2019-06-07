@@ -50,9 +50,3 @@ FilterConfig = element filter-config {
 Renderer = element renderer {
    ComponentDefinition
 }
-
-Rotations = element rotations {
-    element rotation {
-        attribute id { xsd:Name }
-    }+
-}

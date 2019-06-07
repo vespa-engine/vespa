@@ -7,8 +7,7 @@ ContainerCluster = element container | jdisc {
     ContainerServices &    
     DocumentBinding* &
     Aliases? &
-    NodesOfContainerCluster? &
-    Rotations?
+    NodesOfContainerCluster?
 }
 
 ContainerServices =
