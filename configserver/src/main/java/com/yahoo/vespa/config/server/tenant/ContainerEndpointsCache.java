@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Persists assignment of rotations to an application to ZooKeeper.
- * The entries are RotationAssignments, which keep track of the container
+ * The entries are {@link ContainerEndpoint} instances, which keep track of the container
  * cluster that is the target, the endpoint name, and the rotation used to
  * give availability to that cluster.
  *
