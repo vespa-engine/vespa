@@ -78,37 +78,36 @@ struct InitializerTest : public Test {
     void do_test_initialization(InitParams& params);
 };
 
-/** Test initializing with an empty node. */
-TEST_F(InitializerTest, testInitEmptyNode) {
+TEST_F(InitializerTest, init_with_empty_node) {
     InitParams params;
     params.docsPerDisk = 0;
     do_test_initialization(params);
 }
-/** Test initializing with some data on single disk. */
-TEST_F(InitializerTest, testInitSingleDisk) {
+
+TEST_F(InitializerTest, init_with_data_on_single_disk) {
     InitParams params;
     params.diskCount = DiskCount(1);
     do_test_initialization(params);
 }
-/** Test initializing with multiple disks. */
-TEST_F(InitializerTest, testInitMultiDisk) {
+
+TEST_F(InitializerTest, init_with_multiple_disks) {
     InitParams params;
     do_test_initialization(params);
 }
-/** Test initializing with one of the disks being bad. */
-TEST_F(InitializerTest, testInitFailingMiddleDisk) {
+
+TEST_F(InitializerTest, init_with_bad_non_last_disk) {
     InitParams params;
     params.disksDown.insert(1);
     do_test_initialization(params);
 }
-/** Test initializing with last disk being bad. */
-TEST_F(InitializerTest, testInitFailingLastDisk) {
+
+TEST_F(InitializerTest, init_with_bad_last_disk) {
     InitParams params;
     params.disksDown.insert(params.diskCount - 1);
     do_test_initialization(params);
 }
-/** Test initializing with bucket on wrong disk. */
-TEST_F(InitializerTest, testInitBucketOnWrongDisk) {
+
+TEST_F(InitializerTest, init_with_bucket_on_wrong_disk) {
     InitParams params;
     params.bucketWrongDisk = true;
     params.bucketBitsUsed = 58;
