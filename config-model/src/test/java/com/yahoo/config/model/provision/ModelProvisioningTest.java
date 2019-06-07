@@ -16,7 +16,6 @@ import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.VespaModel;
@@ -51,9 +50,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.collection.IsIn.isIn;
-import static org.hamcrest.core.Every.everyItem;
-import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -760,42 +756,6 @@ public class ModelProvisioningTest {
         assertEquals("default01", model.getAdmin().getSlobroks().get(3).getHostName());
         assertEquals("Included in addition because it is retired", "default02", model.getAdmin().getSlobroks().get(4).getHostName());
         assertEquals("Included in addition because it is retired", "default03", model.getAdmin().getSlobroks().get(5).getHostName());
-    }
-
-    @Test
-    public void testSlobroksAreSpreadOverAllContainerClustersExceptNodeAdmin() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services>" +
-                        "  <admin version='4.0'/>" +
-                        "  <container version='1.0' id='routing'>" +
-                        "     <nodes count='10'/>" +
-                        "  </container>" +
-                        "  <container version='1.0' id='node-admin'>" +
-                        "     <nodes count='3'/>" +
-                        "  </container>" +
-                        "</services>";
-
-        int numberOfHosts = 13;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        tester.setApplicationId("hosted-vespa", "routing", "default");
-        VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
-
-        Set<String> routingHosts = getClusterHostnames(model, "routing");
-        assertEquals(10, routingHosts.size());
-
-        Set<String> nodeAdminHosts = getClusterHostnames(model, "node-admin");
-        assertEquals(3, nodeAdminHosts.size());
-
-        Set<String> slobrokHosts = model.getAdmin().getSlobroks().stream()
-                .map(AbstractService::getHostName)
-                .collect(Collectors.toSet());
-        assertEquals(3, slobrokHosts.size());
-
-        assertThat(slobrokHosts, everyItem(isIn(routingHosts)));
-        assertThat(slobrokHosts, everyItem(not(isIn(nodeAdminHosts))));
     }
 
     private Set<String> getClusterHostnames(VespaModel model, String clusterId) {
