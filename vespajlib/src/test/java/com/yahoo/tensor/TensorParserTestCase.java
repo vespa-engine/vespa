@@ -9,13 +9,58 @@ import static org.junit.Assert.fail;
 public class TensorParserTestCase {
 
     @Test
-    public void testParsing() {
+    public void testSparseParsing() {
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor()")).build(),
                      Tensor.from("{}"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x{})")).cell(1.0, 0).build(),
                      Tensor.from("{{x:0}:1.0}"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x{})")).cell().label("x", "l0").value(1.0).build(),
                      Tensor.from("{{x:l0}:1.0}"));
+        assertEquals("If the type is specified, a dense tensor can be created from the sparse text form",
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[1])")).cell(1.0, 0).build(),
+                     Tensor.from("tensor(x[1]):{{x:0}:1.0}"));
+    }
+
+    @Test
+    public void testDenseParsing() {
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor()")).build(),
+                     Tensor.from("tensor():[]"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[1])")).cell(1.0, 0).build(),
+                     Tensor.from("tensor(x[1]):[1.0]"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[2])")).cell(1.0, 0).cell(2.0, 1).build(),
+                     Tensor.from("tensor(x[2]):[1.0, 2.0]"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[3])"))
+                                   .cell(1.0, 0, 0)
+                                   .cell(2.0, 1, 0)
+                                   .cell(3.0, 0, 1)
+                                   .cell(4.0, 1, 1)
+                                   .cell(5.0, 0, 2)
+                                   .cell(6.0, 1, 2).build(),
+                     Tensor.from("tensor(x[2],y[3]):[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[1],y[2],z[3])"))
+                                   .cell(1.0, 0, 0, 0)
+                                   .cell(2.0, 0, 1, 0)
+                                   .cell(3.0, 0, 0, 1)
+                                   .cell(4.0, 0, 1, 1)
+                                   .cell(5.0, 0, 0, 2)
+                                   .cell(6.0, 0, 1, 2).build(),
+                     Tensor.from("tensor(x[1],y[2],z[3]):[[[1.0], [2.0]], [[3.0], [4.0]], [[5.0], [6.0]]]"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2],z[1])"))
+                                   .cell(1.0, 0, 0, 0)
+                                   .cell(2.0, 1, 0, 0)
+                                   .cell(3.0, 2, 0, 0)
+                                   .cell(4.0, 0, 1, 0)
+                                   .cell(5.0, 1, 1, 0)
+                                   .cell(6.0, 2, 1, 0).build(),
+                     Tensor.from("tensor(x[3],y[2],z[1]):[[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]]"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2],z[1])"))
+                                   .cell(1.0, 0, 0, 0)
+                                   .cell(2.0, 1, 0, 0)
+                                   .cell(3.0, 2, 0, 0)
+                                   .cell(4.0, 0, 1, 0)
+                                   .cell(5.0, 1, 1, 0)
+                                   .cell(6.0, 2, 1, 0).build(),
+                     Tensor.from("tensor( x[3],y[2],z[1]) : [  [ [1.0, 2.0, 3.0] , [4.0, 5,6.0] ]  ]"));
     }
 
     @Test

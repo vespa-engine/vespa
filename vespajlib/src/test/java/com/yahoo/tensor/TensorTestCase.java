@@ -54,7 +54,7 @@ public class TensorTestCase {
             fail("Expected parse error");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Excepted a number or a string starting by { or tensor(, got '--'", expected.getMessage());
+            assertEquals("Excepted a number or a string starting by {, [ or tensor(...):, got '--'", expected.getMessage());
         }
     }
 
