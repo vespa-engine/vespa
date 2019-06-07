@@ -55,7 +55,8 @@ public class ModelContextImplTest {
                         rotations,
                         false,
                         false,
-                        flagSource),
+                        flagSource,
+                        null),
                 Optional.empty(),
                 new Version(6), 
                 new Version(6));

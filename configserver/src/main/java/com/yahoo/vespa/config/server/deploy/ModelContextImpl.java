@@ -132,6 +132,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useFdispatchByDefault;
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
+        private final String tlsSecretsKeyName;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -144,7 +145,8 @@ public class ModelContextImpl implements ModelContext {
                           Set<Rotation> rotations,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
-                          FlagSource flagSource) {
+                          FlagSource flagSource,
+                          String tlsSecretsKeyName) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -164,6 +166,7 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.tlsSecretsKeyName = tlsSecretsKeyName;
         }
 
         @Override
@@ -215,6 +218,8 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
 
+        @Override
+        public String tlsSecretsKeyName() { return tlsSecretsKeyName; }
     }
 
 }

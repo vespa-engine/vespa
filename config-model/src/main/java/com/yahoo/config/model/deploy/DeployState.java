@@ -75,6 +75,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Version wantedNodeVespaVersion;
     private final Instant now;
     private final HostProvisioner provisioner;
+    private final Optional<String> tlsSecretsKeyName;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -101,7 +102,8 @@ public class DeployState implements ConfigDefinitionStore {
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
                         Instant now,
-                        Version wantedNodeVespaVersion) {
+                        Version wantedNodeVespaVersion,
+                        Optional<String> tlsSecretsKeyName) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -120,6 +122,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = new ImportedMlModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
                                                    modelImporters);
+        this.tlsSecretsKeyName = tlsSecretsKeyName;
 
         ValidationOverrides suppliedValidationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                                                             .orElse(ValidationOverrides.empty);
@@ -248,6 +251,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
+    public Optional<String> tlsSecretsKeyName() { return tlsSecretsKeyName; }
+
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -264,6 +269,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
+        private Optional<String> tlsSecretsKeyName = Optional.empty();
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -335,6 +341,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder tlsSecretsKeyName(String tlsSecretsKeyName) {
+            this.tlsSecretsKeyName = Optional.ofNullable(tlsSecretsKeyName);
+            return this;
+        }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -361,7 +372,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    queryProfiles,
                                    semanticRules,
                                    now,
-                                   wantedNodeVespaVersion);
+                                   wantedNodeVespaVersion,
+                                   tlsSecretsKeyName);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,

@@ -174,7 +174,8 @@ public class SessionPreparer {
                                                               rotationsSet,
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
-                                                              context.getFlagSource());
+                                                              context.getFlagSource(),
+                                                              params.tlsSecretsKeyName().orElse(null));
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
