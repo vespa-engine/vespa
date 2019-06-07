@@ -10,7 +10,6 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.service.duper.DuperModelManager;
-import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutorImpl;
 import com.yahoo.vespa.service.manager.HealthMonitorApi;
 import com.yahoo.vespa.service.manager.MonitorManager;
@@ -77,7 +76,7 @@ public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
 
     @Override
     public void applicationActivated(ApplicationInfo application) {
-        if (wouldMonitor(application.getApplicationId())) {
+        if (duperModel.isSupportedInfraApplication(application.getApplicationId())) {
             healthMonitors
                     .computeIfAbsent(application.getApplicationId(), applicationHealthMonitorFactory::create)
                     .monitor(application);
@@ -103,22 +102,7 @@ public class HealthMonitorManager implements MonitorManager, HealthMonitorApi {
             return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
         }
 
-        if (applicationId.equals(ZoneApplication.getApplicationId())) {
-            // New: The zone app is health monitored (monitor != null), possibly even the routing cluster
-            // which is a normal jdisc container (unnecessary but harmless), but the node-admin cluster
-            // are tenant Docker hosts running host admin that are monitored via /state/v1/health.
-            if (ZoneApplication.isNodeAdminService(applicationId, clusterId, serviceType)) {
-                return monitor.getStatus(applicationId, clusterId, serviceType, configId);
-            } else {
-                return new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
-            }
-        }
-
         return monitor.getStatus(applicationId, clusterId, serviceType, configId);
-    }
-
-    private boolean wouldMonitor(ApplicationId id) {
-        return duperModel.isSupportedInfraApplication(id) || id.equals(ZoneApplication.getApplicationId());
     }
 
     @Override
