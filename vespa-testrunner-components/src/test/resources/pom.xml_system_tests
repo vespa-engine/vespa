@@ -54,6 +54,7 @@
                     </excludes>
                     <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                    <trimStackTrace>false</trimStackTrace>
                     <environmentVariables>
                         <LD_LIBRARY_PATH>/opt/vespa/lib64</LD_LIBRARY_PATH>
                     </environmentVariables>

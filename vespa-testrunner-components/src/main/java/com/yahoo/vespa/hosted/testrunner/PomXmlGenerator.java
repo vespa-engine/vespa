@@ -68,6 +68,7 @@ public class PomXmlGenerator {
             "                    </excludes>\n" +
             "                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>\n" +
             "                    <redirectTestOutputToFile>false</redirectTestOutputToFile>\n" +
+            "                    <trimStackTrace>false</trimStackTrace>\n" +
             "                    <environmentVariables>\n" +
             "                        <LD_LIBRARY_PATH>" + Defaults.getDefaults().underVespaHome("lib64") + "</LD_LIBRARY_PATH>\n" +
             "                    </environmentVariables>\n" +
