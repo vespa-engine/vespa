@@ -118,7 +118,7 @@ struct ExecFixture
         }
     }
     void setupQueryEnvironment() {
-        test.getQueryEnv().getProperties().add("astr_query", "[d e f]");
+        test.getQueryEnv().getProperties().add("astr_query", "[d e f e]");
         test.getQueryEnv().getProperties().add("aint_query", "[11 13 17]");
     }
     const Tensor &extractTensor(uint32_t docid) {

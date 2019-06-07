@@ -46,7 +46,7 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {
         address.clear();
         address.add(vespalib::string(_attrBuffer[i].value()));
-        builder.insertCell(address, _attrBuffer[i].weight());
+        builder.insertCell(address, _attrBuffer[i].weight(), [](double, double v){ return v; });
     }
     _tensor = builder.build();
     outputs().set_object(0, *_tensor);
