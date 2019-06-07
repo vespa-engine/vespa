@@ -4,84 +4,17 @@
 #include <vespa/storage/bucketdb/judymultimap.h>
 #include <vespa/storage/bucketdb/judymultimap.hpp>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <boost/operators.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".lockable_map_test");
 
+// FIXME these old tests may have the least obvious semantics and worst naming in the entire storage module
+
+using namespace ::testing;
+
 namespace storage {
-
-struct LockableMapTest : public CppUnit::TestFixture {
-    void testSimpleUsage();
-    void testComparison();
-    void testIterating();
-    void testChunkedIterationIsTransparentAcrossChunkSizes();
-    void testCanAbortDuringChunkedIteration();
-    void testThreadSafetyStress();
-    void testFindBuckets();
-    void testFindBuckets2();
-    void testFindBuckets3();
-    void testFindBuckets4();
-    void testFindBuckets5();
-    void testFindBucketsSimple();
-    void testFindNoBuckets();
-    void testFindAll();
-    void testFindAll2();
-    void testFindAllUnusedBitIsSet();
-    void testFindAllInconsistentlySplit();
-    void testFindAllInconsistentlySplit2();
-    void testFindAllInconsistentlySplit3();
-    void testFindAllInconsistentlySplit4();
-    void testFindAllInconsistentlySplit5();
-    void testFindAllInconsistentlySplit6();
-    void testFindAllInconsistentBelow16Bits();
-    void testCreate();
-    void testCreate2();
-    void testCreate3();
-    void testCreate4();
-    void testCreate5();
-    void testCreate6();
-    void testCreateEmpty();
-    void testIsConsistent();
-
-    CPPUNIT_TEST_SUITE(LockableMapTest);
-    CPPUNIT_TEST(testSimpleUsage);
-    CPPUNIT_TEST(testComparison);
-    CPPUNIT_TEST(testIterating);
-    CPPUNIT_TEST(testChunkedIterationIsTransparentAcrossChunkSizes);
-    CPPUNIT_TEST(testCanAbortDuringChunkedIteration);
-    CPPUNIT_TEST(testThreadSafetyStress);
-    CPPUNIT_TEST(testFindBuckets);
-    CPPUNIT_TEST(testFindBuckets2);
-    CPPUNIT_TEST(testFindBuckets3);
-    CPPUNIT_TEST(testFindBuckets4);
-    CPPUNIT_TEST(testFindBuckets5);
-    CPPUNIT_TEST(testFindBucketsSimple);
-    CPPUNIT_TEST(testFindNoBuckets);
-    CPPUNIT_TEST(testFindAll);
-    CPPUNIT_TEST(testFindAll2);
-    CPPUNIT_TEST(testFindAllUnusedBitIsSet);
-    CPPUNIT_TEST(testFindAllInconsistentlySplit);
-    CPPUNIT_TEST(testFindAllInconsistentlySplit2);
-    CPPUNIT_TEST(testFindAllInconsistentlySplit3);
-    CPPUNIT_TEST(testFindAllInconsistentlySplit4);
-    CPPUNIT_TEST(testFindAllInconsistentlySplit5);
-    CPPUNIT_TEST(testFindAllInconsistentlySplit6);
-    CPPUNIT_TEST(testFindAllInconsistentBelow16Bits);
-    CPPUNIT_TEST(testCreate);
-    CPPUNIT_TEST(testCreate2);
-    CPPUNIT_TEST(testCreate3);
-    CPPUNIT_TEST(testCreate4);
-    CPPUNIT_TEST(testCreate5);
-    CPPUNIT_TEST(testCreate6);
-    CPPUNIT_TEST(testCreateEmpty);
-    CPPUNIT_TEST(testIsConsistent);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(LockableMapTest);
 
 namespace {
     struct A : public boost::operators<A> {
@@ -112,84 +45,81 @@ namespace {
     typedef LockableMap<JudyMultiMap<A> > Map;
 }
 
-void
-LockableMapTest::testSimpleUsage() {
-        // Tests insert, erase, size, empty, operator[]
+TEST(LockableMapTest, simple_usage) {
+    // Tests insert, erase, size, empty, operator[]
     Map map;
-        // Do some insertions
-    CPPUNIT_ASSERT(map.empty());
+    // Do some insertions
+    EXPECT_TRUE(map.empty());
     bool preExisted;
     map.insert(16, A(1, 2, 3), "foo", preExisted);
-    CPPUNIT_ASSERT_EQUAL(false, preExisted);
+    EXPECT_EQ(false, preExisted);
     map.insert(11, A(4, 6, 0), "foo", preExisted);
-    CPPUNIT_ASSERT_EQUAL(false, preExisted);
+    EXPECT_EQ(false, preExisted);
     map.insert(14, A(42, 0, 0), "foo", preExisted);
-    CPPUNIT_ASSERT_EQUAL(false, preExisted);
-    CPPUNIT_ASSERT_EQUAL_MSG(map.toString(),
-                             (Map::size_type) 3, map.size());
+    EXPECT_EQ(false, preExisted);
+    EXPECT_EQ((Map::size_type) 3, map.size()) << map.toString();
 
     map.insert(11, A(4, 7, 0), "foo", preExisted);
-    CPPUNIT_ASSERT_EQUAL(true, preExisted);
-    CPPUNIT_ASSERT_EQUAL((Map::size_type) 3, map.size());
-    CPPUNIT_ASSERT(!map.empty());
+    EXPECT_EQ(true, preExisted);
+    EXPECT_EQ((Map::size_type) 3, map.size());
+    EXPECT_FALSE(map.empty());
 
-        // Access some elements
-    CPPUNIT_ASSERT_EQUAL(A(4, 7, 0), *map.get(11, "foo"));
-    CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), *map.get(16, "foo"));
-    CPPUNIT_ASSERT_EQUAL(A(42,0, 0), *map.get(14, "foo"));
+    // Access some elements
+    EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
+    EXPECT_EQ(A(1, 2, 3), *map.get(16, "foo"));
+    EXPECT_EQ(A(42,0, 0), *map.get(14, "foo"));
 
-        // Do removes
-    CPPUNIT_ASSERT(map.erase(12, "foo") == 0);
-    CPPUNIT_ASSERT_EQUAL((Map::size_type) 3, map.size());
+    // Do removes
+    EXPECT_EQ(map.erase(12, "foo"), 0);
+    EXPECT_EQ((Map::size_type) 3, map.size());
 
-    CPPUNIT_ASSERT(map.erase(14, "foo") == 1);
-    CPPUNIT_ASSERT_EQUAL((Map::size_type) 2, map.size());
+    EXPECT_EQ(map.erase(14, "foo"), 1);
+    EXPECT_EQ((Map::size_type) 2, map.size());
 
-    CPPUNIT_ASSERT(map.erase(11, "foo") == 1);
-    CPPUNIT_ASSERT(map.erase(16, "foo") == 1);
-    CPPUNIT_ASSERT_EQUAL((Map::size_type) 0, map.size());
-    CPPUNIT_ASSERT(map.empty());
+    EXPECT_EQ(map.erase(11, "foo"), 1);
+    EXPECT_EQ(map.erase(16, "foo"), 1);
+    EXPECT_EQ((Map::size_type) 0, map.size());
+    EXPECT_TRUE(map.empty());
 }
 
-void
-LockableMapTest::testComparison() {
+TEST(LockableMapTest, comparison) {
     Map map1;
     Map map2;
     bool preExisted;
 
-        // Check empty state is correct
-    CPPUNIT_ASSERT_EQUAL(map1, map2);
-    CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(!(map1 != map2));
+    // Check empty state is correct
+    EXPECT_EQ(map1, map2);
+    EXPECT_FALSE(map1 < map2);
+    EXPECT_FALSE(map1 != map2);
 
-        // Check that different lengths are oki
+    // Check that different lengths are ok
     map1.insert(4, A(1, 2, 3), "foo", preExisted);
-    CPPUNIT_ASSERT(!(map1 == map2));
-    CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(map2 < map1);
-    CPPUNIT_ASSERT(map1 != map2);
+    EXPECT_FALSE(map1 == map2);
+    EXPECT_FALSE(map1 < map2);
+    EXPECT_LT(map2, map1);
+    EXPECT_NE(map1, map2);
 
-        // Check that equal elements are oki
+    // Check that equal elements are ok
     map2.insert(4, A(1, 2, 3), "foo", preExisted);
-    CPPUNIT_ASSERT_EQUAL(map1, map2);
-    CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(!(map1 != map2));
+    EXPECT_EQ(map1, map2);
+    EXPECT_FALSE(map1 < map2);
+    EXPECT_FALSE(map1 != map2);
 
-        // Check that non-equal values are oki
+    // Check that non-equal values are ok
     map1.insert(6, A(1, 2, 6), "foo", preExisted);
     map2.insert(6, A(1, 2, 3), "foo", preExisted);
-    CPPUNIT_ASSERT(!(map1 == map2));
-    CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(map2 < map1);
-    CPPUNIT_ASSERT(map1 != map2);
+    EXPECT_FALSE(map1 == map2);
+    EXPECT_FALSE(map1 < map2);
+    EXPECT_LT(map2, map1);
+    EXPECT_NE(map1, map2);
 
-        // Check that non-equal keys are oki
+    // Check that non-equal keys are ok
     map1.erase(6, "foo");
     map1.insert(7, A(1, 2, 3), "foo", preExisted);
-    CPPUNIT_ASSERT(!(map1 == map2));
-    CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(map2 < map1);
-    CPPUNIT_ASSERT(map1 != map2);
+    EXPECT_FALSE(map1 == map2);
+    EXPECT_FALSE(map1 < map2);
+    EXPECT_LT(map2, map1);
+    EXPECT_NE(map1, map2);
 }
 
 namespace {
@@ -225,7 +155,9 @@ namespace {
 
         std::string toString() {
             std::ostringstream ost;
-            for (uint32_t i=0; i<log.size(); ++i) ost << log[i] << "\n";
+            for (uint32_t i=0; i<log.size(); ++i) {
+                ost << log[i] << "\n";
+            }
             return ost.str();
         }
     };
@@ -234,10 +166,9 @@ namespace {
 EntryProcessor::EntryProcessor() : count(0), log(), behaviour() {}
 EntryProcessor::EntryProcessor(const std::vector<Map::Decision>& decisions)
         : count(0), log(), behaviour(decisions) {}
-EntryProcessor::~EntryProcessor() {}
+EntryProcessor::~EntryProcessor() = default;
 
-void
-LockableMapTest::testIterating() {
+TEST(LockableMapTest, iterating) {
     Map map;
     bool preExisted;
     map.insert(16, A(1, 2, 3), "foo", preExisted);
@@ -247,13 +178,13 @@ LockableMapTest::testIterating() {
     {
         NonConstProcessor ncproc;
         map.each(ncproc, "foo"); // Locking both for each element
-        CPPUNIT_ASSERT_EQUAL(A(4, 7, 0), *map.get(11, "foo"));
-        CPPUNIT_ASSERT_EQUAL(A(42,1, 0), *map.get(14, "foo"));
-        CPPUNIT_ASSERT_EQUAL(A(1, 3, 3), *map.get(16, "foo"));
+        EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
+        EXPECT_EQ(A(42,1, 0), *map.get(14, "foo"));
+        EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
         map.all(ncproc, "foo"); // And for all
-        CPPUNIT_ASSERT_EQUAL(A(4, 8, 0), *map.get(11, "foo"));
-        CPPUNIT_ASSERT_EQUAL(A(42,2, 0), *map.get(14, "foo"));
-        CPPUNIT_ASSERT_EQUAL(A(1, 4, 3), *map.get(16, "foo"));
+        EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
+        EXPECT_EQ(A(42,2, 0), *map.get(14, "foo"));
+        EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
     }
         // Test that we can use const functors directly..
     map.each(EntryProcessor(), "foo");
@@ -265,12 +196,12 @@ LockableMapTest::testIterating() {
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n"
                              "16 - A(1, 4, 3)\n");
-        CPPUNIT_ASSERT_EQUAL(expected, proc.toString());
+        EXPECT_EQ(expected, proc.toString());
 
         EntryProcessor proc2;
         map.each(proc2, "foo", 12, 15);
         expected = "14 - A(42, 2, 0)\n";
-        CPPUNIT_ASSERT_EQUAL(expected, proc2.toString());
+        EXPECT_EQ(expected, proc2.toString());
     }
         // Test that we can abort iterating
     {
@@ -281,7 +212,7 @@ LockableMapTest::testIterating() {
         map.each(proc, "foo");
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n");
-        CPPUNIT_ASSERT_EQUAL(expected, proc.toString());
+        EXPECT_EQ(expected, proc.toString());
     }
         // Test that we can remove during iteration
     {
@@ -293,19 +224,16 @@ LockableMapTest::testIterating() {
         std::string expected("11 - A(4, 8, 0)\n"
                              "14 - A(42, 2, 0)\n"
                              "16 - A(1, 4, 3)\n");
-        CPPUNIT_ASSERT_EQUAL(expected, proc.toString());
-        CPPUNIT_ASSERT_EQUAL_MSG(map.toString(),
-                                 (Map::size_type) 2, map.size());
-        CPPUNIT_ASSERT_EQUAL(A(4, 8, 0), *map.get(11, "foo"));
-        CPPUNIT_ASSERT_EQUAL(A(1, 4, 3), *map.get(16, "foo"));
+        EXPECT_EQ(expected, proc.toString());
+        EXPECT_EQ((Map::size_type) 2, map.size()) << map.toString();
+        EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
+        EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
         Map::WrappedEntry entry = map.get(14, "foo");
-        CPPUNIT_ASSERT(!entry.exist());
+        EXPECT_FALSE(entry.exist());
     }
 }
 
-void
-LockableMapTest::testChunkedIterationIsTransparentAcrossChunkSizes()
-{
+TEST(LockableMapTest, chunked_iteration_is_transparent_across_chunk_sizes) {
     Map map;
     bool preExisted;
     map.insert(16, A(1, 2, 3), "foo", preExisted);
@@ -314,19 +242,17 @@ LockableMapTest::testChunkedIterationIsTransparentAcrossChunkSizes()
     NonConstProcessor ncproc; // Increments 2nd value in all entries.
     // chunkedAll with chunk size of 1
     map.chunkedAll(ncproc, "foo", 1);
-    CPPUNIT_ASSERT_EQUAL(A(4, 7, 0), *map.get(11, "foo"));
-    CPPUNIT_ASSERT_EQUAL(A(42, 1, 0), *map.get(14, "foo"));
-    CPPUNIT_ASSERT_EQUAL(A(1, 3, 3), *map.get(16, "foo"));
+    EXPECT_EQ(A(4, 7, 0), *map.get(11, "foo"));
+    EXPECT_EQ(A(42, 1, 0), *map.get(14, "foo"));
+    EXPECT_EQ(A(1, 3, 3), *map.get(16, "foo"));
     // chunkedAll with chunk size larger than db size
     map.chunkedAll(ncproc, "foo", 100);
-    CPPUNIT_ASSERT_EQUAL(A(4, 8, 0), *map.get(11, "foo"));
-    CPPUNIT_ASSERT_EQUAL(A(42, 2, 0), *map.get(14, "foo"));
-    CPPUNIT_ASSERT_EQUAL(A(1, 4, 3), *map.get(16, "foo"));
+    EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
+    EXPECT_EQ(A(42, 2, 0), *map.get(14, "foo"));
+    EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
 }
 
-void
-LockableMapTest::testCanAbortDuringChunkedIteration()
-{
+TEST(LockableMapTest, can_abort_during_chunked_iteration) {
     Map map;
     bool preExisted;
     map.insert(16, A(1, 2, 3), "foo", preExisted);
@@ -340,243 +266,10 @@ LockableMapTest::testCanAbortDuringChunkedIteration()
     map.chunkedAll(proc, "foo", 100);
     std::string expected("11 - A(4, 6, 0)\n"
             "14 - A(42, 0, 0)\n");
-    CPPUNIT_ASSERT_EQUAL(expected, proc.toString());
+    EXPECT_EQ(expected, proc.toString());
 }
 
-namespace {
-    struct LoadGiver : public document::Runnable {
-        typedef std::shared_ptr<LoadGiver> SP;
-        Map& _map;
-        uint32_t _counter;
-
-        LoadGiver(Map& map) : _map(map), _counter(0) {}
-        ~LoadGiver() __attribute__((noinline));
-    };
-
-    LoadGiver::~LoadGiver() { }
-
-    struct InsertEraseLoadGiver : public LoadGiver {
-        InsertEraseLoadGiver(Map& map) : LoadGiver(map) {}
-
-        void run() override {
-                // Screws up order of buckets by xor'ing with 12345.
-                // Only operate on last 32k super buckets.
-            while (running()) {
-                uint32_t bucket = ((_counter ^ 12345) % 0x8000) + 0x8000;
-                if (bucket % 7 < 3) {
-                    bool preExisted;
-                    _map.insert(bucket, A(bucket, 0, _counter), "foo",
-                                preExisted);
-                }
-                if (bucket % 5 < 2) {
-                    _map.erase(bucket, "foo");
-                }
-                ++_counter;
-            }
-        }
-    };
-
-    struct GetLoadGiver : public LoadGiver {
-        GetLoadGiver(Map& map) : LoadGiver(map) {}
-
-        void run() override {
-                // It's legal to keep entries as long as you only request higher
-                // buckets. So, to test this, keep entries until you request one
-                // that is smaller than those stored.
-            std::vector<std::pair<uint32_t, Map::WrappedEntry> > stored;
-            while (running()) {
-                uint32_t bucket = (_counter ^ 52721) % 0x10000;
-                if (!stored.empty() && stored.back().first > bucket) {
-                    stored.clear();
-                }
-                stored.push_back(std::pair<uint32_t, Map::WrappedEntry>(
-                            bucket, _map.get(bucket, "foo", _counter % 3 == 0)));
-                ++_counter;
-            }
-        }
-    };
-
-    struct AllLoadGiver : public LoadGiver {
-        AllLoadGiver(Map& map) : LoadGiver(map) {}
-
-        void run() override {
-            while (running()) {
-                _map.all(*this, "foo");
-                ++_counter;
-            }
-        }
-
-        Map::Decision operator()(int key, A& a) {
-            //std::cerr << (void*) this << " - " << key << "\n";
-            (void) key;
-            ++a._val2;
-            return Map::CONTINUE;
-        }
-    };
-
-    struct EachLoadGiver : public LoadGiver {
-        EachLoadGiver(Map& map) : LoadGiver(map) {}
-
-        void run() override {
-            while (running()) {
-                _map.each(*this, "foo");
-                ++_counter;
-            }
-        }
-
-        Map::Decision operator()(int key, A& a) {
-            //std::cerr << (void*) this << " - " << key << "\n";
-            (void) key;
-            ++a._val2;
-            return Map::CONTINUE;
-        }
-    };
-
-    struct RandomRangeLoadGiver : public LoadGiver {
-        RandomRangeLoadGiver(Map& map) : LoadGiver(map) {}
-
-        void run() override {
-            while (running()) {
-                uint32_t min = (_counter ^ 23426) % 0x10000;
-                uint32_t max = (_counter ^ 40612) % 0x10000;
-                if (min > max) {
-                    uint32_t tmp = min;
-                    min = max;
-                    max = tmp;
-                }
-                if (_counter % 7 < 5) {
-                    _map.each(*this, "foo", min, max);
-                } else {
-                    _map.all(*this, "foo", min, max);
-                }
-                ++_counter;
-            }
-        }
-
-        Map::Decision operator()(int key, A& a) {
-            //std::cerr << ".";
-            (void) key;
-            ++a._val2;
-            return Map::CONTINUE;
-        }
-    };
-
-    struct GetNextLoadGiver : public LoadGiver {
-        GetNextLoadGiver(Map& map) : LoadGiver(map) {}
-
-        void run() override {
-            while (running()) {
-                uint32_t bucket = (_counter ^ 60417) % 0xffff;
-                if (_counter % 7 < 5) {
-                    _map.each(*this, "foo", bucket + 1, 0xffff);
-                } else {
-                    _map.all(*this, "foo", bucket + 1, 0xffff);
-                }
-                ++_counter;
-            }
-        }
-
-        Map::Decision operator()(int key, A& a) {
-            //std::cerr << ".";
-            (void) key;
-            ++a._val2;
-            return Map::ABORT;
-        }
-    };
-}
-
-void
-LockableMapTest::testThreadSafetyStress() {
-    uint32_t duration = 2 * 1000;
-    std::cerr << "\nRunning LockableMap threadsafety test for "
-              << (duration / 1000) << " seconds.\n";
-    // Set up multiple threads going through the bucket database at the same
-    // time. Ensuring all works and there are no deadlocks.
-
-    // Initial database of 32k elements which should always be present.
-    // Next 32k elements may exist (loadgivers may erase and create them, "foo")
-    Map map;
-    for (uint32_t i=0; i<65536; ++i) {
-        bool preExisted;
-        map.insert(i, A(i, 0, i ^ 12345), "foo", preExisted);
-    }
-    std::vector<LoadGiver::SP> loadgivers;
-    for (uint32_t i=0; i<8; ++i) {
-        loadgivers.push_back(LoadGiver::SP(new InsertEraseLoadGiver(map)));
-    }
-    for (uint32_t i=0; i<2; ++i) {
-        loadgivers.push_back(LoadGiver::SP(new GetLoadGiver(map)));
-    }
-    for (uint32_t i=0; i<2; ++i) {
-        loadgivers.push_back(LoadGiver::SP(new AllLoadGiver(map)));
-    }
-    for (uint32_t i=0; i<2; ++i) {
-        loadgivers.push_back(LoadGiver::SP(new EachLoadGiver(map)));
-    }
-    for (uint32_t i=0; i<2; ++i) {
-        loadgivers.push_back(LoadGiver::SP(new RandomRangeLoadGiver(map)));
-    }
-    for (uint32_t i=0; i<2; ++i) {
-        loadgivers.push_back(LoadGiver::SP(new GetNextLoadGiver(map)));
-    }
-
-    FastOS_ThreadPool pool(128 * 1024);
-    for (uint32_t i=0; i<loadgivers.size(); ++i) {
-        CPPUNIT_ASSERT(loadgivers[i]->start(pool));
-    }
-    FastOS_Thread::Sleep(duration);
-    std::cerr << "Closing down test\n";
-    for (uint32_t i=0; i<loadgivers.size(); ++i) {
-        CPPUNIT_ASSERT(loadgivers[i]->stop());
-    }
-//    FastOS_Thread::Sleep(duration);
-//    std::cerr << "Didn't manage to shut down\n";
-//    map._lockedKeys.print(std::cerr, true, "");
-
-    for (uint32_t i=0; i<loadgivers.size(); ++i) {
-        CPPUNIT_ASSERT(loadgivers[i]->join());
-    }
-    std::cerr << "Loadgiver counts:";
-    for (uint32_t i=0; i<loadgivers.size(); ++i) {
-        std::cerr << " " << loadgivers[i]->_counter;
-    }
-    std::cerr << "\nTest completed\n";
-}
-
-#if 0
-namespace {
-struct Hex {
-    document::BucketId::Type val;
-
-    Hex(document::BucketId::Type v) : val(v) {}
-    bool operator==(const Hex& h) const { return val == h.val; }
-};
-
-std::ostream& operator<<(std::ostream& out, const Hex& h) {
-    out << std::hex << h.val << std::dec;
-    return out;
-}
-
-void
-printBucket(const std::string s, const document::BucketId& b) {
-    std::cerr << s << "bucket=" << b << ", reversed=" << b.stripUnused().toKey() << ", hex=" << Hex(b.stripUnused().toKey()) << "\n";
-}
-
-void
-printBuckets(const std::map<document::BucketId, Map::WrappedEntry>& results) {
-    for (std::map<document::BucketId, Map::WrappedEntry>::const_iterator iter = results.begin();
-         iter != results.end();
-         iter++) {
-        printBucket("Returned ", iter->first);
-    }
-}
-
-}
-#endif
-
-void
-LockableMapTest::testFindBucketsSimple() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_buckets_simple) {
     Map map;
 
     document::BucketId id1(17, 0x0ffff);
@@ -594,17 +287,13 @@ LockableMapTest::testFindBucketsSimple() {
     map.insert(id3.toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(22, 0xfffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getContained(id, "foo");
+    auto results = map.getContained(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)1, results.size());
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3]);
-#endif
+    EXPECT_EQ(1, results.size());
+    EXPECT_EQ(A(3,4,5), *results[id3]);
 }
 
-void
-LockableMapTest::testFindBuckets() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_buckets) {
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -619,20 +308,16 @@ LockableMapTest::testFindBuckets() {
     map.insert(id4.stripUnused().toKey(), A(4,5,6), "foo", preExisted);
 
     document::BucketId id(22, 0xfffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getContained(id, "foo");
+    auto results = map.getContained(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)3, results.size());
+    EXPECT_EQ(3, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]);
-    CPPUNIT_ASSERT_EQUAL(A(4,5,6), *results[id4.stripUnused()]);
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]);
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
+    EXPECT_EQ(A(4,5,6), *results[id4.stripUnused()]);
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]);
 }
 
-void
-LockableMapTest::testFindBuckets2() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_buckets_2) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -647,20 +332,16 @@ LockableMapTest::testFindBuckets2() { // ticket 3121525
     map.insert(id4.stripUnused().toKey(), A(4,5,6), "foo", preExisted);
 
     document::BucketId id(22, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getContained(id, "foo");
+    auto results = map.getContained(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)3, results.size());
+    EXPECT_EQ(3, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]);
-    CPPUNIT_ASSERT_EQUAL(A(4,5,6), *results[id4.stripUnused()]);
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]);
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
+    EXPECT_EQ(A(4,5,6), *results[id4.stripUnused()]);
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]);
 }
 
-void
-LockableMapTest::testFindBuckets3() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_buckets_3) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -671,18 +352,14 @@ LockableMapTest::testFindBuckets3() { // ticket 3121525
     map.insert(id2.stripUnused().toKey(), A(2,3,4), "foo", preExisted);
 
     document::BucketId id(22, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getContained(id, "foo");
+    auto results = map.getContained(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)1, results.size());
+    EXPECT_EQ(1, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]);
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
 }
 
-void
-LockableMapTest::testFindBuckets4() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_buckets_4) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -695,18 +372,14 @@ LockableMapTest::testFindBuckets4() { // ticket 3121525
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(18, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getContained(id, "foo");
+    auto results = map.getContained(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)1, results.size());
+    EXPECT_EQ(1, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]);
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
 }
 
-void
-LockableMapTest::testFindBuckets5() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_buckets_5) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff);
@@ -719,31 +392,23 @@ LockableMapTest::testFindBuckets5() { // ticket 3121525
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(18, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getContained(id, "foo");
+    auto results = map.getContained(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)1, results.size());
+    EXPECT_EQ(1, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]);
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]);
 }
 
-void
-LockableMapTest::testFindNoBuckets() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_no_buckets) {
     Map map;
 
     document::BucketId id(16, 0x0ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)0, results.size());
-#endif
+    EXPECT_EQ(0, results.size());
 }
 
-void
-LockableMapTest::testFindAll() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all) {
     Map map;
 
     document::BucketId id1(16, 0x0aaaa); // contains id2-id7
@@ -766,45 +431,26 @@ LockableMapTest::testFindAll() {
     map.insert(id7.stripUnused().toKey(), A(7,8,9), "foo", preExisted);
     map.insert(id8.stripUnused().toKey(), A(8,9,10), "foo", preExisted);
     map.insert(id9.stripUnused().toKey(), A(9,10,11), "foo", preExisted);
-    //printBucket("Inserted ", id1);
-    //printBucket("Inserted ", id2);
-    //printBucket("Inserted ", id3);
-    //printBucket("Inserted ", id4);
-    //printBucket("Inserted ", id5);
-    //printBucket("Inserted ", id6);
-    //printBucket("Inserted ", id7);
-    //printBucket("Inserted ", id8);
-    //printBucket("Inserted ", id9);
 
     document::BucketId id(17, 0x1aaaa);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    //std::cerr << "Done: getAll() for bucket " << id << "\n";
-    //printBuckets(results);
+    EXPECT_EQ(4, results.size());
 
-    CPPUNIT_ASSERT_EQUAL((size_t)4, results.size());
-
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // super bucket
-    CPPUNIT_ASSERT_EQUAL(A(5,6,7), *results[id5.stripUnused()]); // most specific match (exact match)
-    CPPUNIT_ASSERT_EQUAL(A(6,7,8), *results[id6.stripUnused()]); // sub bucket
-    CPPUNIT_ASSERT_EQUAL(A(7,8,9), *results[id7.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
+    EXPECT_EQ(A(5,6,7), *results[id5.stripUnused()]); // most specific match (exact match)
+    EXPECT_EQ(A(6,7,8), *results[id6.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(7,8,9), *results[id7.stripUnused()]); // sub bucket
 
     id = document::BucketId(16, 0xffff);
     results = map.getAll(id, "foo");
 
-    //std::cerr << "Done: getAll() for bucket " << id << "\n";
-    //printBuckets(results);
+    EXPECT_EQ(1, results.size());
 
-    CPPUNIT_ASSERT_EQUAL((size_t)1, results.size());
-
-    CPPUNIT_ASSERT_EQUAL(A(9,10,11), *results[id9.stripUnused()]); // sub bucket
-#endif
+    EXPECT_EQ(A(9,10,11), *results[id9.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAll2() { // Ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_2) { // Ticket 3121525
     Map map;
 
     document::BucketId id1(17, 0x00001);
@@ -815,19 +461,15 @@ LockableMapTest::testFindAll2() { // Ticket 3121525
     map.insert(id2.stripUnused().toKey(), A(2,3,4), "foo", preExisted);
 
     document::BucketId id(16, 0x00001);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // sub bucket
-    CPPUNIT_ASSERT_EQUAL(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAllUnusedBitIsSet() { // ticket 2938896
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_unused_bit_is_set) { // ticket 2938896
     Map map;
 
     document::BucketId id1(24, 0x000dc7089);
@@ -843,19 +485,15 @@ LockableMapTest::testFindAllUnusedBitIsSet() { // ticket 2938896
 
     document::BucketId id(33, 0x1053c7089);
     id.setUsedBits(32); // Bit 33 is set, but unused
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
-#endif
+    EXPECT_EQ(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAllInconsistentlySplit() { // Ticket 2938896
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_inconsistently_split) { // Ticket 2938896
     Map map;
 
     document::BucketId id1(16, 0x00001); // contains id2-id3
@@ -868,20 +506,16 @@ LockableMapTest::testFindAllInconsistentlySplit() { // Ticket 2938896
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(16, 0x00001);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)3, results.size());
+    EXPECT_EQ(3, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // most specific match (exact match)
-    CPPUNIT_ASSERT_EQUAL(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // most specific match (exact match)
+    EXPECT_EQ(A(2,3,4), *results[id2.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAllInconsistentlySplit2() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_inconsistently_split_2) { // ticket 3121525
     Map map;
 
     document::BucketId id1(17, 0x10000);
@@ -896,19 +530,15 @@ LockableMapTest::testFindAllInconsistentlySplit2() { // ticket 3121525
     map.insert(id4.stripUnused().toKey(), A(4,5,6), "foo", preExisted);
 
     document::BucketId id(32, 0x027228034);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(2,3,4), *results[id2.stripUnused()]); // super bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // most specific match (super bucket)
-#endif
+    EXPECT_EQ(A(2,3,4), *results[id2.stripUnused()]); // super bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // most specific match (super bucket)
 }
 
-void
-LockableMapTest::testFindAllInconsistentlySplit3() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_inconsistently_split_3) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2
@@ -919,18 +549,14 @@ LockableMapTest::testFindAllInconsistentlySplit3() { // ticket 3121525
     map.insert(id2.stripUnused().toKey(), A(2,3,4), "foo", preExisted);
 
     document::BucketId id(22, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)1, results.size());
+    EXPECT_EQ(1, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // super bucket
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
 }
 
-void
-LockableMapTest::testFindAllInconsistentlySplit4() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_inconsistently_split_4) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
@@ -943,19 +569,15 @@ LockableMapTest::testFindAllInconsistentlySplit4() { // ticket 3121525
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(18, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // super bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAllInconsistentlySplit5() { // ticket 3121525
-#if __WORDSIZE == 64
+TEST(LockableMapTest, find_all_inconsistently_split_5) { // ticket 3121525
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
@@ -968,18 +590,15 @@ LockableMapTest::testFindAllInconsistentlySplit5() { // ticket 3121525
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(18, 0x1ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // super bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
-#endif
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAllInconsistentlySplit6() {
+TEST(LockableMapTest, find_all_inconsistently_split_6) {
     Map map;
 
     document::BucketId id1(16, 0x0ffff); // contains id2-id3
@@ -992,18 +611,15 @@ LockableMapTest::testFindAllInconsistentlySplit6() {
     map.insert(id3.stripUnused().toKey(), A(3,4,5), "foo", preExisted);
 
     document::BucketId id(18, 0x3ffff);
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // super bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testFindAllInconsistentBelow16Bits()
-{
+TEST(LockableMapTest, find_all_inconsistent_below_16_bits) {
     Map map;
 
     document::BucketId id1(1, 0x1); // contains id2-id3
@@ -1017,50 +633,40 @@ LockableMapTest::testFindAllInconsistentBelow16Bits()
 
     document::BucketId id(3, 0x5);
 
-    std::map<document::BucketId, Map::WrappedEntry> results =
-        map.getAll(id, "foo");
+    auto results = map.getAll(id, "foo");
 
-    CPPUNIT_ASSERT_EQUAL(size_t(2), results.size());
+    EXPECT_EQ(2, results.size());
 
-    CPPUNIT_ASSERT_EQUAL(A(1,2,3), *results[id1.stripUnused()]); // super bucket
-    CPPUNIT_ASSERT_EQUAL(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
+    EXPECT_EQ(A(1,2,3), *results[id1.stripUnused()]); // super bucket
+    EXPECT_EQ(A(3,4,5), *results[id3.stripUnused()]); // sub bucket
 }
 
-void
-LockableMapTest::testCreate() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create) {
     Map map;
     {
         document::BucketId id1(58, 0x43d6c878000004d2ull);
 
-        std::map<document::BucketId, Map::WrappedEntry> entries(
-                map.getContained(id1, "foo"));
+        auto entries = map.getContained(id1, "foo");
 
-        CPPUNIT_ASSERT_EQUAL((size_t)0, entries.size());
+        EXPECT_EQ(0, entries.size());
 
         Map::WrappedEntry entry = map.createAppropriateBucket(36, "", id1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(36,0x8000004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(36,0x8000004d2ull), entry.getBucketId());
     }
     {
         document::BucketId id1(58, 0x423bf1e0000004d2ull);
 
-        std::map<document::BucketId, Map::WrappedEntry> entries(
-                map.getContained(id1, "foo"));
-        CPPUNIT_ASSERT_EQUAL((size_t)0, entries.size());
+        auto entries = map.getContained(id1, "foo");
+        EXPECT_EQ(0, entries.size());
 
         Map::WrappedEntry entry = map.createAppropriateBucket(36, "", id1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(36,0x0000004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(36,0x0000004d2ull), entry.getBucketId());
     }
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, map.size());
-#endif
+    EXPECT_EQ(2, map.size());
 }
 
-void
-LockableMapTest::testCreate2() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create_2) {
     Map map;
     {
         document::BucketId id1(58, 0xeaf77782000004d2);
@@ -1069,24 +675,19 @@ LockableMapTest::testCreate2() {
     }
     {
         document::BucketId id1(58, 0x00000000000004d2);
-        std::map<document::BucketId, Map::WrappedEntry> entries(
-                map.getContained(id1, "foo"));
+        auto entries = map.getContained(id1, "foo");
 
-        CPPUNIT_ASSERT_EQUAL((size_t)0, entries.size());
+        EXPECT_EQ(0, entries.size());
 
         Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
 
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(34, 0x0000004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(34, 0x0000004d2ull), entry.getBucketId());
     }
 
-    CPPUNIT_ASSERT_EQUAL((size_t)2, map.size());
-#endif
+    EXPECT_EQ(2, map.size());
 }
 
-void
-LockableMapTest::testCreate3() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create_3) {
     Map map;
     {
         document::BucketId id1(58, 0xeaf77780000004d2);
@@ -1100,21 +701,16 @@ LockableMapTest::testCreate3() {
     }
     {
         document::BucketId id1(58, 0x00000000000004d2);
-        std::map<document::BucketId, Map::WrappedEntry> entries(
-                map.getContained(id1, "foo"));
+        auto entries = map.getContained(id1, "foo");
 
-        CPPUNIT_ASSERT_EQUAL((size_t)0, entries.size());
+        EXPECT_EQ(0, entries.size());
 
         Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(40, 0x0000004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(40, 0x0000004d2ull), entry.getBucketId());
     }
-#endif
 }
 
-void
-LockableMapTest::testCreate4() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create_4) {
     Map map;
     {
         document::BucketId id1(16, 0x00000000000004d1);
@@ -1130,15 +726,11 @@ LockableMapTest::testCreate4() {
         document::BucketId id1(58, 0x00000000010004d2);
         Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
 
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(25, 0x0010004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(25, 0x0010004d2ull), entry.getBucketId());
     }
-#endif
 }
 
-void
-LockableMapTest::testCreate6() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create_5) {
     Map map;
     {
         document::BucketId id1(0x8c000000000004d2);
@@ -1165,16 +757,11 @@ LockableMapTest::testCreate6() {
     {
         document::BucketId id1(0xe9944a44000004d2);
         Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(0x90000004000004d2),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(0x90000004000004d2), entry.getBucketId());
     }
-#endif
 }
 
-
-void
-LockableMapTest::testCreate5() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create_6) {
     Map map;
     {
         document::BucketId id1(58, 0xeaf77780000004d2);
@@ -1190,28 +777,20 @@ LockableMapTest::testCreate5() {
     {
         document::BucketId id1(58, 0x00000000010004d2);
         Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(25, 0x0010004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(25, 0x0010004d2ull), entry.getBucketId());
     }
-#endif
 }
 
-void
-LockableMapTest::testCreateEmpty() {
-#if __WORDSIZE == 64
+TEST(LockableMapTest, create_empty) {
     Map map;
     {
         document::BucketId id1(58, 0x00000000010004d2);
         Map::WrappedEntry entry = map.createAppropriateBucket(16, "", id1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x0000004d2ull),
-                             entry.getBucketId());
+        EXPECT_EQ(document::BucketId(16, 0x0000004d2ull), entry.getBucketId());
     }
-#endif
 }
 
-void
-LockableMapTest::testIsConsistent()
-{
+TEST(LockableMapTest, is_consistent) {
     Map map;
     document::BucketId id1(16, 0x00001); // contains id2-id3
     document::BucketId id2(17, 0x00001);
@@ -1221,13 +800,13 @@ LockableMapTest::testIsConsistent()
     {
         Map::WrappedEntry entry(
                 map.get(id1.stripUnused().toKey(), "foo", true));
-        CPPUNIT_ASSERT(map.isConsistent(entry));
+        EXPECT_TRUE(map.isConsistent(entry));
     }
     map.insert(id2.stripUnused().toKey(), A(1,2,3), "foo", preExisted);
     {
         Map::WrappedEntry entry(
                 map.get(id1.stripUnused().toKey(), "foo", true));
-        CPPUNIT_ASSERT(!map.isConsistent(entry));
+        EXPECT_FALSE(map.isConsistent(entry));
     }
 }
 
