@@ -108,9 +108,9 @@ struct ArrayFixture : FixtureBase {
     }
 
     template <typename ExpectedType>
-    void check_prepare_state_output(const vespalib::tensor::Tensor & tensor, vespalib::tensor::SerializeFormat format, const ExpectedType & expected) {
+    void check_prepare_state_output(const vespalib::tensor::Tensor & tensor, const ExpectedType & expected) {
         vespalib::nbostream os;
-        vespalib::tensor::TypedBinaryFormat::serialize(os, tensor, format);
+        vespalib::tensor::TypedBinaryFormat::serialize(os, tensor);
         vespalib::string input_vector(os.c_str(), os.size());
         check_prepare_state_output(".tensor", input_vector, expected);
     }
@@ -197,26 +197,26 @@ TEST_F("prepareSharedState emits double vector for double imported attribute", A
 
 TEST_F("prepareSharedState handles tensor as float from tensor for double imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::DOUBLE);
-    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
-    f.template check_prepare_state_output(tensor, vespalib::tensor::SerializeFormat::FLOAT, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
+    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
+    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as double from tensor for double imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::DOUBLE);
     vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
-    f.template check_prepare_state_output(tensor, vespalib::tensor::SerializeFormat::DOUBLE, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
+    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as float from tensor for float imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::FLOAT);
-    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
-    f.template check_prepare_state_output(tensor, vespalib::tensor::SerializeFormat::FLOAT, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
+    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
+    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as double from tensor for float imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::FLOAT);
     vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
-    f.template check_prepare_state_output(tensor, vespalib::tensor::SerializeFormat::DOUBLE, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
+    f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("Dense i32/i64 array dot product can be evaluated with pre-parsed object parameter", ArrayFixture) {

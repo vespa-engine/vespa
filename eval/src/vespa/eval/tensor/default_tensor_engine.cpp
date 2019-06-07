@@ -170,8 +170,11 @@ Value::UP
 DefaultTensorEngine::from_spec(const TensorSpec &spec) const
 {
     ValueType type = ValueType::from_spec(spec.type());
-    if (!tensor::Tensor::supported({type})) {
-        return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
+    if (type.is_error()) {
+        return std::make_unique<ErrorValue>();
+    } else if (type.is_double()) {
+        double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
+        return std::make_unique<DoubleValue>(value);
     } else if (type.is_dense()) {
         DirectDenseTensorBuilder builder(type);
         for (const auto &cell: spec.cells()) {
@@ -195,13 +198,8 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
             }
         }
         return builder.build();
-    } else if (type.is_double()) {
-        double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
-        return std::make_unique<DoubleValue>(value);
-    } else {
-        assert(type.is_error());
-        return std::make_unique<ErrorValue>();
     }
+    return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
 }
 
 struct CellFunctionFunAdapter : tensor::CellFunction {
