@@ -2,30 +2,14 @@
 
 #include <vespa/storage/bucketdb/judymultimap.h>
 #include <vespa/storage/bucketdb/judymultimap.hpp>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <boost/assign.hpp>
-#include <boost/random.hpp>
-#include <cppunit/extensions/HelperMacros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <map>
 #include <ostream>
 #include <vector>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".judy_multi_map_test");
+using namespace ::testing;
 
 namespace storage {
-
-struct JudyMultiMapTest : public CppUnit::TestFixture {
-    void testSimpleUsage();
-    void testIterator();
-
-    CPPUNIT_TEST_SUITE(JudyMultiMapTest);
-    CPPUNIT_TEST(testSimpleUsage);
-    CPPUNIT_TEST(testIterator);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(JudyMultiMapTest);
 
 namespace {
     struct B;
@@ -84,48 +68,44 @@ namespace {
     }
 }
 
-void
-JudyMultiMapTest::testSimpleUsage() {
+TEST(JudyMultiMapTest, simple_usage) {
     typedef JudyMultiMap<C, B, A> MultiMap;
     MultiMap multiMap;
-        // Do some insertions
+    // Do some insertions
     bool preExisted;
-    CPPUNIT_ASSERT(multiMap.empty());
+    EXPECT_TRUE(multiMap.empty());
     multiMap.insert(16, A(1, 2, 3), preExisted);
-    CPPUNIT_ASSERT_EQUAL(false, preExisted);
+    EXPECT_EQ(false, preExisted);
     multiMap.insert(11, A(4, 6, 0), preExisted);
-    CPPUNIT_ASSERT_EQUAL(false, preExisted);
+    EXPECT_EQ(false, preExisted);
     multiMap.insert(14, A(42, 0, 0), preExisted);
-    CPPUNIT_ASSERT_EQUAL(false, preExisted);
-    CPPUNIT_ASSERT_EQUAL_MSG(multiMap.toString(),
-                             (MultiMap::size_type) 3, multiMap.size());
+    EXPECT_EQ(false, preExisted);
+    EXPECT_EQ((MultiMap::size_type) 3, multiMap.size()) << multiMap.toString();
 
     multiMap.insert(11, A(4, 7, 0), preExisted);
-    CPPUNIT_ASSERT_EQUAL(true, preExisted);
-    CPPUNIT_ASSERT_EQUAL((MultiMap::size_type) 3, multiMap.size());
-    CPPUNIT_ASSERT(!multiMap.empty());
+    EXPECT_EQ(true, preExisted);
+    EXPECT_EQ((MultiMap::size_type) 3, multiMap.size());
+    EXPECT_FALSE(multiMap.empty());
 
-        // Access some elements
-    CPPUNIT_ASSERT_EQUAL(A(4, 7, 0), multiMap[11]);
-    CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), multiMap[16]);
-    CPPUNIT_ASSERT_EQUAL(A(42,0, 0), multiMap[14]);
+    // Access some elements
+    EXPECT_EQ(A(4, 7, 0), multiMap[11]);
+    EXPECT_EQ(A(1, 2, 3), multiMap[16]);
+    EXPECT_EQ(A(42,0, 0), multiMap[14]);
 
-        // Do removes
-    CPPUNIT_ASSERT(multiMap.erase(12) == 0);
-    CPPUNIT_ASSERT_EQUAL((MultiMap::size_type) 3, multiMap.size());
+    // Do removes
+    EXPECT_EQ(multiMap.erase(12), 0);
+    EXPECT_EQ((MultiMap::size_type) 3, multiMap.size());
 
-    CPPUNIT_ASSERT(multiMap.erase(14) == 1);
-    CPPUNIT_ASSERT_EQUAL((MultiMap::size_type) 2, multiMap.size());
+    EXPECT_EQ(multiMap.erase(14), 1);
+    EXPECT_EQ((MultiMap::size_type) 2, multiMap.size());
 
-    CPPUNIT_ASSERT(multiMap.erase(11) == 1);
-    CPPUNIT_ASSERT(multiMap.erase(16) == 1);
-    CPPUNIT_ASSERT_EQUAL((MultiMap::size_type) 0, multiMap.size());
-    CPPUNIT_ASSERT(multiMap.empty());
+    EXPECT_EQ(multiMap.erase(11), 1);
+    EXPECT_EQ(multiMap.erase(16), 1);
+    EXPECT_EQ((MultiMap::size_type) 0, multiMap.size());
+    EXPECT_TRUE(multiMap.empty());
 }
 
-void
-JudyMultiMapTest::testIterator()
-{
+TEST(JudyMultiMapTest, iterator) {
     typedef JudyMultiMap<C, B, A> MultiMap;
     MultiMap multiMap;
     bool preExisted;
@@ -135,37 +115,37 @@ JudyMultiMapTest::testIterator()
     multiMap.insert(14, A(42, 0, 0), preExisted);
 
     MultiMap::Iterator iter = multiMap.begin();
-    CPPUNIT_ASSERT_EQUAL((uint64_t)11, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(4, 6, 0), iter.value());
+    EXPECT_EQ((uint64_t)11, (uint64_t)iter.key());
+    EXPECT_EQ(A(4, 6, 0), iter.value());
     ++iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)14, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(42, 0, 0), iter.value());
+    EXPECT_EQ((uint64_t)14, (uint64_t)iter.key());
+    EXPECT_EQ(A(42, 0, 0), iter.value());
     ++iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)16, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), iter.value());
+    EXPECT_EQ((uint64_t)16, (uint64_t)iter.key());
+    EXPECT_EQ(A(1, 2, 3), iter.value());
     --iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)14, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(42, 0, 0), iter.value());
+    EXPECT_EQ((uint64_t)14, (uint64_t)iter.key());
+    EXPECT_EQ(A(42, 0, 0), iter.value());
     ++iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)16, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), iter.value());
+    EXPECT_EQ((uint64_t)16, (uint64_t)iter.key());
+    EXPECT_EQ(A(1, 2, 3), iter.value());
     --iter;
     --iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)11,(uint64_t) iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(4, 6, 0), iter.value());
+    EXPECT_EQ((uint64_t)11,(uint64_t) iter.key());
+    EXPECT_EQ(A(4, 6, 0), iter.value());
     ++iter;
     ++iter;
     ++iter;
-    CPPUNIT_ASSERT_EQUAL(multiMap.end(), iter);
+    EXPECT_EQ(multiMap.end(), iter);
     --iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)16, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), iter.value());
+    EXPECT_EQ((uint64_t)16, (uint64_t)iter.key());
+    EXPECT_EQ(A(1, 2, 3), iter.value());
     --iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)14, (uint64_t)iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(42, 0, 0), iter.value());
+    EXPECT_EQ((uint64_t)14, (uint64_t)iter.key());
+    EXPECT_EQ(A(42, 0, 0), iter.value());
     --iter;
-    CPPUNIT_ASSERT_EQUAL((uint64_t)11,(uint64_t) iter.key());
-    CPPUNIT_ASSERT_EQUAL(A(4, 6, 0), iter.value());
+    EXPECT_EQ((uint64_t)11,(uint64_t) iter.key());
+    EXPECT_EQ(A(4, 6, 0), iter.value());
 }
 
 } // storage

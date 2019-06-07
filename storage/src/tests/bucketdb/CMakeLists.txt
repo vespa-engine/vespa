@@ -3,7 +3,6 @@
 # TODO: Remove test library when all tests have been migrated to gtest.
 vespa_add_library(storage_testbucketdb TEST
     SOURCES
-    judymultimaptest.cpp
     lockablemaptest.cpp
     DEPENDS
     storage
@@ -17,6 +16,7 @@ vespa_add_executable(storage_bucketdb_gtest_runner_app TEST
     gtest_runner.cpp
     initializertest.cpp
     judyarraytest.cpp
+    judymultimaptest.cpp
     DEPENDS
     storage
     storage_testcommon

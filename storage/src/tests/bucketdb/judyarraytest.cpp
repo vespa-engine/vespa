@@ -38,8 +38,7 @@ TEST(JudyArrayTest, iterating) {
     // Create expected result
     std::sort(values.begin(), values.end());
     // Test that we can iterate through const iterator
-    std::vector<std::pair<JudyArray::key_type, JudyArray::data_type>>
-    foundVals = getJudyArrayContents(array);
+    auto foundVals = getJudyArrayContents(array);
     ASSERT_EQ(values, foundVals);
 
     {   // Test that we can alter through non-const iterator
