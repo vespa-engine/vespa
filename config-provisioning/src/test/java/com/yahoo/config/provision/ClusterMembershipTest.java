@@ -6,7 +6,6 @@ import com.yahoo.component.Vtag;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,26 +36,25 @@ public class ClusterMembershipTest {
             assertTrue(instance.cluster().isExclusive());
         }
 
+        // TODO: Remove after June 2019. This ensures stale rotation data is handled
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/rotation1,rotation2", Vtag.currentVersion);
             assertFalse(instance.retired());
             assertFalse(instance.cluster().isExclusive());
-            assertEquals(Set.of(RotationName.from("rotation1"), RotationName.from("rotation2")), instance.cluster().rotations());
         }
 
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/rotation1,rotation2", Vtag.currentVersion);
             assertFalse(instance.retired());
             assertTrue(instance.cluster().isExclusive());
-            assertEquals(Set.of(RotationName.from("rotation1"), RotationName.from("rotation2")), instance.cluster().rotations());
         }
 
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired/rotation1,rotation2", Vtag.currentVersion);
             assertTrue(instance.retired());
             assertTrue(instance.cluster().isExclusive());
-            assertEquals(Set.of(RotationName.from("rotation1"), RotationName.from("rotation2")), instance.cluster().rotations());
         }
+        // end TODO
     }
 
     @Test
@@ -101,7 +99,6 @@ public class ClusterMembershipTest {
         assertFalse(instance.cluster().group().isPresent());
         assertEquals(3, instance.index());
         assertEquals("container/id1/3", instance.stringValue());
-        assertTrue(instance.cluster().rotations().isEmpty());
     }
 
     private void assertContentService(ClusterMembership instance) {
@@ -111,7 +108,6 @@ public class ClusterMembershipTest {
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
         assertEquals("content/id1/37", instance.stringValue());
-        assertTrue(instance.cluster().rotations().isEmpty());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
@@ -121,7 +117,6 @@ public class ClusterMembershipTest {
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
         assertEquals("content/id1/4/37", instance.stringValue());
-        assertTrue(instance.cluster().rotations().isEmpty());
     }
 
     /** Serializing a spec without a group assigned works, but not deserialization */
@@ -131,7 +126,6 @@ public class ClusterMembershipTest {
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
         assertEquals("content/id1/37/retired", instance.stringValue());
-        assertTrue(instance.cluster().rotations().isEmpty());
     }
 
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {
@@ -141,7 +135,6 @@ public class ClusterMembershipTest {
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
         assertEquals("content/id1/4/37/retired", instance.stringValue());
-        assertTrue(instance.cluster().rotations().isEmpty());
     }
 
 }

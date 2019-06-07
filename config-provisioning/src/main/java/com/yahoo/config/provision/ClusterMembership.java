@@ -3,14 +3,9 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * A node's membership in a cluster. This is a value object.
- * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/rotationId,...]"
+ * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired]"
  *
  * @author bratseth
  */
@@ -25,26 +20,23 @@ public class ClusterMembership {
 
     private ClusterMembership(String stringValue, Version vespaVersion) {
         String[] components = stringValue.split("/");
-        if (components.length < 4 || components.length > 7)
+        if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
                                        "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/rotationId,...]'");
 
         boolean exclusive = false;
-        Set<RotationName> rotations = Collections.emptySet();
         if (components.length > 4) {
             for (int i = 4; i < components.length; i++) {
                 String component = components[i];
                 switch (component) {
                     case "exclusive": exclusive = true; break;
                     case "retired": retired = true; break;
-                    default: rotations = rotationsFrom(component); break;
                 }
             }
         }
 
         this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion, exclusive,
-                                        rotations);
+                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion, exclusive);
         this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }
@@ -62,8 +54,7 @@ public class ClusterMembership {
                (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") +
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
-               ( retired ? "/retired" : "") +
-               ( !cluster.rotations().isEmpty() ? "/" + rotationsAsString(cluster.rotations()) : "");
+               ( retired ? "/retired" : "");
 
     }
 
@@ -119,14 +110,6 @@ public class ClusterMembership {
 
     public static ClusterMembership retiredFrom(ClusterSpec cluster, int index) {
         return new ClusterMembership(cluster, index, true);
-    }
-
-    private static Set<RotationName> rotationsFrom(String s) {
-        return Arrays.stream(s.split(",")).map(RotationName::from).collect(Collectors.toUnmodifiableSet());
-    }
-
-    private static String rotationsAsString(Set<RotationName> rotations) {
-        return rotations.stream().map(RotationName::value).collect(Collectors.joining(","));
     }
 
 }
