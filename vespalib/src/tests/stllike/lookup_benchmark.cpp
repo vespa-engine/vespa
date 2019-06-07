@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <map>
 #include <set>
-#include <tr1/unordered_set>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <vespa/vespalib/stllike/hash_set.hpp>
@@ -67,7 +67,7 @@ size_t benchMap(size_t sz, size_t numLookups)
 
 size_t benchHashStl(size_t sz, size_t numLookups)
 {
-    std::tr1::unordered_set<uint32_t> set;
+    std::unordered_set<uint32_t> set;
     return bench(set, sz, numLookups);
 }
 

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <map>
 #include <set>
-#include <tr1/unordered_set>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <vespa/vespalib/stllike/hash_set.hpp>
@@ -130,7 +130,7 @@ size_t benchMapIntelligent(const std::vector<Slot *> & v)
 size_t benchHashStl(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef std::tr1::unordered_set< Gid, Gid::hash > M;
+    typedef std::unordered_set< Gid, Gid::hash > M;
     M set(v.size());
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -145,7 +145,7 @@ size_t benchHashStl(const std::vector<Slot *> & v)
 size_t benchHashStlIntelligent(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    typedef std::tr1::unordered_set< Gid, Gid::hash > M;
+    typedef std::unordered_set< Gid, Gid::hash > M;
     M set(v.size());
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
@@ -160,7 +160,7 @@ size_t benchHashStlIntelligent(const std::vector<Slot *> & v)
 size_t benchHashStlFastAlloc(const std::vector<Slot *> & v)
 {
     size_t uniq(0);
-    std::tr1::unordered_set< Gid, Gid::hash, std::equal_to<Gid>, RoundRobinAllocator<Gid> > set(v.size());
+    std::unordered_set< Gid, Gid::hash, std::equal_to<Gid>, RoundRobinAllocator<Gid> > set(v.size());
     for(size_t i(0), m(v.size()); i < m; i++) {
         const Slot & s = *v[i];
         if (set.find(s.getGid()) == set.end()) {
