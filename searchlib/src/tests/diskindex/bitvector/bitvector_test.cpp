@@ -2,6 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("bitvector_test");
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/diskindex/bitvectordictionary.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -47,7 +48,7 @@ FieldWriterWrapper::open(const std::string &path,
                         const common::FileHeaderContext &fileHeaderContext)
 {
     vespalib::mkdir(path, false);
-    return _writer.open(path, 64, 10000, false, false, schema, indexId, tuneFileWrite, fileHeaderContext);
+    return _writer.open(path, 64, 10000, false, false, schema, indexId, FieldLengthInfo(), tuneFileWrite, fileHeaderContext);
 }
 
 FieldWriterWrapper &

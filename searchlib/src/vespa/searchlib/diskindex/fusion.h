@@ -11,6 +11,7 @@
 namespace search { template <class IN> class PostingPriorityQueue; }
 namespace search { class TuneFileIndexing; }
 namespace search::common { class FileHeaderContext; }
+namespace search::index { class FieldLengthInfo; }
 
 namespace search::diskindex {
 
@@ -50,7 +51,7 @@ private:
     bool mergeField(uint32_t id);
     bool openInputFieldReaders(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list,
                                std::vector<std::unique_ptr<FieldReader> > & readers);
-    bool openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter & writer);
+    bool openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter & writer, const index::FieldLengthInfo &field_length_info);
     bool setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > & readers,
                         FieldWriter &writer, PostingPriorityQueue<FieldReader> &heap);
     bool mergeFieldPostings(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list, uint64_t  numWordIds);

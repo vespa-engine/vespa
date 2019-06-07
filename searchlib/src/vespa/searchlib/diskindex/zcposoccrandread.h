@@ -50,6 +50,7 @@ public:
     virtual void readHeader();
     static const vespalib::string &getIdentifier();
     static const vespalib::string &getSubIdentifier();
+    const index::FieldLengthInfo &get_field_length_info() const override;
 };
 
 class Zc4PosOccRandRead : public ZcPosOccRandRead

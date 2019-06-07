@@ -464,4 +464,15 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
     }
 }
 
+FieldLengthInfo
+DiskIndex::get_field_length_info(const vespalib::string& field_name) const
+{
+    uint32_t fieldId = _schema.getIndexFieldId(field_name);
+    if (fieldId != Schema::UNKNOWN_FIELD_ID) {
+        return _postingFiles[fieldId]->get_field_length_info();
+    } else {
+        return FieldLengthInfo();
+    }
+}
+
 }

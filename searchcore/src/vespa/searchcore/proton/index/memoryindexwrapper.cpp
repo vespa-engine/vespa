@@ -42,7 +42,7 @@ MemoryIndexWrapper::flushToDisk(const vespalib::string &flushDir,
     indexBuilder.setPrefix(flushDir);
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext,
                                                  serialNum);
-    indexBuilder.open(docIdLimit, numWords, _tuneFileIndexing, fileHeaderContext);
+    indexBuilder.open(docIdLimit, numWords, *this, _tuneFileIndexing, fileHeaderContext);
     _index.dump(indexBuilder);
     indexBuilder.close();
 }

@@ -326,6 +326,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
     uint32_t numDocs = 12 + 1;
     uint32_t numWords = fic.getNumUniqueWords();
     bool dynamicKPosOcc = false;
+    MockFieldLengthInspector mock_field_length_inspector;
     TuneFileIndexing tuneFileIndexing;
     TuneFileSearch tuneFileSearch;
     DummyFileHeaderContext fileHeaderContext;
@@ -336,7 +337,7 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, 
     }
     if (readmmap)
         tuneFileSearch._read.setWantMemoryMap();
-    ib.open(numDocs, numWords, tuneFileIndexing, fileHeaderContext);
+    ib.open(numDocs, numWords, mock_field_length_inspector, tuneFileIndexing, fileHeaderContext);
     fic.dump(ib);
     ib.close();
 

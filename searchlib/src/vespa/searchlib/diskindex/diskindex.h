@@ -5,6 +5,7 @@
 #include "bitvectordictionary.h"
 #include "zcposoccrandread.h"
 #include <vespa/searchlib/index/dictionaryfile.h>
+#include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/cache.h>
@@ -147,6 +148,8 @@ public:
      * Needed for the Cache::BackingStore interface.
      */ 
     bool read(const Key & key, LookupResultVector & result);
+    
+    index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
 };
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b);

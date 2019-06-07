@@ -188,6 +188,7 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     TuneFileIndexing tuneFileIndexing;
     TuneFileAttributes tuneFileAttributes;
     index_builder.open(docIdLimit, memory_index.getNumWords(),
+                       MockFieldLengthInspector(),
                        tuneFileIndexing,
                        _fileHeaderContext);
     memory_index.dump(index_builder);

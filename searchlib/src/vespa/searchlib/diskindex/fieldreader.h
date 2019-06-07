@@ -93,6 +93,7 @@ public:
     virtual void setFeatureParams(const PostingListParams &params);
     virtual void getFeatureParams(PostingListParams &params);
     uint32_t getDocIdLimit() const { return _docIdLimit; }
+    const index::FieldLengthInfo &get_field_length_info() const;
 
     static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema);
 };

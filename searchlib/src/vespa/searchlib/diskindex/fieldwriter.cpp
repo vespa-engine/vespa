@@ -9,6 +9,8 @@
 
 LOG_SETUP(".diskindex.fieldwriter");
 
+using search::index::FieldLengthInfo;
+
 namespace search::diskindex {
 
 using vespalib::getLastErrorString;
@@ -39,6 +41,7 @@ FieldWriter::open(const vespalib::string &prefix,
                   bool encode_cheap_features,
                   const Schema &schema,
                   const uint32_t indexId,
+                  const FieldLengthInfo &field_length_info,
                   const TuneFileSeqWrite &tuneFileWrite,
                   const FileHeaderContext &fileHeaderContext)
 {
@@ -66,7 +69,7 @@ FieldWriter::open(const vespalib::string &prefix,
     _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
-    _posoccfile = makePosOccWrite(_dictFile.get(), dynamicKPosOccFormat, params, featureParams, schema, indexId);
+    _posoccfile = makePosOccWrite(_dictFile.get(), dynamicKPosOccFormat, params, featureParams, schema, indexId, field_length_info);
     vespalib::string cname = _prefix + "dictionary";
 
     // Open output dictionary file

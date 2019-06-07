@@ -3,19 +3,39 @@
 #include "testdiskindex.h"
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 namespace search::diskindex {
 
 using index::DocIdAndFeatures;
 using index::DummyFileHeaderContext;
+using index::FieldLengthInfo;
+using index::IFieldLengthInspector;
 using index::Schema;
 using index::WordDocElementWordPosFeatures;
 using index::schema::DataType;
 
+namespace {
+
+class MockFieldLengthInspector : public IFieldLengthInspector {
+    FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+        if (field_name == "f1") {
+            return FieldLengthInfo(3.5, 21);
+        } else if (field_name == "f2") {
+            return FieldLengthInfo(4.0, 23);
+        } else {
+            return FieldLengthInfo();
+        }
+    }
+};
+
+}
+
 struct Builder
 {
     search::diskindex::IndexBuilder _ib;
+    MockFieldLengthInspector        _mock_field_length_inspector;
     TuneFileIndexing    _tuneFileIndexing;
     DummyFileHeaderContext   _fileHeaderContext;
     DocIdAndFeatures _features;
@@ -35,7 +55,7 @@ struct Builder
             _tuneFileIndexing._write.setWantDirectIO();
         }
         _ib.setPrefix(dir);
-        _ib.open(docIdLimit, numWordIds, _tuneFileIndexing,
+        _ib.open(docIdLimit, numWordIds, _mock_field_length_inspector, _tuneFileIndexing,
                  _fileHeaderContext);
     }
 
