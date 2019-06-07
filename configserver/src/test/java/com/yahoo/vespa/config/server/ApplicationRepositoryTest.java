@@ -85,6 +85,7 @@ public class ApplicationRepositoryTest {
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
                                                                 .curator(curator)
                                                                 .build());
+        tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
@@ -164,8 +165,9 @@ public class ApplicationRepositoryTest {
                                                           orchestrator,
                                                           new MockLogRetriever(),
                                                           clock);
-        deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("localhost"), "");
+        ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
+        deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
+        HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
         assertEquals(200, response.getStatus());
     }
 

@@ -741,21 +741,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private String getLogServerURI(ApplicationId applicationId, Optional<String> hostname) {
+        // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
+        // We make no validation that the hostname is actually allocated to the given application since
+        // most applications under hosted-vespa are not known to the model and its OK for a user to get
+        // logs for any host if they are authorized for the hosted-vespa tenant.
+        if (hostname.isPresent()) {
+            if (HOSTED_VESPA_TENANT.equals(applicationId.tenant()))
+                return "http://" + hostname.get() + ":8080/logs";
+            else throw new IllegalArgumentException("Only hostname paramater unsupported for application " + applicationId);
+        }
+
         Application application = getApplication(applicationId);
         Collection<HostInfo> hostInfos = application.getModel().getHosts();
-
-        // In ServiceInfo: node-admin does not have
-        // 1) Correct ports
-        // 2) logserver
-        // Assume if hostname is set that this is node-admin hostname
-        // TODO: Fix and simplify this once the above to problems have been fixed
-        if (hostname.isPresent()) {
-            HostInfo logServerHostInfo = hostInfos.stream()
-                    .filter(host -> host.getHostname().equalsIgnoreCase(hostname.get()))
-                    .findFirst().orElseThrow(() ->
-                            new IllegalArgumentException("Host " + hostname.get() + " does not belong to " + applicationId));
-            return "http://" + logServerHostInfo.getHostname() + ":8080/logs";
-        }
 
         HostInfo logServerHostInfo = hostInfos.stream()
                 .filter(host -> host.getServices().stream()
