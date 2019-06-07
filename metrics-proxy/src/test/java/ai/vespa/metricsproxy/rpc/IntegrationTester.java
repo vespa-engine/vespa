@@ -68,7 +68,7 @@ public class IntegrationTester implements  AutoCloseable {
 
         vespaServices = new VespaServices(servicesConfig(), monitoringConfig(), null);
         MetricsConsumers consumers = new MetricsConsumers(consumersConfig());
-        VespaMetrics vespaMetrics = new VespaMetrics(consumers, vespaServices);
+        VespaMetrics vespaMetrics = new VespaMetrics(consumers);
         ExternalMetrics externalMetrics = new ExternalMetrics(consumers);
         ApplicationDimensions appDimensions = new ApplicationDimensions(applicationDimensionsConfig());
         NodeDimensions nodeDimensions = new NodeDimensions(nodeDimensionsConfig());
