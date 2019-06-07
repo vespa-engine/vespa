@@ -6,21 +6,24 @@
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <tests/common/teststorageapp.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/sync_crypto_socket.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
+
+using namespace ::testing;
 
 vespalib::string fetch(int port, const vespalib::string &path) {
     auto crypto = vespalib::CryptoEngine::get_default();
     auto socket = vespalib::SocketSpec::from_port(port).client_address().connect();
-    CPPUNIT_ASSERT(socket.valid());
+    assert(socket.valid());
     auto conn = vespalib::SyncCryptoSocket::create(*crypto, std::move(socket), false);
     vespalib::string http_req = vespalib::make_string("GET %s HTTP/1.1\r\n"
                                                       "Host: localhost:%d\r\n"
                                                       "\r\n", path.c_str(), port);
-    CPPUNIT_ASSERT_EQUAL(conn->write(http_req.data(), http_req.size()), ssize_t(http_req.size()));
+    assert(conn->write(http_req.data(), http_req.size()) == ssize_t(http_req.size()));
     char buf[1024];
     vespalib::string result;
     ssize_t res = conn->read(buf, sizeof(buf));
@@ -28,32 +31,17 @@ vespalib::string fetch(int port, const vespalib::string &path) {
         result.append(vespalib::stringref(buf, res));
         res = conn->read(buf, sizeof(buf));
     }
-    CPPUNIT_ASSERT_EQUAL(res, ssize_t(0));
+    assert(res == 0);
     return result;
 }
 
 namespace storage {
 
-struct StatusTest : public CppUnit::TestFixture {
+struct StatusTest : Test {
     std::unique_ptr<TestServiceLayerApp> _node;
 
-    void setUp() override;
-
-    void testIndexStatusPage();
-    void testHtmlStatus();
-    void testXmlStatus();
-    void test404();
-    void requireThatServerSpecIsConstructedCorrectly();
-
-    CPPUNIT_TEST_SUITE(StatusTest);
-    CPPUNIT_TEST(testIndexStatusPage);
-    CPPUNIT_TEST(testHtmlStatus);
-    CPPUNIT_TEST(testXmlStatus);
-    CPPUNIT_TEST(test404);
-    CPPUNIT_TEST_SUITE_END();
+    void SetUp() override;
 };
-
-CPPUNIT_TEST_SUITE_REGISTRATION(StatusTest);
 
 namespace {
     struct HtmlStatusReporter : public framework::HtmlStatusReporter {
@@ -102,20 +90,16 @@ namespace {
         {
             registerStatusPage(*_reporter);
         }
-        ~StatusComponent() { delete _reporter; }
+        ~StatusComponent() override { delete _reporter; }
     };
 
 }
 
-void
-StatusTest::setUp()
-{
-    _node.reset(new TestServiceLayerApp);
+void StatusTest::SetUp() {
+    _node = std::make_unique<TestServiceLayerApp>();
 }
 
-void
-StatusTest::testIndexStatusPage()
-{
+TEST_F(StatusTest, index_status_page) {
     StatusComponent rep1(_node->getComponentRegister(), "foo",
                          new HtmlStatusReporter(
                             "fooid", "Foo impl", "<p>info</p>"));
@@ -144,12 +128,10 @@ StatusTest::testIndexStatusPage()
             "<\\/body>\n"
             "<\\/html>\n"
     );
-    CPPUNIT_ASSERT_MATCH_REGEX(expected, actual);
+    EXPECT_THAT(actual, MatchesRegex(expected));
 }
 
-void
-StatusTest::testHtmlStatus()
-{
+TEST_F(StatusTest, html_status) {
     StatusComponent rep1(_node->getComponentRegister(), "foo",
             new HtmlStatusReporter(
                 "fooid", "Foo impl", "<p>info</p>", "<!-- script -->"));
@@ -172,12 +154,10 @@ StatusTest::testHtmlStatus()
             "<p>info</p></body>\n"
             "</html>\n"
     );
-    CPPUNIT_ASSERT_EQUAL(expected, std::string(actual));
+    EXPECT_EQ(expected, std::string(actual));
 }
 
-void
-StatusTest::testXmlStatus()
-{
+TEST_F(StatusTest, xml_sStatus) {
     StatusComponent rep1(_node->getComponentRegister(), "foo",
             new XmlStatusReporter(
                 "fooid", "Foo impl"));
@@ -196,12 +176,10 @@ StatusTest::testXmlStatus()
             "<mytag foo=\"bar\">content</mytag>\n"
             "</status>"
     );
-    CPPUNIT_ASSERT_EQUAL(expected, std::string(actual));
+    EXPECT_EQ(expected, std::string(actual));
 }
 
-void
-StatusTest::test404()
-{
+TEST_F(StatusTest, test404) {
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
                               "raw:httpport 0");
@@ -211,7 +189,7 @@ StatusTest::test404()
             "Connection: close\r\n"
             "\r\n"
     );
-    CPPUNIT_ASSERT_EQUAL_ESCAPED(expected, std::string(actual));
+    EXPECT_EQ(expected, std::string(actual));
 }
 
 } // storage
