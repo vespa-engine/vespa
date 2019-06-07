@@ -61,7 +61,7 @@ public class ConfigValueChangeValidatorTest {
         assertEquals(3, changes.size());
         assertComponentsEquals(changes, "default/container.0", 0);
         assertComponentsEquals(changes, "admin/cluster-controllers/0", 1);
-        assertComponentsEquals(changes, "admin/metrics/metricsproxy.0", 2);
+        assertComponentsEquals(changes, "admin/metrics/localhost", 2);
     }
 
     @Test
