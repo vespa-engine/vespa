@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/testhelper.h>
-#include <tests/common/storagelinktest.h>
+#include <tests/common/dummystoragelink.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -2083,7 +2083,9 @@ namespace {
 
         void print(std::ostream& out, bool, const std::string&) const override { out << "MidLink"; }
         bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
-            if (!StorageLinkTest::callOnUp(_up, msg)) _up.sendUp(msg);
+            if (!_up.onUp(msg)) {
+                _up.sendUp(msg);
+            }
             return true;
         }
 
@@ -2126,13 +2128,13 @@ namespace {
                 if ((address == _leftAddr && !msg->getType().isReply()) ||
                     (address == _rightAddr && msg->getType().isReply()))
                 {
-                    if (!StorageLinkTest::callOnDown(_left, msg)) {
+                    if (!_left.onDown(msg)) {
                         _left.sendDown(msg);
                     }
                 } else if ((address == _rightAddr && !msg->getType().isReply()) ||
                            (address == _leftAddr && msg->getType().isReply()))
                 {
-                    if (!StorageLinkTest::callOnDown(_right, msg)) {
+                    if (!_right.onDown(msg)) {
                         _right.sendDown(msg);
                     }
                 } else {

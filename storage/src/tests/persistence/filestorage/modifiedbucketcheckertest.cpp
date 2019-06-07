@@ -2,7 +2,7 @@
 
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/common/testhelper.h>
-#include <tests/common/storagelinktest.h>
+#include <tests/common/dummystoragelink.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
