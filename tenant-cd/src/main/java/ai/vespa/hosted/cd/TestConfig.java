@@ -93,7 +93,7 @@ public class TestConfig {
                 ? ControllerHttpClient.withKeyAndCertificate(endpoint, privateKeyFile, certificateFile.get())
                 : ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
 
-
+        return null;
     }
 
     static TestConfig fromJson(byte[] jsonBytes) {
