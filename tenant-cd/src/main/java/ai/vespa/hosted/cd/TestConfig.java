@@ -81,18 +81,6 @@ public class TestConfig {
     }
 
     static TestConfig fromController() {
-        ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
-                                              requireNonBlankProperty("application"),
-                                              getNonBlankProperty("instance").orElse("default"));
-
-        URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
-        Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
-        Optional<Path> certificateFile = getNonBlankProperty("certificateFile").map(Paths::get);
-
-        ControllerHttpClient controller = certificateFile.isPresent()
-                ? ControllerHttpClient.withKeyAndCertificate(endpoint, privateKeyFile, certificateFile.get())
-                : ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
-
         return null;
     }
 
@@ -108,14 +96,6 @@ public class TestConfig {
             endpoints.put(ZoneId.from(zoneId), null); // TODO jvenstad
         });
         return new TestConfig(application, zone, system, endpoints);
-    }
-
-    static Optional<String> getNonBlankProperty(String name) {
-        return Optional.ofNullable(System.getProperty(name)).filter(value -> ! value.isBlank());
-    }
-
-    static String requireNonBlankProperty(String name) {
-        return getNonBlankProperty(name).orElseThrow(() -> new IllegalStateException("Missing required property '" + name + "'"));
     }
 
 }
