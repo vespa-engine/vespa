@@ -111,7 +111,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         for (const auto &elem : vector._data) {
             address.clear();
             address.add(elem.value());
-            tensorBuilder.insertCell(address, elem.weight());
+            tensorBuilder.insertCell(address, elem.weight(), [](double, double v){ return v; });
         }
         return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
     }
