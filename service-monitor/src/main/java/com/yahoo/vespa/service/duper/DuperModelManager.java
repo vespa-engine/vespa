@@ -9,10 +9,7 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
@@ -40,14 +37,12 @@ public class DuperModelManager implements DuperModelInfraApi {
     static final TenantHostApplication tenantHostApplication = new TenantHostApplication();
 
     private final Map<ApplicationId, InfraApplication> supportedInfraApplications;
-    private final Map<ApplicationId, InfraApplication> supportedMinusTenantHostInfraApplications;
 
     private final Object monitor = new Object();
     private final DuperModel duperModel;
     // The set of active infrastructure ApplicationInfo. Not all are necessarily in the DuperModel for historical reasons.
     private final Set<ApplicationId> activeInfraInfos = new HashSet<>(10);
 
-    private final BooleanFlag tenantHostApplicationEnabled;
 
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
@@ -59,7 +54,6 @@ public class DuperModelManager implements DuperModelInfraApi {
     /** For testing */
     DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource) {
         this.duperModel = duperModel;
-        this.tenantHostApplicationEnabled = Flags.ENABLE_TENANT_HOST_APP.bindTo(flagSource);
 
         if (multitenant) {
             supportedInfraApplications =
@@ -70,9 +64,6 @@ public class DuperModelManager implements DuperModelInfraApi {
         } else {
             supportedInfraApplications = Map.of();
         }
-        supportedMinusTenantHostInfraApplications = supportedInfraApplications.entrySet().stream()
-                .filter(app -> app.getValue().getCapacity().type() != NodeType.host)
-                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         superModelProvider.registerListener(new SuperModelListener() {
             @Override
@@ -103,23 +94,16 @@ public class DuperModelManager implements DuperModelInfraApi {
 
     @Override
     public List<InfraApplicationApi> getSupportedInfraApplications() {
-        return new ArrayList<>(getSupportedApps().values());
+        return new ArrayList<>(supportedInfraApplications.values());
     }
 
     @Override
     public Optional<InfraApplicationApi> getInfraApplication(ApplicationId applicationId) {
-        return Optional.ofNullable(getSupportedApps().get(applicationId));
-    }
-
-    private Map<ApplicationId, InfraApplication> getSupportedApps() {
-        return tenantHostApplicationEnabled.value() ? supportedInfraApplications : supportedMinusTenantHostInfraApplications;
+        return Optional.ofNullable(supportedInfraApplications.get(applicationId));
     }
 
     /**
      * Returns true if application is considered an infrastructure application by the DuperModel.
-     *
-     * <p>Note: Unless enable-tenant-host-app flag is enabled, the tenant host "application" is NOT considered an
-     * infrastructure application: It is just a cluster in the {@link ZoneApplication zone application}.
      */
     public boolean isSupportedInfraApplication(ApplicationId applicationId) {
         return supportedInfraApplications.containsKey(applicationId);
