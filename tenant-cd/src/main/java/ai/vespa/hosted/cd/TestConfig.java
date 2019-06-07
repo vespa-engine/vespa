@@ -1,5 +1,6 @@
 package ai.vespa.hosted.cd;
 
+import ai.vespa.hosted.api.ControllerHttpClient;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.ArrayTraverser;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The place to obtain environment-dependent configuration for the current test run.
@@ -28,7 +30,7 @@ import java.util.Map;
  */
 public class TestConfig {
 
-    private static final TestConfig theConfig = fromFile(Paths.get(System.getProperty("vespa.test.config")));
+    private static TestConfig theConfig;
 
     private final ApplicationId application;
     private final ZoneId zone;
@@ -43,7 +45,13 @@ public class TestConfig {
     }
 
     /** Returns the config for this test, or null if it has not been provided. */
-    public static TestConfig get() { return theConfig; }
+    public static synchronized TestConfig get() {
+        if (theConfig == null) {
+            String configPath = System.getProperty("vespa.test.config");
+            theConfig = configPath != null ? fromFile(configPath) : fromController();
+        }
+        return theConfig;
+    }
 
     /** Returns the full id of the application to be tested. */
     public ApplicationId application() { return application; }
@@ -58,28 +66,56 @@ public class TestConfig {
     public Deployment deploymentToTest() { return deployments.get(zone); }
 
     /** Returns the system this is run against. */
-    SystemName system() { return system; }
+    public SystemName system() { return system; }
 
-    static TestConfig fromFile(Path path) {
+    static TestConfig fromFile(String path) {
         if (path == null)
             return null;
 
         try {
-            Inspector config = new JsonDecoder().decode(new Slime(), Files.readAllBytes(path)).get();
-            ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
-            ZoneId zone = ZoneId.from(config.field("zone").asString());
-            SystemName system = SystemName.from(config.field("system").asString());
-            Map<ZoneId, Deployment> endpoints = new HashMap<>();
-            config.field("endpoints").traverse((ObjectTraverser) (zoneId, endpointArray) -> {
-                List<URI> uris = new ArrayList<>();
-                endpointArray.traverse((ArrayTraverser) (__, uri) -> uris.add(URI.create(uri.asString())));
-                endpoints.put(ZoneId.from(zoneId), null); // TODO jvenstad
-            });
-            return new TestConfig(application, zone, system, endpoints);
+            return fromJson(Files.readAllBytes(Paths.get(path)));
         }
         catch (Exception e) {
             throw new IllegalArgumentException("Failed reading config from '" + path + "'!", e);
         }
+    }
+
+    static TestConfig fromController() {
+        ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
+                                              requireNonBlankProperty("application"),
+                                              getNonBlankProperty("instance").orElse("default"));
+
+        URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
+        Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
+        Optional<Path> certificateFile = getNonBlankProperty("certificateFile").map(Paths::get);
+
+        ControllerHttpClient controller = certificateFile.isPresent()
+                ? ControllerHttpClient.withKeyAndCertificate(endpoint, privateKeyFile, certificateFile.get())
+                : ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
+
+
+    }
+
+    static TestConfig fromJson(byte[] jsonBytes) {
+        Inspector config = new JsonDecoder().decode(new Slime(), jsonBytes).get();
+        ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
+        ZoneId zone = ZoneId.from(config.field("zone").asString());
+        SystemName system = SystemName.from(config.field("system").asString());
+        Map<ZoneId, Deployment> endpoints = new HashMap<>();
+        config.field("endpoints").traverse((ObjectTraverser) (zoneId, endpointArray) -> {
+            List<URI> uris = new ArrayList<>();
+            endpointArray.traverse((ArrayTraverser) (__, uri) -> uris.add(URI.create(uri.asString())));
+            endpoints.put(ZoneId.from(zoneId), null); // TODO jvenstad
+        });
+        return new TestConfig(application, zone, system, endpoints);
+    }
+
+    static Optional<String> getNonBlankProperty(String name) {
+        return Optional.ofNullable(System.getProperty(name)).filter(value -> ! value.isBlank());
+    }
+
+    static String requireNonBlankProperty(String name) {
+        return getNonBlankProperty(name).orElseThrow(() -> new IllegalStateException("Missing required property '" + name + "'"));
     }
 
 }
