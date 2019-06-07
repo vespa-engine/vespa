@@ -8,6 +8,7 @@ vespa_add_executable(searchcore_indexmanager_test_app TEST
     searchcore_flushengine
     searchcore_pcommon
     searchcore_util
+    gtest
 )
 vespa_add_executable(searchcore_fusionrunner_test_app TEST
     SOURCES
