@@ -43,7 +43,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
         if (!application.isEligibleForOsUpgrades() || wantedVersion(zone, application, target).equals(target)) {
             return;
         }
-        log.info(String.format("Upgrading OS of %s to version %s in %s", application.id(), target, zone));
+        log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target, zone.getId(), zone.getCloudName()));
         controller().configServer().nodeRepository().upgradeOs(zone.toDeprecatedId(), application.nodeType(), target);
     }
 

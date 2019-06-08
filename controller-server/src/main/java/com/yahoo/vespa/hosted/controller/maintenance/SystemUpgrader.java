@@ -34,7 +34,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
         if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
                                                               .orElse(true)) {
-            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
+            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
             controller().applications().deploy(application, zone.toDeprecatedId(), target);
         }
     }
