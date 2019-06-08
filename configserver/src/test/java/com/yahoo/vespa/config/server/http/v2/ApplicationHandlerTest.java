@@ -197,7 +197,7 @@ public class ApplicationHandlerTest {
         ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant(mytenantName).build();
         HttpResponse responseForUnknown = fileDistributionStatus(unknown, zone);
         assertEquals(404, responseForUnknown.getStatus());
-        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application id: mytenant.unknown\"}",
+        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application id: 'mytenant.unknown'\"}",
                      SessionHandlerTest.getRenderedString(responseForUnknown));
     }
 

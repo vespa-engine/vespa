@@ -458,7 +458,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Application getApplication(ApplicationId applicationId, Optional<Version> version) {
         try {
             Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-            if (tenant == null) throw new IllegalArgumentException("Tenant '" + applicationId.tenant() + "' not found");
+            if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
@@ -533,10 +533,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getActiveSession(tenantRepository.getTenant(applicationId.tenant()), applicationId);
     }
 
-    public long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
+    public long getSessionIdForApplication(ApplicationId applicationId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
+        return getSessionIdForApplication(tenant, applicationId);
+    }
+
+    private long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo == null)
-            throw new IllegalArgumentException("Application repo for tenant '" + tenant.getName() + "' not found");
+            throw new NotFoundException("Application repo for tenant '" + tenant.getName() + "' not found");
 
         return applicationRepo.requireActiveSessionOf(applicationId);
     }
@@ -625,19 +631,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
-
-    public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        TenantName tenantName = applicationId.tenant();
-        if (!tenantRepository.checkThatTenantExists(tenantName)) {
-            throw new IllegalArgumentException("Tenant " + tenantName + " was not found.");
-        }
-        Tenant tenant = tenantRepository.getTenant(tenantName);
-        List<ApplicationId> applicationIds = listApplicationIds(tenant);
-        if (!applicationIds.contains(applicationId)) {
-            throw new IllegalArgumentException("No such application id: " + applicationId);
-        }
-        return tenant;
-    }
 
     public ApplicationMetaData getMetadataFromSession(Tenant tenant, long sessionId) {
         return getLocalSession(tenant, sessionId).getMetaData();

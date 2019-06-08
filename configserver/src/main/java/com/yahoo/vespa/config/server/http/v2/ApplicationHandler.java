@@ -57,7 +57,6 @@ public class ApplicationHandler extends HttpHandler {
     @Override
     public HttpResponse handleGET(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        Tenant tenant = verifyTenantAndApplication(applicationId);
         Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
 
         if (isServiceConvergeRequest(request)) {
@@ -74,10 +73,10 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isContentRequest(request)) {
-            long sessionId = applicationRepository.getSessionIdForApplication(tenant, applicationId);
+            long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
             String contentPath = ApplicationContentRequest.getContentPath(request);
             ApplicationFile applicationFile =
-                    applicationRepository.getApplicationFileFromSession(tenant.getName(),
+                    applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
                                                                         sessionId,
                                                                         contentPath,
                                                                         ContentRequest.getApplicationFileMode(request.getMethod()));
@@ -133,14 +132,6 @@ public class ApplicationHandler extends HttpHandler {
                                request.getProperty("flavor"),
                                request.getProperty("clusterType"),
                                request.getProperty("clusterId"));
-    }
-
-    private Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        try {
-            return applicationRepository.verifyTenantAndApplication(applicationId);
-        } catch (IllegalArgumentException e) {
-            throw new NotFoundException(e.getMessage());
-        }
     }
 
     private static BindingMatch<?> getBindingMatch(HttpRequest request) {
