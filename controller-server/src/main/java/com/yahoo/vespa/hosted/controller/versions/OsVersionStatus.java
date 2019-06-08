@@ -72,7 +72,7 @@ public class OsVersionStatus {
                 continue; // Avoid querying applications that are not eligible for OS upgrades
             }
             for (ZoneApi zone : zonesToUpgrade(controller)) {
-                controller.configServer().nodeRepository().list(zone.toDeprecatedId(), application.id()).stream()
+                controller.configServer().nodeRepository().list(zone.getId(), application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
                           .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.getEnvironment(), zone.getRegionName()))
                           .forEach(node -> {

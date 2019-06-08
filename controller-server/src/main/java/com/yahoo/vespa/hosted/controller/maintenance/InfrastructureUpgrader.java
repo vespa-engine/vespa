@@ -98,7 +98,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
         try {
             return controller().configServer()
                                .nodeRepository()
-                               .list(zone.toDeprecatedId(), application.id())
+                               .list(zone.getId(), application.id())
                                .stream()
                                .filter(node -> requireUpgradeOf(node, application, zone))
                                .map(versionField)

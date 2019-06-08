@@ -299,7 +299,7 @@ public class SystemUpgraderTest {
         for (ZoneApi zone : zones) {
             for (Node node : listNodes(zone, application)) {
                 nodeRepository().putByHostname(
-                        zone.toDeprecatedId(),
+                        zone.getId(),
                         new Node(node.hostname(), node.state(), node.type(), node.owner(), node.wantedVersion(), node.wantedVersion()));
             }
 
@@ -318,13 +318,13 @@ public class SystemUpgraderTest {
     }
 
     private void failNodeIn(ZoneApi zone, SystemApplication application) {
-        List<Node> nodes = nodeRepository().list(zone.toDeprecatedId(), application.id());
+        List<Node> nodes = nodeRepository().list(zone.getId(), application.id());
         if (nodes.isEmpty()) {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
         nodeRepository().putByHostname(
-                zone.toDeprecatedId(),
+                zone.getId(),
                 new Node(node.hostname(), Node.State.failed, node.type(), node.owner(), node.currentVersion(), node.wantedVersion()));
     }
 
@@ -362,7 +362,7 @@ public class SystemUpgraderTest {
     }
 
     private List<Node> listNodes(ZoneApi zone, SystemApplication application) {
-        return nodeRepository().list(zone.toDeprecatedId(), application.id()).stream()
+        return nodeRepository().list(zone.getId(), application.id()).stream()
                                .filter(SystemUpgrader::eligibleForUpgrade)
                                .collect(Collectors.toList());
     }
