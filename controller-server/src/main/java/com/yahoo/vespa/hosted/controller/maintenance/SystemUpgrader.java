@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -30,26 +31,26 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
+    protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
         if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
                                                               .orElse(true)) {
             log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
-            controller().applications().deploy(application, zone, target);
+            controller().applications().deploy(application, zone.toDeprecatedId(), target);
         }
     }
 
     @Override
-    protected boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
+    protected boolean convergedOn(Version target, SystemApplication application, ZoneApi zone) {
         Optional<Version> minVersion = minVersion(zone, application, Node::currentVersion);
         // Skip application convergence check if there are no nodes belonging to the application in the zone
         if (minVersion.isEmpty()) return true;
 
         return     minVersion.get().equals(target)
-                && application.configConvergedIn(zone, controller(), Optional.of(target));
+                && application.configConvergedIn(zone.toDeprecatedId(), controller(), Optional.of(target));
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneId zone) {
+    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
         return eligibleForUpgrade(node);
     }
 

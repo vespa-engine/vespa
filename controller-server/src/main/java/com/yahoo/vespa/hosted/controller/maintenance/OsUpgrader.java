@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -38,22 +39,22 @@ public class OsUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
+    protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
         if (!application.isEligibleForOsUpgrades() || wantedVersion(zone, application, target).equals(target)) {
             return;
         }
         log.info(String.format("Upgrading OS of %s to version %s in %s", application.id(), target, zone));
-        controller().configServer().nodeRepository().upgradeOs(zone, application.nodeType(), target);
+        controller().configServer().nodeRepository().upgradeOs(zone.toDeprecatedId(), application.nodeType(), target);
     }
 
     @Override
-    protected boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
+    protected boolean convergedOn(Version target, SystemApplication application, ZoneApi zone) {
         return currentVersion(zone, application, target).equals(target);
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneId zone) {
-        return cloud.equals(zone.cloud()) && eligibleForUpgrade(node, application);
+    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
+        return cloud.equals(zone.getCloudName()) && eligibleForUpgrade(node, application);
     }
 
     @Override
@@ -65,11 +66,11 @@ public class OsUpgrader extends InfrastructureUpgrader {
                            .map(OsVersion::version);
     }
 
-    private Version currentVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
+    private Version currentVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
     }
 
-    private Version wantedVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
+    private Version wantedVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::wantedOsVersion).orElse(defaultVersion);
     }
 
