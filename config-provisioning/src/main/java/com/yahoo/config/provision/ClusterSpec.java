@@ -4,7 +4,6 @@ package com.yahoo.config.provision;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.component.Version;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -71,20 +70,20 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, rotations);
     }
 
-    // TODO: Remove when versions <= 7.6 are gone
     public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive) {
-        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, Collections.emptySet());
+        return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, Set.of());
     }
 
+    // TODO: Remove after June 2019
     public static ClusterSpec request(Type type, Id id, Version vespaVersion, boolean exclusive, Set<RotationName> rotations) {
         return new ClusterSpec(type, id, Optional.empty(), vespaVersion, exclusive, rotations);
     }
 
-    // TODO: Remove when versions <= 7.6 are gone
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive) {
-        return from(type, id, groupId, vespaVersion, exclusive, Collections.emptySet());
+        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, Set.of());
     }
 
+    // TODO: Remove after June 2019
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion, boolean exclusive, Set<RotationName> rotations) {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion, exclusive, rotations);
     }

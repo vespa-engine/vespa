@@ -15,10 +15,6 @@
     </http>
     <search/>
     <nodes count='1'/>
-    <rotations>
-      <rotation id='us-cluster'/>
-      <rotation id='eu-cluster'/>
-    </rotations>
   </container>
 
   <content id="music" version="1.0">

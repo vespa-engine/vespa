@@ -8,14 +8,11 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -161,15 +158,7 @@ public class NodesSpecification {
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger) {
-        return provision(hostSystem, clusterType, clusterId, logger, Collections.emptySet());
-    }
-
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
-                                                          ClusterSpec.Type clusterType,
-                                                          ClusterSpec.Id clusterId,
-                                                          DeployLogger logger,
-                                                          Set<RotationName> rotations) {
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive, rotations);
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
 
