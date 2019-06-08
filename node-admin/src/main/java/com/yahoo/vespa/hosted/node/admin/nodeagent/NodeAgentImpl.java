@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -362,7 +362,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
-        double cpuCap = noCpuCap(context.zoneId()) ?
+        double cpuCap = noCpuCap(context.zone()) ?
                 0 :
                 context.node().getOwner()
                         .map(NodeOwner::asApplicationId)
@@ -373,9 +373,9 @@ public class NodeAgentImpl implements NodeAgent {
         return ContainerResources.from(cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
     }
 
-    private boolean noCpuCap(ZoneId zoneId) {
-        return zoneId.environment() == Environment.dev
-                || (zoneId.system().isCd() && zoneId.environment() != Environment.prod);
+    private boolean noCpuCap(ZoneApi zone) {
+        return zone.getEnvironment() == Environment.dev
+                || (zone.getSystemName().isCd() && zone.getEnvironment() != Environment.prod);
     }
 
     private void scheduleDownLoadIfNeeded(NodeSpec node, Optional<Container> container) {

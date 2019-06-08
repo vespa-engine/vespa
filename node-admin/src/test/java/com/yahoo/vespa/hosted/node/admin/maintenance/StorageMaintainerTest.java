@@ -3,11 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
@@ -42,6 +41,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author dybis
@@ -152,6 +152,9 @@ public class StorageMaintainerTest {
         }
 
         private Path executeAs(NodeType nodeType) {
+            ZoneApi zone = mock(ZoneApi.class);
+            when(zone.getId()).thenReturn(ZoneId.from(Environment.prod, RegionName.from("us-north-1")));
+
             NodeSpec nodeSpec = new NodeSpec.Builder()
                     .hostname("host123-5.test.domain.tld")
                     .nodeType(nodeType)
@@ -165,7 +168,8 @@ public class StorageMaintainerTest {
                     .build();
             NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec)
                     .fileSystem(TestFileSystem.create())
-                    .zoneId(ZoneId.from(Environment.prod, RegionName.from("us-north-1"), CloudName.defaultName(), SystemName.defaultSystem())).build();
+                    .zone(zone)
+                    .build();
             Path path = context.pathOnHostFromPathInNode("/etc/yamas-agent");
             uncheck(() -> Files.createDirectories(path));
             storageMaintainer.writeMetricsConfig(context);
