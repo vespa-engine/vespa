@@ -7,7 +7,6 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 
@@ -44,7 +43,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
             return;
         }
         log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target, zone.getId(), zone.getCloudName()));
-        controller().configServer().nodeRepository().upgradeOs(zone.toDeprecatedId(), application.nodeType(), target);
+        controller().configServer().nodeRepository().upgradeOs(zone.getId(), application.nodeType(), target);
     }
 
     @Override
