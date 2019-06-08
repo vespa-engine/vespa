@@ -117,7 +117,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                         if (isConfigKeyForSentinelConfig(configKey)) {
                             return; // config processor will return empty sentinel config for unknown nodes
                         }
-                        throw new AuthorizationException(String.format("Host '%s' not found in host registry", hostname));
+                        throw new AuthorizationException(String.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
                     }
                     RequestHandler tenantHandler = getTenantHandler(tenantName.get());
                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
