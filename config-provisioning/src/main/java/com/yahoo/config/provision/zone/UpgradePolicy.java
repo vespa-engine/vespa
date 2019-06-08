@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class declares the order to use when upgrading zones in a system.
@@ -20,7 +22,7 @@ public class UpgradePolicy {
     }
 
     public List<List<ZoneId>> asList() {
-        return Collections.unmodifiableList(zones);
+        return List.copyOf(zones);
     }
 
     private UpgradePolicy with(ZoneId... zone) {
@@ -30,13 +32,13 @@ public class UpgradePolicy {
     }
 
     /** Upgrade given zone as the next step */
-    public UpgradePolicy upgrade(ZoneId zone) {
-        return with(zone);
+    public UpgradePolicy upgrade(ZoneApi zone) {
+        return with(zone.toDeprecatedId());
     }
 
     /** Upgrade given zones in parallel as the next step */
-    public UpgradePolicy upgradeInParallel(ZoneId... zone) {
-        return with(zone);
+    public UpgradePolicy upgradeInParallel(ZoneApi... zone) {
+        return with(Stream.of(zone).map(ZoneApi::toDeprecatedId).toArray(ZoneId[]::new));
     }
 
     public static UpgradePolicy create() {

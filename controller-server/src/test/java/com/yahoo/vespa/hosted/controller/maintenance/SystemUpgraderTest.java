@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,10 +27,10 @@ import static org.junit.Assert.assertTrue;
  */
 public class SystemUpgraderTest {
 
-    private static final ZoneId zone1 = ZoneId.from("prod", "eu-west-1");
-    private static final ZoneId zone2 = ZoneId.from("prod", "us-west-1");
-    private static final ZoneId zone3 = ZoneId.from("prod", "us-central-1");
-    private static final ZoneId zone4 = ZoneId.from("prod", "us-east-3");
+    private static final ZoneApi zone1 = ZoneApiMock.fromId("prod.eu-west-1");
+    private static final ZoneApi zone2 = ZoneApiMock.fromId("prod.us-west-1");
+    private static final ZoneApi zone3 = ZoneApiMock.fromId("prod.us-central-1");
+    private static final ZoneApi zone4 = ZoneApiMock.fromId("prod.us-east-3");
 
     private DeploymentTester tester;
 
@@ -48,8 +50,8 @@ public class SystemUpgraderTest {
 
         Version version1 = Version.fromString("6.5");
         // Bootstrap a system without host applications
-        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4), SystemApplication.configServer,
-                                        SystemApplication.proxy);
+        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId()),
+                                        SystemApplication.configServer, SystemApplication.proxy);
         // Fail a few nodes. Failed nodes should not affect versions
         failNodeIn(zone1, SystemApplication.configServer);
         failNodeIn(zone3, SystemApplication.proxy);
@@ -142,7 +144,7 @@ public class SystemUpgraderTest {
         SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         // Bootstrap system
-        tester.configServer().bootstrap(List.of(zone1), SystemApplication.configServer,
+        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId()), SystemApplication.configServer,
                                         SystemApplication.proxy);
         Version version1 = Version.fromString("6.5");
         tester.upgradeSystem(version1);
@@ -182,7 +184,7 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(List.of(zone1, zone2, zone3, zone4), SystemApplication.all());
+        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId()), SystemApplication.all());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
@@ -280,7 +282,7 @@ public class SystemUpgraderTest {
     public void does_not_deploy_proxy_app_in_zones_without_proxy() {
         List<SystemApplication> applications = List.of(
                 SystemApplication.configServerHost, SystemApplication.configServer, SystemApplication.tenantHost);
-        tester.configServer().bootstrap(List.of(zone1), applications);
+        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId()), applications);
         tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
 
         SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
@@ -292,36 +294,38 @@ public class SystemUpgraderTest {
     }
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */
-    private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
+    private void completeUpgrade(SystemApplication application, Version version, ZoneApi... zones) {
         assertWantedVersion(application, version, zones);
-        for (ZoneId zone : zones) {
+        for (ZoneApi zone : zones) {
             for (Node node : listNodes(zone, application)) {
-                nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                              node.wantedVersion(), node.wantedVersion()));
+                nodeRepository().putByHostname(
+                        zone.toDeprecatedId(),
+                        new Node(node.hostname(), node.state(), node.type(), node.owner(), node.wantedVersion(), node.wantedVersion()));
             }
 
             assertCurrentVersion(application, version, zone);
         }
     }
 
-    private void convergeServices(SystemApplication application, ZoneId... zones) {
-        for (ZoneId zone : zones) {
-            tester.controllerTester().configServer().convergeServices(application.id(), zone);
+    private void convergeServices(SystemApplication application, ZoneApi... zones) {
+        for (ZoneApi zone : zones) {
+            tester.controllerTester().configServer().convergeServices(application.id(), zone.toDeprecatedId());
         }
     }
 
-    private void completeUpgrade(List<SystemApplication> applications, Version version, ZoneId... zones) {
+    private void completeUpgrade(List<SystemApplication> applications, Version version, ZoneApi... zones) {
         applications.forEach(application -> completeUpgrade(application, version, zones));
     }
 
-    private void failNodeIn(ZoneId zone, SystemApplication application) {
-        List<Node> nodes = nodeRepository().list(zone, application.id());
+    private void failNodeIn(ZoneApi zone, SystemApplication application) {
+        List<Node> nodes = nodeRepository().list(zone.toDeprecatedId(), application.id());
         if (nodes.isEmpty()) {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putByHostname(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
-                                                      node.currentVersion(), node.wantedVersion()));
+        nodeRepository().putByHostname(
+                zone.toDeprecatedId(),
+                new Node(node.hostname(), Node.State.failed, node.type(), node.owner(), node.currentVersion(), node.wantedVersion()));
     }
 
     private void assertSystemVersion(Version version) {
@@ -332,33 +336,33 @@ public class SystemUpgraderTest {
         assertEquals(version, tester.controller().versionStatus().controllerVersion().get().versionNumber());
     }
 
-    private void assertWantedVersion(SystemApplication application, Version version, ZoneId... zones) {
+    private void assertWantedVersion(SystemApplication application, Version version, ZoneApi... zones) {
         assertVersion(application, version, Node::wantedVersion, zones);
     }
 
-    private void assertCurrentVersion(SystemApplication application, Version version, ZoneId... zones) {
+    private void assertCurrentVersion(SystemApplication application, Version version, ZoneApi... zones) {
         assertVersion(application, version, Node::currentVersion, zones);
     }
 
-    private void assertWantedVersion(List<SystemApplication> applications, Version version, ZoneId... zones) {
+    private void assertWantedVersion(List<SystemApplication> applications, Version version, ZoneApi... zones) {
         applications.forEach(application -> assertVersion(application, version, Node::wantedVersion, zones));
     }
 
-    private void assertCurrentVersion(List<SystemApplication> applications, Version version, ZoneId... zones) {
+    private void assertCurrentVersion(List<SystemApplication> applications, Version version, ZoneApi... zones) {
         applications.forEach(application -> assertVersion(application, version, Node::currentVersion, zones));
     }
 
     private void assertVersion(SystemApplication application, Version version, Function<Node, Version> versionField,
-                               ZoneId... zones) {
-        for (ZoneId zone : requireNonEmpty(zones)) {
+                               ZoneApi... zones) {
+        for (ZoneApi zone : requireNonEmpty(zones)) {
             for (Node node : listNodes(zone, application)) {
                 assertEquals(application + " version", version, versionField.apply(node));
             }
         }
     }
 
-    private List<Node> listNodes(ZoneId zone, SystemApplication application) {
-        return nodeRepository().list(zone, application.id()).stream()
+    private List<Node> listNodes(ZoneApi zone, SystemApplication application) {
+        return nodeRepository().list(zone.toDeprecatedId(), application.id()).stream()
                                .filter(SystemUpgrader::eligibleForUpgrade)
                                .collect(Collectors.toList());
     }

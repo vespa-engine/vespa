@@ -49,10 +49,10 @@ public class OsUpgraderTest {
     public void upgrade_os() {
         OsUpgrader osUpgrader = osUpgrader(
                 UpgradePolicy.create()
-                             .upgrade(zone1.toDeprecatedId())
-                             .upgradeInParallel(zone2.toDeprecatedId(), zone3.toDeprecatedId())
-                             .upgrade(zone5.toDeprecatedId()) // Belongs to a different cloud and is ignored by this upgrader
-                             .upgrade(zone4.toDeprecatedId()),
+                             .upgrade(zone1)
+                             .upgradeInParallel(zone2, zone3)
+                             .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
+                             .upgrade(zone4),
                 SystemName.cd
         );
 
