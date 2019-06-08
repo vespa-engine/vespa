@@ -42,7 +42,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
 
     /** Deploy a list of system applications until they converge on the given version */
     private void upgradeAll(Version target, List<SystemApplication> applications) {
-        for (List<ZoneId> zones : upgradePolicy.asList()) {
+        for (List<ZoneId> zones : upgradePolicy.deprecatedAsList()) {
             boolean converged = true;
             for (ZoneId zone : zones) {
                 try {

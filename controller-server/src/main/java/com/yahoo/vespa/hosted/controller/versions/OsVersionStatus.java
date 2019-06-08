@@ -87,7 +87,7 @@ public class OsVersionStatus {
 
     private static List<ZoneId> zonesToUpgrade(Controller controller) {
         return controller.zoneRegistry().osUpgradePolicies().stream()
-                         .flatMap(upgradePolicy -> upgradePolicy.asList().stream())
+                         .flatMap(upgradePolicy -> upgradePolicy.deprecatedAsList().stream())
                          .flatMap(Collection::stream)
                          .collect(Collectors.toUnmodifiableList());
     }
