@@ -7,6 +7,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -70,12 +71,12 @@ public class OsVersionStatus {
             if (!application.isEligibleForOsUpgrades()) {
                 continue; // Avoid querying applications that are not eligible for OS upgrades
             }
-            for (ZoneId zone : zonesToUpgrade(controller)) {
-                controller.configServer().nodeRepository().list(zone, application.id()).stream()
+            for (ZoneApi zone : zonesToUpgrade(controller)) {
+                controller.configServer().nodeRepository().list(zone.toDeprecatedId(), application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
-                          .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.environment(), zone.region()))
+                          .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.getEnvironment(), zone.getRegionName()))
                           .forEach(node -> {
-                              var version = new OsVersion(node.version(), zone.cloud());
+                              var version = new OsVersion(node.version(), zone.getCloudName());
                               versions.putIfAbsent(version, new ArrayList<>());
                               versions.get(version).add(node);
                           });
@@ -85,9 +86,9 @@ public class OsVersionStatus {
         return new OsVersionStatus(versions);
     }
 
-    private static List<ZoneId> zonesToUpgrade(Controller controller) {
+    private static List<ZoneApi> zonesToUpgrade(Controller controller) {
         return controller.zoneRegistry().osUpgradePolicies().stream()
-                         .flatMap(upgradePolicy -> upgradePolicy.deprecatedAsList().stream())
+                         .flatMap(upgradePolicy -> upgradePolicy.asList().stream())
                          .flatMap(Collection::stream)
                          .collect(Collectors.toUnmodifiableList());
     }

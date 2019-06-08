@@ -21,14 +21,6 @@ public class UpgradePolicy {
         this.zones = zones;
     }
 
-    public List<List<ZoneId>> deprecatedAsList() {
-        return zones.stream()
-                .map(list -> list.stream()
-                        .map(ZoneApi::toDeprecatedId)
-                        .collect(Collectors.toList()))
-                .collect(Collectors.toList());
-    }
-
     public List<List<ZoneApi>> asList() {
         return List.copyOf(zones);
     }
