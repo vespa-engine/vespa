@@ -37,7 +37,7 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
 
     @Override
     protected Result doProcess(Chain<Searcher> chain, Query request) {
-        return handler.searchAndFill(request, chain, handler.getSearchChainRegistry());
+        return handler.searchAndFill(request, chain);
     }
 
     @Override

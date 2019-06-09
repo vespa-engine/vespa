@@ -724,6 +724,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
+        cluster.addSimpleComponent("com.yahoo.search.searchchain.ExecutionFactory", null, null);
+
         ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(
                 cluster.getSearch().getChains(), "com.yahoo.search.handler.SearchHandler");
 

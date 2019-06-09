@@ -6,9 +6,6 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.component.chain.ChainsConfigurer;
-import com.yahoo.component.chain.model.ChainsModel;
-import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -24,14 +21,12 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
-import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.parser.ParseException;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.ranking.SoftTimeout;
+import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -46,7 +41,6 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.query.properties.DefaultProperties;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
@@ -93,18 +87,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private Value searchConnections;
 
-    private final SearchChainRegistry searchChainRegistry;
-
-    private final RendererRegistry rendererRegistry;
-
-    private final IndexFacts indexFacts;
-
-    private final SpecialTokenRegistry specialTokens;
-
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
-
-    private final Linguistics linguistics;
 
     private final CompiledQueryProfileRegistry queryProfileRegistry;
     
@@ -112,6 +96,8 @@ public class SearchHandler extends LoggingRequestHandler {
     private final Optional<String> hostResponseHeaderKey;
     
     private final String selfHostname = HostName.getLocalhost();
+
+    private final ExecutionFactory executionFactory;
 
     private final class MeanConnections implements Callback {
 
@@ -127,6 +113,33 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     @Inject
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         Executor executor,
+                         AccessLog accessLog,
+                         QueryProfilesConfig queryProfileConfig,
+                         ContainerHttpConfig containerHttpConfig,
+                         ExecutionFactory executionFactory) {
+        super(executor, accessLog, metric, true);
+        log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
+        QueryProfileRegistry queryProfileRegistry = QueryProfileConfigurer.createFromConfig(queryProfileConfig);
+        this.queryProfileRegistry = queryProfileRegistry.compile();
+        this.executionFactory = executionFactory;
+
+        this.maxThreads = examineExecutor(executor);
+
+        searchConnections = new Value(SEARCH_CONNECTIONS, statistics,
+                                      new Value.Parameters().setLogRaw(true).setLogMax(true)
+                                              .setLogMean(true).setLogMin(true)
+                                              .setNameExtension(true)
+                                              .setCallback(new MeanConnections()));
+        
+        this.hostResponseHeaderKey = containerHttpConfig.hostResponseHeaderKey().equals("") ?
+                                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey());
+    }
+
+    /** @deprecated use the other constructor */
+    @Deprecated // TODO: Remove on Vespa 8
     public SearchHandler(ChainsConfig chainsConfig,
                          IndexInfoConfig indexInfo,
                          QrSearchersConfig clusters,
@@ -140,40 +153,13 @@ public class SearchHandler extends LoggingRequestHandler {
                          QueryProfilesConfig queryProfileConfig,
                          ComponentRegistry<Searcher> searchers,
                          ContainerHttpConfig containerHttpConfig) {
-        super(executor, accessLog, metric, true);
-        log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
-        searchChainRegistry = new SearchChainRegistry(searchers);
-        setupSearchChainRegistry(searchers, chainsConfig);
-        indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters));
-        indexFacts.freeze();
-        specialTokens = new SpecialTokenRegistry(specialtokens);
-        rendererRegistry = new RendererRegistry(renderers.allComponents());
-        QueryProfileRegistry queryProfileRegistry = QueryProfileConfigurer.createFromConfig(queryProfileConfig);
-        this.queryProfileRegistry = queryProfileRegistry.compile();
-
-        this.linguistics = linguistics;
-        this.maxThreads = examineExecutor(executor);
-
-        searchConnections = new Value(SEARCH_CONNECTIONS, statistics,
-                                      new Value.Parameters().setLogRaw(true).setLogMax(true)
-                                              .setLogMean(true).setLogMin(true)
-                                              .setNameExtension(true)
-                                              .setCallback(new MeanConnections()));
-        
-        this.hostResponseHeaderKey = containerHttpConfig.hostResponseHeaderKey().equals("") ?
-                                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey());
-    }
-
-    @Override
-    protected void destroy() {
-        super.destroy();
-        rendererRegistry.deconstruct();
-    }
-
-    private void setupSearchChainRegistry(ComponentRegistry<Searcher> searchers, ChainsConfig chainsConfig) {
-        ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
-        ChainsConfigurer.prepareChainRegistry(searchChainRegistry, chainsModel, searchers);
-        searchChainRegistry.freeze();
+        this(statistics,
+             metric,
+             executor,
+             accessLog,
+             queryProfileConfig,
+             containerHttpConfig,
+             new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers));
     }
 
     private static int examineExecutor(Executor executor) {
@@ -278,7 +264,7 @@ public class SearchHandler extends LoggingRequestHandler {
                     ErrorMessage.createInvalidQueryParameter("No search chain named '" + searchChainName + "' was found"));
         } else {
             String pathAndQuery = UriTools.rawRequest(request.getUri());
-            result = search(pathAndQuery, query, searchChain, searchChainRegistry);
+            result = search(pathAndQuery, query, searchChain);
         }
 
         // Transform result to response
@@ -301,7 +287,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     @NonNull
     private Renderer<Result> toRendererCopy(ComponentSpecification format) {
-        Renderer<Result> renderer = rendererRegistry.getRenderer(format);
+        Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(format);
         renderer = perRenderingCopy(renderer);
         return renderer;
     }
@@ -312,28 +298,27 @@ public class SearchHandler extends LoggingRequestHandler {
             chainName = defaultSearchChainName;
         }
 
-        Chain<Searcher> searchChain = searchChainRegistry.getChain(chainName);
+        Chain<Searcher> searchChain = executionFactory.searchChainRegistry().getChain(chainName);
         if (searchChain == null && explicitChainName == null) { // explicit chain not found should cause error
             chainName = fallbackSearchChain;
-            searchChain = searchChainRegistry.getChain(chainName);
+            searchChain = executionFactory.searchChainRegistry().getChain(chainName);
         }
         return new Tuple2<>(chainName, searchChain);
     }
 
     /** Used from container SDK, for internal use only */
-    public Result searchAndFill(Query query, Chain<? extends Searcher> searchChain, SearchChainRegistry registry) {
+    public Result searchAndFill(Query query, Chain<? extends Searcher> searchChain) {
         Result errorResult = validateQuery(query);
         if (errorResult != null) return errorResult;
 
-        Renderer<Result> renderer = rendererRegistry.getRenderer(query.getPresentation().getRenderer());
+        Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(query.getPresentation().getRenderer());
 
         // docsumClass null means "unset", so we set it (it might be null
         // here too in which case it will still be "unset" after we set it :-)
         if (query.getPresentation().getSummary() == null && renderer instanceof com.yahoo.search.rendering.Renderer)
             query.getPresentation().setSummary(((com.yahoo.search.rendering.Renderer) renderer).getDefaultSummaryClass());
 
-        Execution execution = new Execution(searchChain,
-                                            new Execution.Context(registry, indexFacts, specialTokens, rendererRegistry, linguistics));
+        Execution execution = executionFactory.newExecution(searchChain);
         query.getModel().setExecution(execution);
         execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
         if (query.properties().getBoolean(DETAILED_TIMING_LOGGING, false)) {
@@ -362,7 +347,7 @@ public class SearchHandler extends LoggingRequestHandler {
      * For internal use only
      */
     public Renderer<Result> getRendererCopy(ComponentSpecification spec) {
-        Renderer<Result> renderer = rendererRegistry.getRenderer(spec);
+        Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(spec);
         return perRenderingCopy(renderer);
     }
 
@@ -380,7 +365,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    private Result search(String request, Query query, Chain<Searcher> searchChain, SearchChainRegistry registry) {
+    private Result search(String request, Query query, Chain<Searcher> searchChain) {
         if (query.getTraceLevel() >= 2) {
             query.trace("Invoking " + searchChain, false, 2);
         }
@@ -393,7 +378,7 @@ public class SearchHandler extends LoggingRequestHandler {
                     new IllegalStateException("searchConnections reference is null."));
         }
         try {
-            return searchAndFill(query, searchChain, registry);
+            return searchAndFill(query, searchChain);
         } catch (ParseException e) {
             ErrorMessage error = ErrorMessage.createIllegalQuery("Could not parse query [" + request + "]: "
                                                                  + Exceptions.toMessageString(e));
@@ -502,8 +487,7 @@ public class SearchHandler extends LoggingRequestHandler {
         query.trace("Vespa version: " + Vtag.currentVersion.toString(), false, 4);
     }
 
-    public SearchChainRegistry getSearchChainRegistry() {
-        return searchChainRegistry;
+    public SearchChainRegistry getSearchChainRegistry() { return executionFactory.searchChainRegistry();
     }
 
     static private String getMediaType(HttpRequest request) {
