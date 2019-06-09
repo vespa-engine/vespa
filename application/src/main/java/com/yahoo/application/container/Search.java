@@ -41,7 +41,6 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected ListenableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
                                                            Query request,
                                                            Renderer<Result> renderer,
@@ -51,7 +50,6 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected Renderer<Result> doGetRenderer(ComponentSpecification spec) {
         return handler.getRendererCopy(spec);
     }

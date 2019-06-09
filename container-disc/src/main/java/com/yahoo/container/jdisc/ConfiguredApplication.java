@@ -139,7 +139,6 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-
         intitializeAndActivateContainer(builder);
         startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange);
