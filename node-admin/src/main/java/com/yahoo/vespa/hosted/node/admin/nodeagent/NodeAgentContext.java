@@ -2,7 +2,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -37,7 +37,7 @@ public interface NodeAgentContext extends TaskContext {
 
     DockerNetworking dockerNetworking();
 
-    ZoneId zoneId();
+    ZoneApi zone();
 
     String vespaUser();
 
