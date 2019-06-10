@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
@@ -14,8 +13,8 @@ public class TestUtils {
                                                                       String service,
                                                                       String dnsSuffix,
                                                                       Zone zone) {
-        AthenzProviderServiceConfig.Zones.Builder zoneConfig =
-                new AthenzProviderServiceConfig.Zones.Builder()
+        AthenzProviderServiceConfig.Builder zoneConfig =
+                new AthenzProviderServiceConfig.Builder()
                         .serviceName(service)
                         .secretVersion(0)
                         .domain(domain)
@@ -24,7 +23,6 @@ public class TestUtils {
                         .secretName("s3cr3t");
         return new AthenzProviderServiceConfig(
                 new AthenzProviderServiceConfig.Builder()
-                        .zones(ImmutableMap.of(zone.environment().value() + "." + zone.region().value(), zoneConfig))
                         .athenzCaTrustStore("/dummy/path/to/athenz-ca.jks"));
     }
 

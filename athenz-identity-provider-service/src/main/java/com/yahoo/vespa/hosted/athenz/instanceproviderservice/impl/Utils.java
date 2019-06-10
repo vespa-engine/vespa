@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
 /**
  * @author bjorncs
@@ -21,11 +19,6 @@ public class Utils {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         return mapper;
-    }
-
-    public static AthenzProviderServiceConfig.Zones getZoneConfig(AthenzProviderServiceConfig config, Zone zone) {
-        String key = zone.environment().value() + "." + zone.region().value();
-        return config.zones(key);
     }
 
 }
