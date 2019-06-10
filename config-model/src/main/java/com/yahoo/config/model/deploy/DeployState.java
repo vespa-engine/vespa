@@ -341,7 +341,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         public DeployState build(ValidationParameters validationParameters) {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-            QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage);
+            QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
             SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validationParameters);
             return new DeployState(applicationPackage,
