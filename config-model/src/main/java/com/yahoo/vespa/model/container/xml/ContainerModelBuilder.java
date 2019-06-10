@@ -724,9 +724,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
-        ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(
-                cluster.getSearch().getChains(), "com.yahoo.search.handler.SearchHandler");
+        // Magic spell is needed to receive the chains config :-|
+        cluster.addComponent(new ProcessingHandler<>(cluster.getSearch().getChains(),
+                                                     "com.yahoo.search.searchchain.ExecutionFactory"));
 
+        ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(cluster.getSearch().getChains(),
+                                                                                "com.yahoo.search.handler.SearchHandler");
         String[] defaultBindings = {"http://*/search/*"};
         for (String binding: serverBindings(searchElement, defaultBindings)) {
             searchHandler.addServerBindings(binding);

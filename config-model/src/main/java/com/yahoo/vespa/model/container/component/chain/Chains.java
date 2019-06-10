@@ -13,6 +13,7 @@ import java.util.Set;
 
 /**
  * Root config producer the whole chains model(contains chains and components).
+ *
  * @author Tony Vaagenes
  * @author gjoranv
  */

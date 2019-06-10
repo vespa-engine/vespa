@@ -61,8 +61,9 @@ public class ApplicationTest {
         try (Application application =
                      Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
-                                                                             new Query("?query=substring:foobar&tracelevel=3"));
-            assertEquals("AND substring:fo substring:oo substring:ob substring:ba substring:ar", result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
+                                                                                 new Query("?query=substring:foobar&tracelevel=3"));
+            assertEquals("AND substring:fo substring:oo substring:ob substring:ba substring:ar",
+                         result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
         }
     }
 

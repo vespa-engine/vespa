@@ -63,6 +63,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
     }
 
     private static class CloudSubscriber implements Subscriber {
+
         private final ConfigSubscriber subscriber;
         private final Map<ConfigKey<ConfigInstance>, ConfigHandle<ConfigInstance>> handles = new HashMap<>();
 

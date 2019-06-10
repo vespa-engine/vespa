@@ -504,7 +504,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
-        if (containerSearch!=null) containerSearch.getConfig(builder);
+        if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
     @Override

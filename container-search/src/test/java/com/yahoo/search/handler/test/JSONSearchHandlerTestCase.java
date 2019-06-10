@@ -78,8 +78,8 @@ public class JSONSearchHandlerTestCase {
         File activeConfig = new File(tempDir);
         SearchChainConfigurerTestCase.
                 createComponentsConfig(new File(activeConfig, "chains.cfg").getPath(),
-                        new File(activeConfig, "handlers.cfg").getPath(),
-                        new File(activeConfig, "components.cfg").getPath());
+                                       new File(activeConfig, "handlers.cfg").getPath(),
+                                       new File(activeConfig, "components.cfg").getPath());
     }
 
     private SearchHandler fetchSearchHandler(HandlersConfigurerTestWrapper configurer) {
@@ -129,7 +129,7 @@ public class JSONSearchHandlerTestCase {
         assertNotSame("Have a new instance of the search handler", searchHandler, newSearchHandler);
         assertNotNull("Have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("hello"));
         assertNull("Don't have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("classLoadingError"));
-        try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(searchHandler)) {
+        try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             assertJsonResult(json, newDriver);
         }
     }

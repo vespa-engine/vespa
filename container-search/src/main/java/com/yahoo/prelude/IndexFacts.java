@@ -253,11 +253,14 @@ public class IndexFacts {
 
     /**
      * Freeze this to prevent further changes.
+     *
+     * @return this for chaining
      */
-    public void freeze() {
+    public IndexFacts freeze() {
         hasNGramIndices = hasNGramIndices();
         // TODO: Freeze content!
         frozen = true;
+        return this;
     }
 
     /** Whether this contains any index which has isNGram()==true. This is free to ask on a frozen instance. */

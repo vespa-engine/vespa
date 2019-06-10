@@ -52,9 +52,8 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
             Map<ConfigKey<ConfigInstance>, ConfigInstance> ret = new HashMap<>();
             for (ConfigKey<ConfigInstance> key : configKeys) {
                 ConfigInstance.Builder builder = root.getConfig(newBuilderInstance(key), key.getConfigId());
-                if (builder == null) {
+                if (builder == null)
                     throw new RuntimeException("Invalid config id " + key.getConfigId());
-                }
                 ret.put(key, newConfigInstance(builder));
             }
             return ret;

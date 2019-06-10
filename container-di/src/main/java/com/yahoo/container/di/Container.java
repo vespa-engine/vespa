@@ -190,12 +190,10 @@ public class Container {
     }
 
     private ComponentGraph createComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,
-            long generation, Injector fallbackInjector) {
-
+                                                 long generation, Injector fallbackInjector) {
         previousConfigGeneration = generation;
 
         ComponentGraph graph = new ComponentGraph(generation);
-
         ComponentsConfig componentsConfig = getConfig(componentsConfigKey, configsIncludingBootstrapConfigs);
         if (componentsConfig == null) {
             throw new ConfigurationRuntimeException("The set of all configs does not include a valid 'components' config. Config set: "
@@ -250,7 +248,7 @@ public class Container {
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
-            Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
+                                                         Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
         ConfigInstance inst = configs.get(key);
 
         if (inst == null || key.getConfigClass() == null) {
