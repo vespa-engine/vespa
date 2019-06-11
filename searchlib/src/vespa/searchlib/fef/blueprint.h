@@ -70,6 +70,7 @@ private:
     DependencyHandler       *_dependency_handler;
 
 protected:
+    using IAttributeVector = attribute::IAttributeVector;
     /**
      * Define an input feature for this blueprint. This method should
      * be invoked by the @ref setup method. Note that the order in
@@ -100,6 +101,19 @@ protected:
     void describeOutput(vespalib::stringref outName, vespalib::stringref desc,
                         const FeatureType &type = FeatureType::number());
 
+    /**
+     * Used to store a reference to the attribute during prepareSharedState
+     * for later use in createExecutor
+     **/
+    static const IAttributeVector *
+    lookupAndStoreAttribute(const vespalib::string & key, vespalib::stringref attrName,
+                            const IQueryEnvironment & env, IObjectStore & objectStore);
+    /**
+     * Used to lookup attribute from the most efficient source.
+     **/
+    static const IAttributeVector *
+    lookupAttribute(const vespalib::string & key, vespalib::stringref attrName, const IQueryEnvironment & env);
+    static vespalib::string createAttributeKey(vespalib::stringref attrName);
 public:
     /**
      * Create an empty blueprint. Blueprints in their initial state

@@ -852,7 +852,8 @@ createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attrib
 void
 DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
 {
-    const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+    vespalib::string attributeKey = make_attribute_key(getBaseName(), _defaultAttribute);
+    const IAttributeVector * attribute = lookupAndStoreAttribute(attributeKey, getAttribute(env), env, store);
     if (attribute == nullptr) return;
 
     vespalib::string queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
@@ -864,17 +865,13 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
         }
     }
 
-    attribute = upgradeIfNecessary(attribute, env);
-
-    vespalib::string attributeKey = make_attribute_key(getBaseName(), _defaultAttribute);
-    if (store.get(attributeKey) == nullptr) {
-        store.add(attributeKey, std::make_unique<fef::AnyWrapper<const IAttributeVector *>>(attribute));
-    }
+    upgradeIfNecessary(attribute, env);
 }
 
 FeatureExecutor &
 DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
+    // Doing it "manually" here to avoid looking up attribute override unless needed.
     const fef::Anything * attributeArg = env.getObjectStore().get(make_attribute_key(getBaseName(), _defaultAttribute));
     const IAttributeVector * attribute = (attributeArg != nullptr)
                                        ? static_cast<const fef::AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()

@@ -69,4 +69,35 @@ Blueprint::setup(const IIndexEnvironment &indexEnv,
     return false;
 }
 
+const attribute::IAttributeVector *
+Blueprint::lookupAndStoreAttribute(const vespalib::string & key, vespalib::stringref attrName,
+                                   const IQueryEnvironment & env, IObjectStore & store)
+{
+    const Anything * obj = store.get(key);
+    if (obj == nullptr) {
+        const IAttributeVector * attribute = env.getAttributeContext().getAttribute(attrName);
+        store.add(key, std::make_unique<AnyWrapper<const IAttributeVector *>>(attribute));
+        return attribute;
+    }
+    return static_cast<const AnyWrapper<const IAttributeVector *> *>(obj)->getValue();
+}
+
+const attribute::IAttributeVector *
+Blueprint::lookupAttribute(const vespalib::string & key, vespalib::stringref attrName, const IQueryEnvironment & env)
+{
+    const Anything * attributeArg = env.getObjectStore().get(key);
+    const IAttributeVector * attribute = (attributeArg != nullptr)
+                                       ? static_cast<const AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
+                                       : nullptr;
+    if (attribute == nullptr) {
+        attribute = env.getAttributeContext().getAttribute(attrName);
+    }
+    return attribute;;
+}
+
+vespalib::string
+Blueprint::createAttributeKey(vespalib::stringref attrName) {
+    return "fef.attribute.key." + attrName;
+}
+
 }
