@@ -94,53 +94,33 @@ class TensorParser {
         if (type.get().dimensions().stream().anyMatch(d -> ( d.size().isEmpty())))
             throw new IllegalArgumentException("The dense tensor form requires a tensor type containing " +
                                                "only dense dimensions with a given size");
-        IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)IndexedTensor.Builder.of(type.get());
 
-        // Since we know the dimensions the brackets are just syntactic sugar
-        long[] indexes = new long[builder.type().rank()];
+        IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)IndexedTensor.Builder.of(type.get());
+        long index = 0;
         int currentChar;
         int nextNumberEnd = 0;
+        // Since we know the dimensions the brackets are just syntactic sugar:
         while ((currentChar = nextStartCharIndex(nextNumberEnd + 1, valueString)) < valueString.length()) {
             nextNumberEnd   = nextStopCharIndex(currentChar, valueString);
             if (currentChar == nextNumberEnd) return builder.build();
 
-            if (builder.type().valueType() == TensorType.Value.DOUBLE)
-                builder.cellByDirectIndex(nextCellIndex(indexes, builder), Double.parseDouble(valueString.substring(currentChar, nextNumberEnd)));
-            else if (builder.type().valueType() == TensorType.Value.FLOAT)
-                builder.cellByDirectIndex(nextCellIndex(indexes, builder), Float.parseFloat(valueString.substring(currentChar, nextNumberEnd)));
-            else
-                throw new IllegalArgumentException(builder.type().valueType() + " is not supported");
+            TensorType.Value cellValueType = builder.type().valueType();
+            String cellValueString = valueString.substring(currentChar, nextNumberEnd);
+            try {
+                if (cellValueType == TensorType.Value.DOUBLE)
+                    builder.cellByDirectIndex(index, Double.parseDouble(cellValueString));
+                else if (cellValueType == TensorType.Value.FLOAT)
+                    builder.cellByDirectIndex(index, Float.parseFloat(cellValueString));
+                else
+                    throw new IllegalArgumentException(cellValueType + " is not supported");
+            }
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("At index " + index + ": '" +
+                                                   cellValueString + "' is not a valid " + cellValueType);
+            }
+            index++;
         }
         return builder.build();
-    }
-
-    // -----
-
-    /**
-     * Advance to the next cell in left-adjac ent order.
-     *
-     * On rightmost vs. leftmost adjacency:
-     * A dense tensor is laid out with the rightmost dimension as adjacent numbers,
-     * but when we parse a dense tensor we encounter numbers in the leftmost-adjacent order, since
-     * that is the most natural way to write it: tensor(x,y)[[1,2],[3,4]]
-     * should mean {{x:0, y:0}:1, {x:1, y:0}:2, {x:0, y:1}:3, {x:1, y:1}:4}.
-     * Therefore we need to convert the encounter order (numberIndex) from left-adjacent to right-adjacent.
-     */
-    private static long nextCellIndex(long[] indexes, IndexedTensor.BoundBuilder builder) {
-        long cellIndex = IndexedTensor.toValueIndex(indexes, builder.sizes());
-
-        // Find next dimension to advance
-        int nextInDimension = 0;
-        while (nextInDimension < indexes.length && indexes[nextInDimension] + 1 >= builder.sizes().size(nextInDimension)) {
-            indexes[nextInDimension] = 0;
-            nextInDimension++;
-        }
-        if (nextInDimension < indexes.length)
-            indexes[nextInDimension]++;
-        else // there is no next - become invalid
-            indexes[0]++;
-
-        return cellIndex;
     }
 
     /** Returns the position of the next character that should contain a number, or if none the string length */
@@ -187,8 +167,21 @@ class TensorParser {
             }
 
             TensorAddress address = addressBuilder.build();
-            Double value = asDouble(address, s.substring(index, valueEnd).trim());
-            builder.cell(address, value);
+            TensorType.Value cellValueType = builder.type().valueType();
+            String cellValueString = s.substring(index, valueEnd).trim();
+            try {
+                if (cellValueType == TensorType.Value.DOUBLE)
+                    builder.cell(address, Double.parseDouble(cellValueString));
+                else if (cellValueType == TensorType.Value.FLOAT)
+                    builder.cell(address, Float.parseFloat(cellValueString));
+                else
+                    throw new IllegalArgumentException(cellValueType + " is not supported");
+            }
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("At " + address.toString(builder.type()) + ": '" +
+                                                   cellValueString + "' is not a valid " + cellValueType);
+            }
+
             index = valueEnd+1;
             index = skipSpace(index, s);
         }
@@ -217,15 +210,6 @@ class TensorParser {
                                                    "got '" + elementString + "'");
             String dimension = pair[0].trim();
             builder.add(dimension, pair[1].trim());
-        }
-    }
-
-    private static Double asDouble(TensorAddress address, String s) {
-        try {
-            return Double.valueOf(s);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("At " + address + ": Expected a floating point number, got '" + s + "'");
         }
     }
 

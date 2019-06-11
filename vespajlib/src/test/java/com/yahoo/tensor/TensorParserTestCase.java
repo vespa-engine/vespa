@@ -31,36 +31,36 @@ public class TensorParserTestCase {
                      Tensor.from("tensor(x[2]):[1.0, 2.0]"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[3])"))
                                    .cell(1.0, 0, 0)
-                                   .cell(2.0, 1, 0)
-                                   .cell(3.0, 0, 1)
-                                   .cell(4.0, 1, 1)
-                                   .cell(5.0, 0, 2)
+                                   .cell(2.0, 0, 1)
+                                   .cell(3.0, 0, 2)
+                                   .cell(4.0, 1, 0)
+                                   .cell(5.0, 1, 1)
                                    .cell(6.0, 1, 2).build(),
                      Tensor.from("tensor(x[2],y[3]):[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[1],y[2],z[3])"))
                                    .cell(1.0, 0, 0, 0)
-                                   .cell(2.0, 0, 1, 0)
-                                   .cell(3.0, 0, 0, 1)
-                                   .cell(4.0, 0, 1, 1)
-                                   .cell(5.0, 0, 0, 2)
+                                   .cell(2.0, 0, 0, 1)
+                                   .cell(3.0, 0, 0, 2)
+                                   .cell(4.0, 0, 1, 0)
+                                   .cell(5.0, 0, 1, 1)
                                    .cell(6.0, 0, 1, 2).build(),
                      Tensor.from("tensor(x[1],y[2],z[3]):[[[1.0], [2.0]], [[3.0], [4.0]], [[5.0], [6.0]]]"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2],z[1])"))
                                    .cell(1.0, 0, 0, 0)
-                                   .cell(2.0, 1, 0, 0)
-                                   .cell(3.0, 2, 0, 0)
-                                   .cell(4.0, 0, 1, 0)
-                                   .cell(5.0, 1, 1, 0)
+                                   .cell(2.0, 0, 1, 0)
+                                   .cell(3.0, 1, 0, 0)
+                                   .cell(4.0, 1, 1, 0)
+                                   .cell(5.0, 2, 0, 0)
                                    .cell(6.0, 2, 1, 0).build(),
                      Tensor.from("tensor(x[3],y[2],z[1]):[[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]]"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2],z[1])"))
-                                   .cell(1.0, 0, 0, 0)
-                                   .cell(2.0, 1, 0, 0)
-                                   .cell(3.0, 2, 0, 0)
-                                   .cell(4.0, 0, 1, 0)
-                                   .cell(5.0, 1, 1, 0)
-                                   .cell(6.0, 2, 1, 0).build(),
-                     Tensor.from("tensor( x[3],y[2],z[1]) : [  [ [1.0, 2.0, 3.0] , [4.0, 5,6.0] ]  ]"));
+                                   .cell( 1.0, 0, 0, 0)
+                                   .cell( 2.0, 0, 1, 0)
+                                   .cell( 3.0, 1, 0, 0)
+                                   .cell( 4.0, 1, 1, 0)
+                                   .cell( 5.0, 2, 0, 0)
+                                   .cell(-6.0, 2, 1, 0).build(),
+                     Tensor.from("tensor( x[3],y[2],z[1]) : [  [ [1.0, 2.0, 3.0] , [4.0, 5,-6.0] ]  ]"));
     }
 
     @Test
@@ -71,6 +71,10 @@ public class TensorParserTestCase {
                       "{{'x':\"l0\"}:1.0}");
         assertIllegal("dimension must be an identifier or integer, not '\"x\"'",
                       "{{\"x\":\"l0\", \"y\":\"l0\"}:1.0, {\"x\":\"l0\", \"y\":\"l1\"}:2.0}");
+        assertIllegal("At {x:0}: '1-.0' is not a valid double",
+                      "{{x:0}:1-.0}");
+        assertIllegal("At index 0: '1-.0' is not a valid double",
+                      "tensor(x[1]):[1-.0]");
     }
 
     private void assertIllegal(String message, String tensor) {

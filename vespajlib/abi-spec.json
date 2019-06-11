@@ -1352,7 +1352,8 @@
       "public static com.yahoo.tensor.TensorType$Value[] values()",
       "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)",
       "public static com.yahoo.tensor.TensorType$Value largestOf(java.util.List)",
-      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)"
+      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)",
+      "public java.lang.String toString()"
     ],
     "fields": [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
