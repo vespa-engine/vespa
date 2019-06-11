@@ -44,7 +44,6 @@ class PendingChunk
     uint64_t _dataOffset;
     uint32_t _dataLen;
 public:
-    typedef std::shared_ptr<PendingChunk> SP;
     PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen);
     ~PendingChunk();
     vespalib::nbostream & getSerializedIdx() { return _idx; }
@@ -58,7 +57,6 @@ public:
 class ProcessedChunk
 {
 public:
-    typedef std::unique_ptr<ProcessedChunk> UP;
     ProcessedChunk(uint32_t chunkId, uint32_t alignment)
             : _chunkId(chunkId),
               _payLoad(0),
@@ -293,7 +291,7 @@ WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum)
 }
 
 void
-WriteableFileChunk::enque(ProcessedChunk::UP tmp)
+WriteableFileChunk::enque(ProcessedChunkUP tmp)
 {
     LOG(debug, "enqueing %p", tmp.get());
     MonitorGuard guard(_writeMonitor);
@@ -364,7 +362,7 @@ WriteableFileChunk::insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChu
             assert(orderedChunks.find(chunk->getChunkId()) == orderedChunks.end());
             orderedChunks[chunk->getChunkId()] = std::move(chunk);
         } else {
-            orderedChunks[std::numeric_limits<uint32_t>::max()] = ProcessedChunk::UP();
+            orderedChunks[std::numeric_limits<uint32_t>::max()] = ProcessedChunkUP();
         }
     }
 }
@@ -393,8 +391,7 @@ WriteableFileChunk::computeChunkMeta(const LockGuard & guard,
     const ChunkMeta cmeta(offset, tmp.getPayLoad(), active.getLastSerial(), active.count());
     assert((size_t(tmp.getBuf().getData())%_alignment) == 0);
     assert((dataLen%_alignment) == 0);
-    PendingChunk::SP pcsp;
-    pcsp.reset(new PendingChunk(active.getLastSerial(), offset, dataLen));
+    auto pcsp = std::make_shared<PendingChunk>(active.getLastSerial(), offset, dataLen);
     PendingChunk &pc(*pcsp.get());
     nbostream &os(pc.getSerializedIdx());
     cmeta.serialize(os);
@@ -424,8 +421,7 @@ WriteableFileChunk::computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, 
     LockGuard guard(_lock);
 
     if (!_pendingChunks.empty()) {
-        const PendingChunk::SP pcsp(_pendingChunks.back());
-        const PendingChunk &pc(*pcsp.get());
+        const PendingChunk & pc = *_pendingChunks.back();
         assert(pc.getLastSerial() >= lastSerial);
         lastSerial = pc.getLastSerial();
     }
@@ -454,7 +450,7 @@ WriteableFileChunk::writeData(const ProcessedChunkQ & chunks, size_t sz)
 {
     vespalib::DataBuffer buf(0ul, _alignment);
     buf.ensureFree(sz);
-    for (const ProcessedChunk::UP & chunk : chunks) {
+    for (const auto & chunk : chunks) {
         buf.writeBytes(chunk->getBuf().getData(), chunk->getBuf().getDataLen());
     }
 
@@ -540,7 +536,7 @@ WriteableFileChunk::freeze()
 {
     if (!frozen()) {
         waitForAllChunksFlushedToDisk();
-        enque(ProcessedChunk::UP());
+        enque(ProcessedChunkUP());
         _executor.sync();
         {
             MonitorGuard guard(_writeMonitor);
@@ -811,8 +807,7 @@ WriteableFileChunk::needFlushPendingChunks(const MonitorGuard & guard, uint64_t 
     assert(guard.monitors(_lock));
     if (_pendingChunks.empty())
         return false;
-    const PendingChunk::SP pcsp(_pendingChunks.front());
-    const PendingChunk &pc(*pcsp.get());
+    const PendingChunk & pc = *_pendingChunks.front();
     if (pc.getLastSerial() > serialNum)
         return false;
     bool datWritten = datFileLen >= pc.getDataOffset() + pc.getDataLen();
@@ -861,8 +856,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard 
         for (;;) {
             if (!needFlushPendingChunks(guard, serialNum, datFileLen))
                 break;
-            PendingChunk::SP pcsp;
-            pcsp.swap(_pendingChunks.front());
+            std::shared_ptr<PendingChunk> pcsp = std::move(_pendingChunks.front());
             _pendingChunks.pop_front();
             const PendingChunk &pc(*pcsp.get());
             assert(_pendingIdx >= pc.getIdxLen());
