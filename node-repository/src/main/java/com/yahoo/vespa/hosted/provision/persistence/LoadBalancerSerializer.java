@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -35,7 +34,6 @@ public class LoadBalancerSerializer {
     private static final String portsField = "ports";
     private static final String networksField = "networks";
     private static final String realsField = "reals";
-    private static final String rotationsField = "rotations";
     private static final String nameField = "name";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
@@ -57,11 +55,6 @@ public class LoadBalancerSerializer {
             realObject.setString(hostnameField, real.hostname().value());
             realObject.setString(ipAddressField, real.ipAddress());
             realObject.setLong(portField, real.port());
-        });
-        Cursor rotationArray = root.setArray(rotationsField);
-        loadBalancer.rotations().forEach(rotation -> {
-            Cursor rotationObject = rotationArray.addObject();
-            rotationObject.setString(nameField, rotation.value());
         });
         root.setBool(inactiveField, loadBalancer.inactive());
 
@@ -89,11 +82,6 @@ public class LoadBalancerSerializer {
         Set<String> networks = new LinkedHashSet<>();
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
-        Set<RotationName> rotations = new LinkedHashSet<>();
-        object.field(rotationsField).traverse((ArrayTraverser) (i, rotation) -> {
-            rotations.add(RotationName.from(rotation.field(nameField).asString()));
-        });
-
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 new LoadBalancerInstance(
                                         HostName.from(object.field(hostnameField).asString()),
@@ -102,7 +90,6 @@ public class LoadBalancerSerializer {
                                         networks,
                                         reals
                                 ),
-                                rotations,
                                 object.field(inactiveField).asBool());
     }
 
