@@ -3,6 +3,7 @@
 #include "writeablefilechunk.h"
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/data/fileheader.h>
@@ -16,6 +17,7 @@ LOG_SETUP(".search.writeablefilechunk");
 
 using vespalib::makeTask;
 using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 using vespalib::FileHeader;
 using vespalib::make_string;
 using vespalib::LockGuard;
@@ -155,6 +157,7 @@ WriteableFileChunk::openIdx() {
     }
     return file;
 }
+
 WriteableFileChunk::~WriteableFileChunk()
 {
     if (!frozen()) {
@@ -177,7 +180,7 @@ WriteableFileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t s
 {
     size_t sz = FileChunk::updateLidMap(guard, ds, serialNum, docIdLimit);
     _nextChunkId = _chunkInfo.size();
-    _active.reset( new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes())));
+    _active = std::make_unique<Chunk>(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes()));
     _serialNum = getLastPersistedSerialNum();
     _firstChunkIdToBeWritten = _active->getId();
     setDiskFootprint(0);
@@ -219,7 +222,7 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
                 const LidInfoWithLid & li = *(begin + i);
                 uint32_t chunk = li.getChunkId();
                 if ((chunk >= _chunkInfo.size()) || !_chunkInfo[chunk].valid()) {
-                    ChunkMap::const_iterator found = _chunkMap.find(chunk);
+                    auto found = _chunkMap.find(chunk);
                     vespalib::ConstBufferRef buffer;
                     if (found != _chunkMap.end()) {
                         buffer = found->second->getLid(li.getLid());
@@ -234,8 +237,8 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
             }
         }
         for (auto & it : chunksOnFile) {
-            LidInfoWithLidV::const_iterator first = find_first(begin, it.first);
-            LidInfoWithLidV::const_iterator last = seek_past(first, begin + count, it.first);
+            auto first = find_first(begin, it.first);
+            auto last = seek_past(first, begin + count, it.first);
             FileChunk::read(first, last - first, it.second, visitor);
         }
     } else {
@@ -250,7 +253,7 @@ WriteableFileChunk::read(uint32_t lid, SubChunkId chunkId, vespalib::DataBuffer 
     if (!frozen()) {
         LockGuard guard(_lock);
         if ((chunkId >= _chunkInfo.size()) || !_chunkInfo[chunkId].valid()) {
-            ChunkMap::const_iterator found = _chunkMap.find(chunkId);
+            auto found = _chunkMap.find(chunkId);
             if (found != _chunkMap.end()) {
                 return found->second->read(lid, buffer);
             } else {
@@ -268,13 +271,13 @@ WriteableFileChunk::read(uint32_t lid, SubChunkId chunkId, vespalib::DataBuffer 
 void
 WriteableFileChunk::internalFlush(uint32_t chunkId, uint64_t serialNum)
 {
-    Chunk * active(NULL);
+    Chunk * active(nullptr);
     {
         LockGuard guard(_lock);
         active = _chunkMap[chunkId].get();
     }
 
-    ProcessedChunk::UP tmp(new ProcessedChunk(chunkId, _alignment));
+    auto tmp = std::make_unique<ProcessedChunk>(chunkId, _alignment);
     if (_alignment > 1) {
         tmp->getBuf().ensureFree(active->getMaxPackSize(_config.getCompression()) + _alignment - 1);
     }
@@ -298,7 +301,7 @@ WriteableFileChunk::enque(ProcessedChunk::UP tmp)
     LOG(debug, "enqueing %p", tmp.get());
     MonitorGuard guard(_writeMonitor);
     _writeQ.push_back(std::move(tmp));
-    if (_writeTaskIsRunning == false) {
+    if ( ! _writeTaskIsRunning) {
         _writeTaskIsRunning = true;
         uint32_t nextChunkId = _firstChunkIdToBeWritten;
         guard.signal();
@@ -359,7 +362,7 @@ WriteableFileChunk::insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChu
 {
     (void) nextChunkId;
     for (auto &chunk : newChunks) {
-        if (chunk.get() != 0) {
+        if (chunk) {
             assert(chunk->getChunkId() >= nextChunkId);
             assert(orderedChunks.find(chunk->getChunkId()) == orderedChunks.end());
             orderedChunks[chunk->getChunkId()] = std::move(chunk);
@@ -375,7 +378,7 @@ WriteableFileChunk::fetchNextChain(ProcessedChunkMap & orderedChunks, const uint
     ProcessedChunkQ chunks;
     while (!orderedChunks.empty() &&
            ((orderedChunks.begin()->first == (firstChunkId+chunks.size())) ||
-            (orderedChunks.begin()->second.get() == NULL)))
+            !orderedChunks.begin()->second))
     {
         chunks.push_back(std::move(orderedChunks.begin()->second));
         orderedChunks.erase(orderedChunks.begin());
@@ -632,7 +635,7 @@ int32_t WriteableFileChunk::flushLastIfNonEmpty(bool force)
         chunkId = _active->getId();
         _chunkMap[chunkId] = std::move(_active);
         assert(_nextChunkId < LidInfo::getChunkIdLimit());
-        _active.reset(new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes())));
+        _active = std::make_unique<Chunk>(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes()));
     }
     return chunkId;
 }
@@ -643,10 +646,7 @@ WriteableFileChunk::flush(bool block, uint64_t syncToken)
     int32_t chunkId = flushLastIfNonEmpty(syncToken > _serialNum);
     if (chunkId >= 0) {
         setSerialNum(syncToken);
-        _executor.execute(makeTask(makeClosure(this,
-                                           &WriteableFileChunk::internalFlush,
-                                           static_cast<uint32_t>(chunkId),
-                                           _serialNum)));
+        _executor.execute(makeLambdaTask([this, chunkId, serialNum=_serialNum] { internalFlush(chunkId, serialNum); }));
     } else {
         if (block) {
             MonitorGuard guard(_lock);
@@ -693,10 +693,7 @@ WriteableFileChunk::waitForAllChunksFlushedToDisk() const
 }
 
 LidInfo
-WriteableFileChunk::append(uint64_t serialNum,
-                           uint32_t lid,
-                           const void * buffer,
-                           size_t len)
+WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, const void * buffer, size_t len)
 {
     assert( !frozen() );
     if ( ! _active->hasRoom(len)) {
