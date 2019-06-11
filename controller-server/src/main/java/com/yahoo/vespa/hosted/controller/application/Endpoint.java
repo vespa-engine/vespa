@@ -152,7 +152,6 @@ public class Endpoint {
                 if (legacy) return YAHOO_DNS_SUFFIX;
                 return OATH_DNS_SUFFIX;
             case Public:
-            case vaas:
                 return PUBLIC_DNS_SUFFIX;
             case PublicCd:
                 return PUBLIC_CD_DNS_SUFFIX;
