@@ -1,6 +1,7 @@
 package ai.vespa.hosted.cd;
 
 import ai.vespa.hosted.api.ControllerHttpClient;
+import ai.vespa.hosted.auth.Authenticator;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.ArrayTraverser;
@@ -12,13 +13,11 @@ import com.yahoo.slime.Slime;
 
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * The place to obtain environment-dependent configuration for the current test run.
@@ -81,6 +80,7 @@ public class TestConfig {
     }
 
     static TestConfig fromController() {
+        ControllerHttpClient controller = new Authenticator().controller();
         return null;
     }
 

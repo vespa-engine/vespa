@@ -34,7 +34,7 @@ public class Authenticator {
             Path privateKeyFile = credentialsRoot.resolve("key");
 
             X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));
-            if (Instant.now().isBefore(certificate.getNotBefore().toInstant())
+            if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
                 || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
                 throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
                                                 certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
@@ -50,17 +50,15 @@ public class Authenticator {
         return request;
     }
 
-    ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
-                                          requireNonBlankProperty("application"),
-                                          getNonBlankProperty("instance").orElse("default"));
+    public ControllerHttpClient controller() {
+        ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
+                                              requireNonBlankProperty("application"),
+                                              getNonBlankProperty("instance").orElse("default"));
+        URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
+        Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
 
-    URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
-    Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
-    Optional<Path> certificateFile = getNonBlankProperty("certificateFile").map(Paths::get);
-
-    ControllerHttpClient controller = certificateFile.isPresent()
-            ? ControllerHttpClient.withKeyAndCertificate(endpoint, privateKeyFile, certificateFile.get())
-            : ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
+        return ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
+    }
 
     static Optional<String> getNonBlankProperty(String name) {
         return Optional.ofNullable(System.getProperty(name)).filter(value -> ! value.isBlank());
