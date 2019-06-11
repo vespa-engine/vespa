@@ -10,11 +10,7 @@
 #include "minmaxaggrcalc.h"
 #include "btreeiterator.h" 
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -32,12 +28,9 @@ public:
                             TraitsT::INTERNAL_SLOTS,
                             TraitsT::LEAF_SLOTS,
                             AggrCalcT> Aggregator;
-    typedef BTreeIterator<KeyT, DataT, AggrT,
-                          CompareT, TraitsT> Iterator;
-    typedef BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS>
-    InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
-    LeafNodeType;
+    typedef BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT> Iterator;
+    typedef BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS> InternalNodeType;
+    typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS> LeafNodeType;
     typedef KeyT  KeyType;
     typedef DataT DataType;
     typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
@@ -49,19 +42,12 @@ private:
 
 public:
     static void
-    insert(BTreeNode::Ref &root,
-           Iterator &itr,
-           const KeyType &key, const DataType &data,
-           const AggrCalcT &aggrCalc);
+    insert(BTreeNode::Ref &root, Iterator &itr, const KeyType &key, const DataType &data, const AggrCalcT &aggrCalc);
 };
 
 extern template class BTreeInserter<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeInserter<uint32_t, BTreeNoLeafData, NoAggregated>;
 extern template class BTreeInserter<uint32_t, int32_t, MinMaxAggregated,
-                                    std::less<uint32_t>,
-                                    BTreeDefaultTraits,
-                                    MinMaxAggrCalc>;
+                                    std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>;
 
-} // namespace search::btree
-} // namespace search
-
+}

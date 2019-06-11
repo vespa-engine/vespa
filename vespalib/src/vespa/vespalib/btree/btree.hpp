@@ -4,8 +4,7 @@
 
 #include "btree.h"
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, class AggrCalcT>
@@ -24,7 +23,4 @@ BTree<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::~BTree()
     _alloc.clearHoldLists();
 }
 
-
-} // namespace search::btree
-} // namespace search
-
+}
