@@ -7,8 +7,7 @@
 #include "btreeiterator.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 namespace {
 
@@ -178,7 +177,4 @@ insert(BTreeNode::Ref &root,
     }
 }
 
-
-} // namespace search::btree
-} // namespace search
-
+}

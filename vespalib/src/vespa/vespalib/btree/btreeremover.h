@@ -10,11 +10,7 @@
 #include "minmaxaggrcalc.h"
 #include "btreeiterator.h" 
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -82,23 +78,15 @@ public:
     typedef DataT DataType;
     typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
     typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
-    typedef BTreeIterator<KeyT, DataT, AggrT,
-                          CompareT, TraitsT> Iterator;
+    typedef BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT> Iterator;
 
     static void
-    remove(BTreeNode::Ref &root,
-           Iterator &itr,
-           const AggrCalcT &aggrCalc);
+    remove(BTreeNode::Ref &root, Iterator &itr, const AggrCalcT &aggrCalc);
 };
 
 extern template class BTreeRemover<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeRemover<uint32_t, BTreeNoLeafData, NoAggregated>;
-extern template class BTreeRemover<uint32_t, int32_t,
-                                   MinMaxAggregated,
-                                   std::less<uint32_t>,
-                                   BTreeDefaultTraits,
-                                   MinMaxAggrCalc>;
+extern template class BTreeRemover<uint32_t, int32_t, MinMaxAggregated,
+                                   std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>;
 
-} // namespace search::btree
-} // namespace search
-
+}
