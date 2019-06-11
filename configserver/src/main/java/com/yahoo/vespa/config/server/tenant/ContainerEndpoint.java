@@ -8,16 +8,17 @@ import java.util.Objects;
 
 /**
  * ContainerEndpoint tracks the service names that a Container Cluster should be
- * known as.  This is used during request routing both for regular requests and
+ * known as. This is used during request routing both for regular requests and
  * for health checks in traffic distribution.
  *
  * @author ogronnesby
  */
 public class ContainerEndpoint {
+
     private final ClusterId clusterId;
     private final List<String> names;
 
-    ContainerEndpoint(ClusterId clusterId, List<String> names) {
+    public ContainerEndpoint(ClusterId clusterId, List<String> names) {
         this.clusterId = Objects.requireNonNull(clusterId);
         this.names = List.copyOf(Objects.requireNonNull(names));
     }
@@ -51,4 +52,5 @@ public class ContainerEndpoint {
                 ", names=" + names +
                 '}';
     }
+
 }
