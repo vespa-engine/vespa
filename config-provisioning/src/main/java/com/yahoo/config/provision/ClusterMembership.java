@@ -22,7 +22,7 @@ public class ClusterMembership {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
-                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/rotationId,...]'");
+                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive]'");
 
         boolean exclusive = false;
         if (components.length > 4) {
