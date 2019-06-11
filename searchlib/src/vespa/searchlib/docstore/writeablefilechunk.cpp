@@ -653,7 +653,6 @@ WriteableFileChunk::flush(bool block, uint64_t syncToken)
         }
     }
     if (block) {
-        _executor.sync();
         waitForChunkFlushedToDisk(chunkId);
     }
 }
