@@ -91,7 +91,7 @@ void
 LogDataStore::updateSerialNum()
 {
     LockGuard guard(_updateLock);
-    if (getPrevActive(guard) != NULL) {
+    if (getPrevActive(guard) != nullptr) {
         if (getActive(guard).getSerialNum() <
             getPrevActive(guard)->getLastPersistedSerialNum()) {
             getActive(guard).setSerialNum(getPrevActive(guard)->getLastPersistedSerialNum());
@@ -234,7 +234,7 @@ LogDataStore::lastSyncToken() const
     uint64_t lastSerial(getActive(guard).getLastPersistedSerialNum());
     if (lastSerial == 0) {
         const FileChunk * prev = getPrevActive(guard);
-        if (prev != NULL) {
+        if (prev != nullptr) {
             lastSerial = prev->getLastPersistedSerialNum();
         }
     }
@@ -274,7 +274,7 @@ LogDataStore::remove(uint64_t serialNum, uint32_t lid)
         if (lm.valid()) {
             _fileChunks[lm.getFileId()]->remove(lid, lm.size());
         }
-        lm = getActive(guard).append(serialNum, lid, NULL, 0);
+        lm = getActive(guard).append(serialNum, lid, nullptr, 0);
         assert( lm.empty() );
         _lidInfo[lid] = lm;
     }
@@ -327,7 +327,7 @@ LogDataStore::getMaxCompactGain() const
 void
 LogDataStore::flush(uint64_t syncToken)
 {
-    WriteableFileChunk * active = NULL;
+    WriteableFileChunk * active = nullptr;
     std::unique_ptr<FileChunkHolder> activeHolder;
     assert(syncToken == _initFlushSyncToken);
     {
@@ -604,7 +604,7 @@ LogDataStore::getDiskBloat() const
         /// Do not count the holes in the last file as bloat
         if (i != _active) {
             const FileChunk * chunk = _fileChunks[i.getId()].get();
-            if (chunk != NULL) {
+            if (chunk != nullptr) {
                 sz += chunk->getDiskBloat();
             }
         }
@@ -916,7 +916,7 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
             if (file.size() > suffix.size() &&
                 file.find(suffix.c_str()) == file.size() - suffix.size()) {
                 vespalib::string base(file.substr(0, file.find(suffix.c_str())));
-                char *err(NULL);
+                char *err(nullptr);
                 errno = 0;
                 NameId baseId(strtoul(base.c_str(), &err, 10));
                 if ((errno == 0) && (err[0] == '\0')) {
