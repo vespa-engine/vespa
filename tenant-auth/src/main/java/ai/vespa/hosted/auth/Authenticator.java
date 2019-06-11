@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -32,7 +33,11 @@ public class Authenticator {
      * "key" and "cert" in that directory are used; otherwise, the system default SSLContext is returned. */
     public SSLContext sslContext() {
         try {
-            Path credentialsRoot = Path.of(System.getProperty("vespa.test.credentials.root"));
+            Optional<String> credentialsRootProperty = getNonBlankProperty("vespa.test.credentials.root");
+            if (credentialsRootProperty.isEmpty())
+                return SSLContext.getDefault();
+
+            Path credentialsRoot = Path.of(credentialsRootProperty.get());
             Path certificateFile = credentialsRoot.resolve("cert");
             Path privateKeyFile = credentialsRoot.resolve("key");
 
@@ -46,6 +51,9 @@ public class Authenticator {
             return new SslContextBuilder().withKeyStore(privateKey, certificate).build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 
