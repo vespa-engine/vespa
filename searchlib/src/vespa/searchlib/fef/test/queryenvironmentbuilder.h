@@ -57,6 +57,8 @@ public:
     /** Returns a const reference to the match data layout of this. */
     const MatchDataLayout &getLayout() const { return _layout; }
 
+    QueryEnvironmentBuilder& set_avg_field_length(const vespalib::string& field_name, double avg_field_length);
+
 private:
     QueryEnvironmentBuilder(const QueryEnvironmentBuilder &);             // hide
     QueryEnvironmentBuilder & operator=(const QueryEnvironmentBuilder &); // hide

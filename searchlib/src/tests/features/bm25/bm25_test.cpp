@@ -11,6 +11,7 @@
 
 using namespace search::features;
 using namespace search::fef;
+using namespace search::fef::objectstore;
 using CollectionType = FieldInfo::CollectionType;
 using StringVector = std::vector<vespalib::string>;
 
@@ -40,12 +41,13 @@ struct Bm25BlueprintTest : public ::testing::Test {
         EXPECT_FALSE(blueprint->setup(index_env, params));
     }
 
-    void expect_setup_succeed(const StringVector& params) {
+    Blueprint::SP expect_setup_succeed(const StringVector& params) {
         auto blueprint = make_blueprint();
         test::DummyDependencyHandler deps(*blueprint);
         EXPECT_TRUE(blueprint->setup(index_env, params));
         EXPECT_EQ(0, deps.input.size());
         EXPECT_EQ(StringVector({"score"}), deps.output);
+        return blueprint;
     }
 };
 
@@ -70,6 +72,15 @@ TEST_F(Bm25BlueprintTest, blueprint_setup_succeeds_for_index_field)
     expect_setup_succeed({"iws"});
 }
 
+TEST_F(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_length)
+{
+    auto blueprint = expect_setup_succeed({"is"});
+    test::QueryEnvironment query_env;
+    query_env.get_avg_field_lengths()["is"] = 10;
+    ObjectStore store;
+    blueprint->prepareSharedState(query_env, store);
+    EXPECT_DOUBLE_EQ(10, as_value<double>(*store.get("bm25.afl.is")));
+}
 
 struct Bm25ExecutorTest : public ::testing::Test {
     BlueprintFactory factory;
@@ -87,9 +98,10 @@ struct Bm25ExecutorTest : public ::testing::Test {
         test.getQueryEnv().getBuilder().addIndexNode({"foo"});
         test.getQueryEnv().getBuilder().addIndexNode({"foo"});
         test.getQueryEnv().getBuilder().addIndexNode({"bar"});
-
+        test.getQueryEnv().getBuilder().set_avg_field_length("foo", 10);
+    }
+    void setup() {
         EXPECT_TRUE(test.setup());
-
         match_data = test.createMatchDataBuilder();
         clear_term(0, 0);
         clear_term(1, 0);
@@ -111,19 +123,21 @@ struct Bm25ExecutorTest : public ::testing::Test {
         tfmd->setFieldLength(field_length);
     }
 
-    feature_t get_score(feature_t num_occs, feature_t field_length) const {
-        return (num_occs * 2.2) / (num_occs + (1.2 * (0.25 + 0.75 * field_length / 10.0)));
+    feature_t get_score(feature_t num_occs, feature_t field_length, double avg_field_length = 10) const {
+        return (num_occs * 2.2) / (num_occs + (1.2 * (0.25 + 0.75 * field_length / avg_field_length)));
     }
 };
 
 TEST_F(Bm25ExecutorTest, score_is_calculated_for_a_single_term)
 {
+    setup();
     prepare_term(0, 0, 3, 20);
     EXPECT_TRUE(execute(get_score(3.0, 20)));
 }
 
 TEST_F(Bm25ExecutorTest, score_is_calculated_for_multiple_terms)
 {
+    setup();
     prepare_term(0, 0, 3, 20);
     prepare_term(1, 0, 7, 5);
     EXPECT_TRUE(execute(get_score(3.0, 20) + get_score(7.0, 5.0)));
@@ -131,6 +145,7 @@ TEST_F(Bm25ExecutorTest, score_is_calculated_for_multiple_terms)
 
 TEST_F(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored)
 {
+    setup();
     prepare_term(0, 0, 3, 20);
     prepare_term(1, 0, 7, 5, 123);
     EXPECT_TRUE(execute(get_score(3.0, 20)));
@@ -138,8 +153,17 @@ TEST_F(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored)
 
 TEST_F(Bm25ExecutorTest, term_searching_another_field_is_ignored)
 {
+    setup();
     prepare_term(2, 1, 3, 20);
     EXPECT_TRUE(execute(0.0));
+}
+
+TEST_F(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found)
+{
+    test.getQueryEnv().getObjectStore().add("bm25.afl.foo", std::make_unique<AnyWrapper<double>>(15));
+    setup();
+    prepare_term(0, 0, 3, 20);
+    EXPECT_TRUE(execute(get_score(3.0, 20, 15)));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

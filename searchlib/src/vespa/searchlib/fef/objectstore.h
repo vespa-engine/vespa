@@ -2,9 +2,13 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <cassert>
 
 namespace search::fef {
 
+/**
+ * Top level interface for things to store in an IObjectStore.
+ */
 class Anything
 {
 public:
@@ -12,6 +16,9 @@ public:
    virtual ~Anything() { }
 };
 
+/**
+ * Implementation of the Anything interface that wraps a value of the given type.
+ */
 template<typename T>
 class AnyWrapper : public Anything
 {
@@ -22,6 +29,9 @@ private:
     T _value;
 };
 
+/**
+ * Interface for a key value store of Anything instances.
+ */
 class IObjectStore
 {
 public:
@@ -30,6 +40,9 @@ public:
     virtual const Anything * get(const vespalib::string & key) const = 0;
 };
 
+/**
+ * Object store implementation on top of a hash map.
+ */
 class ObjectStore : public IObjectStore
 {
 public:
@@ -41,5 +54,21 @@ private:
     typedef vespalib::hash_map<vespalib::string, Anything *> ObjectMap;
     ObjectMap _objectMap;
 };
+
+namespace objectstore {
+
+/**
+ * Utility function that gets the value stored in an Anything instance (via AnyWrapper).
+ */
+template<typename T>
+const T &
+as_value(const Anything &val) {
+    using WrapperType = AnyWrapper<T>;
+    const auto *wrapper = dynamic_cast<const WrapperType *>(&val);
+    assert(wrapper != nullptr);
+    return wrapper->getValue();
+}
+
+}
 
 }
