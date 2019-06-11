@@ -4,7 +4,6 @@
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -15,8 +14,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".search.writeablefilechunk");
 
-using vespalib::makeTask;
-using vespalib::makeClosure;
 using vespalib::makeLambdaTask;
 using vespalib::FileHeader;
 using vespalib::make_string;
@@ -191,7 +188,7 @@ WriteableFileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t s
 void
 WriteableFileChunk::restart(uint32_t nextChunkId)
 {
-    _executor.execute(makeTask(makeClosure(this, &WriteableFileChunk::fileWriter, nextChunkId)));
+    _executor.execute(makeLambdaTask([this, nextChunkId] {fileWriter(nextChunkId);}));
 }
 
 namespace {
