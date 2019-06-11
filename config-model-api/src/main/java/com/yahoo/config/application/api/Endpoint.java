@@ -5,6 +5,7 @@ import com.yahoo.config.provision.RegionName;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -13,19 +14,37 @@ import java.util.stream.Collectors;
  * should point to.
  *
  * If the endpointId is not set, it will default to the same as the containerId.
+ *
+ * @author ogronnesby
  */
 public class Endpoint {
+
+    /*
+     * Endpoint IDs must be:
+     * - lowercase
+     * - alphanumeric
+     * - begin with a character
+     * - contain zero consecutive dashes
+     * - have a length between 1 and 12
+     */
+    private static final Pattern endpointPattern = Pattern.compile("^[a-z](?:-?[a-z0-9]+)*$");
+    private static final int endpointMaxLength = 12;
+
     private final Optional<String> endpointId;
     private final String containerId;
     private final Set<RegionName> regions;
 
     public Endpoint(Optional<String> endpointId, String containerId, Set<String> regions) {
-        this.endpointId = endpointId;
-        this.containerId = containerId;
+        this.endpointId = Objects.requireNonNull(endpointId, "endpointId must be non-null");
+        this.containerId = Objects.requireNonNull(containerId, "containerId must be non-null");
         this.regions = Set.copyOf(
                 Objects.requireNonNull(
                         regions.stream().map(RegionName::from).collect(Collectors.toList()),
                         "Missing 'regions' parameter"));
+
+        if (endpointId().length() > endpointMaxLength || !endpointPattern.matcher(endpointId()).matches()) {
+            throw new IllegalArgumentException("Invalid endpoint ID: '" + endpointId() + "'");
+        }
     }
 
     public String endpointId() {
@@ -54,4 +73,5 @@ public class Endpoint {
     public int hashCode() {
         return Objects.hash(endpointId, containerId, regions);
     }
+
 }

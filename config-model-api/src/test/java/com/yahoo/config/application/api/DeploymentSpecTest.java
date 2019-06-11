@@ -493,4 +493,49 @@ public class DeploymentSpecTest {
 
         assertEquals(Set.of(RegionName.from("us-east")), spec.endpoints().get(0).regions());
     }
+    @Test
+    public void invalidEndpoints() {
+        assertInvalid("<endpoint id='FOO' container-id='qrs'/>"); // Uppercase
+        assertInvalid("<endpoint id='123' container-id='qrs'/>"); // Starting with non-character
+        assertInvalid("<endpoint id='foo!' container-id='qrs'/>"); // Non-alphanumeric
+        assertInvalid("<endpoint id='foo.bar' container-id='qrs'/>");
+        assertInvalid("<endpoint id='foo--bar' container-id='qrs'/>"); // Multiple consecutive dashes
+        assertInvalid("<endpoint id='foo-' container-id='qrs'/>"); // Trailing dash
+        assertInvalid("<endpoint id='foooooooooooo' container-id='qrs'/>"); // Too long
+        assertInvalid("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>"); // Duplicate
+    }
+
+    @Test
+    public void validEndpoints() {
+        assertEquals(List.of("qrs"), endpointIds("<endpoint container-id='qrs'/>"));
+        assertEquals(List.of("qrs"), endpointIds("<endpoint id='' container-id='qrs'/>"));
+        assertEquals(List.of("f"), endpointIds("<endpoint id='f' container-id='qrs'/>"));
+        assertEquals(List.of("foo"), endpointIds("<endpoint id='foo' container-id='qrs'/>"));
+        assertEquals(List.of("foo-bar"), endpointIds("<endpoint id='foo-bar' container-id='qrs'/>"));
+        assertEquals(List.of("foo", "bar"), endpointIds("<endpoint id='foo' container-id='qrs'/><endpoint id='bar' container-id='qrs'/>"));
+        assertEquals(List.of("fooooooooooo"), endpointIds("<endpoint id='fooooooooooo' container-id='qrs'/>"));
+    }
+
+    private static void assertInvalid(String endpointTag) {
+        try {
+            endpointIds(endpointTag);
+            fail("Expected exception for input '" + endpointTag + "'");
+        } catch (IllegalArgumentException ignored) {}
+    }
+
+    private static List<String> endpointIds(String endpointTag) {
+        var xml = "<deployment>" +
+                  "  <prod>" +
+                  "    <region active=\"true\">us-east</region>" +
+                  "  </prod>" +
+                  "  <endpoints>" +
+                  endpointTag +
+                  "  </endpoints>" +
+                  "</deployment>";
+
+        return DeploymentSpec.fromXml(xml).endpoints().stream()
+                             .map(Endpoint::endpointId)
+                             .collect(Collectors.toList());
+    }
+
 }

@@ -183,7 +183,11 @@ public class DeploymentSpecXmlReader {
                 regions.add(region);
             }
 
-            endpoints.add(new Endpoint(rotationId, containerId.get(), regions));
+            var endpoint = new Endpoint(rotationId, containerId.get(), regions);
+            if (endpoints.contains(endpoint)) {
+                throw new IllegalArgumentException("Duplicate 'endpoint' in 'endpoints' tag");
+            }
+            endpoints.add(endpoint);
         }
 
         return endpoints;
