@@ -25,10 +25,9 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class RemoteMetricsFetcher extends HttpMetricFetcher {
-    /**
-     * @param service The service to fetch metrics from
-     * @param port    The port to use
-     */
+
+    final static String METRICS_PATH = STATE_PATH + "metrics";
+
     RemoteMetricsFetcher(VespaService service, int port) {
         super(service, port, METRICS_PATH);
     }
@@ -50,7 +49,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    public Metrics createMetrics(String data, int fetchCount) {
+    Metrics createMetrics(String data, int fetchCount) {
         Metrics remoteMetrics = new Metrics();
         try {
             remoteMetrics = parse(data);
@@ -61,7 +60,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
         return remoteMetrics;
     }
 
-    Metrics parse(String data) throws JSONException {
+    private Metrics parse(String data) throws JSONException {
         JSONObject o = new JSONObject(data);
         if (!(o.has("metrics"))) {
             return new Metrics(); //empty

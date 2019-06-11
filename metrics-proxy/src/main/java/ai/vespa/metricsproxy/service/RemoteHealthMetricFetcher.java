@@ -18,13 +18,10 @@ import java.util.logging.Logger;
  * @author Jo Kristian Bergum
  */
 public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
-
     private final static Logger log = Logger.getLogger(RemoteHealthMetricFetcher.class.getPackage().getName());
 
-    /**
-     * @param service The service to fetch metrics from
-     * @param port    The port to use
-     */
+    private final static String HEALTH_PATH = STATE_PATH + "health";
+
     public RemoteHealthMetricFetcher(VespaService service, int port) {
         super(service, port, HEALTH_PATH);
     }
@@ -45,7 +42,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    HealthMetric createHealthMetrics(String data, int fetchCount) {
+    private HealthMetric createHealthMetrics(String data, int fetchCount) {
         HealthMetric healthMetric = HealthMetric.getFailed("Failed fetching status page for service");
         try {
             healthMetric = parse(data);

@@ -30,7 +30,6 @@ public class Metrics {
 
     private void ensureNotFrozen() {
         if (isFrozen) throw new IllegalStateException("Frozen Metrics cannot be modified!");
-
     }
 
     public long getTimeStamp() {
