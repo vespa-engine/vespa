@@ -81,6 +81,7 @@ public class NodeAdminStateUpdater {
             try {
                 if (suspendedStates.contains(currentState)) return;
                 nodeAdmin.updateNodeAgentMetrics();
+                nodeAdmin.updateNodeAdminMetrics();
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Metric fetcher scheduler failed", e);
             }
