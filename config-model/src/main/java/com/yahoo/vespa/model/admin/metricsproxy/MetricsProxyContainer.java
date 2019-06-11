@@ -45,8 +45,8 @@ public class MetricsProxyContainer extends Container implements
 
     private final boolean isHostedVespa;
 
-    public MetricsProxyContainer(AbstractConfigProducer parent, int index, boolean isHostedVespa) {
-        super(parent, "metricsproxy." + index, index);
+    public MetricsProxyContainer(AbstractConfigProducer parent, String hostname, int index, boolean isHostedVespa) {
+        super(parent, hostname, index);
         this.isHostedVespa = isHostedVespa;
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));

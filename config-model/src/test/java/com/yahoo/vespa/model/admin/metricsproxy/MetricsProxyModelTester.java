@@ -32,7 +32,7 @@ class MetricsProxyModelTester {
     static final String CLUSTER_CONFIG_ID = "admin/metrics";
 
     // Used for all configs that are produced by the container, not the cluster.
-    static final String CONTAINER_CONFIG_ID = CLUSTER_CONFIG_ID + "/metricsproxy.0";
+    static final String CONTAINER_CONFIG_ID = CLUSTER_CONFIG_ID + "/localhost";
 
     static VespaModel getModel(String servicesXml) {
         var numberOfHosts = 1;
@@ -87,8 +87,8 @@ class MetricsProxyModelTester {
         return new QrStartConfig((QrStartConfig.Builder) model.getConfig(new QrStartConfig.Builder(), CLUSTER_CONFIG_ID));
     }
 
-    static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model) {
-        return new NodeDimensionsConfig((NodeDimensionsConfig.Builder) model.getConfig(new NodeDimensionsConfig.Builder(), CONTAINER_CONFIG_ID));
+    static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model, String configId) {
+        return new NodeDimensionsConfig((NodeDimensionsConfig.Builder) model.getConfig(new NodeDimensionsConfig.Builder(), configId));
     }
 
     static VespaServicesConfig getVespaServicesConfig(String servicesXml) {

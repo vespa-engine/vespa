@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Test;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CONTAINER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_FLAVOR;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
@@ -101,7 +102,9 @@ public class MetricsProxyContainerTest {
     public void hosted_application_propagates_node_dimensions() {
         String services = servicesWithContent();
         VespaModel hostedModel = getHostedModel(services);
-        NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel);
+        assertEquals(1, hostedModel.getHosts().size());
+        String configId = CLUSTER_CONFIG_ID + "/" + hostedModel.getHosts().iterator().next().getHostname();
+        NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel, configId);
 
         assertEquals("content", config.dimensions(NodeDimensionNames.CLUSTER_TYPE));
         assertEquals("my-content", config.dimensions(NodeDimensionNames.CLUSTER_ID));

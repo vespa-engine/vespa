@@ -31,7 +31,7 @@ public class TestUtil {
                                                       MetricsConsumers consumers,
                                                       ApplicationDimensions applicationDimensions,
                                                       NodeDimensions nodeDimensions) {
-        VespaMetrics metrics = new VespaMetrics(consumers, vespaServices);
+        VespaMetrics metrics = new VespaMetrics(consumers);
         return new MetricsManager(vespaServices, metrics, new ExternalMetrics(consumers),
                                   applicationDimensions, nodeDimensions);
     }
