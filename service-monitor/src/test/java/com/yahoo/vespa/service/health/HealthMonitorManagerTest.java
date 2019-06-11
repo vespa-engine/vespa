@@ -3,15 +3,12 @@ package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import com.yahoo.vespa.service.duper.DuperModelManager;
 import com.yahoo.vespa.service.duper.InfraApplication;
 import com.yahoo.vespa.service.duper.ProxyHostApplication;
-import com.yahoo.vespa.service.duper.TestZoneApplication;
-import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +19,6 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,62 +42,6 @@ public class HealthMonitorManagerTest {
         verify(monitor, times(0)).close();
         manager.applicationRemoved(applicationInfo.getApplicationId());
         verify(monitor, times(1)).close();
-    }
-
-    @Test
-    public void verifyZoneApplicationIsMonitored() {
-        ApplicationInfo zoneApplicationInfo = new TestZoneApplication.Builder()
-                .addNodeAdminCluster("h1", "h2")
-                .addRoutingCluster("r1")
-                .build()
-                .makeApplicationInfo();
-
-        verify(monitorFactory, times(0)).create(zoneApplicationInfo.getApplicationId());
-        verify(monitor, times(0)).monitor(any());
-        manager.applicationActivated(zoneApplicationInfo);
-        verify(monitorFactory).create(zoneApplicationInfo.getApplicationId());
-        verify(monitor).monitor(any());
-
-        when(monitor.getStatus(any(), any(), any(), any())).thenReturn(new ServiceStatusInfo(ServiceStatus.DOWN));
-        verifyNodeAdminGetStatus(0);
-        assertEquals(ServiceStatus.DOWN, getNodeAdminStatus());
-        verifyNodeAdminGetStatus(1);
-
-        verifyRoutingGetStatus(0);
-        assertEquals(ServiceStatus.NOT_CHECKED, getRoutingStatus());
-        verifyRoutingGetStatus(0);
-    }
-
-    private void verifyNodeAdminGetStatus(int invocations) {
-        verify(monitor, times(invocations)).getStatus(
-                eq(ZoneApplication.getApplicationId()),
-                eq(ZoneApplication.getNodeAdminClusterId()),
-                any(),
-                any());
-    }
-
-    private void verifyRoutingGetStatus(int invocations) {
-        verify(monitor, times(invocations)).getStatus(
-                eq(ZoneApplication.getApplicationId()),
-                eq(ZoneApplication.getRoutingClusterId()),
-                any(),
-                any());
-    }
-
-    private ServiceStatus getNodeAdminStatus() {
-        return manager.getStatus(
-                ZoneApplication.getApplicationId(),
-                ZoneApplication.getNodeAdminClusterId(),
-                ZoneApplication.getNodeAdminServiceType(),
-                new ConfigId("foo")).serviceStatus();
-    }
-
-    private ServiceStatus getRoutingStatus() {
-        return manager.getStatus(
-                ZoneApplication.getApplicationId(),
-                ZoneApplication.getRoutingClusterId(),
-                ZoneApplication.getRoutingServiceType(),
-                new ConfigId("bar")).serviceStatus();
     }
 
     @Test

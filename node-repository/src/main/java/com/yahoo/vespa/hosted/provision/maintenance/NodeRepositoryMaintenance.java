@@ -174,7 +174,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             rebootInterval = Duration.ofDays(30);
             nodeRetirerInterval = Duration.ofMinutes(30);
             metricsInterval = Duration.ofMinutes(1);
-            infrastructureProvisionInterval = Duration.ofMinutes(3);
+            infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             loadBalancerExpiry = Duration.ofHours(1);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions

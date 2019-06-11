@@ -52,15 +52,6 @@ public class HostedVespaClusterPolicyTest {
                 policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
-    @Test // TODO: Remove after removing tenant hosts from zone-app
-    public void testNodeAdminSuspensionLimit() {
-        when(applicationApi.applicationId()).thenReturn(VespaModelUtil.ZONE_APPLICATION_ID);
-        when(clusterApi.clusterId()).thenReturn(VespaModelUtil.NODE_ADMIN_CLUSTER_ID);
-        when(clusterApi.isStorageCluster()).thenReturn(false);
-        assertEquals(ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT,
-                policy.getConcurrentSuspensionLimit(clusterApi));
-    }
-
     @Test
     public void testTenantHostSuspensionLimit() {
         when(applicationApi.applicationId()).thenReturn(VespaModelUtil.TENANT_HOST_APPLICATION_ID);

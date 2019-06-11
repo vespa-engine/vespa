@@ -13,7 +13,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,8 +29,6 @@ import java.util.stream.Collectors;
  */
 public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
 
-    private static final ApplicationId ZONE_APPLICATION_ID = ApplicationId.from("hosted-vespa", "routing", "default");
-
     private final Clock clock;
     
     private Instant previousRun;
@@ -47,22 +44,15 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
         Instant windowEnd = clock.instant();
         Instant windowStart = previousRun;
         previousRun = windowEnd;
-        return nodeRepository().getNodes().stream()
+        return nodeRepository().getNodes(NodeType.tenant).stream()
                                .filter(node -> hasManualStateChangeSince(windowStart, node))
-                               .flatMap(node -> owner(node).stream())
+                               .flatMap(node -> node.allocation().map(Allocation::owner).stream())
                                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private boolean hasManualStateChangeSince(Instant instant, Node node) {
         return node.history().events().stream()
                 .anyMatch(event -> event.agent() == Agent.operator && event.at().isAfter(instant));
-    }
-
-    private Optional<ApplicationId> owner(Node node) {
-        if (node.allocation().isPresent()) return node.allocation().map(Allocation::owner);
-
-        // TODO: Remove after removing tenant hosts from zone-app
-        return node.type() == NodeType.host ? Optional.of(ZONE_APPLICATION_ID) : Optional.empty();
     }
 
     /**
