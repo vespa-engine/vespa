@@ -46,7 +46,7 @@ public final class Application implements AutoCloseable {
 
     /**
      * This system property is set to "true" upon creation of an Application.
-     * This is useful for components which are created by dependendcy injection which needs to modify
+     * This is useful for components which are created by dependency injection which needs to modify
      * their behavior to function without reliance on any processes outside the JVM.
      */
     public static final String vespaLocalProperty = "vespa.local";
