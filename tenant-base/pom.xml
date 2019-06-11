@@ -41,7 +41,6 @@
 
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>container-dependency-versions</artifactId>
@@ -49,7 +48,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 
@@ -224,21 +222,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${surefire_version}</version>
                         <configuration>
-                            <groups>com.yahoo.vespa.tenant.cd.SystemTest</groups>
-                            <excludedGroups />
-                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
-                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
-			    <trimStackTrace>false</trimStackTrace>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-report-plugin</artifactId>
-                        <version>${surefire_version}</version>
-                        <configuration>
-                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                            <groups>ai.vespa.hosted.cd.SystemTest</groups>
+                            <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -252,21 +238,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${surefire_version}</version>
                         <configuration>
-                            <groups>com.yahoo.vespa.tenant.cd.StagingTest</groups>
-                            <excludedGroups />
-                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
-                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
-			    <trimStackTrace>false</trimStackTrace>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-report-plugin</artifactId>
-                        <version>${surefire_version}</version>
-                        <configuration>
-                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                            <groups>ai.vespa.hosted.cd.StagingTest</groups>
+                            <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -280,21 +254,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${surefire_version}</version>
                         <configuration>
-                            <groups>com.yahoo.vespa.tenant.cd.ProductionTest</groups>
-                            <excludedGroups />
-                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
-                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
-			    <trimStackTrace>false</trimStackTrace>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-report-plugin</artifactId>
-                        <version>${surefire_version}</version>
-                        <configuration>
-                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                            <groups>ai.vespa.hosted.cd.ProductionTest</groups>
+                            <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -304,8 +266,38 @@
 
     <build>
         <finalName>${project.artifactId}</finalName>
-        <plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire_version}</version>
+                    <configuration>
+                        <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                        <trimStackTrace>false</trimStackTrace>
+                        <systemPropertyVariables>
+                            <application>${application}</application>
+                            <tenant>${tenant}</tenant>
+                            <instance>${instance}</instance>
+                            <endpoint>${endpoint}</endpoint>
+                            <privateKeyFile>${privateKeyFile}</privateKeyFile>
+                            <certificateFile>${certificateFile}</certificateFile>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>${surefire_version}</version>
+                    <configuration>
+                        <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
 
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -369,23 +361,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire_version}</version>
                 <configuration>
-                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                     <excludedGroups>
-                        com.yahoo.vespa.tenant.cd.SystemTest,
-                        com.yahoo.vespa.tenant.cd.StagingTest,
-                        com.yahoo.vespa.tenant.cd.ProductionTest
+                        ai.vespa.hosted.cd.SystemTest,
+                        ai.vespa.hosted.cd.StagingTest,
+                        ai.vespa.hosted.cd.ProductionTest
                     </excludedGroups>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>${surefire_version}</version>
-                <configuration>
-                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                 </configuration>
             </plugin>
         </plugins>
