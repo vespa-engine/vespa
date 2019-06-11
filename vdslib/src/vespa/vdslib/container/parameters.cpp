@@ -5,6 +5,7 @@
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 using namespace vdslib;
 

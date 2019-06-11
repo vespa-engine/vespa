@@ -37,6 +37,7 @@
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton");

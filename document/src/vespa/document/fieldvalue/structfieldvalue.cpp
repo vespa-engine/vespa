@@ -14,6 +14,7 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <algorithm>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.structfieldvalue");

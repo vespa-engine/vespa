@@ -5,6 +5,7 @@
 
 #include <vbench/core/string.h>
 #include <vespa/vespalib/locale/c.h>
+#include <cerrno>
 
 namespace vbench {
 

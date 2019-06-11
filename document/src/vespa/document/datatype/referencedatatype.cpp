@@ -3,6 +3,7 @@
 #include "referencedatatype.h"
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <ostream>
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;

@@ -24,6 +24,7 @@
 #include <vespa/persistence/spi/read_consistency.h>
 #include <list>
 #include <deque>
+#include <ostream>
 
 namespace document {
     class Document;

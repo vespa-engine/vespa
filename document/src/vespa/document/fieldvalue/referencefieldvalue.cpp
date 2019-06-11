@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
+#include <ostream>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;

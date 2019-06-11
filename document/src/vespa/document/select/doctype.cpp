@@ -6,6 +6,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <ostream>
 
 namespace document::select {
 

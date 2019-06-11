@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.select.operator");

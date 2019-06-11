@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 #include <vespa/config-stor-distribution.h>
 
 namespace storage {

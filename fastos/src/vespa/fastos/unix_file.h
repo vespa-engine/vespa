@@ -10,6 +10,7 @@
 #pragma once
 
 #include <vespa/fastos/file.h>
+#include <cerrno>
 
 /**
  * This is the generic UNIX implementation of @ref FastOS_FileInterface.
