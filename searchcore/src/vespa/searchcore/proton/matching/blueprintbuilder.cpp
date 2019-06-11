@@ -4,6 +4,7 @@
 #include "blueprintbuilder.h"
 #include "termdatafromnode.h"
 #include "same_element_builder.h"
+#include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>

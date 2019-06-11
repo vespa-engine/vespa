@@ -52,7 +52,7 @@ public:
     search::queryeval::ISourceSelector &selector() { return *_selector; }
 
     // Implements ISearchContext
-    search::queryeval::Searchable &getIndexes() override {
+    IndexSearchable &getIndexes() override {
         return *_indexes;
     }
 
