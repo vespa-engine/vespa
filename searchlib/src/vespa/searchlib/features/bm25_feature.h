@@ -30,7 +30,8 @@ private:
 
 public:
     Bm25Executor(const fef::FieldInfo& field,
-                 const fef::IQueryEnvironment& env);
+                 const fef::IQueryEnvironment& env,
+                 double avg_field_length);
 
     void handle_bind_match_data(const fef::MatchData& match_data) override;
     void execute(uint32_t docId) override;
@@ -53,6 +54,7 @@ public:
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
     }
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    void prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 

@@ -2,21 +2,17 @@
 
 #include "queryenvironment.h"
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 QueryEnvironment::QueryEnvironment(IndexEnvironment *env)
     : _indexEnv(env),
       _terms(),
       _properties(),
       _location(),
-      _attrCtx((env == NULL) ? attribute::IAttributeContext::UP() : env->getAttributeMap().createContext())
+      _attrCtx((env == nullptr) ? attribute::IAttributeContext::UP() : env->getAttributeMap().createContext())
 {
 }
 
 QueryEnvironment::~QueryEnvironment() { }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}
