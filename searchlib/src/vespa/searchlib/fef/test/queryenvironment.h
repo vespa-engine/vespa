@@ -40,6 +40,9 @@ public:
     const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : NULL; }
     const Location & getLocation() const override { return _location; }
     const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
+    double get_average_field_length(const vespalib::string &) const override {
+        return 1.0;
+    }
     const IIndexEnvironment &getIndexEnvironment() const override { assert(_indexEnv != NULL); return *_indexEnv; }
 
     /** Returns a reference to the index environment of this. */

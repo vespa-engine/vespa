@@ -9,6 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <vespa/searchcorespi/index/indexsearchable.h>
 
 using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
@@ -158,7 +159,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _hardDoom(hardDoom),
       _query(),
       _match_limiter(),
-      _queryEnv(indexEnv, attributeContext, rankProperties),
+      _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
       _mdl(),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),

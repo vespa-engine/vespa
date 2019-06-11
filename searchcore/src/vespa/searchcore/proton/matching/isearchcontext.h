@@ -6,6 +6,8 @@
 
 #include <memory>
 
+namespace searchcorespi { class IndexSearchable; }
+
 namespace proton::matching {
 
 /**
@@ -31,13 +33,14 @@ public:
     ISearchContext & operator = (const ISearchContext &) = delete;
 
     typedef search::queryeval::Searchable      Searchable;
+    using IndexSearchable = searchcorespi::IndexSearchable;
 
     /**
      * Obtain the index fields searchable.
      *
      * @return index fields searchable.
      **/
-    virtual Searchable &getIndexes() = 0;
+    virtual IndexSearchable &getIndexes() = 0;
 
     /**
      * Obtain the attribute fields searchable.

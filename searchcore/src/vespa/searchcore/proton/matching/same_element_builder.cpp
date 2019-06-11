@@ -4,6 +4,7 @@
 #include "querynodes.h"
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchcorespi/index/indexsearchable.h>
 
 using search::queryeval::Blueprint;
 using search::queryeval::EmptyBlueprint;

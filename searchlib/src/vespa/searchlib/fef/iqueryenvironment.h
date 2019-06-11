@@ -70,6 +70,15 @@ public:
     virtual const search::attribute::IAttributeContext & getAttributeContext() const = 0;
 
     /**
+     * Returns the average field length for the given field.
+     *
+     * @param field_name field name
+     *
+     * @return average field length
+     **/
+    virtual double get_average_field_length(const vespalib::string &field_name) const = 0;
+
+    /**
      * Returns a const view of the index environment.
      *
      * @return index environment
