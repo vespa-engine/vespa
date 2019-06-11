@@ -1,5 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for IndexManager.
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
@@ -21,8 +20,8 @@
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <set>
@@ -32,6 +31,8 @@ LOG_SETUP("indexmanager_test");
 
 using document::Document;
 using document::FieldValue;
+using proton::index::IndexConfig;
+using proton::index::IndexManager;
 using search::SequencedTaskExecutor;
 using search::SerialNum;
 using search::TuneFileAttributes;
@@ -40,10 +41,10 @@ using search::TuneFileIndexing;
 using search::datastore::EntryRef;
 using search::index::DocBuilder;
 using search::index::DummyFileHeaderContext;
+using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::schema::DataType;
 using search::index::test::MockFieldLengthInspector;
-using vespalib::makeLambdaTask;
 using search::memoryindex::CompactWordsStore;
 using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
@@ -51,8 +52,7 @@ using std::set;
 using std::string;
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::ThreadStackExecutor;
-using proton::index::IndexManager;
-using proton::index::IndexConfig;
+using vespalib::makeLambdaTask;
 
 using namespace proton;
 using namespace searchcorespi;
@@ -61,12 +61,12 @@ using namespace searchcorespi::index;
 namespace {
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer {
-    virtual bool
-    reconfigure(vespalib::Closure0<bool>::UP closure) override
-    {
+
+    virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) override {
         bool ret = true;
-        if (closure.get() != NULL)
+        if (closure.get() != nullptr) {
             ret = closure->call(); // Perform index manager reconfiguration now
+        }
         return ret;
     }
 
@@ -97,7 +97,7 @@ Document::UP buildDocument(DocBuilder &doc_builder, int id,
 
 std::shared_ptr<search::IDestructorCallback> emptyDestructorCallback;
 
-struct Fixture {
+struct IndexManagerTest : public ::testing::Test {
     SerialNum _serial_num;
     IndexManagerDummyReconfigurer _reconfigurer;
     DummyFileHeaderContext _fileHeaderContext;
@@ -107,7 +107,7 @@ struct Fixture {
     Schema _schema;
     DocBuilder _builder;
 
-    Fixture()
+    IndexManagerTest()
         : _serial_num(0),
           _reconfigurer(),
           _fileHeaderContext(),
@@ -123,7 +123,7 @@ struct Fixture {
         resetIndexManager();
     }
 
-    ~Fixture() {
+    ~IndexManagerTest() {
         _writeService.shutdown();
     }
 
@@ -159,19 +159,27 @@ struct Fixture {
                      uint32_t expNumMemoryIndexes,
                      SerialNum expLastiskIndexSerialNum,
                      SerialNum expLastMemoryIndexSerialNum);
+
+    IIndexCollection::SP get_source_collection() const {
+        return _index_manager->getMaintainer().getSourceCollection();
+    }
 };
 
-void Fixture::flushIndexManager() {
+void
+IndexManagerTest::flushIndexManager()
+{
     vespalib::Executor::Task::UP task;
     SerialNum serialNum = _index_manager->getCurrentSerialNum();
     auto &maintainer = _index_manager->getMaintainer();
-    runAsMaster([&]() { task = maintainer.initFlush(serialNum, NULL); });
+    runAsMaster([&]() { task = maintainer.initFlush(serialNum, nullptr); });
     if (task.get()) {
         task->run();
     }
 }
 
-Document::UP Fixture::addDocument(uint32_t id) {
+Document::UP
+IndexManagerTest::addDocument(uint32_t id)
+{
     Document::UP doc = buildDocument(_builder, id, "foo");
     SerialNum serialNum = ++_serial_num;
     runAsIndex([&]() { _index_manager->putDocument(id, *doc, serialNum);
@@ -181,16 +189,18 @@ Document::UP Fixture::addDocument(uint32_t id) {
     return doc;
 }
 
-void Fixture::resetIndexManager() {
+void
+IndexManagerTest::resetIndexManager()
+{
     _index_manager.reset();
     _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(), 1,
                              _reconfigurer, _writeService, _writeService.getMasterExecutor(),
                              TuneFileIndexManager(), TuneFileAttributes(),_fileHeaderContext);
 }
 
-
-void Fixture::assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryIndexes,
-                          SerialNum expLastDiskIndexSerialNum, SerialNum expLastMemoryIndexSerialNum)
+void
+IndexManagerTest::assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryIndexes,
+                              SerialNum expLastDiskIndexSerialNum, SerialNum expLastMemoryIndexSerialNum)
 {
     searchcorespi::IndexManagerStats stats(*_index_manager);
     SerialNum lastDiskIndexSerialNum = 0;
@@ -203,36 +213,38 @@ void Fixture::assertStats(uint32_t expNumDiskIndexes, uint32_t expNumMemoryIndex
     if (!memoryIndexes.empty()) {
         lastMemoryIndexSerialNum = memoryIndexes.back().getSerialNum();
     }
-    EXPECT_EQUAL(expNumDiskIndexes, diskIndexes.size());
-    EXPECT_EQUAL(expNumMemoryIndexes, memoryIndexes.size());
-    EXPECT_EQUAL(expLastDiskIndexSerialNum, lastDiskIndexSerialNum);
-    EXPECT_EQUAL(expLastMemoryIndexSerialNum, lastMemoryIndexSerialNum);
+    EXPECT_EQ(expNumDiskIndexes, diskIndexes.size());
+    EXPECT_EQ(expNumMemoryIndexes, memoryIndexes.size());
+    EXPECT_EQ(expLastDiskIndexSerialNum, lastDiskIndexSerialNum);
+    EXPECT_EQ(expLastMemoryIndexSerialNum, lastMemoryIndexSerialNum);
 }
 
-
-TEST_F("requireThatEmptyMemoryIndexIsNotFlushed", Fixture) {
-    IIndexCollection::SP sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(1u, sources->getSourceCount());
-
-    f.flushIndexManager();
-
-    sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(1u, sources->getSourceCount());
-}
-
-TEST_F("requireThatEmptyMemoryIndexIsFlushedIfSourceSelectorChanged", Fixture)
+TEST_F(IndexManagerTest, require_that_empty_memory_index_is_not_flushed)
 {
-    IIndexCollection::SP sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(1u, sources->getSourceCount());
+    auto sources = get_source_collection();
+    EXPECT_EQ(1u, sources->getSourceCount());
 
-    f.removeDocument(docid, 42);
-    f.flushIndexManager();
+    flushIndexManager();
 
-    sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(2u, sources->getSourceCount());
+    sources = get_source_collection();
+    EXPECT_EQ(1u, sources->getSourceCount());
 }
 
-set<uint32_t> readDiskIds(const string &dir, const string &type) {
+TEST_F(IndexManagerTest, require_that_empty_memory_index_is_flushed_if_source_selector_changed)
+{
+    auto sources = get_source_collection();
+    EXPECT_EQ(1u, sources->getSourceCount());
+
+    removeDocument(docid, 42);
+    flushIndexManager();
+
+    sources = get_source_collection();
+    EXPECT_EQ(2u, sources->getSourceCount());
+}
+
+set<uint32_t>
+readDiskIds(const string &dir, const string &type)
+{
     set<uint32_t> ids;
     FastOS_DirectoryScan dir_scan(dir.c_str());
     while (dir_scan.ReadNext()) {
@@ -254,76 +266,77 @@ set<uint32_t> readDiskIds(const string &dir, const string &type) {
     return ids;
 }
 
-TEST_F("requireThatMemoryIndexIsFlushed", Fixture) {
+TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
+{
     FastOS_StatInfo stat;
     {
-        f.addDocument(docid);
+        addDocument(docid);
 
-        IIndexCollection::SP sources =
-            f._index_manager->getMaintainer().getSourceCollection();
-        EXPECT_EQUAL(1u, sources->getSourceCount());
-        EXPECT_EQUAL(1u, sources->getSourceId(0));
+        auto sources = get_source_collection();
+        EXPECT_EQ(1u, sources->getSourceCount());
+        EXPECT_EQ(1u, sources->getSourceId(0));
 
-        IndexFlushTarget target(f._index_manager->getMaintainer());
-        EXPECT_EQUAL(0, target.getLastFlushTime().time());
+        IndexFlushTarget target(_index_manager->getMaintainer());
+        EXPECT_EQ(0, target.getLastFlushTime().time());
         vespalib::Executor::Task::UP flushTask;
-        f.runAsMaster([&]() { flushTask = target.initFlush(1); });
+        runAsMaster([&]() { flushTask = target.initFlush(1); });
         flushTask->run();
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
-        EXPECT_EQUAL(stat._modifiedTime, target.getLastFlushTime().time());
+        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().time());
 
-        sources = f._index_manager->getMaintainer().getSourceCollection();
-        EXPECT_EQUAL(2u, sources->getSourceCount());
-        EXPECT_EQUAL(1u, sources->getSourceId(0));
-        EXPECT_EQUAL(2u, sources->getSourceId(1));
+        sources = get_source_collection();
+        EXPECT_EQ(2u, sources->getSourceCount());
+        EXPECT_EQ(1u, sources->getSourceId(0));
+        EXPECT_EQ(2u, sources->getSourceId(1));
 
         set<uint32_t> disk_ids = readDiskIds(index_dir, "flush");
         ASSERT_TRUE(disk_ids.size() == 1);
-        EXPECT_EQUAL(1u, *disk_ids.begin());
+        EXPECT_EQ(1u, *disk_ids.begin());
 
         FlushStats stats = target.getLastFlushStats();
-        EXPECT_EQUAL("test_data/index.flush.1", stats.getPath());
-        EXPECT_EQUAL(7u, stats.getPathElementsToLog());
+        EXPECT_EQ("test_data/index.flush.1", stats.getPath());
+        EXPECT_EQ(7u, stats.getPathElementsToLog());
     }
     { // verify last flush time when loading disk index
-        f.resetIndexManager();
-        IndexFlushTarget target(f._index_manager->getMaintainer());
-        EXPECT_EQUAL(stat._modifiedTime, target.getLastFlushTime().time());
+        resetIndexManager();
+        IndexFlushTarget target(_index_manager->getMaintainer());
+        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().time());
 
         // updated serial number & flush time when nothing to flush
         FastOS_Thread::Sleep(8000);
         fastos::TimeStamp now = fastos::ClockSystem::now();
         vespalib::Executor::Task::UP task;
-        f.runAsMaster([&]() { task = target.initFlush(2); });
-        EXPECT_TRUE(task.get() == NULL);
-        EXPECT_EQUAL(2u, target.getFlushedSerialNum());
-        EXPECT_LESS(stat._modifiedTime, target.getLastFlushTime().time());
-        EXPECT_APPROX(now.time(), target.getLastFlushTime().time(), 8);
+        runAsMaster([&]() { task = target.initFlush(2); });
+        EXPECT_TRUE(task.get() == nullptr);
+        EXPECT_EQ(2u, target.getFlushedSerialNum());
+        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime().time());
+        EXPECT_NEAR(now.time(), target.getLastFlushTime().time(), 8);
     }
 }
 
-TEST_F("requireThatMultipleFlushesGivesMultipleIndexes", Fixture) {
+TEST_F(IndexManagerTest, require_that_multiple_flushes_gives_multiple_indexes)
+{
     size_t flush_count = 10;
     for (size_t i = 0; i < flush_count; ++i) {
-        f.addDocument(docid);
-        f.flushIndexManager();
+        addDocument(docid);
+        flushIndexManager();
     }
     set<uint32_t> disk_ids = readDiskIds(index_dir, "flush");
-    EXPECT_EQUAL(flush_count, disk_ids.size());
+    EXPECT_EQ(flush_count, disk_ids.size());
     uint32_t i = 1;
-    for (set<uint32_t>::iterator it = disk_ids.begin(); it != disk_ids.end();
-         ++it) {
-        EXPECT_EQUAL(i++, *it);
+    for (auto it = disk_ids.begin(); it != disk_ids.end(); ++it) {
+        EXPECT_EQ(i++, *it);
     }
 }
 
-TEST_F("requireThatMaxFlushesSetsUrgent", Fixture) {
+TEST_F(IndexManagerTest, require_that_max_flushes_sets_urgent)
+{
     size_t flush_count = 20;
     for (size_t i = 0; i < flush_count; ++i) {
-        f.addDocument(docid);
-        f.flushIndexManager();
+        addDocument(docid);
+        flushIndexManager();
     }
-    IndexFusionTarget target(f._index_manager->getMaintainer());
+    IndexFusionTarget target(_index_manager->getMaintainer());
     EXPECT_TRUE(target.needUrgentFlush());
 }
 
@@ -331,35 +344,39 @@ uint32_t getSource(const IIndexCollection &sources, uint32_t id) {
     return sources.getSourceSelector().createIterator()->getSource(id);
 }
 
-TEST_F("requireThatPutDocumentUpdatesSelector", Fixture) {
-    f.addDocument(docid);
-    IIndexCollection::SP sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(1u, getSource(*sources, docid));
-    f.flushIndexManager();
-    f.addDocument(docid + 1);
-    sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(1u, getSource(*sources, docid));
-    EXPECT_EQUAL(2u, getSource(*sources, docid + 1));
+TEST_F(IndexManagerTest, require_that_put_document_updates_selector)
+{
+    addDocument(docid);
+    auto sources = get_source_collection();
+    EXPECT_EQ(1u, getSource(*sources, docid));
+    flushIndexManager();
+    addDocument(docid + 1);
+    sources = get_source_collection();
+    EXPECT_EQ(1u, getSource(*sources, docid));
+    EXPECT_EQ(2u, getSource(*sources, docid + 1));
 }
 
-TEST_F("requireThatRemoveDocumentUpdatesSelector", Fixture) {
-    Document::UP doc = f.addDocument(docid);
-    IIndexCollection::SP sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(1u, getSource(*sources, docid));
-    f.flushIndexManager();
-    f.removeDocument(docid, ++f._serial_num);
-    sources = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(2u, getSource(*sources, docid));
+TEST_F(IndexManagerTest, require_that_remove_document_updates_selector)
+{
+    Document::UP doc = addDocument(docid);
+    auto sources = get_source_collection();
+    EXPECT_EQ(1u, getSource(*sources, docid));
+    flushIndexManager();
+    removeDocument(docid, ++_serial_num);
+    sources = get_source_collection();
+    EXPECT_EQ(2u, getSource(*sources, docid));
 }
 
-TEST_F("requireThatSourceSelectorIsFlushed", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
+TEST_F(IndexManagerTest, require_that_source_selector_is_flushed)
+{
+    addDocument(docid);
+    flushIndexManager();
     FastOS_File file((index_dir + "/index.flush.1/selector.dat").c_str());
     ASSERT_TRUE(file.OpenReadOnlyExisting());
 }
 
-TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
+TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
+{
     Schema schema(getSchema());
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
     SequencedTaskExecutor invertThreads(2);
@@ -371,12 +388,12 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     uint64_t index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     uint64_t selector_size = (1) * sizeof(Source);
-    EXPECT_EQUAL(index_size, f._index_manager->getMaintainer().getFlushStats().memory_before_bytes -
-                             f._index_manager->getMaintainer().getFlushStats().memory_after_bytes);
-    EXPECT_EQUAL(0u, f._index_manager->getMaintainer().getFlushStats().disk_write_bytes);
-    EXPECT_EQUAL(0u, f._index_manager->getMaintainer().getFlushStats().cpu_time_required);
+    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats().memory_before_bytes -
+                          _index_manager->getMaintainer().getFlushStats().memory_after_bytes);
+    EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats().disk_write_bytes);
+    EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats().cpu_time_required);
 
-    Document::UP doc = f.addDocument(docid);
+    Document::UP doc = addDocument(docid);
     inverter.invertDocument(docid, *doc);
     invertThreads.sync();
     inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
@@ -385,17 +402,17 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
 
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 1) * sizeof(Source);
-    EXPECT_EQUAL(index_size,
-                 f._index_manager->getMaintainer().getFlushStats().memory_before_bytes -
-                 f._index_manager->getMaintainer().getFlushStats().memory_after_bytes);
-    EXPECT_EQUAL(selector_size + index_size,
-                 f._index_manager->getMaintainer().getFlushStats().disk_write_bytes);
-    EXPECT_EQUAL(selector_size * (3+1) + index_size,
-                 f._index_manager->getMaintainer().getFlushStats().cpu_time_required);
+    EXPECT_EQ(index_size,
+              _index_manager->getMaintainer().getFlushStats().memory_before_bytes -
+              _index_manager->getMaintainer().getFlushStats().memory_after_bytes);
+    EXPECT_EQ(selector_size + index_size,
+              _index_manager->getMaintainer().getFlushStats().disk_write_bytes);
+    EXPECT_EQ(selector_size * (3+1) + index_size,
+              _index_manager->getMaintainer().getFlushStats().cpu_time_required);
 
-    doc = f.addDocument(docid + 10);
+    doc = addDocument(docid + 10);
     inverter.invertDocument(docid + 10, *doc);
-    doc = f.addDocument(docid + 100);
+    doc = addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
     invertThreads.sync();
     inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
@@ -403,137 +420,144 @@ TEST_F("requireThatFlushStatsAreCalculated", Fixture) {
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 100 + 1) * sizeof(Source);
-    EXPECT_EQUAL(index_size,
-                 f._index_manager->getMaintainer().getFlushStats().memory_before_bytes -
-                 f._index_manager->getMaintainer().getFlushStats().memory_after_bytes);
-    EXPECT_EQUAL(selector_size + index_size,
-                 f._index_manager->getMaintainer().getFlushStats().disk_write_bytes);
-    EXPECT_EQUAL(selector_size * (3+1) + index_size,
-                 f._index_manager->getMaintainer().getFlushStats().cpu_time_required);
+    EXPECT_EQ(index_size,
+              _index_manager->getMaintainer().getFlushStats().memory_before_bytes -
+              _index_manager->getMaintainer().getFlushStats().memory_after_bytes);
+    EXPECT_EQ(selector_size + index_size,
+              _index_manager->getMaintainer().getFlushStats().disk_write_bytes);
+    EXPECT_EQ(selector_size * (3+1) + index_size,
+              _index_manager->getMaintainer().getFlushStats().cpu_time_required);
 }
 
-TEST_F("requireThatFusionStatsAreCalculated", Fixture) {
-    f.addDocument(docid);
-    EXPECT_EQUAL(0u, f._index_manager->getMaintainer().getFusionStats().diskUsage);
-    f.flushIndexManager();
-    ASSERT_TRUE(f._index_manager->getMaintainer().getFusionStats().diskUsage > 0);
+TEST_F(IndexManagerTest, require_that_fusion_stats_are_calculated)
+{
+    addDocument(docid);
+    EXPECT_EQ(0u, _index_manager->getMaintainer().getFusionStats().diskUsage);
+    flushIndexManager();
+    ASSERT_TRUE(_index_manager->getMaintainer().getFusionStats().diskUsage > 0);
 }
 
-TEST_F("requireThatPutDocumentUpdatesSerialNum", Fixture) {
-    f._serial_num = 0;
-    EXPECT_EQUAL(0u, f._index_manager->getCurrentSerialNum());
-    f.addDocument(docid);
-    EXPECT_EQUAL(1u, f._index_manager->getCurrentSerialNum());
+TEST_F(IndexManagerTest, require_that_put_document_updates_serial_num)
+{
+    _serial_num = 0;
+    EXPECT_EQ(0u, _index_manager->getCurrentSerialNum());
+    addDocument(docid);
+    EXPECT_EQ(1u, _index_manager->getCurrentSerialNum());
 }
 
-TEST_F("requireThatRemoveDocumentUpdatesSerialNum", Fixture) {
-    f._serial_num = 0;
-    Document::UP doc = f.addDocument(docid);
-    EXPECT_EQUAL(1u, f._index_manager->getCurrentSerialNum());
-    f.removeDocument(docid, ++f._serial_num);
-    EXPECT_EQUAL(2u, f._index_manager->getCurrentSerialNum());
+TEST_F(IndexManagerTest, require_that_remove_document_updates_serial_num)
+{
+    _serial_num = 0;
+    Document::UP doc = addDocument(docid);
+    EXPECT_EQ(1u, _index_manager->getCurrentSerialNum());
+    removeDocument(docid, ++_serial_num);
+    EXPECT_EQ(2u, _index_manager->getCurrentSerialNum());
 }
 
-TEST_F("requireThatFlushUpdatesSerialNum", Fixture) {
-    f._serial_num = 0;
-    f.addDocument(docid);
-    EXPECT_EQUAL(1u, f._index_manager->getCurrentSerialNum());
-    EXPECT_EQUAL(0u, f._index_manager->getFlushedSerialNum());
-    f.flushIndexManager();
-    EXPECT_EQUAL(1u, f._index_manager->getCurrentSerialNum());
-    EXPECT_EQUAL(1u, f._index_manager->getFlushedSerialNum());
+TEST_F(IndexManagerTest, require_that_flush_updates_serial_num)
+{
+    _serial_num = 0;
+    addDocument(docid);
+    EXPECT_EQ(1u, _index_manager->getCurrentSerialNum());
+    EXPECT_EQ(0u, _index_manager->getFlushedSerialNum());
+    flushIndexManager();
+    EXPECT_EQ(1u, _index_manager->getCurrentSerialNum());
+    EXPECT_EQ(1u, _index_manager->getFlushedSerialNum());
 }
 
-TEST_F("requireThatFusionUpdatesIndexes", Fixture) {
+TEST_F(IndexManagerTest, require_that_fusion_updates_indexes)
+{
     for (size_t i = 0; i < 10; ++i) {
-        f.addDocument(docid + i);
-        f.flushIndexManager();
+        addDocument(docid + i);
+        flushIndexManager();
     }
     uint32_t ids[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    IIndexCollection::SP
-        source_list(f._index_manager->getMaintainer().getSourceCollection());
-    EXPECT_EQUAL(10u + 1, source_list->getSourceCount());  // disk + mem
-    EXPECT_EQUAL(ids[2], getSource(*source_list, docid + 2));
-    EXPECT_EQUAL(ids[6], getSource(*source_list, docid + 6));
+    auto sources = get_source_collection();
+    EXPECT_EQ(10u + 1, sources->getSourceCount());  // disk + mem
+    EXPECT_EQ(ids[2], getSource(*sources, docid + 2));
+    EXPECT_EQ(ids[6], getSource(*sources, docid + 6));
 
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.assign(ids, ids + 4);
-    f._index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec);
 
     set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
-    EXPECT_EQUAL(1u, fusion_ids.size());
-    EXPECT_EQUAL(ids[3], *fusion_ids.begin());
+    EXPECT_EQ(1u, fusion_ids.size());
+    EXPECT_EQ(ids[3], *fusion_ids.begin());
 
-    source_list = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(10u + 1 - 4 + 1, source_list->getSourceCount());
-    EXPECT_EQUAL(0u, getSource(*source_list, docid + 2));
-    EXPECT_EQUAL(3u, getSource(*source_list, docid + 6));
+    sources = get_source_collection();
+    EXPECT_EQ(10u + 1 - 4 + 1, sources->getSourceCount());
+    EXPECT_EQ(0u, getSource(*sources, docid + 2));
+    EXPECT_EQ(3u, getSource(*sources, docid + 6));
 }
 
-TEST_F("requireThatFlushTriggersFusion", Fixture) {
+TEST_F(IndexManagerTest, require_that_flush_triggers_fusion)
+{
     const uint32_t fusion_trigger = 5;
-    f.resetIndexManager();
+    resetIndexManager();
 
     for (size_t i = 1; i <= fusion_trigger; ++i) {
-        f.addDocument(docid);
-        f.flushIndexManager();
+        addDocument(docid);
+        flushIndexManager();
     }
-    IFlushTarget::SP target(new IndexFusionTarget(f._index_manager->getMaintainer()));
+    IFlushTarget::SP target(new IndexFusionTarget(_index_manager->getMaintainer()));
     target->initFlush(0)->run();
-    f.addDocument(docid);
-    f.flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
     set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
-    EXPECT_EQUAL(1u, fusion_ids.size());
-    EXPECT_EQUAL(5u, *fusion_ids.begin());
+    EXPECT_EQ(1u, fusion_ids.size());
+    EXPECT_EQ(5u, *fusion_ids.begin());
     set<uint32_t> flush_ids = readDiskIds(index_dir, "flush");
-    EXPECT_EQUAL(1u, flush_ids.size());
-    EXPECT_EQUAL(6u, *flush_ids.begin());
+    EXPECT_EQ(1u, flush_ids.size());
+    EXPECT_EQ(6u, *flush_ids.begin());
 }
 
-TEST_F("requireThatFusionTargetIsSetUp", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
-    f.addDocument(docid);
-    f.flushIndexManager();
-    IFlushTarget::List lst(f._index_manager->getFlushTargets());
-    EXPECT_EQUAL(2u, lst.size());
+TEST_F(IndexManagerTest, require_that_fusion_target_is_setUp)
+{
+    addDocument(docid);
+    flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
+    IFlushTarget::List lst(_index_manager->getFlushTargets());
+    EXPECT_EQ(2u, lst.size());
     IFlushTarget::SP target(lst.at(1));
-    EXPECT_EQUAL("memoryindex.fusion", target->getName());
+    EXPECT_EQ("memoryindex.fusion", target->getName());
     EXPECT_FALSE(target->needUrgentFlush());
-    f.addDocument(docid);
-    f.flushIndexManager();
-    lst = f._index_manager->getFlushTargets();
-    EXPECT_EQUAL(2u, lst.size());
+    addDocument(docid);
+    flushIndexManager();
+    lst = _index_manager->getFlushTargets();
+    EXPECT_EQ(2u, lst.size());
     target = lst.at(1);
-    EXPECT_EQUAL("memoryindex.fusion", target->getName());
+    EXPECT_EQ("memoryindex.fusion", target->getName());
     EXPECT_TRUE(target->needUrgentFlush());
 }
 
-TEST_F("requireThatFusionCleansUpOldIndexes", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
+TEST_F(IndexManagerTest, require_that_fusion_cleans_up_old_indexes)
+{
+    addDocument(docid);
+    flushIndexManager();
     // hold reference to index.flush.1
-    IIndexCollection::SP fsc = f._index_manager->getMaintainer().getSourceCollection();
+    auto fsc = get_source_collection();
 
-    f.addDocument(docid + 1);
-    f.flushIndexManager();
+    addDocument(docid + 1);
+    flushIndexManager();
 
     set<uint32_t> flush_ids = readDiskIds(index_dir, "flush");
-    EXPECT_EQUAL(2u, flush_ids.size());
+    EXPECT_EQ(2u, flush_ids.size());
 
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
-    f._index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec);
 
     flush_ids = readDiskIds(index_dir, "flush");
-    EXPECT_EQUAL(1u, flush_ids.size());
-    EXPECT_EQUAL(1u, *flush_ids.begin());
+    EXPECT_EQ(1u, flush_ids.size());
+    EXPECT_EQ(1u, *flush_ids.begin());
 
     fsc.reset();
-    f._index_manager->getMaintainer().removeOldDiskIndexes();
+    _index_manager->getMaintainer().removeOldDiskIndexes();
     flush_ids = readDiskIds(index_dir, "flush");
-    EXPECT_EQUAL(0u, flush_ids.size());
+    EXPECT_EQ(0u, flush_ids.size());
 }
 
 bool contains(const IIndexCollection &fsc, uint32_t id) {
@@ -549,118 +573,123 @@ bool indexExists(const string &type, uint32_t id) {
     return disk_ids.find(id) != disk_ids.end();
 }
 
-TEST_F("requireThatDiskIndexesAreLoadedOnStartup", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
-    f._index_manager.reset(0);
+TEST_F(IndexManagerTest, require_that_disk_indexes_are_loaded_on_startup)
+{
+    addDocument(docid);
+    flushIndexManager();
+    _index_manager.reset(0);
 
     ASSERT_TRUE(indexExists("flush", 1));
-    f.resetIndexManager();
+    resetIndexManager();
 
-    IIndexCollection::SP fsc = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(2u, fsc->getSourceCount());
+    auto fsc = get_source_collection();
+    EXPECT_EQ(2u, fsc->getSourceCount());
     EXPECT_TRUE(contains(*fsc, 1u));
     EXPECT_TRUE(contains(*fsc, 2u));
-    EXPECT_EQUAL(1u, getSource(*fsc, docid));
+    EXPECT_EQ(1u, getSource(*fsc, docid));
     fsc.reset();
 
 
-    f.addDocument(docid + 1);
-    f.flushIndexManager();
+    addDocument(docid + 1);
+    flushIndexManager();
     ASSERT_TRUE(indexExists("flush", 2));
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
-    f._index_manager->getMaintainer().runFusion(fusion_spec);
-    f._index_manager.reset(0);
+    _index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager.reset(0);
 
     ASSERT_TRUE(!indexExists("flush", 1));
     ASSERT_TRUE(!indexExists("flush", 2));
     ASSERT_TRUE(indexExists("fusion", 2));
-    f.resetIndexManager();
+    resetIndexManager();
 
-    fsc = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(2u, fsc->getSourceCount());
+    fsc = get_source_collection();
+    EXPECT_EQ(2u, fsc->getSourceCount());
     EXPECT_TRUE(contains(*fsc, 0u));
     EXPECT_TRUE(contains(*fsc, 1u));
-    EXPECT_EQUAL(0u, getSource(*fsc, docid));
-    EXPECT_EQUAL(0u, getSource(*fsc, docid + 1));
+    EXPECT_EQ(0u, getSource(*fsc, docid));
+    EXPECT_EQ(0u, getSource(*fsc, docid + 1));
     /// Must account for both docid 0 being reserved and the extra after.
-    EXPECT_EQUAL(docid + 2, fsc->getSourceSelector().getDocIdLimit());
+    EXPECT_EQ(docid + 2, fsc->getSourceSelector().getDocIdLimit());
     fsc.reset();
 
 
-    f.addDocument(docid + 2);
-    f.flushIndexManager();
-    f._index_manager.reset(0);
+    addDocument(docid + 2);
+    flushIndexManager();
+    _index_manager.reset(0);
 
     ASSERT_TRUE(indexExists("fusion", 2));
     ASSERT_TRUE(indexExists("flush", 3));
-    f.resetIndexManager();
+    resetIndexManager();
 
-    fsc = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(3u, fsc->getSourceCount());
+    fsc = get_source_collection();
+    EXPECT_EQ(3u, fsc->getSourceCount());
     EXPECT_TRUE(contains(*fsc, 0u));
     EXPECT_TRUE(contains(*fsc, 1u));
     EXPECT_TRUE(contains(*fsc, 2u));
-    EXPECT_EQUAL(0u, getSource(*fsc, docid));
-    EXPECT_EQUAL(0u, getSource(*fsc, docid + 1));
-    EXPECT_EQUAL(1u, getSource(*fsc, docid + 2));
+    EXPECT_EQ(0u, getSource(*fsc, docid));
+    EXPECT_EQ(0u, getSource(*fsc, docid + 1));
+    EXPECT_EQ(1u, getSource(*fsc, docid + 2));
     fsc.reset();
 }
 
-TEST_F("requireThatExistingIndexesAreToBeFusionedOnStartup", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
-    f.addDocument(docid + 1);
-    f.flushIndexManager();
-    f.resetIndexManager();
+TEST_F(IndexManagerTest, require_that_existing_indexes_are_to_be_fusioned_on_startup)
+{
+    addDocument(docid);
+    flushIndexManager();
+    addDocument(docid + 1);
+    flushIndexManager();
+    resetIndexManager();
 
-    IFlushTarget::SP target(new IndexFusionTarget(f._index_manager->getMaintainer()));
+    IFlushTarget::SP target(new IndexFusionTarget(_index_manager->getMaintainer()));
     target->initFlush(0)->run();
-    f.addDocument(docid);
-    f.flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
 
     set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
-    EXPECT_EQUAL(1u, fusion_ids.size());
-    EXPECT_EQUAL(2u, *fusion_ids.begin());
+    EXPECT_EQ(1u, fusion_ids.size());
+    EXPECT_EQ(2u, *fusion_ids.begin());
 }
 
-TEST_F("requireThatSerialNumberIsWrittenOnFlush", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
+TEST_F(IndexManagerTest, require_that_serial_number_is_written_on_flush)
+{
+    addDocument(docid);
+    flushIndexManager();
     FastOS_File file((index_dir + "/index.flush.1/serial.dat").c_str());
     EXPECT_TRUE(file.OpenReadOnly());
 }
 
-TEST_F("requireThatSerialNumberIsCopiedOnFusion", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
-    f.addDocument(docid);
-    f.flushIndexManager();
+TEST_F(IndexManagerTest, require_that_serial_number_is_copied_on_fusion)
+{
+    addDocument(docid);
+    flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
-    f._index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec);
     FastOS_File file((index_dir + "/index.fusion.2/serial.dat").c_str());
     EXPECT_TRUE(file.OpenReadOnly());
 }
 
-TEST_F("requireThatSerialNumberIsReadOnLoad", Fixture) {
-    f.addDocument(docid);
-    f.flushIndexManager();
-    EXPECT_EQUAL(f._serial_num, f._index_manager->getFlushedSerialNum());
-    f.resetIndexManager();
-    EXPECT_EQUAL(f._serial_num, f._index_manager->getFlushedSerialNum());
+TEST_F(IndexManagerTest, require_that_serial_number_is_read_on_load)
+{
+    addDocument(docid);
+    flushIndexManager();
+    EXPECT_EQ(_serial_num, _index_manager->getFlushedSerialNum());
+    resetIndexManager();
+    EXPECT_EQ(_serial_num, _index_manager->getFlushedSerialNum());
 
-    f.addDocument(docid);
-    f.flushIndexManager();
-    f.addDocument(docid);
-    f.flushIndexManager();
-    search::SerialNum serial = f._serial_num;
-    f.addDocument(docid);
-    f.resetIndexManager();
-    EXPECT_EQUAL(serial, f._index_manager->getFlushedSerialNum());
+    addDocument(docid);
+    flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
+    search::SerialNum serial = _serial_num;
+    addDocument(docid);
+    resetIndexManager();
+    EXPECT_EQ(serial, _index_manager->getFlushedSerialNum());
 }
 
 void crippleFusion(uint32_t fusionId) {
@@ -669,27 +698,28 @@ void crippleFusion(uint32_t fusionId) {
     FastOS_File(ost.str().data()).Delete();
 }
 
-TEST_F("requireThatFailedFusionIsRetried", Fixture) {
-    f.resetIndexManager();
+TEST_F(IndexManagerTest, require_that_failed_fusion_is_retried)
+{
+    resetIndexManager();
 
-    f.addDocument(docid);
-    f.flushIndexManager();
-    f.addDocument(docid);
-    f.flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
 
     crippleFusion(2);
 
-    IndexFusionTarget target(f._index_manager->getMaintainer());
+    IndexFusionTarget target(_index_manager->getMaintainer());
     vespalib::Executor::Task::UP fusionTask = target.initFlush(1);
     fusionTask->run();
 
-    FusionSpec spec = f._index_manager->getMaintainer().getFusionSpec();
+    FusionSpec spec = _index_manager->getMaintainer().getFusionSpec();
     set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
     EXPECT_TRUE(fusion_ids.empty());
-    EXPECT_EQUAL(0u, spec.last_fusion_id);
-    EXPECT_EQUAL(2u, spec.flush_ids.size());
-    EXPECT_EQUAL(1u, spec.flush_ids[0]);
-    EXPECT_EQUAL(2u, spec.flush_ids[1]);
+    EXPECT_EQ(0u, spec.last_fusion_id);
+    EXPECT_EQ(2u, spec.flush_ids.size());
+    EXPECT_EQ(1u, spec.flush_ids[0]);
+    EXPECT_EQ(2u, spec.flush_ids[1]);
 }
 
 namespace {
@@ -697,49 +727,116 @@ namespace {
 void expectSchemaIndexFields(uint32_t expIndexFields) {
     Schema s;
     s.loadFromFile("test_data/index.flush.1/schema.txt");
-    EXPECT_EQUAL(expIndexFields, s.getNumIndexFields());
+    EXPECT_EQ(expIndexFields, s.getNumIndexFields());
 }
 
 }
 
-TEST_F("require that setSchema updates schema on disk, wiping removed fields", Fixture)
+TEST_F(IndexManagerTest, require_that_setSchema_updates_schema_on_disk_wiping_removed_fields)
 {
     Schema empty_schema;
-    f.addDocument(docid);
-    f.flushIndexManager();
-    TEST_DO(expectSchemaIndexFields(1));
-    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema, ++f._serial_num); });
-    TEST_DO(expectSchemaIndexFields(0));
+    addDocument(docid);
+    flushIndexManager();
+    expectSchemaIndexFields(1);
+    runAsMaster([&]() { _index_manager->setSchema(empty_schema, ++_serial_num); });
+    expectSchemaIndexFields(0);
 }
 
-TEST_F("require that indexes manager stats can be generated", Fixture)
+TEST_F(IndexManagerTest, require_that_indexes_manager_stats_can_be_generated)
 {
-    TEST_DO(f.assertStats(0, 1, 0, 0));
-    f.addDocument(1);
-    TEST_DO(f.assertStats(0, 1, 0, 1));
-    f.flushIndexManager();
-    TEST_DO(f.assertStats(1, 1, 1, 1));
-    f.addDocument(2);
-    TEST_DO(f.assertStats(1, 1, 1, 2));
+    assertStats(0, 1, 0, 0);
+    addDocument(1);
+    assertStats(0, 1, 0, 1);
+    flushIndexManager();
+    assertStats(1, 1, 1, 1);
+    addDocument(2);
+    assertStats(1, 1, 1, 2);
 }
 
-TEST_F("require that compactLidSpace works", Fixture)
+TEST_F(IndexManagerTest, require_that_compact_lid_space_works)
 {
     Schema empty_schema;
-    f.addDocument(1);
-    f.addDocument(2);
-    f.removeDocument(2);
-    auto fsc = f._index_manager->getMaintainer().getSourceCollection();
-    EXPECT_EQUAL(3u, fsc->getSourceSelector().getDocIdLimit());
-    f.compactLidSpace(2);
-    EXPECT_EQUAL(2u, fsc->getSourceSelector().getDocIdLimit());
+    addDocument(1);
+    addDocument(2);
+    removeDocument(2);
+    auto fsc = get_source_collection();
+    EXPECT_EQ(3u, fsc->getSourceSelector().getDocIdLimit());
+    compactLidSpace(2);
+    EXPECT_EQ(2u, fsc->getSourceSelector().getDocIdLimit());
+}
+
+template <typename IndexType>
+IndexType*
+as_index_type(const IIndexCollection& col, uint32_t source_id)
+{
+    auto& searchable = col.getSearchable(source_id);
+    auto* result = dynamic_cast<IndexType *>(&searchable);
+    assert(result != nullptr);
+    return result;
+}
+
+IMemoryIndex*
+as_memory_index(const IIndexCollection& col, uint32_t source_id)
+{
+    return as_index_type<IMemoryIndex>(col, source_id);
+}
+
+IDiskIndex*
+as_disk_index(const IIndexCollection& col, uint32_t source_id)
+{
+    return as_index_type<IDiskIndex>(col, source_id);
+}
+
+void
+expect_field_length_info(double exp_average, uint32_t exp_samples, const IndexSearchable& searchable)
+{
+    auto info = searchable.get_field_length_info(field_name);
+    EXPECT_DOUBLE_EQ(exp_average, info.get_average_field_length());
+    EXPECT_EQ(exp_samples, info.get_num_samples());
+}
+
+TEST_F(IndexManagerTest, field_length_info_is_propagated_to_disk_index_and_next_memory_index_during_flush)
+{
+    addDocument(1);
+    addDocument(2);
+
+    auto sources = get_source_collection();
+    ASSERT_EQ(1, sources->getSourceCount());
+    auto *first_index = as_memory_index(*sources, 0);
+    expect_field_length_info(1, 2, *first_index);
+
+    flushIndexManager();
+
+    sources = get_source_collection();
+    ASSERT_EQ(2, sources->getSourceCount());
+    expect_field_length_info(1, 2, *as_disk_index(*sources, 0));
+    auto *second_index = as_memory_index(*sources, 1);
+    EXPECT_NE(first_index, second_index);
+    expect_field_length_info(1, 2, *second_index);
+}
+
+TEST_F(IndexManagerTest, field_length_info_is_loaded_from_disk_index_during_startup)
+{
+    addDocument(1);
+    addDocument(2);
+    flushIndexManager();
+    resetIndexManager();
+
+    auto sources = get_source_collection();
+    ASSERT_EQ(2, sources->getSourceCount());
+    expect_field_length_info(1, 2, *as_disk_index(*sources, 0));
+    expect_field_length_info(1, 2, *as_memory_index(*sources, 1));
 }
 
 }  // namespace
 
-TEST_MAIN() {
-    TEST_DO(removeTestData());
+int
+main(int argc, char* argv[])
+{
+    removeTestData();
     DummyFileHeaderContext::setCreator("indexmanager_test");
-    TEST_RUN_ALL();
-    TEST_DO(removeTestData());
+    ::testing::InitGoogleTest(&argc, argv);
+    int result = RUN_ALL_TESTS();
+    removeTestData();
+    return result;
 }

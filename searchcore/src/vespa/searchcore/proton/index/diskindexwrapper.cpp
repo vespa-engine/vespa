@@ -49,9 +49,7 @@ DiskIndexWrapper::accept(searchcorespi::IndexSearchableVisitor &visitor) const
 FieldLengthInfo
 DiskIndexWrapper::get_field_length_info(const vespalib::string& field_name) const
 {
-    // TODO: implement
-    (void) field_name;
-    return FieldLengthInfo();
+    return _index.get_field_length_info(field_name);
 }
 
 }  // namespace proton
