@@ -377,7 +377,7 @@ public class Model implements Cloneable {
      * from a sources
      */
     public void setRestrict(String restrictString) {
-        setFromString(restrictString,restrict);
+        setFromString(restrictString, restrict);
     }
 
     /**

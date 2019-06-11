@@ -108,7 +108,13 @@ class IndexedDoubleTensor extends IndexedTensor {
 
         @Override
         public void cellByDirectIndex(long index, double value) {
-            values[(int)index] = value;
+            try {
+                values[(int) index] = value;
+            }
+            catch (IndexOutOfBoundsException e) {
+                throw new IllegalArgumentException("Can not set the cell at position " + index + " in a tensor " +
+                                                   "of type " + type + ": Index is too large");
+            }
         }
 
     }

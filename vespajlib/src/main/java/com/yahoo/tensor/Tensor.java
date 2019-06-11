@@ -333,7 +333,7 @@ public interface Tensor {
         } else {
             x = Math.nextAfter(x, y);
         }
-        return x==y;
+        return x == y;
     }
 
     // ----------------- Factories
@@ -367,9 +367,7 @@ public interface Tensor {
         return TensorParser.tensorFrom(tensorString, Optional.empty());
     }
 
-    /**
-     * Returns a double as a tensor: A dimensionless tensor containing the value as its cell
-     */
+    /** Returns a double as a tensor: A dimensionless tensor containing the value as its cell */
     static Tensor from(double value) {
         return Tensor.Builder.of(TensorType.empty).cell(value).build();
     }

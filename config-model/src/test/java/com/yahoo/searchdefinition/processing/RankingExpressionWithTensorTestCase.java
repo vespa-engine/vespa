@@ -2,9 +2,10 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author geirst
@@ -138,23 +139,29 @@ public class RankingExpressionWithTensorTestCase {
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
     }
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @Test
     public void requireThatInvalidTensorTypeSpecThrowsException() throws ParseException {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For constant tensor 'my_tensor' in rank profile 'my_profile': Illegal tensor type spec: A tensor type spec must be on the form tensor[<valuetype>]?(dimensionidentifier[{}|[length?]*), but was 'tensor(x)'. Dimension 'x' is on the wrong format. Examples: tensor(x[]), tensor<float>(name{}, x[10])");
-        RankProfileSearchFixture f = new RankProfileSearchFixture(
-                "  rank-profile my_profile {\n" +
-                "    constants {\n" +
-                "      my_tensor {\n" +
-                "        value: { {x:1}:1 }\n" +
-                "        type: tensor(x)\n" +
-                "      }\n" +
-                "    }\n" +
-                "  }");
-        f.compileRankProfile("my_profile");
+        try {
+            RankProfileSearchFixture f = new RankProfileSearchFixture(
+                    "  rank-profile my_profile {\n" +
+                    "    constants {\n" +
+                    "      my_tensor {\n" +
+                    "        value: { {x:1}:1 }\n" +
+                    "        type: tensor(x)\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  }");
+            f.compileRankProfile("my_profile");
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertStartsWith("For constant tensor 'my_tensor' in rank profile 'my_profile': Illegal tensor type spec",
+                             e.getMessage());
+        }
+    }
+
+    private void assertStartsWith(String prefix, String string) {
+        assertEquals(prefix, string.substring(0, Math.min(prefix.length(), string.length())));
     }
 
 }

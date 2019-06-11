@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * An indexed (dense) tensor backed by a double array.
+ * An indexed (dense) tensor backed by an array.
  *
  * @author bratseth
  */
@@ -143,9 +143,8 @@ public abstract class IndexedTensor implements Tensor {
 
         long valueIndex = 0;
         for (int i = 0; i < indexes.length; i++) {
-            if (indexes[i] >= sizes.size(i)) {
-                throw new IllegalArgumentException(indexes + " are not within bounds");
-            }
+            if (indexes[i] >= sizes.size(i))
+                throw new IllegalArgumentException(Arrays.toString(indexes) + " are not within bounds");
             valueIndex += productOfDimensionsAfter(i, sizes) * indexes[i];
         }
         return valueIndex;
