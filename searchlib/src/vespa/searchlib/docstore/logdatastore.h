@@ -89,7 +89,7 @@ public:
                  const search::common::FileHeaderContext &fileHeaderContext,
                  transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer, bool readOnly = false);
 
-    ~LogDataStore();
+    ~LogDataStore() override;
 
     // Implements IDataStore API
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const override;
@@ -220,7 +220,7 @@ private:
     const FileChunk * getPrevActive(const LockGuard & guard) const {
         assert(guard.locks(_updateLock));
         (void) guard;
-        return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : NULL;
+        return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : nullptr;
     }
     void setActive(const LockGuard & guard, FileId fileId) {
         assert(guard.locks(_updateLock));

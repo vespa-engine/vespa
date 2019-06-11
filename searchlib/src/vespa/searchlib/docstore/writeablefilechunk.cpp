@@ -74,7 +74,7 @@ private:
 };
 
 WriteableFileChunk::
-WriteableFileChunk(vespalib::ThreadExecutor &executor,
+WriteableFileChunk(vespalib::Executor &executor,
                    FileId fileId, NameId nameId,
                    const vespalib::string &baseName,
                    SerialNum initialSerialNum,
@@ -536,6 +536,13 @@ WriteableFileChunk::freeze()
 {
     if (!frozen()) {
         waitForAllChunksFlushedToDisk();
+        enque(ProcessedChunkUP());
+        {
+            MonitorGuard guard(_writeMonitor);
+            while (_writeTaskIsRunning) {
+                guard.wait(10);
+            }
+        }
         assert(_writeQ.empty());
         assert(_chunkMap.empty());
         {
