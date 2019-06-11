@@ -21,9 +21,14 @@ import java.time.Duration;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A remote endpoint in a {@link HttpDeployment} of a Vespa application, reachable over HTTP.
+ *
+ * @author jonmv
+ */
 public class HttpEndpoint implements TestEndpoint {
 
-    static final String metricsPath = "/state/v1/metrics";
+    static final String metricsPath = "/state/v1/metrics"; // TODO metrics/v1/values?
     static final String documentApiPath = "/document/v1";
     static final String searchApiPath = "/search";
 

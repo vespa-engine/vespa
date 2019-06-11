@@ -26,7 +26,10 @@ import java.util.Optional;
  */
 public class Authenticator {
 
-    /** Returns an SSLContext from "key" and "cert" files found under {@code System.getProperty("vespa.test.credentials.root")}. */
+    /** Returns an SSLContext which provides authentication against a Vespa endpoint.
+     *
+     * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files
+     * "key" and "cert" in that directory are used; otherwise, the system default SSLContext is returned. */
     public SSLContext sslContext() {
         try {
             Path credentialsRoot = Path.of(System.getProperty("vespa.test.credentials.root"));
@@ -46,10 +49,12 @@ public class Authenticator {
         }
     }
 
+    /** Adds necessary authentication to the given HTTP request builder, to be verified by a Vespa endpoint. */
     public HttpRequest.Builder authenticated(HttpRequest.Builder request) {
         return request;
     }
 
+    /** Returns an authenticated controller client. */
     public ControllerHttpClient controller() {
         ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
                                               requireNonBlankProperty("application"),
