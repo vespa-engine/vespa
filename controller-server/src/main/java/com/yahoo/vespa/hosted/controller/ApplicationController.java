@@ -228,8 +228,6 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<Credentials> credentials) {
-        if ( ! (id.instance().isDefault())) // TODO: Support instances properly
-            throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
         try (Lock lock = lock(id)) {
