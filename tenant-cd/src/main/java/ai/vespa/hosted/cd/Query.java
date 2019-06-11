@@ -1,6 +1,9 @@
 package ai.vespa.hosted.cd;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.Map.copyOf;
@@ -56,5 +59,12 @@ public class Query {
 
     /** Returns the parameters of this query. */
     public Map<String, String> parameters() { return parameters; }
+
+    /** Returns the timeout parameter of the request, if one is set. */
+    public Optional<Duration> timeout() {
+        return Optional.ofNullable(parameters.get("timeout"))
+                       .map(timeout -> Duration.of(Long.parseLong(timeout.replaceAll("\\s*m?s", "")),
+                                                   timeout.contains("ms") ? ChronoUnit.MILLIS : ChronoUnit.SECONDS));
+    }
 
 }

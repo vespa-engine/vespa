@@ -56,7 +56,8 @@ public class HttpEndpoint implements TestEndpoint {
         try {
             URI target = endpoint.resolve(searchApiPath).resolve("?" + query.rawQuery());
             HttpRequest request = HttpRequest.newBuilder()
-                                             .timeout(Duration.ofSeconds(5))
+                                             .timeout(query.timeout().orElse(Duration.ofMillis(500))
+                                                           .plus(Duration.ofSeconds(1)))
                                              .uri(target)
                                              .build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
