@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -46,7 +47,8 @@ public class MetricsTest {
     public void testBasicMetric() {
         Metrics m = new Metrics();
         m.add(new Metric("count", 1, System.currentTimeMillis() / 1000));
-        assertThat(m.get("count").intValue(), is(1));
+        assertThat(m.getMetrics().size(), is(1));
+        assertThat(m.getMetrics().get(0).getName(), is("count"));
     }
 
     @Test

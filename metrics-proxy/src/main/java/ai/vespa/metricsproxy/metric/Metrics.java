@@ -83,22 +83,6 @@ public class Metrics {
     }
 
 
-    /**
-     * Get a single metric based on the metric name
-     * TODO: Remove, might be multiple metrics with same name, but different
-     *
-     * @param key metric name
-     * @return The value or null if metric was not found or expired
-     */
-    public Number get(String key) {
-        isFrozen = true;
-        Metric m = getMetric(key);
-        if (m != null) {
-            return m.getValue();
-        }
-        return null;
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Metric m : metrics) {
