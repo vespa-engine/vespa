@@ -13,29 +13,29 @@ import java.util.List;
  */
 public class UpgradePolicy {
 
-    private final List<List<ZoneId>> zones;
+    private final List<List<ZoneApi>> zones;
 
-    private UpgradePolicy(List<List<ZoneId>> zones) {
+    private UpgradePolicy(List<List<ZoneApi>> zones) {
         this.zones = zones;
     }
 
-    public List<List<ZoneId>> asList() {
-        return Collections.unmodifiableList(zones);
+    public List<List<ZoneApi>> asList() {
+        return List.copyOf(zones);
     }
 
-    private UpgradePolicy with(ZoneId... zone) {
-        List<List<ZoneId>> zones = new ArrayList<>(this.zones);
+    private UpgradePolicy with(ZoneApi... zone) {
+        List<List<ZoneApi>> zones = new ArrayList<>(this.zones);
         zones.add(Arrays.asList(zone));
         return new UpgradePolicy(zones);
     }
 
     /** Upgrade given zone as the next step */
-    public UpgradePolicy upgrade(ZoneId zone) {
+    public UpgradePolicy upgrade(ZoneApi zone) {
         return with(zone);
     }
 
     /** Upgrade given zones in parallel as the next step */
-    public UpgradePolicy upgradeInParallel(ZoneId... zone) {
+    public UpgradePolicy upgradeInParallel(ZoneApi... zone) {
         return with(zone);
     }
 
