@@ -4,6 +4,7 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vector>
 #include <map>
+#include <string>
 
 namespace storage::api {
     class BucketCommand;

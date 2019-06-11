@@ -2,6 +2,7 @@
 
 #include "simpleparser.h"
 #include "compare.h"
+#include <cerrno>
 
 namespace document {
 

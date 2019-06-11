@@ -8,6 +8,7 @@
 #include <list>
 #include <cassert>
 #include <algorithm>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".metrics.metricsset");

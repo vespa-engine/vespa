@@ -19,6 +19,7 @@
 #include <vespa/fastos/timestamp.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <list>
+#include <ostream>
 
 namespace storage {
 

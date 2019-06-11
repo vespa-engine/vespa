@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <cassert>
 #include <vector>
+#include <string>
 
 namespace storage {
 

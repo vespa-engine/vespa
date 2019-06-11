@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <thread>
 #include <chrono>
+#include <ostream>
 
 namespace storage {
 

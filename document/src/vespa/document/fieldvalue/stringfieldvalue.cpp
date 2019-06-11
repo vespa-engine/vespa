@@ -11,6 +11,7 @@
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
+#include <ostream>
 
 using vespalib::nbostream;
 using vespalib::ConstBufferRef;
