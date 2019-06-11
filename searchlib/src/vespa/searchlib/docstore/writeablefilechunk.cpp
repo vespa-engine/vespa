@@ -536,15 +536,8 @@ WriteableFileChunk::freeze()
 {
     if (!frozen()) {
         waitForAllChunksFlushedToDisk();
-        enque(ProcessedChunkUP());
-        _executor.sync();
-        {
-            MonitorGuard guard(_writeMonitor);
-            while (_writeTaskIsRunning) {
-                guard.wait(10);
-            }
-            assert(_writeQ.empty());
-        }
+        assert(_writeQ.empty());
+        assert(_chunkMap.empty());
         {
             MonitorGuard guard(_lock);
             setDiskFootprint(getDiskFootprint(guard));
