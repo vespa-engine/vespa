@@ -21,7 +21,6 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.processing.handler.ProcessingHandler;
 import com.yahoo.search.handler.SearchHandler;
-import com.yahoo.search.searchchain.ExecutionFactory;
 
 import java.nio.file.Path;
 
