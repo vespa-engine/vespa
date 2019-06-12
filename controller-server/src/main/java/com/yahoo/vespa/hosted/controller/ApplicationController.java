@@ -77,6 +77,7 @@ import java.security.Principal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -88,6 +89,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -541,7 +543,7 @@ public class ApplicationController {
         }
     }
 
-    /** Returns the endpoints of the clusters in the deployment, or empty if the request fails. */
+    /** Returns the non-empty endpoints of the clusters in the deployment, or empty if the request fails. */
     public Optional<Map<ClusterSpec.Id, URI>> clusterEndpoints(DeploymentId id) {
         if ( ! get(id.applicationId())
                 .map(application -> application.deployments().containsKey(id.zoneId()))
@@ -562,6 +564,14 @@ public class ApplicationController {
                                    + Exceptions.toMessageString(e));
             return Optional.empty();
         }
+    }
+
+    /** Returns all zone-specific cluster endpoints for the given application, in the given zones. */
+    public Map<ZoneId, Map<ClusterSpec.Id, URI>> clusterEndpoints(ApplicationId id, Collection<ZoneId> zones) {
+        Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments = new HashMap<>();
+        for (ZoneId zone : zones)
+            clusterEndpoints(new DeploymentId(id, zone)).ifPresent(endpoints -> deployments.put(zone, endpoints));
+        return Map.copyOf(deployments);
     }
 
     /**

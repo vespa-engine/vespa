@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -412,6 +414,13 @@ public class JobController {
                          .or(() -> controller.applications().routingPolicies().get(testerId).stream()
                                              .findAny()
                                              .map(policy -> policy.endpointIn(controller.system()).url()));
+    }
+
+    /** Returns a set containing the zone of the deployment tested in the given run, and all production zones for the application. */
+    public Set<ZoneId> testedZoneAndProductionZones(ApplicationId id, JobType type) {
+        return Stream.concat(Stream.of(type.zone(controller.system())),
+                             controller.applications().require(id).productionDeployments().keySet().stream())
+                     .collect(Collectors.toSet());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.
