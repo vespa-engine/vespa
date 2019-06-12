@@ -172,17 +172,8 @@ int getValue(double & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = locale::c::strtod(buf, &ebuf);
-    bool failed = (buf == ebuf);
-    if (errno != 0) {
-        if (errno == ERANGE) {
-            if (val == HUGE_VAL) failed = true;
-            if (val == -HUGE_VAL) failed = true;
-        } else {
-            failed = true;
-        }
-    }
-    if (failed) {
+    val = locale::c::strtod_au(buf, &ebuf);
+    if ((errno != 0) || (buf == ebuf)) {
         throwInputError(errno, "double", buf);
     }
     return ebuf - buf;
@@ -192,17 +183,8 @@ int getValue(float & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = locale::c::strtof(buf, &ebuf);
-    bool failed = (buf == ebuf);
-    if (errno != 0) {
-        if (errno == ERANGE) {
-            if (val == HUGE_VALF) failed = true;
-            if (val == -HUGE_VALF) failed = true;
-        } else {
-            failed = true;
-        }
-    }
-    if (failed) {
+    val = locale::c::strtof_au(buf, &ebuf);
+    if ((errno != 0) || (buf == ebuf)) {
         throwInputError(errno, "float", buf);
     }
     return ebuf - buf;
