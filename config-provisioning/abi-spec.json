@@ -790,8 +790,7 @@
       "public static final enum com.yahoo.config.provision.SystemName main",
       "public static final enum com.yahoo.config.provision.SystemName Public",
       "public static final enum com.yahoo.config.provision.SystemName PublicCd",
-      "public static final enum com.yahoo.config.provision.SystemName dev",
-      "public static final enum com.yahoo.config.provision.SystemName vaas"
+      "public static final enum com.yahoo.config.provision.SystemName dev"
     ]
   },
   "com.yahoo.config.provision.TenantName": {
