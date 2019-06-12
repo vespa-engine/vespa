@@ -168,16 +168,6 @@ public class CuratorDb {
         return lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
-    @SuppressWarnings("unused") // Called by internal code
-    public Lock lockVespaServerPool() {
-        return lock(lockRoot.append("vespaServerPoolLock"), Duration.ofSeconds(1));
-    }
-
-    @SuppressWarnings("unused") // Called by internal code
-    public Lock lockOpenStackServerPool() {
-        return lock(lockRoot.append("openStackServerPoolLock"), Duration.ofSeconds(1));
-    }
-
     public Lock lockOsVersions() {
         return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
     }
@@ -464,31 +454,6 @@ public class CuratorDb {
         curator.set(provisionStatePath(provisionId), data);
     }
 
-    @SuppressWarnings("unused")
-    public List<String> readProvisionStateIds() {
-        return curator.getChildren(provisionStatePath());
-    }
-
-    @SuppressWarnings("unused")
-    public Optional<byte[]> readVespaServerPool() {
-        return curator.getData(vespaServerPoolPath());
-    }
-
-    @SuppressWarnings("unused")
-    public void writeVespaServerPool(byte[] data) {
-        curator.set(vespaServerPoolPath(), data);
-    }
-
-    @SuppressWarnings("unused")
-    public Optional<byte[]> readOpenStackServerPool() {
-        return curator.getData(openStackServerPoolPath());
-    }
-
-    @SuppressWarnings("unused")
-    public void writeOpenStackServerPool(byte[] data) {
-        curator.set(openStackServerPoolPath(), data);
-    }
-
     // -------------- Routing policies ----------------------------------------
 
     public void writeRoutingPolicies(ApplicationId application, Set<RoutingPolicy> policies) {
@@ -587,14 +552,6 @@ public class CuratorDb {
 
     private static Path provisionStatePath(String provisionId) {
         return provisionStatePath().append(provisionId);
-    }
-
-    private static Path vespaServerPoolPath() {
-        return root.append("vespaServerPool");
-    }
-
-    private static Path openStackServerPoolPath() {
-        return root.append("openStackServerPool");
     }
 
     private static Path tenantPath(TenantName name) {
