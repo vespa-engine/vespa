@@ -26,15 +26,15 @@ search neuralnet {
             indexing: attribute
         }
 
-        field replyCount type int {
+        field rCount type int {
             indexing: attribute
         }
 
-        field uniqueReplyAuthorCount type int {
+        field uniqueRAuthorCount type int {
             indexing: attribute
         }
 
-        field replyTo type string {
+        field rTo type string {
             indexing: attribute
         }
 
@@ -82,12 +82,12 @@ search neuralnet {
             expression: if(isNan(attribute(normalizedTextScore)) == 1, 0, attribute(normalizedTextScore))
         }
 
-        macro replyCountToUse() {
-            expression: if(isNan(attribute(replyCount)) == 1, 0, if(attribute(replyCount) < 0, 0, attribute(replyCount)))
+        macro rCountToUse() {
+            expression: if(isNan(attribute(rCount)) == 1, 0, if(attribute(rCount) < 0, 0, attribute(rCount)))
         }
 
-        macro uniqueReplyCountToUse() {
-            expression: if(isNan(attribute(uniqueReplyAuthorCount)) == 1, 0, if(attribute(uniqueReplyAuthorCount) < 0, 0, attribute(uniqueReplyAuthorCount)))
+        macro uniqueRCountToUse() {
+            expression: if(isNan(attribute(uniqueRAuthorCount)) == 1, 0, if(attribute(uniqueRAuthorCount) < 0, 0, attribute(uniqueRAuthorCount)))
         }
 
         macro uvCountToUse() {
@@ -103,15 +103,15 @@ search neuralnet {
         }
 
         macro totalPositiveReactions() {
-            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (uvCountToUse - dvCountToUse) - aVoteCountToUse
+            expression: uniqueRCountToUse + query(voteToRRatio) * (uvCountToUse - dvCountToUse) - aVoteCountToUse
         }
 
         macro totalvote() {
-            expression: query(reportaweight) * aVoteCountToUse + dvCountToUse + query(replyweight) * uniqueReplyCountToUse + uvCountToUse
+            expression: query(reportaweight) * aVoteCountToUse + dvCountToUse + query(rweight) * uniqueRCountToUse + uvCountToUse
         }
 
         macro phat() {
-            expression: if (totalvote == 0, 0, ( query(replyweight) * uniqueReplyCountToUse + uvCountToUse) / totalvote)
+            expression: if (totalvote == 0, 0, ( query(rweight) * uniqueRCountToUse + uvCountToUse) / totalvote)
         }
 
         macro newCommunityScoreToUse() {
@@ -177,7 +177,7 @@ search neuralnet {
             expression {
                 concat(log10_1p(aVoteCountToUse),
                 concat(log10_1p(dvCountToUse),
-                concat(log10_1p(uniqueReplyCountToUse),
+                concat(log10_1p(uniqueRCountToUse),
                 concat(log10_1p(uvCountToUse),
                 concat(phat,
                 concat(log10_1p(totalvote),
