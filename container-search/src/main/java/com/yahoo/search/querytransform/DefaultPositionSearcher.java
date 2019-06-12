@@ -13,7 +13,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * If default position has not been set, it will be set here.

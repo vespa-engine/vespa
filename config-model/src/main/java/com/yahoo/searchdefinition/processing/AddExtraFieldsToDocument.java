@@ -25,6 +25,11 @@ public class AddExtraFieldsToDocument extends Processor {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
+    //TODO This is a tempoarry hack to avoid producing illegal code for fields not wanted anyway.
+    private boolean dirtyLegalFieldNameCheck(String fieldName) {
+        return ! fieldName.contains(".");
+    }
+
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         SDDocumentType document = search.getDocument();
@@ -32,8 +37,11 @@ public class AddExtraFieldsToDocument extends Processor {
             for (Field field : search.extraFieldList()) {
                 addSdField(search, document, (SDField)field, validate);
             }
+            //TODO Vespa 8 or sooner we should avoid the dirty addition of fields from dirty 'default' summary to document at all
             for (SummaryField field : search.getSummary("default").getSummaryFields()) {
-                addSummaryField(search, document, field, validate);
+                if (dirtyLegalFieldNameCheck(field.getName())) {
+                    addSummaryField(search, document, field, validate);
+                }
             }
         }
     }
