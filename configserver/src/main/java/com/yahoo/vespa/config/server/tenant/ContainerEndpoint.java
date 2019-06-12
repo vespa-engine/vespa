@@ -47,10 +47,7 @@ public class ContainerEndpoint {
 
     @Override
     public String toString() {
-        return "ContainerEndpoint{" +
-                "clusterId=" + clusterId +
-                ", names=" + names +
-                '}';
+        return String.format("container endpoint %s -> %s", clusterId, names);
     }
 
 }

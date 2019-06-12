@@ -58,6 +58,9 @@ public final class PrepareParams {
         this.vespaVersion = vespaVersion;
         this.rotations = rotations;
         this.containerEndpoints = containerEndpoints;
+        if ((rotations != null && !rotations.isEmpty()) && !containerEndpoints.isEmpty()) {
+            throw new IllegalArgumentException("Cannot set both rotations and containerEndpoints");
+        }
     }
 
     public static class Builder {

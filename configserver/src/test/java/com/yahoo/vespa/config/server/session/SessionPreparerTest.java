@@ -224,6 +224,39 @@ public class SessionPreparerTest {
         assertEquals(expected, readContainerEndpoints(applicationId));
     }
 
+    @Test
+    public void require_that_container_endpoints_are_written() throws Exception {
+        var endpoints = "[\n" +
+                        "  {\n" +
+                        "    \"clusterId\": \"foo\",\n" +
+                        "    \"names\": [\n" +
+                        "      \"foo.app1.tenant1.global.vespa.example.com\",\n" +
+                        "      \"rotation-042.vespa.global.routing\"\n" +
+                        "    ]\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"clusterId\": \"bar\",\n" +
+                        "    \"names\": [\n" +
+                        "      \"bar.app1.tenant1.global.vespa.example.com\",\n" +
+                        "      \"rotation-043.vespa.global.routing\"\n" +
+                        "    ]\n" +
+                        "  }\n" +
+                        "]";
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId)
+                                                .containerEndpoints(endpoints)
+                                                .build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        var expected = List.of(new ContainerEndpoint(new ClusterId("foo"),
+                                                     List.of("foo.app1.tenant1.global.vespa.example.com",
+                                                             "rotation-042.vespa.global.routing")),
+                               new ContainerEndpoint(new ClusterId("bar"),
+                                                     List.of("bar.app1.tenant1.global.vespa.example.com",
+                                                             "rotation-043.vespa.global.routing")));
+        assertEquals(expected, readContainerEndpoints(applicationId));
+    }
+
     private void prepare(File app) throws IOException {
         prepare(app, new PrepareParams.Builder().build());
     }
