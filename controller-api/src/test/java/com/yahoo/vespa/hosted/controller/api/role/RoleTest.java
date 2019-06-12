@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class RoleTest {
 
     private static final Enforcer mainEnforcer = new Enforcer(SystemName.main);
-    private static final Enforcer vaasEnforcer = new Enforcer(SystemName.vaas);
+    private static final Enforcer publicEnforcer = new Enforcer(SystemName.Public);
 
     @Test
     public void operator_membership() {
@@ -40,18 +40,18 @@ public class RoleTest {
         assertTrue(mainEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
 
         Role publicSystem = Role.athenzTenantAdmin(TenantName.from("t1"));
-        assertFalse(vaasEnforcer.allows(publicSystem, Action.read, URI.create("/controller/v1/foo")));
-        assertTrue(vaasEnforcer.allows(publicSystem, Action.read, URI.create("/badge/v1/badge")));
-        assertTrue(vaasEnforcer.allows(publicSystem, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertFalse(publicEnforcer.allows(publicSystem, Action.read, URI.create("/controller/v1/foo")));
+        assertTrue(publicEnforcer.allows(publicSystem, Action.read, URI.create("/badge/v1/badge")));
+        assertTrue(publicEnforcer.allows(publicSystem, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
     }
 
     @Test
     public void build_service_membership() {
         Role role = Role.tenantPipeline(TenantName.from("t1"), ApplicationName.from("a1"));
-        assertFalse(vaasEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
-        assertFalse(vaasEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
-        assertTrue(vaasEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
-        assertFalse("No global read access", vaasEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
+        assertFalse(publicEnforcer.allows(role, Action.create, URI.create("/not/explicitly/defined")));
+        assertFalse(publicEnforcer.allows(role, Action.update, URI.create("/application/v4/tenant/t1/application/a1")));
+        assertTrue(publicEnforcer.allows(role, Action.create, URI.create("/application/v4/tenant/t1/application/a1/jobreport")));
+        assertFalse("No global read access", publicEnforcer.allows(role, Action.read, URI.create("/controller/v1/foo")));
     }
 
     @Test

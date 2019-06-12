@@ -15,7 +15,6 @@ import java.util.stream.Stream;
 import static com.yahoo.config.provision.SystemName.PublicCd;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.config.provision.SystemName.vaas;
 
 /** Job types that exist in the build system */
 public enum JobType {
@@ -87,9 +86,6 @@ public enum JobType {
 
     devCdUsCentral1        ("dev-cd-us-central-1",
                             Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
-
-    devAwsUsEast1b         ("dev-aws-us-east-1b",
-                            Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b"))),
 
     devAwsUsEast1c         ("dev-aws-us-east-1c",
                             Map.of(PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
