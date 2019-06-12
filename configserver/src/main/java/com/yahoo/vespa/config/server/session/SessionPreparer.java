@@ -8,18 +8,19 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -30,6 +31,8 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -108,6 +111,10 @@ public class SessionPreparer {
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeRotZK();
+                var globalServiceId = context.getApplicationPackage().getDeployment()
+                                             .map(DeploymentSpec::fromXml)
+                                             .flatMap(DeploymentSpec::globalServiceId);
+                preparation.writeContainerEndpointsZK(globalServiceId);
                 preparation.distribute();
             }
             log.log(LogLevel.DEBUG, () -> "time used " + params.getTimeoutBudget().timesUsed() +
@@ -132,7 +139,8 @@ public class SessionPreparer {
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final com.yahoo.component.Version vespaVersion;
 
-        final Rotations rotations;
+        final Rotations rotations; // TODO: Remove this once we have migrated fully to container endpoints
+        final ContainerEndpointsCache containerEndpoints;
         final Set<Rotation> rotationsSet;
         final ModelContext.Properties properties;
 
@@ -153,6 +161,7 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.rotations = new Rotations(curator, tenantPath);
+            this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.rotationsSet = getRotations(params.rotations());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
@@ -225,6 +234,15 @@ public class SessionPreparer {
             checkTimeout("write rotations to zookeeper");
         }
 
+        void writeContainerEndpointsZK(Optional<String> globalServiceId) {
+            if (globalServiceId.isEmpty()) {
+                log.log(LogLevel.WARNING, "Want to write rotations " + rotationsSet + " as container endpoints, but " + applicationId + " has no global-service-id. This should not happen");
+                return;
+            }
+            containerEndpoints.write(applicationId, toContainerEndpoints(globalServiceId.get(), rotationsSet));
+            checkTimeout("write container endpoints to zookeeper");
+        }
+
         void distribute() {
             prepareResult.asList().forEach(modelResult -> modelResult.model
                                            .distributeFiles(modelResult.fileDistributionProvider.getFileDistribution()));
@@ -242,6 +260,13 @@ public class SessionPreparer {
             return rotations;
         }
 
+    }
+
+    private static List<ContainerEndpoint> toContainerEndpoints(String globalServceId, Set<Rotation> rotations) {
+        return List.of(new ContainerEndpoint(new ClusterId(globalServceId),
+                                             rotations.stream()
+                                                      .map(Rotation::getId)
+                                                      .collect(Collectors.toUnmodifiableList())));
     }
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
