@@ -22,7 +22,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field abuseVoteCount type int {
+        field aVoteCount type int {
             indexing: attribute
         }
 
@@ -38,7 +38,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field markedAsAbuseAt type long {
+        field markedAsAAt type long {
             indexing: attribute
         }
 
@@ -98,16 +98,16 @@ search neuralnet {
             expression: if(isNan(attribute(downVoteCount)) == 1, 0, if(attribute(downVoteCount) < 0, 0, attribute(downVoteCount)))
         }
 
-        macro abuseVoteCountToUse() {
-            expression: if(isNan(attribute(abuseVoteCount)) == 1, 0, if(attribute(abuseVoteCount) < 0, 0, attribute(abuseVoteCount)))
+        macro aVoteCountToUse() {
+            expression: if(isNan(attribute(aVoteCount)) == 1, 0, if(attribute(aVoteCount) < 0, 0, attribute(aVoteCount)))
         }
 
         macro totalPositiveReactions() {
-            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (upVoteCountToUse - downVoteCountToUse) - abuseVoteCountToUse
+            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (upVoteCountToUse - downVoteCountToUse) - aVoteCountToUse
         }
 
         macro totalvote() {
-            expression: query(reportabuseweight) * abuseVoteCountToUse + downVoteCountToUse + query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse
+            expression: query(reportaweight) * aVoteCountToUse + downVoteCountToUse + query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse
         }
 
         macro phat() {
@@ -146,8 +146,8 @@ search neuralnet {
             expression: if(isNan(attribute(lastActivityAt)) == 1, attribute(createdAt), attribute(lastActivityAt))
         }
 
-        macro markedAsAbuseAtToUse() {
-            expression: if(isNan(attribute(markedAsAbuseAt)) == 1, maxSignedSixtyFourBitInteger, attribute(markedAsAbuseAt))
+        macro markedAsAAtToUse() {
+            expression: if(isNan(attribute(markedAsAAt)) == 1, maxSignedSixtyFourBitInteger, attribute(markedAsAAt))
         }
 
         macro timeDecayToUse() {
@@ -175,7 +175,7 @@ search neuralnet {
     rank-profile neuralNetworkProfile inherits defaultRankProfile {
         macro nn_input() {
             expression {
-                concat(log10_1p(abuseVoteCountToUse),
+                concat(log10_1p(aVoteCountToUse),
                 concat(log10_1p(downVoteCountToUse),
                 concat(log10_1p(uniqueReplyCountToUse),
                 concat(log10_1p(upVoteCountToUse),
