@@ -2,23 +2,23 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/mergehandler.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <gmock/gmock.h>
 #include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.persistence.handler.merge");
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-struct MergeHandlerTest : public SingleDiskPersistenceTestUtils
-{
+struct MergeHandlerTest : SingleDiskPersistenceTestUtils {
     uint32_t _location; // Location used for all merge tests
     document::Bucket _bucket; // Bucket used for all merge tests
     uint64_t _maxTimestamp;
@@ -29,77 +29,16 @@ struct MergeHandlerTest : public SingleDiskPersistenceTestUtils
     template <typename T>
     std::shared_ptr<T> fetchSingleMessage();
 
-    void setUp() override;
+    void SetUp() override;
 
     enum ChainPos { FRONT, MIDDLE, BACK };
     void setUpChain(ChainPos);
 
-        // Test a regular merge bucket command fetching data, including
-        // puts, removes, unrevertable removes & duplicates.
-    void testMergeBucketCommand();
-        // Test that a simplistic merge with nothing to actually merge,
-        // sends get bucket diff through the entire chain of 3 nodes.
     void testGetBucketDiffChain(bool midChain);
-    void testGetBucketDiffMidChain() { testGetBucketDiffChain(true); }
-    void testGetBucketDiffEndOfChain() { testGetBucketDiffChain(false); }
-        // Test that a simplistic merge with nothing to actually merge,
-        // sends apply bucket diff through the entire chain of 3 nodes.
     void testApplyBucketDiffChain(bool midChain);
-    void testApplyBucketDiffMidChain() { testApplyBucketDiffChain(true); }
-    void testApplyBucketDiffEndOfChain() { testApplyBucketDiffChain(false); }
-        // Test that a simplistic merge with one thing to actually merge,
-        // sends correct commands and finish.
-    void testMasterMessageFlow();
-        // Test that a simplistic merge with 1 doc to actually merge,
-        // sends apply bucket diff through the entire chain of 3 nodes.
-    void testApplyBucketDiffChain();
-    void testMergeUnrevertableRemove();
-    void testChunkedApplyBucketDiff();
-    void testChunkLimitPartiallyFilledDiff();
-    void testMaxTimestamp();
-    void testSPIFlushGuard();
-    void testBucketNotFoundInDb();
-    void testMergeProgressSafeGuard();
-    void testSafeGuardNotInvokedWhenHasMaskChanges();
-    void testEntryRemovedAfterGetBucketDiff();
-
-    void testMergeBucketSPIFailures();
-    void testGetBucketDiffSPIFailures();
-    void testApplyBucketDiffSPIFailures();
-    void testGetBucketDiffReplySPIFailures();
-    void testApplyBucketDiffReplySPIFailures();
-
-    void testRemoveFromDiff();
-
-    void testRemovePutOnExistingTimestamp();
-
-    CPPUNIT_TEST_SUITE(MergeHandlerTest);
-    CPPUNIT_TEST(testMergeBucketCommand);
-    CPPUNIT_TEST(testGetBucketDiffMidChain);
-    CPPUNIT_TEST(testGetBucketDiffEndOfChain);
-    CPPUNIT_TEST(testApplyBucketDiffMidChain);
-    CPPUNIT_TEST(testApplyBucketDiffEndOfChain);
-    CPPUNIT_TEST(testMasterMessageFlow);
-    CPPUNIT_TEST(testMergeUnrevertableRemove);
-    CPPUNIT_TEST(testChunkedApplyBucketDiff);
-    CPPUNIT_TEST(testChunkLimitPartiallyFilledDiff);
-    CPPUNIT_TEST(testMaxTimestamp);
-    CPPUNIT_TEST(testSPIFlushGuard);
-    CPPUNIT_TEST(testBucketNotFoundInDb);
-    CPPUNIT_TEST(testMergeProgressSafeGuard);
-    CPPUNIT_TEST(testSafeGuardNotInvokedWhenHasMaskChanges);
-    CPPUNIT_TEST(testEntryRemovedAfterGetBucketDiff);
-    CPPUNIT_TEST(testMergeBucketSPIFailures);
-    CPPUNIT_TEST(testGetBucketDiffSPIFailures);
-    CPPUNIT_TEST(testApplyBucketDiffSPIFailures);
-    CPPUNIT_TEST(testGetBucketDiffReplySPIFailures);
-    CPPUNIT_TEST(testApplyBucketDiffReplySPIFailures);
-    CPPUNIT_TEST(testRemoveFromDiff);
-    CPPUNIT_TEST(testRemovePutOnExistingTimestamp);
-    CPPUNIT_TEST_SUITE_END();
 
     // @TODO Add test to test that buildBucketInfo and mergeLists create minimal list (wrong sorting screws this up)
-private:
+
     void fillDummyApplyDiff(std::vector<api::ApplyBucketDiffCommand::Entry>& diff);
     std::shared_ptr<api::ApplyBucketDiffCommand> createDummyApplyDiff(
             int timestampOffset,
@@ -119,7 +58,7 @@ private:
     class HandlerInvoker
     {
     public:
-        virtual ~HandlerInvoker() {}
+        virtual ~HandlerInvoker() = default;
         virtual void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&) {}
         virtual void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) = 0;
         virtual std::string afterInvoke(MergeHandlerTest&, MergeHandler&) = 0;
@@ -176,7 +115,7 @@ private:
     {
     public:
         HandleGetBucketDiffReplyInvoker();
-        ~HandleGetBucketDiffReplyInvoker();
+        ~HandleGetBucketDiffReplyInvoker() override;
         void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
         void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
         std::string afterInvoke(MergeHandlerTest&, MergeHandler&) override;
@@ -200,7 +139,7 @@ private:
     {
     public:
         HandleApplyBucketDiffReplyInvoker();
-        ~HandleApplyBucketDiffReplyInvoker();
+        ~HandleApplyBucketDiffReplyInvoker() override;
         void beforeInvoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
         void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
         std::string afterInvoke(MergeHandlerTest&, MergeHandler&) override;
@@ -217,33 +156,30 @@ private:
                        const ExpectedExceptionSpec& spec);
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(MergeHandlerTest);
-
-
-MergeHandlerTest::HandleGetBucketDiffReplyInvoker::HandleGetBucketDiffReplyInvoker() {}
-MergeHandlerTest::HandleGetBucketDiffReplyInvoker::~HandleGetBucketDiffReplyInvoker() {}
+MergeHandlerTest::HandleGetBucketDiffReplyInvoker::HandleGetBucketDiffReplyInvoker() = default;
+MergeHandlerTest::HandleGetBucketDiffReplyInvoker::~HandleGetBucketDiffReplyInvoker() = default;
 MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::HandleApplyBucketDiffReplyInvoker()
     : _counter(0),
       _stub(),
       _applyCmd()
 {}
-MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::~HandleApplyBucketDiffReplyInvoker() {}
+MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::~HandleApplyBucketDiffReplyInvoker() = default;
 
 void
-MergeHandlerTest::setUp() {
+MergeHandlerTest::SetUp() {
     _context.reset(new spi::Context(documentapi::LoadType::DEFAULT, 0, 0));
-    SingleDiskPersistenceTestUtils::setUp();
+    SingleDiskPersistenceTestUtils::SetUp();
 
     _location = 1234;
     _bucket = makeDocumentBucket(document::BucketId(16, _location));
     _maxTimestamp = 11501;
 
-    LOG(info, "Creating %s in bucket database", _bucket.toString().c_str());
+    LOG(debug, "Creating %s in bucket database", _bucket.toString().c_str());
     bucketdb::StorageBucketInfo bucketDBEntry;
     bucketDBEntry.disk = 0;
     getEnv().getBucketDatabase(_bucket.getBucketSpace()).insert(_bucket.getBucketId(), bucketDBEntry, "mergetestsetup");
 
-    LOG(info, "Creating bucket to merge");
+    LOG(debug, "Creating bucket to merge");
     createTestBucket(_bucket);
 
     setUpChain(FRONT);
@@ -261,30 +197,28 @@ MergeHandlerTest::setUpChain(ChainPos pos) {
     }
 }
 
-void
-MergeHandlerTest::testMergeBucketCommand()
-{
+// Test a regular merge bucket command fetching data, including
+// puts, removes, unrevertable removes & duplicates.
+TEST_F(MergeHandlerTest, merge_bucket_command) {
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
-    LOG(info, "Handle a merge bucket command");
+    LOG(debug, "Handle a merge bucket command");
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
     cmd.setSourceIndex(1234);
     MessageTracker::UP tracker = handler.handleMergeBucket(cmd, *_context);
 
-    LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
-                         messageKeeper()._msgs[0]->getType());
-    api::GetBucketDiffCommand& cmd2(dynamic_cast<api::GetBucketDiffCommand&>(
-                *messageKeeper()._msgs[0]));
-    CPPUNIT_ASSERT_EQUAL(_nodes, cmd2.getNodes());
-    std::vector<api::GetBucketDiffCommand::Entry> diff(cmd2.getDiff());
-    CPPUNIT_ASSERT_EQUAL(size_t(17), diff.size());
-    CPPUNIT_ASSERT_EQUAL(uint16_t(1), cmd2.getAddress()->getIndex());
-    CPPUNIT_ASSERT_EQUAL(uint16_t(1234), cmd2.getSourceIndex());
+    LOG(debug, "Check state");
+    ASSERT_EQ(1, messageKeeper()._msgs.size());
+    ASSERT_EQ(api::MessageType::GETBUCKETDIFF, messageKeeper()._msgs[0]->getType());
+    auto& cmd2 = dynamic_cast<api::GetBucketDiffCommand&>(*messageKeeper()._msgs[0]);
+    EXPECT_THAT(_nodes, ContainerEq(cmd2.getNodes()));
+    auto diff = cmd2.getDiff();
+    EXPECT_EQ(17, diff.size());
+    EXPECT_EQ(1, cmd2.getAddress()->getIndex());
+    EXPECT_EQ(1234, cmd2.getSourceIndex());
 
     tracker->generateReply(cmd);
-    CPPUNIT_ASSERT(!tracker->getReply().get());
+    EXPECT_FALSE(tracker->getReply().get());
 }
 
 void
@@ -293,288 +227,137 @@ MergeHandlerTest::testGetBucketDiffChain(bool midChain)
     setUpChain(midChain ? MIDDLE : BACK);
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
-    LOG(info, "Verifying that get bucket diff is sent on");
+    LOG(debug, "Verifying that get bucket diff is sent on");
     api::GetBucketDiffCommand cmd(_bucket, _nodes, _maxTimestamp);
     MessageTracker::UP tracker1 = handler.handleGetBucketDiff(cmd, *_context);
     api::StorageMessage::SP replySent = tracker1->getReply();
 
     if (midChain) {
-        LOG(info, "Check state");
-        CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
-        CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
-                             messageKeeper()._msgs[0]->getType());
-        api::GetBucketDiffCommand& cmd2(
-                dynamic_cast<api::GetBucketDiffCommand&>(
-                    *messageKeeper()._msgs[0]));
-        CPPUNIT_ASSERT_EQUAL(_nodes, cmd2.getNodes());
-        std::vector<api::GetBucketDiffCommand::Entry> diff(cmd2.getDiff());
-        CPPUNIT_ASSERT_EQUAL(size_t(17), diff.size());
-        CPPUNIT_ASSERT_EQUAL(uint16_t(1), cmd2.getAddress()->getIndex());
+        LOG(debug, "Check state");
+        ASSERT_EQ(1, messageKeeper()._msgs.size());
+        ASSERT_EQ(api::MessageType::GETBUCKETDIFF, messageKeeper()._msgs[0]->getType());
+        auto& cmd2 = dynamic_cast<api::GetBucketDiffCommand&>(*messageKeeper()._msgs[0]);
+        EXPECT_THAT(_nodes, ContainerEq(cmd2.getNodes()));
+        auto diff = cmd2.getDiff();
+        EXPECT_EQ(17, diff.size());
+        EXPECT_EQ(1, cmd2.getAddress()->getIndex());
 
-        LOG(info, "Verifying that replying the diff sends on back");
-        api::GetBucketDiffReply::UP reply(new api::GetBucketDiffReply(cmd2));
+        LOG(debug, "Verifying that replying the diff sends on back");
+        auto reply = std::make_unique<api::GetBucketDiffReply>(cmd2);
 
-        CPPUNIT_ASSERT(!replySent.get());
+        ASSERT_FALSE(replySent.get());
 
         MessageSenderStub stub;
         handler.handleGetBucketDiffReply(*reply, stub);
-        CPPUNIT_ASSERT_EQUAL(1, (int)stub.replies.size());
+        ASSERT_EQ(1, stub.replies.size());
         replySent = stub.replies[0];
     }
-    api::GetBucketDiffReply::SP reply2(
-            std::dynamic_pointer_cast<api::GetBucketDiffReply>(
-                    replySent));
-    CPPUNIT_ASSERT(reply2.get());
+    auto reply2 = std::dynamic_pointer_cast<api::GetBucketDiffReply>(replySent);
+    ASSERT_TRUE(reply2.get());
 
-    CPPUNIT_ASSERT_EQUAL(_nodes, reply2->getNodes());
-    std::vector<api::GetBucketDiffCommand::Entry> diff(reply2->getDiff());
-    CPPUNIT_ASSERT_EQUAL(size_t(17), diff.size());
+    EXPECT_THAT(_nodes, ContainerEq(reply2->getNodes()));
+    auto diff = reply2->getDiff();
+    EXPECT_EQ(17, diff.size());
 }
 
+TEST_F(MergeHandlerTest, get_bucket_diff_mid_chain) {
+    testGetBucketDiffChain(true);
+}
+
+TEST_F(MergeHandlerTest, get_bucket_diff_end_of_chain) {
+    testGetBucketDiffChain(false);
+}
+
+// Test that a simplistic merge with 1 doc to actually merge,
+// sends apply bucket diff through the entire chain of 3 nodes.
 void
 MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
 {
     setUpChain(midChain ? MIDDLE : BACK);
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
-    LOG(info, "Verifying that apply bucket diff is sent on");
+    LOG(debug, "Verifying that apply bucket diff is sent on");
     api::ApplyBucketDiffCommand cmd(_bucket, _nodes, _maxTimestamp);
     MessageTracker::UP tracker1 = handler.handleApplyBucketDiff(cmd, *_context);
     api::StorageMessage::SP replySent = tracker1->getReply();
 
     if (midChain) {
-        LOG(info, "Check state");
-        CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
-        CPPUNIT_ASSERT_EQUAL(api::MessageType::APPLYBUCKETDIFF,
-                             messageKeeper()._msgs[0]->getType());
-        api::ApplyBucketDiffCommand& cmd2(
-                dynamic_cast<api::ApplyBucketDiffCommand&>(
-                    *messageKeeper()._msgs[0]));
-        CPPUNIT_ASSERT_EQUAL(_nodes, cmd2.getNodes());
-        std::vector<api::ApplyBucketDiffCommand::Entry> diff(cmd2.getDiff());
-        CPPUNIT_ASSERT_EQUAL(size_t(0), diff.size());
-        CPPUNIT_ASSERT_EQUAL(uint16_t(1), cmd2.getAddress()->getIndex());
+        LOG(debug, "Check state");
+        ASSERT_EQ(1, messageKeeper()._msgs.size());
+        ASSERT_EQ(api::MessageType::APPLYBUCKETDIFF, messageKeeper()._msgs[0]->getType());
+        auto& cmd2 = dynamic_cast<api::ApplyBucketDiffCommand&>(*messageKeeper()._msgs[0]);
+        EXPECT_THAT(_nodes, ContainerEq(cmd2.getNodes()));
+        auto diff = cmd2.getDiff();
+        EXPECT_EQ(0, diff.size());
+        EXPECT_EQ(1, cmd2.getAddress()->getIndex());
 
-        CPPUNIT_ASSERT(!replySent.get());
+        EXPECT_FALSE(replySent.get());
 
-        LOG(info, "Verifying that replying the diff sends on back");
-        api::ApplyBucketDiffReply::UP reply(
-                new api::ApplyBucketDiffReply(cmd2));
+        LOG(debug, "Verifying that replying the diff sends on back");
+        auto reply = std::make_unique<api::ApplyBucketDiffReply>(cmd2);
 
         MessageSenderStub stub;
         handler.handleApplyBucketDiffReply(*reply, stub);
-        CPPUNIT_ASSERT_EQUAL(1, (int)stub.replies.size());
+        ASSERT_EQ(1, stub.replies.size());
         replySent = stub.replies[0];
     }
 
-    api::ApplyBucketDiffReply::SP reply2(
-            std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(replySent));
-    CPPUNIT_ASSERT(reply2.get());
+    auto reply2 = std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(replySent);
+    ASSERT_TRUE(reply2.get());
 
-    CPPUNIT_ASSERT_EQUAL(_nodes, reply2->getNodes());
-    std::vector<api::ApplyBucketDiffCommand::Entry> diff(reply2->getDiff());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), diff.size());
+    EXPECT_THAT(_nodes, ContainerEq(reply2->getNodes()));
+    auto diff = reply2->getDiff();
+    EXPECT_EQ(0, diff.size());
 }
 
-void
-MergeHandlerTest::testMasterMessageFlow()
-{
+TEST_F(MergeHandlerTest, apply_bucket_diff_mid_chain) {
+    testApplyBucketDiffChain(true);
+}
+
+TEST_F(MergeHandlerTest, apply_bucket_diff_end_of_chain) {
+    testApplyBucketDiffChain(false);
+}
+
+// Test that a simplistic merge with one thing to actually merge,
+// sends correct commands and finish.
+TEST_F(MergeHandlerTest, master_message_flow) {
     MergeHandler handler(getPersistenceProvider(), getEnv());
 
-    LOG(info, "Handle a merge bucket command");
+    LOG(debug, "Handle a merge bucket command");
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
 
     handler.handleMergeBucket(cmd, *_context);
-    LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(size_t(1), messageKeeper()._msgs.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
-                         messageKeeper()._msgs[0]->getType());
-    api::GetBucketDiffCommand& cmd2(dynamic_cast<api::GetBucketDiffCommand&>(
-                *messageKeeper()._msgs[0]));
+    LOG(debug, "Check state");
+    ASSERT_EQ(1, messageKeeper()._msgs.size());
+    ASSERT_EQ(api::MessageType::GETBUCKETDIFF, messageKeeper()._msgs[0]->getType());
+    auto& cmd2 = dynamic_cast<api::GetBucketDiffCommand&>(*messageKeeper()._msgs[0]);
 
-    api::GetBucketDiffReply::UP reply(new api::GetBucketDiffReply(cmd2));
-        // End of chain can remove entries all have. This should end up with
-        // one entry master node has other node don't have
+    auto reply = std::make_unique<api::GetBucketDiffReply>(cmd2);
+    // End of chain can remove entries all have. This should end up with
+    // one entry master node has other node don't have
     reply->getDiff().resize(1);
 
     handler.handleGetBucketDiffReply(*reply, messageKeeper());
 
-    LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(size_t(2), messageKeeper()._msgs.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::APPLYBUCKETDIFF,
-                         messageKeeper()._msgs[1]->getType());
-    api::ApplyBucketDiffCommand& cmd3(
-            dynamic_cast<api::ApplyBucketDiffCommand&>(
-                *messageKeeper()._msgs[1]));
-    api::ApplyBucketDiffReply::UP reply2(new api::ApplyBucketDiffReply(cmd3));
-    CPPUNIT_ASSERT_EQUAL(size_t(1), reply2->getDiff().size());
-    reply2->getDiff()[0]._entry._hasMask |= 2;
+    LOG(debug, "Check state");
+    ASSERT_EQ(2, messageKeeper()._msgs.size());
+    ASSERT_EQ(api::MessageType::APPLYBUCKETDIFF, messageKeeper()._msgs[1]->getType());
+    auto& cmd3 = dynamic_cast<api::ApplyBucketDiffCommand&>(*messageKeeper()._msgs[1]);
+    auto reply2 = std::make_unique<api::ApplyBucketDiffReply>(cmd3);
+    ASSERT_EQ(1, reply2->getDiff().size());
+    reply2->getDiff()[0]._entry._hasMask |= 2u;
 
     MessageSenderStub stub;
     handler.handleApplyBucketDiffReply(*reply2, stub);
 
-    CPPUNIT_ASSERT_EQUAL(1, (int)stub.replies.size());
+    ASSERT_EQ(1, stub.replies.size());
 
-    api::MergeBucketReply::SP reply3(
-            std::dynamic_pointer_cast<api::MergeBucketReply>(stub.replies[0]));
-    CPPUNIT_ASSERT(reply3.get());
+    auto reply3 = std::dynamic_pointer_cast<api::MergeBucketReply>(stub.replies[0]);
+    ASSERT_TRUE(reply3.get());
 
-    CPPUNIT_ASSERT_EQUAL(_nodes, reply3->getNodes());
-    CPPUNIT_ASSERT(reply3->getResult().success());
-    CPPUNIT_ASSERT(!fsHandler().isMerging(_bucket));
-}
-
-void
-MergeHandlerTest::testMergeUnrevertableRemove()
-{
-/*
-    MergeHandler handler(getPersistenceProvider(), getEnv());
-
-    LOG(info, "Handle a merge bucket command");
-    api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
-    {
-        MessageTracker tracker;
-        handler.handleMergeBucket(cmd, tracker);
-    }
-
-    LOG(info, "Check state");
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), messageKeeper()._msgs.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::GETBUCKETDIFF,
-                         messageKeeper()._msgs[0]->getType());
-    api::GetBucketDiffCommand& cmd2(
-            dynamic_cast<api::GetBucketDiffCommand&>(
-                    *messageKeeper()._msgs[0]));
-
-    api::GetBucketDiffReply::UP reply(new api::GetBucketDiffReply(cmd2));
-
-    std::vector<Timestamp> docTimestamps;
-    for (int i = 0; i < 4; ++i) {
-        docTimestamps.push_back(Timestamp(reply->getDiff()[i]._timestamp));
-    }
-    CPPUNIT_ASSERT(reply->getDiff().size() >= 4);
-    reply->getDiff().resize(4);
-    // Add one non-unrevertable entry for existing timestamp which
-    // should not be added
-    reply->getDiff()[0]._flags |= Types::DELETED;
-    reply->getDiff()[0]._bodySize = 0;
-    reply->getDiff()[0]._hasMask = 2;
-    // Add a unrevertable entry which should be modified
-    reply->getDiff()[1]._flags |= Types::DELETED | Types::DELETED_IN_PLACE;
-    reply->getDiff()[1]._bodySize = 0;
-    reply->getDiff()[1]._hasMask = 2;
-    // Add one non-unrevertable entry that is a duplicate put
-    // which should not be added or fail the merge.
-    LOG(info, "duplicate put has timestamp %zu and flags %u",
-        reply->getDiff()[2]._timestamp,
-        reply->getDiff()[2]._flags);
-    reply->getDiff()[2]._hasMask = 2;
-    // Add one unrevertable entry for a timestamp that does not exist
-    reply->getDiff()[3]._flags |= Types::DELETED | Types::DELETED_IN_PLACE;
-    reply->getDiff()[3]._timestamp = 12345678;
-    reply->getDiff()[3]._bodySize = 0;
-    reply->getDiff()[3]._hasMask = 2;
-    {
-        MessageTracker tracker;
-        handler.handleGetBucketDiffReply(*reply, tracker);
-    }
-
-    LOG(info, "%s", reply->toString(true).c_str());
-
-    LOG(info, "Create bucket diff reply");
-    CPPUNIT_ASSERT_EQUAL(uint64_t(2), messageKeeper()._msgs.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::APPLYBUCKETDIFF,
-                         messageKeeper()._msgs[1]->getType());
-    api::ApplyBucketDiffCommand& cmd3(
-            dynamic_cast<api::ApplyBucketDiffCommand&>(
-                *messageKeeper()._msgs[1]));
-    api::ApplyBucketDiffReply::UP reply2(
-            new api::ApplyBucketDiffReply(cmd3));
-    CPPUNIT_ASSERT_EQUAL(size_t(4), reply2->getDiff().size());
-
-    memfile::DataLocation headerLocs[4];
-    std::vector<DocumentId> documentIds;
-    // So deserialization won't fail, we need some kind of header blob
-    // for each entry
-
-    for (int i = 0; i < 4; ++i) {
-        api::ApplyBucketDiffReply::Entry& entry = reply2->getDiff()[i];
-        CPPUNIT_ASSERT_EQUAL(uint16_t(2), entry._entry._hasMask);
-
-        memfile::MemFilePtr file(getMemFile(_bucket));
-        const memfile::MemSlot* slot = file->getSlotAtTime(docTimestamps[i]);
-        CPPUNIT_ASSERT(slot != NULL);
-        LOG(info, "Processing slot %s", slot->toString().c_str());
-        CPPUNIT_ASSERT(slot->hasBodyContent());
-        documentIds.push_back(file->getDocumentId(*slot));
-        entry._docName = documentIds.back().toString();
-        headerLocs[i] = slot->getLocation(HEADER);
-
-        document::Document::UP doc(file->getDocument(*slot, ALL));
-        {
-            vespalib::nbostream stream;
-            doc->serializeHeader(stream);
-            std::vector<char> buf(
-                    stream.peek(), stream.peek() + stream.size());
-            entry._headerBlob.swap(buf);
-        }
-        // Put duplicate needs body blob as well
-        if (i == 2) {
-            vespalib::nbostream stream;
-            doc->serializeBody(stream);
-            std::vector<char> buf(
-                    stream.peek(), stream.peek() + stream.size());
-            entry._bodyBlob.swap(buf);
-        }
-    }
-
-    LOG(info, "%s", reply2->toString(true).c_str());
-
-    MessageTracker tracker;
-    handler.handleApplyBucketDiffReply(*reply2, tracker);
-
-    CPPUNIT_ASSERT(tracker._sendReply);
-    api::MergeBucketReply::SP reply3(
-            std::dynamic_pointer_cast<api::MergeBucketReply>(
-                    tracker._reply));
-    CPPUNIT_ASSERT(reply3.get());
-
-    CPPUNIT_ASSERT_EQUAL(_nodes, reply3->getNodes());
-    CPPUNIT_ASSERT(reply3->getResult().success());
-
-    memfile::MemFilePtr file(getMemFile(_bucket));
-    // Existing timestamp should not be modified by
-    // non-unrevertable entry
-    {
-        const memfile::MemSlot* slot = file->getSlotAtTime(
-                Timestamp(reply->getDiff()[0]._timestamp));
-        CPPUNIT_ASSERT(slot != NULL);
-        CPPUNIT_ASSERT(!slot->deleted());
-    }
-    // Ensure unrevertable remove for existing put was merged in OK
-    {
-        const memfile::MemSlot* slot = file->getSlotAtTime(
-                Timestamp(reply->getDiff()[1]._timestamp));
-        CPPUNIT_ASSERT(slot != NULL);
-        CPPUNIT_ASSERT(slot->deleted());
-        CPPUNIT_ASSERT(slot->deletedInPlace());
-        CPPUNIT_ASSERT(!slot->hasBodyContent());
-        // Header location should not have changed
-        CPPUNIT_ASSERT_EQUAL(headerLocs[1], slot->getLocation(HEADER));
-    }
-
-    // Non-existing timestamp unrevertable remove should be added as
-    // entry with doc id-only header
-    {
-        const memfile::MemSlot* slot = file->getSlotAtTime(
-                Timestamp(reply->getDiff()[3]._timestamp));
-        CPPUNIT_ASSERT(slot != NULL);
-        CPPUNIT_ASSERT(slot->deleted());
-        CPPUNIT_ASSERT(slot->deletedInPlace());
-        CPPUNIT_ASSERT(!slot->hasBodyContent());
-        CPPUNIT_ASSERT_EQUAL(documentIds[3], file->getDocumentId(*slot));
-    }
-
-*/
+    EXPECT_THAT(_nodes, ContainerEq(reply3->getNodes()));
+    EXPECT_TRUE(reply3->getResult().success());
+    EXPECT_FALSE(fsHandler().isMerging(_bucket));
 }
 
 template <typename T>
@@ -631,9 +414,7 @@ getFilledDataSize(const std::vector<api::ApplyBucketDiffCommand::Entry>& diff)
 
 }
 
-void
-MergeHandlerTest::testChunkedApplyBucketDiff()
-{
+TEST_F(MergeHandlerTest, chunked_apply_bucket_diff) {
     uint32_t docSize = 1024;
     uint32_t docCount = 10;
     uint32_t maxChunkSize = docSize * 3;
@@ -643,14 +424,12 @@ MergeHandlerTest::testChunkedApplyBucketDiff()
 
     MergeHandler handler(getPersistenceProvider(), getEnv(), maxChunkSize);
 
-    LOG(info, "Handle a merge bucket command");
+    LOG(debug, "Handle a merge bucket command");
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
-    std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
-            fetchSingleMessage<api::GetBucketDiffCommand>());
-    api::GetBucketDiffReply::UP getBucketDiffReply(
-            new api::GetBucketDiffReply(*getBucketDiffCmd));
+    auto getBucketDiffCmd = fetchSingleMessage<api::GetBucketDiffCommand>();
+    auto getBucketDiffReply = std::make_unique<api::GetBucketDiffReply>(*getBucketDiffCmd);
 
     handler.handleGetBucketDiffReply(*getBucketDiffReply, messageKeeper());
 
@@ -659,14 +438,12 @@ MergeHandlerTest::testChunkedApplyBucketDiff()
 
     api::MergeBucketReply::SP reply;
     while (seen.size() != totalDiffs) {
-        std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-                fetchSingleMessage<api::ApplyBucketDiffCommand>());
+        auto applyBucketDiffCmd = fetchSingleMessage<api::ApplyBucketDiffCommand>();
 
-        LOG(info, "Test that we get chunked diffs in ApplyBucketDiff");
-        std::vector<api::ApplyBucketDiffCommand::Entry>& diff(
-                applyBucketDiffCmd->getDiff());
-        CPPUNIT_ASSERT(getFilledCount(diff) < totalDiffs);
-        CPPUNIT_ASSERT(getFilledDataSize(diff) <= maxChunkSize);
+        LOG(debug, "Test that we get chunked diffs in ApplyBucketDiff");
+        auto& diff = applyBucketDiffCmd->getDiff();
+        ASSERT_LT(getFilledCount(diff), totalDiffs);
+        ASSERT_LE(getFilledDataSize(diff), maxChunkSize);
 
         // Include node 1 in hasmask for all diffs to indicate it's done
         // Also remember the diffs we've seen thus far to ensure chunking
@@ -675,39 +452,33 @@ MergeHandlerTest::testChunkedApplyBucketDiff()
             if (!diff[i].filled()) {
                 continue;
             }
-            diff[i]._entry._hasMask |= 2;
-            std::pair<std::set<spi::Timestamp>::iterator, bool> inserted(
-                    seen.insert(spi::Timestamp(diff[i]._entry._timestamp)));
+            diff[i]._entry._hasMask |= 2u;
+            auto inserted = seen.emplace(spi::Timestamp(diff[i]._entry._timestamp));
             if (!inserted.second) {
-                std::ostringstream ss;
-                ss << "Diff for " << diff[i]
-                   << " has already been seen in another ApplyBucketDiff";
-                CPPUNIT_FAIL(ss.str());
+                FAIL() << "Diff for " << diff[i]
+                       << " has already been seen in another ApplyBucketDiff";
             }
         }
 
-        api::ApplyBucketDiffReply::UP applyBucketDiffReply(
-                new api::ApplyBucketDiffReply(*applyBucketDiffCmd));
+        auto applyBucketDiffReply = std::make_unique<api::ApplyBucketDiffReply>(*applyBucketDiffCmd);
         {
             handler.handleApplyBucketDiffReply(*applyBucketDiffReply, messageKeeper());
 
-            if (messageKeeper()._msgs.size()) {
-                CPPUNIT_ASSERT(!reply.get());
+            if (!messageKeeper()._msgs.empty()) {
+                ASSERT_FALSE(reply.get());
                 reply = std::dynamic_pointer_cast<api::MergeBucketReply>(
                         messageKeeper()._msgs[messageKeeper()._msgs.size() - 1]);
             }
         }
     }
-    LOG(info, "Done with applying diff");
+    LOG(debug, "Done with applying diff");
 
-    CPPUNIT_ASSERT(reply.get());
-    CPPUNIT_ASSERT_EQUAL(_nodes, reply->getNodes());
-    CPPUNIT_ASSERT(reply->getResult().success());
+    ASSERT_TRUE(reply.get());
+    EXPECT_THAT(_nodes, ContainerEq(reply->getNodes()));
+    EXPECT_TRUE(reply->getResult().success());
 }
 
-void
-MergeHandlerTest::testChunkLimitPartiallyFilledDiff()
-{
+TEST_F(MergeHandlerTest, chunk_limit_partially_filled_diff) {
     setUpChain(FRONT);
 
     uint32_t docSize = 1024;
@@ -731,24 +502,20 @@ MergeHandlerTest::testChunkLimitPartiallyFilledDiff()
     }
 
     setUpChain(MIDDLE);
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, maxChunkSize));
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, maxChunkSize);
     applyBucketDiffCmd->getDiff() = applyDiff;
 
     MergeHandler handler(
             getPersistenceProvider(), getEnv(), maxChunkSize);
     handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
 
-    std::shared_ptr<api::ApplyBucketDiffCommand> fwdDiffCmd(
-            fetchSingleMessage<api::ApplyBucketDiffCommand>());
+    auto fwdDiffCmd = fetchSingleMessage<api::ApplyBucketDiffCommand>();
     // Should not fill up more than chunk size allows for
-    CPPUNIT_ASSERT_EQUAL(size_t(2), getFilledCount(fwdDiffCmd->getDiff()));
-    CPPUNIT_ASSERT(getFilledDataSize(fwdDiffCmd->getDiff()) <= maxChunkSize);
+    EXPECT_EQ(2, getFilledCount(fwdDiffCmd->getDiff()));
+    EXPECT_LE(getFilledDataSize(fwdDiffCmd->getDiff()), maxChunkSize);
 }
 
-void
-MergeHandlerTest::testMaxTimestamp()
-{
+TEST_F(MergeHandlerTest, max_timestamp) {
     doPut(1234, spi::Timestamp(_maxTimestamp + 10), 1024, 1024);
 
     MergeHandler handler(getPersistenceProvider(), getEnv());
@@ -756,11 +523,10 @@ MergeHandlerTest::testMaxTimestamp()
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
-    std::shared_ptr<api::GetBucketDiffCommand> getCmd(
-            fetchSingleMessage<api::GetBucketDiffCommand>());
+    auto getCmd = fetchSingleMessage<api::GetBucketDiffCommand>();
 
-    CPPUNIT_ASSERT(!getCmd->getDiff().empty());
-    CPPUNIT_ASSERT(getCmd->getDiff().back()._timestamp <= _maxTimestamp);
+    ASSERT_FALSE(getCmd->getDiff().empty());
+    EXPECT_LE(getCmd->getDiff().back()._timestamp, _maxTimestamp);
 }
 
 void
@@ -819,8 +585,7 @@ MergeHandlerTest::createDummyApplyDiff(int timestampOffset,
         fillDummyApplyDiff(applyDiff);
     }
 
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, 1024*1024));
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, 1024*1024);
     applyBucketDiffCmd->getDiff() = applyDiff;
     return applyBucketDiffCmd;
 }
@@ -855,109 +620,86 @@ MergeHandlerTest::createDummyGetBucketDiff(int timestampOffset,
         diff.push_back(e);
     }
 
-    std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
-            new api::GetBucketDiffCommand(_bucket, _nodes, 1024*1024));
+    auto getBucketDiffCmd = std::make_shared<api::GetBucketDiffCommand>(_bucket, _nodes, 1024*1024);
     getBucketDiffCmd->getDiff() = diff;
     return getBucketDiffCmd;
 }
 
-void
-MergeHandlerTest::testSPIFlushGuard()
-{
+TEST_F(MergeHandlerTest, spi_flush_guard) {
     PersistenceProviderWrapper providerWrapper(
             getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
 
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR,
-                        "who you gonna call?"));
+            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
 
     setUpChain(MIDDLE);
     // Fail applying unrevertable remove
     providerWrapper.setFailureMask(
             PersistenceProviderWrapper::FAIL_REMOVE);
     providerWrapper.clearOperationLog();
+
     try {
         handler.handleApplyBucketDiff(*createDummyApplyDiff(6000), *_context);
-        CPPUNIT_FAIL("No exception thrown on failing in-place remove");
+        FAIL() << "No exception thrown on failing in-place remove";
     } catch (const std::runtime_error& e) {
-        CPPUNIT_ASSERT(std::string(e.what()).find("Failed remove")
-                       != std::string::npos);
+        EXPECT_TRUE(std::string(e.what()).find("Failed remove") != std::string::npos);
     }
     // Test that we always flush after applying diff locally, even when
     // errors are encountered.
     const std::vector<std::string>& opLog(providerWrapper.getOperationLog());
-    CPPUNIT_ASSERT(!opLog.empty());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("flush(Bucket(0x40000000000004d2, partition 0))"),
-            opLog.back());
+    ASSERT_FALSE(opLog.empty());
+    EXPECT_EQ("flush(Bucket(0x40000000000004d2, partition 0))", opLog.back());
 }
 
-void
-MergeHandlerTest::testBucketNotFoundInDb()
-{
+TEST_F(MergeHandlerTest, bucket_not_found_in_db) {
     MergeHandler handler(getPersistenceProvider(), getEnv());
     // Send merge for unknown bucket
     api::MergeBucketCommand cmd(makeDocumentBucket(document::BucketId(16, 6789)), _nodes, _maxTimestamp);
     MessageTracker::UP tracker = handler.handleMergeBucket(cmd, *_context);
-    CPPUNIT_ASSERT(tracker->getResult().isBucketDisappearance());
+    EXPECT_TRUE(tracker->getResult().isBucketDisappearance());
 }
 
-void
-MergeHandlerTest::testMergeProgressSafeGuard()
-{
+TEST_F(MergeHandlerTest, merge_progress_safe_guard) {
     MergeHandler handler(getPersistenceProvider(), getEnv());
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
-    std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
-            fetchSingleMessage<api::GetBucketDiffCommand>());
-    api::GetBucketDiffReply::UP getBucketDiffReply(
-            new api::GetBucketDiffReply(*getBucketDiffCmd));
+    auto getBucketDiffCmd = fetchSingleMessage<api::GetBucketDiffCommand>();
+    auto getBucketDiffReply = std::make_unique<api::GetBucketDiffReply>(*getBucketDiffCmd);
 
     handler.handleGetBucketDiffReply(*getBucketDiffReply, messageKeeper());
 
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            fetchSingleMessage<api::ApplyBucketDiffCommand>());
-    api::ApplyBucketDiffReply::UP applyBucketDiffReply(
-            new api::ApplyBucketDiffReply(*applyBucketDiffCmd));
+    auto applyBucketDiffCmd = fetchSingleMessage<api::ApplyBucketDiffCommand>();
+    auto applyBucketDiffReply = std::make_unique<api::ApplyBucketDiffReply>(*applyBucketDiffCmd);
 
     MessageSenderStub stub;
     handler.handleApplyBucketDiffReply(*applyBucketDiffReply, stub);
 
-    CPPUNIT_ASSERT_EQUAL(1, (int)stub.replies.size());
+    ASSERT_EQ(1, stub.replies.size());
 
-    api::MergeBucketReply::SP mergeReply(
-            std::dynamic_pointer_cast<api::MergeBucketReply>(
-                    stub.replies[0]));
-    CPPUNIT_ASSERT(mergeReply.get());
-    CPPUNIT_ASSERT(mergeReply->getResult().getResult()
-                   == api::ReturnCode::INTERNAL_FAILURE);
+    auto mergeReply = std::dynamic_pointer_cast<api::MergeBucketReply>(stub.replies[0]);
+    ASSERT_TRUE(mergeReply.get());
+    EXPECT_EQ(mergeReply->getResult().getResult(), api::ReturnCode::INTERNAL_FAILURE);
 }
 
-void
-MergeHandlerTest::testSafeGuardNotInvokedWhenHasMaskChanges()
-{
+TEST_F(MergeHandlerTest, safe_guard_not_invoked_when_has_mask_changes) {
     MergeHandler handler(getPersistenceProvider(), getEnv());
     _nodes.clear();
-    _nodes.push_back(api::MergeBucketCommand::Node(0, false));
-    _nodes.push_back(api::MergeBucketCommand::Node(1, false));
-    _nodes.push_back(api::MergeBucketCommand::Node(2, false));
+    _nodes.emplace_back(0, false);
+    _nodes.emplace_back(1, false);
+    _nodes.emplace_back(2, false);
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
-    std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
-            fetchSingleMessage<api::GetBucketDiffCommand>());
-    api::GetBucketDiffReply::UP getBucketDiffReply(
-            new api::GetBucketDiffReply(*getBucketDiffCmd));
+    auto getBucketDiffCmd = fetchSingleMessage<api::GetBucketDiffCommand>();
+    auto getBucketDiffReply = std::make_unique<api::GetBucketDiffReply>(*getBucketDiffCmd);
 
     handler.handleGetBucketDiffReply(*getBucketDiffReply, messageKeeper());
 
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            fetchSingleMessage<api::ApplyBucketDiffCommand>());
-    api::ApplyBucketDiffReply::UP applyBucketDiffReply(
-            new api::ApplyBucketDiffReply(*applyBucketDiffCmd));
-    CPPUNIT_ASSERT(!applyBucketDiffReply->getDiff().empty());
+    auto applyBucketDiffCmd = fetchSingleMessage<api::ApplyBucketDiffCommand>();
+    auto applyBucketDiffReply = std::make_unique<api::ApplyBucketDiffReply>(*applyBucketDiffCmd);
+    ASSERT_FALSE(applyBucketDiffReply->getDiff().empty());
     // Change a hasMask to indicate something changed during merging.
     applyBucketDiffReply->getDiff()[0]._entry._hasMask = 0x5;
 
@@ -965,21 +707,15 @@ MergeHandlerTest::testSafeGuardNotInvokedWhenHasMaskChanges()
     LOG(debug, "sending apply bucket diff reply");
     handler.handleApplyBucketDiffReply(*applyBucketDiffReply, stub);
 
-    CPPUNIT_ASSERT_EQUAL(1, (int)stub.commands.size());
+    ASSERT_EQ(1, stub.commands.size());
 
-    api::ApplyBucketDiffCommand::SP applyBucketDiffCmd2(
-            std::dynamic_pointer_cast<api::ApplyBucketDiffCommand>(
-                    stub.commands[0]));
-    CPPUNIT_ASSERT(applyBucketDiffCmd2.get());
-    CPPUNIT_ASSERT_EQUAL(applyBucketDiffCmd->getDiff().size(),
-                         applyBucketDiffCmd2->getDiff().size());
-    CPPUNIT_ASSERT_EQUAL(uint16_t(0x5),
-                         applyBucketDiffCmd2->getDiff()[0]._entry._hasMask);
+    auto applyBucketDiffCmd2 = std::dynamic_pointer_cast<api::ApplyBucketDiffCommand>(stub.commands[0]);
+    ASSERT_TRUE(applyBucketDiffCmd2.get());
+    ASSERT_EQ(applyBucketDiffCmd->getDiff().size(), applyBucketDiffCmd2->getDiff().size());
+    EXPECT_EQ(0x5, applyBucketDiffCmd2->getDiff()[0]._entry._hasMask);
 }
 
-void
-MergeHandlerTest::testEntryRemovedAfterGetBucketDiff()
-{
+TEST_F(MergeHandlerTest, entry_removed_after_get_bucket_diff) {
     MergeHandler handler(getPersistenceProvider(), getEnv());
     std::vector<api::ApplyBucketDiffCommand::Entry> applyDiff;
     {
@@ -990,22 +726,18 @@ MergeHandlerTest::testEntryRemovedAfterGetBucketDiff()
         applyDiff.push_back(e);
     }
     setUpChain(BACK);
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, 1024*1024));
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, 1024*1024);
     applyBucketDiffCmd->getDiff() = applyDiff;
 
-    MessageTracker::UP tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
+    auto tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
 
-    api::ApplyBucketDiffReply::SP applyBucketDiffReply(
-            std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(
-                    tracker->getReply()));
-    CPPUNIT_ASSERT(applyBucketDiffReply.get());
+    auto applyBucketDiffReply = std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(tracker->getReply());
+    ASSERT_TRUE(applyBucketDiffReply.get());
 
-    std::vector<api::ApplyBucketDiffCommand::Entry>& diff(
-            applyBucketDiffReply->getDiff());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), diff.size());
-    CPPUNIT_ASSERT(!diff[0].filled());
-    CPPUNIT_ASSERT_EQUAL(uint16_t(0x0), diff[0]._entry._hasMask);
+    auto& diff = applyBucketDiffReply->getDiff();
+    ASSERT_EQ(1, diff.size());
+    EXPECT_FALSE(diff[0].filled());
+    EXPECT_EQ(0x0, diff[0]._entry._hasMask);
 }
 
 std::string
@@ -1090,15 +822,11 @@ MergeHandlerTest::HandleMergeBucketInvoker::invoke(
     handler.handleMergeBucket(cmd, context);
 }
 
-void
-MergeHandlerTest::testMergeBucketSPIFailures()
-{
-    PersistenceProviderWrapper providerWrapper(
-            getPersistenceProvider());
+TEST_F(MergeHandlerTest, merge_bucket_spi_failures) {
+    PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR,
-                        "who you gonna call?"));
+            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
@@ -1112,11 +840,7 @@ MergeHandlerTest::testMergeBucketSPIFailures()
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
         HandleMergeBucketInvoker invoker;
-        CPPUNIT_ASSERT_EQUAL(std::string(),
-                             doTestSPIException(handler,
-                                                providerWrapper,
-                                                invoker,
-                                                *it));
+        EXPECT_EQ("", doTestSPIException(handler, providerWrapper, invoker, *it));
     }
 }
 
@@ -1130,15 +854,11 @@ MergeHandlerTest::HandleGetBucketDiffInvoker::invoke(
     handler.handleGetBucketDiff(cmd, context);
 }
 
-void
-MergeHandlerTest::testGetBucketDiffSPIFailures()
-{
-    PersistenceProviderWrapper providerWrapper(
-            getPersistenceProvider());
+TEST_F(MergeHandlerTest, get_bucket_diff_spi_failures) {
+    PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR,
-                        "who you gonna call?"));
+            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
@@ -1153,11 +873,7 @@ MergeHandlerTest::testGetBucketDiffSPIFailures()
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
         HandleGetBucketDiffInvoker invoker;
-        CPPUNIT_ASSERT_EQUAL(std::string(),
-                             doTestSPIException(handler,
-                                                providerWrapper,
-                                                invoker,
-                                                *it));
+        EXPECT_EQ("", doTestSPIException(handler, providerWrapper, invoker, *it));
     }
 }
 
@@ -1173,15 +889,11 @@ MergeHandlerTest::HandleApplyBucketDiffInvoker::invoke(
     handler.handleApplyBucketDiff(*cmd, context);
 }
 
-void
-MergeHandlerTest::testApplyBucketDiffSPIFailures()
-{
-    PersistenceProviderWrapper providerWrapper(
-            getPersistenceProvider());
+TEST_F(MergeHandlerTest, apply_bucket_diff_spi_failures) {
+    PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR,
-                        "who you gonna call?"));
+            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
@@ -1197,15 +909,11 @@ MergeHandlerTest::testApplyBucketDiffSPIFailures()
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
         HandleApplyBucketDiffInvoker invoker;
-        CPPUNIT_ASSERT_EQUAL(std::string(),
-                             doTestSPIException(handler,
-                                                providerWrapper,
-                                                invoker,
-                                                *it));
+        EXPECT_EQ("", doTestSPIException(handler, providerWrapper, invoker, *it));
         // Casual, in-place testing of bug 6752085.
         // This will fail if we give NaN to the metric in question.
-        CPPUNIT_ASSERT(std::isfinite(getEnv()._metrics
-                           .mergeAverageDataReceivedNeeded.getLast()));
+        EXPECT_TRUE(std::isfinite(getEnv()._metrics
+                    .mergeAverageDataReceivedNeeded.getLast()));
     }
 }
 
@@ -1248,15 +956,11 @@ MergeHandlerTest::HandleGetBucketDiffReplyInvoker::afterInvoke(
             api::ReturnCode::INTERNAL_FAILURE);
 }
 
-void
-MergeHandlerTest::testGetBucketDiffReplySPIFailures()
-{
-    PersistenceProviderWrapper providerWrapper(
-            getPersistenceProvider());
+TEST_F(MergeHandlerTest, get_bucket_diff_reply_spi_failures) {
+    PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR,
-                        "who you gonna call?"));
+            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
     HandleGetBucketDiffReplyInvoker invoker;
 
     setUpChain(FRONT);
@@ -1270,11 +974,7 @@ MergeHandlerTest::testGetBucketDiffReplySPIFailures()
     ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
-        CPPUNIT_ASSERT_EQUAL(std::string(),
-                             doTestSPIException(handler,
-                                                providerWrapper,
-                                                invoker,
-                                                *it));
+        EXPECT_EQ("", doTestSPIException(handler, providerWrapper, invoker, *it));
     }
 }
 
@@ -1289,23 +989,20 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::beforeInvoke(
     if (getChainPos() == FRONT) {
         api::MergeBucketCommand cmd(test._bucket, test._nodes, test._maxTimestamp);
         handler.handleMergeBucket(cmd, context);
-        std::shared_ptr<api::GetBucketDiffCommand> diffCmd(
-                test.fetchSingleMessage<api::GetBucketDiffCommand>());
-        std::shared_ptr<api::GetBucketDiffCommand> dummyDiff(
-                test.createDummyGetBucketDiff(100000 * _counter, 0x4));
+        auto diffCmd = test.fetchSingleMessage<api::GetBucketDiffCommand>();
+        auto dummyDiff = test.createDummyGetBucketDiff(100000 * _counter, 0x4);
         diffCmd->getDiff() = dummyDiff->getDiff();
 
         api::GetBucketDiffReply diffReply(*diffCmd);
         handler.handleGetBucketDiffReply(diffReply, _stub);
 
-        CPPUNIT_ASSERT_EQUAL(size_t(1), _stub.commands.size());
+        assert(_stub.commands.size() == 1);
         _applyCmd = std::dynamic_pointer_cast<api::ApplyBucketDiffCommand>(
                 _stub.commands[0]);
     } else {
         // Pretend last node in chain has data and that it will be fetched when
         // chain is unwinded.
-        std::shared_ptr<api::ApplyBucketDiffCommand> cmd(
-                test.createDummyApplyDiff(100000 * _counter, 0x4, false));
+        auto cmd = test.createDummyApplyDiff(100000 * _counter, 0x4, false);
         handler.handleApplyBucketDiff(*cmd, context);
         _applyCmd = test.fetchSingleMessage<api::ApplyBucketDiffCommand>();
     }
@@ -1345,11 +1042,8 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::afterInvoke(
     }
 }
 
-void
-MergeHandlerTest::testApplyBucketDiffReplySPIFailures()
-{
-    PersistenceProviderWrapper providerWrapper(
-            getPersistenceProvider());
+TEST_F(MergeHandlerTest, apply_bucket_diff_reply_spi_failures) {
+    PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     HandleApplyBucketDiffReplyInvoker invoker;
     for (int i = 0; i < 2; ++i) {
         ChainPos pos(i == 0 ? FRONT : MIDDLE);
@@ -1357,8 +1051,7 @@ MergeHandlerTest::testApplyBucketDiffReplySPIFailures()
         invoker.setChainPos(pos);
         MergeHandler handler(providerWrapper, getEnv());
         providerWrapper.setResult(
-                spi::Result(spi::Result::PERMANENT_ERROR,
-                            "who you gonna call?"));
+                spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
 
         ExpectedExceptionSpec exceptions[] = {
             { PersistenceProviderWrapper::FAIL_CREATE_ITERATOR, "create iterator" },
@@ -1372,18 +1065,12 @@ MergeHandlerTest::testApplyBucketDiffReplySPIFailures()
         ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
         for (ExceptionIterator it = exceptions; it != last; ++it) {
-            CPPUNIT_ASSERT_EQUAL(std::string(),
-                                 doTestSPIException(handler,
-                                                    providerWrapper,
-                                                    invoker,
-                                                    *it));
+            EXPECT_EQ("", doTestSPIException(handler, providerWrapper, invoker, *it));
         }
     }
 }
 
-void
-MergeHandlerTest::testRemoveFromDiff()
-{
+TEST_F(MergeHandlerTest, remove_from_diff) {
     framework::defaultimplementation::FakeClock clock;
     MergeStatus status(clock, documentapi::LoadType::DEFAULT, 0, 0);
 
@@ -1408,8 +1095,8 @@ MergeHandlerTest::testRemoveFromDiff()
         applyDiff[1]._entry._flags = 0x3;
         applyDiff[1]._entry._hasMask = 0x7;
 
-        CPPUNIT_ASSERT(status.removeFromDiff(applyDiff, 0x7));
-        CPPUNIT_ASSERT(status.diff.empty());
+        EXPECT_TRUE(status.removeFromDiff(applyDiff, 0x7));
+        EXPECT_TRUE(status.diff.empty());
     }
 
     status.diff.insert(status.diff.end(), diff.begin(), diff.end());
@@ -1424,8 +1111,8 @@ MergeHandlerTest::testRemoveFromDiff()
         applyDiff[1]._entry._flags = 0x3;
         applyDiff[1]._entry._hasMask = 0x6;
 
-        CPPUNIT_ASSERT(!status.removeFromDiff(applyDiff, 0x7));
-        CPPUNIT_ASSERT_EQUAL(size_t(2), status.diff.size());
+        EXPECT_FALSE(status.removeFromDiff(applyDiff, 0x7));
+        EXPECT_EQ(2, status.diff.size());
     }
 
     status.diff.clear();
@@ -1442,14 +1129,12 @@ MergeHandlerTest::testRemoveFromDiff()
         applyDiff[1]._entry._flags = 0x3;
         applyDiff[1]._entry._hasMask = 0x5;
 
-        CPPUNIT_ASSERT(status.removeFromDiff(applyDiff, 0x7));
-        CPPUNIT_ASSERT_EQUAL(size_t(2), status.diff.size());
+        EXPECT_TRUE(status.removeFromDiff(applyDiff, 0x7));
+        EXPECT_EQ(2, status.diff.size());
     }
 }
 
-void
-MergeHandlerTest::testRemovePutOnExistingTimestamp()
-{
+TEST_F(MergeHandlerTest, remove_put_on_existing_timestamp) {
     setUpChain(BACK);
 
     document::TestDocMan docMan;
@@ -1469,22 +1154,20 @@ MergeHandlerTest::testRemovePutOnExistingTimestamp()
         applyDiff.push_back(e);
     }
 
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyBucketDiffCmd(
-            new api::ApplyBucketDiffCommand(_bucket, _nodes, 1024*1024));
+    auto applyBucketDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes, 1024*1024);
     applyBucketDiffCmd->getDiff() = applyDiff;
 
-    MessageTracker::UP tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
+    auto tracker = handler.handleApplyBucketDiff(*applyBucketDiffCmd, *_context);
 
-    api::ApplyBucketDiffReply::SP applyBucketDiffReply(
+    auto applyBucketDiffReply =
             std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(
-                    tracker->getReply()));
-    CPPUNIT_ASSERT(applyBucketDiffReply.get());
+                    tracker->getReply());
+    ASSERT_TRUE(applyBucketDiffReply.get());
 
     api::MergeBucketCommand cmd(_bucket, _nodes, _maxTimestamp);
     handler.handleMergeBucket(cmd, *_context);
 
-    std::shared_ptr<api::GetBucketDiffCommand> getBucketDiffCmd(
-            fetchSingleMessage<api::GetBucketDiffCommand>());
+    auto getBucketDiffCmd = fetchSingleMessage<api::GetBucketDiffCommand>();
 
     // Timestamp should now be a regular remove
     bool foundTimestamp = false;
@@ -1492,14 +1175,14 @@ MergeHandlerTest::testRemovePutOnExistingTimestamp()
         const api::GetBucketDiffCommand::Entry& e(
                 getBucketDiffCmd->getDiff()[i]);
         if (e._timestamp == ts) {
-            CPPUNIT_ASSERT_EQUAL(
+            EXPECT_EQ(
                     uint16_t(MergeHandler::IN_USE | MergeHandler::DELETED),
                     e._flags);
             foundTimestamp = true;
             break;
         }
     }
-    CPPUNIT_ASSERT(foundTimestamp);
+    EXPECT_TRUE(foundTimestamp);
 }
 
 } // storage

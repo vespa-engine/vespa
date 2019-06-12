@@ -64,13 +64,8 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const
     }
 }
 
-PersistenceTestUtils::PersistenceTestUtils()
-{
-}
-
-PersistenceTestUtils::~PersistenceTestUtils()
-{
-}
+PersistenceTestUtils::PersistenceTestUtils() = default;
+PersistenceTestUtils::~PersistenceTestUtils() = default;
 
 std::string
 PersistenceTestUtils::dumpBucket(const document::BucketId& bid, uint16_t disk) {

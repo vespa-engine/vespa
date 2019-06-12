@@ -1,6 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(storage_testpersistence TEST
+
+vespa_add_executable(storage_persistence_gtest_runner_app TEST
     SOURCES
+    bucketownershipnotifiertest.cpp
     diskmoveoperationhandlertest.cpp
     mergehandlertest.cpp
     persistencequeuetest.cpp
@@ -10,15 +12,6 @@ vespa_add_library(storage_testpersistence TEST
     provider_error_wrapper_test.cpp
     splitbitdetectortest.cpp
     testandsettest.cpp
-    DEPENDS
-    storage
-    storage_testdistributor
-    storage_testpersistence_common
-)
-
-vespa_add_executable(storage_persistence_gtest_runner_app TEST
-    SOURCES
-    bucketownershipnotifiertest.cpp
     gtest_runner.cpp
     DEPENDS
     storage
