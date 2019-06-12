@@ -529,6 +529,23 @@ AsciistreamTest::testFloat() {
     f = 42.0;
     EXPECT_EXCEPTION(as >> f, IllegalArgumentException, "float value '123.4E50' is outside of range.");
     EXPECT_EQUAL(f, 42.0);
+
+    errno = 0;
+    char *ep;
+    f = locale::c::strtof_au("-5.490412E-39", &ep);
+    EXPECT_EQUAL(f, -5.490412E-39f);
+    EXPECT_EQUAL(errno, 0);
+    EXPECT_EQUAL(*ep, 0);
+
+    f = locale::c::strtof_au("0.0001E-50", &ep);
+    EXPECT_EQUAL(f, 0.0);
+    EXPECT_EQUAL(errno, 0);
+    EXPECT_EQUAL(*ep, 0);
+
+    f = locale::c::strtof_au("123.4E50", &ep);
+    EXPECT_EQUAL(f, HUGE_VALF);
+    EXPECT_EQUAL(errno, ERANGE);
+    EXPECT_EQUAL(*ep, 0);
 }
 
 void
