@@ -10,6 +10,7 @@
 #include <limits>
 #include <stdexcept>
 #include <cassert>
+#include <math.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.stllike.asciistream");
@@ -154,7 +155,7 @@ void throwInputError(int e, const char * t, const char * buf)
     if (e == 0) {
         throw IllegalArgumentException("Failed decoding a " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
     } else if (errno == ERANGE) {
-        throw IllegalArgumentException(string(t) + " value is outside of range '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(string(t) + " value '" + string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else if (errno == EINVAL) {
         throw IllegalArgumentException("Illegal " + string(t) + " value '" + string(buf) + "'.", VESPA_STRLOC);
     } else {
@@ -172,7 +173,16 @@ int getValue(double & val, const char *buf)
     char *ebuf;
     errno = 0;
     val = locale::c::strtod(buf, &ebuf);
-    if ((errno != 0) || (buf == ebuf)) {
+    bool failed = (buf == ebuf);
+    if (errno != 0) {
+        if (errno == ERANGE) {
+            if (val == HUGE_VAL) failed = true;
+            if (val == -HUGE_VAL) failed = true;
+        } else {
+            failed = true;
+        }
+    }
+    if (failed) {
         throwInputError(errno, "double", buf);
     }
     return ebuf - buf;
@@ -183,7 +193,16 @@ int getValue(float & val, const char *buf)
     char *ebuf;
     errno = 0;
     val = locale::c::strtof(buf, &ebuf);
-    if ((errno != 0) || (buf == ebuf)) {
+    bool failed = (buf == ebuf);
+    if (errno != 0) {
+        if (errno == ERANGE) {
+            if (val == HUGE_VALF) failed = true;
+            if (val == -HUGE_VALF) failed = true;
+        } else {
+            failed = true;
+        }
+    }
+    if (failed) {
         throwInputError(errno, "float", buf);
     }
     return ebuf - buf;
