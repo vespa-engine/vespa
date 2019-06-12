@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.search.test;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
@@ -11,12 +12,18 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -112,15 +119,63 @@ public class QueryProfilesTestCase {
         registry.register(untypedUser);
 
         assertConfig("query-profiles.cfg",registry);
+
+        DeployLoggerStub logger = new DeployLoggerStub();
+        new QueryProfiles(registry, logger);
+        assertTrue(logger.entries.isEmpty());
+    }
+
+    @Test
+    public void testValidation() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileTypeRegistry typeRegistry = registry.getTypeRegistry();
+
+        QueryProfileType userType = new QueryProfileType("user");
+        typeRegistry.register(userType);
+
+        DeployLoggerStub logger = new DeployLoggerStub();
+        new QueryProfiles(registry, logger);
+        assertEquals(1, logger.entries.size());
+        assertEquals("This application define query profile types, but has no query profiles referencing them " +
+                     "so they have no effect. " +
+                     "See https://docs.vespa.ai/documentation/query-profiles.html",
+                     logger.entries.get(0).message);
+    }
+
+    @Test
+    public void testValidationWithTensorFields() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileTypeRegistry typeRegistry = registry.getTypeRegistry();
+
+        QueryProfileType userType = new QueryProfileType("user");
+        userType.addField(new FieldDescription("vector", FieldType.fromString("tensor(x[5])", typeRegistry)));
+        userType.addField(new FieldDescription("matrix", FieldType.fromString("tensor(x[5],y[5])", typeRegistry)));
+        typeRegistry.register(userType);
+
+        DeployLoggerStub logger = new DeployLoggerStub();
+        new QueryProfiles(registry, logger);
+        assertEquals(1, logger.entries.size());
+        assertEquals("This application define query profile types, but has no query profiles referencing them " +
+                     "so they have no effect. " +
+                     "In particular, the tensors (vector, matrix) will be interpreted as strings, not tensors if sent in requests. " +
+                     "See https://docs.vespa.ai/documentation/query-profiles.html",
+                     logger.entries.get(0).message);
     }
 
     protected void assertConfig(String correctFileName, QueryProfileRegistry check) throws IOException {
         assertSerializedConfigFileEquals(root + "/" + correctFileName,
-                com.yahoo.text.StringUtilities.implodeMultiline(com.yahoo.config.ConfigInstance.serialize(new QueryProfiles(check).getConfig())));
+                com.yahoo.text.StringUtilities.implodeMultiline(com.yahoo.config.ConfigInstance.serialize(new QueryProfiles(check, new SilentDeployLogger()).getConfig())));
 
         // Also assert that the correct config config can actually be read as a config source
         QueryProfileConfigurer configurer = new QueryProfileConfigurer("file:" + root + "empty.cfg");
         configurer.shutdown();
+    }
+
+    private static class SilentDeployLogger implements DeployLogger {
+
+        @Override
+        public void log(Level level, String message) {}
+
     }
 
 }

@@ -246,7 +246,7 @@ public class SearchBuilder {
         DocumentModelBuilder builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search); // TODO: Why is this not in the regular list?
-            process(search, deployLogger, new QueryProfiles(queryProfileRegistry), validate);
+            process(search, deployLogger, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
             built.add(search);
         }
         builder.addToModel(searchList);
