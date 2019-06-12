@@ -34,4 +34,5 @@ sdump5
 /usage.out
 /zwordc0coll.out
 /zwordf0field.out
+/fldump[2-4]
 searchlib_fusion_test_app
