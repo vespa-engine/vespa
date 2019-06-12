@@ -51,9 +51,9 @@ class NodePrioritizer {
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, NameResolver nameResolver, NodeFlavors flavors) {
+                    int spares, NameResolver nameResolver, NodeFlavors flavors, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = allNodes;
-        this.capacity = new DockerHostCapacity(allNodes);
+        this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;

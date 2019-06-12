@@ -25,12 +25,14 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
-                         BooleanFlag dynamicProvisioningEnabledFlag) {
+                         HostResourcesCalculator hostResourcesCalculator, BooleanFlag dynamicProvisioningEnabledFlag) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabledFlag = dynamicProvisioningEnabledFlag;
     }
 
@@ -65,7 +67,8 @@ public class GroupPreparer {
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
                                                                   spareCount, nodeRepository.nameResolver(),
-                                                                  nodeRepository.getAvailableFlavors());
+                                                                  nodeRepository.getAvailableFlavors(),
+                                                                  hostResourcesCalculator);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);

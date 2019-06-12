@@ -19,9 +19,11 @@ import java.util.Objects;
 public class DockerHostCapacity {
 
     private final LockedNodeList allNodes;
+    private final HostResourcesCalculator hostResourcesCalculator;
 
-    DockerHostCapacity(LockedNodeList allNodes) {
+    DockerHostCapacity(LockedNodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
+        this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
