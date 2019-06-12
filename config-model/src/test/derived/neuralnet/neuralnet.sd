@@ -70,10 +70,6 @@ search neuralnet {
             indexing: attribute
         }
 
-        field authorReputationScore type double {
-            indexing: attribute
-        }
-
         field hsScore type double {
             indexing: attribute
         }
@@ -152,10 +148,6 @@ search neuralnet {
 
         macro freshnessToUse() {
             expression: if (freshness(createdAt).logscale < 0.01, 0.01, freshness(createdAt).logscale)
-        }
-
-        macro reputationScoreToUse() {
-            expression: if (isNan(attribute(authorReputationScore)) == 1, 0.3, attribute(authorReputationScore))
         }
 
         macro rankedAt() {
