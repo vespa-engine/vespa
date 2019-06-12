@@ -514,10 +514,4 @@ search neuralnet {
         type: tensor(out[1])
     }
 
-    rank-profile neuralNetworkControlProfile inherits neuralNetworkProfile { }
-
-    rank-profile neuralNetworkWithPlackettProfile inherits neuralNetworkProfile { }
-
-    rank-profile neuralNetworkBucketProfile inherits neuralNetworkProfile { }
-
 }
