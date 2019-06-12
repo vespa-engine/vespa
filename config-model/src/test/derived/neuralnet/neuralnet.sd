@@ -46,7 +46,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field toxicity type float {
+        field t type float {
             indexing: attribute
         }
 
@@ -54,7 +54,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field normalizedCommunityScore type float {
+        field normalizedCS type float {
             indexing: attribute
         }
 
@@ -122,8 +122,8 @@ search neuralnet {
             expression: attribute(hsScore)
         }
 
-        macro toxicityScoreToUse() {
-            expression: if (isNan(attribute(toxicity)) == 1, 0.6, attribute(toxicity))
+        macro tScoreToUse() {
+            expression: if (isNan(attribute(t)) == 1, 0.6, attribute(t))
         }
 
         macro relevanceScoreToUse() {
@@ -183,7 +183,7 @@ search neuralnet {
                 concat(log10_1p(totalvote),
                 concat(hsScoreToUse,
                 concat(tdToUse,
-                toxicityScoreToUse, x), x), x), x), x), x), x), x)
+                tScoreToUse, x), x), x), x), x), x), x), x)
             }
         }
 
