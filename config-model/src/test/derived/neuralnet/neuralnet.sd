@@ -2,224 +2,132 @@ search neuralnet {
 
     document neuralnet {
 
-        field messageId type string {
-            indexing: summary | index
-            match {
-               exact
-            }
-        }
-
-        field namespace type string {
-            indexing: summary | index
-            match {
-               exact
-            }
-        }
-
         field contextId type string {
-            indexing : summary | attribute
-            attribute: fast-search
-            match {
-               exact
-            }
-        }
-
-        field authorGuid type string {
-            indexing : summary | index
-            match {
-               exact
-            }
+            indexing : attribute
         }
 
         field messageType type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field messageEntity type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field pinned type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field authorId type string {
-            indexing: summary | attribute
-            attribute: fast-search
-            match {
-               exact
-            }
+            indexing: attribute
         }
 
         field authorType type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field createdAt type long {
-            indexing: summary | attribute
-            attribute: fast-search
+            indexing: attribute
         }
 
         field updatedAt type long {
-            indexing: summary | attribute
-            attribute: fast-search
-        }
-
-        field abuseGuids type array<string> {
-            indexing: summary | index
-            match {
-               exact
-            }
-        }
-
-        field internalTags type array<string> {
-            indexing: summary | index
-            match {
-               exact
-            }
+            indexing: attribute
         }
 
         field tags type array<string> {
-            indexing: summary | attribute
-            attribute: fast-search
+            indexing: attribute
         }
 
         field userLabels type array<int> {
-            indexing: summary | attribute
-            attribute: fast-search
-        }
-
-        field content type string {
-            indexing: summary | index
+            indexing: attribute
         }
 
         field sentimentType type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field upVoteCount type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field downVoteCount type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field abuseVoteCount type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field replyCount type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field uniqueReplyAuthorCount type int {
-            indexing: summary | attribute
-        }
-
-        field messageProtoBuf type string {
-            indexing: summary
+            indexing: attribute
         }
 
         field replyTo type string {
-            indexing: summary | attribute
-            attribute: fast-search
-            match {
-               exact
-            }
+            indexing: attribute
         }
 
         field visibility type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field deletedAt type long {
-            indexing: summary | attribute
-            attribute: fast-search
+            indexing: attribute
         }
 
         field markedAsAbuseAt type long {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field smpProcessedState type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field csaiProcessedState type int {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field normalizedTextScore type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field ericScore type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field newsHateCleanScore type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field financeHateCleanScore type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field toxicity type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field relevance type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field newsHateCleanScoreV2 type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field financeHateCleanScoreV2 type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field normalizedCommunityScore type float {
-            indexing: summary | attribute
+            indexing: attribute
         }
 
         field lastActivityAt type long {
-            indexing: summary | attribute
-        }
-
-        field lastActivityBy type string {
-            indexing: summary
-        }
-
-        field lastReplyId type string {
-            indexing: summary
-        }
-
-        field sadVoteCount type int {
-            indexing: summary
-        }
-
-        field laughVoteCount type int {
-            indexing: summary
-        }
-
-        field happyVoteCount type int {
-            indexing: summary
-        }
-
-        field heartVoteCount type int {
-            indexing: summary
-        }
-
-        field angryVoteCount type int {
-            indexing: summary
-        }
-
-        field wowVoteCount type int {
-            indexing: summary
+            indexing: attribute
         }
 
         field authorReputationScore type double {
@@ -248,13 +156,10 @@ search neuralnet {
             query(pinweight): 1000
             query(z): 1.96
 
-            # freshness=0.5 after 30 days
             freshness.halfResponse: 2592000
         }
 
         macro log10_1p(x) {
-            # Similar to log1p but uses log10 rather than ln.
-            # Assumes x not Nan && x>=0, i.e. x should be the output of attributeToUse
             expression: log10(x+1)
         }
 
