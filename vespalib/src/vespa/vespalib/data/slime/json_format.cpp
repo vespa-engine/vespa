@@ -434,7 +434,7 @@ JsonDecoder::decodeNumber(Inserter &inserter)
         default:
             char *endp;
             int errorCode = insertNumber(inserter, isLong, value, &endp);
-            if (errorCode != 0) {
+            if (endp == value.c_str()) {
                 std::stringstream ss;
                 ss << "error inserting number " << value << ". error code: " << errorCode << ". endp - value: " << (endp - value.c_str());
                 in.fail(ss.str());
@@ -450,7 +450,7 @@ insertNumber(Inserter &inserter, bool isLong, const vespalib::string & value, ch
     int errorCode = 0;
     errno = 0;
     if (isLong) {
-        long val = strtol(value.c_str(), endp, 0);
+        long val = strtol(value.c_str(), endp, 10);
         errorCode = errno;
         inserter.insertLong(val);
     } else {
