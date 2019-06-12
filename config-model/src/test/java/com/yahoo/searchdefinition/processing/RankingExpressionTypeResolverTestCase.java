@@ -103,9 +103,7 @@ public class RankingExpressionTypeResolverTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The first-phase expression is invalid: An if expression must produce compatible types in both alternatives, but the 'true' type is tensor(x[],y[]) while the 'false' type is tensor(z[10])" +
-                         "\n'true' branch: attribute(a)" +
-                         "\n'false' branch: attribute(b)",
+            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The first-phase expression is invalid: An if expression must produce compatible types in both alternatives, but the 'true' type is tensor(x[],y[]) while the 'false' type is tensor(z[10])",
                          Exceptions.toMessageString(expected));
         }
     }

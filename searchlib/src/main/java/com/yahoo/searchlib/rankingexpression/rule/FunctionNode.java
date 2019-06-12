@@ -5,7 +5,6 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.transform.TensorMaxMinTransformer;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Join;
@@ -68,11 +67,6 @@ public final class FunctionNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext<Reference> context) {
-        // Check if this node should be interpreted as tensor reduce, as this impacts the type
-        ExpressionNode thisTransformed = TensorMaxMinTransformer.transformFunctionNode(this, context);
-        if (thisTransformed != this)
-            return thisTransformed.type(context);
-
         if (arguments.expressions().size() == 0)
             return TensorType.empty;
 

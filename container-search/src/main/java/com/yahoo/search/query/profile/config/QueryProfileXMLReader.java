@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Importer of query profiles and types from XML files
+ * A class which imports query profiles and types from XML files
  *
  * @author bratseth
  */
