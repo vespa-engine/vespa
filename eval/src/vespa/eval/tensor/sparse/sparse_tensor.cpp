@@ -64,16 +64,7 @@ SparseTensor::operator==(const SparseTensor &rhs) const
 eval::ValueType
 SparseTensor::combineDimensionsWith(const SparseTensor &rhs) const
 {
-    std::vector<eval::ValueType::Dimension> result;
-    std::set_union(_type.dimensions().cbegin(), _type.dimensions().cend(),
-                   rhs._type.dimensions().cbegin(), rhs._type.dimensions().cend(),
-                   std::back_inserter(result),
-                   [](const eval::ValueType::Dimension &lhsDim,
-                      const eval::ValueType::Dimension &rhsDim)
-                   { return lhsDim.name < rhsDim.name; });
-    return (result.empty() ?
-            eval::ValueType::double_type() :
-            eval::ValueType::tensor_type(std::move(result)));
+    return eval::ValueType::join(_type, rhs._type);
 }
 
 const eval::ValueType &
