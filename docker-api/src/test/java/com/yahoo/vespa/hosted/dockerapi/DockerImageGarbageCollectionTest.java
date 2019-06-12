@@ -50,7 +50,7 @@ public class DockerImageGarbageCollectionTest {
     @Test
     public void singleImageWithContainerIsUsed() {
         gcTester.withExistingImages(ImageBuilder.forId("image-1"))
-                .andExistingContainers(ContainerBuilder.forId("container-1").withImageId("image-1"))
+                .andExistingContainers(new ContainerLite("container-1", "image-1", "running"))
                 .expectDeletedImages();
     }
 
@@ -77,7 +77,7 @@ public class DockerImageGarbageCollectionTest {
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image").withTags("latest"),
                         ImageBuilder.forId("image-2").withParentId("parent-image").withTags("1.24"))
-                .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImageId("image-1"))
+                .andExistingContainers(new ContainerLite("vespa-node-1", "image-1", "running"))
                 .expectDeletedImages("1.24"); // Deleting the only tag will delete the image
     }
 
@@ -173,10 +173,8 @@ public class DockerImageGarbageCollectionTest {
             return this;
         }
 
-        private ImageGcTester andExistingContainers(ContainerBuilder... containers) {
-            when(docker.listAllContainers()).thenReturn(Arrays.stream(containers)
-                    .map(ContainerBuilder::toContainer)
-                    .collect(Collectors.toList()));
+        private ImageGcTester andExistingContainers(ContainerLite... containers) {
+            when(docker.listAllContainers()).thenReturn(List.of(containers));
             return this;
         }
 
@@ -256,23 +254,5 @@ public class DockerImageGarbageCollectionTest {
         private ImageBuilder withParentId(String parentId) { this.parentId = parentId; return this; }
         private ImageBuilder withTags(String... tags) { this.repoTags = tags; return this; }
         private Image toImage() { return createFrom(Image.class, this); }
-    }
-
-    // Workaround for Container class that can't be instantiated directly in Java (instantiate via Jackson instead).
-    private static class ContainerBuilder {
-        // Json property names must match exactly the property names in the Container class.
-        @JsonProperty("Id")
-        private final String id;
-
-        @JsonProperty("ImageID")
-        private String imageId;
-
-        private ContainerBuilder(String id) { this.id = id; }
-        private static ContainerBuilder forId(final String id) { return new ContainerBuilder(id); }
-        private ContainerBuilder withImageId(String imageId) { this.imageId = imageId; return this; }
-
-        private com.github.dockerjava.api.model.Container toContainer() {
-            return createFrom(com.github.dockerjava.api.model.Container.class, this);
-        }
     }
 }

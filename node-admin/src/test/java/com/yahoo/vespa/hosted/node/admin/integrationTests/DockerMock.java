@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -91,6 +92,10 @@ public class DockerMock implements Docker {
         return new ProcessResult(0, null, "");
     }
 
+    @Override
+    public List<ContainerLite> listAllContainers() {
+        return List.of();
+    }
 
     public class StartContainerCommandMock implements CreateContainerCommand {
 

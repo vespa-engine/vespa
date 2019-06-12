@@ -81,6 +81,9 @@ public interface Docker {
      */
     boolean pullImageAsyncIfNeeded(DockerImage image);
 
+    /** List all containers, including those not running. */
+    List<ContainerLite> listAllContainers();
+
     /**
      * Deletes the local images that are currently not in use by any container and not recently used.
      */

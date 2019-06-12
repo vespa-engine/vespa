@@ -7,6 +7,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembers
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -46,6 +48,10 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final ProcessExecuter processExecuter;
     private final IPAddresses ipAddresses;
+
+    public DockerOperationsImpl(Docker docker) {
+        this(docker, new ProcessExecuter(), new IPAddressesImpl());
+    }
 
     public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter, IPAddresses ipAddresses) {
         this.docker = docker;
@@ -321,6 +327,11 @@ public class DockerOperationsImpl implements DockerOperations {
 
         if (context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
+    }
+
+    @Override
+    public List<ContainerLite> listContainers() {
+        return docker.listAllContainers();
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
