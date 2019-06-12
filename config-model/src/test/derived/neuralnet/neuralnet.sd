@@ -141,24 +141,6 @@ search neuralnet {
             maxSignedSixtyFourBitInteger: 9223372036854775807
         }
 
-        rank-properties {
-            query(voteToReplyRatio): 1
-            query(textweight): 1
-            query(communityweight): 3
-            query(decay): 259200
-            query(replyweight): 2
-            query(reportabuseweight): 2
-            query(hatespeechweight): 1
-            query(toxicityweight): -1
-            query(relevanceweight): 1
-            query(reputationweight): 1
-            query(wilsonweight): 1
-            query(pinweight): 1000
-            query(z): 1.96
-
-            freshness.halfResponse: 2592000
-        }
-
         macro log10_1p(x) {
             expression: log10(x+1)
         }
