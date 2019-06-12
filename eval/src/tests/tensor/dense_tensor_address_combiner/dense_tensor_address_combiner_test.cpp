@@ -20,12 +20,12 @@ TEST("require that dimensions can be combined")
 {
     EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}}, {{"b", 5}}));
     EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 5}}, {{"b", 5}}));
-    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 7}}, {{"b", 5}}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 5}}, {{"b", 5}}));
     EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 11}, {"c", 5}, {"d", 7}, {"e", 17}}),
                                 combine({{"a", 3}, {"c", 5}, {"d", 7}},
-                                        {{"b", 11}, {"c", 13}, {"e", 17}}));
+                                        {{"b", 11}, {"c", 5}, {"e", 17}}));
     EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 11}, {"c", 5}, {"d", 7}, {"e", 17}}),
-                 combine({{"b", 11}, {"c", 13}, {"e", 17}},
+                 combine({{"b", 11}, {"c", 5}, {"e", 17}},
                          {{"a", 3}, {"c", 5}, {"d", 7}}));
 }
 
