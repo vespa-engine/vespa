@@ -208,7 +208,7 @@ public class RoutingPoliciesTest {
                             URI.create("https://c1.app1.tenant1.us-west-1.vespa.oath.cloud/"),
                             ClusterSpec.Id.from("c2"),
                             URI.create("https://c2.app1.tenant1.us-west-1.vespa.oath.cloud/")),
-                     tester.controller().applications().clusterEndpoints(new DeploymentId(app1.id(), zone1)).get());
+                     tester.controller().applications().clusterEndpoints(new DeploymentId(app1.id(), zone1)));
     }
 
     private Set<RoutingPolicy> policies(Application application) {
