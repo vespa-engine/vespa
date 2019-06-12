@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,5 +51,8 @@ public interface DockerOperations {
 
     Optional<ContainerStats> getContainerStats(NodeAgentContext context);
 
-    List<ContainerLite> listContainers();
+    boolean noManagedContainersRunning();
+
+    /** Deletes the local images that are currently not in use by any container and not recently used. */
+    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 }

@@ -73,7 +73,7 @@ class DockerImageGarbageCollector {
      */
     boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
         List<Image> images = docker.listAllImages();
-        List<ContainerLite> containers = docker.listAllContainers();
+        List<Container> containers = docker.listAllContainers();
 
         Map<String, Image> imageByImageId = images.stream().collect(Collectors.toMap(Image::getId, Function.identity()));
 
@@ -138,14 +138,14 @@ class DockerImageGarbageCollector {
                 .count() > 0;
     }
 
-    private Set<String> getRecentlyUsedImageIds(List<Image> images, List<ContainerLite> containers, Duration minImageAgeToDelete) {
+    private Set<String> getRecentlyUsedImageIds(List<Image> images, List<Container> containers, Duration minImageAgeToDelete) {
         final Instant now = clock.instant();
 
         // Add any already downloaded image to the list once
         images.forEach(image -> lastTimeUsedByImageId.putIfAbsent(image.getId(), now));
 
         // Update last used time for all current containers
-        containers.forEach(container -> lastTimeUsedByImageId.put(container.imageId(), now));
+        containers.forEach(container -> lastTimeUsedByImageId.put(container.getImageId(), now));
 
         // Return list of images that have been used within minImageAgeToDelete
         return lastTimeUsedByImageId.entrySet().stream()

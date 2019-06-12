@@ -42,7 +42,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DockerImpl implements Docker {
@@ -298,14 +297,15 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public List<ContainerLite> listAllContainers() {
+    public boolean noManagedContainersRunning(String manager) {
+        return listAllContainers().stream()
+                .filter(container -> isManagedBy(container, manager))
+                .noneMatch(container -> "running".equalsIgnoreCase(container.getState()));
+    }
+
+    List<com.github.dockerjava.api.model.Container> listAllContainers() {
         try {
-            return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .map(c -> new ContainerLite(
-                            c.getId(), // Example: "94a66101b8dfbf485f4f77a448b079684ea704927aa39e31d824de708cfa3373"
-                            c.getImageId(), // Example: "sha256:7f3abbbbb17d135840a1f185ac291c87f7b90651e65b6021e820abaf397dd282"
-                            c.getState())) // Example: "running"
-                    .collect(Collectors.toList());
+            return dockerClient.listContainersCmd().withShowAll(true).exec();
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to list all containers", e);

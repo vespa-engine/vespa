@@ -7,7 +7,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -23,6 +22,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -330,8 +330,13 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public List<ContainerLite> listContainers() {
-        return docker.listAllContainers();
+    public boolean noManagedContainersRunning() {
+        return docker.noManagedContainersRunning(MANAGER_NAME);
+    }
+
+    @Override
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return docker.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
