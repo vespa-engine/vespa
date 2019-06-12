@@ -57,7 +57,7 @@ public class DockerHostCapacity {
      * @param dockerHost The host to find free capacity of.
      * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    public NodeResources freeCapacityOf(Node dockerHost, boolean includeInactive) {
+    NodeResources freeCapacityOf(Node dockerHost, boolean excludeInactive) {
         // Only hosts have free capacity
         if (dockerHost.type() != NodeType.host) return new NodeResources(0, 0, 0);
 
@@ -65,7 +65,7 @@ public class DockerHostCapacity {
         // may not use reflect the actual disk speed (as of May 2019). This (the 3 diskSpeed assignments below)
         // can be removed when all node allocations accurately reflect the true host disk speed
         return allNodes.childrenOf(dockerHost).asList().stream()
-                .filter(node -> !(includeInactive && isInactiveOrRetired(node)))
+                .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
                 .map(node -> node.flavor().resources().withDiskSpeed(NodeResources.DiskSpeed.any))
                 .reduce(dockerHost.flavor().resources().withDiskSpeed(NodeResources.DiskSpeed.any), NodeResources::subtract)
                 .withDiskSpeed(dockerHost.flavor().resources().diskSpeed());
