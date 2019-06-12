@@ -1,9 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http;
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server.application;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.http.BadRequestException;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -18,7 +20,6 @@ import java.util.zip.GZIPInputStream;
  * A compressed application points to an application package that can be decompressed.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class CompressedApplicationInputStream implements AutoCloseable {
 
@@ -41,7 +42,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
         }
     }
 
-    public static CompressedApplicationInputStream createFromCompressedStream(ArchiveInputStream ais) {
+    static CompressedApplicationInputStream createFromCompressedStream(ArchiveInputStream ais) {
         return new CompressedApplicationInputStream(ais);
     }
 
