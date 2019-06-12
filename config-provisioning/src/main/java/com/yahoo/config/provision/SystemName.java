@@ -27,7 +27,7 @@ public enum SystemName {
     PublicCd(true, true),
 
     /** Local development system */
-    dev(false, false); // TODO: Remove this and use public everywhere
+    dev(false, false);
 
     private final boolean isPublic;
     private final boolean isCd;
