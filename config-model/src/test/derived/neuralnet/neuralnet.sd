@@ -102,7 +102,7 @@ search neuralnet {
             expression: if(isNan(attribute(aVoteCount)) == 1, 0, if(attribute(aVoteCount) < 0, 0, attribute(aVoteCount)))
         }
 
-        macro totalPositiveReactions() {
+        macro totalPR() {
             expression: uniqueRCountToUse + query(voteToRRatio) * (uvCountToUse - dvCountToUse) - aVoteCountToUse
         }
 
@@ -115,7 +115,7 @@ search neuralnet {
         }
 
         macro newCommunityScoreToUse() {
-            expression: if (totalPositiveReactions > 0, log10(totalPositiveReactions), 0)
+            expression: if (totalPR > 0, log10(totalPR), 0)
         }
 
         macro hsScoreToUse() {
