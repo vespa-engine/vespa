@@ -458,6 +458,11 @@ public class CuratorDb {
         curator.set(provisionStatePath(provisionId), data);
     }
 
+    @SuppressWarnings("unused")
+    public List<String> readProvisionStateIds() {
+        return curator.getChildren(provisionStatePath());
+    }
+
     // -------------- Routing policies ----------------------------------------
 
     public void writeRoutingPolicies(ApplicationId application, Set<RoutingPolicy> policies) {
