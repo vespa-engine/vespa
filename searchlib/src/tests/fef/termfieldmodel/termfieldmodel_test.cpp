@@ -50,7 +50,7 @@ void testSetup(State &state) {
     {
         int i = 1;
         for (SFR iter(state.term); iter.valid(); iter.next()) {
-            iter.get().setDocFreq(0.25 * i++);
+            iter.get().setDocFreq(25 * i++, 100);
         }
     }
 
