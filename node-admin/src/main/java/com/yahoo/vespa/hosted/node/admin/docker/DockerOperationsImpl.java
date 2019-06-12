@@ -23,6 +23,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -332,6 +333,11 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public List<ContainerLite> listContainers() {
         return docker.listAllContainers();
+    }
+
+    @Override
+    public boolean deleteUnusedDockerImages(List<DockerImage> wantedImages, Duration minImageAgeToDelete) {
+        return docker.deleteUnusedDockerImages(wantedImages, minImageAgeToDelete);
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
