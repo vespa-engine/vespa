@@ -277,36 +277,6 @@ search neuralnet {
             expression: nativeRank
         }
 
-        summary-features {
-            # values that are returned in Vespa response (hit.fields.summaryfeatures) and also logged to the Grid STREAM-3554
-            attribute(financeHateCleanScore)
-            attribute(newsHateCleanScore)
-            attribute(financeHateCleanScoreV2)
-            attribute(newsHateCleanScoreV2)
-            attribute(userLabels)
-            rankingExpression(abuseVoteCountToUse)
-            rankingExpression(createdAtToUse)
-            rankingExpression(downVoteCountToUse)
-            rankingExpression(hateSpeechScoreToUse)
-            rankingExpression(hateSpeechV2ScoreToUse)
-            rankingExpression(lastActivityAtToUse)
-            rankingExpression(markedAsAbuseAtToUse)
-            rankingExpression(newCommunityScoreToUse)
-            rankingExpression(phat)
-            rankingExpression(rankedAt)
-            rankingExpression(replyCountToUse)
-            rankingExpression(uniqueReplyCountToUse)
-            rankingExpression(freshnessToUse)
-            rankingExpression(sentimentTypeToUse)
-            rankingExpression(textScoreToUse)
-            rankingExpression(timeDecayToUse)
-            rankingExpression(totalvote)
-            rankingExpression(toxicityScoreToUse)
-            rankingExpression(relevanceScoreToUse)
-            rankingExpression(reputationScoreToUse)
-            rankingExpression(upVoteCountToUse)
-            rankingExpression(wilsonIntervalScore)
-        }
     }
 
     rank-profile neuralNetworkProfile inherits defaultRankProfile {
@@ -345,22 +315,6 @@ search neuralnet {
             rerank-count: 2000
         }
 
-        summary-features {
-            rankingExpression(abuseVoteCountToUse)
-            rankingExpression(downVoteCountToUse)
-            rankingExpression(hateSpeechScoreToUse)
-            rankingExpression(hateSpeechV2ScoreToUse)
-            rankingExpression(phat)
-            rankingExpression(relevanceScoreToUse)
-            rankingExpression(replyCountToUse)
-            rankingExpression(uniqueReplyCountToUse)
-            rankingExpression(reputationScoreToUse)
-            rankingExpression(timeDecayToUse)
-            rankingExpression(freshnessToUse)
-            rankingExpression(totalvote)
-            rankingExpression(toxicityScoreToUse)
-            rankingExpression(upVoteCountToUse)
-        }
     }
 
     constant W_0 {
