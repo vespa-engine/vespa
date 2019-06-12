@@ -88,6 +88,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -569,10 +570,10 @@ public class ApplicationController {
 
     /** Returns all zone-specific cluster endpoints for the given application, in the given zones. */
     public Map<ZoneId, Map<ClusterSpec.Id, URI>> clusterEndpoints(ApplicationId id, Collection<ZoneId> zones) {
-        Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments = new HashMap<>();
+        Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (ZoneId zone : zones)
             clusterEndpoints(new DeploymentId(id, zone)).ifPresent(endpoints -> deployments.put(zone, endpoints));
-        return Map.copyOf(deployments);
+        return Collections.unmodifiableMap(deployments);
     }
 
     /**
