@@ -49,13 +49,13 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
     }
 
     private ExpressionNode transformConstantReference(ReferenceNode node, RankProfileTransformContext context) {
-        Reference constantReference = node.reference();
-        if ( ! FeatureNames.isConstantFeature(constantReference) && constantReference.isIdentifier())
-            constantReference = FeatureNames.asConstantFeature(node.getName());
-
+        Reference constantReference = FeatureNames.asConstantFeature(node.getName());
         Value value = context.constants().get(node.getName());
-        if (value == null || value.type().rank() == 0) return node;
-
+        if (value == null || value.type().rank() == 0) {
+            if (context.rankProfile().rankingConstants().get(node.getName()) != null) // Large constants: Transform reference but don't add value
+                return new ReferenceNode(constantReference);
+            return node;
+        }
         TensorValue tensorValue = (TensorValue)value;
         String tensorType = tensorValue.asTensor().type().toString();
         context.rankProperties().put(constantReference.toString() + ".value", tensorValue.toString());

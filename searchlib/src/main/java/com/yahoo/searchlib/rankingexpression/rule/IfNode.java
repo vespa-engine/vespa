@@ -85,9 +85,7 @@ public final class IfNode extends CompositeNode {
         return trueType.dimensionwiseGeneralizationWith(falseType).orElseThrow(() ->
             new IllegalArgumentException("An if expression must produce compatible types in both " +
                                          "alternatives, but the 'true' type is " + trueType + " while the " +
-                                         "'false' type is " + falseType +
-                                         "\n'true' branch: " + trueExpression +
-                                         "\n'false' branch: " + falseExpression)
+                                         "'false' type is " + falseType)
         );
     }
 

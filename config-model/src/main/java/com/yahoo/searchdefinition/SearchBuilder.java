@@ -8,9 +8,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.derived.SearchOrderer;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -396,24 +394,19 @@ public class SearchBuilder {
     }
 
     public static SearchBuilder createFromDirectory(String dir) throws IOException, ParseException {
-        return createFromDirectory(dir, new RankProfileRegistry());
+        return createFromDirectory(dir, new RankProfileRegistry(), new QueryProfileRegistry());
     }
     public static SearchBuilder createFromDirectory(String dir,
-                                                    RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
+                                                    RankProfileRegistry rankProfileRegistry,
+                                                    QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(MockApplicationPackage.fromSearchDefinitionDirectory(dir),
                                                   rankProfileRegistry,
-                                                  createQueryProfileRegistryFromDirectory(dir));
+                                                  queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
         builder.build(true, new BaseDeployLogger());
         return builder;
-    }
-
-    private static QueryProfileRegistry createQueryProfileRegistryFromDirectory(String dir) {
-        File queryProfilesDir = new File(dir, "query-profiles");
-        if ( ! queryProfilesDir.exists()) return new QueryProfileRegistry();
-        return new QueryProfileXMLReader().read(queryProfilesDir.toString());
     }
 
     // TODO: The build methods below just call the create methods above - remove

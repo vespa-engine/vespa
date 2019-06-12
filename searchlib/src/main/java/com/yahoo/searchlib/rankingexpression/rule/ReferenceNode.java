@@ -95,13 +95,7 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext<Reference> context) {
-        TensorType type = null;
-        try {
-            type = context.getType(reference);
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(reference + " is invalid", e);
-        }
+        TensorType type = context.getType(reference);
         if (type == null)
             throw new IllegalArgumentException("Unknown feature '" + toString() + "'");
         return type;

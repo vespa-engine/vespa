@@ -36,7 +36,7 @@ public class VisitorParameters extends Parameters {
     private String remoteDataHandler = null;
     private VisitorDataHandler localDataHandler;
     private VisitorControlHandler controlHandler;
-    private Map<String, byte []> libraryParameters = new TreeMap<>();
+    private Map<String, byte []> libraryParameters = new TreeMap<String, byte []>();
     private Route visitRoute = null;
     private float weight = 1;
     private long maxFirstPassHits = -1;

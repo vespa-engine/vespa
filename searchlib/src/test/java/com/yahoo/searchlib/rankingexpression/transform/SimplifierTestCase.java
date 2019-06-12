@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.transform;
 
-import com.yahoo.log.event.Collection;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
-import com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import org.junit.Test;
@@ -22,7 +20,7 @@ public class SimplifierTestCase {
     @Test
     public void testSimplify() throws ParseException {
         Simplifier s = new Simplifier();
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Collections.emptyMap());
         assertEquals("a + b", s.transform(new RankingExpression("a + b"), c).toString());
         assertEquals("6.5", s.transform(new RankingExpression("1.0 + 2.0 + 3.5"), c).toString());
         assertEquals("6.5", s.transform(new RankingExpression("1.0 + ( 2.0 + 3.5 )"), c).toString());
@@ -47,7 +45,7 @@ public class SimplifierTestCase {
     @Test
     public void testSimplifyComplexExpression() throws ParseException {
         RankingExpression initial = new RankingExpression("sqrt(if (if (INFERRED * 0.9 < INFERRED, GMP, (1 + 1.1) * INFERRED) < INFERRED * INFERRED - INFERRED, if (GMP < 85.80799542793133 * GMP, INFERRED, if (GMP < GMP, tanh(INFERRED), log(76.89956221113943))), tanh(tanh(INFERRED))) * sqrt(sqrt(GMP + INFERRED)) * GMP ) + 13.5 * (1 - GMP) * pow(GMP * 0.1, 2 + 1.1 * 0)");
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Collections.emptyMap());
         RankingExpression simplified = new Simplifier().transform(initial, c);
 
         Context context = new MapContext();
@@ -72,7 +70,7 @@ public class SimplifierTestCase {
     @Test
     public void testParenthesisPreservation() throws ParseException {
         Simplifier s = new Simplifier();
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Collections.emptyMap());
         CompositeNode transformed = (CompositeNode)s.transform(new RankingExpression("a + (b + c) / 100000000.0"), c).getRoot();
         assertEquals("a + (b + c) / 100000000.0", transformed.toString());
     }
