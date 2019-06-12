@@ -133,6 +133,11 @@ search neuralnet {
         field authorReputationScore type double {
             indexing: attribute
         }
+
+        field hsScore type double {
+            indexing: attribute
+        }
+
     }
 
     rank-profile defaultRankProfile inherits default {
@@ -189,16 +194,12 @@ search neuralnet {
             expression: if (totalvote == 0, 0, ( query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse) / totalvote)
         }
 
-        macro wilsonIntervalScore() {
-            expression: if (totalvote == 0, 0, (phat + query(z) * query(z) / (2 * totalvote) - query(z) * sqrt( (phat * (1-phat) + query(z)*query(z)/(4*totalvote))/totalvote)) / (1+query(z)*query(z)/totalvote))
-        }
-
         macro newCommunityScoreToUse() {
             expression: if (totalPositiveReactions > 0, log10(totalPositiveReactions), 0)
         }
 
-        macro hateSpeechScoreToUse() {
-            expression: if (isNan(attribute(newsHateCleanScore)) == 0, if (isNan(attribute(financeHateCleanScore)) == 0,  (attribute(newsHateCleanScore) + attribute(financeHateCleanScore)) / 2 , attribute(newsHateCleanScore)), if( isNan(attribute(financeHateCleanScore)) == 0, attribute(financeHateCleanScore), 0))
+        macro hsScoreToUse() {
+            expression: attribute(hsScore)
         }
 
         macro toxicityScoreToUse() {
@@ -207,18 +208,6 @@ search neuralnet {
 
         macro relevanceScoreToUse() {
             expression: if (isNan(attribute(relevance)) == 1, 0.254, attribute(relevance))
-        }
-
-        macro financeHateSpeechV2ScoreToUse() {
-            expression: if (isNan(attribute(financeHateCleanScoreV2)) == 1, 0.5, attribute(financeHateCleanScoreV2))
-        }
-
-        macro newsHateSpeechV2ScoreToUse() {
-            expression: if (isNan(attribute(newsHateCleanScoreV2)) == 1, 0.5, attribute(newsHateCleanScoreV2))
-        }
-
-        macro hateSpeechV2ScoreToUse() {
-            expression: (financeHateSpeechV2ScoreToUse + newsHateSpeechV2ScoreToUse) / 2
         }
 
         macro freshnessToUse() {
@@ -253,18 +242,6 @@ search neuralnet {
             expression: query(textweight) * textScoreToUse  + query(communityweight) * newCommunityScoreToUse
         }
 
-        macro hatespeechAndWilsonScore() {
-            expression: query(hatespeechweight) * hateSpeechScoreToUse + query(wilsonweight) * wilsonIntervalScore
-        }
-
-        macro perspectiveAndWilsonScore() {
-            expression: query(toxicityweight) * toxicityScoreToUse + query(wilsonweight) * wilsonIntervalScore
-        }
-
-        macro perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score() {
-            expression: query(toxicityweight) * toxicityScoreToUse + query(wilsonweight) * wilsonIntervalScore + query(reputationweight) * reputationScoreToUse + query(relevanceweight) * relevanceScoreToUse + query(hatespeechweight) * hateSpeechV2ScoreToUse
-        }
-
         macro pinScore() {
             expression: if(isNan(attribute(pinned)) == 1, 0, query(pinweight) * attribute(pinned))
         }
@@ -288,7 +265,7 @@ search neuralnet {
                 concat(log10_1p(upVoteCountToUse),
                 concat(phat,
                 concat(log10_1p(totalvote),
-                concat(hateSpeechScoreToUse,
+                concat(hsScoreToUse,
                 concat(timeDecayToUse,
                 toxicityScoreToUse, x), x), x), x), x), x), x), x)
             }
