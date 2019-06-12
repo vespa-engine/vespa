@@ -14,7 +14,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field upVoteCount type int {
+        field uvCount type int {
             indexing: attribute
         }
 
@@ -90,8 +90,8 @@ search neuralnet {
             expression: if(isNan(attribute(uniqueReplyAuthorCount)) == 1, 0, if(attribute(uniqueReplyAuthorCount) < 0, 0, attribute(uniqueReplyAuthorCount)))
         }
 
-        macro upVoteCountToUse() {
-            expression: if(isNan(attribute(upVoteCount)) == 1, 0, if(attribute(upVoteCount) < 0, 0, attribute(upVoteCount)))
+        macro uvCountToUse() {
+            expression: if(isNan(attribute(uvCount)) == 1, 0, if(attribute(uvCount) < 0, 0, attribute(uvCount)))
         }
 
         macro downVoteCountToUse() {
@@ -103,15 +103,15 @@ search neuralnet {
         }
 
         macro totalPositiveReactions() {
-            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (upVoteCountToUse - downVoteCountToUse) - aVoteCountToUse
+            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (uvCountToUse - downVoteCountToUse) - aVoteCountToUse
         }
 
         macro totalvote() {
-            expression: query(reportaweight) * aVoteCountToUse + downVoteCountToUse + query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse
+            expression: query(reportaweight) * aVoteCountToUse + downVoteCountToUse + query(replyweight) * uniqueReplyCountToUse + uvCountToUse
         }
 
         macro phat() {
-            expression: if (totalvote == 0, 0, ( query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse) / totalvote)
+            expression: if (totalvote == 0, 0, ( query(replyweight) * uniqueReplyCountToUse + uvCountToUse) / totalvote)
         }
 
         macro newCommunityScoreToUse() {
@@ -178,7 +178,7 @@ search neuralnet {
                 concat(log10_1p(aVoteCountToUse),
                 concat(log10_1p(downVoteCountToUse),
                 concat(log10_1p(uniqueReplyCountToUse),
-                concat(log10_1p(upVoteCountToUse),
+                concat(log10_1p(uvCountToUse),
                 concat(phat,
                 concat(log10_1p(totalvote),
                 concat(hsScoreToUse,
