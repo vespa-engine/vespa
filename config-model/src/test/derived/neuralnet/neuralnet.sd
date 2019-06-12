@@ -46,10 +46,6 @@ search neuralnet {
             indexing: attribute
         }
 
-        field ericScore type float {
-            indexing: attribute
-        }
-
         field toxicity type float {
             indexing: attribute
         }
@@ -84,10 +80,6 @@ search neuralnet {
 
         macro textScoreToUse() {
             expression: if(isNan(attribute(normalizedTextScore)) == 1, 0, attribute(normalizedTextScore))
-        }
-
-        macro ericScoreToUse() {
-            expression: if(isNan(attribute(ericScore)) == 1, 0, attribute(ericScore))
         }
 
         macro replyCountToUse() {
