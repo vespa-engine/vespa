@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <vespa/eval/eval/value_type.h>
 
 namespace vespalib { class nbostream; }
 
@@ -11,13 +12,15 @@ namespace vespalib::tensor {
 class Tensor;
 
 /**
- * Class for serializing a tensor.
+ * Class for serializing a sparse tensor.
  */
 class SparseBinaryFormat
 {
 public:
+    using CellType = eval::ValueType::CellType;
+
     static void serialize(nbostream &stream, const Tensor &tensor);
-    static std::unique_ptr<Tensor> deserialize(nbostream &stream);
+    static std::unique_ptr<Tensor> deserialize(nbostream &stream, CellType cell_type);
 };
 
 }

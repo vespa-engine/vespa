@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "common.h"
 #include <memory>
 #include <vector>
 
@@ -18,16 +17,12 @@ class Tensor;
 class TypedBinaryFormat
 {
 public:
-    static void serialize(nbostream &stream, const Tensor &tensor, SerializeFormat format);
-    static void serialize(nbostream &stream, const Tensor &tensor) {
-        serialize(stream, tensor, SerializeFormat::DOUBLE);
-    }
-
+    static void serialize(nbostream &stream, const Tensor &tensor);
     static std::unique_ptr<Tensor> deserialize(nbostream &stream);
-    
+
     // This is a temporary method until we get full support for typed tensors
     template <typename T>
-    static void deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<T> & cells);
+    static void deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<T> &cells);
 };
 
 }
