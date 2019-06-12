@@ -515,21 +515,13 @@ void
 AsciistreamTest::testFloat() {
     float f = 0;
     asciistream as("-5.490412E-39");
-    try {
-        as >> f;
-    } catch (std::exception &e) {
-        EXPECT_EQUAL("should not reach this point", e.what());
-    }
+    as >> f;
     EXPECT_EQUAL(f, -5.490412E-39f);
 
     as.clear();
     as << "0.0001E-50";
     f = 42.0;
-    try {
-        as >> f;
-    } catch (std::exception &e) {
-        EXPECT_EQUAL("should not reach this point", e.what());
-    }
+    as >> f;
     EXPECT_EQUAL(f, 0.0);
 
     as.clear();
