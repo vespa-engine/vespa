@@ -56,6 +56,7 @@ public class DockerImpl implements Docker {
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
     private final DockerClient dockerClient;
+    private final DockerImageGarbageCollector dockerImageGC;
     private final CounterWrapper numberOfDockerDaemonFails;
 
     @Inject
@@ -65,6 +66,7 @@ public class DockerImpl implements Docker {
 
     DockerImpl(DockerClient dockerClient, MetricReceiverWrapper metricReceiver) {
         this.dockerClient = dockerClient;
+        this.dockerImageGC = new DockerImageGarbageCollector(this);
 
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
@@ -310,8 +312,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public List<Image> listAllImages() {
+    List<Image> listAllImages() {
         try {
             return dockerClient.listImagesCmd().withShowAll(true).exec();
         } catch (RuntimeException e) {
@@ -320,8 +321,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public void deleteImage(DockerImage dockerImage) {
+    void deleteImage(DockerImage dockerImage) {
         try {
             dockerClient.removeImageCmd(dockerImage.asString()).exec();
         } catch (NotFoundException ignored) {
@@ -330,6 +330,11 @@ public class DockerImpl implements Docker {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to delete docker image " + dockerImage.asString(), e);
         }
+    }
+
+    @Override
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return dockerImageGC.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.github.dockerjava.api.model.Image;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
@@ -84,6 +83,11 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return false;
+    }
+
+    @Override
     public ProcessResult executeInContainerAsUser(ContainerName containerName, String user, OptionalLong timeout, String... args) {
         return new ProcessResult(0, null, "");
     }
@@ -91,15 +95,6 @@ public class DockerMock implements Docker {
     @Override
     public List<ContainerLite> listAllContainers() {
         return List.of();
-    }
-
-    @Override
-    public List<Image> listAllImages() {
-        return List.of();
-    }
-
-    @Override
-    public void deleteImage(DockerImage dockerImage) {
     }
 
     public class StartContainerCommandMock implements CreateContainerCommand {

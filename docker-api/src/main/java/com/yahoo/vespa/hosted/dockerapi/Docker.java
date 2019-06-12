@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.github.dockerjava.api.model.Image;
 import com.yahoo.config.provision.DockerImage;
 
 import java.net.InetAddress;
@@ -16,8 +15,6 @@ import java.util.OptionalLong;
  * and to avoid OSGi exporting those classes.
  */
 public interface Docker {
-
-    void deleteImage(DockerImage dockerImage);
 
     interface CreateContainerCommand {
         CreateContainerCommand withHostName(String hostname);
@@ -87,7 +84,10 @@ public interface Docker {
     /** List all containers, including those not running. */
     List<ContainerLite> listAllContainers();
 
-    List<Image> listAllImages();
+    /**
+     * Deletes the local images that are currently not in use by any container and not recently used.
+     */
+    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**
      * @param containerName The name of the container
