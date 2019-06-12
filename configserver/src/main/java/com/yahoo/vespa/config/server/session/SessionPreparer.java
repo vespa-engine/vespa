@@ -238,11 +238,13 @@ public class SessionPreparer {
             if (!params.containerEndpoints().isEmpty()) { // Use endpoints from parameter when explicitly given
                 containerEndpoints.write(applicationId, params.containerEndpoints());
             } else { // Fall back to writing rotations as container endpoints
-                if (globalServiceId.isEmpty()) {
-                    log.log(LogLevel.WARNING, "Want to write rotations " + rotationsSet + " as container endpoints, but " + applicationId + " has no global-service-id. This should not happen");
-                    return;
+                if (!rotationsSet.isEmpty()) {
+                    if (globalServiceId.isEmpty()) {
+                        log.log(LogLevel.WARNING, "Want to write rotations " + rotationsSet + " as container endpoints, but " + applicationId + " has no global-service-id. This should not happen");
+                        return;
+                    }
+                    containerEndpoints.write(applicationId, toContainerEndpoints(globalServiceId.get(), rotationsSet));
                 }
-                containerEndpoints.write(applicationId, toContainerEndpoints(globalServiceId.get(), rotationsSet));
             }
             checkTimeout("write container endpoints to zookeeper");
         }
