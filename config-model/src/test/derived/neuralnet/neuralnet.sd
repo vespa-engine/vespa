@@ -227,26 +227,7 @@ search neuralnet {
         }
     }
 
-    document-summary reputationSummary {
-        summary authorReputationScore type double {}
-        summary namespace type string {}
-        summary contextId type string {}
-        summary messageId type string {}
-        summary replyTo type string {}
-        summary authorGuid type string {}
-        summary createdAt type long {}
-        summary deletedAt type long {}
-    }
-
-    fieldset default {
-        fields: abuseGuids, tags, internalTags
-    }
-
-    fieldset textFields {
-        fields: namespace, content, authorGuid
-    }
-
-    rank-profile canvassDefaultRankProfile inherits default {
+    rank-profile defaultRankProfile inherits default {
 
         constants {
             maxSignedSixtyFourBitInteger: 9223372036854775807
@@ -337,8 +318,6 @@ search neuralnet {
             expression: if (isNan(attribute(toxicity)) == 1, 0.6, attribute(toxicity))
         }
 
-        # Relevance score is defaulted to 0.254
-        # We took 5000 random comments over 24 hours, the average relevance for all comment is 0.254
         macro relevanceScoreToUse() {
             expression: if (isNan(attribute(relevance)) == 1, 0.254, attribute(relevance))
         }
@@ -359,8 +338,6 @@ search neuralnet {
             expression: if (freshness(createdAt).logscale < 0.01, 0.01, freshness(createdAt).logscale)
         }
 
-        # Reputation score is defaulted to 0.3
-        # If we exclude users having reputation score equals to 0, the average of existing users is 0.3
         macro reputationScoreToUse() {
             expression: if (isNan(attribute(authorReputationScore)) == 1, 0.3, attribute(authorReputationScore))
         }
@@ -445,8 +422,7 @@ search neuralnet {
         }
     }
 
-    # randomly rank 4000 freshest comments. Intended for scientists to collect training data
-    rank-profile randomProfile inherits canvassDefaultRankProfile {
+    rank-profile randomProfile inherits defaultRankProfile {
         first-phase {
             expression: freshness(createdAt)
         }
@@ -456,7 +432,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassHalfLifeDecayProfile inherits canvassDefaultRankProfile {
+    rank-profile halfLifeDecayProfile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -468,21 +444,21 @@ search neuralnet {
         }
     }
 
-    rank-profile newestCreatedCommentProfile inherits canvassDefaultRankProfile {
+    rank-profile newestCreatedCommentProfile inherits defaultRankProfile {
       second-phase {
             expression: attribute(createdAt)
             rerank-count: 4000
       }
     }
 
-    rank-profile oldestCreatedCommentProfile inherits canvassDefaultRankProfile {
+    rank-profile oldestCreatedCommentProfile inherits defaultRankProfile {
       second-phase {
             expression: -1 * attribute(createdAt)
             rerank-count: 4000
       }
     }
 
-    rank-profile canvassSmpAndCommunityV3NoDecayProfile inherits canvassDefaultRankProfile {
+    rank-profile smpAndCommunityV3NoDecayProfile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -494,7 +470,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassSmpAndCommunityV3DecayV2Profile inherits canvassDefaultRankProfile {
+    rank-profile smpAndCommunityV3DecayV2Profile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -506,7 +482,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassPerspectiveAndCommunityV3NoDecayProfile inherits canvassDefaultRankProfile {
+    rank-profile perspectiveAndCommunityV3NoDecayProfile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -518,7 +494,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassPerspectiveAndCommunityV3AndReputationProfile inherits canvassDefaultRankProfile {
+    rank-profile perspectiveAndCommunityV3AndReputationProfile inherits defaultRankProfile {
 
         rank-properties {
             query(hatespeechweight): 0
@@ -536,7 +512,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassPerspectiveAndCommunityV3AndHateSpeechV2Profile inherits canvassDefaultRankProfile {
+    rank-profile perspectiveAndCommunityV3AndHateSpeechV2Profile inherits defaultRankProfile {
 
         rank-properties {
             query(hatespeechweight): 1
@@ -554,7 +530,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassPerspectiveAndCommunityV3AndRelevanceProfile inherits canvassDefaultRankProfile {
+    rank-profile perspectiveAndCommunityV3AndRelevanceProfile inherits defaultRankProfile {
 
         rank-properties {
             query(hatespeechweight): 0
@@ -572,8 +548,7 @@ search neuralnet {
         }
     }
 
-    # PCRR stand for Perspective + CommunityV3 (Wilson) + Relevance + Reputation
-    rank-profile canvassPCRRProfile inherits canvassDefaultRankProfile {
+    rank-profile PCRRProfile inherits defaultRankProfile {
 
         rank-properties {
             query(hatespeechweight): 0
@@ -591,7 +566,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassPerspectiveAndCommunityV3DecayV2Profile inherits canvassDefaultRankProfile {
+    rank-profile perspectiveAndCommunityV3DecayV2Profile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -603,8 +578,7 @@ search neuralnet {
         }
     }
 
-    # PCRD stand for Perspective + CommunityV3 (Wilson) + Relevance + DecayV2 (logscale)
-    rank-profile canvassPCRDProfile inherits canvassDefaultRankProfile {
+    rank-profile PCRDProfile inherits defaultRankProfile {
 
         rank-properties {
             query(hatespeechweight): 0
@@ -622,7 +596,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassSmpAndCommunityV3NoDecayWithPinProfile inherits canvassDefaultRankProfile {
+    rank-profile smpAndCommunityV3NoDecayWithPinProfile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -634,7 +608,7 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassPerspectiveAndCommunityV3NoDecayWithPinProfile inherits canvassDefaultRankProfile {
+    rank-profile perspectiveAndCommunityV3NoDecayWithPinProfile inherits defaultRankProfile {
 
         first-phase {
             expression: freshnessRank
@@ -646,9 +620,8 @@ search neuralnet {
         }
     }
 
-    rank-profile canvassNeuralNetworkProfile inherits canvassDefaultRankProfile {
+    rank-profile neuralNetworkProfile inherits defaultRankProfile {
         macro nn_input() {
-            # [VESPA-9729] tensor is small enough to concat at ranking time, and it is only used in second-phase
             expression {
                 concat(log10_1p(abuseVoteCountToUse),
                 concat(log10_1p(downVoteCountToUse),
@@ -662,20 +635,17 @@ search neuralnet {
             }
         }
 
-        # Model weights {W,b}_{0,1,out} are stored in a rankingmodel.sd document,
-        # and LoadRankingmodelSearcher adds weights from the document to the query.
-        # If searcher does not add weights to the query, macro falls back to constant JSON files
         macro get_model_weights(field) {
             expression: if(query(field) == 0, constant(field), query(field))
         }
 
-        macro layer_0() {  # returns tensor(hidden[9])
+        macro layer_0() {
             expression: elu(xw_plus_b(nn_input, get_model_weights(W_0), get_model_weights(b_0), x))
         }
-        macro layer_1() {  # returns tensor(out[9])
+        macro layer_1() {
             expression: elu(xw_plus_b(layer_0, get_model_weights(W_1), get_model_weights(b_1), hidden))
         }
-        macro layer_out() {  # xw_plus_b returns tensor(out[1]), so sum converts to double
+        macro layer_out() {
             expression: sum(xw_plus_b(layer_1, get_model_weights(W_out), get_model_weights(b_out), out))
         }
         first-phase {
@@ -687,7 +657,6 @@ search neuralnet {
         }
 
         summary-features {
-            # values that are returned in Vespa response (hit.fields.summaryfeatures) and also logged to the Grid STREAM-3554
             rankingExpression(abuseVoteCountToUse)
             rankingExpression(downVoteCountToUse)
             rankingExpression(hateSpeechScoreToUse)
@@ -705,8 +674,6 @@ search neuralnet {
         }
     }
 
-    # Neural network trained by @akshaysoni in 5/2018 to match canvassSmpAndCommunityV3NoDecayProfile
-    # See yo/commentrl::Appendix/Models/neural-network-201805
     constant W_0 {
         file: neural-network-201805/W_0.json
         type: tensor(x[9],hidden[9])
@@ -732,12 +699,10 @@ search neuralnet {
         type: tensor(out[1])
     }
 
-    # 0.5% control bucket
-    rank-profile canvassNeuralNetworkControlProfile inherits canvassNeuralNetworkProfile { }
+    rank-profile neuralNetworkControlProfile inherits neuralNetworkProfile { }
 
-    # 1% hourly bucket
-    rank-profile canvassNeuralNetworkWithPlackettProfile inherits canvassNeuralNetworkProfile { }
+    rank-profile neuralNetworkWithPlackettProfile inherits neuralNetworkProfile { }
 
-    # 5% Evaluate bucket
-    rank-profile canvassNeuralNetworkBucketProfile inherits canvassNeuralNetworkProfile { }
+    rank-profile neuralNetworkBucketProfile inherits neuralNetworkProfile { }
+
 }
