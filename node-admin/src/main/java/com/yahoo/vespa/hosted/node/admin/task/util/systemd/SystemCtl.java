@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.systemd;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.Objects;
@@ -58,7 +59,7 @@ public class SystemCtl {
 
     public boolean serviceExists(TaskContext context, String unit) {
         return terminal.newCommandLine(context)
-                .add("systemctl").add("list-unit-files").add(unit + ".service").executeSilently()
+                .add("systemctl", "list-unit-files", unit + ".service").executeSilently()
                 .mapOutput(output -> {
                     // Last line of the form: "1 unit files listed."
                     Matcher matcher = UNIT_FILES_LISTED_PATTERN.matcher(output);
@@ -68,6 +69,15 @@ public class SystemCtl {
 
                     return !matcher.group(1).equals("0");
                 });
+    }
+
+    /** Returns true if the unit exists and is active (i.e. running). unit is e.g. "docker". */
+    public boolean isActive(TaskContext context, String unit) {
+        return terminal.newCommandLine(context)
+                .add("systemctl", "--quiet", "is-active", unit + ".service")
+                .ignoreExitCode()
+                .executeSilently()
+                .map(CommandResult::getExitCode) == 0;
     }
 
     public class SystemCtlEnable extends SystemCtlCommand {
