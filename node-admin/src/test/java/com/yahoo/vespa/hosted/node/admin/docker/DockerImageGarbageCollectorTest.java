@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.dockerapi;
+package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -7,7 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.model.Image;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
+import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import org.junit.Test;
+import org.mockito.Matchers;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -18,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,7 +31,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author freva
  */
-public class DockerImageGarbageCollectionTest {
+public class DockerImageGarbageCollectorTest {
 
     private final ImageGcTester gcTester = new ImageGcTester();
 

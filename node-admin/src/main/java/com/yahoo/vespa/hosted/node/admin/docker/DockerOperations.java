@@ -54,5 +54,6 @@ public interface DockerOperations {
 
     List<ContainerLite> listContainers();
 
+    /** Deletes the local images that are currently not in use by any container and not recently used. */
     boolean deleteUnusedDockerImages(List<DockerImage> wantedImages, Duration minImageAgeToDelete);
 }

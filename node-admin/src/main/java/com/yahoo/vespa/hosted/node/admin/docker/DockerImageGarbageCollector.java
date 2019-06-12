@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.dockerapi;
+package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
 import com.google.common.base.Strings;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ContainerLite;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -52,14 +53,14 @@ class DockerImageGarbageCollector {
     private static final Logger logger = Logger.getLogger(DockerImageGarbageCollector.class.getName());
 
     private final Map<String, Instant> lastTimeUsedByImageId = new ConcurrentHashMap<>();
-    private final DockerImpl docker;
+    private final Docker docker;
     private final Clock clock;
 
-    DockerImageGarbageCollector(DockerImpl docker) {
+    DockerImageGarbageCollector(Docker docker) {
         this(docker, Clock.systemUTC());
     }
 
-    DockerImageGarbageCollector(DockerImpl docker, Clock clock) {
+    DockerImageGarbageCollector(Docker docker, Clock clock) {
         this.docker = docker;
         this.clock = clock;
     }

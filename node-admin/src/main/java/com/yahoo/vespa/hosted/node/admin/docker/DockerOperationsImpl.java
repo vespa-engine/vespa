@@ -49,6 +49,7 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final ProcessExecuter processExecuter;
     private final IPAddresses ipAddresses;
+    private final DockerImageGarbageCollector dockerImageGC;
 
     public DockerOperationsImpl(Docker docker) {
         this(docker, new ProcessExecuter(), new IPAddressesImpl());
@@ -58,6 +59,7 @@ public class DockerOperationsImpl implements DockerOperations {
         this.docker = docker;
         this.processExecuter = processExecuter;
         this.ipAddresses = ipAddresses;
+        this.dockerImageGC = new DockerImageGarbageCollector(docker);
     }
 
     @Override
@@ -337,7 +339,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public boolean deleteUnusedDockerImages(List<DockerImage> wantedImages, Duration minImageAgeToDelete) {
-        return docker.deleteUnusedDockerImages(wantedImages, minImageAgeToDelete);
+        return dockerImageGC.deleteUnusedDockerImages(wantedImages, minImageAgeToDelete);
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
