@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
+#include <cmath>
 #include <memory>
 
 namespace search::features {
@@ -32,11 +33,20 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
         for (size_t j = 0; j < term->numFields(); ++j) {
             const ITermFieldData& term_field = term->field(j);
             if (field.id() == term_field.getFieldId()) {
-                // TODO: Add proper calculation of IDF
-                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Cheap), 1.0);
+                // TODO: Add support for using significance instead of default idf if specified in the query
+                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Cheap),
+                                    calculate_inverse_document_frequency(term_field.get_matching_doc_count(),
+                                                                         term_field.get_total_doc_count()));
             }
         }
     }
+}
+
+double
+Bm25Executor::calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count)
+{
+    return std::log(1 + (static_cast<double>(total_doc_count - matching_doc_count + 0.5) /
+                         static_cast<double>(matching_doc_count + 0.5)));
 }
 
 void

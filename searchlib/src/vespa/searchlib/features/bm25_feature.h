@@ -33,6 +33,8 @@ public:
                  const fef::IQueryEnvironment& env,
                  double avg_field_length);
 
+    double static calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count);
+
     void handle_bind_match_data(const fef::MatchData& match_data) override;
     void execute(uint32_t docId) override;
 };
