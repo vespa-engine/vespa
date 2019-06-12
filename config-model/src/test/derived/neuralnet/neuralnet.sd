@@ -114,7 +114,7 @@ search neuralnet {
             expression: if (totalvote == 0, 0, ( query(rweight) * uniqueRCountToUse + uvCountToUse) / totalvote)
         }
 
-        macro newCommunityScoreToUse() {
+        macro nCScoreToUse() {
             expression: if (totalPR > 0, log10(totalPR), 0)
         }
 
@@ -155,7 +155,7 @@ search neuralnet {
         }
 
         macro commentOverallScore() {
-            expression: query(textweight) * textScoreToUse  + query(communityweight) * newCommunityScoreToUse
+            expression: query(textweight) * textScoreToUse  + query(communityweight) * nCScoreToUse
         }
 
         macro pinScore() {
