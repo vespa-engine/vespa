@@ -58,7 +58,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field lastActivityAt type long {
+        field laAt type long {
             indexing: attribute
         }
 
@@ -142,8 +142,8 @@ search neuralnet {
             expression: if(isNan(attribute(createdAt)) == 1, rankedAt, attribute(createdAt))
         }
 
-        macro lastActivityAtToUse() {
-            expression: if(isNan(attribute(lastActivityAt)) == 1, attribute(createdAt), attribute(lastActivityAt))
+        macro laAtToUse() {
+            expression: if(isNan(attribute(laAt)) == 1, attribute(createdAt), attribute(laAt))
         }
 
         macro markedAsAAtToUse() {
