@@ -3,12 +3,15 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -25,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -34,6 +38,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -396,6 +401,20 @@ public class InternalStepRunnerTest {
                                            "1554970337.947777\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
                                            "1554970337.947820\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
                                            "1554970337.947844\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)";
+
+    @Test
+    public void testConfig() throws IOException {
+        ZoneId zone = ZoneId.from("test", "eu-north-1");
+        byte[] json = InternalStepRunner.testConfig(appId,
+                                                    zone,
+                                                    SystemName.Public,
+                                                    Map.of(zone, Map.of(ClusterSpec.Id.from("ai"),
+                                                                        URI.create("https://server/"))),
+                                                    Map.of(zone, List.of("facts")));
+        byte[] expected = InternalStepRunnerTest.class.getResourceAsStream("/testConfig.json").readAllBytes();
+        assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlime(expected))),
+                     new String(json));
+    }
 
     @Test
     public void generates_correct_services_xml_test() {

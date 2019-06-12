@@ -11,8 +11,10 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
@@ -28,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -48,6 +49,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -320,19 +322,23 @@ public class InternalStepRunner implements StepRunner {
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
         logger.log("Attempting to find deployment endpoints ...");
-        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id, Set.of(zoneId));
+        var endpoints = deploymentEndpoints(id, Set.of(zoneId));
         if ( ! endpoints.containsKey(zoneId)) {
             logger.log("Endpoints not yet ready.");
             return false;
         }
+        logEndpoints(endpoints, logger);
+        return true;
+    }
+
+    private void logEndpoints(Map<ZoneId, Map<ClusterSpec.Id, URI>> endpoints, DualLogger logger) {
         List<String> messages = new ArrayList<>();
         messages.add("Found endpoints:");
         endpoints.forEach((zone, uris) -> {
             messages.add("- " + zone);
-            uris.forEach(uri -> messages.add(" |-- " + uri));
+            uris.forEach((cluster, uri) -> messages.add(" |-- " + uri + " (" + cluster + ")"));
         });
         logger.log(messages);
-        return true;
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
@@ -387,18 +393,12 @@ public class InternalStepRunner implements StepRunner {
         Set<ZoneId> zones = testedZoneAndProductionZones(id);
 
         logger.log("Attempting to find endpoints ...");
-        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application(), zones);
+        var endpoints = deploymentEndpoints(id.application(), zones);
         if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
-        List<String> messages = new ArrayList<>();
-        messages.add("Found endpoints:");
-        endpoints.forEach((zone, uris) -> {
-            messages.add("- " + zone);
-            uris.forEach(uri -> messages.add(" |-- " + uri));
-        });
-        logger.log(messages);
+        logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if (testerEndpoint.isEmpty() && timedOut(deployment.get(), endpointTimeout)) {
@@ -620,17 +620,12 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns all endpoints for all current deployments of the given real application. */
-    private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id, Iterable<ZoneId> zones) {
-        ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
-        for (ZoneId zone : zones) {
-            controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+    private Map<ZoneId, Map<ClusterSpec.Id, URI>> deploymentEndpoints(ApplicationId id, Collection<ZoneId> zones) {
+        ImmutableMap.Builder<ZoneId, Map<ClusterSpec.Id, URI>> deployments = ImmutableMap.builder();
+        for (ZoneId zone : zones)
+            controller.applications().clusterEndpoints(new DeploymentId(id, zone))
                       .filter(endpoints -> ! endpoints.isEmpty())
-                      .or(() -> Optional.of(controller.applications().routingPolicies().get(id, zone).stream()
-                                                      .map(policy -> policy.endpointIn(controller.system()).url())
-                                                      .collect(Collectors.toUnmodifiableList()))
-                                        .filter(endpoints -> ! endpoints.isEmpty()))
                       .ifPresent(endpoints -> deployments.put(zone, endpoints));
-        }
         return deployments.build();
     }
 
@@ -713,8 +708,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the config for the tests to run for the given job. */
-    private static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system,
-                                     Map<ZoneId, List<URI>> deployments, Map<ZoneId, List<String>> clusters) {
+    static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system,
+                                     Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments, Map<ZoneId, List<String>> clusters) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
@@ -725,8 +720,16 @@ public class InternalStepRunner implements StepRunner {
         Cursor endpointsObject = root.setObject("endpoints");
         deployments.forEach((zone, endpoints) -> {
             Cursor endpointArray = endpointsObject.setArray(zone.value());
-            for (URI endpoint : endpoints)
+            for (URI endpoint : endpoints.values())
                 endpointArray.addString(endpoint.toString());
+        });
+
+        Cursor zoneEndpointsObject = root.setObject("zoneEndpoints");
+        deployments.forEach((zone, endpoints) -> {
+            Cursor clusterEndpointsObject = zoneEndpointsObject.setObject(zone.value());
+            endpoints.forEach((cluster, endpoint) -> {
+                clusterEndpointsObject.setString(cluster.value(), endpoint.toString());
+            });
         });
 
         Cursor clustersObject = root.setObject("clusters");
