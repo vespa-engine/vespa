@@ -23,8 +23,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
     public void testFunctions() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressionfunction",
-                                                          rankProfileRegistry,
-                                                          new QueryProfileRegistry()).getSearch();
+                                                          rankProfileRegistry).getSearch();
         RankProfile functionsRankProfile = rankProfileRegistry.get(search, "macros");
         Map<String, RankProfile.RankingExpressionFunction> functions = functionsRankProfile.getFunctions();
         assertEquals(2, functions.get("titlematch$").function().arguments().size());
@@ -62,9 +61,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile",
-                                                          registry,
-                                                          new QueryProfileRegistry()).getSearch();
+        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile", registry).getSearch();
         new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
     }
 
