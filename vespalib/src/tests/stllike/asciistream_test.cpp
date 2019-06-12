@@ -4,7 +4,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/locale/c.h>
 #include <iomanip>
+#include <float.h>
 
 using namespace vespalib;
 
@@ -26,6 +28,7 @@ public:
     void testMoveIsWellDefined();
     void testIllegalNumbers();
     void testDouble();
+    void testFloat();
     void testStateSaver();
 };
 
@@ -83,10 +86,10 @@ AsciistreamTest::testIllegalNumbers()
         is << "777777777777";
         EXPECT_EQUAL(24u, is.size());
         uint64_t l(0);
-        EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "value is outside of range '777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "value '777777777777777777777777' is outside of range");
         EXPECT_EQUAL(24u, is.size());
         int64_t li(0);
-        EXPECT_EXCEPTION(is >> li, IllegalArgumentException, "value is outside of range '777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> li, IllegalArgumentException, "value '777777777777777777777777' is outside of range");
         EXPECT_EQUAL(24u, is.size());
     }
     {
@@ -102,13 +105,13 @@ AsciistreamTest::testIllegalNumbers()
         asciistream is("7777777777777777777777777777777777777777");
         EXPECT_EQUAL(40u, is.size());
         float f(0);
-        EXPECT_EXCEPTION(is >> f, IllegalArgumentException, "float value is outside of range '7777777777777777777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> f, IllegalArgumentException, "float value '7777777777777777777777777777777777777777' is outside of range");
         EXPECT_EQUAL(40u, is.size());
         vespalib::string tmp = is.str();
         is << "e" << tmp;
         EXPECT_EQUAL(81u, is.size());
         double d(0);
-        EXPECT_EXCEPTION(is >> d, IllegalArgumentException, "double value is outside of range '7777777777777777777777777777777777777777e7777777777777777777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> d, IllegalArgumentException, "double value '7777777777777777777777777777777777777777e7777777777777777777777777777777777777777' is outside of range");
         EXPECT_EQUAL(81u, is.size());
     }
     {
@@ -481,6 +484,68 @@ AsciistreamTest::testDouble() {
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0.0", automatic << forcedot, 1);
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0.0", automatic << forcedot, 16);
     VERIFY_DOUBLE_SERIALIZATION(maxInteger, "9007199254740992.0", automatic << forcedot, 16);
+
+    asciistream as;
+    as.clear();
+    as << (3 * std::numeric_limits<double>::min());
+    double dv = 0;
+    as >> dv;
+    EXPECT_TRUE(dv > 0);
+
+    as.clear();
+    as << (3 * std::numeric_limits<double>::denorm_min());
+    dv = 0;
+    as >> dv;
+    EXPECT_TRUE(dv > 0);
+
+    as.clear();
+    as << "1.0e-325";
+    dv = 42.0;
+    as >> dv;
+    EXPECT_EQUAL(dv, 0.0);
+
+    as.clear();
+    as << "1.0e666";
+    dv = 42.0;
+    EXPECT_EXCEPTION(as >> dv, IllegalArgumentException, "double value '1.0e666' is outside of range.");
+    EXPECT_EQUAL(dv, 42.0);
+}
+
+void
+AsciistreamTest::testFloat() {
+    float f = 0;
+    asciistream as("-5.490412E-39");
+    as >> f;
+    EXPECT_EQUAL(f, -5.490412E-39f);
+
+    as.clear();
+    as << "0.0001E-50";
+    f = 42.0;
+    as >> f;
+    EXPECT_EQUAL(f, 0.0);
+
+    as.clear();
+    as << "123.4E50";
+    f = 42.0;
+    EXPECT_EXCEPTION(as >> f, IllegalArgumentException, "float value '123.4E50' is outside of range.");
+    EXPECT_EQUAL(f, 42.0);
+
+    errno = 0;
+    char *ep;
+    f = locale::c::strtof_au("-5.490412E-39", &ep);
+    EXPECT_EQUAL(f, -5.490412E-39f);
+    EXPECT_EQUAL(errno, 0);
+    EXPECT_EQUAL(*ep, 0);
+
+    f = locale::c::strtof_au("0.0001E-50", &ep);
+    EXPECT_EQUAL(f, 0.0);
+    EXPECT_EQUAL(errno, 0);
+    EXPECT_EQUAL(*ep, 0);
+
+    f = locale::c::strtof_au("123.4E50", &ep);
+    EXPECT_EQUAL(f, HUGE_VALF);
+    EXPECT_EQUAL(errno, ERANGE);
+    EXPECT_EQUAL(*ep, 0);
 }
 
 void
@@ -547,6 +612,7 @@ AsciistreamTest::Main()
     testGetLine();
     testIllegalNumbers();
     testDouble();
+    testFloat();
     testStateSaver();
     TEST_DONE();
 }
