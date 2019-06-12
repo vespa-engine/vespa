@@ -6,12 +6,17 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -29,6 +34,7 @@ public final class PrepareParams {
     static final String VERBOSE_PARAM_NAME = "verbose";
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
     static final String ROTATIONS_PARAM_NAME = "rotations";
+    static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -38,9 +44,11 @@ public final class PrepareParams {
     private final boolean isBootstrap;
     private final Optional<Version> vespaVersion;
     private final Set<Rotation> rotations;
+    private final List<ContainerEndpoint> containerEndpoints;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
-                         boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion, Set<Rotation> rotations) {
+                          boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
+                          Set<Rotation> rotations, List<ContainerEndpoint> containerEndpoints) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -49,6 +57,7 @@ public final class PrepareParams {
         this.isBootstrap = isBootstrap;
         this.vespaVersion = vespaVersion;
         this.rotations = rotations;
+        this.containerEndpoints = containerEndpoints;
     }
 
     public static class Builder {
@@ -61,6 +70,7 @@ public final class PrepareParams {
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
         private Optional<Version> vespaVersion = Optional.empty();
         private Set<Rotation> rotations;
+        private List<ContainerEndpoint> containerEndpoints = List.of();
 
         public Builder() { }
 
@@ -119,22 +129,30 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder containerEndpoints(String serialized) {
+            if (serialized == null) return this;
+            Slime slime = SlimeUtils.jsonToSlime(serialized);
+            containerEndpoints = ContainerEndpointSerializer.endpointListFromSlime(slime);
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     verbose, isBootstrap, vespaVersion, rotations);
+                                     verbose, isBootstrap, vespaVersion, rotations, containerEndpoints);
         }
 
     }
 
     public static PrepareParams fromHttpRequest(HttpRequest request, TenantName tenant, Duration barrierTimeout) {
         return new Builder().ignoreValidationErrors(request.getBooleanProperty(IGNORE_VALIDATION_PARAM_NAME))
-                                          .dryRun(request.getBooleanProperty(DRY_RUN_PARAM_NAME))
-                                          .verbose(request.getBooleanProperty(VERBOSE_PARAM_NAME))
-                                          .timeoutBudget(SessionHandler.getTimeoutBudget(request, barrierTimeout))
-                                          .applicationId(createApplicationId(request, tenant))
-                                          .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
-                                          .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
-                                          .build();
+                            .dryRun(request.getBooleanProperty(DRY_RUN_PARAM_NAME))
+                            .verbose(request.getBooleanProperty(VERBOSE_PARAM_NAME))
+                            .timeoutBudget(SessionHandler.getTimeoutBudget(request, barrierTimeout))
+                            .applicationId(createApplicationId(request, tenant))
+                            .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
+                            .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
+                            .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
+                            .build();
     }
 
     private static ApplicationId createApplicationId(HttpRequest request, TenantName tenant) {
@@ -164,7 +182,14 @@ public final class PrepareParams {
     /** Returns the Vespa version the nodes running the prepared system should have, or empty to use the system version */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
+    /** Returns the global rotations that should be made available for this deployment */
+    // TODO: Remove this once all applications have to switched to containerEndpoints
     public Set<Rotation> rotations() { return rotations; }
+
+    /** Returns the container endpoints that should be made available for this deployment. One per cluster */
+    public List<ContainerEndpoint> containerEndpoints() {
+        return containerEndpoints;
+    }
 
     public boolean ignoreValidationErrors() {
         return ignoreValidationErrors;
