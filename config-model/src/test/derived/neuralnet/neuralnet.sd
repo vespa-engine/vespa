@@ -2,27 +2,7 @@ search neuralnet {
 
     document neuralnet {
 
-        field contextId type string {
-            indexing : attribute
-        }
-
-        field messageType type int {
-            indexing: attribute
-        }
-
-        field messageEntity type int {
-            indexing: attribute
-        }
-
         field pinned type int {
-            indexing: attribute
-        }
-
-        field authorId type string {
-            indexing: attribute
-        }
-
-        field authorType type int {
             indexing: attribute
         }
 
@@ -31,14 +11,6 @@ search neuralnet {
         }
 
         field updatedAt type long {
-            indexing: attribute
-        }
-
-        field tags type array<string> {
-            indexing: attribute
-        }
-
-        field userLabels type array<int> {
             indexing: attribute
         }
 
@@ -70,23 +42,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field visibility type int {
-            indexing: attribute
-        }
-
-        field deletedAt type long {
-            indexing: attribute
-        }
-
         field markedAsAbuseAt type long {
-            indexing: attribute
-        }
-
-        field smpProcessedState type int {
-            indexing: attribute
-        }
-
-        field csaiProcessedState type int {
             indexing: attribute
         }
 
@@ -98,27 +54,11 @@ search neuralnet {
             indexing: attribute
         }
 
-        field newsHateCleanScore type float {
-            indexing: attribute
-        }
-
-        field financeHateCleanScore type float {
-            indexing: attribute
-        }
-
         field toxicity type float {
             indexing: attribute
         }
 
         field relevance type float {
-            indexing: attribute
-        }
-
-        field newsHateCleanScoreV2 type float {
-            indexing: attribute
-        }
-
-        field financeHateCleanScoreV2 type float {
             indexing: attribute
         }
 
