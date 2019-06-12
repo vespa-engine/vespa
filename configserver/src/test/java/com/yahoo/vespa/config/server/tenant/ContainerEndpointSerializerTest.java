@@ -8,7 +8,11 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author ogronnesby
+ */
 public class ContainerEndpointSerializerTest {
+
     @Test
     public void readSingleEndpoint() {
         final var slime = new Slime();
@@ -42,4 +46,5 @@ public class ContainerEndpointSerializerTest {
 
         assertEquals(endpoints, deserialized);
     }
+
 }

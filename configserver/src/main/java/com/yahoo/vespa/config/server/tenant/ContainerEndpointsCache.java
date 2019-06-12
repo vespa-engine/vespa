@@ -24,6 +24,7 @@ import java.util.List;
  * @author ogronnesby
  */
 public class ContainerEndpointsCache {
+
     private final Path cachePath;
     private final Curator curator;
 
@@ -37,7 +38,7 @@ public class ContainerEndpointsCache {
         return optionalData
                 .map(SlimeUtils::jsonToSlime)
                 .map(ContainerEndpointSerializer::endpointListFromSlime)
-                .orElse(List.of());
+                .orElseGet(List::of);
     }
 
     public void write(ApplicationId applicationId, List<ContainerEndpoint> endpoints) {
@@ -56,4 +57,5 @@ public class ContainerEndpointsCache {
     private Path applicationPath(ApplicationId applicationId) {
         return cachePath.append(applicationId.serializedForm());
     }
+
 }

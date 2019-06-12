@@ -17,8 +17,11 @@ import java.util.List;
  * @author ogronnesby
  */
 public class ContainerEndpointSerializer {
+
     private static final String clusterIdField = "clusterId";
     private static final String namesField = "names";
+
+    private ContainerEndpointSerializer() {}
 
     public static ContainerEndpoint endpointFromSlime(Inspector inspector) {
         final var clusterId = inspector.field(clusterIdField).asString();
@@ -73,4 +76,5 @@ public class ContainerEndpointSerializer {
 
         return slime;
     }
+
 }
