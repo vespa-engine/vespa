@@ -30,7 +30,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field uniqueRAuthorCount type int {
+        field uniqueRACount type int {
             indexing: attribute
         }
 
@@ -87,7 +87,7 @@ search neuralnet {
         }
 
         macro uniqueRCountToUse() {
-            expression: if(isNan(attribute(uniqueRAuthorCount)) == 1, 0, if(attribute(uniqueRAuthorCount) < 0, 0, attribute(uniqueRAuthorCount)))
+            expression: if(isNan(attribute(uniqueRCount)) == 1, 0, if(attribute(uniqueRACount) < 0, 0, attribute(uniqueRACount)))
         }
 
         macro uvCountToUse() {
