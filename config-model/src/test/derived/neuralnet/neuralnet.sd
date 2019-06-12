@@ -18,7 +18,7 @@ search neuralnet {
             indexing: attribute
         }
 
-        field downVoteCount type int {
+        field dvCount type int {
             indexing: attribute
         }
 
@@ -94,8 +94,8 @@ search neuralnet {
             expression: if(isNan(attribute(uvCount)) == 1, 0, if(attribute(uvCount) < 0, 0, attribute(uvCount)))
         }
 
-        macro downVoteCountToUse() {
-            expression: if(isNan(attribute(downVoteCount)) == 1, 0, if(attribute(downVoteCount) < 0, 0, attribute(downVoteCount)))
+        macro dvCountToUse() {
+            expression: if(isNan(attribute(dvCount)) == 1, 0, if(attribute(dvCount) < 0, 0, attribute(dvCount)))
         }
 
         macro aVoteCountToUse() {
@@ -103,11 +103,11 @@ search neuralnet {
         }
 
         macro totalPositiveReactions() {
-            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (uvCountToUse - downVoteCountToUse) - aVoteCountToUse
+            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (uvCountToUse - dvCountToUse) - aVoteCountToUse
         }
 
         macro totalvote() {
-            expression: query(reportaweight) * aVoteCountToUse + downVoteCountToUse + query(replyweight) * uniqueReplyCountToUse + uvCountToUse
+            expression: query(reportaweight) * aVoteCountToUse + dvCountToUse + query(replyweight) * uniqueReplyCountToUse + uvCountToUse
         }
 
         macro phat() {
@@ -176,7 +176,7 @@ search neuralnet {
         macro nn_input() {
             expression {
                 concat(log10_1p(aVoteCountToUse),
-                concat(log10_1p(downVoteCountToUse),
+                concat(log10_1p(dvCountToUse),
                 concat(log10_1p(uniqueReplyCountToUse),
                 concat(log10_1p(uvCountToUse),
                 concat(phat,
