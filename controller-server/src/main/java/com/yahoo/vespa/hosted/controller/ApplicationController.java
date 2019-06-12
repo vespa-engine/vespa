@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -520,7 +521,7 @@ public class ApplicationController {
         controller.nameServiceForwarder().createCname(RecordName.from(name), RecordData.fqdn(targetName), Priority.normal);
     }
 
-    /** Returns the endpoints of the deployment, or an empty list if the request fails */
+    /** Returns the endpoints of the deployment, or empty if the request fails */
     public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
         if ( ! get(deploymentId.applicationId())
                 .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
@@ -535,6 +536,29 @@ public class ApplicationController {
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
+                                   + Exceptions.toMessageString(e));
+            return Optional.empty();
+        }
+    }
+
+    /** Returns the endpoints of the clusters in the deployment, or empty if the request fails. */
+    public Optional<Map<ClusterSpec.Id, URI>> clusterEndpoints(DeploymentId id) {
+        if ( ! get(id.applicationId())
+                .map(application -> application.deployments().containsKey(id.zoneId()))
+                .orElse(id.applicationId().instance().isTester()))
+            throw new NotExistsException("Deployment", id.toString());
+
+        try {
+            return Optional.of(routingPolicies.get(id))
+                           .filter(policies -> ! policies.isEmpty())
+                           .map(policies -> policies.stream()
+                                                    .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
+                                                    .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
+                                                                                          policy -> policy.endpointIn(controller.system()).url())))
+                           .or(() -> Optional.of(routingGenerator.clusterEndpoints(id)));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": "
                                    + Exceptions.toMessageString(e));
             return Optional.empty();
         }

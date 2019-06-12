@@ -9,7 +9,9 @@ import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -18,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -193,6 +196,19 @@ public class RoutingPoliciesTest {
         assertEquals(expectedRecords, recordNames());
         assertTrue("Removes stale routing policies " + app2, tester.controller().applications().routingPolicies().get(app2.id()).isEmpty());
         assertEquals("Keeps routing policies for " + app1, 4, tester.controller().applications().routingPolicies().get(app1.id()).size());
+    }
+
+    @Test
+    public void cluster_endpoints_resolve_from_policies() {
+        provisionLoadBalancers(3, app1.id(), zone1);
+        tester.deployCompletely(app1, applicationPackage);
+        assertEquals(Map.of(ClusterSpec.Id.from("c0"),
+                            URI.create("https://c0.app1.tenant1.us-west-1.vespa.oath.cloud/"),
+                            ClusterSpec.Id.from("c1"),
+                            URI.create("https://c1.app1.tenant1.us-west-1.vespa.oath.cloud/"),
+                            ClusterSpec.Id.from("c2"),
+                            URI.create("https://c2.app1.tenant1.us-west-1.vespa.oath.cloud/")),
+                     tester.controller().applications().clusterEndpoints(new DeploymentId(app1.id(), zone1)).get());
     }
 
     private Set<RoutingPolicy> policies(Application application) {
