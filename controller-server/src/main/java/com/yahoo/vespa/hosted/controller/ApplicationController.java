@@ -543,7 +543,7 @@ public class ApplicationController {
         }
     }
 
-    /** Returns the non-empty endpoints of the clusters in the deployment, or empty if the request fails. */
+    /** Returns the non-empty endpoints per cluster in the given deployment, or empty if endpoints can't be found. */
     public Optional<Map<ClusterSpec.Id, URI>> clusterEndpoints(DeploymentId id) {
         if ( ! get(id.applicationId())
                 .map(application -> application.deployments().containsKey(id.zoneId()))
@@ -557,7 +557,8 @@ public class ApplicationController {
                                                     .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
                                                     .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
                                                                                           policy -> policy.endpointIn(controller.system()).url())))
-                           .or(() -> Optional.of(routingGenerator.clusterEndpoints(id)));
+                           .or(() -> Optional.of(routingGenerator.clusterEndpoints(id)))
+                           .filter(endpoints -> ! endpoints.isEmpty());
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": "
