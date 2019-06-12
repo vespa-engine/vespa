@@ -14,10 +14,6 @@ search neuralnet {
             indexing: attribute
         }
 
-        field sentimentType type int {
-            indexing: attribute
-        }
-
         field upVoteCount type int {
             indexing: attribute
         }
@@ -84,10 +80,6 @@ search neuralnet {
 
         macro log10_1p(x) {
             expression: log10(x+1)
-        }
-
-        macro sentimentTypeToUse() {
-            expression: if(isNan(attribute(sentimentType)) == 1, -2, attribute(sentimentType))
         }
 
         macro textScoreToUse() {
