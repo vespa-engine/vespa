@@ -141,9 +141,7 @@ enum PathGroup {
                  Matcher.application,
                  Optional.of("/api"),
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
-                 "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/jobreport",
-                 "/application/v4/tenant/{tenant}/application/{application}/promote",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote"),
+                 "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/jobreport"),
 
     /** Paths which contain (not very strictly) classified information about customers. */
     classifiedTenantInfo(Optional.of("/api"),
