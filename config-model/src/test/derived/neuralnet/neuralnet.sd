@@ -150,7 +150,7 @@ search neuralnet {
             expression: if(isNan(attribute(markedAsAAt)) == 1, maxSignedSixtyFourBitInteger, attribute(markedAsAAt))
         }
 
-        macro timeDecayToUse() {
+        macro tdToUse() {
             expression: pow(2, 0 - ((rankedAt - createdAtToUse) / query(decay)))
         }
 
@@ -182,7 +182,7 @@ search neuralnet {
                 concat(phat,
                 concat(log10_1p(totalvote),
                 concat(hsScoreToUse,
-                concat(timeDecayToUse,
+                concat(tdToUse,
                 toxicityScoreToUse, x), x), x), x), x), x), x), x)
             }
         }
