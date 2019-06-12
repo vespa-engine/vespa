@@ -151,6 +151,11 @@ public class Flags {
             "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
             "Takes effect on restart of configserver");
 
+    public static final UnboundBooleanFlag PROVISION_APPLICATION_CERTIFICATE = defineFeatureFlag(
+            "provision-application-certificate", false,
+            "Privision certificate from CA and include reference in deployment",
+            "Takes effect on deployment through controller",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

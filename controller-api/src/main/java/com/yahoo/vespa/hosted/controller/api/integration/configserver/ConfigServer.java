@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ public interface ConfigServer {
     }
 
     PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
-                               List<ContainerEndpoint> containerEndpoints, byte[] content);
+                               List<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 
