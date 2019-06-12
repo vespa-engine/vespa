@@ -11,7 +11,6 @@ import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -33,14 +32,14 @@ public class IdentityDocumentGenerator {
     private final NodeRepository nodeRepository;
     private final Zone zone;
     private final KeyProvider keyProvider;
-    private final AthenzProviderServiceConfig.Zones zoneConfig;
+    private final AthenzProviderServiceConfig athenzProviderServiceConfig;
 
     @Inject
     public IdentityDocumentGenerator(AthenzProviderServiceConfig config,
                                      NodeRepository nodeRepository,
                                      Zone zone,
                                      KeyProvider keyProvider) {
-        this.zoneConfig = Utils.getZoneConfig(config, zone);
+        this.athenzProviderServiceConfig = config;
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;
@@ -62,8 +61,8 @@ public class IdentityDocumentGenerator {
 
             Set<String> ips = new HashSet<>(node.ipAddresses());
 
-            PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
-            AthenzService providerService = new AthenzService(zoneConfig.domain(), zoneConfig.serviceName());
+            PrivateKey privateKey = keyProvider.getPrivateKey(athenzProviderServiceConfig.secretVersion());
+            AthenzService providerService = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
             String configServerHostname = HostName.getLocalhost();
             Instant createdAt = Instant.now();

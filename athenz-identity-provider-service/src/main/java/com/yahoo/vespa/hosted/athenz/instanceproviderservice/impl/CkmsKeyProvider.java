@@ -14,8 +14,6 @@ import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
-
 /**
  * @author mortent
  * @author bjorncs
@@ -32,7 +30,7 @@ public class CkmsKeyProvider implements KeyProvider {
                            Zone zone,
                            AthenzProviderServiceConfig config) {
         this.secretStore = secretStore;
-        this.secretName = getZoneConfig(config, zone).secretName();
+        this.secretName = config.secretName();
         this.secrets = new HashMap<>();
     }
 

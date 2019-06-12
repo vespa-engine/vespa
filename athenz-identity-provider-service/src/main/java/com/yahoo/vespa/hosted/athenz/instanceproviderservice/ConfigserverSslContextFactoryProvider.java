@@ -37,8 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
-
 /**
  * Configures the JDisc https connector with the configserver's Athenz provider certificate and private key.
  *
@@ -56,7 +54,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
             Executors.newSingleThreadScheduledExecutor(runnable -> new Thread(runnable, "configserver-ssl-context-factory-provider"));
     private final ZtsClient ztsClient;
     private final KeyProvider keyProvider;
-    private final AthenzProviderServiceConfig.Zones zoneConfig;
+    private final AthenzProviderServiceConfig athenzProviderServiceConfig;
     private final AthenzService configserverIdentity;
 
     @Inject
@@ -64,14 +62,14 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                                                  KeyProvider keyProvider,
                                                  AthenzProviderServiceConfig config,
                                                  Zone zone) {
-        this.zoneConfig = getZoneConfig(config, zone);
-        this.ztsClient = new DefaultZtsClient(URI.create(zoneConfig.ztsUrl()), bootstrapIdentity);
+        this.athenzProviderServiceConfig = config;
+        this.ztsClient = new DefaultZtsClient(URI.create(athenzProviderServiceConfig.ztsUrl()), bootstrapIdentity);
         this.keyProvider = keyProvider;
-        this.configserverIdentity = new AthenzService(zoneConfig.domain(), zoneConfig.serviceName());
+        this.configserverIdentity = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
         Duration updatePeriod = Duration.ofDays(config.updatePeriodDays());
         Path trustStoreFile = Paths.get(config.athenzCaTrustStore());
-        this.sslContextFactory = initializeSslContextFactory(keyProvider, trustStoreFile, updatePeriod, configserverIdentity, ztsClient, zoneConfig);
+        this.sslContextFactory = initializeSslContextFactory(keyProvider, trustStoreFile, updatePeriod, configserverIdentity, ztsClient, athenzProviderServiceConfig);
         scheduler.scheduleAtFixedRate(new KeystoreUpdater(sslContextFactory),
                                       updatePeriod.toDays()/*initial delay*/,
                                       updatePeriod.toDays(),
@@ -108,7 +106,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                                                                  Duration updatePeriod,
                                                                  AthenzService configserverIdentity,
                                                                  ZtsClient ztsClient,
-                                                                 AthenzProviderServiceConfig.Zones zoneConfig) {
+                                                                 AthenzProviderServiceConfig zoneConfig) {
 
         // TODO Use DefaultTlsContext to configure SslContextFactory (ensure that cipher/protocol configuration is same across all TLS endpoints)
 
@@ -150,7 +148,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                                            char[] keystorePwd,
                                            KeyProvider keyProvider,
                                            ZtsClient ztsClient,
-                                           AthenzProviderServiceConfig.Zones zoneConfig) {
+                                           AthenzProviderServiceConfig zoneConfig) {
         PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
         PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);
         Identity serviceIdentity = ztsClient.getServiceIdentity(configserverIdentity,
@@ -184,7 +182,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
             try {
                 log.log(LogLevel.INFO, "Updating configserver provider certificate from ZTS");
                 char[] keystorePwd = generateKeystorePassword();
-                KeyStore keyStore = updateKeystore(configserverIdentity, keystorePwd, keyProvider, ztsClient, zoneConfig);
+                KeyStore keyStore = updateKeystore(configserverIdentity, keystorePwd, keyProvider, ztsClient, athenzProviderServiceConfig);
                 sslContextFactory.reload(scf -> {
                     scf.setKeyStore(keyStore);
                     scf.setKeyStorePassword(new String(keystorePwd));
