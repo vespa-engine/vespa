@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
@@ -29,11 +30,10 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         deleteContent(toDir);
 
         SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/");
-        //SearchBuilder builder = SearchBuilder.createFromFile(searchDefDir + name + ".sd");
         return derive(dirName, searchDefinitionName, builder);
     }
 
-    protected DerivedConfiguration derive(String dirName, String searchDefinitionName, SearchBuilder builder) throws IOException {
+    private DerivedConfiguration derive(String dirName, String searchDefinitionName, SearchBuilder builder) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
@@ -85,14 +85,14 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
      * Asserts config is correctly derived given a builder.
      * This will fail if the builder contains multiple search definitions.
      */
-    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, String dirName) throws IOException, ParseException {
+    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, String dirName) throws IOException {
         builder.build();
         DerivedConfiguration derived = derive(dirName, null, builder);
         assertCorrectConfigFiles(dirName);
         return derived;
     }
 
-    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, Search search, String name) throws IOException, ParseException {
+    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, Search search, String name) throws IOException {
         DerivedConfiguration derived = derive(name, builder, search);
         assertCorrectConfigFiles(name);
         return derived;

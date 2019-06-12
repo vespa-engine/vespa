@@ -1,0 +1,743 @@
+search neuralnet {
+
+    document neuralnet {
+
+        field messageId type string {
+            indexing: summary | index
+            match {
+               exact
+            }
+        }
+
+        field namespace type string {
+            indexing: summary | index
+            match {
+               exact
+            }
+        }
+
+        field contextId type string {
+            indexing : summary | attribute
+            attribute: fast-search
+            match {
+               exact
+            }
+        }
+
+        field authorGuid type string {
+            indexing : summary | index
+            match {
+               exact
+            }
+        }
+
+        field messageType type int {
+            indexing: summary | attribute
+        }
+
+        field messageEntity type int {
+            indexing: summary | attribute
+        }
+
+        field pinned type int {
+            indexing: summary | attribute
+        }
+
+        field authorId type string {
+            indexing: summary | attribute
+            attribute: fast-search
+            match {
+               exact
+            }
+        }
+
+        field authorType type int {
+            indexing: summary | attribute
+        }
+
+        field createdAt type long {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+        field updatedAt type long {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+        field abuseGuids type array<string> {
+            indexing: summary | index
+            match {
+               exact
+            }
+        }
+
+        field internalTags type array<string> {
+            indexing: summary | index
+            match {
+               exact
+            }
+        }
+
+        field tags type array<string> {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+        field userLabels type array<int> {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+        field content type string {
+            indexing: summary | index
+        }
+
+        field sentimentType type int {
+            indexing: summary | attribute
+        }
+
+        field upVoteCount type int {
+            indexing: summary | attribute
+        }
+
+        field downVoteCount type int {
+            indexing: summary | attribute
+        }
+
+        field abuseVoteCount type int {
+            indexing: summary | attribute
+        }
+
+        field replyCount type int {
+            indexing: summary | attribute
+        }
+
+        field uniqueReplyAuthorCount type int {
+            indexing: summary | attribute
+        }
+
+        field messageProtoBuf type string {
+            indexing: summary
+        }
+
+        field replyTo type string {
+            indexing: summary | attribute
+            attribute: fast-search
+            match {
+               exact
+            }
+        }
+
+        field visibility type int {
+            indexing: summary | attribute
+        }
+
+        field deletedAt type long {
+            indexing: summary | attribute
+            attribute: fast-search
+        }
+
+        field markedAsAbuseAt type long {
+            indexing: summary | attribute
+        }
+
+        field smpProcessedState type int {
+            indexing: summary | attribute
+        }
+
+        field csaiProcessedState type int {
+            indexing: summary | attribute
+        }
+
+        field normalizedTextScore type float {
+            indexing: summary | attribute
+        }
+
+        field ericScore type float {
+            indexing: summary | attribute
+        }
+
+        field newsHateCleanScore type float {
+            indexing: summary | attribute
+        }
+
+        field financeHateCleanScore type float {
+            indexing: summary | attribute
+        }
+
+        field toxicity type float {
+            indexing: summary | attribute
+        }
+
+        field relevance type float {
+            indexing: summary | attribute
+        }
+
+        field newsHateCleanScoreV2 type float {
+            indexing: summary | attribute
+        }
+
+        field financeHateCleanScoreV2 type float {
+            indexing: summary | attribute
+        }
+
+        field normalizedCommunityScore type float {
+            indexing: summary | attribute
+        }
+
+        field lastActivityAt type long {
+            indexing: summary | attribute
+        }
+
+        field lastActivityBy type string {
+            indexing: summary
+        }
+
+        field lastReplyId type string {
+            indexing: summary
+        }
+
+        field sadVoteCount type int {
+            indexing: summary
+        }
+
+        field laughVoteCount type int {
+            indexing: summary
+        }
+
+        field happyVoteCount type int {
+            indexing: summary
+        }
+
+        field heartVoteCount type int {
+            indexing: summary
+        }
+
+        field angryVoteCount type int {
+            indexing: summary
+        }
+
+        field wowVoteCount type int {
+            indexing: summary
+        }
+
+        field authorReputationScore type double {
+            indexing: attribute
+        }
+    }
+
+    document-summary reputationSummary {
+        summary authorReputationScore type double {}
+        summary namespace type string {}
+        summary contextId type string {}
+        summary messageId type string {}
+        summary replyTo type string {}
+        summary authorGuid type string {}
+        summary createdAt type long {}
+        summary deletedAt type long {}
+    }
+
+    fieldset default {
+        fields: abuseGuids, tags, internalTags
+    }
+
+    fieldset textFields {
+        fields: namespace, content, authorGuid
+    }
+
+    rank-profile canvassDefaultRankProfile inherits default {
+
+        constants {
+            maxSignedSixtyFourBitInteger: 9223372036854775807
+        }
+
+        rank-properties {
+            query(voteToReplyRatio): 1
+            query(textweight): 1
+            query(communityweight): 3
+            query(decay): 259200
+            query(replyweight): 2
+            query(reportabuseweight): 2
+            query(hatespeechweight): 1
+            query(toxicityweight): -1
+            query(relevanceweight): 1
+            query(reputationweight): 1
+            query(wilsonweight): 1
+            query(pinweight): 1000
+            query(z): 1.96
+
+            # freshness=0.5 after 30 days
+            freshness.halfResponse: 2592000
+        }
+
+        macro log10_1p(x) {
+            # Similar to log1p but uses log10 rather than ln.
+            # Assumes x not Nan && x>=0, i.e. x should be the output of attributeToUse
+            expression: log10(x+1)
+        }
+
+        macro sentimentTypeToUse() {
+            expression: if(isNan(attribute(sentimentType)) == 1, -2, attribute(sentimentType))
+        }
+
+        macro textScoreToUse() {
+            expression: if(isNan(attribute(normalizedTextScore)) == 1, 0, attribute(normalizedTextScore))
+        }
+
+        macro ericScoreToUse() {
+            expression: if(isNan(attribute(ericScore)) == 1, 0, attribute(ericScore))
+        }
+
+        macro replyCountToUse() {
+            expression: if(isNan(attribute(replyCount)) == 1, 0, if(attribute(replyCount) < 0, 0, attribute(replyCount)))
+        }
+
+        macro uniqueReplyCountToUse() {
+            expression: if(isNan(attribute(uniqueReplyAuthorCount)) == 1, 0, if(attribute(uniqueReplyAuthorCount) < 0, 0, attribute(uniqueReplyAuthorCount)))
+        }
+
+        macro upVoteCountToUse() {
+            expression: if(isNan(attribute(upVoteCount)) == 1, 0, if(attribute(upVoteCount) < 0, 0, attribute(upVoteCount)))
+        }
+
+        macro downVoteCountToUse() {
+            expression: if(isNan(attribute(downVoteCount)) == 1, 0, if(attribute(downVoteCount) < 0, 0, attribute(downVoteCount)))
+        }
+
+        macro abuseVoteCountToUse() {
+            expression: if(isNan(attribute(abuseVoteCount)) == 1, 0, if(attribute(abuseVoteCount) < 0, 0, attribute(abuseVoteCount)))
+        }
+
+        macro totalPositiveReactions() {
+            expression: uniqueReplyCountToUse + query(voteToReplyRatio) * (upVoteCountToUse - downVoteCountToUse) - abuseVoteCountToUse
+        }
+
+        macro totalvote() {
+            expression: query(reportabuseweight) * abuseVoteCountToUse + downVoteCountToUse + query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse
+        }
+
+        macro phat() {
+            expression: if (totalvote == 0, 0, ( query(replyweight) * uniqueReplyCountToUse + upVoteCountToUse) / totalvote)
+        }
+
+        macro wilsonIntervalScore() {
+            expression: if (totalvote == 0, 0, (phat + query(z) * query(z) / (2 * totalvote) - query(z) * sqrt( (phat * (1-phat) + query(z)*query(z)/(4*totalvote))/totalvote)) / (1+query(z)*query(z)/totalvote))
+        }
+
+        macro newCommunityScoreToUse() {
+            expression: if (totalPositiveReactions > 0, log10(totalPositiveReactions), 0)
+        }
+
+        macro hateSpeechScoreToUse() {
+            expression: if (isNan(attribute(newsHateCleanScore)) == 0, if (isNan(attribute(financeHateCleanScore)) == 0,  (attribute(newsHateCleanScore) + attribute(financeHateCleanScore)) / 2 , attribute(newsHateCleanScore)), if( isNan(attribute(financeHateCleanScore)) == 0, attribute(financeHateCleanScore), 0))
+        }
+
+        macro toxicityScoreToUse() {
+            expression: if (isNan(attribute(toxicity)) == 1, 0.6, attribute(toxicity))
+        }
+
+        # Relevance score is defaulted to 0.254
+        # We took 5000 random comments over 24 hours, the average relevance for all comment is 0.254
+        macro relevanceScoreToUse() {
+            expression: if (isNan(attribute(relevance)) == 1, 0.254, attribute(relevance))
+        }
+
+        macro financeHateSpeechV2ScoreToUse() {
+            expression: if (isNan(attribute(financeHateCleanScoreV2)) == 1, 0.5, attribute(financeHateCleanScoreV2))
+        }
+
+        macro newsHateSpeechV2ScoreToUse() {
+            expression: if (isNan(attribute(newsHateCleanScoreV2)) == 1, 0.5, attribute(newsHateCleanScoreV2))
+        }
+
+        macro hateSpeechV2ScoreToUse() {
+            expression: (financeHateSpeechV2ScoreToUse + newsHateSpeechV2ScoreToUse) / 2
+        }
+
+        macro freshnessToUse() {
+            expression: if (freshness(createdAt).logscale < 0.01, 0.01, freshness(createdAt).logscale)
+        }
+
+        # Reputation score is defaulted to 0.3
+        # If we exclude users having reputation score equals to 0, the average of existing users is 0.3
+        macro reputationScoreToUse() {
+            expression: if (isNan(attribute(authorReputationScore)) == 1, 0.3, attribute(authorReputationScore))
+        }
+
+        macro rankedAt() {
+            expression: now
+        }
+
+        macro createdAtToUse() {
+            expression: if(isNan(attribute(createdAt)) == 1, rankedAt, attribute(createdAt))
+        }
+
+        macro lastActivityAtToUse() {
+            expression: if(isNan(attribute(lastActivityAt)) == 1, attribute(createdAt), attribute(lastActivityAt))
+        }
+
+        macro markedAsAbuseAtToUse() {
+            expression: if(isNan(attribute(markedAsAbuseAt)) == 1, maxSignedSixtyFourBitInteger, attribute(markedAsAbuseAt))
+        }
+
+        macro timeDecayToUse() {
+            expression: pow(2, 0 - ((rankedAt - createdAtToUse) / query(decay)))
+        }
+
+        macro commentOverallScore() {
+            expression: query(textweight) * textScoreToUse  + query(communityweight) * newCommunityScoreToUse
+        }
+
+        macro hatespeechAndWilsonScore() {
+            expression: query(hatespeechweight) * hateSpeechScoreToUse + query(wilsonweight) * wilsonIntervalScore
+        }
+
+        macro perspectiveAndWilsonScore() {
+            expression: query(toxicityweight) * toxicityScoreToUse + query(wilsonweight) * wilsonIntervalScore
+        }
+
+        macro perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score() {
+            expression: query(toxicityweight) * toxicityScoreToUse + query(wilsonweight) * wilsonIntervalScore + query(reputationweight) * reputationScoreToUse + query(relevanceweight) * relevanceScoreToUse + query(hatespeechweight) * hateSpeechV2ScoreToUse
+        }
+
+        macro pinScore() {
+            expression: if(isNan(attribute(pinned)) == 1, 0, query(pinweight) * attribute(pinned))
+        }
+
+        macro freshnessRank() {
+            expression: nativeRank + freshness(createdAt)
+        }
+
+        first-phase {
+            expression: nativeRank
+        }
+
+        summary-features {
+            # values that are returned in Vespa response (hit.fields.summaryfeatures) and also logged to the Grid STREAM-3554
+            attribute(financeHateCleanScore)
+            attribute(newsHateCleanScore)
+            attribute(financeHateCleanScoreV2)
+            attribute(newsHateCleanScoreV2)
+            attribute(userLabels)
+            rankingExpression(abuseVoteCountToUse)
+            rankingExpression(createdAtToUse)
+            rankingExpression(downVoteCountToUse)
+            rankingExpression(hateSpeechScoreToUse)
+            rankingExpression(hateSpeechV2ScoreToUse)
+            rankingExpression(lastActivityAtToUse)
+            rankingExpression(markedAsAbuseAtToUse)
+            rankingExpression(newCommunityScoreToUse)
+            rankingExpression(phat)
+            rankingExpression(rankedAt)
+            rankingExpression(replyCountToUse)
+            rankingExpression(uniqueReplyCountToUse)
+            rankingExpression(freshnessToUse)
+            rankingExpression(sentimentTypeToUse)
+            rankingExpression(textScoreToUse)
+            rankingExpression(timeDecayToUse)
+            rankingExpression(totalvote)
+            rankingExpression(toxicityScoreToUse)
+            rankingExpression(relevanceScoreToUse)
+            rankingExpression(reputationScoreToUse)
+            rankingExpression(upVoteCountToUse)
+            rankingExpression(wilsonIntervalScore)
+        }
+    }
+
+    # randomly rank 4000 freshest comments. Intended for scientists to collect training data
+    rank-profile randomProfile inherits canvassDefaultRankProfile {
+        first-phase {
+            expression: freshness(createdAt)
+        }
+        second-phase {
+            expression: random
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassHalfLifeDecayProfile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: commentOverallScore * timeDecayToUse
+            rerank-count: 2000
+        }
+    }
+
+    rank-profile newestCreatedCommentProfile inherits canvassDefaultRankProfile {
+      second-phase {
+            expression: attribute(createdAt)
+            rerank-count: 4000
+      }
+    }
+
+    rank-profile oldestCreatedCommentProfile inherits canvassDefaultRankProfile {
+      second-phase {
+            expression: -1 * attribute(createdAt)
+            rerank-count: 4000
+      }
+    }
+
+    rank-profile canvassSmpAndCommunityV3NoDecayProfile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: hatespeechAndWilsonScore
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassSmpAndCommunityV3DecayV2Profile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: hatespeechAndWilsonScore + freshness(createdAt).logscale
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassPerspectiveAndCommunityV3NoDecayProfile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonScore
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassPerspectiveAndCommunityV3AndReputationProfile inherits canvassDefaultRankProfile {
+
+        rank-properties {
+            query(hatespeechweight): 0
+            query(relevanceweight): 0
+            query(reputationweight): 1
+        }
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassPerspectiveAndCommunityV3AndHateSpeechV2Profile inherits canvassDefaultRankProfile {
+
+        rank-properties {
+            query(hatespeechweight): 1
+            query(relevanceweight): 0
+            query(reputationweight): 0
+        }
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassPerspectiveAndCommunityV3AndRelevanceProfile inherits canvassDefaultRankProfile {
+
+        rank-properties {
+            query(hatespeechweight): 0
+            query(relevanceweight): 1
+            query(reputationweight): 0
+        }
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score
+            rerank-count: 4000
+        }
+    }
+
+    # PCRR stand for Perspective + CommunityV3 (Wilson) + Relevance + Reputation
+    rank-profile canvassPCRRProfile inherits canvassDefaultRankProfile {
+
+        rank-properties {
+            query(hatespeechweight): 0
+            query(relevanceweight): 1
+            query(reputationweight): 1
+        }
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassPerspectiveAndCommunityV3DecayV2Profile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonScore * freshnessToUse
+            rerank-count: 4000
+        }
+    }
+
+    # PCRD stand for Perspective + CommunityV3 (Wilson) + Relevance + DecayV2 (logscale)
+    rank-profile canvassPCRDProfile inherits canvassDefaultRankProfile {
+
+        rank-properties {
+            query(hatespeechweight): 0
+            query(relevanceweight): 1
+            query(reputationweight): 0
+        }
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonAndReputationAndRelevanceAndHateSpeechV2Score * freshnessToUse
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassSmpAndCommunityV3NoDecayWithPinProfile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: hatespeechAndWilsonScore + pinScore
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassPerspectiveAndCommunityV3NoDecayWithPinProfile inherits canvassDefaultRankProfile {
+
+        first-phase {
+            expression: freshnessRank
+        }
+
+        second-phase {
+            expression: perspectiveAndWilsonScore + pinScore
+            rerank-count: 4000
+        }
+    }
+
+    rank-profile canvassNeuralNetworkProfile inherits canvassDefaultRankProfile {
+        macro nn_input() {
+            # [VESPA-9729] tensor is small enough to concat at ranking time, and it is only used in second-phase
+            expression {
+                concat(log10_1p(abuseVoteCountToUse),
+                concat(log10_1p(downVoteCountToUse),
+                concat(log10_1p(uniqueReplyCountToUse),
+                concat(log10_1p(upVoteCountToUse),
+                concat(phat,
+                concat(log10_1p(totalvote),
+                concat(hateSpeechScoreToUse,
+                concat(timeDecayToUse,
+                toxicityScoreToUse, x), x), x), x), x), x), x), x)
+            }
+        }
+
+        # Model weights {W,b}_{0,1,out} are stored in a rankingmodel.sd document,
+        # and LoadRankingmodelSearcher adds weights from the document to the query.
+        # If searcher does not add weights to the query, macro falls back to constant JSON files
+        macro get_model_weights(field) {
+            expression: if(query(field) == 0, constant(field), query(field))
+        }
+
+        macro layer_0() {  # returns tensor(hidden[9])
+            expression: elu(xw_plus_b(nn_input, get_model_weights(W_0), get_model_weights(b_0), x))
+        }
+        macro layer_1() {  # returns tensor(out[9])
+            expression: elu(xw_plus_b(layer_0, get_model_weights(W_1), get_model_weights(b_1), hidden))
+        }
+        macro layer_out() {  # xw_plus_b returns tensor(out[1]), so sum converts to double
+            expression: sum(xw_plus_b(layer_1, get_model_weights(W_out), get_model_weights(b_out), out))
+        }
+        first-phase {
+            expression: freshnessRank
+        }
+        second-phase {
+            expression: layer_out
+            rerank-count: 2000
+        }
+
+        summary-features {
+            # values that are returned in Vespa response (hit.fields.summaryfeatures) and also logged to the Grid STREAM-3554
+            rankingExpression(abuseVoteCountToUse)
+            rankingExpression(downVoteCountToUse)
+            rankingExpression(hateSpeechScoreToUse)
+            rankingExpression(hateSpeechV2ScoreToUse)
+            rankingExpression(phat)
+            rankingExpression(relevanceScoreToUse)
+            rankingExpression(replyCountToUse)
+            rankingExpression(uniqueReplyCountToUse)
+            rankingExpression(reputationScoreToUse)
+            rankingExpression(timeDecayToUse)
+            rankingExpression(freshnessToUse)
+            rankingExpression(totalvote)
+            rankingExpression(toxicityScoreToUse)
+            rankingExpression(upVoteCountToUse)
+        }
+    }
+
+    # Neural network trained by @akshaysoni in 5/2018 to match canvassSmpAndCommunityV3NoDecayProfile
+    # See yo/commentrl::Appendix/Models/neural-network-201805
+    constant W_0 {
+        file: neural-network-201805/W_0.json
+        type: tensor(x[9],hidden[9])
+    }
+    constant b_0 {
+        file: neural-network-201805/b_0.json
+        type: tensor(hidden[9])
+    }
+    constant W_1 {
+        file: neural-network-201805/W_1.json
+        type: tensor(hidden[9],out[9])
+    }
+    constant b_1 {
+        file: neural-network-201805/b_1.json
+        type: tensor(out[9])
+    }
+    constant W_out {
+        file: neural-network-201805/W_out.json
+        type: tensor(out[9])
+    }
+    constant b_out {
+        file: neural-network-201805/b_out.json
+        type: tensor(out[1])
+    }
+
+    # 0.5% control bucket
+    rank-profile canvassNeuralNetworkControlProfile inherits canvassNeuralNetworkProfile { }
+
+    # 1% hourly bucket
+    rank-profile canvassNeuralNetworkWithPlackettProfile inherits canvassNeuralNetworkProfile { }
+
+    # 5% Evaluate bucket
+    rank-profile canvassNeuralNetworkBucketProfile inherits canvassNeuralNetworkProfile { }
+}

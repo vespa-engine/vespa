@@ -34,6 +34,12 @@ public class FeatureNames {
         return name.equals("attribute") || name.equals("constant") || name.equals("query");
     }
 
+    /** Returns true if this is a constant */
+    public static boolean isConstantFeature(Reference reference) {
+        if ( ! isSimpleFeature(reference)) return false;
+        return reference.name().equals("constant");
+    }
+
     /**
      * Returns the single argument of the given feature name, without any quotes,
      * or empty if it is not a valid query, attribute or constant feature name
