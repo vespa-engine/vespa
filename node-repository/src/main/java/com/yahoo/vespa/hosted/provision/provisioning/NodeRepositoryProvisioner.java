@@ -6,10 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +63,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
         this.preparer = new Preparer(nodeRepository,
-                zone.environment().equals(Environment.prod) ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
+                zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
                 provisionServiceProvider.getHostProvisioner(),
                 Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource));
         this.activator = new Activator(nodeRepository);
@@ -140,7 +139,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   Collections.emptyList(),
+                                   List.of(),
                                    Optional.of(node.flavor()),
                                    Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),

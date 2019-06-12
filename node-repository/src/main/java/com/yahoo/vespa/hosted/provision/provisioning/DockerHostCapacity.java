@@ -25,7 +25,7 @@ public class DockerHostCapacity {
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
-        int result = compare(freeCapacityOf(hostB,  true), freeCapacityOf(hostA, true));
+        int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
         if (result != 0) return result;
 
         // If resources are equal we want to assign to the one with the most IPaddresses free
@@ -59,7 +59,7 @@ public class DockerHostCapacity {
      */
     public NodeResources freeCapacityOf(Node dockerHost, boolean includeInactive) {
         // Only hosts have free capacity
-        if ( ! dockerHost.type().equals(NodeType.host)) return new NodeResources(0, 0, 0);
+        if (dockerHost.type() != NodeType.host) return new NodeResources(0, 0, 0);
 
         // Subtract used resources without taking disk speed into account since existing allocations grandfathered in
         // may not use reflect the actual disk speed (as of May 2019). This (the 3 diskSpeed assignments below)
@@ -71,8 +71,8 @@ public class DockerHostCapacity {
                 .withDiskSpeed(dockerHost.flavor().resources().diskSpeed());
     }
 
-    private boolean isInactiveOrRetired(Node node) {
-        if (node.state().equals(Node.State.inactive)) return true;
+    private static boolean isInactiveOrRetired(Node node) {
+        if (node.state() == Node.State.inactive) return true;
         if (node.allocation().isPresent() && node.allocation().get().membership().retired()) return true;
         return false;
     }
