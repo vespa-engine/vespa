@@ -209,7 +209,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST (deploy) an application to a zone - manual user deployment (includes a content hash for verification)
         MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(entity::data)))
                                       .userIdentity(USER_ID),
@@ -521,10 +521,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT),
                               new File("delete-with-active-deployments.json"), 400);
 
-        // DELETE (deactivate) a deployment - dev
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default", DELETE)
+        // GET config for running a test against a deployment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/dev-us-east-1/test-config", GET)
                                       .userIdentity(USER_ID),
-                              "Deactivated tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default");
+                              new File("test-config.json"));
+
+        // DELETE (deactivate) a deployment - dev
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/default", DELETE)
+                                      .userIdentity(USER_ID),
+                              "Deactivated tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/default");
 
         // DELETE (deactivate) a deployment - prod
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/default", DELETE)

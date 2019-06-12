@@ -23,7 +23,7 @@ public class TestConfigSerializerTest {
     @Test
     public void testConfig() throws IOException {
         ZoneId zone = JobType.systemTest.zone(SystemName.PublicCd);
-        byte[] json = new TestConfigSerializer(SystemName.PublicCd).testConfig(appId,
+        byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(appId,
                                                                                JobType.systemTest,
                                                                                Map.of(zone, Map.of(ClusterSpec.Id.from("ai"),
                                                                                                    URI.create("https://server/"))),
