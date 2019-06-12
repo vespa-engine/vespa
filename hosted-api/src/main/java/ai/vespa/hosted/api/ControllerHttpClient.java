@@ -201,8 +201,9 @@ public abstract class ControllerHttpClient {
                             + URLEncoder.encode(name, UTF_8) + "=" + URLEncoder.encode(value, UTF_8));
     }
 
+    // TODO jvenstad: remove when vaas is no longer part of region names.
     private static String jobNameOf(ZoneId zone) {
-        return zone.environment().value() + "-" + zone.region().value();
+        return zone.environment().value() + "-" + zone.region().value().replaceAll("vaas-", "");
     }
 
     private HttpResponse<byte[]> send(HttpRequest request) {
