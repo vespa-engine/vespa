@@ -189,11 +189,11 @@ selectExecutor(const IAttributeVector *attribute, IntegerVector vector, vespalib
     return stash.create<SingleZeroValueExecutor>();
 }
 
-    void
-    InternalMaxReduceProdJoinBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore & store) const
-    {
-        lookupAndStoreAttribute(_attrKey, _attribute, env, store);
-    }
+void
+InternalMaxReduceProdJoinBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore & store) const
+{
+    lookupAndStoreAttribute(_attrKey, _attribute, env, store);
+}
 
 FeatureExecutor &
 InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
