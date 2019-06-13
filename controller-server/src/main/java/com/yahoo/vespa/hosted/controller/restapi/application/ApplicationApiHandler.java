@@ -1274,8 +1274,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
-        object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +
-                                         "/application/" + application.id().application().value(), request.getUri()).toString());
+        object.setString("url", withPath("/application/v4" +
+                                               "/tenant/" + application.id().tenant().value() +
+                                               "/application/" + application.id().application().value() +
+                                               "/instance/" + application.id().instance().value(),
+                                         request.getUri()).toString());
     }
 
     private Slime toSlime(ActivateResult result) {
