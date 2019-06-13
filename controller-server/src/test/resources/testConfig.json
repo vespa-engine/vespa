@@ -1,0 +1,20 @@
+{
+  "application": "tenant:application:default",
+  "zone": "test.aws-us-east-1c",
+  "system": "publiccd",
+  "endpoints": {
+    "test.aws-us-east-1c": [
+      "https://server/"
+    ]
+  },
+  "zoneEndpoints": {
+    "test.aws-us-east-1c": {
+      "ai": "https://server/"
+    }
+  },
+  "clusters": {
+    "test.aws-us-east-1c": [
+      "facts"
+    ]
+  }
+}

@@ -225,9 +225,9 @@
   "instances": [
     {
       "environment": "dev",
-      "region": "us-west-1",
+      "region": "us-east-1",
       "instance": "default",
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/default"
     },
     {
       "bcpStatus": {

@@ -13,7 +13,7 @@ public interface Deployment {
     /** Returns an Endpoint in the cluster with the given id. */
     Endpoint endpoint(String id);
 
-    /** Returns a {@link TestDeployment} representation of this, or throws if this is a production deployment. */
+    /** Returns a {@link TestDeployment} view of this, or throws if this is a production deployment. */
     TestDeployment asTestDeployment();
 
 }

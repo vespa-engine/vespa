@@ -7,8 +7,12 @@ package ai.vespa.hosted.cd;
  */
 public interface TestDeployment extends Deployment {
 
+    /** Returns a {@link TestEndpoint} in the cluster with the "default" id. */
+    @Override
     TestEndpoint endpoint();
 
+    /** Returns a {@link TestEndpoint} in the cluster with the given id. */
+    @Override
     TestEndpoint endpoint(String id);
 
 }

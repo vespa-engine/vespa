@@ -1,0 +1,21 @@
+{
+  "application": "tenant1:application1:default",
+  "zone": "dev.us-east-1",
+  "system": "main",
+  "endpoints": {
+    "dev.us-east-1": [
+      "http://old-endpoint.vespa.yahooapis.com:4080"
+    ],
+    "prod.us-central-1": [
+      "http://old-endpoint.vespa.yahooapis.com:4080"
+    ]
+  },
+  "zoneEndpoints": {
+    "dev.us-east-1": {
+      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+    },
+    "prod.us-central-1": {
+      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+    }
+  }
+}

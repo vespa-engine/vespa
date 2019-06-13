@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -26,15 +27,22 @@ import java.util.Optional;
  */
 public class Authenticator {
 
-    /** Returns an SSLContext from "key" and "cert" files found under {@code System.getProperty("vespa.test.credentials.root")}. */
+    /** Returns an SSLContext which provides authentication against a Vespa endpoint.
+     *
+     * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files
+     * "key" and "cert" in that directory are used; otherwise, the system default SSLContext is returned. */
     public SSLContext sslContext() {
         try {
-            Path credentialsRoot = Path.of(System.getProperty("vespa.test.credentials.root"));
+            Optional<String> credentialsRootProperty = getNonBlankProperty("vespa.test.credentials.root");
+            if (credentialsRootProperty.isEmpty())
+                return SSLContext.getDefault();
+
+            Path credentialsRoot = Path.of(credentialsRootProperty.get());
             Path certificateFile = credentialsRoot.resolve("cert");
             Path privateKeyFile = credentialsRoot.resolve("key");
 
             X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));
-            if (Instant.now().isBefore(certificate.getNotBefore().toInstant())
+            if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
                 || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
                 throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
                                                 certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
@@ -44,23 +52,26 @@ public class Authenticator {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
+    /** Adds necessary authentication to the given HTTP request builder, to be verified by a Vespa endpoint. */
     public HttpRequest.Builder authenticated(HttpRequest.Builder request) {
         return request;
     }
 
-    ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
-                                          requireNonBlankProperty("application"),
-                                          getNonBlankProperty("instance").orElse("default"));
+    /** Returns an authenticated controller client. */
+    public ControllerHttpClient controller() {
+        ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
+                                              requireNonBlankProperty("application"),
+                                              getNonBlankProperty("instance").orElse("default"));
+        URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
+        Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
 
-    URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
-    Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
-    Optional<Path> certificateFile = getNonBlankProperty("certificateFile").map(Paths::get);
-
-    ControllerHttpClient controller = certificateFile.isPresent()
-            ? ControllerHttpClient.withKeyAndCertificate(endpoint, privateKeyFile, certificateFile.get())
-            : ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
+        return ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
+    }
 
     static Optional<String> getNonBlankProperty(String name) {
         return Optional.ofNullable(System.getProperty(name)).filter(value -> ! value.isBlank());

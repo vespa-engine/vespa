@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
- * Used to easily generate points for a pre-defined space.
+ * Used to easily generate points (Map&lt;String, ?&gt;) for a space defined here by its dimension names.
  *
  * @author jonmv
  */
