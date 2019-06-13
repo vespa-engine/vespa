@@ -76,6 +76,7 @@ public:
 };
 
 extern template class VectorBase<int64_t, int64_t, double>;
+extern template class VectorBase<uint32_t, uint32_t, double>;
 extern template class IntegerVectorT<int64_t>;
 
 using IntegerVector = IntegerVectorT<int64_t>;

@@ -44,6 +44,8 @@ VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::sy
 }
 
 template class VectorBase<int64_t, int64_t, double>;
+template class VectorBase<uint32_t, uint32_t, double>;
+
 template class IntegerVectorT<int64_t>;
 
 
