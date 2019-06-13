@@ -462,7 +462,7 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
         if (supportsGetRawValues<A,VT>(*iattr)) {
             using ExactA = MultiValueNumericAttribute<A, VT>;
 
-            const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
+            auto * exactA = dynamic_cast<const ExactA *>(iattr);
             if (exactA != nullptr) {
                 return stash.create<dotproduct::array::DotProductExecutor<ExactA>>(exactA, values);
             }
@@ -623,7 +623,7 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V vector, vespalib::
     using VT = multivalue::WeightedValue<T>;
     using ExactA = MultiValueNumericAttribute<A, VT>;
     if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues<A, VT>(*iattr)) {
-        const ExactA * exactA = dynamic_cast<const ExactA *>(iattr);
+        auto * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
             return &stash.create<DotProductExecutor<ExactA>>(exactA, std::move(vector));
         }
@@ -654,7 +654,7 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
         if (vector.empty()) {
             return &stash.create<SingleZeroValueExecutor>();
         }
-        const IWeightedIndexVector * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
+       auto getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
         if (supportsGetEnumHandles(getEnumHandles)) {
             return &stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
         }
@@ -789,18 +789,20 @@ createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attrib
         Property prop = env.getProperties().lookup(baseName, queryVector);
         if (prop.found() && !prop.get().empty()) {
             if (attribute->isStringType() && attribute->hasEnum()) {
-                dotproduct::wset::EnumVector vector(attribute);
-                WeightedSetParser::parse(prop.get(), vector);
+                auto vector = std::make_unique<dotproduct::wset::EnumVector>(attribute);
+                WeightedSetParser::parse(prop.get(), *vector);
+                arguments = std::move(vector);
             } else if (attribute->isIntegerType()) {
                 if (attribute->hasEnum()) {
-                    dotproduct::wset::EnumVector vector(attribute);
-                    WeightedSetParser::parse(prop.get(), vector);
+                    auto vector = std::make_unique<dotproduct::wset::EnumVector>(attribute);
+                    WeightedSetParser::parse(prop.get(), *vector);
+                    arguments = std::move(vector);
                 } else {
-                    dotproduct::wset::IntegerVector vector;
-                    WeightedSetParser::parse(prop.get(), vector);
+                    auto vector = std::make_unique<dotproduct::wset::IntegerVector>();
+                    WeightedSetParser::parse(prop.get(), *vector);
+                    arguments = std::move(vector);
                 }
             }
-            // TODO actually use the parsed output for wset operations!
         }
     }
     return arguments;
