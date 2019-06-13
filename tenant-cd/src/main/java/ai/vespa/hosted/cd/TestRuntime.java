@@ -34,8 +34,10 @@ public class TestRuntime {
         this.productionDeployments = config.deployments().entrySet().stream()
                                            .filter(zoneDeployment -> zoneDeployment.getKey().environment() == Environment.prod)
                                            .collect(toUnmodifiableMap(zoneDeployment -> zoneDeployment.getKey().region().value(),
-                                                                      zoneDeployment -> new HttpDeployment(zoneDeployment.getValue(), authenticator)));
-        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), authenticator);
+                                                                      zoneDeployment -> new HttpDeployment(zoneDeployment.getValue(),
+                                                                                                           config.zone(),
+                                                                                                           authenticator)));
+        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), config.zone(), authenticator);
     }
 
     /**

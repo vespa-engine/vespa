@@ -1,12 +1,14 @@
 package ai.vespa.hosted.cd.http;
 
 import ai.vespa.hosted.api.EndpointAuthenticator;
-import ai.vespa.hosted.cd.Deployment;
-import ai.vespa.hosted.cd.Endpoint;
 import ai.vespa.hosted.cd.TestDeployment;
+import ai.vespa.hosted.cd.TestEndpoint;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 /**
@@ -14,30 +16,38 @@ import java.util.stream.Collectors;
  *
  * @author jonmv
  */
-public class HttpDeployment implements Deployment {
+public class HttpDeployment implements TestDeployment {
 
+    private final ZoneId zone;
     private final Map<String, HttpEndpoint> endpoints;
 
     /** Creates a representation of the given deployment endpoints, using the authenticator for data plane access. */
-    public HttpDeployment(Map<String, URI> endpoints, EndpointAuthenticator authenticator) {
+    public HttpDeployment(Map<String, URI> endpoints, ZoneId zone, EndpointAuthenticator authenticator) {
+        this.zone = zone;
         this.endpoints = endpoints.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                       entry -> new HttpEndpoint(entry.getValue(), authenticator)));
     }
 
     @Override
-    public Endpoint endpoint() {
-        return null;
+    public TestEndpoint endpoint() {
+        return endpoint("default");
     }
 
     @Override
-    public Endpoint endpoint(String id) {
-        return null;
+    public TestEndpoint endpoint(String id) {
+        if ( ! endpoints.containsKey(id))
+            throw new NoSuchElementException("No cluster with id '" + id + "'");
+
+        return endpoints.get(id);
     }
 
     @Override
     public TestDeployment asTestDeployment() {
-        return null;
+        if (zone.environment() == Environment.prod)
+            throw new IllegalArgumentException("Won't return a mutable view of a production deployment");
+
+        return this;
     }
 
 }

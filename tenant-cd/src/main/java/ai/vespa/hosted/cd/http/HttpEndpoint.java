@@ -52,6 +52,11 @@ public class HttpEndpoint implements TestEndpoint {
     }
 
     @Override
+    public URI uri() {
+        return endpoint;
+    }
+
+    @Override
     public Search search(Query query) {
         try {
             URI target = endpoint.resolve(searchApiPath).resolve("?" + query.rawQuery());
