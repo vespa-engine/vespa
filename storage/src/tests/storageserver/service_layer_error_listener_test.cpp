@@ -3,30 +3,22 @@
 #include <vespa/storage/storageserver/service_layer_error_listener.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vdstestlib/cppunit/dirconfig.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+using namespace ::testing;
 
 namespace storage {
 
-class ServiceLayerErrorListenerTest : public CppUnit::TestFixture {
-public:
-    CPPUNIT_TEST_SUITE(ServiceLayerErrorListenerTest);
-    CPPUNIT_TEST(shutdown_invoked_on_fatal_error);
-    CPPUNIT_TEST(merge_throttle_backpressure_invoked_on_resource_exhaustion_error);
-    CPPUNIT_TEST_SUITE_END();
-
-    void shutdown_invoked_on_fatal_error();
-    void merge_throttle_backpressure_invoked_on_resource_exhaustion_error();
+struct ServiceLayerErrorListenerTest : Test {
 };
-
-CPPUNIT_TEST_SUITE_REGISTRATION(ServiceLayerErrorListenerTest);
 
 namespace {
 
 class TestShutdownListener
-        : public framework::defaultimplementation::ShutdownListener
+    : public framework::defaultimplementation::ShutdownListener
 {
 public:
     TestShutdownListener() : _reason() {}
@@ -52,31 +44,31 @@ struct Fixture {
     ~Fixture();
 };
 
-Fixture::~Fixture() {}
+Fixture::~Fixture() = default;
 
 }
 
-void ServiceLayerErrorListenerTest::shutdown_invoked_on_fatal_error() {
+TEST_F(ServiceLayerErrorListenerTest, shutdown_invoked_on_fatal_error) {
     Fixture f;
 
     f.app.getComponentRegister().registerShutdownListener(f.shutdown_listener);
-    CPPUNIT_ASSERT(!f.shutdown_listener.shutdown_requested());
+    EXPECT_FALSE(f.shutdown_listener.shutdown_requested());
 
     f.error_listener.on_fatal_error("eject! eject!");
-    CPPUNIT_ASSERT(f.shutdown_listener.shutdown_requested());
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("eject! eject!"), f.shutdown_listener.reason());
+    EXPECT_TRUE(f.shutdown_listener.shutdown_requested());
+    EXPECT_EQ("eject! eject!", f.shutdown_listener.reason());
 
     // Should only be invoked once
     f.error_listener.on_fatal_error("here be dragons");
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("eject! eject!"), f.shutdown_listener.reason());
+    EXPECT_EQ("eject! eject!", f.shutdown_listener.reason());
 }
 
-void ServiceLayerErrorListenerTest::merge_throttle_backpressure_invoked_on_resource_exhaustion_error() {
+TEST_F(ServiceLayerErrorListenerTest, merge_throttle_backpressure_invoked_on_resource_exhaustion_error) {
     Fixture f;
 
-    CPPUNIT_ASSERT(!f.merge_throttler.backpressure_mode_active());
+    EXPECT_FALSE(f.merge_throttler.backpressure_mode_active());
     f.error_listener.on_resource_exhaustion_error("buy more RAM!");
-    CPPUNIT_ASSERT(f.merge_throttler.backpressure_mode_active());
+    EXPECT_TRUE(f.merge_throttler.backpressure_mode_active());
 }
 
 }

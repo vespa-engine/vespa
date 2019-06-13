@@ -12,24 +12,17 @@
 #include <tests/common/testhelper.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-struct CommunicationManagerTest : public CppUnit::TestFixture {
-    void testSimple();
-    void testDistPendingLimitConfigsArePropagatedToMessageBus();
-    void testStorPendingLimitConfigsArePropagatedToMessageBus();
-    void testCommandsAreDequeuedInFifoOrder();
-    void testRepliesAreDequeuedInFifoOrder();
-    void bucket_space_config_can_be_updated_live();
-    void unmapped_bucket_space_documentapi_request_returns_error_reply();
-    void unmapped_bucket_space_for_get_documentapi_request_returns_error_reply();
+struct CommunicationManagerTest : Test {
 
     static constexpr uint32_t MESSAGE_WAIT_TIME_SEC = 60;
 
@@ -45,23 +38,9 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
         cmd->setPriority(priority);
         return cmd;
     }
-
-    CPPUNIT_TEST_SUITE(CommunicationManagerTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testDistPendingLimitConfigsArePropagatedToMessageBus);
-    CPPUNIT_TEST(testStorPendingLimitConfigsArePropagatedToMessageBus);
-    CPPUNIT_TEST(testCommandsAreDequeuedInFifoOrder);
-    CPPUNIT_TEST(testRepliesAreDequeuedInFifoOrder);
-    CPPUNIT_TEST(bucket_space_config_can_be_updated_live);
-    CPPUNIT_TEST(unmapped_bucket_space_documentapi_request_returns_error_reply);
-    CPPUNIT_TEST(unmapped_bucket_space_for_get_documentapi_request_returns_error_reply);
-    CPPUNIT_TEST_SUITE_END();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(CommunicationManagerTest);
-
-void CommunicationManagerTest::testSimple()
-{
+TEST_F(CommunicationManagerTest, simple) {
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig distConfig(getStandardConfig(false));
     vdstestlib::DirConfig storConfig(getStandardConfig(true));
@@ -70,8 +49,8 @@ void CommunicationManagerTest::testSimple()
     addSlobrokConfig(distConfig, slobrok);
     addSlobrokConfig(storConfig, slobrok);
 
-        // Set up a "distributor" and a "storage" node with communication
-        // managers and a dummy storage link below we can use for testing.
+    // Set up a "distributor" and a "storage" node with communication
+    // managers and a dummy storage link below we can use for testing.
     TestServiceLayerApp storNode(storConfig.getConfigId());
     TestDistributorApp distNode(distConfig.getConfigId());
 
@@ -89,30 +68,22 @@ void CommunicationManagerTest::testSimple()
     FastOS_Thread::Sleep(1000);
 
     // Send a message through from distributor to storage
-    std::shared_ptr<api::StorageCommand> cmd(
-            new api::GetCommand(
-                makeDocumentBucket(document::BucketId(0)), document::DocumentId("doc::mydoc"), "[all]"));
-    cmd->setAddress(api::StorageMessageAddress(
-                "storage", lib::NodeType::STORAGE, 1));
+    auto cmd = std::make_shared<api::GetCommand>(
+            makeDocumentBucket(document::BucketId(0)), document::DocumentId("doc::mydoc"), "[all]");
+    cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
-    CPPUNIT_ASSERT(storageLink->getNumCommands() > 0);
-    std::shared_ptr<api::StorageCommand> cmd2(
-            std::dynamic_pointer_cast<api::StorageCommand>(
-                storageLink->getCommand(0)));
-    CPPUNIT_ASSERT_EQUAL(
-            vespalib::string("doc::mydoc"),
-            static_cast<api::GetCommand&>(*cmd2).getDocumentId().toString());
-        // Reply to the message
+    ASSERT_GT(storageLink->getNumCommands(), 0);
+    auto cmd2 = std::dynamic_pointer_cast<api::StorageCommand>(storageLink->getCommand(0));
+    EXPECT_EQ("doc::mydoc", dynamic_cast<api::GetCommand&>(*cmd2).getDocumentId().toString());
+    // Reply to the message
     std::shared_ptr<api::StorageReply> reply(cmd2->makeReply().release());
     storageLink->sendUp(reply);
     storageLink->sendUp(reply);
     distributorLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
-    CPPUNIT_ASSERT(distributorLink->getNumCommands() > 0);
-    std::shared_ptr<api::GetReply> reply2(
-            std::dynamic_pointer_cast<api::GetReply>(
-                distributorLink->getCommand(0)));
-    CPPUNIT_ASSERT_EQUAL(false, reply2->wasFound());
+    ASSERT_GT(distributorLink->getNumCommands(), 0);
+    auto reply2 = std::dynamic_pointer_cast<api::GetReply>(distributorLink->getCommand(0));
+    EXPECT_FALSE(reply2->wasFound());
 }
 
 void
@@ -144,11 +115,11 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
     // Outer type is RPCMessageBus, which wraps regular MessageBus.
     auto& mbus = commMgr.getMessageBus().getMessageBus();
     if (isContentNode) {
-        CPPUNIT_ASSERT_EQUAL(uint32_t(12345), mbus.getMaxPendingCount());
-        CPPUNIT_ASSERT_EQUAL(uint32_t(555666), mbus.getMaxPendingSize());
+        EXPECT_EQ(12345, mbus.getMaxPendingCount());
+        EXPECT_EQ(555666, mbus.getMaxPendingSize());
     } else {
-        CPPUNIT_ASSERT_EQUAL(uint32_t(6789), mbus.getMaxPendingCount());
-        CPPUNIT_ASSERT_EQUAL(uint32_t(777888), mbus.getMaxPendingSize());
+        EXPECT_EQ(6789, mbus.getMaxPendingCount());
+        EXPECT_EQ(777888, mbus.getMaxPendingSize());
     }
 
     // Test live reconfig of limits.
@@ -160,27 +131,21 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
 
     commMgr.configure(std::move(liveCfg));
     if (isContentNode) {
-        CPPUNIT_ASSERT_EQUAL(uint32_t(777777), mbus.getMaxPendingCount());
+        EXPECT_EQ(777777, mbus.getMaxPendingCount());
     } else {
-        CPPUNIT_ASSERT_EQUAL(uint32_t(999999), mbus.getMaxPendingCount());
+        EXPECT_EQ(999999, mbus.getMaxPendingCount());
     }
 }
 
-void
-CommunicationManagerTest::testDistPendingLimitConfigsArePropagatedToMessageBus()
-{
+TEST_F(CommunicationManagerTest, dist_pending_limit_configs_are_propagated_to_message_bus) {
     doTestConfigPropagation(false);
 }
 
-void
-CommunicationManagerTest::testStorPendingLimitConfigsArePropagatedToMessageBus()
-{
+TEST_F(CommunicationManagerTest, stor_pending_limit_configs_are_propagated_to_message_bus) {
     doTestConfigPropagation(true);
 }
 
-void
-CommunicationManagerTest::testCommandsAreDequeuedInFifoOrder()
-{
+TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig storConfig(getStandardConfig(true));
     storConfig.getConfig("stor-server").set("node_index", "1");
@@ -207,15 +172,13 @@ CommunicationManagerTest::testCommandsAreDequeuedInFifoOrder()
     for (size_t i = 0; i < pris.size(); ++i) {
         // Casting is just to avoid getting mismatched values printed to the
         // output verbatim as chars.
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(
                 uint32_t(pris[i]),
                 uint32_t(storageLink->getCommand(i)->getPriority()));
     }
 }
 
-void
-CommunicationManagerTest::testRepliesAreDequeuedInFifoOrder()
-{
+TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig storConfig(getStandardConfig(true));
     storConfig.getConfig("stor-server").set("node_index", "1");
@@ -236,7 +199,7 @@ CommunicationManagerTest::testRepliesAreDequeuedInFifoOrder()
 
     // Want FIFO order for replies, not priority-sorted order.
     for (size_t i = 0; i < pris.size(); ++i) {
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(
                 uint32_t(pris[i]),
                 uint32_t(storageLink->getCommand(i)->getPriority()));
     }
@@ -303,7 +266,7 @@ BucketspacesConfigBuilder::Documenttype doc_type(vespalib::stringref name, vespa
 
 }
 
-void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
+TEST_F(CommunicationManagerTest, bucket_space_config_can_be_updated_live) {
     CommunicationManagerFixture f;
     BucketspacesConfigBuilder config;
     config.documenttype.emplace_back(doc_type("foo", "default"));
@@ -315,10 +278,10 @@ void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
     f.bottom_link->waitForMessages(2, MESSAGE_WAIT_TIME_SEC);
 
     auto cmd1 = f.bottom_link->getCommand(0);
-    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(), cmd1->getBucket().getBucketSpace());
+    EXPECT_EQ(document::FixedBucketSpaces::global_space(), cmd1->getBucket().getBucketSpace());
 
     auto cmd2 = f.bottom_link->getCommand(1);
-    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(), cmd2->getBucket().getBucketSpace());
+    EXPECT_EQ(document::FixedBucketSpaces::default_space(), cmd2->getBucket().getBucketSpace());
 
     config.documenttype[1] = doc_type("bar", "default");
     f.comm_mgr->updateBucketSpacesConfig(config);
@@ -326,30 +289,30 @@ void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
     f.bottom_link->waitForMessages(3, MESSAGE_WAIT_TIME_SEC);
 
     auto cmd3 = f.bottom_link->getCommand(2);
-    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(), cmd3->getBucket().getBucketSpace());
+    EXPECT_EQ(document::FixedBucketSpaces::default_space(), cmd3->getBucket().getBucketSpace());
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
+    EXPECT_EQ(uint64_t(0), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
-void CommunicationManagerTest::unmapped_bucket_space_documentapi_request_returns_error_reply() {
+TEST_F(CommunicationManagerTest, unmapped_bucket_space_documentapi_request_returns_error_reply) {
     CommunicationManagerFixture f;
 
     BucketspacesConfigBuilder config;
     config.documenttype.emplace_back(doc_type("foo", "default"));
     f.comm_mgr->updateBucketSpacesConfig(config);
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
+    EXPECT_EQ(uint64_t(0), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 
     f.comm_mgr->handleMessage(f.documentapi_remove_message_for_space("fluff"));
-    CPPUNIT_ASSERT_EQUAL(size_t(1), f.reply_handler.replies.size());
+    ASSERT_EQ(1, f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
-    CPPUNIT_ASSERT(reply.hasErrors());
-    CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
+    ASSERT_TRUE(reply.hasErrors());
+    EXPECT_EQ(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
+    EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
-void CommunicationManagerTest::unmapped_bucket_space_for_get_documentapi_request_returns_error_reply() {
+TEST_F(CommunicationManagerTest, unmapped_bucket_space_for_get_documentapi_request_returns_error_reply) {
     CommunicationManagerFixture f;
 
     BucketspacesConfigBuilder config;
@@ -357,11 +320,11 @@ void CommunicationManagerTest::unmapped_bucket_space_for_get_documentapi_request
     f.comm_mgr->updateBucketSpacesConfig(config);
 
     f.comm_mgr->handleMessage(f.documentapi_get_message_for_space("fluff"));
-    CPPUNIT_ASSERT_EQUAL(size_t(1), f.reply_handler.replies.size());
+    ASSERT_EQ(1, f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
-    CPPUNIT_ASSERT(reply.hasErrors());
-    CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
+    ASSERT_TRUE(reply.hasErrors());
+    EXPECT_EQ(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
+    EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
 } // storage

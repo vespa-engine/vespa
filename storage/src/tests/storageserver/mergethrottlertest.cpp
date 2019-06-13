@@ -1,5 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <tests/common/testhelper.h>
@@ -12,6 +11,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <unordered_set>
 #include <memory>
 #include <iterator>
@@ -23,6 +23,7 @@
 using namespace document;
 using namespace storage::api;
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
@@ -100,16 +101,16 @@ struct MergeBuilder {
             bool source_only = (_source_only.find(node) != _source_only.end());
             n.emplace_back(node, source_only);
         }
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(_bucket), n, _maxTimestamp,
-                                       _clusterStateVersion, _chain));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(_bucket), n, _maxTimestamp,
+                _clusterStateVersion, _chain);
         StorageMessageAddress address("storage", lib::NodeType::STORAGE, _nodes[0]);
         cmd->setAddress(address);
         return cmd;
     }
 };
 
-MergeBuilder::~MergeBuilder() {}
+MergeBuilder::~MergeBuilder() = default;
 
 std::shared_ptr<api::SetSystemStateCommand>
 makeSystemStateCmd(const std::string& state)
@@ -120,76 +121,21 @@ makeSystemStateCmd(const std::string& state)
 
 } // anon ns
 
-class MergeThrottlerTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(MergeThrottlerTest);
-    CPPUNIT_TEST(testMergesConfig);
-    CPPUNIT_TEST(testChain);
-    CPPUNIT_TEST(testWithSourceOnlyNode);
-    CPPUNIT_TEST(test42DistributorBehavior);
-    CPPUNIT_TEST(test42DistributorBehaviorDoesNotTakeOwnership);
-    CPPUNIT_TEST(testEndOfChainExecutionDoesNotTakeOwnership);
-    CPPUNIT_TEST(testResendHandling);
-    CPPUNIT_TEST(testPriorityQueuing);
-    CPPUNIT_TEST(testCommandInQueueDuplicateOfKnownMerge);
-    CPPUNIT_TEST(testInvalidReceiverNode);
-    CPPUNIT_TEST(testForwardQueuedMerge);
-    CPPUNIT_TEST(testExecuteQueuedMerge);
-    CPPUNIT_TEST(testFlush);
-    CPPUNIT_TEST(testUnseenMergeWithNodeInChain);
-    CPPUNIT_TEST(testMergeWithNewerClusterStateFlushesOutdatedQueued);
-    CPPUNIT_TEST(testUpdatedClusterStateFlushesOutdatedQueued);
-    CPPUNIT_TEST(test42MergesDoNotTriggerFlush);
-    CPPUNIT_TEST(testOutdatedClusterStateMergesAreRejectedOnArrival);
-    CPPUNIT_TEST(testUnknownMergeWithSelfInChain);
-    CPPUNIT_TEST(testBusyReturnedOnFullQueue);
-    CPPUNIT_TEST(testBrokenCycle);
-    CPPUNIT_TEST(testGetBucketDiffCommandNotInActiveSetIsRejected);
-    CPPUNIT_TEST(testApplyBucketDiffCommandNotInActiveSetIsRejected);
-    CPPUNIT_TEST(testNewClusterStateAbortsAllOutdatedActiveMerges);
-    CPPUNIT_TEST(backpressure_busy_bounces_merges_for_configured_duration);
-    CPPUNIT_TEST(source_only_merges_are_not_affected_by_backpressure);
-    CPPUNIT_TEST(backpressure_evicts_all_queued_merges);
-    CPPUNIT_TEST_SUITE_END();
-public:
-    void setUp() override;
-    void tearDown() override;
-
-    void testMergesConfig();
-    void testChain();
-    void testWithSourceOnlyNode();
-    void test42DistributorBehavior();
-    void test42DistributorBehaviorDoesNotTakeOwnership();
-    void testEndOfChainExecutionDoesNotTakeOwnership();
-    void testResendHandling();
-    void testPriorityQueuing();
-    void testCommandInQueueDuplicateOfKnownMerge();
-    void testInvalidReceiverNode();
-    void testForwardQueuedMerge();
-    void testExecuteQueuedMerge();
-    void testFlush();
-    void testUnseenMergeWithNodeInChain();
-    void testMergeWithNewerClusterStateFlushesOutdatedQueued();
-    void testUpdatedClusterStateFlushesOutdatedQueued();
-    void test42MergesDoNotTriggerFlush();
-    void testOutdatedClusterStateMergesAreRejectedOnArrival();
-    void testUnknownMergeWithSelfInChain();
-    void testBusyReturnedOnFullQueue();
-    void testBrokenCycle();
-    void testGetBucketDiffCommandNotInActiveSetIsRejected();
-    void testApplyBucketDiffCommandNotInActiveSetIsRejected();
-    void testNewClusterStateAbortsAllOutdatedActiveMerges();
-    void backpressure_busy_bounces_merges_for_configured_duration();
-    void source_only_merges_are_not_affected_by_backpressure();
-    void backpressure_evicts_all_queued_merges();
-private:
-    static const int _storageNodeCount = 3;
-    static const int _messageWaitTime = 100;
+struct MergeThrottlerTest : Test {
+    static constexpr int _storageNodeCount = 3;
+    static constexpr int _messageWaitTime = 100;
 
     // Using n storage node links and dummy servers
     std::vector<std::shared_ptr<DummyStorageLink> > _topLinks;
     std::vector<std::shared_ptr<TestServiceLayerApp> > _servers;
     std::vector<MergeThrottler*> _throttlers;
     std::vector<DummyStorageLink*> _bottomLinks;
+
+    MergeThrottlerTest();
+    ~MergeThrottlerTest();
+
+    void SetUp() override;
+    void TearDown() override;
 
     api::MergeBucketCommand::SP sendMerge(const MergeBuilder&);
 
@@ -201,13 +147,11 @@ private:
     void fill_throttler_queue_with_n_commands(uint16_t throttler_index, size_t queued_count);
 };
 
-const int MergeThrottlerTest::_storageNodeCount;
-const int MergeThrottlerTest::_messageWaitTime;
-
-CPPUNIT_TEST_SUITE_REGISTRATION(MergeThrottlerTest);
+MergeThrottlerTest::MergeThrottlerTest() = default;
+MergeThrottlerTest::~MergeThrottlerTest() = default;
 
 void
-MergeThrottlerTest::setUp()
+MergeThrottlerTest::SetUp()
 {
     vdstestlib::DirConfig config(getStandardConfig(true));
 
@@ -234,7 +178,7 @@ MergeThrottlerTest::setUp()
 }
 
 void
-MergeThrottlerTest::tearDown()
+MergeThrottlerTest::TearDown()
 {
     for (std::size_t i = 0; i < _topLinks.size(); ++i) {
         if (_topLinks[i]->getState() == StorageLink::OPENED) {
@@ -293,20 +237,16 @@ void waitUntilMergeQueueIs(MergeThrottler& throttler, std::size_t sz, int timeou
 
 // Extremely simple test that just checks that (min|max)_merges_per_node
 // under the stor-server config gets propagated to all the nodes
-void
-MergeThrottlerTest::testMergesConfig()
-{
+TEST_F(MergeThrottlerTest, merges_config) {
     for (int i = 0; i < _storageNodeCount; ++i) {
-        CPPUNIT_ASSERT_EQUAL(uint32_t(25), _throttlers[i]->getThrottlePolicy().getMaxPendingCount());
-        CPPUNIT_ASSERT_EQUAL(std::size_t(20), _throttlers[i]->getMaxQueueSize());
+        EXPECT_EQ(25, _throttlers[i]->getThrottlePolicy().getMaxPendingCount());
+        EXPECT_EQ(20, _throttlers[i]->getMaxQueueSize());
     }
 }
 
 // Test that a distributor sending a merge to the lowest-index storage
 // node correctly invokes a merge forwarding chain and subsequent unwind.
-void
-MergeThrottlerTest::testChain()
-{
+TEST_F(MergeThrottlerTest, chain) {
     uint16_t indices[_storageNodeCount];
     for (int i = 0; i < _storageNodeCount; ++i) {
         indices[i] = i;
@@ -342,31 +282,31 @@ MergeThrottlerTest::testChain()
             if (i == executorNode) {
                 fwdToExec = fwd;
             }
-            CPPUNIT_ASSERT_EQUAL(uint16_t(i), _servers[i]->getIndex());
+            ASSERT_EQ(i, _servers[i]->getIndex());
             // No matter the node order, command is always sent to node 0 -> 1 -> 2 etc
             _topLinks[i]->sendDown(fwd);
             _topLinks[i]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
             // Forwarded merge should not be sent down. Should not be necessary
             // to lock throttler here, since it should be sleeping like a champion
-            CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[i]->getNumCommands());
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[i]->getNumReplies());
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[i]->getActiveMerges().size());
+            ASSERT_EQ(0, _bottomLinks[i]->getNumCommands());
+            ASSERT_EQ(1, _topLinks[i]->getNumReplies());
+            ASSERT_EQ(1, _throttlers[i]->getActiveMerges().size());
 
             fwd = _topLinks[i]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-            CPPUNIT_ASSERT_EQUAL(uint16_t(i + 1), fwd->getAddress()->getIndex());
-            CPPUNIT_ASSERT_EQUAL(distributorIndex, dynamic_cast<const StorageCommand&>(*fwd).getSourceIndex());
+            ASSERT_EQ(i + 1, fwd->getAddress()->getIndex());
+            ASSERT_EQ(distributorIndex, dynamic_cast<const StorageCommand&>(*fwd).getSourceIndex());
             {
                 std::vector<uint16_t> chain;
                 for (int j = 0; j <= i; ++j) {
                     chain.push_back(j);
                 }
-                CPPUNIT_ASSERT(checkChain(fwd, chain.begin(), chain.end()));
+                EXPECT_TRUE(checkChain(fwd, chain.begin(), chain.end()));
             }
             // Ensure priority, cluster state version and timeout is correctly forwarded
-            CPPUNIT_ASSERT_EQUAL(7, static_cast<int>(fwd->getPriority()));
-            CPPUNIT_ASSERT_EQUAL(uint32_t(123), dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
-            CPPUNIT_ASSERT_EQUAL(uint32_t(54321), dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
+            EXPECT_EQ(7, static_cast<int>(fwd->getPriority()));
+            EXPECT_EQ(123, dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
+            EXPECT_EQ(54321, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
         }
 
         _topLinks[lastNodeIdx]->sendDown(fwd);
@@ -374,26 +314,25 @@ MergeThrottlerTest::testChain()
         // If node 2 is the first in the node list, it should immediately execute
         // the merge. Otherwise, a cycle with the first node should be formed.
         if (executorNode != lastNodeIdx) {
-            //std::cout << "cycle " << lastNodeIdx << " -> " << executorNode << "\n";
             _topLinks[lastNodeIdx]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
             // Forwarded merge should not be sent down
-            CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[lastNodeIdx]->getNumCommands());
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[lastNodeIdx]->getNumReplies());
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[lastNodeIdx]->getActiveMerges().size());
+            ASSERT_EQ(0, _bottomLinks[lastNodeIdx]->getNumCommands());
+            ASSERT_EQ(1, _topLinks[lastNodeIdx]->getNumReplies());
+            ASSERT_EQ(1, _throttlers[lastNodeIdx]->getActiveMerges().size());
 
             fwd = _topLinks[lastNodeIdx]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-            CPPUNIT_ASSERT_EQUAL(uint16_t(executorNode), fwd->getAddress()->getIndex());
-            CPPUNIT_ASSERT_EQUAL(distributorIndex, dynamic_cast<const StorageCommand&>(*fwd).getSourceIndex());
+            ASSERT_EQ(executorNode, fwd->getAddress()->getIndex());
+            ASSERT_EQ(distributorIndex, dynamic_cast<const StorageCommand&>(*fwd).getSourceIndex());
             {
                 std::vector<uint16_t> chain;
                 for (int j = 0; j < _storageNodeCount; ++j) {
                     chain.push_back(j);
                 }
-                CPPUNIT_ASSERT(checkChain(fwd, chain.begin(), chain.end()));
+                EXPECT_TRUE(checkChain(fwd, chain.begin(), chain.end()));
             }
-            CPPUNIT_ASSERT_EQUAL(7, static_cast<int>(fwd->getPriority()));
-            CPPUNIT_ASSERT_EQUAL(uint32_t(123), dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
-            CPPUNIT_ASSERT_EQUAL(uint32_t(54321), dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
+            EXPECT_EQ(7, static_cast<int>(fwd->getPriority()));
+            EXPECT_EQ(123, dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
+            EXPECT_EQ(54321, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
 
             _topLinks[executorNode]->sendDown(fwd);
         }
@@ -401,29 +340,28 @@ MergeThrottlerTest::testChain()
         _bottomLinks[executorNode]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
         // Forwarded merge has now been sent down to persistence layer
-        CPPUNIT_ASSERT_EQUAL(std::size_t(1), _bottomLinks[executorNode]->getNumCommands());
-        CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[executorNode]->getNumReplies()); // No reply sent yet
-        CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[executorNode]->getActiveMerges().size()); // no re-registering merge
+        ASSERT_EQ(1, _bottomLinks[executorNode]->getNumCommands());
+        ASSERT_EQ(0, _topLinks[executorNode]->getNumReplies()); // No reply sent yet
+        ASSERT_EQ(1, _throttlers[executorNode]->getActiveMerges().size()); // no re-registering merge
 
         if (executorNode != lastNodeIdx) {
             // The MergeBucketCommand that is kept in the executor node should
             // be the one from the node it initially got it from, NOT the one
             // from the last node, since the chain has looped
-            CPPUNIT_ASSERT(_throttlers[executorNode]->getActiveMerges().find(bucket)
-                           != _throttlers[executorNode]->getActiveMerges().end());
-            CPPUNIT_ASSERT_EQUAL(static_cast<StorageMessage*>(fwdToExec.get()),
-                                 _throttlers[executorNode]->getActiveMerges().find(bucket)->second.getMergeCmd().get());
+            ASSERT_TRUE(_throttlers[executorNode]->getActiveMerges().find(bucket)
+                        != _throttlers[executorNode]->getActiveMerges().end());
+            ASSERT_EQ(static_cast<StorageMessage*>(fwdToExec.get()),
+                      _throttlers[executorNode]->getActiveMerges().find(bucket)->second.getMergeCmd().get());
         }
 
         // Send reply up from persistence layer to simulate a completed
         // merge operation. Chain should now unwind properly
         fwd = _bottomLinks[executorNode]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-        CPPUNIT_ASSERT_EQUAL(7, static_cast<int>(fwd->getPriority()));
-        CPPUNIT_ASSERT_EQUAL(uint32_t(123), dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
-        CPPUNIT_ASSERT_EQUAL(uint32_t(54321), dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
+        EXPECT_EQ(7, static_cast<int>(fwd->getPriority()));
+        EXPECT_EQ(123, dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
+        EXPECT_EQ(54321, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
 
-        std::shared_ptr<MergeBucketReply> reply(
-                new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd)));
+        auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
         reply->setResult(ReturnCode(ReturnCode::OK, "Great success! :D-|-<"));
         _bottomLinks[executorNode]->sendUp(reply);
 
@@ -431,45 +369,41 @@ MergeThrottlerTest::testChain()
 
         if (executorNode != lastNodeIdx) {
             // Merge should not be removed yet from executor, since it's pending an unwind
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[executorNode]->getActiveMerges().size());
-            CPPUNIT_ASSERT_EQUAL(static_cast<StorageMessage*>(fwdToExec.get()),
-                                 _throttlers[executorNode]->getActiveMerges().find(bucket)->second.getMergeCmd().get());
+            ASSERT_EQ(1, _throttlers[executorNode]->getActiveMerges().size());
+            ASSERT_EQ(static_cast<StorageMessage*>(fwdToExec.get()),
+                      _throttlers[executorNode]->getActiveMerges().find(bucket)->second.getMergeCmd().get());
         }
         // MergeBucketReply waiting to be sent back to node 2. NOTE: we don't have any
         // transport context stuff set up here to perform the reply mapping, so we
         // have to emulate it
-        CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[executorNode]->getNumReplies());
+        ASSERT_EQ(1, _topLinks[executorNode]->getNumReplies());
 
-        StorageMessage::SP unwind = _topLinks[executorNode]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-        CPPUNIT_ASSERT_EQUAL(uint16_t(executorNode), unwind->getAddress()->getIndex());
+        auto unwind = _topLinks[executorNode]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+        ASSERT_EQ(executorNode, unwind->getAddress()->getIndex());
 
         // eg: 0 -> 2 -> 1 -> 0. Or: 2 -> 1 -> 0 if no cycle
         for (int i = (executorNode != lastNodeIdx ? _storageNodeCount - 1 : _storageNodeCount - 2); i >= 0; --i) {
             _topLinks[i]->sendDown(unwind);
             _topLinks[i]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
-            CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[i]->getNumCommands());
-            CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[i]->getNumReplies());
-            CPPUNIT_ASSERT_EQUAL(std::size_t(0), _throttlers[i]->getActiveMerges().size());
+            ASSERT_EQ(0, _bottomLinks[i]->getNumCommands());
+            ASSERT_EQ(1, _topLinks[i]->getNumReplies());
+            ASSERT_EQ(0, _throttlers[i]->getActiveMerges().size());
 
             unwind = _topLinks[i]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-            CPPUNIT_ASSERT_EQUAL(uint16_t(i), unwind->getAddress()->getIndex());
+            ASSERT_EQ(uint16_t(i), unwind->getAddress()->getIndex());
         }
 
         const MergeBucketReply& mbr = dynamic_cast<const MergeBucketReply&>(*unwind);
 
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::OK, mbr.getResult().getResult());
-        CPPUNIT_ASSERT_EQUAL(vespalib::string("Great success! :D-|-<"), mbr.getResult().getMessage());
-        CPPUNIT_ASSERT_EQUAL(bucket, mbr.getBucket());
+        EXPECT_EQ(ReturnCode::OK, mbr.getResult().getResult());
+        EXPECT_EQ(vespalib::string("Great success! :D-|-<"), mbr.getResult().getMessage());
+        EXPECT_EQ(bucket, mbr.getBucket());
 
     } while (std::next_permutation(indices, indices + _storageNodeCount));
-
-    //std::cout << "\n" << *_topLinks[0] << "\n";
 }
 
-void
-MergeThrottlerTest::testWithSourceOnlyNode()
-{
+TEST_F(MergeThrottlerTest, with_source_only_node) {
     BucketId bid(14, 0x1337);
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
@@ -478,39 +412,37 @@ MergeThrottlerTest::testWithSourceOnlyNode()
     nodes.push_back(0);
     nodes.push_back(2);
     nodes.push_back(MergeBucketCommand::Node(1, true));
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(bid), nodes, UINT_MAX, 123));
+    auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, UINT_MAX, 123);
 
     cmd->setAddress(address);
     _topLinks[0]->sendDown(cmd);
 
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
     StorageMessage::SP fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    CPPUNIT_ASSERT_EQUAL(uint16_t(1), fwd->getAddress()->getIndex());
+    ASSERT_EQ(1, fwd->getAddress()->getIndex());
 
     _topLinks[1]->sendDown(fwd);
 
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
     fwd = _topLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    CPPUNIT_ASSERT_EQUAL(uint16_t(2), fwd->getAddress()->getIndex());
+    ASSERT_EQ(2, fwd->getAddress()->getIndex());
 
     _topLinks[2]->sendDown(fwd);
 
     _topLinks[2]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
     fwd = _topLinks[2]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    CPPUNIT_ASSERT_EQUAL(uint16_t(0), fwd->getAddress()->getIndex());
+    ASSERT_EQ(0, fwd->getAddress()->getIndex());
 
     _topLinks[0]->sendDown(fwd);
     _bottomLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
     _bottomLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
     reply->setResult(ReturnCode(ReturnCode::OK, "Great success! :D-|-<"));
     _bottomLinks[0]->sendUp(reply);
 
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
     fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(uint16_t(0), fwd->getAddress()->getIndex());
+    ASSERT_EQ(0, fwd->getAddress()->getIndex());
 
     // Assume everything's fine from here on out
 }
@@ -519,17 +451,15 @@ MergeThrottlerTest::testWithSourceOnlyNode()
 // index, so we must detect such situations and execute the merge
 // immediately rather than attempt to chain it. Test that this
 // is done correctly.
-void
-MergeThrottlerTest::test42DistributorBehavior()
-{
+// TODO remove functionality and test
+TEST_F(MergeThrottlerTest, legacy_42_distributor_behavior) {
     BucketId bid(32, 0xfeef00);
 
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(1);
     nodes.push_back(2);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234));
+    auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234);
 
     // Send to node 1, which is not the lowest index
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
@@ -539,40 +469,37 @@ MergeThrottlerTest::test42DistributorBehavior()
     _bottomLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
     // Should now have been sent to persistence layer
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _bottomLinks[1]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[1]->getNumReplies()); // No reply sent yet
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[1]->getActiveMerges().size());
+    ASSERT_EQ(1, _bottomLinks[1]->getNumCommands());
+    ASSERT_EQ(0, _topLinks[1]->getNumReplies()); // No reply sent yet
+    ASSERT_EQ(1, _throttlers[1]->getActiveMerges().size());
 
     // Send reply up from persistence layer to simulate a completed
     // merge operation. Merge should be removed from state.
     _bottomLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*cmd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*cmd));
     reply->setResult(ReturnCode(ReturnCode::OK, "Tonight we dine on turtle soup!"));
     _bottomLinks[1]->sendUp(reply);
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[1]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[1]->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _throttlers[1]->getActiveMerges().size());
+    ASSERT_EQ(0, _bottomLinks[1]->getNumCommands());
+    ASSERT_EQ(1, _topLinks[1]->getNumReplies());
+    ASSERT_EQ(0, _throttlers[1]->getActiveMerges().size());
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[1]->getMetrics().local.ok.getValue());
+    EXPECT_EQ(uint64_t(1), _throttlers[1]->getMetrics().local.ok.getValue());
 }
 
 // Test that we don't take ownership of the merge command when we're
 // just passing it through to the persistence layer when receiving
 // a merge command that presumably comes form a 4.2 distributor
-void
-MergeThrottlerTest::test42DistributorBehaviorDoesNotTakeOwnership()
-{
+// TODO remove functionality and test
+TEST_F(MergeThrottlerTest, legacy_42_distributor_behavior_does_not_take_ownership) {
     BucketId bid(32, 0xfeef00);
 
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(1);
     nodes.push_back(2);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234));
+    auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234);
 
     // Send to node 1, which is not the lowest index
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
@@ -582,9 +509,9 @@ MergeThrottlerTest::test42DistributorBehaviorDoesNotTakeOwnership()
     _bottomLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
     // Should now have been sent to persistence layer
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _bottomLinks[1]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[1]->getNumReplies()); // No reply sent yet
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[1]->getActiveMerges().size());
+    ASSERT_EQ(1, _bottomLinks[1]->getNumCommands());
+    ASSERT_EQ(0, _topLinks[1]->getNumReplies()); // No reply sent yet
+    ASSERT_EQ(1, _throttlers[1]->getActiveMerges().size());
 
     _bottomLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
@@ -597,29 +524,26 @@ MergeThrottlerTest::test42DistributorBehaviorDoesNotTakeOwnership()
     // for the merge command, as it is not owned by the throttler
     _throttlers[1]->onFlush(true);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[1]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[1]->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _throttlers[1]->getActiveMerges().size());
+    ASSERT_EQ(0, _bottomLinks[1]->getNumCommands());
+    ASSERT_EQ(0, _topLinks[1]->getNumReplies());
+    ASSERT_EQ(0, _throttlers[1]->getActiveMerges().size());
 
     // Send a belated reply from persistence up just to ensure the
     // throttler doesn't throw a fit if it receives an unknown merge
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*cmd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*cmd));
     reply->setResult(ReturnCode(ReturnCode::OK, "Tonight we dine on turtle soup!"));
     _bottomLinks[1]->sendUp(reply);
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[1]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[1]->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _throttlers[1]->getActiveMerges().size());
+    ASSERT_EQ(0, _bottomLinks[1]->getNumCommands());
+    ASSERT_EQ(1, _topLinks[1]->getNumReplies());
+    ASSERT_EQ(0, _throttlers[1]->getActiveMerges().size());
 }
 
 // Test that we don't take ownership of the merge command when we're
 // just passing it through to the persistence layer when we're at the
 // the end of the chain and also the designated executor
-void
-MergeThrottlerTest::testEndOfChainExecutionDoesNotTakeOwnership()
-{
+TEST_F(MergeThrottlerTest, end_of_chain_execution_does_not_take_ownership) {
     BucketId bid(32, 0xfeef00);
 
     std::vector<MergeBucketCommand::Node> nodes;
@@ -629,8 +553,7 @@ MergeThrottlerTest::testEndOfChainExecutionDoesNotTakeOwnership()
     std::vector<uint16_t> chain;
     chain.push_back(0);
     chain.push_back(1);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234, 1, chain));
+    auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234, 1, chain);
 
     // Send to last node, which is not the lowest index
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
@@ -640,9 +563,9 @@ MergeThrottlerTest::testEndOfChainExecutionDoesNotTakeOwnership()
     _bottomLinks[2]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
     // Should now have been sent to persistence layer
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _bottomLinks[2]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[2]->getNumReplies()); // No reply sent yet
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _throttlers[2]->getActiveMerges().size());
+    ASSERT_EQ(1, _bottomLinks[2]->getNumCommands());
+    ASSERT_EQ(0, _topLinks[2]->getNumReplies()); // No reply sent yet
+    ASSERT_EQ(1, _throttlers[2]->getActiveMerges().size());
 
     _bottomLinks[2]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
@@ -655,37 +578,33 @@ MergeThrottlerTest::testEndOfChainExecutionDoesNotTakeOwnership()
     // for the merge command, as it is not owned by the throttler
     _throttlers[2]->onFlush(true);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[2]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[2]->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _throttlers[2]->getActiveMerges().size());
+    ASSERT_EQ(0, _bottomLinks[2]->getNumCommands());
+    ASSERT_EQ(0, _topLinks[2]->getNumReplies());
+    ASSERT_EQ(0, _throttlers[2]->getActiveMerges().size());
 
     // Send a belated reply from persistence up just to ensure the
     // throttler doesn't throw a fit if it receives an unknown merge
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*cmd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*cmd));
     reply->setResult(ReturnCode(ReturnCode::OK, "Tonight we dine on turtle soup!"));
     _bottomLinks[2]->sendUp(reply);
     _topLinks[2]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[2]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[2]->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _throttlers[2]->getActiveMerges().size());
+    ASSERT_EQ(0, _bottomLinks[2]->getNumCommands());
+    ASSERT_EQ(1, _topLinks[2]->getNumReplies());
+    ASSERT_EQ(0, _throttlers[2]->getActiveMerges().size());
 }
 
 // Test that nodes resending a merge command won't lead to duplicate
 // state registration/forwarding or erasing the already present state
 // information.
-void
-MergeThrottlerTest::testResendHandling()
-{
+TEST_F(MergeThrottlerTest, resend_handling) {
     BucketId bid(32, 0xbadbed);
 
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(1);
     nodes.push_back(2);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234));
+    auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234);
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
 
@@ -702,9 +621,8 @@ MergeThrottlerTest::testResendHandling()
     // Reply should be BUSY
     StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
 
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-            ReturnCode::BUSY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+              ReturnCode::BUSY);
 
     _topLinks[1]->sendDown(fwd);
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
@@ -717,9 +635,8 @@ MergeThrottlerTest::testResendHandling()
 
     // Reply should be BUSY
     reply = _topLinks[2]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-            ReturnCode::BUSY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+              ReturnCode::BUSY);
 
     fwd = _topLinks[2]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
@@ -729,24 +646,21 @@ MergeThrottlerTest::testResendHandling()
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
     reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-            ReturnCode::BUSY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+              ReturnCode::BUSY);
 }
 
-void
-MergeThrottlerTest::testPriorityQueuing()
-{
+TEST_F(MergeThrottlerTest, priority_queuing) {
     // Fill up all active merges
     std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(1);
     nodes.push_back(2);
-    CPPUNIT_ASSERT(maxPending >= 4u);
+    ASSERT_GE(maxPending, 4u);
     for (std::size_t i = 0; i < maxPending; ++i) {
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234);
         cmd->setPriority(100);
         _topLinks[0]->sendDown(cmd);
     }
@@ -771,15 +685,14 @@ MergeThrottlerTest::testPriorityQueuing()
     for (std::size_t i = 0; i < maxPending - 4; ++i) {
         _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
     }
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[0]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(4), _topLinks[0]->getNumReplies());
+    ASSERT_EQ(0, _topLinks[0]->getNumCommands());
+    ASSERT_EQ(4, _topLinks[0]->getNumReplies());
 
     // Now when we start replying to merges, queued merges should be
     // processed in priority order
     for (int i = 0; i < 4; ++i) {
         StorageMessage::SP replyTo = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-        std::shared_ptr<MergeBucketReply> reply(
-                new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*replyTo)));
+        auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*replyTo));
         reply->setResult(ReturnCode(ReturnCode::OK, "whee"));
         _topLinks[0]->sendDown(reply);
     }
@@ -789,26 +702,24 @@ MergeThrottlerTest::testPriorityQueuing()
 
     for (int i = 0; i < 4; ++i) {
         StorageMessage::SP cmd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-        CPPUNIT_ASSERT_EQUAL(uint8_t(sortedPris[i]), cmd->getPriority());
+        EXPECT_EQ(uint8_t(sortedPris[i]), cmd->getPriority());
     }
 }
 
 // Test that we can detect and reject merges that due to resending
 // and potential priority queue sneaking etc may end up with duplicates
 // in the queue for a merge that is already known.
-void
-MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
-{
+TEST_F(MergeThrottlerTest, command_in_queue_duplicate_of_known_merge) {
     // Fill up all active merges and 1 queued one
-    std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+    ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + 1; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(2 + i);
         nodes.push_back(5 + i);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234);
         cmd->setPriority(100 - i);
         _topLinks[0]->sendDown(cmd);
     }
@@ -823,8 +734,8 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
         nodes.push_back(0);
         nodes.push_back(12);
         nodes.push_back(123);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf000feee)), nodes, 1234));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf000feee)), nodes, 1234);
         _topLinks[0]->sendDown(cmd);
     }
     {
@@ -832,22 +743,21 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
         nodes.push_back(0);
         nodes.push_back(124); // Different node set doesn't matter
         nodes.push_back(14);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf000feee)), nodes, 1234));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf000feee)), nodes, 1234);
         _topLinks[0]->sendDown(cmd);
     }
 
     waitUntilMergeQueueIs(*_throttlers[0], 3, _messageWaitTime);
 
-    StorageMessage::SP fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
+    auto fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
     // Remove and success-reply for 2 merges. This will give enough room
     // for the 2 first queued merges to be processed, the last one having a
     // duplicate in the queue.
     for (int i = 0; i < 2; ++i) {
         StorageMessage::SP fwd2 = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-        std::shared_ptr<MergeBucketReply> reply(
-                new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd2)));
+        auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd2));
         reply->setResult(ReturnCode(ReturnCode::OK, ""));
         _topLinks[0]->sendDown(reply);
     }
@@ -859,8 +769,7 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
     _topLinks[0]->getRepliesOnce();
     // Send a success-reply for fwd, allowing the duplicate from the queue
     // to have its moment to shine only to then be struck down mercilessly
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
     reply->setResult(ReturnCode(ReturnCode::OK, ""));
     _topLinks[0]->sendDown(reply);
 
@@ -868,62 +777,55 @@ MergeThrottlerTest::testCommandInQueueDuplicateOfKnownMerge()
     waitUntilMergeQueueIs(*_throttlers[0], 0, _messageWaitTime);
 
     // First reply is the successful merge reply
-    StorageMessage::SP reply2 = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply2).getResult().getResult(),
-            ReturnCode::OK);
+    auto reply2 = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply2).getResult().getResult(),
+              ReturnCode::OK);
 
     // Second reply should be the BUSY-rejected duplicate
-    StorageMessage::SP reply1 = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply1).getResult().getResult(),
-            ReturnCode::BUSY);
-    CPPUNIT_ASSERT(static_cast<MergeBucketReply&>(*reply1).getResult()
-                   .getMessage().find("out of date;") != std::string::npos);
+    auto reply1 = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply1).getResult().getResult(),
+              ReturnCode::BUSY);
+    EXPECT_TRUE(static_cast<MergeBucketReply&>(*reply1).getResult()
+                .getMessage().find("out of date;") != std::string::npos);
 }
 
 // Test that sending a merge command to a node not in the set of
 // to-be-merged nodes is handled gracefully.
 // This is not a scenario that should ever actually happen, but for
 // the sake of robustness, include it anyway.
-void
-MergeThrottlerTest::testInvalidReceiverNode()
-{
+TEST_F(MergeThrottlerTest, invalid_receiver_node) {
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(1);
     nodes.push_back(5);
     nodes.push_back(9);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baaaa)), nodes, 1234));
+    auto cmd = std::make_shared<MergeBucketCommand>(
+            makeDocumentBucket(BucketId(32, 0xf00baaaa)), nodes, 1234);
 
     // Send to node with index 0
     _topLinks[0]->sendDown(cmd);
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
-    StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-            ReturnCode::REJECTED);
-    CPPUNIT_ASSERT(static_cast<MergeBucketReply&>(*reply).getResult()
-                   .getMessage().find("which is not in its forwarding chain") != std::string::npos);
+    auto reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+              ReturnCode::REJECTED);
+    EXPECT_TRUE(static_cast<MergeBucketReply&>(*reply).getResult()
+                .getMessage().find("which is not in its forwarding chain") != std::string::npos);
 }
 
 // Test that the throttling policy kicks in after a certain number of
 // merges are forwarded and that the rest are queued in a prioritized
 // order.
-void
-MergeThrottlerTest::testForwardQueuedMerge()
-{
+TEST_F(MergeThrottlerTest, forward_queued_merge) {
     // Fill up all active merges and then 3 queued ones
-    std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+    ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + 3; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(2 + i);
         nodes.push_back(5 + i);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234);
         cmd->setPriority(100 - i);
         _topLinks[0]->sendDown(cmd);
     }
@@ -933,70 +835,61 @@ MergeThrottlerTest::testForwardQueuedMerge()
     waitUntilMergeQueueIs(*_throttlers[0], 3, _messageWaitTime);
 
     // Merge queue state should not be touched by worker thread now
-    StorageMessage::SP nextMerge = _throttlers[0]->getMergeQueue().begin()->_msg;
+    auto nextMerge = _throttlers[0]->getMergeQueue().begin()->_msg;
 
-    StorageMessage::SP fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
+    auto fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
     // Remove all the rest of the active merges
     while (!_topLinks[0]->getReplies().empty()) {
         _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
     }
 
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
     reply->setResult(ReturnCode(ReturnCode::OK, "Celebrate good times come on"));
     _topLinks[0]->sendDown(reply);
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime); // Success rewind reply
 
     // Remove reply bound for distributor
-    StorageMessage::SP distReply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*distReply).getResult().getResult(),
-            ReturnCode::OK);
+    auto distReply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*distReply).getResult().getResult(),
+              ReturnCode::OK);
 
     waitUntilMergeQueueIs(*_throttlers[0], 2, _messageWaitTime);
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[0]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), _topLinks[0]->getNumReplies());
+    ASSERT_EQ(0, _topLinks[0]->getNumCommands());
+    ASSERT_EQ(1, _topLinks[0]->getNumReplies());
 
     // First queued merge should now have been registered and forwarded
     fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<const MergeBucketCommand&>(*fwd).getBucketId(),
-            static_cast<const MergeBucketCommand&>(*nextMerge).getBucketId());
+    ASSERT_EQ(static_cast<const MergeBucketCommand&>(*fwd).getBucketId(),
+              static_cast<const MergeBucketCommand&>(*nextMerge).getBucketId());
 
-    CPPUNIT_ASSERT(
-            static_cast<const MergeBucketCommand&>(*fwd).getNodes()
-            == static_cast<const MergeBucketCommand&>(*nextMerge).getNodes());
+    ASSERT_TRUE(static_cast<const MergeBucketCommand&>(*fwd).getNodes()
+                == static_cast<const MergeBucketCommand&>(*nextMerge).getNodes());
 
     // Ensure forwarded merge has a higher priority than the next queued one
-    CPPUNIT_ASSERT(fwd->getPriority() < _throttlers[0]->getMergeQueue().begin()->_msg->getPriority());
+    EXPECT_LT(fwd->getPriority(), _throttlers[0]->getMergeQueue().begin()->_msg->getPriority());
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().chaining.ok.getValue());
-
-    /*framework::HttpUrlPath path("?xml");
-      _forwarders[0]->reportStatus(std::cerr, path);*/
+    EXPECT_EQ(uint64_t(1), _throttlers[0]->getMetrics().chaining.ok.getValue());
 }
 
-void
-MergeThrottlerTest::testExecuteQueuedMerge()
-{
+TEST_F(MergeThrottlerTest, execute_queued_merge) {
     MergeThrottler& throttler(*_throttlers[1]);
     DummyStorageLink& topLink(*_topLinks[1]);
     DummyStorageLink& bottomLink(*_bottomLinks[1]);
 
     // Fill up all active merges and then 3 queued ones
-    std::size_t maxPending = throttler.getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    size_t maxPending = throttler.getThrottlePolicy().getMaxPendingCount();
+    ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + 3; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(1);
         nodes.push_back(5 + i);
         nodes.push_back(7 + i);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1);
         cmd->setPriority(250 - i + 5);
         topLink.sendDown(cmd);
     }
@@ -1013,8 +906,8 @@ MergeThrottlerTest::testExecuteQueuedMerge()
         nodes.push_back(0);
         std::vector<uint16_t> chain;
         chain.push_back(0);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0x1337)), nodes, 1234, 1, chain));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0x1337)), nodes, 1234, 1, chain);
         cmd->setPriority(0);
         topLink.sendDown(cmd);
     }
@@ -1022,19 +915,12 @@ MergeThrottlerTest::testExecuteQueuedMerge()
     waitUntilMergeQueueIs(throttler, 4, _messageWaitTime);
 
     // Merge queue state should not be touched by worker thread now
-    StorageMessage::SP nextMerge(throttler.getMergeQueue().begin()->_msg);
-    /*StorageMessage::SP nextMerge;
-    {
-        vespalib::LockGuard lock(_throttlers[0]->getStateLock());
-        // Dirty: have to check internal state
-        nextMerge = _throttlers[0]->getMergeQueue().begin()->_msg;
-        }*/
+    auto nextMerge = throttler.getMergeQueue().begin()->_msg;
 
-    CPPUNIT_ASSERT_EQUAL(
-            BucketId(32, 0x1337),
-            dynamic_cast<const MergeBucketCommand&>(*nextMerge).getBucketId());
+    ASSERT_EQ(BucketId(32, 0x1337),
+              dynamic_cast<const MergeBucketCommand&>(*nextMerge).getBucketId());
 
-    StorageMessage::SP fwd(topLink.getAndRemoveMessage(MessageType::MERGEBUCKET));
+    auto fwd = topLink.getAndRemoveMessage(MessageType::MERGEBUCKET);
 
     // Remove all the rest of the active merges
     while (!topLink.getReplies().empty()) {
@@ -1042,50 +928,44 @@ MergeThrottlerTest::testExecuteQueuedMerge()
     }
 
     // Free up a merge slot
-    std::shared_ptr<MergeBucketReply> reply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd)));
+    auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
     reply->setResult(ReturnCode(ReturnCode::OK, "Celebrate good times come on"));
     topLink.sendDown(reply);
 
     topLink.waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
     // Remove chain reply
-    StorageMessage::SP distReply(topLink.getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY));
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*distReply).getResult().getResult(),
-            ReturnCode::OK);
+    auto distReply = topLink.getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    ASSERT_EQ(static_cast<MergeBucketReply&>(*distReply).getResult().getResult(),
+              ReturnCode::OK);
 
     waitUntilMergeQueueIs(throttler, 3, _messageWaitTime);
     bottomLink.waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), topLink.getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), topLink.getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(1), bottomLink.getNumCommands());
+    ASSERT_EQ(0, topLink.getNumCommands());
+    ASSERT_EQ(0, topLink.getNumReplies());
+    ASSERT_EQ(1, bottomLink.getNumCommands());
 
     // First queued merge should now have been registered and sent down
-    StorageMessage::SP cmd(bottomLink.getAndRemoveMessage(MessageType::MERGEBUCKET));
+    auto cmd = bottomLink.getAndRemoveMessage(MessageType::MERGEBUCKET);
 
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<const MergeBucketCommand&>(*cmd).getBucketId(),
-            static_cast<const MergeBucketCommand&>(*nextMerge).getBucketId());
+    ASSERT_EQ(static_cast<const MergeBucketCommand&>(*cmd).getBucketId(),
+              static_cast<const MergeBucketCommand&>(*nextMerge).getBucketId());
 
-    CPPUNIT_ASSERT(
-            static_cast<const MergeBucketCommand&>(*cmd).getNodes()
-            == static_cast<const MergeBucketCommand&>(*nextMerge).getNodes());
+    ASSERT_TRUE(static_cast<const MergeBucketCommand&>(*cmd).getNodes()
+                == static_cast<const MergeBucketCommand&>(*nextMerge).getNodes());
 }
 
-void
-MergeThrottlerTest::testFlush()
-{
+TEST_F(MergeThrottlerTest, flush) {
     // Fill up all active merges and then 3 queued ones
     std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + 3; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1);
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1095,7 +975,7 @@ MergeThrottlerTest::testFlush()
 
     // Remove all forwarded commands
     uint32_t removed = _topLinks[0]->getRepliesOnce().size();
-    CPPUNIT_ASSERT(removed >= 5);
+    ASSERT_GE(removed, 5);
 
     // Flush the storage link, triggering an abort of all commands
     // no matter what their current state is.
@@ -1105,9 +985,8 @@ MergeThrottlerTest::testFlush()
 
     while (!_topLinks[0]->getReplies().empty()) {
         StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-        CPPUNIT_ASSERT_EQUAL(
-                ReturnCode::ABORTED,
-                static_cast<const MergeBucketReply&>(*reply).getResult().getResult());
+        ASSERT_EQ(ReturnCode::ABORTED,
+                  static_cast<const MergeBucketReply&>(*reply).getResult().getResult());
     }
     // NOTE: merges that have been immediately executed (i.e. not cycled)
     // on the node should _not_ be replied to, since they're not owned
@@ -1119,9 +998,7 @@ MergeThrottlerTest::testFlush()
 // it knows nothing about when it comes back up. If this is not handled
 // properly, it will attempt to forward this node again with a bogus
 // index. This should be implicitly handled by checking for a full node
-void
-MergeThrottlerTest::testUnseenMergeWithNodeInChain()
-{
+TEST_F(MergeThrottlerTest, unseen_merge_with_node_in_chain) {
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(5);
@@ -1130,8 +1007,8 @@ MergeThrottlerTest::testUnseenMergeWithNodeInChain()
     chain.push_back(0);
     chain.push_back(5);
     chain.push_back(9);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xdeadbeef)), nodes, 1234, 1, chain));
+    auto cmd = std::make_shared<MergeBucketCommand>(
+            makeDocumentBucket(BucketId(32, 0xdeadbeef)), nodes, 1234, 1, chain);
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 9);
 
@@ -1141,21 +1018,19 @@ MergeThrottlerTest::testUnseenMergeWithNodeInChain()
     // First, test that we get rejected when processing merge immediately
     // Should get a rejection in return
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
-    StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            ReturnCode::REJECTED,
-            dynamic_cast<const MergeBucketReply&>(*reply).getResult().getResult());
+    auto reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    ASSERT_EQ(ReturnCode::REJECTED,
+              dynamic_cast<const MergeBucketReply&>(*reply).getResult().getResult());
 
     // Second, test that we get rejected before queueing up. This is to
     // avoid a hypothetical deadlock scenario.
     // Fill up all active merges
     {
 
-        std::size_t maxPending(
-                _throttlers[0]->getThrottlePolicy().getMaxPendingCount());
-        for (std::size_t i = 0; i < maxPending; ++i) {
-            std::shared_ptr<MergeBucketCommand> fillCmd(
-                    new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234));
+        size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+        for (size_t i = 0; i < maxPending; ++i) {
+            auto fillCmd = std::make_shared<MergeBucketCommand>(
+                    makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234);
             _topLinks[0]->sendDown(fillCmd);
         }
     }
@@ -1164,26 +1039,23 @@ MergeThrottlerTest::testUnseenMergeWithNodeInChain()
 
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
     reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            ReturnCode::REJECTED,
-            dynamic_cast<const MergeBucketReply&>(*reply).getResult().getResult());
+    ASSERT_EQ(ReturnCode::REJECTED,
+              dynamic_cast<const MergeBucketReply&>(*reply).getResult().getResult());
 }
 
-void
-MergeThrottlerTest::testMergeWithNewerClusterStateFlushesOutdatedQueued()
-{
+TEST_F(MergeThrottlerTest, merge_with_newer_cluster_state_flushes_outdated_queued){
     // Fill up all active merges and then 3 queued ones with the same
     // system state
-    std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+    ASSERT_LT(maxPending, 100);
     std::vector<api::StorageMessage::Id> ids;
     for (std::size_t i = 0; i < maxPending + 3; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1);
         ids.push_back(cmd->getMsgId());
         _topLinks[0]->sendDown(cmd);
     }
@@ -1198,8 +1070,8 @@ MergeThrottlerTest::testMergeWithNewerClusterStateFlushesOutdatedQueued()
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0x12345678)), nodes, 1234, 2));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0x12345678)), nodes, 1234, 2);
         ids.push_back(cmd->getMsgId());
         _topLinks[0]->sendDown(cmd);
     }
@@ -1211,30 +1083,27 @@ MergeThrottlerTest::testMergeWithNewerClusterStateFlushesOutdatedQueued()
 
     for (int i = 0; i < 3; ++i) {
         StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-        CPPUNIT_ASSERT_EQUAL(
-                static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-                ReturnCode::WRONG_DISTRIBUTION);
-        CPPUNIT_ASSERT_EQUAL(1u, static_cast<MergeBucketReply&>(*reply).getClusterStateVersion());
-        CPPUNIT_ASSERT_EQUAL(ids[maxPending + i], reply->getMsgId());
+        ASSERT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+                  ReturnCode::WRONG_DISTRIBUTION);
+        ASSERT_EQ(1u, static_cast<MergeBucketReply&>(*reply).getClusterStateVersion());
+        ASSERT_EQ(ids[maxPending + i], reply->getMsgId());
     }
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(3), _throttlers[0]->getMetrics().chaining.failures.wrongdistribution.getValue());
+    EXPECT_EQ(uint64_t(3), _throttlers[0]->getMetrics().chaining.failures.wrongdistribution.getValue());
 }
 
-void
-MergeThrottlerTest::testUpdatedClusterStateFlushesOutdatedQueued()
-{
+TEST_F(MergeThrottlerTest, updated_cluster_state_flushes_outdated_queued) {
     // State is version 1. Send down several merges with state version 2.
-    std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+    ASSERT_LT(maxPending, 100);
     std::vector<api::StorageMessage::Id> ids;
     for (std::size_t i = 0; i < maxPending + 3; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 2));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 2);
         ids.push_back(cmd->getMsgId());
         _topLinks[0]->sendDown(cmd);
     }
@@ -1245,8 +1114,8 @@ MergeThrottlerTest::testUpdatedClusterStateFlushesOutdatedQueued()
 
     // Send down new system state (also set it explicitly)
     _servers[0]->setClusterState(lib::ClusterState("distributor:100 storage:100 version:3"));
-    std::shared_ptr<api::SetSystemStateCommand> stateCmd(
-            new api::SetSystemStateCommand(lib::ClusterState("distributor:100 storage:100 version:3")));
+    auto stateCmd = std::make_shared<api::SetSystemStateCommand>(
+            lib::ClusterState("distributor:100 storage:100 version:3"));
     _topLinks[0]->sendDown(stateCmd);
 
     // Queue should now be flushed with all being replied to with WRONG_DISTRIBUTION
@@ -1255,29 +1124,27 @@ MergeThrottlerTest::testUpdatedClusterStateFlushesOutdatedQueued()
 
     for (int i = 0; i < 3; ++i) {
         StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-        CPPUNIT_ASSERT_EQUAL(
-                static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-                ReturnCode::WRONG_DISTRIBUTION);
-        CPPUNIT_ASSERT_EQUAL(2u, static_cast<MergeBucketReply&>(*reply).getClusterStateVersion());
-        CPPUNIT_ASSERT_EQUAL(ids[maxPending + i], reply->getMsgId());
+        ASSERT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+                  ReturnCode::WRONG_DISTRIBUTION);
+        ASSERT_EQ(2u, static_cast<MergeBucketReply&>(*reply).getClusterStateVersion());
+        ASSERT_EQ(ids[maxPending + i], reply->getMsgId());
     }
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(3), _throttlers[0]->getMetrics().chaining.failures.wrongdistribution.getValue());
+    EXPECT_EQ(uint64_t(3), _throttlers[0]->getMetrics().chaining.failures.wrongdistribution.getValue());
 }
 
-void
-MergeThrottlerTest::test42MergesDoNotTriggerFlush()
-{
+// TODO remove functionality and test
+TEST_F(MergeThrottlerTest, legacy_42_merges_do_not_trigger_flush) {
     // Fill up all active merges and then 1 queued one
-    std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    CPPUNIT_ASSERT(maxPending < 100);
+    size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+    ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + 1; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00baa00 + i)), nodes, 1234, 1);
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1285,7 +1152,7 @@ MergeThrottlerTest::test42MergesDoNotTriggerFlush()
     _topLinks[0]->waitForMessages(maxPending, _messageWaitTime);
     waitUntilMergeQueueIs(*_throttlers[0], 1, _messageWaitTime);
 
-    StorageMessage::SP fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
+    auto fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
     // Remove all the rest of the active merges
     while (!_topLinks[0]->getReplies().empty()) {
@@ -1299,24 +1166,22 @@ MergeThrottlerTest::test42MergesDoNotTriggerFlush()
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xbaaadbed)), nodes, 1234, 0));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xbaaadbed)), nodes, 1234, 0);
         _topLinks[0]->sendDown(cmd);
     }
 
     waitUntilMergeQueueIs(*_throttlers[0], 2, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[0]->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[0]->getNumReplies());
+    ASSERT_EQ(0, _topLinks[0]->getNumCommands());
+    ASSERT_EQ(0, _topLinks[0]->getNumReplies());
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().local.failures.wrongdistribution.getValue());
+    EXPECT_EQ(uint64_t(0), _throttlers[0]->getMetrics().local.failures.wrongdistribution.getValue());
 }
 
 // Test that a merge that arrive with a state version that is less than
 // that of the node is rejected immediately
-void
-MergeThrottlerTest::testOutdatedClusterStateMergesAreRejectedOnArrival()
-{
+TEST_F(MergeThrottlerTest, outdated_cluster_state_merges_are_rejected_on_arrival) {
     _servers[0]->setClusterState(lib::ClusterState("distributor:100 storage:100 version:10"));
 
     // Send down a merge with a cluster state version of 9, which should
@@ -1326,28 +1191,25 @@ MergeThrottlerTest::testOutdatedClusterStateMergesAreRejectedOnArrival()
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 9));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 9);
         _topLinks[0]->sendDown(cmd);
     }
 
     _topLinks[0]->waitForMessages(1, _messageWaitTime);
 
-    StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
-            ReturnCode::WRONG_DISTRIBUTION);
+    auto reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    EXPECT_EQ(static_cast<MergeBucketReply&>(*reply).getResult().getResult(),
+              ReturnCode::WRONG_DISTRIBUTION);
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().chaining.failures.wrongdistribution.getValue());
+    EXPECT_EQ(uint64_t(1), _throttlers[0]->getMetrics().chaining.failures.wrongdistribution.getValue());
 }
 
 // Test erroneous case where node receives merge where the merge does
 // not exist in the state, but it exists in the chain without the chain
 // being full. This is something that shouldn't happen, but must still
 // not crash the node
-void
-MergeThrottlerTest::testUnknownMergeWithSelfInChain()
-{
+TEST_F(MergeThrottlerTest, unknown_merge_with_self_in_chain) {
     BucketId bid(32, 0xbadbed);
 
     std::vector<MergeBucketCommand::Node> nodes;
@@ -1356,8 +1218,7 @@ MergeThrottlerTest::testUnknownMergeWithSelfInChain()
     nodes.push_back(2);
     std::vector<uint16_t> chain;
     chain.push_back(0);
-    std::shared_ptr<MergeBucketCommand> cmd(
-            new MergeBucketCommand(makeDocumentBucket(bid), nodes, 1234, 1, chain));
+    auto cmd = std::make_shared<MergeBucketCommand>(makeDocumentBucket(bid), nodes, 1234, 1, chain);
 
     StorageMessageAddress address("storage", lib::NodeType::STORAGE, 1);
 
@@ -1365,26 +1226,23 @@ MergeThrottlerTest::testUnknownMergeWithSelfInChain()
     _topLinks[0]->sendDown(cmd);
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
 
-    StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    auto reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
 
-    CPPUNIT_ASSERT_EQUAL(
-            ReturnCode::REJECTED,
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult());
+    EXPECT_EQ(ReturnCode::REJECTED,
+              static_cast<MergeBucketReply&>(*reply).getResult().getResult());
 }
 
-void
-MergeThrottlerTest::testBusyReturnedOnFullQueue()
-{
-    std::size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
-    std::size_t maxQueue = _throttlers[0]->getMaxQueueSize();
-    CPPUNIT_ASSERT(maxPending < 100);
+TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
+    size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
+    size_t maxQueue = _throttlers[0]->getMaxQueueSize();
+    ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + maxQueue; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf00000 + i)), nodes, 1234, 1));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf00000 + i)), nodes, 1234, 1);
         _topLinks[0]->sendDown(cmd);
     }
 
@@ -1400,32 +1258,24 @@ MergeThrottlerTest::testBusyReturnedOnFullQueue()
         nodes.push_back(0);
         nodes.push_back(1);
         nodes.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xf000baaa)), nodes, 1234, 1));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xf000baaa)), nodes, 1234, 1);
         _topLinks[0]->sendDown(cmd);
     }
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
-    StorageMessage::SP reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
+    auto reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
 
-    CPPUNIT_ASSERT_EQUAL(
-            BucketId(32, 0xf000baaa),
-            static_cast<MergeBucketReply&>(*reply).getBucketId());
+    EXPECT_EQ(BucketId(32, 0xf000baaa),
+              static_cast<MergeBucketReply&>(*reply).getBucketId());
 
-    CPPUNIT_ASSERT_EQUAL(
-            ReturnCode::BUSY,
-            static_cast<MergeBucketReply&>(*reply).getResult().getResult());
+    EXPECT_EQ(ReturnCode::BUSY,
+              static_cast<MergeBucketReply&>(*reply).getResult().getResult());
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0),
-                         _throttlers[0]->getMetrics().chaining
-                         .failures.busy.getValue());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1),
-                         _throttlers[0]->getMetrics().local
-                         .failures.busy.getValue());
+    EXPECT_EQ(0, _throttlers[0]->getMetrics().chaining.failures.busy.getValue());
+    EXPECT_EQ(1, _throttlers[0]->getMetrics().local.failures.busy.getValue());
 }
 
-void
-MergeThrottlerTest::testBrokenCycle()
-{
+TEST_F(MergeThrottlerTest, broken_cycle) {
     std::vector<MergeBucketCommand::Node> nodes;
     nodes.push_back(1);
     nodes.push_back(0);
@@ -1433,14 +1283,14 @@ MergeThrottlerTest::testBrokenCycle()
     {
         std::vector<uint16_t> chain;
         chain.push_back(0);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain);
         _topLinks[1]->sendDown(cmd);
     }
 
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
-    StorageMessage::SP fwd = _topLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    CPPUNIT_ASSERT_EQUAL(uint16_t(2), fwd->getAddress()->getIndex());
+    auto fwd = _topLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
+    ASSERT_EQ(2, fwd->getAddress()->getIndex());
 
     // Send cycled merge which will be executed
     {
@@ -1448,23 +1298,21 @@ MergeThrottlerTest::testBrokenCycle()
         chain.push_back(0);
         chain.push_back(1);
         chain.push_back(2);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain);
         _topLinks[1]->sendDown(cmd);
     }
 
     _bottomLinks[1]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
-    StorageMessage::SP cycled = _bottomLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
+    auto cycled = _bottomLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
     // Now, node 2 goes down, auto sending back a failed merge
-    std::shared_ptr<MergeBucketReply> nodeDownReply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*fwd)));
+    auto nodeDownReply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
     nodeDownReply->setResult(ReturnCode(ReturnCode::NOT_CONNECTED, "Node went sightseeing"));
 
     _topLinks[1]->sendDown(nodeDownReply);
     // Merge reply also arrives from persistence
-    std::shared_ptr<MergeBucketReply> persistenceReply(
-            new MergeBucketReply(dynamic_cast<const MergeBucketCommand&>(*cycled)));
+    auto persistenceReply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*cycled));
     persistenceReply->setResult(ReturnCode(ReturnCode::ABORTED, "Oh dear"));
     _bottomLinks[1]->sendUp(persistenceReply);
 
@@ -1474,8 +1322,8 @@ MergeThrottlerTest::testBrokenCycle()
     // Unwind reply shares the result of the persistence reply
     for (int i = 0; i < 2; ++i) {
         StorageMessage::SP reply = _topLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(ReturnCode::ABORTED, "Oh dear"),
-                             static_cast<MergeBucketReply&>(*reply).getResult());
+        ASSERT_EQ(api::ReturnCode(ReturnCode::ABORTED, "Oh dear"),
+                  static_cast<MergeBucketReply&>(*reply).getResult());
     }
 
     // Make sure it has been removed from the internal state so we can
@@ -1483,14 +1331,14 @@ MergeThrottlerTest::testBrokenCycle()
     {
         std::vector<uint16_t> chain;
         chain.push_back(0);
-        std::shared_ptr<MergeBucketCommand> cmd(
-                new MergeBucketCommand(makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain));
+        auto cmd = std::make_shared<MergeBucketCommand>(
+                makeDocumentBucket(BucketId(32, 0xfeef00)), nodes, 1234, 1, chain);
         _topLinks[1]->sendDown(cmd);
     }
 
     _topLinks[1]->waitForMessage(MessageType::MERGEBUCKET, 5);
     fwd = _topLinks[1]->getAndRemoveMessage(MessageType::MERGEBUCKET);
-    CPPUNIT_ASSERT_EQUAL(uint16_t(2), fwd->getAddress()->getIndex());
+    ASSERT_EQ(2, fwd->getAddress()->getIndex());
 }
 
 void
@@ -1501,39 +1349,33 @@ MergeThrottlerTest::sendAndExpectReply(
 {
     _topLinks[0]->sendDown(msg);
     _topLinks[0]->waitForMessage(expectedReplyType, _messageWaitTime);
-    StorageMessage::SP reply(_topLinks[0]->getAndRemoveMessage(
-                    expectedReplyType));
+    auto reply = _topLinks[0]->getAndRemoveMessage(expectedReplyType);
     auto& storageReply = dynamic_cast<api::StorageReply&>(*reply);
-    CPPUNIT_ASSERT_EQUAL(expectedResultCode,
-                         storageReply.getResult().getResult());
+    ASSERT_EQ(expectedResultCode, storageReply.getResult().getResult());
 }
 
-void
-MergeThrottlerTest::testGetBucketDiffCommandNotInActiveSetIsRejected()
-{
+TEST_F(MergeThrottlerTest, get_bucket_diff_command_not_in_active_set_is_rejected) {
     document::BucketId bucket(16, 1234);
     std::vector<api::GetBucketDiffCommand::Node> nodes;
-    std::shared_ptr<api::GetBucketDiffCommand> getDiffCmd(
-            new api::GetBucketDiffCommand(makeDocumentBucket(bucket), nodes, api::Timestamp(1234)));
+    auto getDiffCmd = std::make_shared<api::GetBucketDiffCommand>(
+            makeDocumentBucket(bucket), nodes, api::Timestamp(1234));
 
-    sendAndExpectReply(getDiffCmd,
-                       api::MessageType::GETBUCKETDIFF_REPLY,
-                       api::ReturnCode::ABORTED);
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[0]->getNumCommands());
+    ASSERT_NO_FATAL_FAILURE(sendAndExpectReply(getDiffCmd,
+            api::MessageType::GETBUCKETDIFF_REPLY,
+            api::ReturnCode::ABORTED));
+    ASSERT_EQ(0, _bottomLinks[0]->getNumCommands());
 }
 
-void
-MergeThrottlerTest::testApplyBucketDiffCommandNotInActiveSetIsRejected()
-{
+TEST_F(MergeThrottlerTest, apply_bucket_diff_command_not_in_active_set_is_rejected) {
     document::BucketId bucket(16, 1234);
     std::vector<api::GetBucketDiffCommand::Node> nodes;
-    std::shared_ptr<api::ApplyBucketDiffCommand> applyDiffCmd(
-            new api::ApplyBucketDiffCommand(makeDocumentBucket(bucket), nodes, api::Timestamp(1234)));
+    auto applyDiffCmd = std::make_shared<api::ApplyBucketDiffCommand>(
+            makeDocumentBucket(bucket), nodes, api::Timestamp(1234));
 
-    sendAndExpectReply(applyDiffCmd,
-                       api::MessageType::APPLYBUCKETDIFF_REPLY,
-                       api::ReturnCode::ABORTED);
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[0]->getNumCommands());
+    ASSERT_NO_FATAL_FAILURE(sendAndExpectReply(applyDiffCmd,
+            api::MessageType::APPLYBUCKETDIFF_REPLY,
+            api::ReturnCode::ABORTED));
+    ASSERT_EQ(0, _bottomLinks[0]->getNumCommands());
 }
 
 api::MergeBucketCommand::SP
@@ -1544,51 +1386,47 @@ MergeThrottlerTest::sendMerge(const MergeBuilder& builder)
     return cmd;
 }
 
-void
-MergeThrottlerTest::testNewClusterStateAbortsAllOutdatedActiveMerges()
-{
+TEST_F(MergeThrottlerTest, new_cluster_state_aborts_all_outdated_active_merges) {
     document::BucketId bucket(16, 6789);
     _throttlers[0]->getThrottlePolicy().setMaxPendingCount(1);
 
     // Merge will be forwarded (i.e. active).
     sendMerge(MergeBuilder(bucket).clusterStateVersion(10));
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
-    StorageMessage::SP fwd(_topLinks[0]->getAndRemoveMessage(
-            MessageType::MERGEBUCKET));
+    auto fwd = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET);
 
-    _topLinks[0]->sendDown(makeSystemStateCmd(
-            "version:11 distributor:100 storage:100"));
+    _topLinks[0]->sendDown(makeSystemStateCmd("version:11 distributor:100 storage:100"));
     // Cannot send reply until we're unwinding
-    CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[0]->getNumReplies());
+    ASSERT_EQ(0, _topLinks[0]->getNumReplies());
 
     // Trying to diff the bucket should now fail
     {
-        std::shared_ptr<api::GetBucketDiffCommand> getDiffCmd(
-                new api::GetBucketDiffCommand(makeDocumentBucket(bucket), {}, api::Timestamp(123)));
+        auto getDiffCmd = std::make_shared<api::GetBucketDiffCommand>(
+                makeDocumentBucket(bucket), std::vector<api::GetBucketDiffCommand::Node>(), api::Timestamp(123));
 
-        sendAndExpectReply(getDiffCmd,
-                           api::MessageType::GETBUCKETDIFF_REPLY,
-                           api::ReturnCode::ABORTED);
+        ASSERT_NO_FATAL_FAILURE(sendAndExpectReply(getDiffCmd,
+                api::MessageType::GETBUCKETDIFF_REPLY,
+                api::ReturnCode::ABORTED));
     }
 }
 
-void MergeThrottlerTest::backpressure_busy_bounces_merges_for_configured_duration() {
+TEST_F(MergeThrottlerTest, backpressure_busy_bounces_merges_for_configured_duration) {
     _servers[0]->getClock().setAbsoluteTimeInSeconds(1000);
 
-    CPPUNIT_ASSERT(!_throttlers[0]->backpressure_mode_active());
+    EXPECT_FALSE(_throttlers[0]->backpressure_mode_active());
     _throttlers[0]->apply_timed_backpressure();
-    CPPUNIT_ASSERT(_throttlers[0]->backpressure_mode_active());
+    EXPECT_TRUE(_throttlers[0]->backpressure_mode_active());
     document::BucketId bucket(16, 6789);
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().local.failures.busy.getValue());
+    EXPECT_EQ(0, _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+    EXPECT_EQ(uint64_t(0), _throttlers[0]->getMetrics().local.failures.busy.getValue());
 
-    sendAndExpectReply(MergeBuilder(bucket).create(),
-                       api::MessageType::MERGEBUCKET_REPLY,
-                       api::ReturnCode::BUSY);
+    ASSERT_NO_FATAL_FAILURE(sendAndExpectReply(MergeBuilder(bucket).create(),
+            api::MessageType::MERGEBUCKET_REPLY,
+            api::ReturnCode::BUSY));
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().local.failures.busy.getValue());
+    EXPECT_EQ(1, _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+    EXPECT_EQ(1, _throttlers[0]->getMetrics().local.failures.busy.getValue());
 
     _servers[0]->getClock().addSecondsToTime(15); // Test-config has duration set to 15 seconds
     // Backpressure has now been lifted. New merges should be forwarded
@@ -1596,11 +1434,11 @@ void MergeThrottlerTest::backpressure_busy_bounces_merges_for_configured_duratio
     sendMerge(MergeBuilder(bucket));
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
-    CPPUNIT_ASSERT(!_throttlers[0]->backpressure_mode_active());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+    EXPECT_FALSE(_throttlers[0]->backpressure_mode_active());
+    EXPECT_EQ(1, _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
 }
 
-void MergeThrottlerTest::source_only_merges_are_not_affected_by_backpressure() {
+TEST_F(MergeThrottlerTest, source_only_merges_are_not_affected_by_backpressure) {
     _servers[2]->getClock().setAbsoluteTimeInSeconds(1000);
     _throttlers[2]->apply_timed_backpressure();
     document::BucketId bucket(16, 6789);
@@ -1608,12 +1446,12 @@ void MergeThrottlerTest::source_only_merges_are_not_affected_by_backpressure() {
     _topLinks[2]->sendDown(MergeBuilder(bucket).chain(0, 1).source_only(2).create());
     _topLinks[2]->waitForMessage(MessageType::MERGEBUCKET, _messageWaitTime);
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
+    EXPECT_EQ(0, _throttlers[0]->getMetrics().bounced_due_to_back_pressure.getValue());
 }
 
 void MergeThrottlerTest::fill_throttler_queue_with_n_commands(uint16_t throttler_index, size_t queued_count) {
-    std::size_t max_pending = _throttlers[throttler_index]->getThrottlePolicy().getMaxPendingCount();
-    for (std::size_t i = 0; i < max_pending + queued_count; ++i) {
+    size_t max_pending = _throttlers[throttler_index]->getThrottlePolicy().getMaxPendingCount();
+    for (size_t i = 0; i < max_pending + queued_count; ++i) {
         _topLinks[throttler_index]->sendDown(MergeBuilder(document::BucketId(16, i)).create());
     }
 
@@ -1622,7 +1460,7 @@ void MergeThrottlerTest::fill_throttler_queue_with_n_commands(uint16_t throttler
     waitUntilMergeQueueIs(*_throttlers[throttler_index], queued_count, _messageWaitTime);
 }
 
-void MergeThrottlerTest::backpressure_evicts_all_queued_merges() {
+TEST_F(MergeThrottlerTest, backpressure_evicts_all_queued_merges) {
     _servers[0]->getClock().setAbsoluteTimeInSeconds(1000);
 
     fill_throttler_queue_with_n_commands(0, 1);
@@ -1631,7 +1469,7 @@ void MergeThrottlerTest::backpressure_evicts_all_queued_merges() {
 
     _topLinks[0]->waitForMessage(MessageType::MERGEBUCKET_REPLY, _messageWaitTime);
     auto reply = _topLinks[0]->getAndRemoveMessage(MessageType::MERGEBUCKET_REPLY);
-    CPPUNIT_ASSERT_EQUAL(ReturnCode::BUSY, dynamic_cast<const MergeBucketReply&>(*reply).getResult().getResult());
+    EXPECT_EQ(ReturnCode::BUSY, dynamic_cast<const MergeBucketReply&>(*reply).getResult().getResult());
 }
 
 // TODO test message queue aborting (use rendezvous functionality--make guard)

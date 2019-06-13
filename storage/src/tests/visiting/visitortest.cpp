@@ -18,11 +18,13 @@
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 #include <sys/stat.h>
 
 using namespace std::chrono_literals;
 using document::test::makeBucketSpace;
+using namespace ::testing;
 
 namespace storage {
 
@@ -30,8 +32,7 @@ namespace {
 
 using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
 
-struct TestParams
-{
+struct TestParams {
     TestParams& maxVisitorMemoryUsage(uint32_t bytes) {
         _maxVisitorMemoryUsage = bytes;
         return *this;
@@ -52,26 +53,7 @@ struct TestParams
 
 }
 
-class VisitorTest : public CppUnit::TestFixture
-{
-private:
-    CPPUNIT_TEST_SUITE(VisitorTest);
-    CPPUNIT_TEST(testNormalUsage);
-    CPPUNIT_TEST(testFailedCreateIterator);
-    CPPUNIT_TEST(testFailedGetIter);
-    CPPUNIT_TEST(testDocumentAPIClientError);
-    CPPUNIT_TEST(testNoDocumentAPIResendingForFailedVisitor);
-    CPPUNIT_TEST(testIteratorCreatedForFailedVisitor);
-    CPPUNIT_TEST(testFailedDocumentAPISend);
-    CPPUNIT_TEST(testNoVisitorNotificationForTransientFailures);
-    CPPUNIT_TEST(testNotificationSentIfTransientErrorRetriedManyTimes);
-    CPPUNIT_TEST(testNoMbusTracingIfTraceLevelIsZero);
-    CPPUNIT_TEST(testReplyContainsTraceIfTraceLevelAboveZero);
-    CPPUNIT_TEST(testNoMoreIteratorsSentWhileMemoryUsedAboveLimit);
-    CPPUNIT_TEST(testDumpVisitorInvokesStrongReadConsistencyIteration);
-    CPPUNIT_TEST(testTestVisitorInvokesWeakReadConsistencyIteration);
-    CPPUNIT_TEST_SUITE_END();
-
+struct VisitorTest : Test {
     static uint32_t docCount;
     std::vector<document::Document::SP > _documents;
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
@@ -80,25 +62,7 @@ private:
     DummyStorageLink* _bottom;
     VisitorManager* _manager;
 
-public:
     VisitorTest() : _node() {}
-
-    void testNormalUsage();
-    void testFailedCreateIterator();
-    void testFailedGetIter();
-    void testDocumentAPIClientError();
-    void testNoDocumentAPIResendingForFailedVisitor();
-    void testIteratorCreatedForFailedVisitor();
-    void testFailedDocumentAPISend();
-    void testNoVisitorNotificationForTransientFailures();
-    void testNotificationSentIfTransientErrorRetriedManyTimes();
-    void testNoMbusTracingIfTraceLevelIsZero();
-    void testReplyContainsTraceIfTraceLevelAboveZero();
-    void testNoMoreIteratorsSentWhileMemoryUsedAboveLimit();
-    void testDumpVisitorInvokesStrongReadConsistencyIteration();
-    void testTestVisitorInvokesWeakReadConsistencyIteration();
-    // TODO:
-    void testVisitMultipleBuckets() {}
 
     // Not using setUp since can't throw exception out of it.
     void initializeTest(const TestParams& params = TestParams());
@@ -118,13 +82,14 @@ public:
 
     std::shared_ptr<api::CreateVisitorCommand> makeCreateVisitor(
             const VisitorOptions& options = VisitorOptions());
-    void tearDown() override;
+    void TearDown() override;
     bool waitUntilNoActiveVisitors();
     TestVisitorMessageSession& getSession(uint32_t n);
-    uint64_t verifyCreateVisitorReply(
+    void verifyCreateVisitorReply(
             api::ReturnCode::Result expectedResult,
             int checkStatsDocsVisited = -1,
-            int checkStatsBytesVisited = -1);
+            int checkStatsBytesVisited = -1,
+            uint64_t* message_id_out = nullptr);
     void getMessagesAndReply(
             int expectedCount,
             TestVisitorMessageSession& session,
@@ -134,18 +99,17 @@ public:
             api::ReturnCode::Result returnCode = api::ReturnCode::OK);
     uint32_t getMatchingDocuments(std::vector<document::Document::SP >& docs);
 
-private:
+protected:
     void doTestVisitorInstanceHasConsistencyLevel(
             vespalib::stringref visitorType,
             spi::ReadConsistency expectedConsistency);
 
     template <typename T>
-    std::vector<std::shared_ptr<T> >
-    fetchMultipleCommands(DummyStorageLink& link, size_t count);
+    void fetchMultipleCommands(DummyStorageLink& link, size_t count,
+                               std::vector<std::shared_ptr<T>>& commands_out);
 
     template <typename T>
-    std::shared_ptr<T>
-    fetchSingleCommand(DummyStorageLink& link);
+    void fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_out);
 
     void sendGetIterReply(GetIterCommand& cmd,
                           const api::ReturnCode& result =
@@ -153,8 +117,9 @@ private:
                           uint32_t maxDocuments = 0,
                           bool overrideCompleted = false);
     void sendCreateIteratorReply(uint64_t iteratorId = 1234);
-    std::shared_ptr<api::CreateVisitorReply> doCompleteVisitingSession(
-            const std::shared_ptr<api::CreateVisitorCommand>& cmd);
+    void doCompleteVisitingSession(
+            const std::shared_ptr<api::CreateVisitorCommand>& cmd,
+            std::shared_ptr<api::CreateVisitorReply>& reply_out);
 
     void sendInitialCreateVisitorAndGetIterRound();
 
@@ -170,8 +135,6 @@ private:
 };
 
 uint32_t VisitorTest::docCount = 10;
-
-CPPUNIT_TEST_SUITE_REGISTRATION(VisitorTest);
 
 void
 VisitorTest::initializeTest(const TestParams& params)
@@ -192,26 +155,23 @@ VisitorTest::initializeTest(const TestParams& params)
     vespalib::mkdir(vespalib::make_string("%s/disks/d0", rootFolder.c_str()), true);
     vespalib::mkdir(vespalib::make_string("%s/disks/d1", rootFolder.c_str()), true);
 
-    try {
-        _messageSessionFactory.reset(
-                new TestVisitorMessageSessionFactory(config.getConfigId()));
-        if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
-            _messageSessionFactory->_autoReplyError = params._autoReplyError;
-            _messageSessionFactory->_createAutoReplyVisitorSessions = true;
-        }
-        _node.reset(new TestServiceLayerApp(config.getConfigId()));
-        _top.reset(new DummyStorageLink());
-        _top->push_back(std::unique_ptr<StorageLink>(_manager
-                = new VisitorManager(
-                    config.getConfigId(),
-                    _node->getComponentRegister(), *_messageSessionFactory)));
-        _bottom = new DummyStorageLink();
-        _top->push_back(std::unique_ptr<StorageLink>(_bottom));
-        _manager->setTimeBetweenTicks(10);
-        _top->open();
-    } catch (config::InvalidConfigException& e) {
-        fprintf(stderr, "%s\n", e.what());
+    _messageSessionFactory.reset(
+            new TestVisitorMessageSessionFactory(config.getConfigId()));
+    if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
+        _messageSessionFactory->_autoReplyError = params._autoReplyError;
+        _messageSessionFactory->_createAutoReplyVisitorSessions = true;
     }
+    _node.reset(new TestServiceLayerApp(config.getConfigId()));
+    _top.reset(new DummyStorageLink());
+    _top->push_back(std::unique_ptr<StorageLink>(_manager
+            = new VisitorManager(
+                config.getConfigId(),
+                _node->getComponentRegister(), *_messageSessionFactory)));
+    _bottom = new DummyStorageLink();
+    _top->push_back(std::unique_ptr<StorageLink>(_bottom));
+    _manager->setTimeBetweenTicks(10);
+    _top->open();
+
     std::string content(
             "To be, or not to be: that is the question:\n"
             "Whether 'tis nobler in the mind to suffer\n"
@@ -263,16 +223,16 @@ VisitorTest::initializeTest(const TestParams& params)
 }
 
 void
-VisitorTest::tearDown()
+VisitorTest::TearDown()
 {
-    if (_top.get() != 0) {
+    if (_top) {
         _top->close();
         _top->flush();
-        _top.reset(0);
+        _top.reset();
     }
-    _node.reset(0);
-    _messageSessionFactory.reset(0);
-    _manager = 0;
+    _node.reset();
+    _messageSessionFactory.reset();
+    _manager = nullptr;
 }
 
 bool
@@ -310,7 +270,7 @@ VisitorTest::getSession(uint32_t n)
         }
         std::this_thread::sleep_for(10ms);
     }
-    throw std::logic_error("unreachable");
+    abort();
 }
 
 void
@@ -327,10 +287,10 @@ VisitorTest::getMessagesAndReply(
         mbus::Reply::UP reply;
         {
             vespalib::MonitorGuard guard(session.getMonitor());
-            CPPUNIT_ASSERT(!session.sentMessages.empty());
+            ASSERT_FALSE(session.sentMessages.empty());
             std::unique_ptr<documentapi::DocumentMessage> msg(std::move(session.sentMessages.front()));
             session.sentMessages.pop_front();
-            CPPUNIT_ASSERT(msg->getPriority() < 16);
+            ASSERT_LT(msg->getPriority(), 16);
 
             switch (msg->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
@@ -361,35 +321,37 @@ VisitorTest::getMessagesAndReply(
     }
 }
 
-uint64_t
+void
 VisitorTest::verifyCreateVisitorReply(
         api::ReturnCode::Result expectedResult,
         int checkStatsDocsVisited,
-        int checkStatsBytesVisited)
+        int checkStatsBytesVisited,
+        uint64_t* message_id_out)
 {
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
-    CPPUNIT_ASSERT_EQUAL(1, (int)replies.size());
+    ASSERT_EQ(1, replies.size());
 
     std::shared_ptr<api::StorageMessage> msg(replies[0]);
 
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
+    ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
 
-    std::shared_ptr<api::CreateVisitorReply> reply(
-            std::dynamic_pointer_cast<api::CreateVisitorReply>(msg));
-    CPPUNIT_ASSERT(reply.get());
-    CPPUNIT_ASSERT_EQUAL(expectedResult, reply->getResult().getResult());
+    auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
+    ASSERT_TRUE(reply.get());
+    ASSERT_EQ(expectedResult, reply->getResult().getResult());
 
     if (checkStatsDocsVisited >= 0) {
-        CPPUNIT_ASSERT_EQUAL(checkStatsDocsVisited,
-                             int(reply->getVisitorStatistics().getDocumentsVisited()));
+        ASSERT_EQ(checkStatsDocsVisited,
+                  reply->getVisitorStatistics().getDocumentsVisited());
     }
     if (checkStatsBytesVisited >= 0) {
-        CPPUNIT_ASSERT_EQUAL(checkStatsBytesVisited,
-                             int(reply->getVisitorStatistics().getBytesVisited()));
+        ASSERT_EQ(checkStatsBytesVisited,
+                  reply->getVisitorStatistics().getBytesVisited());
     }
 
-    return reply->getMsgId();
+    if (message_id_out) {
+        *message_id_out = reply->getMsgId();
+    }
 }
 
 uint32_t
@@ -423,12 +385,11 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
     assert(maxDocuments < _documents.size());
     size_t documentCount = maxDocuments != 0 ? maxDocuments : _documents.size();
     for (size_t i = 0; i < documentCount; ++i) {
-        reply->getEntries().push_back(
-                spi::DocEntry::UP(
-                        new spi::DocEntry(
+        reply->getEntries().emplace_back(
+                        std::make_unique<spi::DocEntry>(
                                 spi::Timestamp(1000 + i),
                                 spi::NONE,
-                                document::Document::UP(_documents[i]->clone()))));
+                                document::Document::UP(_documents[i]->clone())));
     }
     if (documentCount == _documents.size() || overrideCompleted) {
         reply->setCompleted();
@@ -437,12 +398,13 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
 }
 
 template <typename T>
-std::vector<std::shared_ptr<T> >
-VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count)
+void
+VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count,
+                                   std::vector<std::shared_ptr<T>>& commands_out)
 {
     link.waitForMessages(count, 60);
     std::vector<api::StorageMessage::SP> msgs(link.getCommandsOnce());
-    std::vector<std::shared_ptr<T> > fetched;
+    std::vector<std::shared_ptr<T>> fetched;
     if (msgs.size() != count) {
         std::ostringstream oss;
         oss << "Expected "
@@ -453,38 +415,38 @@ VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count)
         for (size_t i = 0; i < msgs.size(); ++i) {
             oss << i << ": " << *msgs[i] << "\n";
         }
-        CPPUNIT_FAIL(oss.str());
+        FAIL() << oss.str();
     }
     for (size_t i = 0; i < count; ++i) {
-        std::shared_ptr<T> ret(std::dynamic_pointer_cast<T>(msgs[i]));
+        auto ret = std::dynamic_pointer_cast<T>(msgs[i]);
         if (!ret) {
             std::ostringstream oss;
             oss << "Expected message of type "
                 << typeid(T).name()
                 << ", but got "
                 << msgs[0]->toString();
-            CPPUNIT_FAIL(oss.str());
+            FAIL() << oss.str();
         }
         fetched.push_back(ret);
     }
-    return fetched;
+    commands_out = std::move(fetched);
 }
 
 template <typename T>
-std::shared_ptr<T>
-VisitorTest::fetchSingleCommand(DummyStorageLink& link)
+void
+VisitorTest::fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_out)
 {
-    std::vector<std::shared_ptr<T> > ret(
-            fetchMultipleCommands<T>(link, 1));
-    return ret[0];
+    std::vector<std::shared_ptr<T>> ret;
+    ASSERT_NO_FATAL_FAILURE(fetchMultipleCommands<T>(link, 1, ret));
+    msg_out = std::move(ret[0]);
 }
 
 std::shared_ptr<api::CreateVisitorCommand>
 VisitorTest::makeCreateVisitor(const VisitorOptions& options)
 {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            new api::CreateVisitorCommand(makeBucketSpace(), options.visitorType, "testvis", ""));
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(
+            makeBucketSpace(), options.visitorType, "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->setAddress(address);
     cmd->setMaximumPendingReplyCount(UINT32_MAX);
@@ -496,35 +458,29 @@ VisitorTest::makeCreateVisitor(const VisitorOptions& options)
 void
 VisitorTest::sendCreateIteratorReply(uint64_t iteratorId)
 {
-    CreateIteratorCommand::SP createCmd(
-            fetchSingleCommand<CreateIteratorCommand>(*_bottom));
+    CreateIteratorCommand::SP createCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<CreateIteratorCommand>(*_bottom, createCmd));
     spi::IteratorId id(iteratorId);
-    api::StorageReply::SP reply(
-            new CreateIteratorReply(*createCmd, id));
+    auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     _bottom->sendUp(reply);
 }
 
-void
-VisitorTest::testNormalUsage()
-{
-    initializeTest();
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+TEST_F(VisitorTest, normal_usage) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
 
-    CreateIteratorCommand::SP createCmd(
-            fetchSingleCommand<CreateIteratorCommand>(*_bottom));
-    CPPUNIT_ASSERT_EQUAL(static_cast<int>(DefaultPriority),
-                         static_cast<int>(createCmd->getPriority())); // Inherit pri
+    CreateIteratorCommand::SP createCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<CreateIteratorCommand>(*_bottom, createCmd));
+    ASSERT_EQ(static_cast<int>(DefaultPriority),
+              static_cast<int>(createCmd->getPriority())); // Inherit pri
     spi::IteratorId id(1234);
-    api::StorageReply::SP reply(
-            new CreateIteratorReply(*createCmd, id));
+    auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     _bottom->sendUp(reply);
 
-    GetIterCommand::SP getIterCmd(
-            fetchSingleCommand<GetIterCommand>(*_bottom));
-    CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                         getIterCmd->getIteratorId());
+    GetIterCommand::SP getIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
+    ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
 
     sendGetIterReply(*getIterCmd);
 
@@ -532,76 +488,64 @@ VisitorTest::testNormalUsage()
     std::vector<document::DocumentId> docIds;
     std::vector<std::string> infoMessages;
     getMessagesAndReply(_documents.size(), getSession(0), docs, docIds, infoMessages);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), docIds.size());
+    ASSERT_EQ(0, infoMessages.size());
+    ASSERT_EQ(0, docIds.size());
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::OK);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
-    CPPUNIT_ASSERT_EQUAL(INT64_C(0), getFailedVisitorDestinationReplyCount());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
+    ASSERT_EQ(0, getFailedVisitorDestinationReplyCount());
 }
 
-void
-VisitorTest::testFailedCreateIterator()
-{
-    initializeTest();
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+TEST_F(VisitorTest, failed_create_iterator) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    auto cmd = makeCreateVisitor();
     cmd->addBucketToBeVisited(document::BucketId(16, 4));
     _top->sendDown(cmd);
 
-    CreateIteratorCommand::SP createCmd(
-            fetchSingleCommand<CreateIteratorCommand>(*_bottom));
+    CreateIteratorCommand::SP createCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<CreateIteratorCommand>(*_bottom, createCmd));
     spi::IteratorId id(0);
-    api::StorageReply::SP reply(
-            new CreateIteratorReply(*createCmd, id));
+    auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     reply->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE));
     _bottom->sendUp(reply);
 
-    verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE, 0, 0);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE, 0, 0));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::testFailedGetIter()
-{
-    initializeTest();
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+TEST_F(VisitorTest, failed_get_iter) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
-    GetIterCommand::SP getIterCmd(
-            fetchSingleCommand<GetIterCommand>(*_bottom));
-    CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                         getIterCmd->getIteratorId());
+    GetIterCommand::SP getIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
+    ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
 
     sendGetIterReply(*getIterCmd,
                      api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::BUCKET_NOT_FOUND, 0, 0);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUCKET_NOT_FOUND, 0, 0));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::testDocumentAPIClientError()
-{
+TEST_F(VisitorTest, document_api_client_error) {
     initializeTest();
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+    auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
     {
-        GetIterCommand::SP getIterCmd(
-                fetchSingleCommand<GetIterCommand>(*_bottom));
-        CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                             getIterCmd->getIteratorId());
+        GetIterCommand::SP getIterCmd;
+        ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
+        ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
 
         sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK), 1);
     }
@@ -612,40 +556,36 @@ VisitorTest::testDocumentAPIClientError()
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::INTERNAL_FAILURE);
     // INTERNAL_FAILURE is critical, so no visitor info sent
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    ASSERT_EQ(0, infoMessages.size());
 
     std::this_thread::sleep_for(100ms);
 
     {
-        GetIterCommand::SP getIterCmd(
-                fetchSingleCommand<GetIterCommand>(*_bottom));
-        CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                             getIterCmd->getIteratorId());
+        GetIterCommand::SP getIterCmd;
+        ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
+        ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
 
         sendGetIterReply(*getIterCmd);
     }
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::testNoDocumentAPIResendingForFailedVisitor()
-{
-    initializeTest();
+TEST_F(VisitorTest, no_document_api_resending_for_failed_visitor) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
     std::shared_ptr<api::CreateVisitorCommand> cmd(
             makeCreateVisitor());
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
     {
-        GetIterCommand::SP getIterCmd(
-                fetchSingleCommand<GetIterCommand>(*_bottom));
-        CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                             getIterCmd->getIteratorId());
+        GetIterCommand::SP getIterCmd;
+        ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
+        ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
 
         sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK), 2, true);
     }
@@ -658,50 +598,44 @@ VisitorTest::testNoDocumentAPIResendingForFailedVisitor()
     // should cause the entire visitor to fail.
     getMessagesAndReply(3, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::NOT_CONNECTED);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), infoMessages.size());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[From content node 0] NOT_CONNECTED: Generic error"),
-            infoMessages[0]);
+    ASSERT_EQ(1, infoMessages.size());
+    EXPECT_EQ("[From content node 0] NOT_CONNECTED: Generic error",
+              infoMessages[0]);
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::NOT_CONNECTED);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
-    CPPUNIT_ASSERT_EQUAL(INT64_C(3), getFailedVisitorDestinationReplyCount());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::NOT_CONNECTED));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
+    ASSERT_EQ(3, getFailedVisitorDestinationReplyCount());
 }
 
-void
-VisitorTest::testIteratorCreatedForFailedVisitor()
-{
+TEST_F(VisitorTest, iterator_created_for_failed_visitor) {
     initializeTest(TestParams().parallelBuckets(2));
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+    auto cmd = makeCreateVisitor();
     cmd->addBucketToBeVisited(document::BucketId(16, 4));
     _top->sendDown(cmd);
 
-    std::vector<CreateIteratorCommand::SP> createCmds(
-            fetchMultipleCommands<CreateIteratorCommand>(*_bottom, 2));
+    std::vector<CreateIteratorCommand::SP> createCmds;
+    ASSERT_NO_FATAL_FAILURE(fetchMultipleCommands<CreateIteratorCommand>(*_bottom, 2, createCmds));
     {
         spi::IteratorId id(0);
-        api::StorageReply::SP reply(
-                new CreateIteratorReply(*createCmds[0], id));
+        auto reply = std::make_shared<CreateIteratorReply>(*createCmds[0], id);
         reply->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE));
         _bottom->sendUp(reply);
     }
     {
         spi::IteratorId id(1234);
-        api::StorageReply::SP reply(
-                new CreateIteratorReply(*createCmds[1], id));
+        auto reply = std::make_shared<CreateIteratorReply>(*createCmds[1], id);
         _bottom->sendUp(reply);
     }
     // Want to immediately receive destroyiterator for newly created
     // iterator, since we cannot use it anyway when the visitor has failed.
-    DestroyIteratorCommand::SP destroyCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyCmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE, 0, 0);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE, 0, 0));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
 /**
@@ -710,62 +644,55 @@ VisitorTest::testIteratorCreatedForFailedVisitor()
  * and the visitor terminates cleanly without counting the failed message
  * as pending.
  */
-void
-VisitorTest::testFailedDocumentAPISend()
-{
-    initializeTest(TestParams().autoReplyError(
+TEST_F(VisitorTest, failed_document_api_send) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest(TestParams().autoReplyError(
                 mbus::Error(mbus::ErrorCode::HANDSHAKE_FAILED,
-                    "abandon ship!")));
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+                    "abandon ship!"))));
+    auto cmd = makeCreateVisitor();
     cmd->addBucketToBeVisited(document::BucketId(16, 4));
     _top->sendDown(cmd);
 
     sendCreateIteratorReply();
-    GetIterCommand::SP getIterCmd(
-            fetchSingleCommand<GetIterCommand>(*_bottom));
-    CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                         getIterCmd->getIteratorId());
+    GetIterCommand::SP getIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
+    ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
     sendGetIterReply(*getIterCmd,
                      api::ReturnCode(api::ReturnCode::OK),
                      2,
                      true);
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    verifyCreateVisitorReply(
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(
             static_cast<api::ReturnCode::Result>(
                     mbus::ErrorCode::HANDSHAKE_FAILED),
             0,
-            0);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+            0));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
     // We currently don't count failures to send in this metric; send failures
     // indicate a message bus problem and already log a warning when they happen
-    CPPUNIT_ASSERT_EQUAL(INT64_C(0), getFailedVisitorDestinationReplyCount());
+    ASSERT_EQ(0, getFailedVisitorDestinationReplyCount());
 }
 
 void
 VisitorTest::sendInitialCreateVisitorAndGetIterRound()
 {
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+    auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
     {
-        GetIterCommand::SP getIterCmd(
-                fetchSingleCommand<GetIterCommand>(*_bottom));
+        GetIterCommand::SP getIterCmd;
+        ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
         sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK),
                          1, true);
     }
 }
 
-void
-VisitorTest::testNoVisitorNotificationForTransientFailures()
-{
-    initializeTest();
-    sendInitialCreateVisitorAndGetIterRound();
+TEST_F(VisitorTest, no_visitor_notification_for_transient_failures) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    ASSERT_NO_FATAL_FAILURE(sendInitialCreateVisitorAndGetIterRound());
 
     std::vector<document::Document::SP> docs;
     std::vector<document::DocumentId> docIds;
@@ -776,41 +703,40 @@ VisitorTest::testNoVisitorNotificationForTransientFailures()
     // Should not get info message for BUCKET_DELETED, but resend of Put.
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::BUCKET_DELETED);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    ASSERT_EQ(0, infoMessages.size());
     // Should not get info message for BUCKET_NOT_FOUND, but resend of Put.
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::BUCKET_NOT_FOUND);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    ASSERT_EQ(0, infoMessages.size());
     // MessageBus error codes guaranteed to fit in return code result.
     // Should not get info message for SESSION_BUSY, but resend of Put.
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         static_cast<api::ReturnCode::Result>(
                                 mbus::ErrorCode::SESSION_BUSY));
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    ASSERT_EQ(0, infoMessages.size());
     // WRONG_DISTRIBUTION should not be reported, as it will happen all the
     // time when initiating remote migrations et al.
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::WRONG_DISTRIBUTION);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    ASSERT_EQ(0, infoMessages.size());
 
     // Complete message successfully to finish the visitor.
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::OK);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+    ASSERT_EQ(0, infoMessages.size());
 
-    fetchSingleCommand<DestroyIteratorCommand>(*_bottom);
+    DestroyIteratorCommand::SP cmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, cmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::OK);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::testNotificationSentIfTransientErrorRetriedManyTimes()
-{
+TEST_F(VisitorTest, notification_sent_if_transient_error_retried_many_times) {
     constexpr size_t retries(
         Visitor::TRANSIENT_ERROR_RETRIES_BEFORE_NOTIFY);
 
-    initializeTest();
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
     sendInitialCreateVisitorAndGetIterRound();
 
     std::vector<document::Document::SP> docs;
@@ -822,31 +748,33 @@ VisitorTest::testNotificationSentIfTransientErrorRetriedManyTimes()
     for (size_t attempt = 0; attempt < retries; ++attempt) {
         getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                             api::ReturnCode::WRONG_DISTRIBUTION);
-        CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
+        ASSERT_EQ(0, infoMessages.size());
     }
     // Should now have a client notification along for the ride.
     // This has to be ACKed as OK or the visitor will fail.
     getMessagesAndReply(2, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::OK);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), infoMessages.size());
+    ASSERT_EQ(1, infoMessages.size());
     // TODO(vekterli) ideally we'd want to test that this happens only once
     // per message, but this seems frustratingly complex to do currently.
-    fetchSingleCommand<DestroyIteratorCommand>(*_bottom);
+    DestroyIteratorCommand::SP cmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, cmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::OK);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-std::shared_ptr<api::CreateVisitorReply>
+void
 VisitorTest::doCompleteVisitingSession(
-        const std::shared_ptr<api::CreateVisitorCommand>& cmd)
+        const std::shared_ptr<api::CreateVisitorCommand>& cmd,
+        std::shared_ptr<api::CreateVisitorReply>& reply_out)
 {
     initializeTest();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
-    GetIterCommand::SP getIterCmd(
-            fetchSingleCommand<GetIterCommand>(*_bottom));
+    GetIterCommand::SP getIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
     sendGetIterReply(*getIterCmd,
                      api::ReturnCode(api::ReturnCode::OK),
                      1,
@@ -857,50 +785,44 @@ VisitorTest::doCompleteVisitingSession(
     std::vector<std::string> infoMessages;
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages);
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
-    CPPUNIT_ASSERT_EQUAL(size_t(1), replies.size());
+    ASSERT_EQ(1, replies.size());
 
     std::shared_ptr<api::StorageMessage> msg(replies[0]);
 
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::VISITOR_CREATE_REPLY,
-                         msg->getType());
-    return std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
+    ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
+    reply_out = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
 }
 
-void
-VisitorTest::testNoMbusTracingIfTraceLevelIsZero()
-{
+TEST_F(VisitorTest, no_mbus_tracing_if_trace_level_is_zero) {
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(0);
-    auto reply = doCompleteVisitingSession(cmd);
-    CPPUNIT_ASSERT(reply->getTrace().getRoot().isEmpty());
+    std::shared_ptr<api::CreateVisitorReply> reply;
+    ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
+    EXPECT_TRUE(reply->getTrace().getRoot().isEmpty());
 }
 
-void
-VisitorTest::testReplyContainsTraceIfTraceLevelAboveZero()
-{
+TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(1);
-    auto reply = doCompleteVisitingSession(cmd);
-    CPPUNIT_ASSERT(!reply->getTrace().getRoot().isEmpty());
+    std::shared_ptr<api::CreateVisitorReply> reply;
+    ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
+    EXPECT_FALSE(reply->getTrace().getRoot().isEmpty());
 }
 
-void
-VisitorTest::testNoMoreIteratorsSentWhileMemoryUsedAboveLimit()
-{
+TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {
     initializeTest(TestParams().maxVisitorMemoryUsage(1)
                                .parallelBuckets(1));
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+    auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
-    GetIterCommand::SP getIterCmd(
-            fetchSingleCommand<GetIterCommand>(*_bottom));
+    GetIterCommand::SP getIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
     sendGetIterReply(*getIterCmd,
                      api::ReturnCode(api::ReturnCode::OK),
                      1);
@@ -914,7 +836,7 @@ VisitorTest::testNoMoreIteratorsSentWhileMemoryUsedAboveLimit()
     // kind of explicit barrier with which we can synchronize the test and the
     // running visitor thread.
     std::this_thread::sleep_for(100ms);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _bottom->getNumCommands());
+    ASSERT_EQ(0, _bottom->getNumCommands());
 
     std::vector<document::Document::SP> docs;
     std::vector<document::DocumentId> docIds;
@@ -922,7 +844,7 @@ VisitorTest::testNoMoreIteratorsSentWhileMemoryUsedAboveLimit()
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages);
 
     // 2nd round of GetIter now allowed. Send reply indicating completion.
-    getIterCmd = fetchSingleCommand<GetIterCommand>(*_bottom);
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
     sendGetIterReply(*getIterCmd,
                      api::ReturnCode(api::ReturnCode::OK),
                      1,
@@ -930,11 +852,11 @@ VisitorTest::testNoMoreIteratorsSentWhileMemoryUsedAboveLimit()
 
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages);
 
-    DestroyIteratorCommand::SP destroyIterCmd(
-            fetchSingleCommand<DestroyIteratorCommand>(*_bottom));
+    DestroyIteratorCommand::SP destroyIterCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    verifyCreateVisitorReply(api::ReturnCode::OK);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
 void
@@ -942,19 +864,17 @@ VisitorTest::doTestVisitorInstanceHasConsistencyLevel(
         vespalib::stringref visitorType,
         spi::ReadConsistency expectedConsistency)
 {
-    initializeTest();
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
     std::shared_ptr<api::CreateVisitorCommand> cmd(
             makeCreateVisitor(VisitorOptions().withVisitorType(visitorType)));
     _top->sendDown(cmd);
 
-    auto createCmd = fetchSingleCommand<CreateIteratorCommand>(*_bottom);
-    CPPUNIT_ASSERT_EQUAL(expectedConsistency,
-                         createCmd->getReadConsistency());
+    CreateIteratorCommand::SP createCmd;
+    ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<CreateIteratorCommand>(*_bottom, createCmd));
+    ASSERT_EQ(expectedConsistency, createCmd->getReadConsistency());
 }
 
-void
-VisitorTest::testDumpVisitorInvokesStrongReadConsistencyIteration()
-{
+TEST_F(VisitorTest, dump_visitor_invokes_strong_read_consistency_iteration) {
     doTestVisitorInstanceHasConsistencyLevel(
             "dumpvisitor", spi::ReadConsistency::STRONG);
 }
@@ -965,9 +885,7 @@ VisitorTest::testDumpVisitorInvokesStrongReadConsistencyIteration()
 // any external client use cases. Our primary concern is to test that each
 // visitor subclass might report its own read consistency requirement and that
 // this is carried along to the CreateIteratorCommand.
-void
-VisitorTest::testTestVisitorInvokesWeakReadConsistencyIteration()
-{
+TEST_F(VisitorTest, test_visitor_invokes_weak_read_consistency_iteration) {
     doTestVisitorInstanceHasConsistencyLevel(
             "testvisitor", spi::ReadConsistency::WEAK);
 }

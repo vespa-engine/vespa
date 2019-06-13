@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <boost/lexical_cast.hpp>
-#include <cppunit/extensions/HelperMacros.h>
-#include <vespa/log/log.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/storageserver/bucketintegritychecker.h>
@@ -11,43 +8,26 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <tests/common/teststorageapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
-LOG_SETUP(".test.bucketintegritychecker");
+using namespace ::testing;
 
 namespace storage {
 
-struct BucketIntegrityCheckerTest : public CppUnit::TestFixture {
+struct BucketIntegrityCheckerTest : public Test {
     std::unique_ptr<vdstestlib::DirConfig> _config;
     std::unique_ptr<TestServiceLayerApp> _node;
     int _timeout; // Timeout in seconds before aborting
 
-    void setUp() override {
+    void SetUp() override {
         _timeout = 60*2;
-        _config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
-        _node.reset(new TestServiceLayerApp(DiskCount(256),
-                                            NodeIndex(0),
-                                            _config->getConfigId()));
+        _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true));
+        _node = std::make_unique<TestServiceLayerApp>(
+                DiskCount(256), NodeIndex(0), _config->getConfigId());
     }
-
-    void tearDown() override {
-        LOG(info, "Finished test");
-    }
-
-    void testConfig();
-    void testBasicFunctionality();
-    void testTiming();
-
-    CPPUNIT_TEST_SUITE(BucketIntegrityCheckerTest);
-    CPPUNIT_TEST(testConfig);
-    CPPUNIT_TEST(testBasicFunctionality);
-    CPPUNIT_TEST_SUITE_END();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketIntegrityCheckerTest);
-
-void BucketIntegrityCheckerTest::testConfig()
-{
-
+TEST_F(BucketIntegrityCheckerTest, config) {
     // Verify that config is read correctly. Given config should not use
     // any default values.
     vdstestlib::DirConfig::Config& config(
@@ -63,18 +43,18 @@ void BucketIntegrityCheckerTest::testConfig()
                                    _node->getComponentRegister());
     checker.setMaxThreadWaitTime(framework::MilliSecTime(10));
     SchedulingOptions& opt(checker.getSchedulingOptions());
-    CPPUNIT_ASSERT_EQUAL(60u, opt._dailyCycleStart);
-    CPPUNIT_ASSERT_EQUAL(360u, opt._dailyCycleStop);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::CONTINUE,  opt._dailyStates[0]);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::RUN_CHEAP, opt._dailyStates[1]);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::RUN_FULL,  opt._dailyStates[2]);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::CONTINUE,  opt._dailyStates[3]);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::DONT_RUN,  opt._dailyStates[4]);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::RUN_CHEAP, opt._dailyStates[5]);
-    CPPUNIT_ASSERT_EQUAL(SchedulingOptions::CONTINUE,  opt._dailyStates[6]);
-    CPPUNIT_ASSERT_EQUAL(2u, opt._maxPendingCount);
-    CPPUNIT_ASSERT_EQUAL(framework::SecondTime(7200), opt._minCycleTime);
-    CPPUNIT_ASSERT_EQUAL(framework::SecondTime(5), opt._requestDelay);
+    EXPECT_EQ(60u, opt._dailyCycleStart);
+    EXPECT_EQ(360u, opt._dailyCycleStop);
+    EXPECT_EQ(SchedulingOptions::CONTINUE,  opt._dailyStates[0]);
+    EXPECT_EQ(SchedulingOptions::RUN_CHEAP, opt._dailyStates[1]);
+    EXPECT_EQ(SchedulingOptions::RUN_FULL,  opt._dailyStates[2]);
+    EXPECT_EQ(SchedulingOptions::CONTINUE,  opt._dailyStates[3]);
+    EXPECT_EQ(SchedulingOptions::DONT_RUN,  opt._dailyStates[4]);
+    EXPECT_EQ(SchedulingOptions::RUN_CHEAP, opt._dailyStates[5]);
+    EXPECT_EQ(SchedulingOptions::CONTINUE,  opt._dailyStates[6]);
+    EXPECT_EQ(2u, opt._maxPendingCount);
+    EXPECT_EQ(framework::SecondTime(7200), opt._minCycleTime);
+    EXPECT_EQ(framework::SecondTime(5), opt._requestDelay);
 }
 
 namespace {
@@ -115,11 +95,11 @@ namespace {
         mytime.tm_min = 0;
         mytime.tm_sec = 0;
         time_t startTime = timegm(&mytime);
-        CPPUNIT_ASSERT(gmtime_r(&startTime, &mytime));
+        assert(gmtime_r(&startTime, &mytime));
         while (mytime.tm_wday != 0) {
             ++mytime.tm_mday;
             startTime = timegm(&mytime);
-            CPPUNIT_ASSERT(gmtime_r(&startTime, &mytime));
+            assert(gmtime_r(&startTime, &mytime));
         }
             // Add the wanted values to the start time
         time_t resultTime = startTime;
@@ -166,8 +146,18 @@ namespace {
     }
 }
 
-void BucketIntegrityCheckerTest::testBasicFunctionality()
-{
+#define ASSERT_COMMAND_COUNT(count, dummylink) \
+    { \
+        std::ostringstream msgost; \
+        if ((dummylink).getNumCommands() != count) { \
+            for (uint32_t ijx=0; ijx<(dummylink).getNumCommands(); ++ijx) { \
+                msgost << (dummylink).getCommand(ijx)->toString(true) << "\n"; \
+            } \
+        } \
+        ASSERT_EQ(size_t(count), (dummylink).getNumCommands()) << msgost.str(); \
+    }
+
+TEST_F(BucketIntegrityCheckerTest, basic_functionality) {
     _node->getClock().setAbsoluteTimeInSeconds(getDate("week1 sun 00:00:00"));
     addBucketsToDatabase(*_node, false);
     DummyStorageLink* dummyLink = 0;
@@ -193,91 +183,70 @@ void BucketIntegrityCheckerTest::testBasicFunctionality()
         dummyLink->waitForMessages(4, _timeout);
         FastOS_Thread::Sleep(10); // Give 5th message chance to come
         ASSERT_COMMAND_COUNT(4, *dummyLink);
-        RepairBucketCommand *cmd1 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(0).get());
-        CPPUNIT_ASSERT_EQUAL(230, (int)cmd1->getPriority());
-        CPPUNIT_ASSERT(cmd1);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x234),
-                             cmd1->getBucketId());
-        RepairBucketCommand *cmd2 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(1).get());
-        CPPUNIT_ASSERT(cmd2);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x456),
-                             cmd2->getBucketId());
-        RepairBucketCommand *cmd3 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(2).get());
-        CPPUNIT_ASSERT(cmd3);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x567),
-                             cmd3->getBucketId());
-        RepairBucketCommand *cmd4 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(3).get());
-        CPPUNIT_ASSERT(cmd4);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x987),
-                             cmd4->getBucketId());
+        auto* cmd1 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(0).get());
+        EXPECT_EQ(230, cmd1->getPriority());
+        ASSERT_TRUE(cmd1);
+        EXPECT_EQ(document::BucketId(16, 0x234), cmd1->getBucketId());
+        auto* cmd2 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(1).get());
+        ASSERT_TRUE(cmd2);
+        EXPECT_EQ(document::BucketId(16, 0x456), cmd2->getBucketId());
+        auto* cmd3 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(2).get());
+        ASSERT_TRUE(cmd3);
+        EXPECT_EQ(document::BucketId(16, 0x567), cmd3->getBucketId());
+        auto* cmd4 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(3).get());
+        ASSERT_TRUE(cmd4);
+        EXPECT_EQ(document::BucketId(16, 0x987), cmd4->getBucketId());
 
         // Answering a message on disk with no more buckets does not trigger new
-        std::shared_ptr<RepairBucketReply> reply1(
-                new RepairBucketReply(*cmd3));
-        CPPUNIT_ASSERT(checker.onUp(reply1));
+        auto reply1 = std::make_shared<RepairBucketReply>(*cmd3);
+        ASSERT_TRUE(checker.onUp(reply1));
         FastOS_Thread::Sleep(10); // Give next message chance to come
         ASSERT_COMMAND_COUNT(4, *dummyLink);
         // Answering a message on disk with more buckets trigger new repair
-        std::shared_ptr<RepairBucketReply> reply2(
-                new RepairBucketReply(*cmd2));
-        CPPUNIT_ASSERT(checker.onUp(reply2));
+        auto reply2 = std::make_shared<RepairBucketReply>(*cmd2);
+        ASSERT_TRUE(checker.onUp(reply2));
         dummyLink->waitForMessages(5, _timeout);
         FastOS_Thread::Sleep(10); // Give 6th message chance to come
         ASSERT_COMMAND_COUNT(5, *dummyLink);
-        RepairBucketCommand *cmd5 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(4).get());
-        CPPUNIT_ASSERT(cmd5);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x345),
-                             cmd5->getBucketId());
+        auto* cmd5 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(4).get());
+        ASSERT_TRUE(cmd5);
+        EXPECT_EQ(document::BucketId(16, 0x345), cmd5->getBucketId());
         // Fail a repair, causing it to be resent later, but first continue
         // with other bucket.
-        std::shared_ptr<RepairBucketReply> reply3(
-                new RepairBucketReply(*cmd1));
+        auto reply3 = std::make_shared<RepairBucketReply>(*cmd1);
         reply3->setResult(api::ReturnCode(api::ReturnCode::IGNORED));
-        CPPUNIT_ASSERT(checker.onUp(reply3));
+        ASSERT_TRUE(checker.onUp(reply3));
         dummyLink->waitForMessages(6, _timeout);
         FastOS_Thread::Sleep(10); // Give 7th message chance to come
         ASSERT_COMMAND_COUNT(6, *dummyLink);
-        RepairBucketCommand *cmd6 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(5).get());
-        CPPUNIT_ASSERT(cmd6);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x123),
-                             cmd6->getBucketId());
+        auto* cmd6 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(5).get());
+        ASSERT_TRUE(cmd6);
+        EXPECT_EQ(document::BucketId(16, 0x123), cmd6->getBucketId());
         // Fail a repair with not found. That is an acceptable return code.
         // (No more requests as this was last for that disk)
-        std::shared_ptr<RepairBucketReply> reply4(
-                new RepairBucketReply(*cmd4));
+        auto reply4 = std::make_shared<RepairBucketReply>(*cmd4);
         reply3->setResult(api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
-        CPPUNIT_ASSERT(checker.onUp(reply4));
+        ASSERT_TRUE(checker.onUp(reply4));
         FastOS_Thread::Sleep(10); // Give 7th message chance to come
         ASSERT_COMMAND_COUNT(6, *dummyLink);
 
         // Send a repair reply that actually have corrected the bucket.
         api::BucketInfo newInfo(0x3456, 4, 8192);
-        std::shared_ptr<RepairBucketReply> reply5(
-                new RepairBucketReply(*cmd5, newInfo));
+        auto reply5 = std::make_shared<RepairBucketReply>(*cmd5, newInfo);
         reply5->setAltered(true);
-        CPPUNIT_ASSERT(checker.onUp(reply5));
+        ASSERT_TRUE(checker.onUp(reply5));
 
         // Finish run. New iteration should not start yet as min
         // cycle time has not passed
-        std::shared_ptr<RepairBucketReply> reply6(
-                new RepairBucketReply(*cmd6));
-        CPPUNIT_ASSERT(checker.onUp(reply6));
+        auto reply6 = std::make_shared<RepairBucketReply>(*cmd6);
+        ASSERT_TRUE(checker.onUp(reply6));
         dummyLink->waitForMessages(7, _timeout);
         ASSERT_COMMAND_COUNT(7, *dummyLink);
-        RepairBucketCommand *cmd7 = dynamic_cast<RepairBucketCommand*>(
-                dummyLink->getCommand(6).get());
-        CPPUNIT_ASSERT(cmd7);
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x234),
-                             cmd7->getBucketId());
-        std::shared_ptr<RepairBucketReply> reply7(
-                new RepairBucketReply(*cmd7));
-        CPPUNIT_ASSERT(checker.onUp(reply7));
+        auto* cmd7 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(6).get());
+        ASSERT_TRUE(cmd7);
+        EXPECT_EQ(document::BucketId(16, 0x234), cmd7->getBucketId());
+        auto reply7 = std::make_shared<RepairBucketReply>(*cmd7);
+        ASSERT_TRUE(checker.onUp(reply7));
         FastOS_Thread::Sleep(10); // Give 8th message chance to come
         ASSERT_COMMAND_COUNT(7, *dummyLink);
 
