@@ -8,7 +8,7 @@
 #include <vespa/storage/storageserver/bucketintegritychecker.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/common/testhelper.h>
-#include <tests/common/storagelinktest.h>
+#include <tests/common/dummystoragelink.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <tests/common/teststorageapp.h>
 
@@ -218,13 +218,13 @@ void BucketIntegrityCheckerTest::testBasicFunctionality()
         // Answering a message on disk with no more buckets does not trigger new
         std::shared_ptr<RepairBucketReply> reply1(
                 new RepairBucketReply(*cmd3));
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply1));
+        CPPUNIT_ASSERT(checker.onUp(reply1));
         FastOS_Thread::Sleep(10); // Give next message chance to come
         ASSERT_COMMAND_COUNT(4, *dummyLink);
         // Answering a message on disk with more buckets trigger new repair
         std::shared_ptr<RepairBucketReply> reply2(
                 new RepairBucketReply(*cmd2));
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply2));
+        CPPUNIT_ASSERT(checker.onUp(reply2));
         dummyLink->waitForMessages(5, _timeout);
         FastOS_Thread::Sleep(10); // Give 6th message chance to come
         ASSERT_COMMAND_COUNT(5, *dummyLink);
@@ -238,7 +238,7 @@ void BucketIntegrityCheckerTest::testBasicFunctionality()
         std::shared_ptr<RepairBucketReply> reply3(
                 new RepairBucketReply(*cmd1));
         reply3->setResult(api::ReturnCode(api::ReturnCode::IGNORED));
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply3));
+        CPPUNIT_ASSERT(checker.onUp(reply3));
         dummyLink->waitForMessages(6, _timeout);
         FastOS_Thread::Sleep(10); // Give 7th message chance to come
         ASSERT_COMMAND_COUNT(6, *dummyLink);
@@ -252,7 +252,7 @@ void BucketIntegrityCheckerTest::testBasicFunctionality()
         std::shared_ptr<RepairBucketReply> reply4(
                 new RepairBucketReply(*cmd4));
         reply3->setResult(api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply4));
+        CPPUNIT_ASSERT(checker.onUp(reply4));
         FastOS_Thread::Sleep(10); // Give 7th message chance to come
         ASSERT_COMMAND_COUNT(6, *dummyLink);
 
@@ -261,13 +261,13 @@ void BucketIntegrityCheckerTest::testBasicFunctionality()
         std::shared_ptr<RepairBucketReply> reply5(
                 new RepairBucketReply(*cmd5, newInfo));
         reply5->setAltered(true);
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply5));
+        CPPUNIT_ASSERT(checker.onUp(reply5));
 
         // Finish run. New iteration should not start yet as min
         // cycle time has not passed
         std::shared_ptr<RepairBucketReply> reply6(
                 new RepairBucketReply(*cmd6));
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply6));
+        CPPUNIT_ASSERT(checker.onUp(reply6));
         dummyLink->waitForMessages(7, _timeout);
         ASSERT_COMMAND_COUNT(7, *dummyLink);
         RepairBucketCommand *cmd7 = dynamic_cast<RepairBucketCommand*>(
@@ -277,7 +277,7 @@ void BucketIntegrityCheckerTest::testBasicFunctionality()
                              cmd7->getBucketId());
         std::shared_ptr<RepairBucketReply> reply7(
                 new RepairBucketReply(*cmd7));
-        CPPUNIT_ASSERT(StorageLinkTest::callOnUp(checker, reply7));
+        CPPUNIT_ASSERT(checker.onUp(reply7));
         FastOS_Thread::Sleep(10); // Give 8th message chance to come
         ASSERT_COMMAND_COUNT(7, *dummyLink);
 

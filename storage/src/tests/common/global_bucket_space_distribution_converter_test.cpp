@@ -1,37 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config/config.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+using namespace ::testing;
 
 namespace storage {
-
-struct GlobalBucketSpaceDistributionConverterTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(GlobalBucketSpaceDistributionConverterTest);
-    CPPUNIT_TEST(can_transform_flat_cluster_config);
-    CPPUNIT_TEST(can_transform_single_level_multi_group_config);
-    CPPUNIT_TEST(can_transform_multi_level_multi_group_config);
-    CPPUNIT_TEST(can_transform_heterogenous_multi_group_config);
-    CPPUNIT_TEST(can_transform_concrete_distribution_instance);
-    CPPUNIT_TEST(config_retired_state_is_propagated);
-    CPPUNIT_TEST(group_capacities_are_propagated);
-    CPPUNIT_TEST(global_distribution_has_same_owner_distributors_as_default);
-    CPPUNIT_TEST(can_generate_config_with_legacy_partition_spec);
-    CPPUNIT_TEST_SUITE_END();
-
-    void can_transform_flat_cluster_config();
-    void can_transform_single_level_multi_group_config();
-    void can_transform_multi_level_multi_group_config();
-    void can_transform_heterogenous_multi_group_config();
-    void can_transform_concrete_distribution_instance();
-    void config_retired_state_is_propagated();
-    void group_capacities_are_propagated();
-    void global_distribution_has_same_owner_distributors_as_default();
-    void can_generate_config_with_legacy_partition_spec();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(GlobalBucketSpaceDistributionConverterTest);
 
 using DistributionConfig = vespa::config::content::StorDistributionConfig;
 
@@ -77,12 +53,12 @@ disk_distribution MODULO_BID
 
 }
 
-void GlobalBucketSpaceDistributionConverterTest::can_transform_flat_cluster_config() {
-    CPPUNIT_ASSERT_EQUAL(expected_flat_global_config, default_to_global_config(default_flat_config));
+TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_flat_cluster_config) {
+    EXPECT_EQ(expected_flat_global_config, default_to_global_config(default_flat_config));
 }
 
 
-void GlobalBucketSpaceDistributionConverterTest::can_transform_single_level_multi_group_config() {
+TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_single_level_multi_group_config) {
     vespalib::string default_config(
 R"(redundancy 2
 group[3]
@@ -143,10 +119,10 @@ group[2].nodes[2].index 5
 group[2].nodes[2].retired false
 disk_distribution MODULO_BID
 )");
-    CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
+    EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
 
-void GlobalBucketSpaceDistributionConverterTest::can_transform_multi_level_multi_group_config() {
+TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_multi_level_multi_group_config) {
     vespalib::string default_config(
 R"(redundancy 2
 group[5]
@@ -226,13 +202,13 @@ group[6].nodes[0].index 3
 group[6].nodes[0].retired false
 disk_distribution MODULO_BID
 )");
-    CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
+    EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
 
 // FIXME partition specs are order-invariant with regards to groups, so heterogenous
 // setups will not produce the expected replica distribution.
 // TODO Consider disallowing entirely when using global docs.
-void GlobalBucketSpaceDistributionConverterTest::can_transform_heterogenous_multi_group_config() {
+TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_heterogenous_multi_group_config) {
     vespalib::string default_config(
 R"(redundancy 2
 ready_copies 2
@@ -279,17 +255,17 @@ group[2].nodes[0].index 2
 group[2].nodes[0].retired false
 disk_distribution MODULO_BID
 )");
-    CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
+    EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
 
-void GlobalBucketSpaceDistributionConverterTest::can_transform_concrete_distribution_instance() {
+TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_concrete_distribution_instance) {
     auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_flat_config);
     lib::Distribution flat_distr(*default_cfg);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(flat_distr);
-    CPPUNIT_ASSERT_EQUAL(expected_flat_global_config, global_distr->serialize());
+    EXPECT_EQ(expected_flat_global_config, global_distr->serialize());
 }
 
-void GlobalBucketSpaceDistributionConverterTest::config_retired_state_is_propagated() {
+TEST(GlobalBucketSpaceDistributionConverterTest, config_retired_state_is_propagated) {
     vespalib::string default_config(
 R"(redundancy 1
 group[1]
@@ -308,14 +284,14 @@ group[0].nodes[2].retired true
     auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
 
-    CPPUNIT_ASSERT_EQUAL(size_t(1), as_global->group.size());
-    CPPUNIT_ASSERT_EQUAL(size_t(3), as_global->group[0].nodes.size());
-    CPPUNIT_ASSERT_EQUAL(false, as_global->group[0].nodes[0].retired);
-    CPPUNIT_ASSERT_EQUAL(true, as_global->group[0].nodes[1].retired);
-    CPPUNIT_ASSERT_EQUAL(true, as_global->group[0].nodes[2].retired);
+    ASSERT_EQ(1, as_global->group.size());
+    ASSERT_EQ(3, as_global->group[0].nodes.size());
+    EXPECT_FALSE(as_global->group[0].nodes[0].retired);
+    EXPECT_TRUE(as_global->group[0].nodes[1].retired);
+    EXPECT_TRUE(as_global->group[0].nodes[2].retired);
 }
 
-void GlobalBucketSpaceDistributionConverterTest::group_capacities_are_propagated() {
+TEST(GlobalBucketSpaceDistributionConverterTest, group_capacities_are_propagated) {
     vespalib::string default_config(
 R"(redundancy 2
 group[3]
@@ -338,13 +314,13 @@ group[2].nodes[0].index 1
     auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
 
-    CPPUNIT_ASSERT_EQUAL(size_t(3), as_global->group.size());
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(5.0, as_global->group[0].capacity, 0.00001);
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.0, as_global->group[1].capacity, 0.00001);
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(3.0, as_global->group[2].capacity, 0.00001);
+    ASSERT_EQ(3, as_global->group.size());
+    EXPECT_DOUBLE_EQ(5.0, as_global->group[0].capacity);
+    EXPECT_DOUBLE_EQ(2.0, as_global->group[1].capacity);
+    EXPECT_DOUBLE_EQ(3.0, as_global->group[2].capacity);
 }
 
-void GlobalBucketSpaceDistributionConverterTest::global_distribution_has_same_owner_distributors_as_default() {
+TEST(GlobalBucketSpaceDistributionConverterTest, global_distribution_has_same_owner_distributors_as_default) {
     vespalib::string default_config(
 R"(redundancy 2
 ready_copies 2
@@ -375,13 +351,13 @@ group[2].nodes[1].index 2
         document::BucketId bucket(16, i);
         const auto default_index = default_distr.getIdealDistributorNode(state, bucket, "ui");
         const auto global_index = global_distr.getIdealDistributorNode(state, bucket, "ui");
-        CPPUNIT_ASSERT_EQUAL(default_index, global_index);
+        ASSERT_EQ(default_index, global_index);
     }
 }
 
 // By "legacy" read "broken", but we need to be able to generate it to support rolling upgrades properly.
 // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-void GlobalBucketSpaceDistributionConverterTest::can_generate_config_with_legacy_partition_spec() {
+TEST(GlobalBucketSpaceDistributionConverterTest, can_generate_config_with_legacy_partition_spec) {
     vespalib::string default_config(
 R"(redundancy 2
 group[3]
@@ -436,7 +412,7 @@ group[2].nodes[2].index 5
 group[2].nodes[2].retired false
 disk_distribution MODULO_BID
 )");
-    CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config, true));
+    EXPECT_EQ(expected_global_config, default_to_global_config(default_config, true));
 }
 
 }

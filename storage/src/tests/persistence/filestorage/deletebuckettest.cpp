@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/log/log.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -14,26 +13,15 @@ using document::test::makeDocumentBucket;
 
 namespace storage {
 
-class DeleteBucketTest : public FileStorTestFixture
-{
-public:
-    void testDeleteAbortsOperationsForBucket();
-
-    CPPUNIT_TEST_SUITE(DeleteBucketTest);
-    CPPUNIT_TEST(testDeleteAbortsOperationsForBucket);
-    CPPUNIT_TEST_SUITE_END();
+struct DeleteBucketTest : FileStorTestFixture {
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(DeleteBucketTest);
-
-void
-DeleteBucketTest::testDeleteAbortsOperationsForBucket()
-{
-    TestFileStorComponents c(*this, "testDeleteAbortsOperationsForBucket");
+TEST_F(DeleteBucketTest, delete_aborts_operations_for_bucket) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(16, 1);
 
     createBucket(bucket);
-    LOG(info, "TEST STAGE: taking resume guard");
+    LOG(debug, "TEST STAGE: taking resume guard");
     {
         ResumeGuard rg(c.manager->getFileStorHandler().pause());
         // First put may or may not be queued, since pausing might race with
@@ -51,7 +39,7 @@ DeleteBucketTest::testDeleteAbortsOperationsForBucket()
         // with having to check that _at least_ 1 reply had BUCKET_DELETED. Joy!
         c.top.waitForMessages(2, 60 * 2);
         std::vector <api::StorageMessage::SP> msgs(c.top.getRepliesOnce());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), msgs.size());
+        ASSERT_EQ(2, msgs.size());
         int numDeleted = 0;
         for (uint32_t i = 0; i < 2; ++i) {
             api::StorageReply& reply(dynamic_cast<api::StorageReply&>(*msgs[i]));
@@ -59,8 +47,8 @@ DeleteBucketTest::testDeleteAbortsOperationsForBucket()
                 ++numDeleted;
             }
         }
-        CPPUNIT_ASSERT(numDeleted >= 1);
-        LOG(info, "TEST STAGE: done, releasing resume guard");
+        ASSERT_GE(numDeleted, 1);
+        LOG(debug, "TEST STAGE: done, releasing resume guard");
     }
     // Ensure we don't shut down persistence threads before DeleteBucket op has completed
     c.top.waitForMessages(1, 60*2);

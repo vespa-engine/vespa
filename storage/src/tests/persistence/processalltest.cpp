@@ -2,44 +2,20 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/processallhandler.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/loadtypes/loadtype.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-class ProcessAllHandlerTest : public SingleDiskPersistenceTestUtils
-{
-    CPPUNIT_TEST_SUITE(ProcessAllHandlerTest);
-    CPPUNIT_TEST(testRemoveLocation);
-    CPPUNIT_TEST(testRemoveLocationDocumentSubset);
-    CPPUNIT_TEST(testRemoveLocationUnknownDocType);
-    CPPUNIT_TEST(testRemoveLocationBogusSelection);
-    CPPUNIT_TEST(testStat);
-    CPPUNIT_TEST(testStatWithRemove);
-    CPPUNIT_TEST(testStatWholeBucket);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
-    void testRemoveLocation();
-    void testRemoveLocationDocumentSubset();
-    void testRemoveLocationUnknownDocType();
-    void testRemoveLocationEmptySelection();
-    void testRemoveLocationBogusSelection();
-    void testStat();
-    void testStatWithRemove();
-    void testStatWholeBucket();
+class ProcessAllHandlerTest : public SingleDiskPersistenceTestUtils {
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(ProcessAllHandlerTest);
-
-void
-ProcessAllHandlerTest::testRemoveLocation()
-{
+TEST_F(ProcessAllHandlerTest, remove_location) {
     document::BucketId bucketId(16, 4);
     doPut(4, spi::Timestamp(1234));
     doPut(4, spi::Timestamp(2345));
@@ -49,16 +25,12 @@ ProcessAllHandlerTest::testRemoveLocation()
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     handler.handleRemoveLocation(removeLocation, context);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "DocEntry(1234, 1, id:mail:testdoctype1:n=4:3619.html)\n"
-                    "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n"),
-            dumpBucket(bucketId));
+    EXPECT_EQ("DocEntry(1234, 1, id:mail:testdoctype1:n=4:3619.html)\n"
+              "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n",
+              dumpBucket(bucketId));
 }
 
-void
-ProcessAllHandlerTest::testRemoveLocationDocumentSubset()
-{
+TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
     document::BucketId bucketId(16, 4);
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
 
@@ -74,70 +46,49 @@ ProcessAllHandlerTest::testRemoveLocationDocumentSubset()
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     handler.handleRemoveLocation(removeLocation, context);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("DocEntry(100, 1, id:mail:testdoctype1:n=4:3619.html)\n"
-                        "DocEntry(101, 0, Doc(id:mail:testdoctype1:n=4:33113.html))\n"
-                        "DocEntry(102, 1, id:mail:testdoctype1:n=4:62608.html)\n"
-                        "DocEntry(103, 0, Doc(id:mail:testdoctype1:n=4:26566.html))\n"
-                        "DocEntry(104, 1, id:mail:testdoctype1:n=4:56061.html)\n"
-                        "DocEntry(105, 0, Doc(id:mail:testdoctype1:n=4:20019.html))\n"
-                        "DocEntry(106, 1, id:mail:testdoctype1:n=4:49514.html)\n"
-                        "DocEntry(107, 0, Doc(id:mail:testdoctype1:n=4:13472.html))\n"
-                        "DocEntry(108, 1, id:mail:testdoctype1:n=4:42967.html)\n"
-                        "DocEntry(109, 0, Doc(id:mail:testdoctype1:n=4:6925.html))\n"),
-            dumpBucket(bucketId));
+    EXPECT_EQ("DocEntry(100, 1, id:mail:testdoctype1:n=4:3619.html)\n"
+              "DocEntry(101, 0, Doc(id:mail:testdoctype1:n=4:33113.html))\n"
+              "DocEntry(102, 1, id:mail:testdoctype1:n=4:62608.html)\n"
+              "DocEntry(103, 0, Doc(id:mail:testdoctype1:n=4:26566.html))\n"
+              "DocEntry(104, 1, id:mail:testdoctype1:n=4:56061.html)\n"
+              "DocEntry(105, 0, Doc(id:mail:testdoctype1:n=4:20019.html))\n"
+              "DocEntry(106, 1, id:mail:testdoctype1:n=4:49514.html)\n"
+              "DocEntry(107, 0, Doc(id:mail:testdoctype1:n=4:13472.html))\n"
+              "DocEntry(108, 1, id:mail:testdoctype1:n=4:42967.html)\n"
+              "DocEntry(109, 0, Doc(id:mail:testdoctype1:n=4:6925.html))\n",
+              dumpBucket(bucketId));
 }
 
-void
-ProcessAllHandlerTest::testRemoveLocationUnknownDocType()
-{
+TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_type) {
     document::BucketId bucketId(16, 4);
     doPut(4, spi::Timestamp(1234));
 
     api::RemoveLocationCommand
         removeLocation("unknowndoctype.headerval % 2 == 0", makeDocumentBucket(bucketId));
 
-    bool gotException = false;
-    try {
-        ProcessAllHandler handler(getEnv(), getPersistenceProvider());
-        spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
-        handler.handleRemoveLocation(removeLocation, context);
-    } catch (...) {
-        gotException = true;
-    }
-    CPPUNIT_ASSERT(gotException);
+    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
+    ASSERT_THROW(handler.handleRemoveLocation(removeLocation, context), std::exception);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n"),
-            dumpBucket(bucketId));
+    EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
+              dumpBucket(bucketId));
 }
 
-void
-ProcessAllHandlerTest::testRemoveLocationBogusSelection()
-{
+TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_bogus_selection) {
     document::BucketId bucketId(16, 4);
     doPut(4, spi::Timestamp(1234));
 
     api::RemoveLocationCommand removeLocation("id.bogus != badgers", makeDocumentBucket(bucketId));
 
-    bool gotException = false;
-    try {
-        ProcessAllHandler handler(getEnv(), getPersistenceProvider());
-        spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
-        handler.handleRemoveLocation(removeLocation, context);
-    } catch (...) {
-        gotException = true;
-    }
-    CPPUNIT_ASSERT(gotException);
+    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
+    ASSERT_THROW(handler.handleRemoveLocation(removeLocation, context), std::exception);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n"),
-            dumpBucket(bucketId));
+    EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
+              dumpBucket(bucketId));
 }
 
-void
-ProcessAllHandlerTest::testStat()
-{
+TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matching_selection) {
     document::BucketId bucketId(16, 4);
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
 
@@ -153,10 +104,9 @@ ProcessAllHandlerTest::testStat()
         spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
-    CPPUNIT_ASSERT(tracker->getReply().get());
-    api::StatBucketReply& reply =
-        dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, reply.getResult().getResult());
+    ASSERT_TRUE(tracker->getReply().get());
+    auto& reply = dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
+    EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
         "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
@@ -167,12 +117,10 @@ ProcessAllHandlerTest::testStat()
         "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 206\n";
 
 
-    CPPUNIT_ASSERT_EQUAL(expected, reply.getResults());
+    EXPECT_EQ(expected, reply.getResults());
 }
 
-void
-ProcessAllHandlerTest::testStatWithRemove()
-{
+TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) {
     document::BucketId bucketId(16, 4);
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
 
@@ -191,10 +139,9 @@ ProcessAllHandlerTest::testStatWithRemove()
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
-    CPPUNIT_ASSERT(tracker->getReply().get());
-    api::StatBucketReply& reply =
-        dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, reply.getResult().getResult());
+    ASSERT_TRUE(tracker->getReply().get());
+    auto& reply = dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
+    EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
         "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
@@ -219,13 +166,11 @@ ProcessAllHandlerTest::testStatWithRemove()
         "  Timestamp: 208, id:mail:testdoctype1:n=4:42967.html, gid(0x04000000f19ece1668e6de48) (remove)\n"
         "  Timestamp: 209, id:mail:testdoctype1:n=4:6925.html, gid(0x04000000667c0b3cada830be) (remove)\n";
 
-    CPPUNIT_ASSERT_EQUAL(expected, reply.getResults());
+    EXPECT_EQ(expected, reply.getResults());
 }
 
-
-void
-ProcessAllHandlerTest::testStatWholeBucket()
-{
+// TODO is this test neccessary? Seems to not test anything more than the above tests
+TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_bucket) {
     document::BucketId bucketId(16, 4);
     ProcessAllHandler handler(getEnv(), getPersistenceProvider());
 
@@ -240,10 +185,9 @@ ProcessAllHandlerTest::testStatWholeBucket()
     spi::Context context(documentapi::LoadType::DEFAULT, 0, 0);
     MessageTracker::UP tracker = handler.handleStatBucket(statBucket, context);
 
-    CPPUNIT_ASSERT(tracker->getReply().get());
-    api::StatBucketReply& reply =
-        dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, reply.getResult().getResult());
+    ASSERT_TRUE(tracker->getReply().get());
+    auto& reply = dynamic_cast<api::StatBucketReply&>(*tracker->getReply().get());
+    EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
 
     vespalib::string expected =
         "Persistence bucket BucketId(0x4000000000000004), partition 0\n"
@@ -258,7 +202,7 @@ ProcessAllHandlerTest::testStatWholeBucket()
         "  Timestamp: 108, Doc(id:mail:testdoctype1:n=4:42967.html), gid(0x04000000f19ece1668e6de48), size: 206\n"
         "  Timestamp: 109, Doc(id:mail:testdoctype1:n=4:6925.html), gid(0x04000000667c0b3cada830be), size: 130\n";
 
-    CPPUNIT_ASSERT_EQUAL(expected, reply.getResults());
+    EXPECT_EQ(expected, reply.getResults());
 }
 
 }

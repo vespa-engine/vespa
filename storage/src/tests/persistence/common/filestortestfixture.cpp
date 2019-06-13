@@ -34,7 +34,7 @@ FileStorTestFixture::setupPersistenceThreads(uint32_t threads)
 
 // Default provider setup which should work out of the box for most tests.
 void
-FileStorTestFixture::setUp()
+FileStorTestFixture::SetUp()
 {
     setupPersistenceThreads(1);
     _node->setPersistenceProvider(
@@ -42,7 +42,7 @@ FileStorTestFixture::setUp()
 }
 
 void
-FileStorTestFixture::tearDown()
+FileStorTestFixture::TearDown()
 {
     _node.reset();
 }
@@ -73,10 +73,8 @@ FileStorTestFixture::bucketExistsInDb(const document::BucketId& bucket) const
 
 FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
         FileStorTestFixture& fixture,
-        const char* testName,
         const StorageLinkInjector& injector)
-    : _testName(testName),
-      _fixture(fixture),
+    : _fixture(fixture),
       manager(new FileStorManager(fixture._config->getConfigId(),
                                   fixture._node->getPartitions(),
                                   fixture._node->getPersistenceProvider(),
