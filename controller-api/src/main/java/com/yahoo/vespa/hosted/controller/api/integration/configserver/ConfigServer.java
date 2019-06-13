@@ -31,7 +31,7 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
+    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames, byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 

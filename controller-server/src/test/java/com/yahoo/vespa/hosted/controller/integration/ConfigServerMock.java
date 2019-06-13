@@ -59,7 +59,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
-    private final Map<DeploymentId, Set<String>> rotationCnames = new HashMap<>();
+    private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -180,8 +180,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         warnings.put(deployment, List.copyOf(logs));
     }
 
-    public Map<DeploymentId, Set<String>> rotationCnames() {
-        return Collections.unmodifiableMap(rotationCnames);
+    public Map<DeploymentId, Set<String>> rotationNames() {
+        return Collections.unmodifiableMap(rotationNames);
     }
 
     @Override
@@ -223,8 +223,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
-                                       Set<String> rotationNames, byte[] content) {
+    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
@@ -236,7 +235,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
-        this.rotationCnames.put(deployment, Set.copyOf(rotationCnames));
+        this.rotationNames.put(deployment, Set.copyOf(rotationNames));
 
         return new PreparedApplication() {
 
