@@ -55,7 +55,6 @@ protected:
     Vector _vector;
     HashMap _dimMap; // dimension -> component
 public:
-    VectorBase(const VectorBase & rhs);
     VectorBase(VectorBase && rhs) = default;
     VectorBase & operator = (VectorBase && rhs) = default;
     ~VectorBase();
@@ -122,11 +121,11 @@ public:
     using AT = multivalue::WeightedValue<BaseType>;
     using V  = VectorBase<BaseType, BaseType, feature_t>;
 private:
-    V                                         _queryVector;
-    const typename V::HashMap::const_iterator _end;
+    const V                                    & _queryVector;
+    const typename V::HashMap::const_iterator    _end;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
 public:
-    DotProductExecutorBase(V queryVector);
+    DotProductExecutorBase(const V & queryVector);
     ~DotProductExecutorBase() override;
     void execute(uint32_t docId) override;
 };
@@ -139,9 +138,11 @@ public:
 protected:
     const A * _attribute;
 private:
+    std::unique_ptr<V> _backing;
     size_t getAttributeValues(uint32_t docid, const AT * & count) override;
 public:
-    DotProductExecutor(const A * attribute, V queryVector);
+    DotProductExecutor(const A * attribute, const V & queryVector);
+    DotProductExecutor(const A * attribute, std::unique_ptr<V> queryVector);
     ~DotProductExecutor();
 };
 
@@ -153,12 +154,13 @@ template <typename Vector, typename Buffer>
 class DotProductExecutorByCopy final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector *            _attribute;
-    Vector                                         _queryVector;
+    const Vector &                                 _queryVector;
     const typename Vector::HashMap::const_iterator _end;
     Buffer                                         _buffer;
-
+    std::unique_ptr<Vector>                        _backing;
 public:
-    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, Vector queryVector);
+    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, const Vector & queryVector);
+    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, std::unique_ptr<Vector> queryVector);
     ~DotProductExecutorByCopy() override;
     void execute(uint32_t docId) override;
 };
