@@ -65,6 +65,18 @@ TEST_F(Bm25BlueprintTest, blueprint_setup_fails_when_parameter_list_is_not_valid
     expect_setup_fail({"is", "ia"}); // wrong parameter number
 }
 
+TEST_F(Bm25BlueprintTest, blueprint_setup_fails_when_k1_param_is_malformed)
+{
+    index_env.getProperties().add("bm25(is).k1", "malformed");
+    expect_setup_fail({"is"});
+}
+
+TEST_F(Bm25BlueprintTest, blueprint_setup_fails_when_b_param_is_malformed)
+{
+    index_env.getProperties().add("bm25(is).b", "malformed");
+    expect_setup_fail({"is"});
+}
+
 TEST_F(Bm25BlueprintTest, blueprint_setup_succeeds_for_index_field)
 {
     expect_setup_succeed({"is"});
@@ -82,10 +94,29 @@ TEST_F(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_
     EXPECT_DOUBLE_EQ(10, as_value<double>(*store.get("bm25.afl.is")));
 }
 
+struct Scorer {
+
+    double avg_field_length;
+    double k1_param;
+    double b_param;
+
+    Scorer() :
+        avg_field_length(10),
+        k1_param(1.2),
+        b_param(0.75)
+    {}
+
+    feature_t score(feature_t num_occs, feature_t field_length, double inverse_doc_freq) const {
+        return inverse_doc_freq * (num_occs * (1 + k1_param)) /
+                (num_occs + (k1_param * ((1 - b_param) + b_param * field_length / avg_field_length)));
+    }
+};
+
 struct Bm25ExecutorTest : public ::testing::Test {
     BlueprintFactory factory;
     FtFeatureTest test;
     test::MatchDataBuilder::UP match_data;
+    Scorer scorer;
     static constexpr uint32_t total_doc_count = 100;
 
     Bm25ExecutorTest()
@@ -132,9 +163,8 @@ struct Bm25ExecutorTest : public ::testing::Test {
         return Bm25Executor::calculate_inverse_document_frequency(matching_doc_count, total_doc_count);
     }
 
-    feature_t get_score(feature_t num_occs, feature_t field_length,
-                        double inverse_doc_freq, double avg_field_length = 10) const {
-        return inverse_doc_freq * (num_occs * 2.2) / (num_occs + (1.2 * (0.25 + 0.75 * field_length / avg_field_length)));
+    feature_t score(feature_t num_occs, feature_t field_length, double inverse_doc_freq) const {
+        return scorer.score(num_occs, field_length, inverse_doc_freq);
     }
 };
 
@@ -142,7 +172,7 @@ TEST_F(Bm25ExecutorTest, score_is_calculated_for_a_single_term)
 {
     setup();
     prepare_term(0, 0, 3, 20);
-    EXPECT_TRUE(execute(get_score(3.0, 20, idf(25))));
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
 TEST_F(Bm25ExecutorTest, score_is_calculated_for_multiple_terms)
@@ -150,7 +180,7 @@ TEST_F(Bm25ExecutorTest, score_is_calculated_for_multiple_terms)
     setup();
     prepare_term(0, 0, 3, 20);
     prepare_term(1, 0, 7, 5);
-    EXPECT_TRUE(execute(get_score(3.0, 20, idf(25)) + get_score(7.0, 5.0, idf(35))));
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25)) + score(7.0, 5.0, idf(35))));
 }
 
 TEST_F(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored)
@@ -159,7 +189,7 @@ TEST_F(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored)
     prepare_term(0, 0, 3, 20);
     uint32_t unmatched_doc_id = 123;
     prepare_term(1, 0, 7, 5, unmatched_doc_id);
-    EXPECT_TRUE(execute(get_score(3.0, 20, idf(25))));
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
 TEST_F(Bm25ExecutorTest, term_searching_another_field_is_ignored)
@@ -174,7 +204,8 @@ TEST_F(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found)
     test.getQueryEnv().getObjectStore().add("bm25.afl.foo", std::make_unique<AnyWrapper<double>>(15));
     setup();
     prepare_term(0, 0, 3, 20);
-    EXPECT_TRUE(execute(get_score(3.0, 20, idf(25), 15)));
+    scorer.avg_field_length = 15;
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
 TEST_F(Bm25ExecutorTest, calculates_inverse_document_frequency)
@@ -185,6 +216,24 @@ TEST_F(Bm25ExecutorTest, calculates_inverse_document_frequency)
                      Bm25Executor::calculate_inverse_document_frequency(40, 100));
     EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)),
                      Bm25Executor::calculate_inverse_document_frequency(100, 100));
+}
+
+TEST_F(Bm25ExecutorTest, k1_param_can_be_overriden)
+{
+    test.getIndexEnv().getProperties().add("bm25(foo).k1", "2.5");
+    setup();
+    prepare_term(0, 0, 3, 20);
+    scorer.k1_param = 2.5;
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
+}
+
+TEST_F(Bm25ExecutorTest, b_param_can_be_overriden)
+{
+    test.getIndexEnv().getProperties().add("bm25(foo).b", "0.9");
+    setup();
+    prepare_term(0, 0, 3, 20);
+    scorer.b_param = 0.9;
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

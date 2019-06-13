@@ -31,7 +31,9 @@ private:
 public:
     Bm25Executor(const fef::FieldInfo& field,
                  const fef::IQueryEnvironment& env,
-                 double avg_field_length);
+                 double avg_field_length,
+                 double k1_param,
+                 double b_param);
 
     double static calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count);
 
@@ -46,6 +48,10 @@ public:
 class Bm25Blueprint : public fef::Blueprint {
 private:
     const fef::FieldInfo* _field;
+    double _k1_param;
+    double _b_param;
+
+    bool lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const;
 
 public:
     Bm25Blueprint();
