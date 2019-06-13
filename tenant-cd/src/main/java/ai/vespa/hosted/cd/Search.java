@@ -9,6 +9,14 @@ import java.util.Map;
  */
 public class Search {
 
+    private final String raw;
+
+    public Search(String raw) {
+        this.raw = raw;
+    }
+
+    public String rawOutput() { return raw; }
+
     // hits
     // coverage
     // searched
