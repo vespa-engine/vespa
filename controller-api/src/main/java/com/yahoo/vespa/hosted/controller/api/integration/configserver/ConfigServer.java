@@ -26,8 +26,8 @@ public interface ConfigServer {
 
     interface PreparedApplication {
         // TODO: Remove the two methods below
-        void activate();
-        List<Log> messages();
+        default void activate() {}
+        default List<Log> messages() { return List.of(); }
         PrepareResponse prepareResponse();
     }
 
