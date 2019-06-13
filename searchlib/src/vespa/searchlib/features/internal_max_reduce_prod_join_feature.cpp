@@ -137,7 +137,7 @@ bool supportsGetRawValues(const A &attr) noexcept {
 
 template<typename BaseType, typename V>
 FeatureExecutor &
-selectTypedExecutor(const IAttributeVector *attribute, V vector, vespalib::Stash &stash) {
+selectTypedExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &stash) {
     if (!attribute->isImported()) {
         using A = IntegerAttributeTemplate<BaseType>;
         using VT = multivalue::Value<BaseType>;
@@ -147,22 +147,22 @@ selectTypedExecutor(const IAttributeVector *attribute, V vector, vespalib::Stash
         if (supportsGetRawValues(*iattr)) {
             const ExactA *exactA = dynamic_cast<const ExactA *>(iattr);
             if (exactA != nullptr) {
-                return stash.create<RawExecutor<BaseType>>(attribute, std::move(vector));
+                return stash.create<RawExecutor<BaseType>>(attribute, std::forward<V>(vector));
             }
         }
     }
-    return stash.create<BufferedExecutor<BaseType>>(attribute, std::move(vector));
+    return stash.create<BufferedExecutor<BaseType>>(attribute, std::forward<V>(vector));
 }
 
 template<typename V>
 FeatureExecutor &
-selectExecutor(const IAttributeVector *attribute, V vector, vespalib::Stash &stash) {
+selectExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &stash) {
     if (attribute->getCollectionType() == CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
-                return selectTypedExecutor<int32_t, V>(attribute, std::move(vector), stash);
+                return selectTypedExecutor<int32_t, V>(attribute, std::forward<V>(vector), stash);
             case BasicType::INT64:
-                return selectTypedExecutor<int64_t, V>(attribute, std::move(vector), stash);
+                return selectTypedExecutor<int64_t, V>(attribute, std::forward<V>(vector), stash);
             default:
                 break;
         }
