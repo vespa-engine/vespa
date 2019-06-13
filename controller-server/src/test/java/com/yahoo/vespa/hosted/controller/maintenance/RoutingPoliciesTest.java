@@ -202,6 +202,7 @@ public class RoutingPoliciesTest {
     public void cluster_endpoints_resolve_from_policies() {
         provisionLoadBalancers(3, app1.id(), zone1);
         tester.deployCompletely(app1, applicationPackage);
+        tester.controllerTester().routingGenerator().putEndpoints(new DeploymentId(app1.id(), zone1), Collections.emptyList());
         assertEquals(Map.of(ClusterSpec.Id.from("c0"),
                             URI.create("https://c0.app1.tenant1.us-west-1.vespa.oath.cloud/"),
                             ClusterSpec.Id.from("c1"),
