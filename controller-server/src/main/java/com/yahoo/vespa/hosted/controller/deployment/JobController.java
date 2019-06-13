@@ -410,7 +410,7 @@ public class JobController {
     Optional<URI> testerEndpoint(RunId id) {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
         return controller.applications().getDeploymentEndpoints(testerId)
-                         .flatMap(uris -> uris.stream().findAny())
+                         .stream().findAny()
                          .or(() -> controller.applications().routingPolicies().get(testerId).stream()
                                              .findAny()
                                              .map(policy -> policy.endpointIn(controller.system()).url()));

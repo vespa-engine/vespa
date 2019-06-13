@@ -525,27 +525,27 @@ public class ApplicationController {
     }
 
     /** Returns the endpoints of the deployment, or empty if the request fails */
-    public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
+    public List<URI> getDeploymentEndpoints(DeploymentId deploymentId) {
         if ( ! get(deploymentId.applicationId())
                 .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
                 .orElse(deploymentId.applicationId().instance().isTester()))
             throw new NotExistsException("Deployment", deploymentId.toString());
 
         try {
-            return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                                                    .map(RoutingEndpoint::endpoint)
-                                                                    .map(URI::create)
-                                                                    .iterator()));
+            return ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
+                                                        .map(RoutingEndpoint::endpoint)
+                                                        .map(URI::create)
+                                                        .iterator());
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
                                    + Exceptions.toMessageString(e));
-            return Optional.empty();
+            return Collections.emptyList();
         }
     }
 
     /** Returns the non-empty endpoints per cluster in the given deployment, or empty if endpoints can't be found. */
-    public Optional<Map<ClusterSpec.Id, URI>> clusterEndpoints(DeploymentId id) {
+    public Map<ClusterSpec.Id, URI> clusterEndpoints(DeploymentId id) {
         if ( ! get(id.applicationId())
                 .map(application -> application.deployments().containsKey(id.zoneId()))
                 .orElse(id.applicationId().instance().isTester()))
@@ -558,21 +558,23 @@ public class ApplicationController {
                                                     .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
                                                     .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
                                                                                           policy -> policy.endpointIn(controller.system()).url())))
-                           .or(() -> Optional.of(routingGenerator.clusterEndpoints(id)))
-                           .filter(endpoints -> ! endpoints.isEmpty());
+                           .orElseGet(() -> routingGenerator.clusterEndpoints(id));
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": "
                                    + Exceptions.toMessageString(e));
-            return Optional.empty();
+            return Collections.emptyMap();
         }
     }
 
     /** Returns all zone-specific cluster endpoints for the given application, in the given zones. */
     public Map<ZoneId, Map<ClusterSpec.Id, URI>> clusterEndpoints(ApplicationId id, Collection<ZoneId> zones) {
         Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments = new TreeMap<>(Comparator.comparing(ZoneId::value));
-        for (ZoneId zone : zones)
-            clusterEndpoints(new DeploymentId(id, zone)).ifPresent(endpoints -> deployments.put(zone, endpoints));
+        for (ZoneId zone : zones) {
+            var endpoints = clusterEndpoints(new DeploymentId(id, zone));
+            if ( ! endpoints.isEmpty())
+                deployments.put(zone, endpoints);
+        }
         return Collections.unmodifiableMap(deployments);
     }
 
