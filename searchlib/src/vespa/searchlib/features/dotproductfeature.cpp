@@ -32,6 +32,9 @@ template <typename DimensionVType, typename DimensionHType, typename ComponentTy
 VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() = default;
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
+VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::VectorBase(const VectorBase &) = default;
+
+template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
 VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator> &
 VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::syncMap() {
     Converter<DimensionVType, DimensionHType> conv;
@@ -43,7 +46,8 @@ VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::sy
     return *this;
 }
 
-template VectorBase<int64_t, int64_t, double> & VectorBase<int64_t, int64_t, double>::syncMap();
+template class VectorBase<int64_t, int64_t, double>;
+template class IntegerVectorT<int64_t>;
 
 
 template <typename Vector, typename Buffer>

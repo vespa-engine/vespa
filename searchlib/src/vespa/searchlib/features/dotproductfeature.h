@@ -45,7 +45,7 @@ struct ArrayParam : public fef::Anything {
 namespace wset {
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator = std::equal_to<DimensionHType> >
-class VectorBase {
+class VectorBase : public fef::Anything {
 public:
     typedef std::pair<DimensionVType, ComponentType> Element; // <dimension, component>
     typedef std::vector<Element>                    Vector;
@@ -55,6 +55,7 @@ protected:
     Vector _vector;
     HashMap _dimMap; // dimension -> component
 public:
+    VectorBase(const VectorBase & rhs);
     VectorBase(VectorBase && rhs) = default;
     VectorBase & operator = (VectorBase && rhs) = default;
     ~VectorBase();
@@ -74,6 +75,9 @@ public:
         this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
     }
 };
+
+extern template class VectorBase<int64_t, int64_t, double>;
+extern template class IntegerVectorT<int64_t>;
 
 using IntegerVector = IntegerVectorT<int64_t>;
 
