@@ -2,6 +2,8 @@ package ai.vespa.hosted.cd;
 
 import ai.vespa.hosted.cd.metric.Metrics;
 
+import java.net.URI;
+
 /**
  * An endpoint in a Vespa application {@link Deployment}, which allows document and metrics retrieval.
  *
@@ -11,6 +13,8 @@ import ai.vespa.hosted.cd.metric.Metrics;
  * @author jonmv
  */
 public interface Endpoint {
+
+    URI uri();
 
     Search search(Query query);
 

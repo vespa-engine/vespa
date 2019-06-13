@@ -1,6 +1,6 @@
 package ai.vespa.hosted.cd.http;
 
-import ai.vespa.hosted.auth.Authenticator;
+import ai.vespa.hosted.api.EndpointAuthenticator;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
@@ -19,6 +19,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -34,11 +35,11 @@ public class HttpEndpoint implements TestEndpoint {
 
     private final URI endpoint;
     private final HttpClient client;
-    private final Authenticator authenticator;
+    private final EndpointAuthenticator authenticator;
 
-    public HttpEndpoint(URI endpoint) {
+    public HttpEndpoint(URI endpoint, EndpointAuthenticator authenticator) {
         this.endpoint = requireNonNull(endpoint);
-        this.authenticator = new Authenticator();
+        this.authenticator = requireNonNull(authenticator);
         this.client = HttpClient.newBuilder()
                                 .sslContext(authenticator.sslContext())
                                 .connectTimeout(Duration.ofSeconds(5))
@@ -52,14 +53,19 @@ public class HttpEndpoint implements TestEndpoint {
     }
 
     @Override
+    public URI uri() {
+        return endpoint;
+    }
+
+    @Override
     public Search search(Query query) {
         try {
             URI target = endpoint.resolve(searchApiPath).resolve("?" + query.rawQuery());
-            HttpRequest request = HttpRequest.newBuilder()
-                                             .timeout(query.timeout().orElse(Duration.ofMillis(500))
-                                                           .plus(Duration.ofSeconds(1)))
-                                             .uri(target)
-                                             .build();
+            HttpRequest request = authenticator.authenticated(HttpRequest.newBuilder()
+                                                                         .timeout(query.timeout().orElse(Duration.ofMillis(500))
+                                                                                       .plus(Duration.ofSeconds(1)))
+                                                                         .uri(target))
+                                               .build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() / 100 != 2) // TODO consider allowing 504 if specified.
                 throw new RuntimeException("Non-OK status code " + response.statusCode() + " at " + target +
@@ -73,9 +79,9 @@ public class HttpEndpoint implements TestEndpoint {
     }
 
     static Search toSearch(byte[] body) {
-        Inspector rootObject = new JsonDecoder().decode(new Slime(), body).get();
         // TODO jvenstad
-        return new Search();
+        // Inspector rootObject = new JsonDecoder().decode(new Slime(), body).get();
+        return new Search(new String(body, UTF_8));
     }
 
     @Override

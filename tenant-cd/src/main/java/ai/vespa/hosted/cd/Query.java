@@ -25,7 +25,7 @@ public class Query {
         this.parameters = parameters;
     }
 
-    /** Creates a query with the given raw query part. */
+    /** Creates a query with the given raw query part, e.g. {@code Query.ofRaw("yql=select * ...")}. */
     public static Query ofRaw(String rawQuery) {
         if (rawQuery.isBlank())
             throw new IllegalArgumentException("Query can not be blank.");
@@ -36,7 +36,7 @@ public class Query {
                                .collect(toUnmodifiableMap(pair -> pair[0], pair -> pair[1])));
     }
 
-    /** Creates a query with the given name-value pairs. */
+    /** Creates a query with the given name-value pairs, e.g. {@code Query.ofParameters(Map.of("yql", "select * ..."))}. */
     public static Query ofParameters(Map<String, String> parameters) {
         if (parameters.isEmpty())
             throw new IllegalArgumentException("Parameters can not be empty.");
