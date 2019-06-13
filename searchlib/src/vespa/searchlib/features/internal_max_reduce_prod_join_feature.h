@@ -26,7 +26,7 @@ class InternalMaxReduceProdJoinBlueprint : public fef::Blueprint {
 private:
     vespalib::string _attribute;
     vespalib::string _attrKey;  // Used for looking up the attribute in the ObjectStore.
-    vespalib::string _query;
+    vespalib::string _queryVector;
 
 public:
     InternalMaxReduceProdJoinBlueprint();

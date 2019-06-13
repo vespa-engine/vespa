@@ -133,7 +133,7 @@ InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const Pa
 {
     _attribute = params[0].getValue();
     _attrKey = createAttributeKey(_attribute);
-    _query = params[1].getValue();
+    _queryVector = params[1].getValue();
     describeOutput("scalar", "Internal executor for optimized execution of reduce(join(A,Q,f(x,y)(x*y)),max)");
     env.hintAttributeAccess(_attribute);
     return true;
@@ -204,7 +204,7 @@ InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env,
                 "returning executor with default value.", _attribute.c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
-    Property prop = env.getProperties().lookup(_query);
+    Property prop = env.getProperties().lookup(_queryVector);
     if (prop.found() && !prop.get().empty()) {
         IntegerVector vector;
         WeightedSetParser::parse(prop.get(), vector);

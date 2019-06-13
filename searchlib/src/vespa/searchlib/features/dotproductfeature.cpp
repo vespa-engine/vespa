@@ -351,51 +351,6 @@ size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint3
 
 }
 
-DotProductBlueprint::DotProductBlueprint() :
-    Blueprint("dotProduct"),
-    _defaultAttribute(),
-    _queryVector()
-{ }
-
-DotProductBlueprint::~DotProductBlueprint() = default;
-
-vespalib::string
-DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
-{
-    Property prop = env.getProperties().lookup(getBaseName(), _defaultAttribute + ".override.name");
-    if (prop.found() && !prop.get().empty()) {
-        return prop.get();
-    }
-    return _defaultAttribute;
-}
-
-void
-DotProductBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
-{
-}
-
-bool
-DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & params)
-{
-    _defaultAttribute = params[0].getValue();
-    _queryVector = params[1].getValue();
-    describeOutput("scalar", "The result after calculating the dot product of the vector represented by the weighted set "
-                             "and the vector sent down with the query");
-    env.hintAttributeAccess(_defaultAttribute);
-    return true;
-}
-
-ParameterDescriptions
-DotProductBlueprint::getDescriptions() const {
-    return ParameterDescriptions().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY).string();
-}
-
-Blueprint::UP
-DotProductBlueprint::createInstance() const
-{
-    return std::make_unique<DotProductBlueprint>();
-}
-
 namespace {
 
 template <typename T, typename AsT = T>
@@ -849,19 +804,66 @@ createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attrib
 
 }
 
+DotProductBlueprint::DotProductBlueprint() :
+    Blueprint("dotProduct"),
+    _defaultAttribute(),
+    _queryVector(),
+    _attrKey(),
+    _queryVectorKey()
+{ }
+
+DotProductBlueprint::~DotProductBlueprint() = default;
+
+vespalib::string
+DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
+{
+    Property prop = env.getProperties().lookup(getBaseName(), _defaultAttribute + ".override.name");
+    if (prop.found() && !prop.get().empty()) {
+        return prop.get();
+    }
+    return _defaultAttribute;
+}
+
+void
+DotProductBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
+{
+}
+
+bool
+DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & params)
+{
+    _defaultAttribute = params[0].getValue();
+    _queryVector = params[1].getValue();
+    _attrKey = make_attribute_key(getBaseName(), _defaultAttribute);
+    _queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
+    describeOutput("scalar", "The result after calculating the dot product of the vector represented by the weighted set "
+                             "and the vector sent down with the query");
+    env.hintAttributeAccess(_defaultAttribute);
+    return true;
+}
+
+ParameterDescriptions
+DotProductBlueprint::getDescriptions() const {
+    return ParameterDescriptions().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY).string();
+}
+
+Blueprint::UP
+DotProductBlueprint::createInstance() const
+{
+    return std::make_unique<DotProductBlueprint>();
+}
+
 void
 DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectStore & store) const
 {
-    vespalib::string attributeKey = make_attribute_key(getBaseName(), _defaultAttribute);
-    const IAttributeVector * attribute = lookupAndStoreAttribute(attributeKey, getAttribute(env), env, store);
+    const IAttributeVector * attribute = lookupAndStoreAttribute(_attrKey, getAttribute(env), env, store);
     if (attribute == nullptr) return;
 
-    vespalib::string queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
-    const fef::Anything * queryVector = env.getObjectStore().get(queryVectorKey);
+    const fef::Anything * queryVector = env.getObjectStore().get(_queryVectorKey);
     if (queryVector == nullptr) {
         fef::Anything::UP arguments = createQueryVector(env, attribute, getBaseName(), _queryVector);
         if (arguments) {
-            store.add(queryVectorKey, std::move(arguments));
+            store.add(_queryVectorKey, std::move(arguments));
         }
     }
 
@@ -872,7 +874,7 @@ FeatureExecutor &
 DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
     // Doing it "manually" here to avoid looking up attribute override unless needed.
-    const fef::Anything * attributeArg = env.getObjectStore().get(make_attribute_key(getBaseName(), _defaultAttribute));
+    const fef::Anything * attributeArg = env.getObjectStore().get(_attrKey);
     const IAttributeVector * attribute = (attributeArg != nullptr)
                                        ? static_cast<const fef::AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
                                        : env.getAttributeContext().getAttribute(getAttribute(env));
@@ -882,7 +884,7 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
         return stash.create<SingleZeroValueExecutor>();
     }
     attribute = upgradeIfNecessary(attribute, env);
-    const fef::Anything * queryVectorArg = env.getObjectStore().get(make_queryvector_key(getBaseName(), _queryVector));
+    const fef::Anything * queryVectorArg = env.getObjectStore().get(_queryVectorKey);
     if (queryVectorArg != nullptr) {
         return createFromObject(attribute, *queryVectorArg, stash);
     } else {
