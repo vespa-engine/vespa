@@ -756,7 +756,7 @@ public class RankProfile implements Serializable, Cloneable {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
                 Optional<Reference> feature = Reference.simple(field.getName());
-                if ( ! feature.isPresent() || ! feature.get().name().equals("query")) continue;
+                if ( feature.isEmpty() || ! feature.get().name().equals("query")) continue;
 
                 TensorType existingType = context.getType(feature.get());
                 if ( ! Objects.equals(existingType, context.defaultTypeOf(feature.get())))

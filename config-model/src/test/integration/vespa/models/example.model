@@ -19,7 +19,7 @@ model example {
     }
 
     function foo2() {
-        expression: max(sum(input1 * input2, name) * constant1asLarge, x) * constant2
+        expression: max(sum(input1 * input2, name) * constant(constant1asLarge), x) * constant2
     }
 
 }

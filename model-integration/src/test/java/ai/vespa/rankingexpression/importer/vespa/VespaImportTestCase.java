@@ -40,7 +40,7 @@ public class VespaImportTestCase {
         assertEquals(2, model.expressions().size());
         assertEquals("reduce(reduce(input1 * input2, sum, name) * constant1, max, x) * constant2",
                      model.expressions().get("foo1").getRoot().toString());
-        assertEquals("reduce(reduce(input1 * input2, sum, name) * constant1asLarge, max, x) * constant2",
+        assertEquals("reduce(reduce(input1 * input2, sum, name) * constant(constant1asLarge), max, x) * constant2",
                      model.expressions().get("foo2").getRoot().toString());
 
         List<ImportedMlFunction> functions = model.outputExpressions();
