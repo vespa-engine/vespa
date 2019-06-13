@@ -1,6 +1,6 @@
 package ai.vespa.hosted.cd.http;
 
-import ai.vespa.hosted.api.Authenticator;
+import ai.vespa.hosted.api.EndpointAuthenticator;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
@@ -34,9 +34,9 @@ public class HttpEndpoint implements TestEndpoint {
 
     private final URI endpoint;
     private final HttpClient client;
-    private final ai.vespa.hosted.api.Authenticator authenticator;
+    private final EndpointAuthenticator authenticator;
 
-    public HttpEndpoint(URI endpoint, Authenticator authenticator) {
+    public HttpEndpoint(URI endpoint, EndpointAuthenticator authenticator) {
         this.endpoint = requireNonNull(endpoint);
         this.authenticator = requireNonNull(authenticator);
         this.client = HttpClient.newBuilder()

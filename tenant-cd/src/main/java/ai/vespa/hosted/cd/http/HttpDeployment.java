@@ -1,6 +1,6 @@
 package ai.vespa.hosted.cd.http;
 
-import ai.vespa.hosted.api.Authenticator;
+import ai.vespa.hosted.api.EndpointAuthenticator;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.Endpoint;
 import ai.vespa.hosted.cd.TestDeployment;
@@ -19,7 +19,7 @@ public class HttpDeployment implements Deployment {
     private final Map<String, HttpEndpoint> endpoints;
 
     /** Creates a representation of the given deployment endpoints, using the authenticator for data plane access. */
-    public HttpDeployment(Map<String, URI> endpoints, Authenticator authenticator) {
+    public HttpDeployment(Map<String, URI> endpoints, EndpointAuthenticator authenticator) {
         this.endpoints = endpoints.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                       entry -> new HttpEndpoint(entry.getValue(), authenticator)));

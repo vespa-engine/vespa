@@ -1,18 +1,20 @@
 package ai.vespa.hosted.cd;
 
-import ai.vespa.hosted.api.Authenticator;
+import ai.vespa.hosted.api.ApiAuthenticator;
+import ai.vespa.hosted.api.EndpointAuthenticator;
 import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
+import ai.vespa.hosted.cd.http.HttpDeployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 
-import static ai.vespa.hosted.api.TestConfig.fromJson;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * The place to obtain environment-dependent configuration for test of a Vespa deployment.
@@ -24,11 +26,16 @@ public class TestRuntime {
     private static TestRuntime theRuntime;
 
     private final TestConfig config;
-    private final Authenticator authenticator;
+    private final Map<String, Deployment> productionDeployments;
+    private final Deployment deploymentToTest;
 
-    private TestRuntime(TestConfig config, Authenticator authenticator) {
+    private TestRuntime(TestConfig config, EndpointAuthenticator authenticator) {
         this.config = config;
-        this.authenticator = authenticator;
+        this.productionDeployments = config.deployments().entrySet().stream()
+                                           .filter(zoneDeployment -> zoneDeployment.getKey().environment() == Environment.prod)
+                                           .collect(toUnmodifiableMap(zoneDeployment -> zoneDeployment.getKey().region().value(),
+                                                                      zoneDeployment -> new HttpDeployment(zoneDeployment.getValue(), authenticator)));
+        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), authenticator);
     }
 
     /**
@@ -44,17 +51,29 @@ public class TestRuntime {
     public static synchronized TestRuntime get() {
         if (theRuntime == null) {
             String configPath = System.getProperty("vespa.test.config");
-            Authenticator authenticator = new ai.vespa.hosted.auth.Authenticator();
-            theRuntime = new TestRuntime(configPath != null ? fromFile(configPath) : fromController(authenticator),
-                                         authenticator);
+            TestConfig config = configPath != null ? fromFile(configPath) : fromController();
+            theRuntime = new TestRuntime(config,
+                                         new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
         }
         return theRuntime;
     }
 
-    /** Returns a copy of this runtime, with the given authenticator. */
-    public TestRuntime with(Authenticator authenticator) {
+    /** Returns a copy of this runtime, with the given endpoint authenticator. */
+    public TestRuntime with(EndpointAuthenticator authenticator) {
         return new TestRuntime(config, authenticator);
     }
+
+    /** Returns the full id of the application this is testing. */
+    public ApplicationId application() { return config.application(); }
+
+    /** Returns the zone of the deployment this is testing. */
+    public ZoneId zone() { return config.zone(); }
+
+    /** Returns all production deployments of the application this is testing. */
+    public Map<String, Deployment> productionDeployments() { return productionDeployments; }
+
+    /** Returns the deployment this is testing. */
+    public Deployment deploymentToTest() { return deploymentToTest; }
 
     private static TestConfig fromFile(String path) {
         try {
@@ -65,8 +84,8 @@ public class TestRuntime {
         }
     }
 
-    private static TestConfig fromController(Authenticator authenticator) {
-        ControllerHttpClient controller = authenticator.controller();
+    private static TestConfig fromController() {
+        ControllerHttpClient controller = new ai.vespa.hosted.auth.ApiAuthenticator().controller();
         ApplicationId id = Properties.application();
         Environment environment = Properties.environment().orElse(Environment.dev);
         ZoneId zone = Properties.region().map(region -> ZoneId.from(environment, region))

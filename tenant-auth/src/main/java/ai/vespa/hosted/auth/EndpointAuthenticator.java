@@ -1,8 +1,6 @@
 package ai.vespa.hosted.auth;
 
-import ai.vespa.hosted.api.ControllerHttpClient;
-import ai.vespa.hosted.api.Properties;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
@@ -10,11 +8,9 @@ import com.yahoo.security.X509CertificateUtils;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -22,14 +18,16 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
-import static ai.vespa.hosted.api.Properties.requireNonBlankProperty;
 
 /**
  * Authenticates against the hosted Vespa API using private key signatures, and against Vespa applications using mutual TLS.
  *
  * @author jonmv
  */
-public class Authenticator implements ai.vespa.hosted.api.Authenticator {
+public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthenticator {
+
+    /** Don't touch. */
+    public EndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
 
     /**
      * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files
@@ -65,14 +63,6 @@ public class Authenticator implements ai.vespa.hosted.api.Authenticator {
     @Override
     public HttpRequest.Builder authenticated(HttpRequest.Builder request) {
         return request;
-    }
-
-    /** Returns an authenticating controller client, using the (overridable) project properties of this Vespa application. */
-    @Override
-    public ControllerHttpClient controller() {
-        return ControllerHttpClient.withSignatureKey(Properties.endpoint(),
-                                                     Properties.privateKeyFile(),
-                                                     Properties.application());
     }
 
 }

@@ -59,10 +59,7 @@ public class TestConfig {
     public ZoneId zone() { return zone; }
 
     /** Returns an immutable view of deployments, per zone, of the application to test. */
-    public Map<ZoneId, Map<String, URI>> allDeployments() { return deployments; }
-
-    /** Returns the deployment to test in this test runtime. */
-    public Map<String, URI> deploymentToTest() { return deployments.get(zone); }
+    public Map<ZoneId, Map<String, URI>> deployments() { return deployments; }
 
     /** Returns the hosted Vespa system this is run against. */
     public SystemName system() { return system; }
