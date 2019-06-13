@@ -25,15 +25,18 @@ namespace search::features {
 class InternalMaxReduceProdJoinBlueprint : public fef::Blueprint {
 private:
     vespalib::string _attribute;
-    vespalib::string _query;
+    vespalib::string _queryVector;
+    vespalib::string _attrKey;
+    vespalib::string _queryVectorKey;
 
 public:
     InternalMaxReduceProdJoinBlueprint();
-    ~InternalMaxReduceProdJoinBlueprint();
+    ~InternalMaxReduceProdJoinBlueprint() override;
 
     fef::ParameterDescriptions getDescriptions() const override;
     fef::Blueprint::UP createInstance() const override;
     bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
 

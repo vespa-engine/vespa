@@ -45,7 +45,7 @@ public:
     struct DependencyHandler {
         virtual const FeatureType &resolve_input(const vespalib::string &feature_name, AcceptInput accept_type) = 0;
         virtual void define_output(const vespalib::string &output_name, const FeatureType &type) = 0;
-        virtual ~DependencyHandler() {}
+        virtual ~DependencyHandler() = default;
     };
 
     /**
@@ -62,14 +62,19 @@ public:
     typedef std::vector<string> StringVector;
 
 private:
-    Blueprint(const Blueprint &);
-    Blueprint &operator=(const Blueprint &);
-
     string                   _baseName;
     string                   _name;
     DependencyHandler       *_dependency_handler;
 
 protected:
+    /**
+     * Create an empty blueprint. Blueprints in their initial state
+     * are used as prototypes to create other instances of the same
+     * class. The @ref setup method is used to tailor a blueprint
+     * object for a specific set of parameters.
+     **/
+    Blueprint(vespalib::stringref baseName);
+
     using IAttributeVector = attribute::IAttributeVector;
     /**
      * Define an input feature for this blueprint. This method should
@@ -115,13 +120,8 @@ protected:
     lookupAttribute(const vespalib::string & key, vespalib::stringref attrName, const IQueryEnvironment & env);
     static vespalib::string createAttributeKey(vespalib::stringref attrName);
 public:
-    /**
-     * Create an empty blueprint. Blueprints in their initial state
-     * are used as prototypes to create other instances of the same
-     * class. The @ref setup method is used to tailor a blueprint
-     * object for a specific set of parameters.
-     **/
-    Blueprint(vespalib::stringref baseName);
+    Blueprint(const Blueprint &) = delete;
+    Blueprint &operator=(const Blueprint &) = delete;
 
     /**
      * Obtain the base name of this blueprint. This method will
@@ -239,10 +239,7 @@ public:
      * This is called before creating multiple execution threads.
      * @param queryEnv The query environment.
      */
-    virtual void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const {
-        (void) queryEnv;
-        (void) objectStore;
-    }
+    virtual void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const;
 
     /**
      * Create a feature executor based on this blueprint. Failure to
