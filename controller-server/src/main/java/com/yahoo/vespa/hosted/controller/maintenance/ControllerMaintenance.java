@@ -5,6 +5,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
@@ -13,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
@@ -55,6 +55,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final CostReportMaintainer costReportMaintainer;
     private final ResourceMeterMaintainer resourceMeterMaintainer;
     private final NameServiceDispatcher nameServiceDispatcher;
+    private final BillingMaintainer billingMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -64,6 +65,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
                                  ResourceSnapshotConsumer resourceSnapshotConsumer,
+                                 BillingHandler billingHandler,
                                  SelfHostedCostConfig selfHostedCostConfig) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
@@ -86,6 +88,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepositoryClient, Clock.systemUTC(), metric, resourceSnapshotConsumer);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
+        billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(15), jobControl, billingHandler);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -114,6 +117,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer.deconstruct();
         resourceMeterMaintainer.deconstruct();
         nameServiceDispatcher.deconstruct();
+        billingMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
