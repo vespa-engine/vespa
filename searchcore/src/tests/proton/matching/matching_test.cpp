@@ -630,21 +630,21 @@ TEST("require that summary features are filled") {
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
     FeatureSet::SP fs = world.getSummaryFeatures(req);
-    const feature_t * f = NULL;
+    const FeatureSet::Value * f = NULL;
     EXPECT_EQUAL(2u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
     EXPECT_EQUAL("value(100)", fs->getNames()[1]);
     EXPECT_EQUAL(2u, fs->numDocs());
     f = fs->getFeaturesByDocId(10);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(10, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(10, f[0].as_double());
+    EXPECT_EQUAL(100, f[1].as_double());
     f = fs->getFeaturesByDocId(15);
     EXPECT_TRUE(f == NULL);
     f = fs->getFeaturesByDocId(30);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(30, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(30, f[0].as_double());
+    EXPECT_EQUAL(100, f[1].as_double());
 }
 
 TEST("require that rank features are filled") {
@@ -653,18 +653,18 @@ TEST("require that rank features are filled") {
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
     FeatureSet::SP fs = world.getRankFeatures(req);
-    const feature_t * f = NULL;
+    const FeatureSet::Value * f = NULL;
     EXPECT_EQUAL(1u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a2)", fs->getNames()[0]);
     EXPECT_EQUAL(2u, fs->numDocs());
     f = fs->getFeaturesByDocId(10);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(20, f[0]);
+    EXPECT_EQUAL(20, f[0].as_double());
     f = fs->getFeaturesByDocId(15);
     EXPECT_TRUE(f == NULL);
     f = fs->getFeaturesByDocId(30);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(60, f[0]);
+    EXPECT_EQUAL(60, f[0].as_double());
 }
 
 TEST("require that search session can be cached") {
@@ -703,10 +703,10 @@ TEST("require that getSummaryFeatures can use cached query setup") {
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
     EXPECT_EQUAL("value(100)", fs->getNames()[1]);
     ASSERT_EQUAL(1u, fs->numDocs());
-    const feature_t *f = fs->getFeaturesByDocId(30);
+    const auto *f = fs->getFeaturesByDocId(30);
     ASSERT_TRUE(f);
-    EXPECT_EQUAL(30, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(30, f[0].as_double());
+    EXPECT_EQUAL(100, f[1].as_double());
 
     // getSummaryFeatures can be called multiple times.
     fs = world.getSummaryFeatures(docsum_request);
@@ -716,8 +716,8 @@ TEST("require that getSummaryFeatures can use cached query setup") {
     ASSERT_EQUAL(1u, fs->numDocs());
     f = fs->getFeaturesByDocId(30);
     ASSERT_TRUE(f);
-    EXPECT_EQUAL(30, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(30, f[0].as_double());
+    EXPECT_EQUAL(100, f[1].as_double());
 }
 
 TEST("require that getSummaryFeatures prefers cached query setup") {
