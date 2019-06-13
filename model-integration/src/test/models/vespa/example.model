@@ -19,7 +19,7 @@ model example {
     }
 
     function foo2() {
-        expression: reduce(sum(input1 * input2, name) * constant1asLarge, max, x) * constant2
+        expression: reduce(sum(input1 * input2, name) * constant(constant1asLarge), max, x) * constant2
     }
 
 }
