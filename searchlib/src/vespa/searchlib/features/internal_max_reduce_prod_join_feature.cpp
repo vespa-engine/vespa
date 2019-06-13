@@ -105,7 +105,7 @@ BufferedExecutor<BaseType>::execute(uint32_t docId)
  * Blueprint
  */
 InternalMaxReduceProdJoinBlueprint::InternalMaxReduceProdJoinBlueprint() :
-        Blueprint("internalMaxReduceProdJoin")
+    Blueprint("internalMaxReduceProdJoin")
 {
 }
 
@@ -132,6 +132,7 @@ bool
 InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
     _attribute = params[0].getValue();
+    _attrKey = createAttributeKey(_attribute);
     _query = params[1].getValue();
     describeOutput("scalar", "Internal executor for optimized execution of reduce(join(A,Q,f(x,y)(x*y)),max)");
     env.hintAttributeAccess(_attribute);
@@ -188,15 +189,19 @@ selectExecutor(const IAttributeVector *attribute, IntegerVector vector, vespalib
     return stash.create<SingleZeroValueExecutor>();
 }
 
+    void
+    InternalMaxReduceProdJoinBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore & store) const
+    {
+        lookupAndStoreAttribute(_attrKey, _attribute, env, store);
+    }
 
 FeatureExecutor &
 InternalMaxReduceProdJoinBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    const IAttributeVector *attribute = env.getAttributeContext().getAttribute(_attribute);
+    const IAttributeVector * attribute = lookupAttribute(_attrKey, _attribute, env);
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, "
-                "returning executor with default value.",
-            _attribute.c_str());
+                "returning executor with default value.", _attribute.c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
     Property prop = env.getProperties().lookup(_query);
