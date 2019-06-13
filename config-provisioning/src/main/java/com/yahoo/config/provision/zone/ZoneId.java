@@ -18,17 +18,13 @@ import java.util.Objects;
 public class ZoneId {
     // TODO: Replace usages of environment + region with usages of this.
 
-    // TODO: Remove static factory methods not specifying cloud and system
-
     private final Environment environment;
     private final RegionName region;
-    private final CloudName cloud;
     private final SystemName system;
 
     private ZoneId(Environment environment, RegionName region, CloudName cloud, SystemName system) {
         this.environment = Objects.requireNonNull(environment, "environment must be non-null");
         this.region = Objects.requireNonNull(region, "region must be non-null");
-        this.cloud = Objects.requireNonNull(cloud, "cloud must be non-null");
         this.system = Objects.requireNonNull(system, "system must be non-null");
     }
 
@@ -69,10 +65,6 @@ public class ZoneId {
         return new ZoneId(environment, region, cloud, SystemName.defaultSystem());
     }
 
-    public static ZoneId from(String environment, String region, String cloud) {
-        return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud), SystemName.defaultSystem());
-    }
-
     public static ZoneId from(String environment, String region, String cloud, String system) {
         return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud), SystemName.from(system));
     }
@@ -89,10 +81,6 @@ public class ZoneId {
         return region;
     }
 
-    public CloudName cloud() {
-        return cloud;
-    }
-
     public SystemName system() {
         return system;
     }
@@ -100,20 +88,14 @@ public class ZoneId {
     /** Returns the serialised value of this. Inverse of {@code ZoneId.from(String value)}. */
     public String value() {
         return environment + "." + region;
-        // TODO: Change to the below when there only methods use constructor including cloud and system are used and
-        // all serialized values contain cloud and system
-        // return cloud + "." + system + "." + environment + "." + region;
     }
 
     @Override
     public String toString() {
-        return "zone " + value() + " in " + cloud;
-        // TODO: Use the below (need  to fix some use of toString() in tests first)
-        //return "zone " + cloud + "." + system + "." + environment + "." + region;
+        return value();
     }
 
     @Override
-    // TODO: Update to check cloud and system when everyone use methods that specify cloud and system
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
