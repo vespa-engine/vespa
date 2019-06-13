@@ -223,13 +223,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         });
     }
 
-    private boolean zoneHasActiveRotation(Zone zone) {
-        return app.getDeployment()
-                  .map(DeploymentSpec::fromXml)
-                  .map(spec -> zoneHasActiveRotation(zone, spec))
-                  .orElse(true);
-    }
-
     private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
         return spec.zones().stream()
                    .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&

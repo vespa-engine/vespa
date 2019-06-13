@@ -28,7 +28,7 @@ public class ContainerEndpointsCache {
     private final Path cachePath;
     private final Curator curator;
 
-    ContainerEndpointsCache(Path tenantPath, Curator curator) {
+    public ContainerEndpointsCache(Path tenantPath, Curator curator) {
         this.cachePath = tenantPath.append("containerEndpointsCache/");
         this.curator = curator;
     }
