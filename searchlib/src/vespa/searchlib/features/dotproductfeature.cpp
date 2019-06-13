@@ -572,7 +572,7 @@ createForDirectArray(const IAttributeVector * attribute,
 
 template <typename A, typename V>
 FeatureExecutor &
-createForDirectWSetImpl(const IAttributeVector * attribute, V vector, vespalib::Stash & stash)
+createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespalib::Stash & stash)
 {
     using namespace dotproduct::wset;
     using T = typename A::BaseType;
@@ -582,11 +582,11 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V vector, vespalib::
     if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues<A, VT>(*iattr)) {
         auto * exactA = dynamic_cast<const ExactA *>(iattr);
         if (exactA != nullptr) {
-            return stash.create<DotProductExecutor<ExactA>>(exactA, std::move(vector));
+            return stash.create<DotProductExecutor<ExactA>>(exactA, std::forward<V>(vector));
         }
-        return stash.create<DotProductExecutor<A>>(iattr, std::move(vector));
+        return stash.create<DotProductExecutor<A>>(iattr, std::forward<V>(vector));
     }
-    return stash.create<DotProductExecutorByCopy<IntegerVectorT<T>, WeightedIntegerContent>>(attribute, std::move(vector));
+    return stash.create<DotProductExecutorByCopy<IntegerVectorT<T>, WeightedIntegerContent>>(attribute, std::forward<V>(vector));
 }
 
 template <typename T>
@@ -596,7 +596,7 @@ createForDirectIntegerWSet(const IAttributeVector * attribute, const dotproduct:
     using namespace dotproduct::wset;
     return vector.empty()
            ? stash.create<SingleZeroValueExecutor>()
-           : createForDirectWSetImpl<IntegerAttributeTemplate<T>, const dotproduct::wset::IntegerVectorT<T> &>(attribute, vector, stash);
+           : createForDirectWSetImpl<IntegerAttributeTemplate<T>>(attribute, vector, stash);
 }
 
 FeatureExecutor &
@@ -752,7 +752,7 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
             }
         }
     }
-    return stash.create<SingleZeroValueExecutor>();;
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 FeatureExecutor &
@@ -889,7 +889,7 @@ createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attrib
                         auto vector = std::make_unique<dotproduct::wset::IntegerVectorT<int8_t>>();
                         WeightedSetParser::parse(prop.get(), *vector);
                         vector->syncMap();
-                        arguments = std::move(vector);;
+                        arguments = std::move(vector);
                     }
                 }
             }
