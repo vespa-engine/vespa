@@ -1,6 +1,7 @@
 package ai.vespa.hosted.auth;
 
 import ai.vespa.hosted.api.ControllerHttpClient;
+import ai.vespa.hosted.api.Properties;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
@@ -20,17 +21,21 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 
+import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
+import static ai.vespa.hosted.api.Properties.requireNonBlankProperty;
+
 /**
- * Authenticates {@link HttpRequest}s against a hosted Vespa application based on mutual TLS.
+ * Authenticates against the hosted Vespa API using private key signatures, and against Vespa applications using mutual TLS.
  *
  * @author jonmv
  */
-public class Authenticator {
+public class Authenticator implements ai.vespa.hosted.api.Authenticator {
 
-    /** Returns an SSLContext which provides authentication against a Vespa endpoint.
-     *
+    /**
      * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files
-     * "key" and "cert" in that directory are used; otherwise, the system default SSLContext is returned. */
+     * "key" and "cert" in that directory are used; otherwise, the system default SSLContext is returned.
+     */
+    @Override
     public SSLContext sslContext() {
         try {
             Optional<String> credentialsRootProperty = getNonBlankProperty("vespa.test.credentials.root");
@@ -57,28 +62,17 @@ public class Authenticator {
         }
     }
 
-    /** Adds necessary authentication to the given HTTP request builder, to be verified by a Vespa endpoint. */
+    @Override
     public HttpRequest.Builder authenticated(HttpRequest.Builder request) {
         return request;
     }
 
-    /** Returns an authenticated controller client. */
+    /** Returns an authenticating controller client, using the (overridable) project properties of this Vespa application. */
+    @Override
     public ControllerHttpClient controller() {
-        ApplicationId id = ApplicationId.from(requireNonBlankProperty("tenant"),
-                                              requireNonBlankProperty("application"),
-                                              getNonBlankProperty("instance").orElse("default"));
-        URI endpoint = URI.create(requireNonBlankProperty("endpoint"));
-        Path privateKeyFile = Paths.get(requireNonBlankProperty("privateKeyFile"));
-
-        return ControllerHttpClient.withSignatureKey(endpoint, privateKeyFile, id);
-    }
-
-    static Optional<String> getNonBlankProperty(String name) {
-        return Optional.ofNullable(System.getProperty(name)).filter(value -> ! value.isBlank());
-    }
-
-    static String requireNonBlankProperty(String name) {
-        return getNonBlankProperty(name).orElseThrow(() -> new IllegalStateException("Missing required property '" + name + "'"));
+        return ControllerHttpClient.withSignatureKey(Properties.endpoint(),
+                                                     Properties.privateKeyFile(),
+                                                     Properties.application());
     }
 
 }

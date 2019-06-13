@@ -104,14 +104,14 @@ public abstract class ControllerHttpClient {
 
     /** Deactivates the deployment of the given application in the given zone. */
     public String deactivate(ApplicationId id, ZoneId zone) {
-        return asText(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
-                                                 .timeout(Duration.ofSeconds(10)),
-                                      DELETE)));
+        return asString(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
+                                                .timeout(Duration.ofSeconds(10)),
+                                     DELETE)));
     }
 
-    /** Returns the default {@link Environment#dev} {@link ZoneId}, to use for development deployments. */
-    public ZoneId devZone() {
-        Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath())
+    /** Returns the default {@link ZoneId} for the given environment, if any. */
+    public ZoneId defaultZone(Environment environment) {
+        Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath(environment))
                                                                    .timeout(Duration.ofSeconds(10)),
                                                         GET)));
         return ZoneId.from("dev", rootObject.field("name").asString());
@@ -123,6 +123,11 @@ public abstract class ControllerHttpClient {
                                                    .timeout(Duration.ofSeconds(10)),
                                         GET)))
                 .field("compileVersion").asString();
+    }
+
+    /** Returns the test config for functional and verification tests of the indicated Vespa deployment. */
+    public TestConfig testConfig(ApplicationId id, ZoneId zone) {
+        return TestConfig.fromJson(asBytes(send(request(HttpRequest.newBuilder(testConfigPath(id, zone)), GET))));
     }
 
     /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
@@ -137,6 +142,7 @@ public abstract class ControllerHttpClient {
         return deploymentLog(id, zone, run, -1);
     }
 
+    /** Returns an authenticated request from the given input. Override this for, e.g., request signing. */
     protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
         return request.method(method.name(), ofInputStream(data)).build();
     }
@@ -181,15 +187,22 @@ public abstract class ControllerHttpClient {
                             "deploy", jobNameOf(zone));
     }
 
+    private URI jobPath(ApplicationId id, ZoneId zone) {
+        return concatenated(instancePath(id), "job", jobNameOf(zone));
+    }
+
+    private URI testConfigPath(ApplicationId id, ZoneId zone) {
+        return concatenated(instancePath(id), "test-config");
+    }
+
     private URI runPath(ApplicationId id, ZoneId zone, long run, long after) {
-        return withQuery(concatenated(instancePath(id),
-                                      "job", jobNameOf(zone),
+        return withQuery(concatenated(jobPath(id, zone),
                                       "run", Long.toString(run)),
                          "after", Long.toString(after));
     }
 
-    private URI defaultRegionPath() {
-        return concatenated(endpoint, "zone", "v1", "environment", Environment.dev.value(), "default");
+    private URI defaultRegionPath(Environment environment) {
+        return concatenated(endpoint, "zone", "v1", "environment", environment.value(), "default");
     }
 
     private static URI concatenated(URI base, String... parts) {
@@ -247,9 +260,15 @@ public abstract class ControllerHttpClient {
         return streamer;
     }
 
-    private static String asText(HttpResponse<byte[]> response) {
+    /** Returns the response body as a String, or throws if the status code is non-2XX. */
+    private static String asString(HttpResponse<byte[]> response) {
+        return new String(asBytes(response), UTF_8);
+    }
+
+    /** Returns the response body as a byte array, or throws if the status code is non-2XX. */
+    private static byte[] asBytes(HttpResponse<byte[]> response) {
         toInspector(response);
-        return new String(response.body(), UTF_8);
+        return response.body();
     }
 
     /** Returns an {@link Inspector} for the assumed JSON formatted response, or throws if the status code is non-2XX. */
