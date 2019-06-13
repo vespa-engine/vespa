@@ -237,62 +237,39 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         this.rotationNames.put(deployment, Set.copyOf(rotationNames));
 
-        return new PreparedApplication() {
-
-            // TODO: Remove when no longer part of interface
-            public void activate() {}
-
-            // TODO: Remove when no longer part of interface
-            public List<Log> messages() {
-                Log warning = new Log();
-                warning.level = "WARNING";
-                warning.time  = 1;
-                warning.message = "The warning";
-
-                Log info = new Log();
-                info.level = "INFO";
-                info.time  = 2;
-                info.message = "The info";
-
-                return List.of(warning, info);
+        return () -> {
+            Application application = applications.get(deployment.applicationId());
+            application.activate();
+            List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
+            for (Node node : nodes) {
+                nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
+                                                                           Node.State.active,
+                                                                           node.type(),
+                                                                           node.owner(),
+                                                                           node.currentVersion(),
+                                                                           application.version().get()));
             }
+            serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
+                                                                 deployment.zoneId(),
+                                                                 false,
+                                                                 2,
+                                                                 nodes.stream()
+                                                                      .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                                 43,
+                                                                                                                 "container",
+                                                                                                                 1))
+                                                                      .collect(Collectors.toList())));
 
-            @Override
-            public PrepareResponse prepareResponse() {
-                Application application = applications.get(deployment.applicationId());
-                application.activate();
-                List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
-                for (Node node : nodes) {
-                    nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
-                                                                               Node.State.active,
-                                                                               node.type(),
-                                                                               node.owner(),
-                                                                               node.currentVersion(),
-                                                                               application.version().get()));
-                }
-                serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
-                                                                     deployment.zoneId(),
-                                                                     false,
-                                                                     2,
-                                                                     nodes.stream()
-                                                                          .map(node -> new ServiceConvergence.Status(node.hostname(),
-                                                                                                                     43,
-                                                                                                                     "container",
-                                                                                                                     1))
-                                                                          .collect(Collectors.toList())));
-
-                PrepareResponse prepareResponse = new PrepareResponse();
-                prepareResponse.message = "foo";
-                prepareResponse.configChangeActions = configChangeActions != null
-                        ? configChangeActions
-                        : new ConfigChangeActions(Collections.emptyList(),
-                                                  Collections.emptyList());
-                setConfigChangeActions(null);
-                prepareResponse.tenant = new TenantId("tenant");
-                prepareResponse.log = warnings.getOrDefault(deployment, Collections.emptyList());
-                return prepareResponse;
-            }
-
+            PrepareResponse prepareResponse = new PrepareResponse();
+            prepareResponse.message = "foo";
+            prepareResponse.configChangeActions = configChangeActions != null
+                    ? configChangeActions
+                    : new ConfigChangeActions(Collections.emptyList(),
+                                              Collections.emptyList());
+            setConfigChangeActions(null);
+            prepareResponse.tenant = new TenantId("tenant");
+            prepareResponse.log = warnings.getOrDefault(deployment, Collections.emptyList());
+            return prepareResponse;
         };
     }
 
