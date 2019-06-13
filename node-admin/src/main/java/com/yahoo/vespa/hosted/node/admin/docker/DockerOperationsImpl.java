@@ -15,12 +15,14 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembers
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +48,10 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final ProcessExecuter processExecuter;
     private final IPAddresses ipAddresses;
+
+    public DockerOperationsImpl(Docker docker) {
+        this(docker, new ProcessExecuter(), new IPAddressesImpl());
+    }
 
     public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter, IPAddresses ipAddresses) {
         this.docker = docker;
@@ -321,6 +327,16 @@ public class DockerOperationsImpl implements DockerOperations {
 
         if (context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
+    }
+
+    @Override
+    public boolean noManagedContainersRunning() {
+        return docker.noManagedContainersRunning(MANAGER_NAME);
+    }
+
+    @Override
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return docker.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
