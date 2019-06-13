@@ -550,13 +550,12 @@ public class ApplicationController {
             throw new NotExistsException("Deployment", id.toString());
 
         try {
-            return Optional.of(routingPolicies.get(id))
-                           .filter(policies -> ! policies.isEmpty())
-                           .map(policies -> policies.stream()
+            return Optional.of(routingGenerator.clusterEndpoints(id))
+                    .filter(endpoints -> ! endpoints.isEmpty())
+                    .orElseGet(() -> routingPolicies.get(id).stream()
                                                     .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
                                                     .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
-                                                                                          policy -> policy.endpointIn(controller.system()).url())))
-                           .orElseGet(() -> routingGenerator.clusterEndpoints(id));
+                                                                                          policy -> policy.endpointIn(controller.system()).url())));
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": "
