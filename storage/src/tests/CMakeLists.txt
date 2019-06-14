@@ -6,8 +6,6 @@ vespa_add_executable(storage_testrunner_app TEST
     SOURCES
     testrunner.cpp
     DEPENDS
-    storage_teststorageserver
-    storage_testvisiting
     storage_testcommon
     storage_testhostreporter
     storage_testdistributor

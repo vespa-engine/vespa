@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/stat.h>
@@ -13,12 +12,14 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-struct BouncerTest : public CppUnit::TestFixture {
+struct BouncerTest : public Test {
     std::unique_ptr<TestStorageApp> _node;
     std::unique_ptr<DummyStorageLink> _upper;
     Bouncer* _manager;
@@ -26,40 +27,10 @@ struct BouncerTest : public CppUnit::TestFixture {
 
     BouncerTest();
 
-    void setUp() override;
-    void tearDown() override;
+    void SetUp() override;
+    void TearDown() override;
 
     void setUpAsNode(const lib::NodeType& type);
-
-    void testFutureTimestamp();
-    void testAllowNotifyBucketChangeEvenWhenDistributorDown();
-    void rejectLowerPrioritizedFeedMessagesWhenConfigured();
-    void doNotRejectHigherPrioritizedFeedMessagesThanConfigured();
-    void rejectionThresholdIsExclusive();
-    void onlyRejectFeedMessagesWhenConfigured();
-    void rejectionIsDisabledByDefaultInConfig();
-    void readOnlyOperationsAreNotRejected();
-    void internalOperationsAreNotRejected();
-    void outOfBoundsConfigValuesThrowException();
-    void abort_request_when_derived_bucket_space_node_state_is_marked_down();
-    void client_operations_are_allowed_through_on_cluster_state_down_distributor();
-    void cluster_state_activation_commands_are_not_bounced();
-
-    CPPUNIT_TEST_SUITE(BouncerTest);
-    CPPUNIT_TEST(testFutureTimestamp);
-    CPPUNIT_TEST(testAllowNotifyBucketChangeEvenWhenDistributorDown);
-    CPPUNIT_TEST(rejectLowerPrioritizedFeedMessagesWhenConfigured);
-    CPPUNIT_TEST(doNotRejectHigherPrioritizedFeedMessagesThanConfigured);
-    CPPUNIT_TEST(rejectionThresholdIsExclusive);
-    CPPUNIT_TEST(onlyRejectFeedMessagesWhenConfigured);
-    CPPUNIT_TEST(rejectionIsDisabledByDefaultInConfig);
-    CPPUNIT_TEST(readOnlyOperationsAreNotRejected);
-    CPPUNIT_TEST(internalOperationsAreNotRejected);
-    CPPUNIT_TEST(outOfBoundsConfigValuesThrowException);
-    CPPUNIT_TEST(abort_request_when_derived_bucket_space_node_state_is_marked_down);
-    CPPUNIT_TEST(client_operations_are_allowed_through_on_cluster_state_down_distributor);
-    CPPUNIT_TEST(cluster_state_activation_commands_are_not_bounced);
-    CPPUNIT_TEST_SUITE_END();
 
     using Priority = api::StorageMessage::Priority;
 
@@ -77,12 +48,10 @@ struct BouncerTest : public CppUnit::TestFixture {
             api::Timestamp timestamp,
             document::BucketSpace bucketSpace);
 
-    void assertMessageBouncedWithRejection();
-    void assertMessageBouncedWithAbort();
-    void assertMessageNotBounced();
+    void expectMessageBouncedWithRejection();
+    void expectMessageBouncedWithAbort();
+    void expectMessageNotBounced();
 };
-
-CPPUNIT_TEST_SUITE_REGISTRATION(BouncerTest);
 
 BouncerTest::BouncerTest()
     : _node(),
@@ -109,12 +78,12 @@ void BouncerTest::setUpAsNode(const lib::NodeType& type) {
 }
 
 void
-BouncerTest::setUp() {
+BouncerTest::SetUp() {
     setUpAsNode(lib::NodeType::STORAGE);
 }
 
 void
-BouncerTest::tearDown() {
+BouncerTest::TearDown() {
     _manager = nullptr;
     _lower = nullptr;
     if (_upper) {
@@ -149,30 +118,27 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
     return cmd;
 }
 
-void
-BouncerTest::testFutureTimestamp()
-{
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().clock_skew_aborts.getValue());
+TEST_F(BouncerTest, future_timestamp) {
+    EXPECT_EQ(0, _manager->metrics().clock_skew_aborts.getValue());
 
     // Fail when future timestamps (more than 5 seconds) are received.
     {
         _upper->sendDown(createDummyFeedMessage(16 * 1000000));
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)_upper->getNumReplies());
-        CPPUNIT_ASSERT_EQUAL(0, (int)_upper->getNumCommands());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode::REJECTED,
-                             static_cast<api::RemoveReply&>(*_upper->getReply(0)).
-                             getResult().getResult());
+        ASSERT_EQ(1, _upper->getNumReplies());
+        EXPECT_EQ(0, _upper->getNumCommands());
+        EXPECT_EQ(api::ReturnCode::REJECTED,
+                  dynamic_cast<api::RemoveReply&>(*_upper->getReply(0)).getResult().getResult());
         _upper->reset();
     }
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().clock_skew_aborts.getValue());
+    EXPECT_EQ(1, _manager->metrics().clock_skew_aborts.getValue());
 
     // Verify that 1 second clock skew is OK
     {
         _upper->sendDown(createDummyFeedMessage(11 * 1000000));
 
-        CPPUNIT_ASSERT_EQUAL(0, (int)_upper->getNumReplies());
-        CPPUNIT_ASSERT_EQUAL(1, (int)_lower->getNumCommands());
+        EXPECT_EQ(0, _upper->getNumReplies());
+        EXPECT_EQ(1, _lower->getNumCommands());
         _lower->reset();
     }
 
@@ -180,15 +146,13 @@ BouncerTest::testFutureTimestamp()
     {
         _upper->sendDown(createDummyFeedMessage(5 * 1000000));
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)_lower->getNumCommands());
+        EXPECT_EQ(1, _lower->getNumCommands());
     }
 
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().clock_skew_aborts.getValue());
+    EXPECT_EQ(1, _manager->metrics().clock_skew_aborts.getValue());
 }
 
-void
-BouncerTest::testAllowNotifyBucketChangeEvenWhenDistributorDown()
-{
+TEST_F(BouncerTest, allow_notify_bucket_change_even_when_distributor_down) {
     lib::NodeState state(lib::NodeType::DISTRIBUTOR, lib::State::DOWN);
     _node->getNodeStateUpdater().setReportedNodeState(state);
     // Trigger Bouncer state update
@@ -202,39 +166,38 @@ BouncerTest::testAllowNotifyBucketChangeEvenWhenDistributorDown()
     auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
     _upper->sendDown(cmd);
 
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _lower->getNumCommands());
+    EXPECT_EQ(0, _upper->getNumReplies());
+    EXPECT_EQ(1, _lower->getNumCommands());
 }
 
 void
-BouncerTest::assertMessageBouncedWithRejection()
+BouncerTest::expectMessageBouncedWithRejection()
 {
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumCommands());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::REJECTED,
-            static_cast<api::RemoveReply&>(*_upper->getReply(0)).
-            getResult().getResult());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _lower->getNumCommands());
+    ASSERT_EQ(1, _upper->getNumReplies());
+    EXPECT_EQ(0, _upper->getNumCommands());
+    EXPECT_EQ(api::ReturnCode::REJECTED,
+              dynamic_cast<api::RemoveReply&>(*_upper->getReply(0)).getResult().getResult());
+    EXPECT_EQ(size_t(0), _lower->getNumCommands());
 }
 
 void
-BouncerTest::assertMessageBouncedWithAbort()
+BouncerTest::expectMessageBouncedWithAbort()
 {
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumCommands());
+    ASSERT_EQ(1, _upper->getNumReplies());
+    EXPECT_EQ(0, _upper->getNumCommands());
     auto& reply = dynamic_cast<api::StorageReply&>(*_upper->getReply(0));
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::ABORTED,
-                         "We don't allow command of type MessageType(12, Remove) "
-                         "when node is in state Down (on storage.2)"),
-                         reply.getResult());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _lower->getNumCommands());
+    EXPECT_EQ(api::ReturnCode(api::ReturnCode::ABORTED,
+              "We don't allow command of type MessageType(12, Remove) "
+              "when node is in state Down (on storage.2)"),
+              reply.getResult());
+    EXPECT_EQ(0, _lower->getNumCommands());
 }
 
 void
-BouncerTest::assertMessageNotBounced()
+BouncerTest::expectMessageNotBounced()
 {
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _lower->getNumCommands());
+    EXPECT_EQ(size_t(0), _upper->getNumReplies());
+    EXPECT_EQ(size_t(1), _lower->getNumCommands());
 }
 
 void
@@ -246,49 +209,37 @@ BouncerTest::configureRejectionThreshold(int newThreshold)
     _manager->configure(std::move(config));
 }
 
-void
-BouncerTest::rejectLowerPrioritizedFeedMessagesWhenConfigured()
-{
+TEST_F(BouncerTest, reject_lower_prioritized_feed_messages_when_configured) {
     configureRejectionThreshold(Priority(120));
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(121)));
-    assertMessageBouncedWithRejection();
+    expectMessageBouncedWithRejection();
 }
 
-void
-BouncerTest::doNotRejectHigherPrioritizedFeedMessagesThanConfigured()
-{
+TEST_F(BouncerTest, do_not_reject_higher_prioritized_feed_messages_than_configured) {
     configureRejectionThreshold(Priority(120));
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(119)));
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
-void
-BouncerTest::rejectionThresholdIsExclusive()
-{
+TEST_F(BouncerTest, rejection_threshold_is_exclusive) {
     configureRejectionThreshold(Priority(120));
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(120)));
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
-void
-BouncerTest::onlyRejectFeedMessagesWhenConfigured()
-{
+TEST_F(BouncerTest, only_reject_feed_messages_when_configured) {
     configureRejectionThreshold(RejectionDisabledConfigValue);
     // A message with even the lowest priority should not be rejected.
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(255)));
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
-void
-BouncerTest::rejectionIsDisabledByDefaultInConfig()
-{
+TEST_F(BouncerTest, rejection_is_disabled_by_default_in_config) {
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(255)));
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
-void
-BouncerTest::readOnlyOperationsAreNotRejected()
-{
+TEST_F(BouncerTest, read_only_operations_are_not_rejected) {
     configureRejectionThreshold(Priority(1));
     // StatBucket is an external operation, but it's not a mutating operation
     // and should therefore not be blocked.
@@ -296,33 +247,22 @@ BouncerTest::readOnlyOperationsAreNotRejected()
             makeDocumentBucket(document::BucketId(16, 5)), "");
     cmd->setPriority(Priority(2));
     _upper->sendDown(cmd);
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
-void
-BouncerTest::internalOperationsAreNotRejected()
-{
+TEST_F(BouncerTest, internal_operations_are_not_rejected) {
     configureRejectionThreshold(Priority(1));
     document::BucketId bucket(16, 1234);
     api::BucketInfo info(0x1, 0x2, 0x3);
     auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
     cmd->setPriority(Priority(2));
     _upper->sendDown(cmd);
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
-void
-BouncerTest::outOfBoundsConfigValuesThrowException()
-{
-    try {
-        configureRejectionThreshold(256);
-        CPPUNIT_FAIL("Upper bound violation not caught");
-    } catch (config::InvalidConfigException &) {}
-
-    try {
-        configureRejectionThreshold(-2);
-        CPPUNIT_FAIL("Lower bound violation not caught");
-    } catch (config::InvalidConfigException &) {}
+TEST_F(BouncerTest, out_of_bounds_config_values_throw_exception) {
+    EXPECT_THROW(configureRejectionThreshold(256), config::InvalidConfigException);
+    EXPECT_THROW(configureRejectionThreshold(-2), config::InvalidConfigException);
 }
 
 
@@ -340,25 +280,23 @@ makeClusterStateBundle(const vespalib::string &baselineState, const std::map<doc
 
 }
 
-void
-BouncerTest::abort_request_when_derived_bucket_space_node_state_is_marked_down()
-{
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().unavailable_node_aborts.getValue());
+TEST_F(BouncerTest, abort_request_when_derived_bucket_space_node_state_is_marked_down) {
+    EXPECT_EQ(0, _manager->metrics().unavailable_node_aborts.getValue());
 
     auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
-    assertMessageBouncedWithAbort();
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().unavailable_node_aborts.getValue());
+    expectMessageBouncedWithAbort();
+    EXPECT_EQ(1, _manager->metrics().unavailable_node_aborts.getValue());
 
     _upper->reset();
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::global_space()));
-    assertMessageNotBounced();
-    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().unavailable_node_aborts.getValue());
+    expectMessageNotBounced();
+    EXPECT_EQ(1, _manager->metrics().unavailable_node_aborts.getValue());
 }
 
-void BouncerTest::client_operations_are_allowed_through_on_cluster_state_down_distributor() {
-    tearDown();
+TEST_F(BouncerTest, client_operations_are_allowed_through_on_cluster_state_down_distributor) {
+    TearDown();
     setUpAsNode(lib::NodeType::DISTRIBUTOR);
 
     // Distributor states never vary across bucket spaces, so not necessary to test with
@@ -366,12 +304,12 @@ void BouncerTest::client_operations_are_allowed_through_on_cluster_state_down_di
     auto state = makeClusterStateBundle("distributor:3 .2.s:d storage:3", {});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
-    assertMessageNotBounced();
-    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().unavailable_node_aborts.getValue());
+    expectMessageNotBounced();
+    EXPECT_EQ(0, _manager->metrics().unavailable_node_aborts.getValue());
 }
 
-void BouncerTest::cluster_state_activation_commands_are_not_bounced() {
-    tearDown();
+TEST_F(BouncerTest, cluster_state_activation_commands_are_not_bounced) {
+    TearDown();
     setUpAsNode(lib::NodeType::DISTRIBUTOR);
 
     auto state = makeClusterStateBundle("version:10 distributor:3 .2.s:d storage:3", {}); // Our index (2) is down
@@ -379,7 +317,7 @@ void BouncerTest::cluster_state_activation_commands_are_not_bounced() {
 
     auto activate_cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(11);
     _upper->sendDown(activate_cmd);
-    assertMessageNotBounced();
+    expectMessageNotBounced();
 }
 
 } // storage

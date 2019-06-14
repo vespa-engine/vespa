@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
@@ -11,9 +10,12 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.statereporter");
+
+using namespace ::testing;
 
 namespace storage {
 
@@ -23,7 +25,7 @@ public:
     std::string getComponentName() const override { return "component"; }
 };
 
-struct StateReporterTest : public CppUnit::TestFixture {
+struct StateReporterTest : Test {
     FastOS_ThreadPool _threadPool;
     framework::defaultimplementation::FakeClock* _clock;
     std::unique_ptr<TestServiceLayerApp> _node;
@@ -37,87 +39,72 @@ struct StateReporterTest : public CppUnit::TestFixture {
 
     StateReporterTest();
 
-    void setUp() override;
-    void tearDown() override;
+    void SetUp() override;
+    void TearDown() override;
     void runLoad(uint32_t count = 1);
-
-    void testReportConfigGeneration();
-    void testReportHealth();
-    void testReportMetrics();
-
-    CPPUNIT_TEST_SUITE(StateReporterTest);
-    CPPUNIT_TEST(testReportConfigGeneration);
-    CPPUNIT_TEST(testReportHealth);
-    CPPUNIT_TEST(testReportMetrics);
-    CPPUNIT_TEST_SUITE_END();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(StateReporterTest);
-
 namespace {
-    struct MetricClock : public metrics::MetricManager::Timer
-    {
-        framework::Clock& _clock;
-        MetricClock(framework::Clock& c) : _clock(c) {}
-        time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
-        time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
-    };
+
+struct MetricClock : public metrics::MetricManager::Timer
+{
+    framework::Clock& _clock;
+    explicit MetricClock(framework::Clock& c) : _clock(c) {}
+    time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
+    time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
+};
+
 }
 
 StateReporterTest::StateReporterTest()
     : _threadPool(256*1024),
-      _clock(0),
+      _clock(nullptr),
       _top(),
       _stateReporter()
 {
 }
 
-void StateReporterTest::setUp() {
-    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true, "statereportertest")));
+void StateReporterTest::SetUp() {
+    _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "statereportertest"));
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
-    try {
-        _node.reset(new TestServiceLayerApp(DiskCount(4), NodeIndex(0),
-                    _config->getConfigId()));
-        _node->setupDummyPersistence();
-        _clock = &_node->getClock();
-        _clock->setAbsoluteTimeInSeconds(1000000);
-        _top.reset(new DummyStorageLink);
-    } catch (config::InvalidConfigException& e) {
-        fprintf(stderr, "%s\n", e.what());
-    }
-    _metricManager.reset(new metrics::MetricManager(
-            std::unique_ptr<metrics::MetricManager::Timer>(
-                new MetricClock(*_clock))));
+
+    _node = std::make_unique<TestServiceLayerApp>(DiskCount(4), NodeIndex(0), _config->getConfigId());
+    _node->setupDummyPersistence();
+    _clock = &_node->getClock();
+    _clock->setAbsoluteTimeInSeconds(1000000);
+    _top = std::make_unique<DummyStorageLink>();
+
+    _metricManager = std::make_unique<metrics::MetricManager>(std::make_unique<MetricClock>(*_clock));
     _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {
         metrics::MetricLockGuard guard(_metricManager->getMetricLock());
         _metricManager->registerMetric(guard, *_topSet);
     }
 
-    _stateReporter.reset(new StateReporter(
+    _stateReporter = std::make_unique<StateReporter>(
             _node->getComponentRegister(),
             *_metricManager,
             _generationFetcher,
-            "status"));
+            "status");
 
     uint16_t diskCount = _node->getPartitions().size();
     documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
-    _filestorMetrics.reset(new FileStorMetrics(_node->getLoadTypes()->getMetricLoadTypes()));
+    _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());
     _filestorMetrics->initDiskMetrics(diskCount, loadTypes->getMetricLoadTypes(), 1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());
 }
 
-void StateReporterTest::tearDown() {
+void StateReporterTest::TearDown() {
     _metricManager->stop();
-    _stateReporter.reset(0);
-    _topSet.reset(0);
-    _metricManager.reset(0);
-    _top.reset(0);
-    _node.reset(0);
-    _config.reset(0);
+    _stateReporter.reset();
+    _topSet.reset();
+    _metricManager.reset();
+    _top.reset();
+    _node.reset();
+    _config.reset();
     _filestorMetrics.reset();
 }
 
@@ -129,17 +116,15 @@ vespalib::Slime slime; \
     vespalib::SimpleBuffer buffer;                                      \
     JsonFormat::encode(slime, buffer, false); \
     if (parsed == 0) { \
-        std::ostringstream error; \
-        error << "Failed to parse JSON: '\n" \
-              << jsonData << "'\n:" << buffer.get().make_string() << "\n"; \
-        CPPUNIT_ASSERT_EQUAL_MSG(error.str(), jsonData.size(), parsed); \
+        ASSERT_EQ(jsonData.size(), parsed) << "Failed to parse JSON: '\n" \
+              << jsonData << "':" << buffer.get().make_string(); \
     } \
 }
 
 #define ASSERT_GENERATION(jsonData, component, generation) \
 { \
     PARSE_JSON(jsonData); \
-    CPPUNIT_ASSERT_EQUAL( \
+    ASSERT_EQ( \
             generation, \
             slime.get()["config"][component]["generation"].asDouble()); \
 }
@@ -147,10 +132,10 @@ vespalib::Slime slime; \
 #define ASSERT_NODE_STATUS(jsonData, code, message) \
 { \
     PARSE_JSON(jsonData); \
-    CPPUNIT_ASSERT_EQUAL( \
+    ASSERT_EQ( \
             vespalib::string(code), \
             slime.get()["status"]["code"].asString().make_string()); \
-    CPPUNIT_ASSERT_EQUAL( \
+    ASSERT_EQ( \
             vespalib::string(message), \
             slime.get()["status"]["message"].asString().make_string()); \
 }
@@ -161,7 +146,6 @@ vespalib::Slime slime; \
     double getCount = -1; \
     double putCount = -1; \
     size_t metricCount = slime.get()["metrics"]["values"].children(); \
-    /*std::cerr << "\nmetric count=" << metricCount << "\n";*/ \
     for (size_t j=0; j<metricCount; j++) { \
         const vespalib::string name = slime.get()["metrics"]["values"][j]["name"] \
                                  .asString().make_string(); \
@@ -177,22 +161,21 @@ vespalib::Slime slime; \
                        .asDouble(); \
         } \
     } \
-    CPPUNIT_ASSERT_EQUAL(expGetCount, getCount); \
-    CPPUNIT_ASSERT_EQUAL(expPutCount, putCount); \
-    CPPUNIT_ASSERT(metricCount > 100); \
+    ASSERT_EQ(expGetCount, getCount); \
+    ASSERT_EQ(expPutCount, putCount); \
+    ASSERT_GT(metricCount, 100); \
 }
 
 
-void StateReporterTest::testReportConfigGeneration() {
+TEST_F(StateReporterTest, report_config_generation) {
     std::ostringstream ost;
     framework::HttpUrlPath path("/state/v1/config");
     _stateReporter->reportStatus(ost, path);
     std::string jsonData = ost.str();
-    //std::cerr << "\nConfig: " << jsonData << "\n";
     ASSERT_GENERATION(jsonData, "component", 1.0);
 }
 
-void StateReporterTest::testReportHealth() {
+TEST_F(StateReporterTest, report_health) {
     const int stateCount = 7;
     const lib::NodeState nodeStates[stateCount] = {
         lib::NodeState(lib::NodeType::STORAGE, lib::State::UNKNOWN),
@@ -228,23 +211,22 @@ void StateReporterTest::testReportHealth() {
         std::ostringstream ost;
         _stateReporter->reportStatus(ost, path);
         std::string jsonData = ost.str();
-        //std::cerr << "\nHealth " << i << ":" << jsonData << "\n";
         ASSERT_NODE_STATUS(jsonData, codes[i], messages[i]);
     }
 }
 
-void StateReporterTest::testReportMetrics() {
+TEST_F(StateReporterTest, report_metrics) {
     FileStorDiskMetrics& disk0(*_filestorMetrics->disks[0]);
     FileStorThreadMetrics& thread0(*disk0.threads[0]);
 
-    LOG(info, "Adding to get metric");
+    LOG(debug, "Adding to get metric");
 
     using documentapi::LoadType;
     thread0.get[LoadType::DEFAULT].count.inc(1);
 
-    LOG(info, "Waiting for 5 minute snapshot to be taken");
+    LOG(debug, "Waiting for 5 minute snapshot to be taken");
     // Wait until active metrics have been added to 5 min snapshot and reset
-    for (uint32_t i=0; i<6; ++i) {
+    for (uint32_t i = 0; i < 6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
         while (
@@ -254,7 +236,7 @@ void StateReporterTest::testReportMetrics() {
             FastOS_Thread::Sleep(1);
         }
     }
-    LOG(info, "5 minute snapshot should have been taken. Adding put count");
+    LOG(debug, "5 minute snapshot should have been taken. Adding put count");
 
     thread0.put[LoadType::DEFAULT].count.inc(1);
 
@@ -264,12 +246,11 @@ void StateReporterTest::testReportMetrics() {
         "/state/v1/metrics?consumer=status"
     };
 
-    for (int i=0; i<pathCount; i++) {
+    for (int i = 0; i < pathCount; i++) {
         framework::HttpUrlPath path(paths[i]);
         std::ostringstream ost;
         _stateReporter->reportStatus(ost, path);
         std::string jsonData = ost.str();
-        //std::cerr << "\nMetrics:" << jsonData << "\n";
         ASSERT_METRIC_GET_PUT(jsonData, 1.0, 0.0);
     }
  }

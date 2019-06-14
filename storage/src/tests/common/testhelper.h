@@ -19,17 +19,6 @@
         CPPUNIT_ASSERT_EQUAL_MSG(msgost.str(), size_t(count), \
                                  (dummylink).getNumReplies()); \
     }
-#define ASSERT_COMMAND_COUNT(count, dummylink) \
-    { \
-        std::ostringstream msgost; \
-        if ((dummylink).getNumCommands() != count) { \
-            for (uint32_t ijx=0; ijx<(dummylink).getNumCommands(); ++ijx) { \
-                msgost << (dummylink).getCommand(ijx)->toString(true) << "\n"; \
-            } \
-        } \
-        CPPUNIT_ASSERT_EQUAL_MSG(msgost.str(), size_t(count), \
-                                 (dummylink).getNumCommands()); \
-    }
 
 namespace storage {
 
