@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -46,7 +47,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                                    Clock clock,
                                    Metric metric,
                                    ResourceSnapshotConsumer resourceSnapshotConsumer) {
-        super(controller, interval, jobControl, ResourceMeterMaintainer.class.getSimpleName(), Set.of(SystemName.cd, SystemName.main));
+        super(controller, interval, jobControl, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.clock = clock;
         this.nodeRepository = nodeRepository;
         this.metric = metric;
