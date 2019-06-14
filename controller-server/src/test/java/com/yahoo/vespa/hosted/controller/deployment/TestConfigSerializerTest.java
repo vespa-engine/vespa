@@ -9,6 +9,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +30,7 @@ public class TestConfigSerializerTest {
                                                                                Map.of(zone, Map.of(ClusterSpec.Id.from("ai"),
                                                                                                    URI.create("https://server/"))),
                                                                                Map.of(zone, List.of("facts")));
-        byte[] expected = InternalStepRunnerTest.class.getResourceAsStream("/testConfig.json").readAllBytes();
+        byte[] expected = Files.readAllBytes(Paths.get("src/test/resources/testConfig.json"));
         assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlime(expected))),
                      new String(json));
     }
