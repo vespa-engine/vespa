@@ -43,6 +43,9 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
 
     private final GaugeWrapper numberOfContainersInLoadImageState;
+    private final GaugeWrapper jvmHeapUsed;
+    private final GaugeWrapper jvmHeapFree;
+    private final GaugeWrapper jvmHeapTotal;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver, Clock clock) {
@@ -70,6 +73,10 @@ public class NodeAdminImpl implements NodeAdmin {
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
+
+        this.jvmHeapUsed = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.used");
+        this.jvmHeapFree = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.free");
+        this.jvmHeapTotal = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.total");
     }
 
     @Override
@@ -110,6 +117,17 @@ public class NodeAdminImpl implements NodeAdmin {
 
         numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
         numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
+    }
+
+    @Override
+    public void updateNodeAdminMetrics() {
+        Runtime runtime = Runtime.getRuntime();
+        long freeMemory = runtime.freeMemory();
+        long totalMemory = runtime.totalMemory();
+        long usedMemory = totalMemory - freeMemory;
+        jvmHeapFree.sample(freeMemory);
+        jvmHeapUsed.sample(usedMemory);
+        jvmHeapTotal.sample(totalMemory);
     }
 
     @Override

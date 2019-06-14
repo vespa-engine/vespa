@@ -2,22 +2,22 @@
 
 #include "simpletermfielddata.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 SimpleTermFieldData::SimpleTermFieldData(uint32_t fieldId)
     : _fieldId(fieldId),
-      _docFreq(0),
+      _matching_doc_count(0),
+      _total_doc_count(1),
       _handle(IllegalHandle)
 {
 }
 
 SimpleTermFieldData::SimpleTermFieldData(const ITermFieldData &rhs)
     : _fieldId(rhs.getFieldId()),
-      _docFreq(rhs.getDocFreq()),
+      _matching_doc_count(rhs.get_matching_doc_count()),
+      _total_doc_count(rhs.get_total_doc_count()),
       _handle(rhs.getHandle())
 {
 }
 
-} // namespace fef
-} // namespace search
+}

@@ -6177,6 +6177,7 @@
     "methods": [
       "public void <init>()",
       "public void register(com.yahoo.search.query.profile.types.QueryProfileType)",
+      "public boolean hasApplicationTypes()",
       "public void freeze()",
       "public static com.yahoo.search.query.profile.types.QueryProfileTypeRegistry emptyFrozen()"
     ],

@@ -296,6 +296,13 @@ public class DockerImpl implements Docker {
         return encodedContainerName.substring(FRAMEWORK_CONTAINER_PREFIX.length());
     }
 
+    @Override
+    public boolean noManagedContainersRunning(String manager) {
+        return listAllContainers().stream()
+                .filter(container -> isManagedBy(container, manager))
+                .noneMatch(container -> "running".equalsIgnoreCase(container.getState()));
+    }
+
     List<com.github.dockerjava.api.model.Container> listAllContainers() {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec();

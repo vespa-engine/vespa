@@ -8,44 +8,59 @@ import java.util.Optional;
  */
 class TensorParser {
 
-    static Tensor tensorFrom(String tensorString, Optional<TensorType> type) {
+    static Tensor tensorFrom(String tensorString, Optional<TensorType> explicitType) {
+        Optional<TensorType> type;
+        String valueString;
+
         tensorString = tensorString.trim();
-        try {
-            if (tensorString.startsWith("tensor")) {
-                int colonIndex = tensorString.indexOf(':');
-                String typeString = tensorString.substring(0, colonIndex);
-                String valueString = tensorString.substring(colonIndex + 1);
-                TensorType typeFromString = TensorTypeParser.fromSpec(typeString);
-                if (type.isPresent() && ! type.get().equals(typeFromString))
-                    throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
-                                                       "passed type " + type.get());
-                return tensorFromValueString(valueString, typeFromString);
-            }
-            else if (tensorString.startsWith("{")) {
-                return tensorFromValueString(tensorString, type.orElse(typeFromValueString(tensorString)));
-            }
-            else {
-                if (type.isPresent() && ! type.get().equals(TensorType.empty))
-                    throw new IllegalArgumentException("Got zero-dimensional tensor '" + tensorString +
-                                                       "' where type " + type.get() + " is required");
+        if (tensorString.startsWith("tensor")) {
+            int colonIndex = tensorString.indexOf(':');
+            String typeString = tensorString.substring(0, colonIndex);
+            TensorType typeFromString = TensorTypeParser.fromSpec(typeString);
+            if (explicitType.isPresent() && ! explicitType.get().equals(typeFromString))
+                throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
+                                                   "passed type " + explicitType.get());
+            type = Optional.of(typeFromString);
+            valueString = tensorString.substring(colonIndex + 1);
+        }
+        else {
+            type = explicitType;
+            valueString = tensorString;
+        }
+
+        valueString = valueString.trim();
+        if (valueString.startsWith("{")) {
+            return tensorFromSparseValueString(valueString, type);
+        }
+        else if (valueString.startsWith("[")) {
+            return tensorFromDenseValueString(valueString, type);
+        }
+        else {
+            if (explicitType.isPresent() && ! explicitType.get().equals(TensorType.empty))
+                throw new IllegalArgumentException("Got a zero-dimensional tensor value ('" + tensorString +
+                                                   "') where type " + explicitType.get() + " is required");
+            try {
                 return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
             }
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" +
-                                               tensorString + "'");
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Excepted a number or a string starting by {, [ or tensor(...):, got '" +
+                                                   tensorString + "'");
+            }
         }
     }
 
-    /** Derive the tensor type from the first address string in the given tensor string */
-    private static TensorType typeFromValueString(String s) {
-        s = s.substring(1).trim(); // remove tensor start
+    /** Derives the tensor type from the first address string in the given tensor string */
+    private static TensorType typeFromSparseValueString(String valueString) {
+        String s = valueString.substring(1).trim(); // remove tensor start
         int firstKeyOrTensorEnd = s.indexOf('}');
+        if (firstKeyOrTensorEnd < 0)
+            throw new IllegalArgumentException("Excepted a number or a string starting by {, [ or tensor(...):, got '" +
+                                               valueString + "'");
         String addressBody = s.substring(0, firstKeyOrTensorEnd).trim();
         if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
         if ( ! addressBody.startsWith("{")) return TensorType.empty; // Single value tensor
 
-        addressBody = addressBody.substring(1); // remove key start
+        addressBody = addressBody.substring(1, addressBody.length()); // remove key start
         if (addressBody.isEmpty()) return TensorType.empty; // Empty key
 
         TensorType.Builder builder = new TensorType.Builder(TensorType.Value.DOUBLE);
@@ -60,19 +75,74 @@ class TensorParser {
         return builder.build();
     }
 
-    private static Tensor tensorFromValueString(String tensorValueString, TensorType type) {
-        Tensor.Builder builder = Tensor.Builder.of(type);
-        tensorValueString = tensorValueString.trim();
+    private static Tensor tensorFromSparseValueString(String valueString, Optional<TensorType> type) {
         try {
-            if (tensorValueString.startsWith("{"))
-                return fromCellString(builder, tensorValueString);
-            else
-                return builder.cell(Double.parseDouble(tensorValueString)).build();
+            valueString = valueString.trim();
+            Tensor.Builder builder = Tensor.Builder.of(type.orElse(typeFromSparseValueString(valueString)));
+            return fromCellString(builder, valueString);
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" +
-                                               tensorValueString + "'");
+                                               valueString + "'");
         }
+    }
+
+    private static Tensor tensorFromDenseValueString(String valueString, Optional<TensorType> type) {
+        if (type.isEmpty())
+            throw new IllegalArgumentException("The dense tensor form requires an explicit tensor type " +
+                                               "on the form 'tensor(dimensions):...");
+        if (type.get().dimensions().stream().anyMatch(d -> ( d.size().isEmpty())))
+            throw new IllegalArgumentException("The dense tensor form requires a tensor type containing " +
+                                               "only dense dimensions with a given size");
+
+        IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)IndexedTensor.Builder.of(type.get());
+        long index = 0;
+        int currentChar;
+        int nextNumberEnd = 0;
+        // Since we know the dimensions the brackets are just syntactic sugar:
+        while ((currentChar = nextStartCharIndex(nextNumberEnd + 1, valueString)) < valueString.length()) {
+            nextNumberEnd   = nextStopCharIndex(currentChar, valueString);
+            if (currentChar == nextNumberEnd) return builder.build();
+
+            TensorType.Value cellValueType = builder.type().valueType();
+            String cellValueString = valueString.substring(currentChar, nextNumberEnd);
+            try {
+                if (cellValueType == TensorType.Value.DOUBLE)
+                    builder.cellByDirectIndex(index, Double.parseDouble(cellValueString));
+                else if (cellValueType == TensorType.Value.FLOAT)
+                    builder.cellByDirectIndex(index, Float.parseFloat(cellValueString));
+                else
+                    throw new IllegalArgumentException(cellValueType + " is not supported");
+            }
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("At index " + index + ": '" +
+                                                   cellValueString + "' is not a valid " + cellValueType);
+            }
+            index++;
+        }
+        return builder.build();
+    }
+
+    /** Returns the position of the next character that should contain a number, or if none the string length */
+    private static int nextStartCharIndex(int charIndex, String valueString) {
+        for (; charIndex < valueString.length(); charIndex++) {
+            if (valueString.charAt(charIndex) == ']') continue;
+            if (valueString.charAt(charIndex) == '[') continue;
+            if (valueString.charAt(charIndex) == ',') continue;
+            if (valueString.charAt(charIndex) == ' ') continue;
+            return charIndex;
+        }
+        return valueString.length();
+    }
+
+    private static int nextStopCharIndex(int charIndex, String valueString) {
+        while (charIndex < valueString.length()) {
+            if (valueString.charAt(charIndex) == ',') return charIndex;
+            if (valueString.charAt(charIndex) == ']') return charIndex;
+            charIndex++;
+        }
+        throw new IllegalArgumentException("Malformed tensor value '" + valueString +
+                                           "': Expected a ',' or ']' after position " + charIndex);
     }
 
     private static Tensor fromCellString(Tensor.Builder builder, String s) {
@@ -97,8 +167,21 @@ class TensorParser {
             }
 
             TensorAddress address = addressBuilder.build();
-            Double value = asDouble(address, s.substring(index, valueEnd).trim());
-            builder.cell(address, value);
+            TensorType.Value cellValueType = builder.type().valueType();
+            String cellValueString = s.substring(index, valueEnd).trim();
+            try {
+                if (cellValueType == TensorType.Value.DOUBLE)
+                    builder.cell(address, Double.parseDouble(cellValueString));
+                else if (cellValueType == TensorType.Value.FLOAT)
+                    builder.cell(address, Float.parseFloat(cellValueString));
+                else
+                    throw new IllegalArgumentException(cellValueType + " is not supported");
+            }
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("At " + address.toString(builder.type()) + ": '" +
+                                                   cellValueString + "' is not a valid " + cellValueType);
+            }
+
             index = valueEnd+1;
             index = skipSpace(index, s);
         }
@@ -127,15 +210,6 @@ class TensorParser {
                                                    "got '" + elementString + "'");
             String dimension = pair[0].trim();
             builder.add(dimension, pair[1].trim());
-        }
-    }
-
-    private static Double asDouble(TensorAddress address, String s) {
-        try {
-            return Double.valueOf(s);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("At " + address + ": Expected a floating point number, got '" + s + "'");
         }
     }
 

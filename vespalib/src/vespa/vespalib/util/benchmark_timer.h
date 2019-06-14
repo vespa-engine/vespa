@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <functional>
+#include <algorithm>
 
 namespace vespalib {
 

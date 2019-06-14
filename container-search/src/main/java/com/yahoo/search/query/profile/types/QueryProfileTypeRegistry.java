@@ -12,13 +12,21 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
  */
 public class QueryProfileTypeRegistry extends ComponentRegistry<QueryProfileType> {
 
+    private final int nativeProfileCount;
+
     public QueryProfileTypeRegistry() {
         Query.addNativeQueryProfileTypesTo(this);
+        nativeProfileCount = allComponents().size();
     }
 
     /** Register this type by its id */
     public void register(QueryProfileType type) {
         super.register(type.getId(), type);
+    }
+
+    /** Returns true if this has types in addition to the native Vespa types */
+    public boolean hasApplicationTypes() {
+        return allComponents().size() > nativeProfileCount;
     }
 
     @Override

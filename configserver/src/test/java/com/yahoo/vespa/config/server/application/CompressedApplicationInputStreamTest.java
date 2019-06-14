@@ -1,8 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http;
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server.application;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -26,7 +27,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class CompressedApplicationInputStreamTest {
 

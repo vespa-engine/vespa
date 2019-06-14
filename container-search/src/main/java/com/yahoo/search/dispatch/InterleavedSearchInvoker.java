@@ -124,7 +124,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     }
 
     private void trimResult(Execution execution) {
-        if (trimResult) {
+        if (trimResult || result.hits().size() > query.getHits()) {
             result.hits().trim(query.getOffset(), query.getHits());
         }
     }

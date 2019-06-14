@@ -29,6 +29,7 @@ public class RequestVerifier {
         this(pemPublicKey, Clock.systemUTC());
     }
 
+    /** Creates a new request verifier from the given PEM encoded ECDSA public key, with the given clock. */
     public RequestVerifier(String pemPublicKey, Clock clock) {
         this.verifier = SignatureUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey), SHA256_WITH_ECDSA);
         this.clock = clock;

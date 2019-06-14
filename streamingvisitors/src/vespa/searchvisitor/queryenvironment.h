@@ -54,6 +54,8 @@ public:
     // inherit documentation
     virtual const search::attribute::IAttributeContext & getAttributeContext() const override { return *_attrCtx; }
 
+    double get_average_field_length(const vespalib::string &) const override { return 1.0; }
+
     // inherit documentation
     virtual const search::fef::IIndexEnvironment & getIndexEnvironment() const override { return _indexEnv; }
 

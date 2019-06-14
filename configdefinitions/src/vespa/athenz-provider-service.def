@@ -2,22 +2,22 @@
 namespace=vespa.hosted.athenz.instanceproviderservice.config
 
 # Athenz domain
-zones{}.domain                            string
+domain                                    string
 
 # Athenz service name
-zones{}.serviceName                       string
+serviceName                               string
 
 # Secret name of private Key
-zones{}.secretName                        string
+secretName                                string
 
 # Secret version
-zones{}.secretVersion                     int
+secretVersion                             int
 
 # Certificate DNS suffix
-zones{}.certDnsSuffix                     string
+certDnsSuffix                             string
 
 # Athenz ZTS server url
-zones{}.ztsUrl                            string
+ztsUrl                                    string
 
 # Path to Athenz CA JKS trust store
 athenzCaTrustStore                        string

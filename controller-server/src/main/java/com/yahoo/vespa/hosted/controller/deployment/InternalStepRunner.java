@@ -11,13 +11,11 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -28,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -41,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -57,7 +53,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -99,10 +94,12 @@ public class InternalStepRunner implements StepRunner {
     static final Duration installationTimeout = Duration.ofMinutes(150);
 
     private final Controller controller;
+    private final TestConfigSerializer testConfigSerializer;
     private final DeploymentFailureMails mails;
 
     public InternalStepRunner(Controller controller) {
         this.controller = controller;
+        this.testConfigSerializer = new TestConfigSerializer(controller.system());
         this.mails = new DeploymentFailureMails(controller.zoneRegistry());
     }
 
@@ -320,19 +317,23 @@ public class InternalStepRunner implements StepRunner {
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
         logger.log("Attempting to find deployment endpoints ...");
-        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id, Set.of(zoneId));
+        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zoneId));
         if ( ! endpoints.containsKey(zoneId)) {
             logger.log("Endpoints not yet ready.");
             return false;
         }
+        logEndpoints(endpoints, logger);
+        return true;
+    }
+
+    private void logEndpoints(Map<ZoneId, Map<ClusterSpec.Id, URI>> endpoints, DualLogger logger) {
         List<String> messages = new ArrayList<>();
         messages.add("Found endpoints:");
         endpoints.forEach((zone, uris) -> {
             messages.add("- " + zone);
-            uris.forEach(uri -> messages.add(" |-- " + uri));
+            uris.forEach((cluster, uri) -> messages.add(" |-- " + uri + " (" + cluster + ")"));
         });
         logger.log(messages);
-        return true;
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
@@ -384,21 +385,15 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
-        Set<ZoneId> zones = testedZoneAndProductionZones(id);
+        Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id.application(), id.type());
 
         logger.log("Attempting to find endpoints ...");
-        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application(), zones);
+        var endpoints = controller.applications().clusterEndpoints(id.application(), zones);
         if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
-        List<String> messages = new ArrayList<>();
-        messages.add("Found endpoints:");
-        endpoints.forEach((zone, uris) -> {
-            messages.add("- " + zone);
-            uris.forEach(uri -> messages.add(" |-- " + uri));
-        });
-        logger.log(messages);
+        logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if (testerEndpoint.isEmpty() && timedOut(deployment.get(), endpointTimeout)) {
@@ -410,9 +405,10 @@ public class InternalStepRunner implements StepRunner {
             logger.log("Starting tests ...");
             controller.jobController().cloud().startTests(testerEndpoint.get(),
                                                           TesterCloud.Suite.of(id.type()),
-                                                          testConfig(id.application(), id.type().zone(controller.system()),
-                                                                     controller.system(), endpoints,
-                                                                     listClusters(id.application(), zones)));
+                                                          testConfigSerializer.configJson(id.application(),
+                                                                                          id.type(),
+                                                                                          endpoints,
+                                                                                          listClusters(id.application(), zones)));
             return Optional.of(running);
         }
 
@@ -612,28 +608,6 @@ public class InternalStepRunner implements StepRunner {
         throw new IllegalStateException("No step deploys to the zone this run is for!");
     }
 
-    /** Returns a stream containing the zone of the deployment tested in the given run, and all production zones for the application. */
-    private Set<ZoneId> testedZoneAndProductionZones(RunId id) {
-        return Stream.concat(Stream.of(id.type().zone(controller.system())),
-                             application(id.application()).productionDeployments().keySet().stream())
-                     .collect(Collectors.toSet());
-    }
-
-    /** Returns all endpoints for all current deployments of the given real application. */
-    private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id, Iterable<ZoneId> zones) {
-        ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
-        for (ZoneId zone : zones) {
-            controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
-                      .filter(endpoints -> ! endpoints.isEmpty())
-                      .or(() -> Optional.of(controller.applications().routingPolicies().get(id, zone).stream()
-                                                      .map(policy -> policy.endpointIn(controller.system()).url())
-                                                      .collect(Collectors.toUnmodifiableList()))
-                                        .filter(endpoints -> ! endpoints.isEmpty()))
-                      .ifPresent(endpoints -> deployments.put(zone, endpoints));
-        }
-        return deployments.build();
-    }
-
     /** Returns all content clusters in all current deployments of the given real application. */
     private Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
@@ -710,38 +684,6 @@ public class InternalStepRunner implements StepRunner {
                 athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("")
                 + "/>";
         return deploymentSpec.getBytes(StandardCharsets.UTF_8);
-    }
-
-    /** Returns the config for the tests to run for the given job. */
-    private static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system,
-                                     Map<ZoneId, List<URI>> deployments, Map<ZoneId, List<String>> clusters) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-
-        root.setString("application", id.serializedForm());
-        root.setString("zone", testerZone.value());
-        root.setString("system", system.value());
-
-        Cursor endpointsObject = root.setObject("endpoints");
-        deployments.forEach((zone, endpoints) -> {
-            Cursor endpointArray = endpointsObject.setArray(zone.value());
-            for (URI endpoint : endpoints)
-                endpointArray.addString(endpoint.toString());
-        });
-
-        Cursor clustersObject = root.setObject("clusters");
-        clusters.forEach((zone, clusterList) -> {
-            Cursor clusterArray = clustersObject.setArray(zone.value());
-            for (String cluster : clusterList)
-                clusterArray.addString(cluster);
-        });
-
-        try {
-            return SlimeUtils.toJsonBytes(slime);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     /** Logger which logs to a {@link JobController}, as well as to the parent class' {@link Logger}. */

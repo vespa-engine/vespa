@@ -293,7 +293,7 @@ public class ControllerTest {
                                 "app1--tenant1.global.vespa.oath.cloud",
                                 "app1.tenant1.global.vespa.yahooapis.com",
                                 "app1--tenant1.global.vespa.yahooapis.com"),
-                         tester.configServer().rotationCnames().get(new DeploymentId(application.id(), deployment.zone())));
+                         tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
         assertEquals(3, tester.controllerTester().nameService().records().size());

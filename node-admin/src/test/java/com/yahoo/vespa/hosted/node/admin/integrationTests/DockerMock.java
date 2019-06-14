@@ -91,6 +91,10 @@ public class DockerMock implements Docker {
         return new ProcessResult(0, null, "");
     }
 
+    @Override
+    public boolean noManagedContainersRunning(String manager) {
+        return false;
+    }
 
     public class StartContainerCommandMock implements CreateContainerCommand {
 

@@ -10,8 +10,7 @@ LOG_SETUP(".fef.blueprint");
 namespace search::fef {
 
 const FeatureType &
-Blueprint::defineInput(vespalib::stringref inName,
-                       AcceptInput accept)
+Blueprint::defineInput(vespalib::stringref inName, AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
     return _dependency_handler->resolve_input(inName, accept);
@@ -60,13 +59,17 @@ Blueprint::setup(const IIndexEnvironment &indexEnv,
 }
 
 bool
-Blueprint::setup(const IIndexEnvironment &indexEnv,
-                 const ParameterList &params)
+Blueprint::setup(const IIndexEnvironment &indexEnv, const ParameterList &params)
 {
     (void) indexEnv; (void) params;
     LOG(error, "The setup function using a typed parameter list does not have a default implementation. "
         "Make sure the setup function is implemented in the rank feature %s.", getBaseName().c_str());
     return false;
+}
+
+void
+Blueprint::prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const {
+    (void) queryEnv; (void) objectStore;
 }
 
 const attribute::IAttributeVector *

@@ -709,14 +709,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Invalid deployment fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3/global-rotation", GET)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in zone prod.us-east-3 in default\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-east-3\"}",
                               404);
 
         // Change status of non-existing deployment fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3/global-rotation/override", PUT)
                                       .userIdentity(USER_ID)
                                       .data("{\"reason\":\"unit-test\"}"),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in zone prod.us-east-3 in default\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"application 'tenant1.application1.instance1' has no deployment in prod.us-east-3\"}",
                               404);
 
         // GET global rotation status

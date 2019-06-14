@@ -25,13 +25,11 @@ import java.util.Set;
 public interface ConfigServer {
 
     interface PreparedApplication {
-        // TODO: Remove the two methods below
-        void activate();
-        List<Log> messages();
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
+    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
+                               List<ContainerEndpoint> containerEndpoints, byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 

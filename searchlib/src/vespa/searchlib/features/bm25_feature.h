@@ -30,7 +30,12 @@ private:
 
 public:
     Bm25Executor(const fef::FieldInfo& field,
-                 const fef::IQueryEnvironment& env);
+                 const fef::IQueryEnvironment& env,
+                 double avg_field_length,
+                 double k1_param,
+                 double b_param);
+
+    double static calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count);
 
     void handle_bind_match_data(const fef::MatchData& match_data) override;
     void execute(uint32_t docId) override;
@@ -43,6 +48,10 @@ public:
 class Bm25Blueprint : public fef::Blueprint {
 private:
     const fef::FieldInfo* _field;
+    double _k1_param;
+    double _b_param;
+
+    bool lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const;
 
 public:
     Bm25Blueprint();
@@ -53,6 +62,7 @@ public:
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
     }
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    void prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 

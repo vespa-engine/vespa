@@ -9,14 +9,22 @@ using vespalib::GenerationHeldBase;
 using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
 
-//////////////////////////////////////////////////////////////////////
-// Parameterized Constructor
-//////////////////////////////////////////////////////////////////////
+namespace {
+
+size_t computeCapacity(size_t capacity, size_t allocatedBytes) {
+    size_t possibleCapacity = (allocatedBytes * 8) - 1;
+    assert(possibleCapacity >= capacity);
+    return possibleCapacity;
+}
+
+}
+
 AllocatedBitVector::AllocatedBitVector(Index numberOfElements) :
     BitVector(),
     _capacityBits(numberOfElements),
     _alloc(allocatePaddedAndAligned(numberOfElements))
 {
+    _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
     clear();
 }
@@ -33,6 +41,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     _capacityBits(capacityBits),
     _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits))
 {
+    _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
     clear();
     if (rhsSize > 0) {
@@ -58,6 +67,7 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, Index capacity_) :
     _capacityBits(capacity_),
     _alloc(allocatePaddedAndAligned(0, rhs.size(), capacity_))
 {
+    _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     memcpy(_alloc.get(),  rhs.getStart(), rhs.sizeBytes());
     init(_alloc.get(), 0, rhs.size());
 }
@@ -65,7 +75,7 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, Index capacity_) :
 //////////////////////////////////////////////////////////////////////
 // Destructor
 //////////////////////////////////////////////////////////////////////
-AllocatedBitVector::~AllocatedBitVector() { }
+AllocatedBitVector::~AllocatedBitVector() = default;
 
 void
 AllocatedBitVector::cleanup()
@@ -78,8 +88,8 @@ AllocatedBitVector::cleanup()
 void
 AllocatedBitVector::resize(Index newLength)
 {
-    _capacityBits = newLength;
-    _alloc = allocatePaddedAndAligned(_capacityBits);
+    _alloc = allocatePaddedAndAligned(newLength);
+    _capacityBits = computeCapacity(newLength, _alloc.size());
     init(_alloc.get(), 0, newLength);
     clear();
 }

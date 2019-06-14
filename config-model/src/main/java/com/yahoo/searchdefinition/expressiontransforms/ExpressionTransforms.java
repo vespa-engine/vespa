@@ -6,6 +6,7 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.transform.ConstantDereferencer;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.searchlib.rankingexpression.transform.Simplifier;
+import com.yahoo.searchlib.rankingexpression.transform.TensorMaxMinTransformer;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class ExpressionTransforms {
                                  new ConstantTensorTransformer(),
                                  new FunctionInliner(),
                                  new FunctionShadower(),
-                                 new TensorTransformer(),
+                                 new TensorMaxMinTransformer(),
                                  new Simplifier());
     }
 

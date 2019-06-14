@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -12,6 +13,8 @@ import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Owns the query profiles and query profile types to be handed to the qrs nodes.
@@ -29,8 +32,9 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
      * @param registry the registry containing the query profiles and types of this.
      *        The given registry cannot be frozen on calling this.
      */
-    public QueryProfiles(QueryProfileRegistry registry) {
+    public QueryProfiles(QueryProfileRegistry registry, DeployLogger logger) {
         this.registry = registry;
+        validate(registry, logger);
     }
 
     public QueryProfiles() {
@@ -39,6 +43,28 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
 
     public QueryProfileRegistry getRegistry() {
         return registry;
+    }
+
+    /** Emits warnings/hints on some common configuration errors */
+    private void validate(QueryProfileRegistry registry, DeployLogger logger) {
+        Set<String> tensorFields = new HashSet<>();
+        for (QueryProfileType type : registry.getTypeRegistry().allComponents()) {
+            for (var fieldEntry : type.fields().entrySet()) {
+                if (fieldEntry.getValue().getType().asTensorType().rank() > 0)
+                    tensorFields.add(fieldEntry.getKey());
+            }
+        }
+
+        if ( registry.getTypeRegistry().hasApplicationTypes() && registry.allComponents().isEmpty()) {
+            logger.log(Level.WARNING, "This application define query profile types, but has " +
+                                      "no query profiles referencing them so they have no effect. "  +
+                                      (tensorFields.isEmpty()
+                                       ? ""
+                                       : "In particular, the tensors (" + String.join(", ", tensorFields) +
+                                         ") will be interpreted as strings, not tensors if sent in requests. ") +
+                                      "See https://docs.vespa.ai/documentation/query-profiles.html");
+        }
+
     }
 
     @Override

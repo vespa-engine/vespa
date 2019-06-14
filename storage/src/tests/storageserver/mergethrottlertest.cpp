@@ -3,7 +3,7 @@
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <tests/common/testhelper.h>
-#include <tests/common/storagelinktest.h>
+#include <tests/common/dummystoragelink.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -595,7 +595,7 @@ MergeThrottlerTest::test42DistributorBehaviorDoesNotTakeOwnership()
 
     // Flush throttler (synchronously). Should NOT generate a reply
     // for the merge command, as it is not owned by the throttler
-    StorageLinkTest::callOnFlush(*_throttlers[1], true);
+    _throttlers[1]->onFlush(true);
 
     CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[1]->getNumCommands());
     CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[1]->getNumReplies());
@@ -653,7 +653,7 @@ MergeThrottlerTest::testEndOfChainExecutionDoesNotTakeOwnership()
 
     // Flush throttler (synchronously). Should NOT generate a reply
     // for the merge command, as it is not owned by the throttler
-    StorageLinkTest::callOnFlush(*_throttlers[2], true);
+    _throttlers[2]->onFlush(true);
 
     CPPUNIT_ASSERT_EQUAL(std::size_t(0), _bottomLinks[2]->getNumCommands());
     CPPUNIT_ASSERT_EQUAL(std::size_t(0), _topLinks[2]->getNumReplies());

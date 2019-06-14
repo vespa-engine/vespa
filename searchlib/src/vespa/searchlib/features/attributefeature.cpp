@@ -324,7 +324,7 @@ AttributeBlueprint::createInstance() const
 }
 
 #define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
-    if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != NULL) { \
+    if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != nullptr) { \
         return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
     }
 
@@ -333,7 +333,7 @@ namespace {
 fef::FeatureExecutor &
 createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
                 attrName.c_str());
         std::vector<feature_t> values(4, 0.0f);
@@ -382,7 +382,7 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                               const ValueType &tensorType,
                               vespalib::Stash &stash)
 {
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);

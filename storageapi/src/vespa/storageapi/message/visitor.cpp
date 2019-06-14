@@ -3,6 +3,7 @@
 #include "visitor.h"
 #include <vespa/vespalib/util/array.hpp>
 #include <climits>
+#include <ostream>
 
 namespace storage::api {
 

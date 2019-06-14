@@ -53,7 +53,9 @@ public class TypeResolutionTestCase {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("An if expression must produce compatible types in both alternatives, " +
-                         "but the 'true' type is tensor(x[]) while the 'false' type is tensor(y[])",
+                         "but the 'true' type is tensor(x[]) while the 'false' type is tensor(y[])" +
+                         "\n'true' branch: query(x1)" +
+                         "\n'false' branch: query(y1)",
                          expected.getMessage());
         }
         catch (ParseException e) {

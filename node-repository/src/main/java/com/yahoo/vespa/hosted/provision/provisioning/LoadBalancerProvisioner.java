@@ -57,7 +57,7 @@ public class LoadBalancerProvisioner {
                     LoadBalancerInstance instance = create(application, kv.getKey().id(), kv.getValue());
                     // Load balancer is always re-activated here to avoid reallocation if an application/cluster is
                     // deleted and then redeployed.
-                    LoadBalancer loadBalancer = new LoadBalancer(id, instance, kv.getKey().rotations(), false);
+                    LoadBalancer loadBalancer = new LoadBalancer(id, instance, false);
                     loadBalancers.put(loadBalancer.id(), loadBalancer);
                     db.writeLoadBalancer(loadBalancer);
                 }

@@ -5,7 +5,7 @@ search music3 {
 
         }
         field pos type position {
-
+            indexing: attribute
         }
     }
 }

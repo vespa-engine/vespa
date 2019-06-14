@@ -1,4 +1,4 @@
 {
   "error-code": "BAD_REQUEST",
-  "message": "Could not delete 'application 'tenant1.application1.instance1'': It has active deployments in: zone dev.us-west-1 in default, zone prod.us-central-1 in default"
+  "message": "Could not delete 'application 'tenant1.application1.instance1'': It has active deployments in: dev.us-west-1, prod.us-central-1"
 }

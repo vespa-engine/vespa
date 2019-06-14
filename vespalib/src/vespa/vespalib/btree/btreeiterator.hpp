@@ -9,8 +9,6 @@
 
 namespace search::btree {
 
-#define STRICT_BTREE_ITERATOR_SEEK
-
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
@@ -81,10 +79,7 @@ operator=(const BTreeIteratorBase &other)
 
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-~BTreeIteratorBase()
-{
-}
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::~BTreeIteratorBase() = default;
 
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
@@ -674,11 +669,7 @@ BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 binarySeek(const KeyType & key, CompareT comp)
 {
     const LeafNodeType *lnode = _leaf.getNode();
-    uint32_t lidx = _leaf.getIdx();
-#ifdef STRICT_BTREE_ITERATOR_SEEK
-    assert(_leaf.valid() && comp(lnode->getKey(lidx), key));
-#endif
-    ++lidx;
+    uint32_t lidx = _leaf.getIdx() + 1;
     if (lidx < lnode->validSlots()) {
         if (!comp(lnode->getKey(lidx), key)) {
             _leaf.setIdx(lidx);
@@ -723,11 +714,7 @@ BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 linearSeek(const KeyType & key, CompareT comp)
 {
     const LeafNodeType *lnode = _leaf.getNode();
-    uint32_t lidx = _leaf.getIdx();
-#ifdef STRICT_BTREE_ITERATOR_SEEK
-    assert(_leaf.valid() && comp(lnode->getKey(lidx), key));
-#endif
-    ++lidx;
+    uint32_t lidx = _leaf.getIdx() + 1;
     if (lidx < lnode->validSlots()) {
         if (!comp(lnode->getKey(lidx), key)) {
             _leaf.setIdx(lidx);
@@ -792,11 +779,7 @@ BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 binarySeekPast(const KeyType & key, CompareT comp)
 {
     const LeafNodeType *lnode = _leaf.getNode();
-    uint32_t lidx = _leaf.getIdx();
-#ifdef STRICT_BTREE_ITERATOR_SEEK
-    assert(_leaf.valid() && !comp(key, lnode->getKey(lidx)));
-#endif
-    ++lidx;
+    uint32_t lidx = _leaf.getIdx() + 1;
     if (lidx < lnode->validSlots()) {
         if (comp(key, lnode->getKey(lidx))) {
             _leaf.setIdx(lidx);
@@ -841,11 +824,8 @@ BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 linearSeekPast(const KeyType & key, CompareT comp)
 {
     const LeafNodeType *lnode = _leaf.getNode();
-    uint32_t lidx = _leaf.getIdx();
-#ifdef STRICT_BTREE_ITERATOR_SEEK
-    assert(_leaf.valid() && !comp(key, lnode->getKey(lidx)));
-#endif
-    ++lidx;
+    uint32_t lidx = _leaf.getIdx() + 1;
+
     if (lidx < lnode->validSlots()) {
         if (comp(key, lnode->getKey(lidx))) {
             _leaf.setIdx(lidx);

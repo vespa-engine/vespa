@@ -8,13 +8,9 @@ vespa_add_executable(storage_testrunner_app TEST
     DEPENDS
     storage_teststorageserver
     storage_testvisiting
-    storage_testbucketdb
     storage_testcommon
     storage_testhostreporter
     storage_testdistributor
-    storage_testpersistence
-    storage_testfilestorage
-    storage_teststatus
 )
 
 vespa_add_test(

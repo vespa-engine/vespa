@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -76,6 +77,7 @@ import java.security.Principal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -86,6 +88,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -208,7 +211,7 @@ public class ApplicationController {
         return findGlobalEndpoint(deployment).map(endpoint -> {
             try {
                 EndpointStatus status = configServer.getGlobalRotationStatus(deployment, endpoint.upstreamName());
-                return Collections.singletonMap(endpoint, status);
+                return Map.of(endpoint, status);
             } catch (IOException e) {
                 throw new UncheckedIOException("Failed to get rotation status of " + deployment, e);
             }
@@ -282,7 +285,6 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             Set<String> rotationNames = new HashSet<>();
-            Set<String> cnames;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(require(applicationId), lock);
@@ -324,9 +326,9 @@ public class ApplicationController {
                 application = withRotation(application, zone);
                 Application app = application.get();
                 // Include global DNS names
-                cnames = app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).collect(Collectors.toSet());
+                app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).forEach(rotationNames::add);
                 // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
-                app.rotations().stream().map(RotationId::asString).forEach(cnames::add);
+                app.rotations().stream().map(RotationId::asString).forEach(rotationNames::add);
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion
@@ -338,7 +340,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, cnames);
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames);
 
             lockOrThrow(applicationId, application ->
                     store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
@@ -405,7 +407,7 @@ public class ApplicationController {
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
             DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Set.of(), Set.of());
+            return deploy(application.id(), applicationPackage, zone, options, Set.of());
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -413,16 +415,15 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        return deploy(tester.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
+        return deploy(tester.id(), applicationPackage, zone, options, Set.of());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, DeployOptions deployOptions,
-                                  Set<String> rotationNames, Set<String> cnames) {
+                                  Set<String> rotationNames) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         ConfigServer.PreparedApplication preparedApplication =
-                configServer.deploy(deploymentId, deployOptions, cnames, rotationNames,
-                                    applicationPackage.zippedContent());
+                configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationPackage.zippedContent());
 
         // Refresh routing policies on successful deployment. At this point we can safely assume that the config server
         // has allocated load balancers for the deployment.
@@ -466,8 +467,8 @@ public class ApplicationController {
         logEntry.message = "Ignoring deployment of application '" + application + "' to " + zone +
                            " as a deployment is not currently expected";
         PrepareResponse prepareResponse = new PrepareResponse();
-        prepareResponse.log = Collections.singletonList(logEntry);
-        prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
+        prepareResponse.log = List.of(logEntry);
+        prepareResponse.configChangeActions = new ConfigChangeActions(List.of(), List.of());
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
@@ -518,24 +519,57 @@ public class ApplicationController {
         controller.nameServiceForwarder().createCname(RecordName.from(name), RecordData.fqdn(targetName), Priority.normal);
     }
 
-    /** Returns the endpoints of the deployment, or an empty list if the request fails */
-    public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
+    /** Returns the endpoints of the deployment, or empty if the request fails */
+    public List<URI> getDeploymentEndpoints(DeploymentId deploymentId) {
         if ( ! get(deploymentId.applicationId())
                 .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
                 .orElse(deploymentId.applicationId().instance().isTester()))
             throw new NotExistsException("Deployment", deploymentId.toString());
 
         try {
-            return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                                                    .map(RoutingEndpoint::endpoint)
-                                                                    .map(URI::create)
-                                                                    .iterator()));
+            return ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
+                                                        .map(RoutingEndpoint::endpoint)
+                                                        .map(URI::create)
+                                                        .iterator());
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
                                    + Exceptions.toMessageString(e));
-            return Optional.empty();
+            return Collections.emptyList();
         }
+    }
+
+    /** Returns the non-empty endpoints per cluster in the given deployment, or empty if endpoints can't be found. */
+    public Map<ClusterSpec.Id, URI> clusterEndpoints(DeploymentId id) {
+        if ( ! get(id.applicationId())
+                .map(application -> application.deployments().containsKey(id.zoneId()))
+                .orElse(id.applicationId().instance().isTester()))
+            throw new NotExistsException("Deployment", id.toString());
+
+        try {
+            return Optional.of(routingGenerator.clusterEndpoints(id))
+                    .filter(endpoints -> ! endpoints.isEmpty())
+                    .orElseGet(() -> routingPolicies.get(id).stream()
+                                                    .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
+                                                    .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
+                                                                                          policy -> policy.endpointIn(controller.system()).url())));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": "
+                                   + Exceptions.toMessageString(e));
+            return Collections.emptyMap();
+        }
+    }
+
+    /** Returns all zone-specific cluster endpoints for the given application, in the given zones. */
+    public Map<ZoneId, Map<ClusterSpec.Id, URI>> clusterEndpoints(ApplicationId id, Collection<ZoneId> zones) {
+        Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments = new TreeMap<>(Comparator.comparing(ZoneId::value));
+        for (ZoneId zone : zones) {
+            var endpoints = clusterEndpoints(new DeploymentId(id, zone));
+            if ( ! endpoints.isEmpty())
+                deployments.put(zone, endpoints);
+        }
+        return Collections.unmodifiableMap(deployments);
     }
 
     /**
@@ -778,7 +812,7 @@ public class ApplicationController {
             if (!"warn".equalsIgnoreCase(log.level) && !"warning".equalsIgnoreCase(log.level)) continue;
             warnings.merge(DeploymentMetrics.Warning.all, 1, Integer::sum);
         }
-        return Collections.unmodifiableMap(warnings);
+        return Map.copyOf(warnings);
     }
 
 }

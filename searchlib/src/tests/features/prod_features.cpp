@@ -1968,8 +1968,10 @@ Test::testTerm()
             .addField(FieldType::INDEX, CollectionType::SINGLE,     "idx2")  // field 1
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "attr"); // field 2
         ft.getQueryEnv().getBuilder().addAllFields().setUniqueId(0);
-        ft.getQueryEnv().getBuilder().addAllFields().setUniqueId(1).setWeight(search::query::Weight(200)).lookupField(0)->setDocFreq(0.5);
-        ft.getQueryEnv().getBuilder().addAttributeNode("attr")->setUniqueId(2).setWeight(search::query::Weight(400)).lookupField(2)->setDocFreq(0.25);
+        ft.getQueryEnv().getBuilder().addAllFields().setUniqueId(1)
+                .setWeight(search::query::Weight(200)).lookupField(0)->setDocFreq(50, 100);
+        ft.getQueryEnv().getBuilder().addAttributeNode("attr")->setUniqueId(2)
+                .setWeight(search::query::Weight(400)).lookupField(2)->setDocFreq(25, 100);
         // setup connectedness between term 1 and term 0
         ft.getQueryEnv().getProperties().add("vespa.term.1.connexity", "0");
         ft.getQueryEnv().getProperties().add("vespa.term.1.connexity", "0.7");

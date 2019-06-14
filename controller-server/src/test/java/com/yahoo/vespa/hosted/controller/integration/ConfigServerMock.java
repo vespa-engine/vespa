@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -59,7 +60,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Set<DeploymentId> suspendedApplications = new HashSet<>();
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
-    private final Map<DeploymentId, Set<String>> rotationCnames = new HashMap<>();
+    private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -180,8 +181,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         warnings.put(deployment, List.copyOf(logs));
     }
 
-    public Map<DeploymentId, Set<String>> rotationCnames() {
-        return Collections.unmodifiableMap(rotationCnames);
+    public Map<DeploymentId, Set<String>> rotationNames() {
+        return Collections.unmodifiableMap(rotationNames);
     }
 
     @Override
@@ -223,8 +224,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
-                                       Set<String> rotationNames, byte[] content) {
+    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
+                                      List<ContainerEndpoint> containerEndpoints, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
@@ -236,64 +237,41 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
-        this.rotationCnames.put(deployment, Set.copyOf(rotationCnames));
+        this.rotationNames.put(deployment, Set.copyOf(rotationNames));
 
-        return new PreparedApplication() {
-
-            // TODO: Remove when no longer part of interface
-            public void activate() {}
-
-            // TODO: Remove when no longer part of interface
-            public List<Log> messages() {
-                Log warning = new Log();
-                warning.level = "WARNING";
-                warning.time  = 1;
-                warning.message = "The warning";
-
-                Log info = new Log();
-                info.level = "INFO";
-                info.time  = 2;
-                info.message = "The info";
-
-                return List.of(warning, info);
+        return () -> {
+            Application application = applications.get(deployment.applicationId());
+            application.activate();
+            List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
+            for (Node node : nodes) {
+                nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
+                                                                           Node.State.active,
+                                                                           node.type(),
+                                                                           node.owner(),
+                                                                           node.currentVersion(),
+                                                                           application.version().get()));
             }
+            serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
+                                                                 deployment.zoneId(),
+                                                                 false,
+                                                                 2,
+                                                                 nodes.stream()
+                                                                      .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                                 43,
+                                                                                                                 "container",
+                                                                                                                 1))
+                                                                      .collect(Collectors.toList())));
 
-            @Override
-            public PrepareResponse prepareResponse() {
-                Application application = applications.get(deployment.applicationId());
-                application.activate();
-                List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
-                for (Node node : nodes) {
-                    nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
-                                                                               Node.State.active,
-                                                                               node.type(),
-                                                                               node.owner(),
-                                                                               node.currentVersion(),
-                                                                               application.version().get()));
-                }
-                serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
-                                                                     deployment.zoneId(),
-                                                                     false,
-                                                                     2,
-                                                                     nodes.stream()
-                                                                          .map(node -> new ServiceConvergence.Status(node.hostname(),
-                                                                                                                     43,
-                                                                                                                     "container",
-                                                                                                                     1))
-                                                                          .collect(Collectors.toList())));
-
-                PrepareResponse prepareResponse = new PrepareResponse();
-                prepareResponse.message = "foo";
-                prepareResponse.configChangeActions = configChangeActions != null
-                        ? configChangeActions
-                        : new ConfigChangeActions(Collections.emptyList(),
-                                                  Collections.emptyList());
-                setConfigChangeActions(null);
-                prepareResponse.tenant = new TenantId("tenant");
-                prepareResponse.log = warnings.getOrDefault(deployment, Collections.emptyList());
-                return prepareResponse;
-            }
-
+            PrepareResponse prepareResponse = new PrepareResponse();
+            prepareResponse.message = "foo";
+            prepareResponse.configChangeActions = configChangeActions != null
+                    ? configChangeActions
+                    : new ConfigChangeActions(Collections.emptyList(),
+                                              Collections.emptyList());
+            setConfigChangeActions(null);
+            prepareResponse.tenant = new TenantId("tenant");
+            prepareResponse.log = warnings.getOrDefault(deployment, Collections.emptyList());
+            return prepareResponse;
         };
     }
 

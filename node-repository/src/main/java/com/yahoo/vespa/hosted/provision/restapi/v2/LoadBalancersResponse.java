@@ -76,11 +76,7 @@ public class LoadBalancersResponse extends HttpResponse {
                 realObject.setLong("port", real.port());
             });
 
-            Cursor rotationArray = lbObject.setArray("rotations");
-            lb.rotations().forEach(rotation -> {
-                Cursor rotationObject = rotationArray.addObject();
-                rotationObject.setString("name", rotation.value());
-            });
+            lbObject.setArray("rotations"); // To avoid changing the API. This can be removed when clients stop expecting this
 
             lbObject.setBool("inactive", lb.inactive());
         });

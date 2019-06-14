@@ -48,6 +48,9 @@ public class TensorType {
             return FLOAT;
         }
 
+        @Override
+        public String toString() { return name().toLowerCase(); }
+
     };
 
     /** The empty tensor type - which is the same as a double */

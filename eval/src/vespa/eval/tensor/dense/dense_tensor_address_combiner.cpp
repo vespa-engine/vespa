@@ -57,31 +57,7 @@ AddressContext::~AddressContext() = default;
 eval::ValueType
 DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs)
 {
-    // NOTE: both lhs and rhs are sorted according to dimension names.
-    std::vector<eval::ValueType::Dimension> result;
-    auto lhsItr = lhs.dimensions().cbegin();
-    auto rhsItr = rhs.dimensions().cbegin();
-    while (lhsItr != lhs.dimensions().end() &&
-           rhsItr != rhs.dimensions().end()) {
-        if (lhsItr->name == rhsItr->name) {
-            result.emplace_back(lhsItr->name, std::min(lhsItr->size, rhsItr->size));
-            ++lhsItr;
-            ++rhsItr;
-        } else if (lhsItr->name < rhsItr->name) {
-            result.emplace_back(*lhsItr++);
-        } else {
-            result.emplace_back(*rhsItr++);
-        }
-    }
-    while (lhsItr != lhs.dimensions().end()) {
-        result.emplace_back(*lhsItr++);
-    }
-    while (rhsItr != rhs.dimensions().end()) {
-        result.emplace_back(*rhsItr++);
-    }
-    return (result.empty() ?
-            eval::ValueType::double_type() :
-            eval::ValueType::tensor_type(std::move(result)));
+    return eval::ValueType::join(lhs, rhs);
 }
 
 }

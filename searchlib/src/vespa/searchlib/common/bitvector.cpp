@@ -52,7 +52,7 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity)
     assert(alloc.size()/sizeof(Word) >= words);
     // Clear padding
     size_t usedBytes = numBytes(end - start);
-    memset(static_cast<char *>(alloc.get()) + usedBytes, 0, sz - usedBytes);
+    memset(static_cast<char *>(alloc.get()) + usedBytes, 0, alloc.size() - usedBytes);
     return alloc;
 }
 

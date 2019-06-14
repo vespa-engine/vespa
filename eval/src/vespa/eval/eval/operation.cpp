@@ -2,6 +2,7 @@
 
 #include "operation.h"
 #include <vespa/vespalib/util/approx.h>
+#include <algorithm>
 
 namespace vespalib::eval::operation {
 

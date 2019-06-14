@@ -41,19 +41,16 @@ import static com.yahoo.log.LogLevel.DEBUG;
 public class VespaMetrics {
     private static final Logger log = Logger.getLogger(VespaMetrics.class.getPackage().getName());
 
-    // MUST be the same as the constant defined in config-model
     public static final ConsumerId VESPA_CONSUMER_ID = toConsumerId("Vespa");
 
     public static final DimensionId METRIC_TYPE_DIMENSION_ID = toDimensionId("metrictype");
     public static final DimensionId INSTANCE_DIMENSION_ID = toDimensionId("instance");
 
-    private static final Set<ConsumerId> DEFAULT_CONSUMERS = Collections.singleton(VESPA_CONSUMER_ID);
-
     private final MetricsConsumers metricsConsumers;
 
     private static final MetricsFormatter formatter = new MetricsFormatter(false, false);
 
-    public VespaMetrics(MetricsConsumers metricsConsumers, VespaServices vespaServices) {
+    public VespaMetrics(MetricsConsumers metricsConsumers) {
         this.metricsConsumers = metricsConsumers;
     }
 

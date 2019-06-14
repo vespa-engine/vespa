@@ -3,12 +3,15 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -25,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -34,6 +38,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -369,7 +374,7 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
         assertTestLogEntries(id, Step.copyVespaLogs,
-                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in zone test.us-east-1 in default ..."),
+                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in test.us-east-1 ..."),
                              new LogEntry(lastId + 3, 1554970337084L, info,
                                           "17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\n" +
                                           "Switching to the latest deployed set of configurations and components. Application switch number: 2"),

@@ -2,16 +2,13 @@
 
 #include "queryenvironmentbuilder.h"
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 QueryEnvironmentBuilder::QueryEnvironmentBuilder(QueryEnvironment &env,
                                                  MatchDataLayout &layout) :
     _queryEnv(env),
     _layout(layout)
 {
-    // empty
 }
 
 QueryEnvironmentBuilder::~QueryEnvironmentBuilder() { }
@@ -39,8 +36,8 @@ QueryEnvironmentBuilder::addIndexNode(const std::vector<vespalib::string> &field
     td.setWeight(search::query::Weight(100));
     for (uint32_t i = 0; i < fieldNames.size(); ++i) {
         const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldNames[i]);
-        if (info == NULL || info->type() != FieldType::INDEX) {
-            return NULL;
+        if (info == nullptr || info->type() != FieldType::INDEX) {
+            return nullptr;
         }
         SimpleTermFieldData &tfd = td.addField(info->id());
         tfd.setHandle(_layout.allocTermField(tfd.getFieldId()));
@@ -52,8 +49,8 @@ SimpleTermData *
 QueryEnvironmentBuilder::addAttributeNode(const vespalib::string &attrName)
 {
     const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(attrName);
-    if (info == NULL || info->type() != FieldType::ATTRIBUTE) {
-        return NULL;
+    if (info == nullptr || info->type() != FieldType::ATTRIBUTE) {
+        return nullptr;
     }
     _queryEnv.getTerms().push_back(SimpleTermData());
     SimpleTermData &td = _queryEnv.getTerms().back();
@@ -63,6 +60,11 @@ QueryEnvironmentBuilder::addAttributeNode(const vespalib::string &attrName)
     return &td;
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+QueryEnvironmentBuilder&
+QueryEnvironmentBuilder::set_avg_field_length(const vespalib::string& field_name, double avg_field_length)
+{
+    _queryEnv.get_avg_field_lengths()[field_name] = avg_field_length;
+    return *this;
+}
+
+}

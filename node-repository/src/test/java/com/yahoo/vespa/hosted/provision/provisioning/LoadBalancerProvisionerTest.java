@@ -61,7 +61,6 @@ public class LoadBalancerProvisionerTest {
         assertEquals(4080, get(loadBalancers.get().get(0).instance().reals(), 0).port());
         assertEquals("127.0.0.2", get(loadBalancers.get().get(0).instance().reals(), 1).ipAddress());
         assertEquals(4080, get(loadBalancers.get().get(0).instance().reals(), 1).port());
-        assertEquals(rotationsCluster1, loadBalancers.get().get(0).rotations());
 
         // A container is failed
         Supplier<List<Node>> containers = () -> tester.getNodes(app1).type(ClusterSpec.Type.container).asList();
@@ -105,7 +104,6 @@ public class LoadBalancerProvisionerTest {
                                             .map(Real::hostname)
                                             .sorted()
                                             .collect(Collectors.toList());
-        assertEquals(rotationsCluster2, loadBalancers.get().get(1).rotations());
         assertEquals(activeContainers, reals);
 
         // Application is removed and load balancer is deactivated

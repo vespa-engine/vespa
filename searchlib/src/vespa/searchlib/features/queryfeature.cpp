@@ -15,6 +15,7 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/locale/c.h>
+#include <cerrno>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.queryfeature");

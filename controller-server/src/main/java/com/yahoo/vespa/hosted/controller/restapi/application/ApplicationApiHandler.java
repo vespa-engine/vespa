@@ -66,6 +66,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
+import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -95,6 +96,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -186,6 +188,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -629,7 +632,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // ask the routing layer here
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.applications().getDeploymentEndpoints(deploymentId)
-                  .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
+                  .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
@@ -1137,6 +1140,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         } catch (IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
+    }
+
+    private HttpResponse testConfig(ApplicationId id, JobType type) {
+        var endpoints = controller.applications().clusterEndpoints(id, controller.jobController().testedZoneAndProductionZones(id, type));
+        return new SlimeJsonResponse(new TestConfigSerializer(controller.system()).configSlime(id,
+                                                                                               type,
+                                                                                               endpoints,
+                                                                                               Collections.emptyMap()));
     }
 
     private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {

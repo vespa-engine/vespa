@@ -47,7 +47,7 @@ public:
 private:
     std::vector<FieldEntry> _fields;
 
-    void setDocumentFrequency(double docFreq);
+    void propagate_document_frequency(uint32_t matching_count_doc, uint32_t total_doc_count);
 
 protected:
     void resolve(const ViewResolver &resolver,

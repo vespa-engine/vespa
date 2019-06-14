@@ -6,6 +6,8 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/location.h>
 
+namespace search::index { class IFieldLengthInspector; }
+
 namespace proton::matching {
 
 /**
@@ -19,6 +21,7 @@ private:
     search::fef::Properties                     _properties;
     std::vector<const search::fef::Location *>  _locations;
     std::vector<const search::fef::ITermData *> _terms;
+    const search::index::IFieldLengthInspector &_field_length_inspector;
 
     QueryEnvironment(const QueryEnvironment &);
     QueryEnvironment &operator=(const QueryEnvironment &);
@@ -33,7 +36,8 @@ public:
      **/
     QueryEnvironment(const search::fef::IIndexEnvironment &indexEnv,
                      const search::attribute::IAttributeContext &attrContext,
-                     const search::fef::Properties &properties);
+                     const search::fef::Properties &properties,
+                     const search::index::IFieldLengthInspector &field_length_inspector);
 
     /**
      * Used to edit the list of terms by the one setting up this query
@@ -70,6 +74,8 @@ public:
 
     // inherited from search::fef::IQueryEnvironment
     const search::attribute::IAttributeContext & getAttributeContext() const override;
+
+    double get_average_field_length(const vespalib::string &field_name) const override;
 
     // inherited from search::fef::IQueryEnvironment
     const search::fef::IIndexEnvironment & getIndexEnvironment() const override;

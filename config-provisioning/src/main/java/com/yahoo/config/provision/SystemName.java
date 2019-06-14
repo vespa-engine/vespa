@@ -27,10 +27,7 @@ public enum SystemName {
     PublicCd(true, true),
 
     /** Local development system */
-    dev(false, false),
-
-    /** VaaS */
-    vaas(true, true); // TODO: Remove this and use public everywhere
+    dev(false, false);
 
     private final boolean isPublic;
     private final boolean isCd;
@@ -51,7 +48,6 @@ public enum SystemName {
             case "main": return main;
             case "public": return Public;
             case "publiccd": return PublicCd;
-            case "vaas": return vaas;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         }
     }
@@ -63,7 +59,6 @@ public enum SystemName {
             case main: return "main";
             case Public: return "public";
             case PublicCd: return "publiccd";
-            case vaas: return "vaas";
             default : throw new IllegalStateException();
         }
     }

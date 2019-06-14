@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/testhelper.h>
-#include <tests/common/storagelinktest.h>
+#include <tests/common/testhelper.h> // FIXME
+#include <tests/common/dummystoragelink.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -20,6 +20,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <atomic>
 
 #include <vespa/log/log.h>
@@ -30,20 +31,21 @@ using document::Document;
 using namespace storage::api;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 #define ASSERT_SINGLE_REPLY(replytype, reply, link, time) \
-reply = 0; \
+reply = nullptr; \
 try{ \
     link.waitForMessages(1, time); \
-    CPPUNIT_ASSERT_EQUAL((size_t)1, link.getNumReplies()); \
+    ASSERT_EQ(1, link.getNumReplies()); \
     reply = dynamic_cast<replytype*>(link.getReply(0).get()); \
-    if (reply == 0) { \
-        CPPUNIT_FAIL("Got reply of unexpected type: " \
-                     + link.getReply(0)->getType().toString()); \
+    if (reply == nullptr) { \
+        FAIL() << "Got reply of unexpected type: " \
+               << link.getReply(0)->getType().toString(); \
     } \
 } catch (vespalib::Exception& e) { \
-    reply = 0; \
-    CPPUNIT_FAIL("Failed to find single reply in time"); \
+    reply = nullptr; \
+    FAIL() << "Failed to find single reply in time"; \
 }
 
 namespace storage {
@@ -56,7 +58,7 @@ struct TestFileStorComponents;
 
 }
 
-struct FileStorManagerTest : public CppUnit::TestFixture {
+struct FileStorManagerTest : Test{
     enum {LONG_WAITTIME=60};
     unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<vdstestlib::DirConfig> config;
@@ -67,84 +69,8 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
 
     FileStorManagerTest() : _node(), _waitTime(LONG_WAITTIME) {}
 
-    void setUp() override;
-    void tearDown() override;
-
-    void testPut();
-    void testHeaderOnlyPut();
-    void testFlush();
-    void testRemapSplit();
-    void testHandlerPriority();
-    void testHandlerMulti();
-    void testHandlerTimeout();
-    void testHandlerPause();
-    void testHandlerPausedMultiThread();
-    void testPriority();
-    void testSplit1();
-    void testSplitSingleGroup();
-    void testSplitEmptyTargetWithRemappedOps();
-    void testNotifyOnSplitSourceOwnershipChanged();
-    void testJoin();
-    void testVisiting();
-    void testRemoveLocation();
-    void testDeleteBucket();
-    void testDeleteBucketRejectOutdatedBucketInfo();
-    void testDeleteBucketWithInvalidBucketInfo();
-    void testNoTimestamps();
-    void testEqualTimestamps();
-    void testGetIter();
-    void testSetBucketActiveState();
-    void testNotifyOwnerDistributorOnOutdatedSetBucketState();
-    void testGetBucketDiffImplicitCreateBucket();
-    void testMergeBucketImplicitCreateBucket();
-    void testNewlyCreatedBucketIsReady();
-    void testCreateBucketSetsActiveFlagInDatabaseAndReply();
-    void testStateChange();
-    void testRepairNotifiesDistributorOnChange();
-    void testDiskMove();
-    void put_command_size_is_added_to_metric();
-    void update_command_size_is_added_to_metric();
-    void remove_command_size_is_added_to_metric();
-    void get_command_size_is_added_to_metric();
-
-    CPPUNIT_TEST_SUITE(FileStorManagerTest);
-    CPPUNIT_TEST(testPut);
-    CPPUNIT_TEST(testHeaderOnlyPut);
-    CPPUNIT_TEST(testFlush);
-    CPPUNIT_TEST(testRemapSplit);
-    CPPUNIT_TEST(testHandlerPriority);
-    CPPUNIT_TEST(testHandlerMulti);
-    CPPUNIT_TEST(testHandlerTimeout);
-    CPPUNIT_TEST(testHandlerPause);
-    CPPUNIT_TEST(testHandlerPausedMultiThread);
-    CPPUNIT_TEST(testPriority);
-    CPPUNIT_TEST(testSplit1);
-    CPPUNIT_TEST(testSplitSingleGroup);
-    CPPUNIT_TEST(testSplitEmptyTargetWithRemappedOps);
-    CPPUNIT_TEST(testNotifyOnSplitSourceOwnershipChanged);
-    CPPUNIT_TEST(testJoin);
-    CPPUNIT_TEST(testVisiting);
-    CPPUNIT_TEST(testRemoveLocation);
-    CPPUNIT_TEST(testDeleteBucket);
-    CPPUNIT_TEST(testDeleteBucketRejectOutdatedBucketInfo);
-    CPPUNIT_TEST(testDeleteBucketWithInvalidBucketInfo);
-    CPPUNIT_TEST(testNoTimestamps);
-    CPPUNIT_TEST(testEqualTimestamps);
-    CPPUNIT_TEST(testGetIter);
-    CPPUNIT_TEST(testSetBucketActiveState);
-    CPPUNIT_TEST(testNotifyOwnerDistributorOnOutdatedSetBucketState);
-    CPPUNIT_TEST(testGetBucketDiffImplicitCreateBucket);
-    CPPUNIT_TEST(testMergeBucketImplicitCreateBucket);
-    CPPUNIT_TEST(testNewlyCreatedBucketIsReady);
-    CPPUNIT_TEST(testCreateBucketSetsActiveFlagInDatabaseAndReply);
-    CPPUNIT_TEST(testStateChange);
-    CPPUNIT_TEST(testRepairNotifiesDistributorOnChange);
-    CPPUNIT_TEST(testDiskMove);
-    CPPUNIT_TEST(put_command_size_is_added_to_metric);
-    CPPUNIT_TEST(update_command_size_is_added_to_metric);
-    CPPUNIT_TEST(remove_command_size_is_added_to_metric);
-    CPPUNIT_TEST(get_command_size_is_added_to_metric);
-    CPPUNIT_TEST_SUITE_END();
+    void SetUp() override;
+    void TearDown() override;
 
     void createBucket(document::BucketId bid, uint16_t disk)
     {
@@ -239,8 +165,6 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
     }
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(FileStorManagerTest);
-
 std::string findFile(const std::string& path, const std::string& file) {
     FastOS_DirectoryScan dirScan(path.c_str());
     while (dirScan.ReadNext()) {
@@ -285,17 +209,12 @@ std::unique_ptr<DiskThread> createThread(vdstestlib::DirConfig& config,
 
 namespace {
 
-struct TestFileStorComponents
-{
-private:
-    TestName _testName;
-public:
+struct TestFileStorComponents {
     DummyStorageLink top;
     FileStorManager* manager;
 
-    TestFileStorComponents(FileStorManagerTest& test, const char* testName)
-        : _testName(testName),
-          manager(new FileStorManager(test.config->getConfigId(),
+    explicit TestFileStorComponents(FileStorManagerTest& test)
+        : manager(new FileStorManager(test.config->getConfigId(),
                                       test._node->getPartitions(),
                                       test._node->getPersistenceProvider(),
                                       test._node->getComponentRegister()))
@@ -308,21 +227,18 @@ public:
 }
 
 void
-FileStorManagerTest::setUp()
+FileStorManagerTest::SetUp()
 {
     setupDisks(1);
 }
 
 void
-FileStorManagerTest::tearDown()
+FileStorManagerTest::TearDown()
 {
     _node.reset(0);
 }
 
-void
-FileStorManagerTest::testHeaderOnlyPut()
-{
-    TestName testName("testHeaderOnlyPut");
+TEST_F(FileStorManagerTest, header_only_put) {
     // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
@@ -340,69 +256,56 @@ FileStorManagerTest::testHeaderOnlyPut()
 
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 105));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
     }
     doc->setValue(doc->getField("headerval"), document::IntFieldValue(42));
     // Putting it again, this time with header only
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 124));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 124);
         cmd->setUpdateTimestamp(105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::OK, reply->getResult().getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::OK, reply->getResult().getResult());
     }
     // Getting it
     {
-        std::shared_ptr<api::GetCommand> cmd(new api::GetCommand(
-                                                       makeDocumentBucket(bid), doc->getId(), "[all]"));
+        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bid), doc->getId(), "[all]");
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+        ASSERT_EQ(1, top.getNumReplies());
         std::shared_ptr<api::GetReply> reply2(
                 std::dynamic_pointer_cast<api::GetReply>(
                     top.getReply(0)));
         top.reset();
-        CPPUNIT_ASSERT(reply2.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply2->getResult());
-        CPPUNIT_ASSERT_EQUAL(doc->getId().toString(),
-                             reply2->getDocumentId().toString());
-            // Ensure partial update was done, but other things are equal
-        document::FieldValue::UP value(
-                reply2->getDocument()->getValue(doc->getField("headerval")));
-        CPPUNIT_ASSERT(value.get());
-        CPPUNIT_ASSERT_EQUAL(42, dynamic_cast<document::IntFieldValue&>(
-                                    *value).getAsInt());
+        ASSERT_TRUE(reply2.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply2->getResult());
+        EXPECT_EQ(doc->getId().toString(), reply2->getDocumentId().toString());
+        // Ensure partial update was done, but other things are equal
+        auto value = reply2->getDocument()->getValue(doc->getField("headerval"));
+        ASSERT_TRUE(value.get());
+        EXPECT_EQ(42, dynamic_cast<document::IntFieldValue&>(*value).getAsInt());
         reply2->getDocument()->remove("headerval");
         doc->remove("headerval");
-        CPPUNIT_ASSERT_EQUAL(*doc, *reply2->getDocument());
+        EXPECT_EQ(*doc, *reply2->getDocument());
     }
 }
 
-void
-FileStorManagerTest::testPut()
-{
-    TestName testName("testPut");
+TEST_F(FileStorManagerTest, put) {
     // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
@@ -420,25 +323,20 @@ FileStorManagerTest::testPut()
 
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 105));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
     }
 }
 
-void
-FileStorManagerTest::testDiskMove()
-{
+TEST_F(FileStorManagerTest, disk_move) {
     setupDisks(2);
 
     // Setting up manager
@@ -458,27 +356,24 @@ FileStorManagerTest::testDiskMove()
 
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 105));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
     }
 
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "foo"));
 
-        CPPUNIT_ASSERT_EQUAL(0, (int)entry->disk);
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(0, entry->disk);
+        EXPECT_EQ(
                 vespalib::string(
                         "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 114, "
                         "ready true, active false)"),
@@ -486,26 +381,24 @@ FileStorManagerTest::testDiskMove()
     }
 
     {
-        std::shared_ptr<BucketDiskMoveCommand> cmd(
-                new BucketDiskMoveCommand(makeDocumentBucket(bid), 0, 1));
+        auto cmd = std::make_shared<BucketDiskMoveCommand>(makeDocumentBucket(bid), 0, 1);
 
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<BucketDiskMoveReply> reply(
-                std::dynamic_pointer_cast<BucketDiskMoveReply>(top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<BucketDiskMoveReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
     }
 
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "foo"));
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)entry->disk);
-        CPPUNIT_ASSERT_EQUAL(
+        EXPECT_EQ(1, entry->disk);
+        EXPECT_EQ(
                 vespalib::string(
                         "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 114, "
                         "ready true, active false)"),
@@ -513,11 +406,7 @@ FileStorManagerTest::testDiskMove()
     }
 }
 
-
-void
-FileStorManagerTest::testStateChange()
-{
-    TestName testName("testStateChange");
+TEST_F(FileStorManagerTest, state_change) {
     // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
@@ -528,17 +417,13 @@ FileStorManagerTest::testStateChange()
     top.open();
 
     setClusterState("storage:3 distributor:3");
-
-    CPPUNIT_ASSERT_EQUAL(true, getDummyPersistence().getClusterState().nodeUp());
+    EXPECT_TRUE(getDummyPersistence().getClusterState().nodeUp());
 
     setClusterState("storage:3 .0.s:d distributor:3");
-
-    CPPUNIT_ASSERT_EQUAL(false, getDummyPersistence().getClusterState().nodeUp());
+    EXPECT_FALSE(getDummyPersistence().getClusterState().nodeUp());
 }
 
-void
-FileStorManagerTest::testRepairNotifiesDistributorOnChange()
-{
+TEST_F(FileStorManagerTest, repair_notifies_distributor_on_change) {
     // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
@@ -555,9 +440,8 @@ FileStorManagerTest::testRepairNotifiesDistributorOnChange()
 
     for (uint32_t i = 0; i < 3; ++i) {
         document::DocumentId docId(vespalib::make_string("userdoc:ns:1:%d", i));
-        Document::SP doc(new Document(*_testdoctype1, docId));
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(document::BucketId(16, 1)), doc, i + 1));
+        auto doc = std::make_shared<Document>(*_testdoctype1, docId);
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, 1)), doc, i + 1);
         cmd->setAddress(address);
         top.sendDown(cmd);
     }
@@ -567,13 +451,12 @@ FileStorManagerTest::testRepairNotifiesDistributorOnChange()
 
     getDummyPersistence().simulateMaintenanceFailure();
 
-    std::shared_ptr<RepairBucketCommand> cmd(
-            new RepairBucketCommand(makeDocumentBucket(document::BucketId(16, 1)), 0));
+    auto cmd = std::make_shared<RepairBucketCommand>(makeDocumentBucket(document::BucketId(16, 1)), 0);
     top.sendDown(cmd);
 
     top.waitForMessages(2, _waitTime);
 
-    CPPUNIT_ASSERT_EQUAL(
+    EXPECT_EQ(
             std::string("NotifyBucketChangeCommand(BucketId(0x4000000000000001), "
                         "BucketInfo(crc 0x2625a314, docCount 2, totDocSize 154, "
                         "ready true, active false))"), top.getReply(0)->toString());
@@ -581,22 +464,18 @@ FileStorManagerTest::testRepairNotifiesDistributorOnChange()
     top.close();
 }
 
-
-void
-FileStorManagerTest::testFlush()
-{
-    TestName testName("testFlush");
-        // Setting up manager
+TEST_F(FileStorManagerTest, flush) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
                 config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
-        // Creating a document to test with
+    // Creating a document to test with
 
     document::DocumentId docId("doc:crawler:http://www.ntnu.no/");
-    Document::SP doc(new Document(*_testdoctype1, docId));
+    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(4000);
 
     static const uint32_t msgCount = 10;
@@ -604,8 +483,7 @@ FileStorManagerTest::testFlush()
     // Generating many put commands
     std::vector<std::shared_ptr<api::StorageCommand> > _commands;
     for (uint32_t i=0; i<msgCount; ++i) {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, i+1));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, i+1);
         cmd->setAddress(address);
         _commands.push_back(cmd);
     }
@@ -614,13 +492,10 @@ FileStorManagerTest::testFlush()
     }
     top.close();
     top.flush();
-    CPPUNIT_ASSERT_EQUAL((size_t) msgCount, top.getNumReplies());
+    EXPECT_EQ(msgCount, top.getNumReplies());
 }
 
-void
-FileStorManagerTest::testHandlerPriority()
-{
-    TestName testName("testHandlerPriority");
+TEST_F(FileStorManagerTest, handler_priority) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -638,7 +513,7 @@ FileStorManagerTest::testHandlerPriority()
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50);
     uint32_t stripeId = filestorHandler.getNextStripeId(0);
-    CPPUNIT_ASSERT_EQUAL(0u, stripeId);
+    ASSERT_EQ(0u, stripeId);
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -657,15 +532,14 @@ FileStorManagerTest::testHandlerPriority()
         filestorHandler.schedule(cmd, 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(45, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(60, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(75, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(15, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(30, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(45, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(60, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(75, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 }
 
-class MessagePusherThread : public document::Runnable
-{
+class MessagePusherThread : public document::Runnable {
 public:
     FileStorHandler& _handler;
     Document::SP _doc;
@@ -673,7 +547,7 @@ public:
     std::atomic<bool> _threadDone;
 
     MessagePusherThread(FileStorHandler& handler, Document::SP doc);
-    ~MessagePusherThread();
+    ~MessagePusherThread() override;
 
     void run() override {
         while (!_done) {
@@ -690,7 +564,7 @@ public:
 };
 
 MessagePusherThread::MessagePusherThread(FileStorHandler& handler, Document::SP doc)
-    : _handler(handler), _doc(doc), _done(false), _threadDone(false)
+    : _handler(handler), _doc(std::move(doc)), _done(false), _threadDone(false)
 {}
 MessagePusherThread::~MessagePusherThread() = default;
 
@@ -704,7 +578,7 @@ public:
     std::atomic<bool> _failed;
     std::atomic<bool> _threadDone;
 
-    MessageFetchingThread(FileStorHandler& handler)
+    explicit MessageFetchingThread(FileStorHandler& handler)
         : _threadId(handler.getNextStripeId(0)), _handler(handler), _config(0), _fetchedCount(0), _done(false),
           _failed(false), _threadDone(false)
     {}
@@ -729,10 +603,7 @@ public:
     };
 };
 
-void
-FileStorManagerTest::testHandlerPausedMultiThread()
-{
-    TestName testName("testHandlerPausedMultiThread");
+TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -767,23 +638,19 @@ FileStorManagerTest::testHandlerPausedMultiThread()
         ResumeGuard guard = filestorHandler.pause();
         thread._config.fetch_add(1);
         uint32_t count = thread._fetchedCount;
-        CPPUNIT_ASSERT_EQUAL(count, thread._fetchedCount.load());
+        ASSERT_EQ(count, thread._fetchedCount.load());
     }
 
     pushthread._done = true;
     thread._done = true;
-    CPPUNIT_ASSERT(!thread._failed);
+    ASSERT_FALSE(thread._failed);
 
     while (!pushthread._threadDone || !thread._threadDone) {
         FastOS_Thread::Sleep(1);
     }
 }
 
-
-void
-FileStorManagerTest::testHandlerPause()
-{
-    TestName testName("testHandlerPriority");
+TEST_F(FileStorManagerTest, handler_pause) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -818,15 +685,15 @@ FileStorManagerTest::testHandlerPause()
         filestorHandler.schedule(cmd, 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(15, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 
     {
         ResumeGuard guard = filestorHandler.pause();
         (void)guard;
-        CPPUNIT_ASSERT(filestorHandler.getNextMessage(0, stripeId).second.get() == NULL);
+        ASSERT_EQ(filestorHandler.getNextMessage(0, stripeId).second.get(), nullptr);
     }
 
-    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    ASSERT_EQ(30, filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 }
 
 namespace {
@@ -842,10 +709,7 @@ uint64_t getPutTime(api::StorageMessage::SP& msg)
 
 }
 
-void
-FileStorManagerTest::testRemapSplit()
-{
-    TestName testName("testRemapSplit");
+TEST_F(FileStorManagerTest, remap_split) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -878,36 +742,31 @@ FileStorManagerTest::testRemapSplit()
         filestorHandler.schedule(std::make_shared<api::PutCommand>(makeDocumentBucket(bucket2), doc2, i + 10), 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(std::string("BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 1, size 108) (priority: 127)\n"
-                                     "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 11, size 108) (priority: 127)\n"
-                                     "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 2, size 108) (priority: 127)\n"
-                                     "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 12, size 108) (priority: 127)\n"
-                                     "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 3, size 108) (priority: 127)\n"
-                                     "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n"),
-                         filestorHandler.dumpQueue(0));
+    EXPECT_EQ("BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 1, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 11, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 2, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 12, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 3, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n",
+              filestorHandler.dumpQueue(0));
 
     FileStorHandler::RemapInfo a(makeDocumentBucket(document::BucketId(17, 1234)), 0);
     FileStorHandler::RemapInfo b(makeDocumentBucket(document::BucketId(17, 1234 | 1 << 16)), 0);
     filestorHandler.remapQueueAfterSplit(FileStorHandler::RemapInfo(makeDocumentBucket(bucket1), 0), a, b);
 
-    CPPUNIT_ASSERT(a.foundInQueue);
-    CPPUNIT_ASSERT(!b.foundInQueue);
+    ASSERT_TRUE(a.foundInQueue);
+    ASSERT_FALSE(b.foundInQueue);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                                 "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 11, size 108) (priority: 127)\n"
-                                 "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 12, size 108) (priority: 127)\n"
-                                 "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n"
-                                 "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 1, size 108) (priority: 127)\n"
-                                 "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 2, size 108) (priority: 127)\n"
-                                 "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 3, size 108) (priority: 127)\n"),
-             filestorHandler.dumpQueue(0));
-
+    EXPECT_EQ("BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 11, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 12, size 108) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n"
+              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 1, size 108) (priority: 127)\n"
+              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 2, size 108) (priority: 127)\n"
+              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 3, size 108) (priority: 127)\n",
+              filestorHandler.dumpQueue(0));
 }
 
-void
-FileStorManagerTest::testHandlerMulti()
-{
-    TestName testName("testHandlerMulti");
+TEST_F(FileStorManagerTest, handler_multi) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -946,29 +805,25 @@ FileStorManagerTest::testHandlerMulti()
 
     {
         FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, stripeId);
-        CPPUNIT_ASSERT_EQUAL((uint64_t)1, getPutTime(lock.second));
+        ASSERT_EQ(1, getPutTime(lock.second));
 
         lock = filestorHandler.getNextMessage(0, stripeId, lock);
-        CPPUNIT_ASSERT_EQUAL((uint64_t)2, getPutTime(lock.second));
+        ASSERT_EQ(2, getPutTime(lock.second));
 
         lock = filestorHandler.getNextMessage(0, stripeId, lock);
-        CPPUNIT_ASSERT_EQUAL((uint64_t)3, getPutTime(lock.second));
+        ASSERT_EQ(3, getPutTime(lock.second));
     }
 
     {
         FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, stripeId);
-        CPPUNIT_ASSERT_EQUAL((uint64_t)11, getPutTime(lock.second));
+        ASSERT_EQ(11, getPutTime(lock.second));
 
         lock = filestorHandler.getNextMessage(0, stripeId, lock);
-        CPPUNIT_ASSERT_EQUAL((uint64_t)12, getPutTime(lock.second));
+        ASSERT_EQ(12, getPutTime(lock.second));
     }
 }
 
-
-void
-FileStorManagerTest::testHandlerTimeout()
-{
-    TestName testName("testHandlerTimeout");
+TEST_F(FileStorManagerTest, handler_timeout) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -1018,20 +873,17 @@ FileStorManagerTest::testHandlerTimeout()
     for (;;) {
         auto lock = filestorHandler.getNextMessage(0, stripeId);
         if (lock.first.get()) {
-            CPPUNIT_ASSERT_EQUAL(uint8_t(200), lock.second->getPriority());
+            ASSERT_EQ(200, lock.second->getPriority());
             break;
         }
     }
 
-    CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::TIMEOUT,
-                         static_cast<api::StorageReply&>(*top.getReply(0)).getResult().getResult());
+    ASSERT_EQ(1, top.getNumReplies());
+    EXPECT_EQ(api::ReturnCode::TIMEOUT,
+              static_cast<api::StorageReply&>(*top.getReply(0)).getResult().getResult());
 }
 
-void
-FileStorManagerTest::testPriority()
-{
-    TestName testName("testPriority");
+TEST_F(FileStorManagerTest, priority) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -1080,11 +932,8 @@ FileStorManagerTest::testPriority()
     for (uint32_t i=0; i<documents.size(); ++i) {
         document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
 
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bucket), documents[i], 100 + i));
-        std::unique_ptr<api::StorageMessageAddress> address(
-                new api::StorageMessageAddress(
-                        "storage", lib::NodeType::STORAGE, 3));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
+        auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
         cmd->setAddress(*address);
         cmd->setPriority(i * 2);
         filestorHandler.schedule(cmd, 0);
@@ -1094,35 +943,31 @@ FileStorManagerTest::testPriority()
 
     // Wait until everything is done.
     int count = 0;
-    while (documents.size() != top.getNumReplies() && count < 1000) {
-        FastOS_Thread::Sleep(100);
+    while (documents.size() != top.getNumReplies() && count < 10000) {
+        FastOS_Thread::Sleep(10);
         count++;
     }
-    CPPUNIT_ASSERT(count < 1000);
+    ASSERT_LT(count, 10000);
 
     for (uint32_t i = 0; i < documents.size(); i++) {
         std::shared_ptr<api::PutReply> reply(
                 std::dynamic_pointer_cast<api::PutReply>(
                         top.getReply(i)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
     // Verify that thread 1 gets documents over 50 pri
-    CPPUNIT_ASSERT_EQUAL(uint64_t(documents.size()),
-            metrics.disks[0]->threads[0]->operations.getValue()
-            + metrics.disks[0]->threads[1]->operations.getValue());
+    EXPECT_EQ(documents.size(),
+              metrics.disks[0]->threads[0]->operations.getValue()
+              + metrics.disks[0]->threads[1]->operations.getValue());
     // Closing file stor handler before threads are deleted, such that
     // file stor threads getNextMessage calls returns.
     filestorHandler.close();
 }
 
-void
-FileStorManagerTest::testSplit1()
-{
-    TestName testName("testSplit1");
-        // Setup a filestorthread to test
+TEST_F(FileStorManagerTest, split1) {
+    // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
     top.push_back(std::unique_ptr<StorageLink>(
@@ -1137,7 +982,7 @@ FileStorManagerTest::testSplit1()
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
-        // Creating documents to test with. Different gids, 2 locations.
+    // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
         std::string content("Here is some content which is in all documents");
@@ -1161,60 +1006,45 @@ FileStorManagerTest::testSplit1()
             _node->getPersistenceProvider().createBucket(
                     makeSpiBucket(bucket), context);
 
-            std::shared_ptr<api::PutCommand> cmd(
-                    new api::PutCommand(makeDocumentBucket(bucket), documents[i], 100 + i));
-            std::unique_ptr<api::StorageMessageAddress> address(
-                    new api::StorageMessageAddress(
-                        "storage", lib::NodeType::STORAGE, 3));
+            auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
+            auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(*address);
             cmd->setSourceIndex(0);
 
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
             LOG(debug, "Got %zu replies", top.getNumReplies());
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::PutReply> reply(
-                    std::dynamic_pointer_cast<api::PutReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
 
             // Delete every 5th document to have delete entries in file too
             if (i % 5 == 0) {
-                std::shared_ptr<api::RemoveCommand> rcmd(
-                        new api::RemoveCommand(
-                            makeDocumentBucket(bucket), documents[i]->getId(), 1000000 + 100 + i));
+                auto rcmd = std::make_shared<api::RemoveCommand>(
+                        makeDocumentBucket(bucket), documents[i]->getId(), 1000000 + 100 + i);
                 rcmd->setAddress(*address);
                 filestorHandler.schedule(rcmd, 0);
                 filestorHandler.flush(true);
-                CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-                std::shared_ptr<api::RemoveReply> rreply(
-                        std::dynamic_pointer_cast<api::RemoveReply>(
-                            top.getReply(0)));
-                CPPUNIT_ASSERT_MSG(top.getReply(0)->getType().toString(),
-                                   rreply.get());
-                CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                     rreply->getResult());
+                ASSERT_EQ(1, top.getNumReplies());
+                auto rreply = std::dynamic_pointer_cast<api::RemoveReply>(top.getReply(0));
+                ASSERT_TRUE(rreply.get()) << top.getReply(0)->getType().toString();
+                EXPECT_EQ(ReturnCode(ReturnCode::OK), rreply->getResult());
                 top.reset();
             }
         }
 
         // Perform a split, check that locations are split
         {
-            std::shared_ptr<api::SplitBucketCommand> cmd(
-                    new api::SplitBucketCommand(makeDocumentBucket(document::BucketId(16, 1))));
+            auto cmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(document::BucketId(16, 1)));
             cmd->setSourceIndex(0);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::SplitBucketReply> reply(
-                    std::dynamic_pointer_cast<api::SplitBucketReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::SplitBucketReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
 
@@ -1222,37 +1052,30 @@ FileStorManagerTest::testSplit1()
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(
                         17, i % 3 == 0 ? 0x10001 : 0x0100001);
-            std::shared_ptr<api::GetCommand> cmd(
-                    new api::GetCommand(makeDocumentBucket(bucket), documents[i]->getId(), "[all]"));
-            api::StorageMessageAddress address(
-                    "storage", lib::NodeType::STORAGE, 3);
+            auto cmd = std::make_shared<api::GetCommand>(
+                    makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+            api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::GetReply> reply(
-                    std::dynamic_pointer_cast<api::GetReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(i % 5 != 0 ? true : false, reply->wasFound());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::GetReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(((i % 5) != 0), reply->wasFound());
             top.reset();
         }
 
         // Keep splitting location 1 until we gidsplit
         for (int i=17; i<=32; ++i) {
-            std::shared_ptr<api::SplitBucketCommand> cmd(
-                    new api::SplitBucketCommand(
-                        makeDocumentBucket(document::BucketId(i, 0x0100001))));
+            auto cmd = std::make_shared<api::SplitBucketCommand>(
+                        makeDocumentBucket(document::BucketId(i, 0x0100001)));
             cmd->setSourceIndex(0);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::SplitBucketReply> reply(
-                    std::dynamic_pointer_cast<api::SplitBucketReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::SplitBucketReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
 
@@ -1265,19 +1088,16 @@ FileStorManagerTest::testSplit1()
                 bucket = document::BucketId(33, factory.getBucketId(
                                     documents[i]->getId()).getRawId());
             }
-            std::shared_ptr<api::GetCommand> cmd(
-                    new api::GetCommand(makeDocumentBucket(bucket), documents[i]->getId(), "[all]"));
-            api::StorageMessageAddress address(
-                    "storage", lib::NodeType::STORAGE, 3);
+            auto cmd = std::make_shared<api::GetCommand>(
+                    makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+            api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::GetReply> reply(
-                    std::dynamic_pointer_cast<api::GetReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(i % 5 != 0 ? true : false, reply->wasFound());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::GetReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(((i % 5) != 0), reply->wasFound());
             top.reset();
         }
     }
@@ -1286,11 +1106,8 @@ FileStorManagerTest::testSplit1()
     filestorHandler.close();
 }
 
-void
-FileStorManagerTest::testSplitSingleGroup()
-{
-    TestName testName("testSplitSingleGroup");
-        // Setup a filestorthread to test
+TEST_F(FileStorManagerTest, split_single_group) {
+    // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
     top.push_back(std::unique_ptr<StorageLink>(
@@ -1312,79 +1129,62 @@ FileStorManagerTest::testSplitSingleGroup()
         std::unique_ptr<DiskThread> thread(createThread(
                 *config, *_node, _node->getPersistenceProvider(),
                 filestorHandler, *metrics.disks[0]->threads[0], 0));
-            // Creating documents to test with. Different gids, 2 locations.
-        std::vector<document::Document::SP > documents;
+        // Creating documents to test with. Different gids, 2 locations.
+        std::vector<document::Document::SP> documents;
         for (uint32_t i=0; i<20; ++i) {
             std::string content("Here is some content for all documents");
             std::ostringstream uri;
 
             uri << "userdoc:footype:" << (state ? 0x10001 : 0x0100001)
                                    << ":mydoc-" << i;
-            Document::SP doc(createDocument(
-                    content, uri.str()).release());
-            documents.push_back(doc);
+            documents.emplace_back(createDocument(content, uri.str()));
         }
         document::BucketIdFactory factory;
 
-            // Populate bucket with the given data
+        // Populate bucket with the given data
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(16, factory.getBucketId(
                                 documents[i]->getId()).getRawId());
 
-            _node->getPersistenceProvider().createBucket(
-                    makeSpiBucket(bucket), context);
+            _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket), context);
 
-            std::shared_ptr<api::PutCommand> cmd(
-                    new api::PutCommand(makeDocumentBucket(bucket), documents[i], 100 + i));
-            api::StorageMessageAddress address(
-                    "storage", lib::NodeType::STORAGE, 3);
+            auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
+            api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::PutReply> reply(
-                    std::dynamic_pointer_cast<api::PutReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
-            // Perform a split, check that locations are split
+        // Perform a split, check that locations are split
         {
-            std::shared_ptr<api::SplitBucketCommand> cmd(
-                    new api::SplitBucketCommand(makeDocumentBucket(document::BucketId(16, 1))));
+            auto cmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(document::BucketId(16, 1)));
             cmd->setSourceIndex(0);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::SplitBucketReply> reply(
-                    std::dynamic_pointer_cast<api::SplitBucketReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::SplitBucketReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
-
 
         // Test that the documents are all still there
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(17, state ? 0x10001 : 0x00001);
-            std::shared_ptr<api::GetCommand> cmd(
-                    new api::GetCommand(makeDocumentBucket(bucket), documents[i]->getId(), "[all]"));
-            api::StorageMessageAddress address(
-                    "storage", lib::NodeType::STORAGE, 3);
+            auto cmd = std::make_shared<api::GetCommand>
+                    (makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+            api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::GetReply> reply(
-                    std::dynamic_pointer_cast<api::GetReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::GetReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
             // Closing file stor handler before threads are deleted, such that
@@ -1415,21 +1215,16 @@ FileStorManagerTest::putDoc(DummyStorageLink& top,
     cmd->setPriority(120);
     filestorHandler.schedule(cmd, 0);
     filestorHandler.flush(true);
-    CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+    ASSERT_EQ(1, top.getNumReplies());
     std::shared_ptr<api::PutReply> reply(
             std::dynamic_pointer_cast<api::PutReply>(
                     top.getReply(0)));
-    CPPUNIT_ASSERT(reply.get());
-    CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                         reply->getResult());
+    ASSERT_TRUE(reply.get());
+    ASSERT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     top.reset();
 }
 
-void
-FileStorManagerTest::testSplitEmptyTargetWithRemappedOps()
-{
-    TestName testName("testSplitEmptyTargetWithRemappedOps");
-
+TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
     top.push_back(std::unique_ptr<StorageLink>(
@@ -1450,7 +1245,7 @@ FileStorManagerTest::testSplitEmptyTargetWithRemappedOps()
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
 
     for (uint32_t i=0; i<10; ++i) {
-        putDoc(top, filestorHandler, source, i);
+        ASSERT_NO_FATAL_FAILURE(putDoc(top, filestorHandler, source, i));
     }
 
     // Send split followed by a put that is bound for a target bucket that
@@ -1459,54 +1254,42 @@ FileStorManagerTest::testSplitEmptyTargetWithRemappedOps()
     // the persistence provider deleting it internally.
     // Make sure we block the operation queue until we've scheduled all
     // the operations.
-    std::unique_ptr<ResumeGuard> resumeGuard(
-            new ResumeGuard(filestorHandler.pause()));
+    auto resumeGuard = std::make_unique<ResumeGuard>(filestorHandler.pause());
 
-    std::shared_ptr<api::SplitBucketCommand> splitCmd(
-            new api::SplitBucketCommand(makeDocumentBucket(source)));
+    auto splitCmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(source));
     splitCmd->setPriority(120);
     splitCmd->setSourceIndex(0);
 
     document::DocumentId docId(
             vespalib::make_string("userdoc:ns:%d:1234", 0x100001));
-    Document::SP doc(new Document(*_testdoctype1, docId));
-    std::shared_ptr<api::PutCommand> putCmd(
-            new api::PutCommand(makeDocumentBucket(source), doc, 1001));
+    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
+    auto putCmd = std::make_shared<api::PutCommand>(makeDocumentBucket(source), doc, 1001);
     putCmd->setAddress(address);
     putCmd->setPriority(120);
 
     filestorHandler.schedule(splitCmd, 0);
     filestorHandler.schedule(putCmd, 0);
-    resumeGuard.reset(0); // Unpause
+    resumeGuard.reset(); // Unpause
     filestorHandler.flush(true);
 
     top.waitForMessages(2, _waitTime);
 
-    CPPUNIT_ASSERT_EQUAL((size_t) 2, top.getNumReplies());
+    ASSERT_EQ(2, top.getNumReplies());
     {
-        std::shared_ptr<api::SplitBucketReply> reply(
-                std::dynamic_pointer_cast<api::SplitBucketReply>(
-                        top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                             reply->getResult());
+        auto reply = std::dynamic_pointer_cast<api::SplitBucketReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
     {
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                        top.getReply(1)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                             reply->getResult());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(1));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
     top.reset();
 }
 
-void
-FileStorManagerTest::testNotifyOnSplitSourceOwnershipChanged()
-{
-    TestName testName("testSplit1");
+TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
@@ -1525,11 +1308,10 @@ FileStorManagerTest::testNotifyOnSplitSourceOwnershipChanged()
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
     createBucket(source, 0);
     for (uint32_t i=0; i<10; ++i) {
-        putDoc(top, filestorHandler, source, i);
+        ASSERT_NO_FATAL_FAILURE(putDoc(top, filestorHandler, source, i));
     }
 
-    std::shared_ptr<api::SplitBucketCommand> splitCmd(
-            new api::SplitBucketCommand(makeDocumentBucket(source)));
+    auto splitCmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(source));
     splitCmd->setPriority(120);
     splitCmd->setSourceIndex(0); // Source not owned by this distributor.
 
@@ -1537,25 +1319,18 @@ FileStorManagerTest::testNotifyOnSplitSourceOwnershipChanged()
     filestorHandler.flush(true);
     top.waitForMessages(4, _waitTime); // 3 notify cmds + split reply
 
-    CPPUNIT_ASSERT_EQUAL(size_t(4), top.getNumReplies());
+    ASSERT_EQ(4, top.getNumReplies());
     for (int i = 0; i < 3; ++i) {
-        CPPUNIT_ASSERT_EQUAL(api::MessageType::NOTIFYBUCKETCHANGE,
-                             top.getReply(i)->getType());
+        ASSERT_EQ(api::MessageType::NOTIFYBUCKETCHANGE, top.getReply(i)->getType());
     }
 
-    std::shared_ptr<api::SplitBucketReply> reply(
-            std::dynamic_pointer_cast<api::SplitBucketReply>(
-                    top.getReply(3)));
-    CPPUNIT_ASSERT(reply.get());
-    CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                         reply->getResult());
+    auto reply = std::dynamic_pointer_cast<api::SplitBucketReply>(top.getReply(3));
+    ASSERT_TRUE(reply.get());
+    EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
 }
 
-void
-FileStorManagerTest::testJoin()
-{
-    TestName testName("testJoin");
-        // Setup a filestorthread to test
+TEST_F(FileStorManagerTest, join) {
+    // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
     top.push_back(std::unique_ptr<StorageLink>(
@@ -1570,15 +1345,13 @@ FileStorManagerTest::testJoin()
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
             filestorHandler, *metrics.disks[0]->threads[0], 0));
-        // Creating documents to test with. Different gids, 2 locations.
+    // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
         std::string content("Here is some content which is in all documents");
         std::ostringstream uri;
-
         uri << "userdoc:footype:" << (i % 3 == 0 ? 0x10001 : 0x0100001) << ":mydoc-" << i;
-        Document::SP doc(createDocument(content, uri.str()).release());
-        documents.push_back(doc);
+        documents.emplace_back(createDocument(content, uri.str()));
     }
     document::BucketIdFactory factory;
 
@@ -1586,7 +1359,7 @@ FileStorManagerTest::testJoin()
     createBucket(document::BucketId(17, 0x10001), 0);
 
     {
-            // Populate bucket with the given data
+        // Populate bucket with the given data
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(17, factory.getBucketId(documents[i]->getId()).getRawId());
             auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
@@ -1594,66 +1367,57 @@ FileStorManagerTest::testJoin()
             cmd->setAddress(*address);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+            ASSERT_EQ(1, top.getNumReplies());
             auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
-                // Delete every 5th document to have delete entries in file too
-            if (i % 5 == 0) {
-                auto rcmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bucket),
-                                                                 documents[i]->getId(), 1000000 + 100 + i);
+            // Delete every 5th document to have delete entries in file too
+            if ((i % 5) == 0) {
+                auto rcmd = std::make_shared<api::RemoveCommand>(
+                        makeDocumentBucket(bucket), documents[i]->getId(), 1000000 + 100 + i);
                 rcmd->setAddress(*address);
                 filestorHandler.schedule(rcmd, 0);
                 filestorHandler.flush(true);
-                CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+                ASSERT_EQ(1, top.getNumReplies());
                 auto rreply = std::dynamic_pointer_cast<api::RemoveReply>(top.getReply(0));
-                CPPUNIT_ASSERT_MSG(top.getReply(0)->getType().toString(),
-                                   rreply.get());
-                CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                     rreply->getResult());
+                ASSERT_TRUE(rreply.get()) << top.getReply(0)->getType().toString();
+                EXPECT_EQ(ReturnCode(ReturnCode::OK), rreply->getResult());
                 top.reset();
             }
         }
         LOG(debug, "Starting the actual join after populating data");
-            // Perform a join, check that other files are gone
+        // Perform a join, check that other files are gone
         {
-            std::shared_ptr<api::JoinBucketsCommand> cmd(
-                    new api::JoinBucketsCommand(makeDocumentBucket(document::BucketId(16, 1))));
-            cmd->getSourceBuckets().push_back(document::BucketId(17, 0x00001));
-            cmd->getSourceBuckets().push_back(document::BucketId(17, 0x10001));
+            auto cmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(document::BucketId(16, 1)));
+            cmd->getSourceBuckets().emplace_back(document::BucketId(17, 0x00001));
+            cmd->getSourceBuckets().emplace_back(document::BucketId(17, 0x10001));
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::JoinBucketsReply> reply(
-                    std::dynamic_pointer_cast<api::JoinBucketsReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::JoinBucketsReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
             top.reset();
         }
             // Test that the documents have gotten into the file.
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(16, 1);
-            std::shared_ptr<api::GetCommand> cmd(
-                    new api::GetCommand(makeDocumentBucket(bucket), documents[i]->getId(), "[all]"));
-            api::StorageMessageAddress address(
-                    "storage", lib::NodeType::STORAGE, 3);
+            auto cmd = std::make_shared<api::GetCommand>(
+                    makeDocumentBucket(bucket), documents[i]->getId(), "[all]");
+            api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
             cmd->setAddress(address);
             filestorHandler.schedule(cmd, 0);
             filestorHandler.flush(true);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<api::GetReply> reply(
-                    std::dynamic_pointer_cast<api::GetReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(i % 5 != 0 ? true : false, reply->wasFound());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<api::GetReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(((i % 5) != 0), reply->wasFound());
             top.reset();
         }
     }
-        // Closing file stor handler before threads are deleted, such that
-        // file stor threads getNextMessage calls returns.
+    // Closing file stor handler before threads are deleted, such that
+    // file stor threads getNextMessage calls returns.
     filestorHandler.close();
 }
 
@@ -1673,30 +1437,24 @@ createIterator(DummyStorageLink& link,
         spi::Selection(spi::DocumentSelection(docSel));
     selection.setFromTimestamp(spi::Timestamp(fromTime.getTime()));
     selection.setToTimestamp(spi::Timestamp(toTime.getTime()));
-    CreateIteratorCommand::SP createIterCmd(
-            new CreateIteratorCommand(makeDocumentBucket(bucket),
-                                      selection,
-                                      headerOnly ? "[header]" : "[all]",
-                                      spi::NEWEST_DOCUMENT_ONLY));
+    auto createIterCmd = std::make_shared<CreateIteratorCommand>(
+            makeDocumentBucket(bucket), selection,
+            headerOnly ? "[header]" : "[all]",
+            spi::NEWEST_DOCUMENT_ONLY);
     link.sendDown(createIterCmd);
     link.waitForMessages(1, FileStorManagerTest::LONG_WAITTIME);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), link.getNumReplies());
-    std::shared_ptr<CreateIteratorReply> reply(
-            std::dynamic_pointer_cast<CreateIteratorReply>(
-                    link.getReply(0)));
-    CPPUNIT_ASSERT(reply.get());
+    assert(link.getNumReplies() == 1);
+    auto reply = std::dynamic_pointer_cast<CreateIteratorReply>(link.getReply(0));
+    assert(reply.get());
     link.reset();
-    CPPUNIT_ASSERT(reply->getResult().success());
+    assert(reply->getResult().success());
     return reply->getIteratorId();
 }
 
 }
 
-void
-FileStorManagerTest::testVisiting()
-{
-    TestName testName("testVisiting");
-        // Setting up manager
+TEST_F(FileStorManagerTest, visiting) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
@@ -1705,9 +1463,10 @@ FileStorManagerTest::testVisiting()
         // Adding documents to two buckets which we are going to visit
         // We want one bucket in one slotfile, and one bucket with a file split
     uint32_t docCount = 50;
-    std::vector<document::BucketId> ids(2);
-    ids[0] = document::BucketId(16, 1);
-    ids[1] = document::BucketId(16, 2);
+    std::vector<document::BucketId> ids = {
+        document::BucketId(16, 1),
+        document::BucketId(16, 2)
+    };
 
     createBucket(ids[0], 0);
     createBucket(ids[1], 0);
@@ -1719,8 +1478,7 @@ FileStorManagerTest::testVisiting()
 
         uri << "userdoc:crawler:" << (i < 3 ? 1 : 2) << ":"
             << randomizer.nextUint32() << ".html";
-        Document::SP doc(createDocument(
-                content, uri.str()).release());
+        Document::SP doc(createDocument(content, uri.str()));
         const document::DocumentType& type(doc->getType());
         if (i < 30) {
             doc->setValue(type.getField("hstringval"),
@@ -1729,71 +1487,61 @@ FileStorManagerTest::testVisiting()
             doc->setValue(type.getField("hstringval"),
                           document::StringFieldValue("Jane Doe"));
         }
-        std::shared_ptr<api::PutCommand> cmd(new api::PutCommand(
-                    makeDocumentBucket(ids[i < 3 ? 0 : 1]), doc, i+1));
+        auto cmd = std::make_shared<api::PutCommand>(
+                makeDocumentBucket(ids[(i < 3) ? 0 : 1]), doc, i+1);
         top.sendDown(cmd);
     }
     top.waitForMessages(docCount, _waitTime);
-    CPPUNIT_ASSERT_EQUAL((size_t) docCount, top.getNumReplies());
-        // Check nodestate with splitting
+    ASSERT_EQ(docCount, top.getNumReplies());
+    // Check nodestate with splitting
     {
         api::BucketInfo info;
         for (uint32_t i=3; i<docCount; ++i) {
-            std::shared_ptr<api::BucketInfoReply> reply(
-                    std::dynamic_pointer_cast<api::BucketInfoReply>(
-                        top.getReply(i)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_MESSAGE(reply->getResult().toString(),
-                                   reply->getResult().success());
+            auto reply = std::dynamic_pointer_cast<api::BucketInfoReply>(top.getReply(i));
+            ASSERT_TRUE(reply.get());
+            ASSERT_TRUE(reply->getResult().success()) << reply->getResult().toString();
 
             info = reply->getBucketInfo();
         }
-        CPPUNIT_ASSERT_EQUAL(docCount-3, info.getDocumentCount());
+        EXPECT_EQ(docCount - 3, info.getDocumentCount());
     }
     top.reset();
-        // Visit bucket with no split, using no selection
+    // Visit bucket with no split, using no selection
     {
         spi::IteratorId iterId(createIterator(top, ids[0], "true"));
         auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[0]), iterId, 16*1024);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
-        std::shared_ptr<GetIterReply> reply(
-                std::dynamic_pointer_cast<GetIterReply>(top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(ids[0], reply->getBucketId());
-        CPPUNIT_ASSERT_EQUAL(size_t(3), reply->getEntries().size());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<GetIterReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(ids[0], reply->getBucketId());
+        EXPECT_EQ(3, reply->getEntries().size());
         top.reset();
     }
-        // Visit bucket with split, using selection
+    // Visit bucket with split, using selection
     {
         uint32_t totalDocs = 0;
-        spi::IteratorId iterId(
-                createIterator(top,
-                               ids[1],
-                               "testdoctype1.hstringval = \"John Doe\""));
+        spi::IteratorId iterId(createIterator(top, ids[1], "testdoctype1.hstringval = \"John Doe\""));
         while (true) {
             auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-            std::shared_ptr<GetIterReply> reply(
-                    std::dynamic_pointer_cast<GetIterReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
-            CPPUNIT_ASSERT_EQUAL(ids[1], reply->getBucketId());
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<GetIterReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+            EXPECT_EQ(ids[1], reply->getBucketId());
             totalDocs += reply->getEntries().size();
             top.reset();
             if (reply->isCompleted()) {
                 break;
             }
         }
-        CPPUNIT_ASSERT_EQUAL(27u, totalDocs);
+        EXPECT_EQ(27u, totalDocs);
     }
-        // Visit bucket with min and max timestamps set, headers only
+    // Visit bucket with min and max timestamps set, headers only
     {
         document::BucketId bucket(16, 2);
         spi::IteratorId iterId(
@@ -1808,37 +1556,24 @@ FileStorManagerTest::testVisiting()
             auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
-            CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
-            std::shared_ptr<GetIterReply> reply(
-                    std::dynamic_pointer_cast<GetIterReply>(
-                        top.getReply(0)));
-            CPPUNIT_ASSERT(reply.get());
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply->getResult());
-            CPPUNIT_ASSERT_EQUAL(bucket, reply->getBucketId());
-/* Header only is a VDS-specific thing.
-
-            for (size_t i = 0; i < reply->getEntries().size(); ++i) {
-                CPPUNIT_ASSERT(reply->getEntries()[i]->getDocument()
-                               ->getBody().empty());
-            }
-*/
+            ASSERT_EQ(1, top.getNumReplies());
+            auto reply = std::dynamic_pointer_cast<GetIterReply>(top.getReply(0));
+            ASSERT_TRUE(reply.get());
+            EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+            EXPECT_EQ(bucket, reply->getBucketId());
             totalDocs += reply->getEntries().size();
             top.reset();
             if (reply->isCompleted()) {
                 break;
             }
         }
-        CPPUNIT_ASSERT_EQUAL(11u, totalDocs);
+        EXPECT_EQ(11u, totalDocs);
     }
 
 }
 
-void
-FileStorManagerTest::testRemoveLocation()
-{
-    TestName testName("testRemoveLocation");
-        // Setting up manager
+TEST_F(FileStorManagerTest, remove_location) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
@@ -1853,55 +1588,44 @@ FileStorManagerTest::testRemoveLocation()
     for (uint32_t i=0; i<=10; ++i) {
         std::ostringstream docid;
         docid << "userdoc:ns:" << (i << 8) << ":foo";
-        Document::SP doc(createDocument(
-                    "some content", docid.str()).release());
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 1000 + i));
+        Document::SP doc(createDocument("some content", docid.str()));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 1000 + i);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(i + 1u, reply->getBucketInfo().getDocumentCount());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(i + 1u, reply->getBucketInfo().getDocumentCount());
     }
-        // Issuing remove location command
+    // Issuing remove location command
     {
-        std::shared_ptr<api::RemoveLocationCommand> cmd(
-                new api::RemoveLocationCommand("id.user % 512 == 0", makeDocumentBucket(bid)));
-                //new api::RemoveLocationCommand("id.user == 1", bid));
+        auto cmd = std::make_shared<api::RemoveLocationCommand>("id.user % 512 == 0", makeDocumentBucket(bid));
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::RemoveLocationReply> reply(
-                std::dynamic_pointer_cast<api::RemoveLocationReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(5u, reply->getBucketInfo().getDocumentCount());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(5u, reply->getBucketInfo().getDocumentCount());
     }
 }
 
-void FileStorManagerTest::testDeleteBucket()
-{
-    TestName testName("testDeleteBucket");
-        // Setting up manager
+TEST_F(FileStorManagerTest, delete_bucket) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
                     config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
-    api::StorageMessageAddress address(
-            "storage", lib::NodeType::STORAGE, 2);
-        // Creating a document to test with
+    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
+    // Creating a document to test with
     document::DocumentId docId("userdoc:crawler:4000:http://www.ntnu.no/");
-    Document::SP doc(new Document(*_testdoctype1, docId));
+    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
     createBucket(bid, 0);
@@ -1909,52 +1633,42 @@ void FileStorManagerTest::testDeleteBucket()
     api::BucketInfo bucketInfo;
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 105));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
         bucketInfo = reply->getBucketInfo();
         top.reset();
     }
 
     // Delete bucket
     {
-        std::shared_ptr<api::DeleteBucketCommand> cmd(
-                new api::DeleteBucketCommand(makeDocumentBucket(bid)));
+        auto cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bid));
         cmd->setAddress(address);
         cmd->setBucketInfo(bucketInfo);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::DeleteBucketReply> reply(
-                std::dynamic_pointer_cast<api::DeleteBucketReply>(
-                    top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::DeleteBucketReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 }
 
-void
-FileStorManagerTest::testDeleteBucketRejectOutdatedBucketInfo()
-{
-    TestName testName("testDeleteBucketRejectOutdatedBucketInfo");
+TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
     // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
                     config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
-    api::StorageMessageAddress address(
-            "storage", lib::NodeType::STORAGE, 2);
+    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
     document::DocumentId docId("userdoc:crawler:4000:http://www.ntnu.no/");
     Document::SP doc(new Document(*_testdoctype1, docId));
@@ -1966,40 +1680,32 @@ FileStorManagerTest::testDeleteBucketRejectOutdatedBucketInfo()
 
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 105));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
         bucketInfo = reply->getBucketInfo();
         top.reset();
     }
 
     // Attempt to delete bucket, but with non-matching bucketinfo
     {
-        std::shared_ptr<api::DeleteBucketCommand> cmd(
-                new api::DeleteBucketCommand(makeDocumentBucket(bid)));
+        auto cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bid));
         cmd->setBucketInfo(api::BucketInfo(0xf000baaa, 1, 123, 1, 456));
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::DeleteBucketReply> reply(
-                std::dynamic_pointer_cast<api::DeleteBucketReply>(
-                    top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(
-                ReturnCode::REJECTED,
-                reply->getResult().getResult());
-        CPPUNIT_ASSERT_EQUAL(bucketInfo, reply->getBucketInfo());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::DeleteBucketReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::REJECTED, reply->getResult().getResult());
+        EXPECT_EQ(bucketInfo, reply->getBucketInfo());
     }
 }
 
@@ -2007,191 +1713,51 @@ FileStorManagerTest::testDeleteBucketRejectOutdatedBucketInfo()
  * Test that receiving a DeleteBucketCommand with invalid
  * BucketInfo deletes the bucket and does not fail the operation.
  */
-void
-FileStorManagerTest::testDeleteBucketWithInvalidBucketInfo()
-{
-    TestName testName("testDeleteBucketWithInvalidBucketInfo");
+TEST_F(FileStorManagerTest, delete_bucket_with_invalid_bucket_info){
     // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager = new FileStorManager(
                     config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
-    api::StorageMessageAddress address(
-            "storage", lib::NodeType::STORAGE, 2);
+    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
     document::DocumentId docId("userdoc:crawler:4000:http://www.ntnu.no/");
-    Document::SP doc(new Document(*_testdoctype1, docId));
+    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
     createBucket(bid, 0);
 
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 105));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT_EQUAL(1, (int)reply->getBucketInfo().getDocumentCount());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
         top.reset();
     }
 
     // Attempt to delete bucket with invalid bucketinfo
     {
-        std::shared_ptr<api::DeleteBucketCommand> cmd(
-                new api::DeleteBucketCommand(makeDocumentBucket(bid)));
+        auto cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bid));
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::DeleteBucketReply> reply(
-                std::dynamic_pointer_cast<api::DeleteBucketReply>(
-                    top.getReply(0)));
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(
-                ReturnCode::OK,
-                reply->getResult().getResult());
-        CPPUNIT_ASSERT_EQUAL(api::BucketInfo(), reply->getBucketInfo());
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::DeleteBucketReply>(top.getReply(0));
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::OK, reply->getResult().getResult());
+        EXPECT_EQ(api::BucketInfo(), reply->getBucketInfo());
     }
 }
 
-namespace {
-
-    /**
-     * Utility storage link, sending data to the given links instead of through
-     * a regular chain.
-     */
-    struct MidLink : public StorageLink {
-        StorageLink& _up;
-
-    public:
-        MidLink(std::unique_ptr<StorageLink> down, StorageLink& up)
-            : StorageLink("MidLink"), _up(up)
-        {
-            push_back(std::move(down));
-        }
-        ~MidLink() {
-            closeNextLink();
-        }
-
-        void print(std::ostream& out, bool, const std::string&) const override { out << "MidLink"; }
-        bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
-            if (!StorageLinkTest::callOnUp(_up, msg)) _up.sendUp(msg);
-            return true;
-        }
-
-    };
-
-    /**
-     * Utility class, connecting two storage links below it, sending
-     * messages coming up from one down the other (providing address is set
-     * correctly.)
-     */
-    class BinaryStorageLink : public DummyStorageLink {
-        vespalib::Lock _lock;
-        std::set<api::StorageMessage::Id> _seen;
-        MidLink _left;
-        MidLink _right;
-        uint16_t _leftAddr;
-        uint16_t _rightAddr;
-
-    public:
-        BinaryStorageLink(uint16_t leftAddr, std::unique_ptr<StorageLink> left,
-                          uint16_t rightAddr, std::unique_ptr<StorageLink> right)
-            : _left(std::move(left), *this),
-              _right(std::move(right), *this),
-              _leftAddr(leftAddr),
-              _rightAddr(rightAddr) {}
-
-        void print(std::ostream& out, bool, const std::string&) const override { out << "BinaryStorageLink"; }
-
-        bool onDown(const std::shared_ptr<api::StorageMessage> & msg) override {
-//            LOG(debug, "onDown Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
-
-            vespalib::LockGuard lock(_lock);
-            _seen.insert(msg->getMsgId());
-            return sendOn(msg);
-        }
-
-        bool sendOn(const std::shared_ptr<api::StorageMessage> & msg) {
-            if (msg->getAddress()) {
-                uint16_t address = msg->getAddress()->getIndex();
-                if ((address == _leftAddr && !msg->getType().isReply()) ||
-                    (address == _rightAddr && msg->getType().isReply()))
-                {
-                    if (!StorageLinkTest::callOnDown(_left, msg)) {
-                        _left.sendDown(msg);
-                    }
-                } else if ((address == _rightAddr && !msg->getType().isReply()) ||
-                           (address == _leftAddr && msg->getType().isReply()))
-                {
-                    if (!StorageLinkTest::callOnDown(_right, msg)) {
-                        _right.sendDown(msg);
-                    }
-                } else {
-                    std::ostringstream ost;
-                    ost << "Address " << address << " is neither " << _leftAddr
-                        << " or " << _rightAddr << " in message " << *msg
-                        << ".\n";
-                    CPPUNIT_FAIL(ost.str());
-                }
-            }
-            return true;
-        }
-
-        bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
-            // LOG(debug, "onUp Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
-
-            vespalib::LockGuard lock(_lock);
-            std::set<api::StorageMessage::Id>::iterator it
-                    = _seen.find(msg->getMsgId());
-                // If message originated from the outside
-            if (it != _seen.end()) {
-                LOG(debug, "Have seen this message before, storing");
-
-                _seen.erase(it);
-                return DummyStorageLink::onUp(msg);
-                // If it originated from below, send it down again.
-            } else if (msg->getType() == api::MessageType::NOTIFYBUCKETCHANGE) {
-                // Just throw away notify bucket change
-                return true;
-            } else {
-                LOG(debug, "Never seen %s, sending on!",
-                    msg->toString().c_str());
-
-                return sendOn(msg);
-            }
-        }
-
-        void onFlush(bool downwards) override {
-            if (downwards) {
-                _left.flush();
-                _right.flush();
-            }
-        }
-        void onOpen() override {
-            _left.open();
-            _right.open();
-        }
-        void onClose() override {
-            _left.close();
-            _right.close();
-        }
-    };
-}
-
-void
-FileStorManagerTest::testNoTimestamps()
-{
-    TestName testName("testNoTimestamps");
-        // Setting up manager
+TEST_F(FileStorManagerTest, no_timestamps) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
@@ -2199,7 +1765,7 @@ FileStorManagerTest::testNoTimestamps()
     top.open();
     api::StorageMessageAddress address(
             "storage", lib::NodeType::STORAGE, 3);
-        // Creating a document to test with
+    // Creating a document to test with
     Document::SP doc(createDocument(
                 "some content", "doc:crawler:http://www.ntnu.no/").release());
     document::BucketId bid(16, 4000);
@@ -2208,53 +1774,41 @@ FileStorManagerTest::testNoTimestamps()
 
     // Putting it
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 0));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 0);
         cmd->setAddress(address);
-        CPPUNIT_ASSERT_EQUAL((api::Timestamp)0, cmd->getTimestamp());
+        EXPECT_EQ(api::Timestamp(0), cmd->getTimestamp());
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::REJECTED,
-                             reply->getResult().getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::REJECTED, reply->getResult().getResult());
     }
-        // Removing it
+    // Removing it
     {
-        std::shared_ptr<api::RemoveCommand> cmd(
-                new api::RemoveCommand(makeDocumentBucket(bid), doc->getId(), 0));
+        auto cmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid), doc->getId(), 0);
         cmd->setAddress(address);
-        CPPUNIT_ASSERT_EQUAL((api::Timestamp)0, cmd->getTimestamp());
+        EXPECT_EQ(api::Timestamp(0), cmd->getTimestamp());
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::RemoveReply> reply(
-                std::dynamic_pointer_cast<api::RemoveReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::RemoveReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::REJECTED,
-                             reply->getResult().getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::REJECTED, reply->getResult().getResult());
     }
 }
 
-void
-FileStorManagerTest::testEqualTimestamps()
-{
-    TestName testName("testEqualTimestamps");
-        // Setting up manager
+TEST_F(FileStorManagerTest, equal_timestamps) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
             new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
     top.open();
-    api::StorageMessageAddress address(
-            "storage", lib::NodeType::STORAGE, 3);
-        // Creating a document to test with
+    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
+    // Creating a document to test with
     document::BucketId bid(16, 4000);
 
     createBucket(bid, 0);
@@ -2262,20 +1816,16 @@ FileStorManagerTest::testEqualTimestamps()
     // Putting it
     {
         Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:http://www.ntnu.no/")
-                .release());
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 100));
+                "some content", "userdoc:crawler:4000:http://www.ntnu.no/"));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 100);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::OK, reply->getResult().getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::OK, reply->getResult().getResult());
     }
 
     // Putting it on same timestamp again
@@ -2283,48 +1833,36 @@ FileStorManagerTest::testEqualTimestamps()
     // have to accept this)
     {
         Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:http://www.ntnu.no/")
-                .release());
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 100));
+                "some content", "userdoc:crawler:4000:http://www.ntnu.no/"));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 100);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::OK, reply->getResult().getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::OK, reply->getResult().getResult());
     }
 
     // Putting the doc with other id. Now we should fail
     {
         Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:http://www.ntnu.nu/")
-                .release());
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), doc, 100));
+                "some content", "userdoc:crawler:4000:http://www.ntnu.nu/"));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 100);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::TIMESTAMP_EXIST,
-                             reply->getResult().getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::TIMESTAMP_EXIST, reply->getResult().getResult());
     }
 }
 
-void
-FileStorManagerTest::testGetIter()
-{
-    TestName testName("testGetIter");
-        // Setting up manager
+TEST_F(FileStorManagerTest, get_iter) {
+    // Setting up manager
     DummyStorageLink top;
     FileStorManager *manager;
     top.push_back(unique_ptr<StorageLink>(manager =
@@ -2337,85 +1875,70 @@ FileStorManagerTest::testGetIter()
     createBucket(bid, 0);
 
     std::vector<Document::SP > docs;
-        // Creating some documents to test with
+    // Creating some documents to test with
     for (uint32_t i=0; i<10; ++i) {
         std::ostringstream id;
         id << "userdoc:crawler:4000:http://www.ntnu.no/" << i;
-        docs.push_back(
+        docs.emplace_back(
                 Document::SP(
                     _node->getTestDocMan().createRandomDocumentAtLocation(
                         4000, i, 400, 400)));
     }
     api::BucketInfo bucketInfo;
-        // Putting all docs to have something to visit
+    // Putting all docs to have something to visit
     for (uint32_t i=0; i<docs.size(); ++i) {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bid), docs[i], 100 + i));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), docs[i], 100 + i);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::PutReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
         bucketInfo = reply->getBucketInfo();
     }
-        // Sending a getiter request that will only visit some of the docs
+    // Sending a getiter request that will only visit some of the docs
     spi::IteratorId iterId(createIterator(top, bid, ""));
     {
-        std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(makeDocumentBucket(bid), iterId, 2048));
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<GetIterReply> reply(
-                std::dynamic_pointer_cast<GetIterReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<GetIterReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-        CPPUNIT_ASSERT(reply->getEntries().size() > 0);
-        CPPUNIT_ASSERT(reply->getEntries().size() < docs.size());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+        EXPECT_GT(reply->getEntries().size(), 0);
+        EXPECT_LT(reply->getEntries().size(), docs.size());
     }
-        // Normal case of get iter is testing through visitor tests.
-        // Testing specific situation where file is deleted while visiting here
+    // Normal case of get iter is testing through visitor tests.
+    // Testing specific situation where file is deleted while visiting here
     {
-        std::shared_ptr<api::DeleteBucketCommand> cmd(
-                new api::DeleteBucketCommand(makeDocumentBucket(bid)));
+        auto cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bid));
         cmd->setBucketInfo(bucketInfo);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::DeleteBucketReply> reply(
-                std::dynamic_pointer_cast<api::DeleteBucketReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::DeleteBucketReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
     {
         auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
-        std::shared_ptr<GetIterReply> reply(
-                std::dynamic_pointer_cast<GetIterReply>(
-                    top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<GetIterReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode::BUCKET_NOT_FOUND,
-                             reply->getResult().getResult());
-        CPPUNIT_ASSERT(reply->getEntries().empty());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode::BUCKET_NOT_FOUND, reply->getResult().getResult());
+        EXPECT_TRUE(reply->getEntries().empty());
     }
 }
 
-void
-FileStorManagerTest::testSetBucketActiveState()
-{
-    TestName testName("testSetBucketActiveState");
+TEST_F(FileStorManagerTest, set_bucket_active_state) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
@@ -2431,83 +1954,70 @@ FileStorManagerTest::testSetBucketActiveState()
 
     const uint16_t disk = 0;
     createBucket(bid, disk);
-    spi::dummy::DummyPersistence& provider(
-            dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider()));
-    CPPUNIT_ASSERT(!provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
+    auto& provider = dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider());
+    EXPECT_FALSE(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
 
     {
-        std::shared_ptr<api::SetBucketStateCommand> cmd(
-                new api::SetBucketStateCommand(
-                        makeDocumentBucket(bid), api::SetBucketStateCommand::ACTIVE));
+        auto cmd = std::make_shared<api::SetBucketStateCommand>(
+                makeDocumentBucket(bid), api::SetBucketStateCommand::ACTIVE);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::SetBucketStateReply> reply(
-                std::dynamic_pointer_cast<api::SetBucketStateReply>(
-                        top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::SetBucketStateReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
-    CPPUNIT_ASSERT(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
+    EXPECT_TRUE(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(entry->info.isActive());
+        EXPECT_TRUE(entry->info.isActive());
     }
     // Trigger bucket info to be read back into the database
     {
-        std::shared_ptr<ReadBucketInfo> cmd(
-                new ReadBucketInfo(makeDocumentBucket(bid)));
+        auto cmd = std::make_shared<ReadBucketInfo>(makeDocumentBucket(bid));
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<ReadBucketInfoReply> reply(
-                std::dynamic_pointer_cast<ReadBucketInfoReply>(
-                        top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<ReadBucketInfoReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
+        ASSERT_TRUE(reply.get());
     }
     // Should not have lost active flag
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(entry->info.isActive());
+        EXPECT_TRUE(entry->info.isActive());
     }
 
     {
-        std::shared_ptr<api::SetBucketStateCommand> cmd(
-                new api::SetBucketStateCommand(
-                        makeDocumentBucket(bid), api::SetBucketStateCommand::INACTIVE));
+        auto cmd = std::make_shared<api::SetBucketStateCommand>(
+                makeDocumentBucket(bid), api::SetBucketStateCommand::INACTIVE);
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::SetBucketStateReply> reply(
-                std::dynamic_pointer_cast<api::SetBucketStateReply>(
-                        top.getReply(0)));
+        ASSERT_EQ(1, top.getNumReplies());
+        auto reply = std::dynamic_pointer_cast<api::SetBucketStateReply>(top.getReply(0));
         top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
 
-    CPPUNIT_ASSERT(!provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
+    EXPECT_FALSE(provider.isActive(makeSpiBucket(bid, spi::PartitionId(disk))));
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(!entry->info.isActive());
+        EXPECT_FALSE(entry->info.isActive());
     }
 }
 
-void
-FileStorManagerTest::testNotifyOwnerDistributorOnOutdatedSetBucketState()
-{
-    TestName testName("testNotifyOwnerDistributorOnOutdatedSetBucketState");
+TEST_F(FileStorManagerTest, notify_owner_distributor_on_outdated_set_bucket_state) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
@@ -2520,47 +2030,37 @@ FileStorManagerTest::testNotifyOwnerDistributorOnOutdatedSetBucketState()
     top.open();
     
     document::BucketId bid(getFirstBucketNotOwnedByDistributor(0));
-    CPPUNIT_ASSERT(bid.getRawId() != 0);
+    ASSERT_NE(bid.getRawId(), 0);
     createBucket(bid, 0);
 
-    std::shared_ptr<api::SetBucketStateCommand> cmd(
-            new api::SetBucketStateCommand(
-                    makeDocumentBucket(bid), api::SetBucketStateCommand::ACTIVE));
-    cmd->setAddress(api::StorageMessageAddress(
-                            "cluster", lib::NodeType::STORAGE, 1));
+    auto cmd = std::make_shared<api::SetBucketStateCommand>(
+            makeDocumentBucket(bid), api::SetBucketStateCommand::ACTIVE);
+    cmd->setAddress(api::StorageMessageAddress("cluster", lib::NodeType::STORAGE, 1));
     cmd->setSourceIndex(0);
 
     top.sendDown(cmd);
     top.waitForMessages(2, _waitTime);
 
-    CPPUNIT_ASSERT_EQUAL(size_t(2), top.getNumReplies());
+    ASSERT_EQ(2, top.getNumReplies());
     // Not necessarily deterministic order.
     int idxOffset = 0;
     if (top.getReply(0)->getType() != api::MessageType::NOTIFYBUCKETCHANGE) {
         ++idxOffset;
     }
-    std::shared_ptr<api::NotifyBucketChangeCommand> notifyCmd(
-            std::dynamic_pointer_cast<api::NotifyBucketChangeCommand>(
-                    top.getReply(idxOffset)));
-    std::shared_ptr<api::SetBucketStateReply> stateReply(
-            std::dynamic_pointer_cast<api::SetBucketStateReply>(
-                    top.getReply(1 - idxOffset)));
+    auto notifyCmd  = std::dynamic_pointer_cast<api::NotifyBucketChangeCommand>(top.getReply(idxOffset));
+    auto stateReply = std::dynamic_pointer_cast<api::SetBucketStateReply>(top.getReply(1 - idxOffset));
 
-    CPPUNIT_ASSERT(stateReply.get());
-    CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                         stateReply->getResult());
+    ASSERT_TRUE(stateReply.get());
+    EXPECT_EQ(ReturnCode(ReturnCode::OK), stateReply->getResult());
 
-    CPPUNIT_ASSERT(notifyCmd.get());
-    CPPUNIT_ASSERT_EQUAL(uint16_t(1), notifyCmd->getAddress()->getIndex());
+    ASSERT_TRUE(notifyCmd.get());
+    EXPECT_EQ(1, notifyCmd->getAddress()->getIndex());
     // Not necessary for this to be set since distributor does not insert this
     // info into its db, but useful for debugging purposes.
-    CPPUNIT_ASSERT(notifyCmd->getBucketInfo().isActive());
+    EXPECT_TRUE(notifyCmd->getBucketInfo().isActive());
 }
 
-void
-FileStorManagerTest::testGetBucketDiffImplicitCreateBucket()
-{
-    TestName testName("testGetBucketDiffImplicitCreateBucket");
+TEST_F(FileStorManagerTest, GetBucketDiff_implicitly_creates_bucket) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
@@ -2573,34 +2073,26 @@ FileStorManagerTest::testGetBucketDiffImplicitCreateBucket()
 
     document::BucketId bid(16, 4000);
 
-    std::vector<api::MergeBucketCommand::Node> nodes;
-    nodes.push_back(1);
-    nodes.push_back(0);
+    std::vector<api::MergeBucketCommand::Node> nodes = {1, 0};
 
-    std::shared_ptr<api::GetBucketDiffCommand> cmd(
-            new api::GetBucketDiffCommand(makeDocumentBucket(bid), nodes, Timestamp(1000)));
-    cmd->setAddress(api::StorageMessageAddress(
-                            "cluster", lib::NodeType::STORAGE, 1));
+    auto cmd = std::make_shared<api::GetBucketDiffCommand>(makeDocumentBucket(bid), nodes, Timestamp(1000));
+    cmd->setAddress(api::StorageMessageAddress("cluster", lib::NodeType::STORAGE, 1));
     cmd->setSourceIndex(0);
     top.sendDown(cmd);
 
     api::GetBucketDiffReply* reply;
     ASSERT_SINGLE_REPLY(api::GetBucketDiffReply, reply, top, _waitTime);
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
-                         reply->getResult());
+    EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(entry.exist());
-        CPPUNIT_ASSERT(entry->info.isReady());
+        ASSERT_TRUE(entry.exist());
+        EXPECT_TRUE(entry->info.isReady());
     }
 }
 
-void
-FileStorManagerTest::testMergeBucketImplicitCreateBucket()
-{
-    TestName testName("testMergeBucketImplicitCreateBucket");
+TEST_F(FileStorManagerTest, merge_bucket_implicitly_creates_bucket) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
@@ -2613,14 +2105,10 @@ FileStorManagerTest::testMergeBucketImplicitCreateBucket()
 
     document::BucketId bid(16, 4000);
 
-    std::vector<api::MergeBucketCommand::Node> nodes;
-    nodes.push_back(1);
-    nodes.push_back(2);
+    std::vector<api::MergeBucketCommand::Node> nodes = {1, 2};
 
-    std::shared_ptr<api::MergeBucketCommand> cmd(
-            new api::MergeBucketCommand(makeDocumentBucket(bid), nodes, Timestamp(1000)));
-    cmd->setAddress(api::StorageMessageAddress(
-                            "cluster", lib::NodeType::STORAGE, 1));
+    auto cmd = std::make_shared<api::MergeBucketCommand>(makeDocumentBucket(bid), nodes, Timestamp(1000));
+    cmd->setAddress(api::StorageMessageAddress("cluster", lib::NodeType::STORAGE, 1));
     cmd->setSourceIndex(0);
     top.sendDown(cmd);
 
@@ -2630,15 +2118,12 @@ FileStorManagerTest::testMergeBucketImplicitCreateBucket()
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(entry.exist());
-        CPPUNIT_ASSERT(entry->info.isReady());
+        ASSERT_TRUE(entry.exist());
+        EXPECT_TRUE(entry->info.isReady());
     }
 }
 
-void
-FileStorManagerTest::testNewlyCreatedBucketIsReady()
-{
-    TestName testName("testNewlyCreatedBucketIsReady");
+TEST_F(FileStorManagerTest, newly_created_bucket_is_ready) {
     DummyStorageLink top;
     FileStorManager* manager(
             new FileStorManager(config->getConfigId(),
@@ -2651,31 +2136,26 @@ FileStorManagerTest::testNewlyCreatedBucketIsReady()
 
     document::BucketId bid(16, 4000);
 
-    std::shared_ptr<api::CreateBucketCommand> cmd(
-            new api::CreateBucketCommand(makeDocumentBucket(bid)));
-    cmd->setAddress(api::StorageMessageAddress(
-                            "cluster", lib::NodeType::STORAGE, 1));
+    auto cmd = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bid));
+    cmd->setAddress(api::StorageMessageAddress("cluster", lib::NodeType::STORAGE, 1));
     cmd->setSourceIndex(0);
     top.sendDown(cmd);
 
     api::CreateBucketReply* reply;
     ASSERT_SINGLE_REPLY(api::CreateBucketReply, reply, top, _waitTime);
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
-                         reply->getResult());
+    EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(entry.exist());
-        CPPUNIT_ASSERT(entry->info.isReady());
-        CPPUNIT_ASSERT(!entry->info.isActive());
+        ASSERT_TRUE(entry.exist());
+        EXPECT_TRUE(entry->info.isReady());
+        EXPECT_FALSE(entry->info.isActive());
     }
 }
 
-void
-FileStorManagerTest::testCreateBucketSetsActiveFlagInDatabaseAndReply()
-{
-    TestFileStorComponents c(*this, "testNotifyOnSplitSourceOwnershipChanged");
+TEST_F(FileStorManagerTest, create_bucket_sets_active_flag_in_database_and_reply) {
+    TestFileStorComponents c(*this);
     setClusterState("storage:2 distributor:1");
 
     document::BucketId bid(16, 4000);
@@ -2689,15 +2169,14 @@ FileStorManagerTest::testCreateBucketSetsActiveFlagInDatabaseAndReply()
 
     api::CreateBucketReply* reply;
     ASSERT_SINGLE_REPLY(api::CreateBucketReply, reply, c.top, _waitTime);
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
-                         reply->getResult());
+    EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
     {
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(
                         bid, "foo"));
-        CPPUNIT_ASSERT(entry.exist());
-        CPPUNIT_ASSERT(entry->info.isReady());
-        CPPUNIT_ASSERT(entry->info.isActive());
+        ASSERT_TRUE(entry.exist());
+        EXPECT_TRUE(entry->info.isReady());
+        EXPECT_TRUE(entry->info.isActive());
     }
 }
 
@@ -2708,11 +2187,11 @@ void FileStorManagerTest::assert_request_size_set(TestFileStorComponents& c, std
     cmd->setAddress(address);
     c.top.sendDown(cmd);
     c.top.waitForMessages(1, _waitTime);
-    CPPUNIT_ASSERT_EQUAL(static_cast<int64_t>(cmd->getApproxByteSize()), metric.request_size.getLast());
+    EXPECT_EQ(static_cast<int64_t>(cmd->getApproxByteSize()), metric.request_size.getLast());
 }
 
-void FileStorManagerTest::put_command_size_is_added_to_metric() {
-    TestFileStorComponents c(*this, "put_command_size_is_added_to_metric");
+TEST_F(FileStorManagerTest, put_command_size_is_added_to_metric) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
     createBucket(bucket, 0);
     auto cmd = std::make_shared<api::PutCommand>(
@@ -2721,8 +2200,8 @@ void FileStorManagerTest::put_command_size_is_added_to_metric() {
     assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->put[defaultLoadType]);
 }
 
-void FileStorManagerTest::update_command_size_is_added_to_metric() {
-    TestFileStorComponents c(*this, "update_command_size_is_added_to_metric");
+TEST_F(FileStorManagerTest, update_command_size_is_added_to_metric) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
     createBucket(bucket, 0);
     auto update = std::make_shared<document::DocumentUpdate>(
@@ -2735,8 +2214,8 @@ void FileStorManagerTest::update_command_size_is_added_to_metric() {
     assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->update[defaultLoadType]);
 }
 
-void FileStorManagerTest::remove_command_size_is_added_to_metric() {
-    TestFileStorComponents c(*this, "remove_command_size_is_added_to_metric");
+TEST_F(FileStorManagerTest, remove_command_size_is_added_to_metric) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
     createBucket(bucket, 0);
     auto cmd = std::make_shared<api::RemoveCommand>(
@@ -2745,8 +2224,8 @@ void FileStorManagerTest::remove_command_size_is_added_to_metric() {
     assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->remove[defaultLoadType]);
 }
 
-void FileStorManagerTest::get_command_size_is_added_to_metric() {
-    TestFileStorComponents c(*this, "get_command_size_is_added_to_metric");
+TEST_F(FileStorManagerTest, get_command_size_is_added_to_metric) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
     createBucket(bucket, 0);
     auto cmd = std::make_shared<api::GetCommand>(

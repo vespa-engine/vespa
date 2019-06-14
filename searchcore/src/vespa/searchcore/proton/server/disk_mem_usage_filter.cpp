@@ -2,9 +2,10 @@
 
 #include "disk_mem_usage_filter.h"
 #include "i_disk_mem_usage_listener.h"
-#include <vespa/log/log.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <sstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.server.disk_mem_usage_filter");
 
 namespace proton {

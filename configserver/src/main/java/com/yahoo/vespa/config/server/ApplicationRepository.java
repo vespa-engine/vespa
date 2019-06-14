@@ -29,6 +29,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -39,7 +40,6 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -691,11 +691,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to decompress stream", e);
         }
-    }
-
-    private List<ApplicationId> listApplicationIds(Tenant tenant) {
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return applicationRepo.activeApplications();
     }
 
     private void cleanupTempDirectory(File tempDir) {

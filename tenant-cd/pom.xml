@@ -5,6 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>com.yahoo.vespa</groupId>
     <artifactId>tenant-cd</artifactId>
     <name>Hosted Vespa tenant CD</name>
     <description>Test library for hosted Vespa applications.</description>
@@ -19,6 +20,36 @@
     </parent>
 
     <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>security-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-provisioning</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>hosted-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

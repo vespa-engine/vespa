@@ -4,6 +4,7 @@ import ai.vespa.hosted.api.Deployment;
 import ai.vespa.hosted.api.DeploymentLog;
 import ai.vespa.hosted.api.DeploymentResult;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -41,7 +42,11 @@ public class DeployMojo extends AbstractVespaMojo {
                                                                              projectPathOf("target", "application.zip"))));
         if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
 
-        ZoneId zone = environment == null || region == null ? controller.devZone() : ZoneId.from(environment, region);
+        ZoneId zone = region == null
+                ? controller.defaultZone(environment == null
+                                                 ? Environment.dev
+                                                 : Environment.from(environment))
+                : ZoneId.from(environment, region);
 
         DeploymentResult result = controller.deploy(deployment, id, zone);
         getLog().info(result.message());
