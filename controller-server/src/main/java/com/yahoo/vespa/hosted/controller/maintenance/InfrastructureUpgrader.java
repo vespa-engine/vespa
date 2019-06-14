@@ -3,11 +3,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.config.provision.zone.UpgradePolicy;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.yolean.Exceptions;
 
@@ -68,7 +67,9 @@ public abstract class InfrastructureUpgrader extends Maintainer {
         for (SystemApplication application : applications) {
             if (convergedOn(target, application.dependencies(), zone)) {
                 boolean currentAppConverged = convergedOn(target, application, zone);
-                if (!currentAppConverged) {
+                // In dynamically provisioned zones there may be no tenant hosts at the time of upgrade, so we
+                // should always set the target version.
+                if (application == SystemApplication.tenantHost || !currentAppConverged) {
                     upgrade(target, application, zone);
                 }
                 converged &= currentAppConverged;
