@@ -33,7 +33,7 @@ public class FieldOfTypeDocumentTestCase extends SearchDefinitionTestCase {
 
 
         DocumentType musicType = manager.getDocumentType("music");
-        assertEquals(5, musicType.getFieldCount());
+        assertEquals(3, musicType.getFieldCount());
 
         Field intField = musicType.getField("intfield");
         assertEquals(DataType.INT, intField.getDataType());
@@ -41,21 +41,13 @@ public class FieldOfTypeDocumentTestCase extends SearchDefinitionTestCase {
         assertEquals(DataType.STRING, stringField.getDataType());
         Field longField = musicType.getField("longfield");
         assertEquals(DataType.LONG, longField.getDataType());
-        Field summaryfeatures = musicType.getField("summaryfeatures");
-        assertEquals(DataType.STRING, summaryfeatures.getDataType());
-        Field rankfeatures = musicType.getField("rankfeatures");
-        assertEquals(DataType.STRING, rankfeatures.getDataType());
 
 
         DocumentType bookType = manager.getDocumentType("book");
-        assertEquals(3, bookType.getFieldCount());
+        assertEquals(1, bookType.getFieldCount());
 
         Field musicField = bookType.getField("soundtrack");
         assertSame(musicType, musicField.getDataType());
-        summaryfeatures = musicType.getField("summaryfeatures");
-        assertEquals(DataType.STRING, summaryfeatures.getDataType());
-        rankfeatures = musicType.getField("rankfeatures");
-        assertEquals(DataType.STRING, rankfeatures.getDataType());
     }
 
 }

@@ -21,13 +21,13 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class AddExtraFieldsToDocument extends Processor {
 
-    public AddExtraFieldsToDocument(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    AddExtraFieldsToDocument(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     //TODO This is a tempoarry hack to avoid producing illegal code for fields not wanted anyway.
     private boolean dirtyLegalFieldNameCheck(String fieldName) {
-        return ! fieldName.contains(".");
+        return ! fieldName.contains(".") && !"rankfeatures".equals(fieldName) && !"summaryfeatures".equals(fieldName);
     }
 
     @Override
