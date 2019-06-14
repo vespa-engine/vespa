@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import org.eclipse.jetty.io.RuntimeIOException;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -50,8 +52,22 @@ public class UnixPath {
         return path;
     }
 
+    public boolean exists() {
+        return Files.exists(path);
+    }
+
     public String readUtf8File() {
         return new String(readBytes(), StandardCharsets.UTF_8);
+    }
+
+    public Optional<String> readUtf8FileIfExists() {
+        try {
+            return Optional.of(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+        } catch (NoSuchFileException ignored) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new RuntimeIOException(e);
+        }
     }
 
     public byte[] readBytes() {
