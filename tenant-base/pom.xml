@@ -217,14 +217,14 @@
         </profile>
 
         <profile>
-            <id>system-tests</id>
+            <id>functional-tests</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <groups>ai.vespa.hosted.cd.SystemTest</groups>
+                            <groups>ai.vespa.hosted.cd.FunctionalTest</groups>
                             <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
                         </configuration>
                     </plugin>
@@ -233,14 +233,14 @@
         </profile>
 
         <profile>
-            <id>staging-tests</id>
+            <id>upgrade-tests</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <groups>ai.vespa.hosted.cd.StagingTest</groups>
+                            <groups>ai.vespa.hosted.cd.UpgradeTest</groups>
                             <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
                         </configuration>
                     </plugin>
@@ -371,8 +371,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludedGroups>
-                        ai.vespa.hosted.cd.SystemTest,
-                        ai.vespa.hosted.cd.StagingTest,
+                        ai.vespa.hosted.cd.FunctionalTest,
+                        ai.vespa.hosted.cd.UpgradeTest,
                         ai.vespa.hosted.cd.ProductionTest
                     </excludedGroups>
                 </configuration>
