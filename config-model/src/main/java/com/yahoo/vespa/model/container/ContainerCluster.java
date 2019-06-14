@@ -208,7 +208,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     private void addTestrunnerComponentsIfTester(DeployState deployState) {
-        if (deployState.getProperties().applicationId().instance().isTester())
+        if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester())
             addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("vespa-testrunner-components-jar-with-dependencies.jar")));
     }
 
