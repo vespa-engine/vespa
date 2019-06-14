@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.state;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.state.bindings.HealthResponse;
 
 /**
@@ -16,26 +17,12 @@ public class StateImpl implements State {
 
     @Override
     public HealthCode getHealth() {
-        HealthResponse response;
         try {
-            response = configServerApi.get("/state/v1/health", HealthResponse.class);
-        } catch (RuntimeException e) {
-            if (causedByConnectionRefused(e)) {
-                return HealthCode.DOWN;
-            }
-
-            throw e;
+            HealthResponse response = configServerApi.get("/state/v1/health", HealthResponse.class);
+            return HealthCode.fromString(response.status.code);
+        } catch (HttpException e) {
+            return HealthCode.DOWN;
         }
-        return HealthCode.fromString(response.status.code);
     }
 
-    private static boolean causedByConnectionRefused(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof java.net.ConnectException) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

@@ -106,7 +106,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 try {
                     return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed parse response from config server", e);
+                    throw new UncheckedIOException("Failed parse response from config server", e);
                 }
             } catch (HttpException e) {
                 if (!e.isRetryable()) throw e;
@@ -124,8 +124,8 @@ public class ConfigServerApiImpl implements ConfigServerApi {
             }
         }
 
-        throw new RuntimeException("All requests against the config servers ("
-                + configServers + ") failed, last as follows:", lastException);
+        throw HttpException.handleException(
+                "All requests against the config servers (" + configServers + ") failed, last as follows:", lastException);
     }
 
     @Override
