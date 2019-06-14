@@ -391,7 +391,7 @@ public class NodeAgentImpl implements NodeAgent {
     public void converge(NodeAgentContext context) {
         try {
             doConverge(context);
-        } catch (OrchestratorException | ConvergenceException e) {
+        } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
@@ -494,7 +494,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             default:
-                throw new RuntimeException("UNKNOWN STATE " + node.getState().name());
+                throw new ConvergenceException("UNKNOWN STATE " + node.getState().name());
         }
     }
 

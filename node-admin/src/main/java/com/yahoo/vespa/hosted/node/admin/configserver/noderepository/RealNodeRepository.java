@@ -45,7 +45,7 @@ public class RealNodeRepository implements NodeRepository {
 
         NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
         if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Failed to add nodes: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class RealNodeRepository implements NodeRepository {
                 NodeMessageResponse.class);
 
         if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Failed to update node attributes: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class RealNodeRepository implements NodeRepository {
         NODE_ADMIN_LOGGER.info(response.message);
 
         if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Failed to set node state: " + response.message + " " + response.errorCode);
     }
 
     private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
