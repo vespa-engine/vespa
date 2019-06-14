@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * @author stiankri, dybis
  */
 public class RealNodeRepository implements NodeRepository {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(RealNodeRepository.class);
+    private static final Logger logger = Logger.getLogger(RealNodeRepository.class.getName());
 
     private final ConfigServerApi configServerApi;
 
@@ -130,7 +130,7 @@ public class RealNodeRepository implements NodeRepository {
                 "/nodes/v2/state/" + state + "/" + hostName,
                 Optional.empty(), /* body */
                 NodeMessageResponse.class);
-        NODE_ADMIN_LOGGER.info(response.message);
+        logger.info(response.message);
 
         if (Strings.isNullOrEmpty(response.errorCode)) return;
         throw new NodeRepositoryException("Failed to set node state: " + response.message + " " + response.errorCode);
