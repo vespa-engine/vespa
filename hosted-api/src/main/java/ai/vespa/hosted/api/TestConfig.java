@@ -44,7 +44,7 @@ public class TestConfig {
         ZoneId zone = ZoneId.from(config.field("zone").asString());
         SystemName system = SystemName.from(config.field("system").asString());
         Map<ZoneId, Map<String, URI>> deployments = new HashMap<>();
-        config.field("clusterEndpoints").traverse((ObjectTraverser) (zoneId, endpointsObject) -> {
+        config.field("zoneEndpoints").traverse((ObjectTraverser) (zoneId, endpointsObject) -> {
             Map<String, URI> endpoints = new HashMap<>();
             endpointsObject.traverse((ObjectTraverser) (cluster, uri) -> endpoints.put(cluster, URI.create(uri.asString())));
             deployments.put(ZoneId.from(zoneId), endpoints);

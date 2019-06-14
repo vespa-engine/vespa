@@ -548,19 +548,19 @@ public class ApplicationController {
                 .orElse(id.applicationId().instance().isTester()))
             throw new NotExistsException("Deployment", id.toString());
 
+        // TODO jvenstad: Swap to use routingPolicies first, when this is ready.
         try {
-            return Optional.of(routingGenerator.clusterEndpoints(id))
-                    .filter(endpoints -> ! endpoints.isEmpty())
-                    .orElseGet(() -> routingPolicies.get(id).stream()
-                                                    .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
-                                                    .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
-                                                                                          policy -> policy.endpointIn(controller.system()).url())));
+            var endpoints = routingGenerator.clusterEndpoints(id);
+            if ( ! endpoints.isEmpty())
+                return endpoints;
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": "
-                                   + Exceptions.toMessageString(e));
-            return Collections.emptyMap();
+            log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": " + Exceptions.toMessageString(e));
         }
+        return routingPolicies.get(id).stream()
+                              .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
+                              .collect(Collectors.toUnmodifiableMap(policy -> policy.cluster(),
+                                                                    policy -> policy.endpointIn(controller.system()).url()));
     }
 
     /** Returns all zone-specific cluster endpoints for the given application, in the given zones. */
