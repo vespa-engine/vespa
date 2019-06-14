@@ -192,7 +192,7 @@ public abstract class ControllerHttpClient {
     }
 
     private URI testConfigPath(ApplicationId id, ZoneId zone) {
-        return concatenated(instancePath(id), "test-config");
+        return concatenated(jobPath(id, zone), "test-config");
     }
 
     private URI runPath(ApplicationId id, ZoneId zone, long run, long after) {
