@@ -91,6 +91,13 @@ public class NodeSpec {
             Set<String> additionalIpAddresses,
             NodeReports reports,
             Optional<String> parentHostname) {
+        if (state == NodeState.active) {
+            Objects.requireNonNull(wantedVespaVersion, "Unknown vespa version for active node");
+            Objects.requireNonNull(wantedDockerImage, "Unknown docker image for active node");
+            Objects.requireNonNull(wantedRestartGeneration, "Unknown restartGeneration for active node");
+            Objects.requireNonNull(currentRestartGeneration, "Unknown currentRestartGeneration for active node");
+        }
+
         this.hostname = Objects.requireNonNull(hostname);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage);

@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.No
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -143,30 +142,13 @@ public class RealNodeRepository implements NodeRepository {
 
         Objects.requireNonNull(node.state, "Unknown node state");
         NodeState nodeState = NodeState.valueOf(node.state);
-        if (nodeState == NodeState.active) {
-            Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
-            Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
-            Objects.requireNonNull(node.restartGeneration, "Unknown restartGeneration for active node");
-            Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");
-        }
 
-        String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
-
-        NodeOwner owner = null;
-        if (node.owner != null) {
-            owner = new NodeOwner(node.owner.tenant, node.owner.application, node.owner.instance);
-        }
-
-        NodeMembership membership = null;
-        if (node.membership != null) {
-            membership = new NodeMembership(node.membership.clusterType, node.membership.clusterId,
-                    node.membership.group, node.membership.index, node.membership.retired);
-        }
-
-        NodeReports reports = NodeReports.fromMap(node.reports == null ? Collections.emptyMap() : node.reports);
+        Optional<NodeMembership> membership = Optional.ofNullable(node.membership)
+                .map(m -> new NodeMembership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
+        NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
 
         return new NodeSpec(
-                hostName,
+                node.hostname,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::fromString),
                 Optional.ofNullable(node.currentDockerImage).map(DockerImage::fromString),
                 nodeState,
@@ -179,8 +161,8 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.wantToDeprovision),
-                Optional.ofNullable(owner),
-                Optional.ofNullable(membership),
+                Optional.ofNullable(node.owner).map(o -> new NodeOwner(o.tenant, o.application, o.instance)),
+                membership,
                 Optional.ofNullable(node.restartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
                 node.rebootGeneration,
