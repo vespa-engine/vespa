@@ -80,43 +80,37 @@ public class RealNodeRepository implements NodeRepository {
      */
     @Override
     public Map<String, Acl> getAcls(String hostName) {
-        try {
-            String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
-            GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
+        String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
+        GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
 
-            // Group ports by container hostname that trusts them
-            Map<String, Set<Integer>> trustedPorts = response.trustedPorts.stream()
-                    .collect(Collectors.groupingBy(
-                            GetAclResponse.Port::getTrustedBy,
-                            Collectors.mapping(port -> port.port, Collectors.toSet())));
+        // Group ports by container hostname that trusts them
+        Map<String, Set<Integer>> trustedPorts = response.trustedPorts.stream()
+                .collect(Collectors.groupingBy(
+                        GetAclResponse.Port::getTrustedBy,
+                        Collectors.mapping(port -> port.port, Collectors.toSet())));
 
-            // Group node ip-addresses by container hostname that trusts them
-            Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
-                    .collect(Collectors.groupingBy(
-                            GetAclResponse.Node::getTrustedBy,
-                            Collectors.mapping(
-                                    node -> new Acl.Node(node.hostname, node.ipAddress),
-                                    Collectors.toSet())));
+        // Group node ip-addresses by container hostname that trusts them
+        Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
+                .collect(Collectors.groupingBy(
+                        GetAclResponse.Node::getTrustedBy,
+                        Collectors.mapping(
+                                node -> new Acl.Node(node.hostname, node.ipAddress),
+                                Collectors.toSet())));
 
-            // Group trusted networks by container hostname that trusts them
-            Map<String, Set<String>> trustedNetworks = response.trustedNetworks.stream()
-                     .collect(Collectors.groupingBy(GetAclResponse.Network::getTrustedBy,
-                                                    Collectors.mapping(node -> node.network, Collectors.toSet())));
+        // Group trusted networks by container hostname that trusts them
+        Map<String, Set<String>> trustedNetworks = response.trustedNetworks.stream()
+                 .collect(Collectors.groupingBy(GetAclResponse.Network::getTrustedBy,
+                                                Collectors.mapping(node -> node.network, Collectors.toSet())));
 
 
-            // For each hostname create an ACL
-            return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedNetworks.keySet())
-                         .flatMap(Set::stream)
-                         .distinct()
-                         .collect(Collectors.toMap(
-                                 Function.identity(),
-                                 hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname),
-                                                     trustedNetworks.get(hostname))));
-        } catch (HttpException.NotFoundException e) {
-            NODE_ADMIN_LOGGER.warning("Failed to fetch ACLs for " + hostName + " No ACL will be applied");
-        }
-
-        return Collections.emptyMap();
+        // For each hostname create an ACL
+        return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedNetworks.keySet())
+                     .flatMap(Set::stream)
+                     .distinct()
+                     .collect(Collectors.toMap(
+                             Function.identity(),
+                             hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname),
+                                                 trustedNetworks.get(hostname))));
     }
 
     @Override
