@@ -4,8 +4,13 @@
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
+#include <vespa/searchlib/fef/properties.h>
 #include <cmath>
 #include <memory>
+#include <stdexcept>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.bm25_feature");
 
 namespace search::features {
 
@@ -20,14 +25,15 @@ using fef::objectstore::as_value;
 
 Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
                            const fef::IQueryEnvironment& env,
-                           double avg_field_length)
+                           double avg_field_length,
+                           double k1_param,
+                           double b_param)
     : FeatureExecutor(),
       _terms(),
       _avg_field_length(avg_field_length),
-      _k1_param(1.2),
-      _b_param(0.75)
+      _k1_param(k1_param),
+      _b_param(b_param)
 {
-    // TODO: Add support for setting k1 and b
     for (size_t i = 0; i < env.getNumTerms(); ++i) {
         const ITermData* term = env.getTerm(i);
         for (size_t j = 0; j < term->numFields(); ++j) {
@@ -75,10 +81,31 @@ Bm25Executor::execute(uint32_t doc_id)
     outputs().set_number(0, score);
 }
 
+bool
+Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const
+{
+    vespalib::string key = getBaseName() + "(" + _field->name() + ")." + param;
+    auto value = props.lookup(key);
+    if (value.found()) {
+        try {
+            result = std::stod(value.get());
+        } catch (const std::invalid_argument& ex) {
+            LOG(warning, "Not able to convert rank property '%s': '%s' to a double value",
+                key.c_str(), value.get().c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
+double constexpr default_k1_param = 1.2;
+double constexpr default_b_param = 0.75;
 
 Bm25Blueprint::Bm25Blueprint()
     : Blueprint("bm25"),
-      _field(nullptr)
+      _field(nullptr),
+      _k1_param(default_k1_param),
+      _b_param(default_b_param)
 {
 }
 
@@ -101,6 +128,13 @@ Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList
 {
     const auto& field_name = params[0].getValue();
     _field = env.getFieldByName(field_name);
+
+    if (!lookup_param(env.getProperties(), "k1", _k1_param)) {
+        return false;
+    }
+    if (!lookup_param(env.getProperties(), "b", _b_param)) {
+        return false;
+    }
 
     describeOutput("score", "The bm25 score for all terms searching in the given index field");
     return (_field != nullptr);
@@ -132,7 +166,7 @@ Bm25Blueprint::createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash
     double avg_field_length = lookup_result != nullptr ?
                               as_value<double>(*lookup_result) :
                               env.get_average_field_length(_field->name());
-    return stash.create<Bm25Executor>(*_field, env, avg_field_length);
+    return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
 }
 
 }
