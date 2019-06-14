@@ -105,9 +105,9 @@ public class Flags {
             "Takes effect on next deployment",
             APPLICATION_ID);
 
-    public static final UnboundListFlag<String> DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
-            "dynamic-provisioning-flavors", List.of(),
-            "List of additional Vespa flavor names that can be used for dynamic provisioning",
+    public static final UnboundListFlag<String> DISABLED_DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
+            "disabled-dynamic-provisioning-flavors", List.of(),
+            "List of disabled Vespa flavor names that cannot be used for dynamic provisioning",
             "Takes effect on next provisioning");
 
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
