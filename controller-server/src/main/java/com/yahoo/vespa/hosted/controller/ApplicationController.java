@@ -90,7 +90,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -426,7 +425,7 @@ public class ApplicationController {
                                   Set<String> rotationNames) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         ConfigServer.PreparedApplication preparedApplication =
-                configServer.deploy(deploymentId, deployOptions, rotationNames, applicationPackage.zippedContent());
+                configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationPackage.zippedContent());
 
         // Refresh routing policies on successful deployment. At this point we can safely assume that the config server
         // has allocated load balancers for the deployment.
