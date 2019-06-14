@@ -50,8 +50,22 @@ public class UnixPath {
         return path;
     }
 
+    public boolean exists() {
+        return Files.exists(path);
+    }
+
     public String readUtf8File() {
         return new String(readBytes(), StandardCharsets.UTF_8);
+    }
+
+    public Optional<String> readUtf8FileIfExists() {
+        try {
+            return Optional.of(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+        } catch (NoSuchFileException ignored) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public byte[] readBytes() {
