@@ -436,6 +436,7 @@ public class NodeAgentImpl implements NodeAgent {
             case reserved:
             case parked:
             case failed:
+            case inactive:
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context);
                 break;
@@ -480,10 +481,6 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(context);
                 context.log(logger, "Call resume against Orchestrator");
                 orchestrator.resume(context.hostname().value());
-                break;
-            case inactive:
-                removeContainerIfNeededUpdateContainerState(context, container);
-                updateNodeRepoWithCurrentAttributes(context);
                 break;
             case provisioned:
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
