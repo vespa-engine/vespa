@@ -52,12 +52,12 @@ lookupConnectedness(const search::fef::IQueryEnvironment& env,
 }
 
 feature_t
-lookupSignificance(const search::fef::IQueryEnvironment& env, const ITermData& data, feature_t fallback)
+lookupSignificance(const search::fef::IQueryEnvironment& env, const ITermData& term, feature_t fallback)
 {
     // Significance of 0.5 for term with unique id 1 is represented as:
     // [vespa.term.1.significance: "0.5"]
     vespalib::asciistream os;
-    os << "vespa.term." << data.getUniqueId() << ".significance";
+    os << "vespa.term." << term.getUniqueId() << ".significance";
     Property p = env.getProperties().lookup(os.str());
     if (p.found()) {
         return strToNum<feature_t>(p.get());
@@ -68,11 +68,11 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, const ITermData& d
 feature_t
 lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, feature_t fallback)
 {
-    const ITermData * data = env.getTerm(termId);
-    if (data == nullptr) {
+    const ITermData* term = env.getTerm(termId);
+    if (term == nullptr) {
         return fallback;
     }
-    return lookupSignificance(env, *data, fallback);
+    return lookupSignificance(env, *term, fallback);
 }
 
 double

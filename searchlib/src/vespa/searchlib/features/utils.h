@@ -120,7 +120,7 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
  * @param fallback     The value to return if the significance was not found in the property map.
  * @return             The significance.
  */
-feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& data, feature_t fallback);
+feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term, feature_t fallback);
 
 /**
  * Returns the significance of the given term.
