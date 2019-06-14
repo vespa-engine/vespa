@@ -44,14 +44,14 @@ enum PathGroup {
     /** Paths used by tenant administrators. */
     tenantInfo(Matcher.tenant,
                Optional.of("/api"),
-               "/application/v4/tenant/{tenant}/application/",
-               "/application/v4/tenant/{tenant}/application/{application}/instance/"),
+               "/application/v4/tenant/{tenant}/application/"),
 
     /** Path for the base application resource. */
     application(Matcher.tenant,
                 Matcher.application,
                 Optional.of("/api"),
                 "/application/v4/tenant/{tenant}/application/{application}",
+                "/application/v4/tenant/{tenant}/application/{application}/instance/",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}"),
 
     /** Paths used for user management on the application level. */
