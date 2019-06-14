@@ -6,12 +6,22 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchvisitor/hitcollector.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using namespace document;
 using namespace search::fef;
 using namespace vespalib;
 using namespace vdslib;
 using namespace vsm;
+using vespalib::nbostream;
+using vespalib::eval::Value;
+using vespalib::eval::DoubleValue;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
+
 
 namespace storage {
 
@@ -226,26 +236,38 @@ HitCollectorTest::testEmpty()
 class MyRankProgram : public HitCollector::IRankProgram
 {
 private:
+    Value::UP _boxed_double;
+    Value::UP _tensor;
     NumberOrObject _fooValue;
     NumberOrObject _barValue;
+    NumberOrObject _bazValue;
 
 public:
     MyRankProgram()
-        : _fooValue(),
-          _barValue()
+        : _boxed_double(),
+          _tensor(),
+          _fooValue(),
+          _barValue(),
+          _bazValue()
     {}
-    virtual void  run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
+    ~MyRankProgram();
+    virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
+        _boxed_double = std::make_unique<DoubleValue>(docid + 30);
+        _tensor = DefaultTensorEngine::ref().from_spec(TensorSpec("tensor(x{})").add({{"x", "a"}}, docid + 20));
         _fooValue.as_number = docid + 10;
-        _barValue.as_number = docid + 30;
+        _barValue.as_object = *_boxed_double;
+        _bazValue.as_object = *_tensor;
     }
   
     FeatureResolver get_resolver() {
         FeatureResolver resolver(2);
         resolver.add("foo", LazyValue(&_fooValue), false);
-        resolver.add("bar", LazyValue(&_barValue), false);
+        resolver.add("bar", LazyValue(&_barValue), true);
+        resolver.add("baz", LazyValue(&_bazValue), true);
         return resolver;
     }
 };
+MyRankProgram::~MyRankProgram() = default;
 
 void
 HitCollectorTest::testFeatureSet()
@@ -262,28 +284,42 @@ HitCollectorTest::testFeatureSet()
     FeatureResolver resolver(rankProgram.get_resolver());
     search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver);
 
-    EXPECT_EQUAL(sf->getNames().size(), 2u);
+    EXPECT_EQUAL(sf->getNames().size(), 3u);
     EXPECT_EQUAL(sf->getNames()[0], "foo");
     EXPECT_EQUAL(sf->getNames()[1], "bar");
-    EXPECT_EQUAL(sf->numFeatures(), 2u);
+    EXPECT_EQUAL(sf->getNames()[2], "baz");
+    EXPECT_EQUAL(sf->numFeatures(), 3u);
     EXPECT_EQUAL(sf->numDocs(), 3u);
     {
-        const search::feature_t * f = sf->getFeaturesByDocId(1);
+        const auto * f = sf->getFeaturesByDocId(1);
         ASSERT_TRUE(f != NULL);
-        EXPECT_EQUAL(f[0], 11); // 10 + docId
-        EXPECT_EQUAL(f[1], 31); // 30 + docId
+        EXPECT_EQUAL(f[0].as_double(), 11); // 10 + docId
+        EXPECT_EQUAL(f[1].as_double(), 31); // 30 + docId
     }
     {
-        const search::feature_t * f = sf->getFeaturesByDocId(3);
+        const auto * f = sf->getFeaturesByDocId(3);
         ASSERT_TRUE(f != NULL);
-        EXPECT_EQUAL(f[0], 13);
-        EXPECT_EQUAL(f[1], 33);
+        EXPECT_TRUE(f[0].is_double());
+        EXPECT_TRUE(!f[0].is_data());
+        EXPECT_EQUAL(f[0].as_double(), 13);
+        EXPECT_TRUE(f[1].is_double());
+        EXPECT_TRUE(!f[1].is_data());
+        EXPECT_EQUAL(f[1].as_double(), 33);
+        EXPECT_TRUE(!f[2].is_double());
+        EXPECT_TRUE(f[2].is_data());
+        {
+            auto &engine = DefaultTensorEngine::ref();
+            nbostream buf(f[2].as_data().data, f[2].as_data().size);
+            auto actual = engine.to_spec(*engine.decode(buf));
+            auto expect = TensorSpec("tensor(x{})").add({{"x", "a"}}, 23);
+            EXPECT_EQUAL(actual, expect);
+        }
     }
     {
-        const search::feature_t * f = sf->getFeaturesByDocId(4);
+        const auto * f = sf->getFeaturesByDocId(4);
         ASSERT_TRUE(f != NULL);
-        EXPECT_EQUAL(f[0], 14);
-        EXPECT_EQUAL(f[1], 34);
+        EXPECT_EQUAL(f[0].as_double(), 14);
+        EXPECT_EQUAL(f[1].as_double(), 34);
     }
     ASSERT_TRUE(sf->getFeaturesByDocId(0) == NULL);
     ASSERT_TRUE(sf->getFeaturesByDocId(2) == NULL);

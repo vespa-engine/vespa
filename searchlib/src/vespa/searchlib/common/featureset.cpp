@@ -59,7 +59,7 @@ FeatureSet::contains(const std::vector<uint32_t> &docIds) const
     return true;
 }
 
-feature_t *
+FeatureSet::Value *
 FeatureSet::getFeaturesByIndex(uint32_t idx)
 {
     if (idx >= _docIds.size()) {
@@ -68,7 +68,7 @@ FeatureSet::getFeaturesByIndex(uint32_t idx)
     return &(_values[idx * _names.size()]);
 }
 
-const feature_t *
+const FeatureSet::Value *
 FeatureSet::getFeaturesByDocId(uint32_t docId) const
 {
     uint32_t low = 0;

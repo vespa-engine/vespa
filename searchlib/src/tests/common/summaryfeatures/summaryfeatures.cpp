@@ -5,6 +5,7 @@ LOG_SETUP("summaryfeatures_test");
 #include <vespa/searchlib/common/featureset.h>
 
 using namespace search;
+using vespalib::Memory;
 
 TEST_SETUP(Test);
 
@@ -43,34 +44,34 @@ Test::Main()
         EXPECT_EQUAL(sf.addDocId(40), 3u);
         EXPECT_EQUAL(sf.addDocId(50), 4u);
         EXPECT_EQUAL(sf.numDocs(), 5u);
-        feature_t *f;
-        const feature_t *cf;
+        FeatureSet::Value *f;
+        const FeatureSet::Value *cf;
         f = sf.getFeaturesByIndex(0);
         ASSERT_TRUE(f != 0);
-        f[0] = 11.0;
-        f[1] = 12.0;
-        f[2] = 13.0;
+        f[0].set_double(11.0);
+        f[1].set_double(12.0);
+        f[2].set_double(13.0);
         f = sf.getFeaturesByIndex(1);
         ASSERT_TRUE(f != 0);
-        f[0] = 21.0;
-        f[1] = 22.0;
-        f[2] = 23.0;
+        f[0].set_double(21.0);
+        f[1].set_double(22.0);
+        f[2].set_double(23.0);
         f = sf.getFeaturesByIndex(2);
         ASSERT_TRUE(f != 0);
-        f[0] = 31.0;
-        f[1] = 32.0;
-        f[2] = 33.0;
+        f[0].set_double(31.0);
+        f[1].set_double(32.0);
+        f[2].set_double(33.0);
         f = sf.getFeaturesByIndex(3);
         ASSERT_TRUE(f != 0);
-        f[0] = 41.0;
-        f[1] = 42.0;
-        f[2] = 43.0;
+        f[0].set_double(41.0);
+        f[1].set_data(Memory("test", 4));
+        f[2].set_double(43.0);
         f = sf.getFeaturesByIndex(4);
         ASSERT_TRUE(f != 0);
-        f[0] = 51.0;
-        f[1] = 52.0;
-        f[2] = 53.0;
-        EXPECT_TRUE(sf.getFeaturesByIndex(5) == 0);
+        f[0].set_double(51.0);
+        f[1].set_double(52.0);
+        f[2].set_double(53.0);
+        EXPECT_TRUE(sf.getFeaturesByIndex(5) == nullptr);
         {
             std::vector<uint32_t> docs;
             EXPECT_TRUE(sf.contains(docs));
@@ -107,45 +108,49 @@ Test::Main()
         }
         {
             cf = sf.getFeaturesByDocId(10);
-            ASSERT_TRUE(cf != 0);
-            EXPECT_APPROX(cf[0], 11.0, 10e-6);
-            EXPECT_APPROX(cf[1], 12.0, 10e-6);
-            EXPECT_APPROX(cf[2], 13.0, 10e-6);
+            ASSERT_TRUE(cf != nullptr);
+            EXPECT_APPROX(cf[0].as_double(), 11.0, 10e-6);
+            EXPECT_APPROX(cf[1].as_double(), 12.0, 10e-6);
+            EXPECT_APPROX(cf[2].as_double(), 13.0, 10e-6);
         }
         {
             cf = sf.getFeaturesByDocId(20);
-            ASSERT_TRUE(cf != 0);
-            EXPECT_APPROX(cf[0], 21.0, 10e-6);
-            EXPECT_APPROX(cf[1], 22.0, 10e-6);
-            EXPECT_APPROX(cf[2], 23.0, 10e-6);
+            ASSERT_TRUE(cf != nullptr);
+            EXPECT_APPROX(cf[0].as_double(), 21.0, 10e-6);
+            EXPECT_APPROX(cf[1].as_double(), 22.0, 10e-6);
+            EXPECT_APPROX(cf[2].as_double(), 23.0, 10e-6);
         }
         {
             cf = sf.getFeaturesByDocId(30);
-            ASSERT_TRUE(cf != 0);
-            EXPECT_APPROX(cf[0], 31.0, 10e-6);
-            EXPECT_APPROX(cf[1], 32.0, 10e-6);
-            EXPECT_APPROX(cf[2], 33.0, 10e-6);
+            ASSERT_TRUE(cf != nullptr);
+            EXPECT_APPROX(cf[0].as_double(), 31.0, 10e-6);
+            EXPECT_APPROX(cf[1].as_double(), 32.0, 10e-6);
+            EXPECT_APPROX(cf[2].as_double(), 33.0, 10e-6);
         }
         {
             cf = sf.getFeaturesByDocId(40);
-            ASSERT_TRUE(cf != 0);
-            EXPECT_APPROX(cf[0], 41.0, 10e-6);
-            EXPECT_APPROX(cf[1], 42.0, 10e-6);
-            EXPECT_APPROX(cf[2], 43.0, 10e-6);
+            ASSERT_TRUE(cf != nullptr);
+            EXPECT_TRUE(cf[0].is_double());
+            EXPECT_TRUE(!cf[0].is_data());
+            EXPECT_EQUAL(cf[0].as_double(), 41.0);
+            EXPECT_TRUE(!cf[1].is_double());
+            EXPECT_TRUE(cf[1].is_data());
+            EXPECT_EQUAL(cf[1].as_data(), Memory("test", 4));
+            EXPECT_EQUAL(cf[2].as_double(), 43.0);
         }
         {
             cf = sf.getFeaturesByDocId(50);
-            ASSERT_TRUE(cf != 0);
-            EXPECT_APPROX(cf[0], 51.0, 10e-6);
-            EXPECT_APPROX(cf[1], 52.0, 10e-6);
-            EXPECT_APPROX(cf[2], 53.0, 10e-6);
+            ASSERT_TRUE(cf != nullptr);
+            EXPECT_APPROX(cf[0].as_double(), 51.0, 10e-6);
+            EXPECT_APPROX(cf[1].as_double(), 52.0, 10e-6);
+            EXPECT_APPROX(cf[2].as_double(), 53.0, 10e-6);
         }
-        EXPECT_TRUE(sf.getFeaturesByDocId(5) == 0);
-        EXPECT_TRUE(sf.getFeaturesByDocId(15) == 0);
-        EXPECT_TRUE(sf.getFeaturesByDocId(25) == 0);
-        EXPECT_TRUE(sf.getFeaturesByDocId(35) == 0);
-        EXPECT_TRUE(sf.getFeaturesByDocId(45) == 0);
-        EXPECT_TRUE(sf.getFeaturesByDocId(55) == 0);
+        EXPECT_TRUE(sf.getFeaturesByDocId(5) == nullptr);
+        EXPECT_TRUE(sf.getFeaturesByDocId(15) == nullptr);
+        EXPECT_TRUE(sf.getFeaturesByDocId(25) == nullptr);
+        EXPECT_TRUE(sf.getFeaturesByDocId(35) == nullptr);
+        EXPECT_TRUE(sf.getFeaturesByDocId(45) == nullptr);
+        EXPECT_TRUE(sf.getFeaturesByDocId(55) == nullptr);
     }
     TEST_DONE();
 }

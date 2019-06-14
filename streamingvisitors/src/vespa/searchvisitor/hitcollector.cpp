@@ -4,6 +4,9 @@
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
+#include <vespa/eval/eval/tensor.h>
+#include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");
@@ -156,10 +159,22 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     for (const Hit & hit : _hits) {
         rankProgram.run(hit.getDocId(), hit.getMatchData());
         uint32_t docId = hit.getDocId();
-        search::feature_t * f = retval->getFeaturesByIndex(retval->addDocId(docId));
+        auto * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         for (uint32_t j = 0; j < names.size(); ++j) {
-            f[j] = resolver.resolve(j).as_number(docId);
-            LOG(debug, "getFeatureSet: lDocId(%u), '%s': %f", docId, names[j].c_str(), f[j]);
+            if (resolver.is_object(j)) {
+                auto obj = resolver.resolve(j).as_object(docId);
+                if (const auto *tensor = obj.get().as_tensor()) {
+                    vespalib::nbostream buf;
+                    tensor->engine().encode(*tensor, buf);
+                    f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
+                } else {
+                    f[j].set_double(obj.get().as_double());
+                }
+            } else {
+                f[j].set_double(resolver.resolve(j).as_number(docId));
+            }
+            LOG(debug, "getFeatureSet: lDocId(%u), '%s': %f %s", docId, names[j].c_str(), f[j].as_double(),
+                f[j].is_data() ? "[tensor]" : "");
         }
     }
     return retval;

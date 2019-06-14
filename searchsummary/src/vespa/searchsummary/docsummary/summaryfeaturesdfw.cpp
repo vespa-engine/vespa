@@ -37,12 +37,16 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType 
         }
     }
     const FeatureSet::StringVector &names = state->_summaryFeatures->getNames();
-    const feature_t *values = state->_summaryFeatures->getFeaturesByDocId(docid);
+    const FeatureSet::Value *values = state->_summaryFeatures->getFeaturesByDocId(docid);
     if (type == RES_FEATUREDATA && values != nullptr) {
         vespalib::slime::Cursor& obj = target.insertObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
             vespalib::Memory name(names[i].c_str(), names[i].size());
-            obj.setDouble(name, values[i]);
+            if (values[i].is_data()) {
+                obj.setData(name, values[i].as_data());
+            } else {
+                obj.setDouble(name, values[i].as_double());
+            }
         }
         if (state->_summaryFeaturesCached) {
             obj.setDouble(_M_cached, 1.0);
@@ -56,7 +60,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType 
         json.clear();
         json.beginObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
-            featureDump(json, names[i], values[i]);
+            featureDump(json, names[i], values[i].as_double());
         }
         json.appendKey(_G_cached);
         if (state->_summaryFeaturesCached) {

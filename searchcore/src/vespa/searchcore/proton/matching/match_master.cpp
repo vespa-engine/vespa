@@ -11,6 +11,9 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/eval/eval/tensor.h>
+#include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_master");
@@ -127,7 +130,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
     RankProgram &rankProgram = matchTools->rank_program();
 
     std::vector<vespalib::string> featureNames;
-    FeatureResolver resolver(rankProgram.get_seeds());
+    FeatureResolver resolver(rankProgram.get_seeds(false));
     featureNames.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
@@ -144,9 +147,20 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
         if (search.seek(docs[i])) {
             uint32_t docId = search.getDocId();
             search.unpack(docId);
-            search::feature_t * f = fs.getFeaturesByIndex(fs.addDocId(docId));
+            auto * f = fs.getFeaturesByIndex(fs.addDocId(docId));
             for (uint32_t j = 0; j < featureNames.size(); ++j) {
-                f[j] = resolver.resolve(j).as_number(docId);
+                if (resolver.is_object(j)) {
+                    auto obj = resolver.resolve(j).as_object(docId);
+                    if (const auto *tensor = obj.get().as_tensor()) {
+                        vespalib::nbostream buf;
+                        tensor->engine().encode(*tensor, buf);
+                        f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
+                    } else {
+                        f[j].set_double(obj.get().as_double());
+                    }
+                } else {
+                    f[j].set_double(resolver.resolve(j).as_number(docId));
+                }
             }
         } else {
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);

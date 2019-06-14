@@ -30,12 +30,16 @@ RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
         }
     }
     const FeatureSet::StringVector & names = state->_rankFeatures->getNames();
-    const feature_t * values = state->_rankFeatures->getFeaturesByDocId(docid);
+    const FeatureSet::Value * values = state->_rankFeatures->getFeaturesByDocId(docid);
     if (type == RES_FEATUREDATA && values != nullptr) {
         vespalib::slime::Cursor& obj = target.insertObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
             vespalib::Memory name(names[i].c_str(), names[i].size());
-            obj.setDouble(name, values[i]);
+            if (values[i].is_data()) {
+                obj.setData(name, values[i].as_data());
+            } else {
+                obj.setDouble(name, values[i].as_double());
+            }
         }
         return;
     }
@@ -44,7 +48,7 @@ RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
         json.clear();
         json.beginObject();
         for (uint32_t i = 0; i < names.size(); ++i) {
-            featureDump(json, names[i], values[i]);
+            featureDump(json, names[i], values[i].as_double());
         }
         json.endObject();
         vespalib::Memory value(json.toString().data(),

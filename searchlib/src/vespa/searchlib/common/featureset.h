@@ -4,6 +4,7 @@
 
 #include "feature.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/data/memory.h>
 #include <map>
 #include <vector>
 
@@ -16,12 +17,34 @@ namespace search {
 class FeatureSet
 {
 public:
+    class Value {
+    private:
+        std::vector<char> _data;
+        double _value;
+    public:
+        bool operator==(const Value &rhs) const {
+            return ((_data == rhs._data) && (_value == rhs._value));
+        }
+        bool is_double() const { return _data.empty(); }
+        bool is_data() const { return !_data.empty(); }
+        double as_double() const { return _value; }
+        vespalib::Memory as_data() const { return vespalib::Memory(&_data[0], _data.size()); }
+        void set_double(double value) {
+            _data.clear();
+            _value = value;
+        }
+        void set_data(vespalib::Memory data) {
+            _data.assign(data.data, data.data + data.size);
+            _value = 0.0;
+        }
+    };
+
     typedef vespalib::string string;
     typedef std::vector<string> StringVector;
 private:
     StringVector _names;
-    std::vector<uint32_t>    _docIds;
-    std::vector<feature_t>   _values;
+    std::vector<uint32_t> _docIds;
+    std::vector<Value> _values;
 
     FeatureSet(const FeatureSet &);
     FeatureSet & operator=(const FeatureSet &);
@@ -112,7 +135,7 @@ public:
      * @return pointer to features
      * @param idx index into docid array
      **/
-    feature_t *getFeaturesByIndex(uint32_t idx);
+    Value *getFeaturesByIndex(uint32_t idx);
 
     /**
      * Obtain the feature values belonging to a document based on the
@@ -122,7 +145,7 @@ public:
      * @return pointer to features
      * @param docId docid value
      **/
-    const feature_t *getFeaturesByDocId(uint32_t docId) const;
+    const Value *getFeaturesByDocId(uint32_t docId) const;
 };
 
 } // namespace search
