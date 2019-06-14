@@ -72,6 +72,7 @@ public enum SystemName {
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
     public static Set<SystemName> allOf(Predicate<SystemName> predicate) {
-        return Stream.of(values()).filter(predicate::test).collect(Collectors.toSet());
+        return Stream.of(values()).filter(predicate).collect(Collectors.toUnmodifiableSet());
     }
+
 }
