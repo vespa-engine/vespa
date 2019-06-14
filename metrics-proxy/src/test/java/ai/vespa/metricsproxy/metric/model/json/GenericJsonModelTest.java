@@ -5,6 +5,7 @@
 package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.StatusCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
@@ -19,6 +20,7 @@ import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author gjoranv
@@ -53,6 +55,7 @@ public class GenericJsonModelTest {
 
         var servicePacket = new MetricsPacket.Builder(toServiceId("my-service"))
                 .timestamp(123456L)
+                .statusCode(0)
                 .putMetric(toMetricId("service-metric"), 1234)
                 .putDimension(toDimensionId("service-dim"), "service-dim-value")
                 .build();
@@ -69,6 +72,9 @@ public class GenericJsonModelTest {
 
         assertEquals(1, jsonModel.services.size());
         GenericService service = jsonModel.services.get(0);
+        assertEquals(StatusCode.UP.status, service.status.code);
+        assertEquals("", service.status.description);
+
         assertEquals(1, service.metrics.size());
         GenericMetrics serviceMetrics = service.metrics.get(0);
         assertEquals(1234L, serviceMetrics.values.get("service-metric").longValue());

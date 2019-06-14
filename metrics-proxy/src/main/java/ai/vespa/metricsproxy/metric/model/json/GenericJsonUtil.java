@@ -6,6 +6,7 @@ package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
+import ai.vespa.metricsproxy.metric.model.StatusCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +35,13 @@ public class GenericJsonUtil {
             var genericMetricsList = packets.stream()
                     .map(packet -> new GenericMetrics(packet.metrics(), packet.dimensions()))
                     .collect(toList());
-            var genericService = new GenericService(serviceId.id,
-                                                    packets.get(0).timestamp,
-                                                    genericMetricsList);
+            var genericService = packets.stream().findFirst()
+                    .map(firstPacket -> new GenericService(serviceId.id,
+                                                           firstPacket.timestamp,
+                                                           StatusCode.values()[firstPacket.statusCode],
+                                                           firstPacket.statusMessage,
+                                                           genericMetricsList))
+                    .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
             } else {

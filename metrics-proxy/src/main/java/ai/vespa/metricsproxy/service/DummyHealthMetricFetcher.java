@@ -28,7 +28,7 @@ public class DummyHealthMetricFetcher extends RemoteHealthMetricFetcher {
         if (service.isAlive()) {
             return HealthMetric.getOk("Service is running - pid check only");
         } else {
-            return HealthMetric.getFailed("Service is not running - pid check only");
+            return HealthMetric.getDown("Service is not running - pid check only");
         }
     }
 }

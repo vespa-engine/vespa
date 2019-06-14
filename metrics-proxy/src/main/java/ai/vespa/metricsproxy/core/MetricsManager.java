@@ -81,6 +81,8 @@ public class MetricsManager {
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
         if (services.isEmpty()) return Collections.emptyList();
+
+        log.log(DEBUG, () -> "Updating services prior to fetching metrics, number of services= " + services.size());
         vespaServices.updateServices(services);
 
         List<MetricsPacket.Builder> result = vespaMetrics.getMetrics(services);

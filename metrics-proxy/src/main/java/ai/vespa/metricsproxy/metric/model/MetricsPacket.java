@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -88,7 +87,7 @@ public class MetricsPacket {
         // Except for 'service' for which we require an explicit non-null value.
         private ServiceId service;
         private int statusCode = 0;
-        private String statusMessage = "<null>";
+        private String statusMessage = "";
         private long timestamp = 0L;
         private Map<MetricId, Number> metrics = new LinkedHashMap<>();
         private final Map<DimensionId, String> dimensions = new LinkedHashMap<>();

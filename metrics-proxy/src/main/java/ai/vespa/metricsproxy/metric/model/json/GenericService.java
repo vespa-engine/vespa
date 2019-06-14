@@ -4,12 +4,12 @@
 
 package ai.vespa.metricsproxy.metric.model.json;
 
+import ai.vespa.metricsproxy.metric.model.StatusCode;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
@@ -37,10 +37,11 @@ public class GenericService {
 
     public GenericService() { }
 
-    GenericService(String name, Long timestamp, List<GenericMetrics> metrics) {
+    // TODO: take StatusCode instead of int
+    GenericService(String name, Long timestamp, StatusCode statusCode, String message, List<GenericMetrics> metrics) {
         this.name = name;
         this.timestamp = timestamp;
-        status = new Status("up");
+        status = new Status(statusCode, message);
         this.metrics = metrics;
     }
 
@@ -50,8 +51,9 @@ public class GenericService {
     public static class Status {
         public Status() { }
 
-        Status(String code) {
-            this.code = code;
+        Status(StatusCode statusCode, String description) {
+            code = statusCode.status;
+            this.description = description;
         }
 
         @JsonProperty("code")

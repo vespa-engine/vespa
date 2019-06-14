@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.metric;
 
+import ai.vespa.metricsproxy.metric.model.StatusCode;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
 import org.junit.Test;
@@ -12,7 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -64,7 +64,7 @@ public class MetricsTest {
 
         m = HealthMetric.get("bad", "test message");
         assertThat(m.isOk(), is(false));
-        assertThat(m.getStatus(), is("bad"));
+        assertThat(m.getStatus(), is(StatusCode.UNKNOWN));
     }
 
     @Test

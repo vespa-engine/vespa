@@ -8,6 +8,7 @@ import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.metric.HealthMetric;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -17,6 +18,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
+import ai.vespa.metricsproxy.service.DownService;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
@@ -34,9 +36,11 @@ import java.util.concurrent.Executors;
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
 import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
+import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -47,8 +51,9 @@ import static org.junit.Assert.assertNotNull;
 public class GenericMetricsHandlerTest {
 
     private static final List<VespaService> testServices = ImmutableList.of(
-            new DummyService(0, "dummy/id/0"),
-            new DummyService(1, "dummy/id/0"));
+            new DummyService(0, ""),
+            new DummyService(1, ""),
+            new DownService(HealthMetric.getDown("No response")));
 
     private static final String CPU_METRIC = "cpu";
 
@@ -93,7 +98,7 @@ public class GenericMetricsHandlerTest {
         String response = testDriver.sendRequest(URI).readAll();
         var jsonModel = createObjectMapper().readValue(response, GenericJsonModel.class);
 
-        assertEquals(1, jsonModel.services.size());
+        assertEquals(2, jsonModel.services.size());
         GenericService dummyService = jsonModel.services.get(0);
         assertEquals(2, dummyService.metrics.size());
 
@@ -104,6 +109,22 @@ public class GenericMetricsHandlerTest {
         GenericMetrics dummy1Metrics = getMetricsForInstance("dummy1", dummyService);
         assertEquals(6L, dummy1Metrics.values.get(METRIC_1).longValue());
         assertEquals("metric-dim", dummy1Metrics.dimensions.get("dim0"));
+    }
+
+    @Test
+    public void response_contains_health_from_service_that_is_down() throws Exception {
+        String response = testDriver.sendRequest(URI).readAll();
+        var jsonModel = createObjectMapper().readValue(response, GenericJsonModel.class);
+
+        GenericService downService = jsonModel.services.get(1);
+        assertEquals(DOWN.status, downService.status.code);
+        assertEquals("No response", downService.status.description);
+
+        // Service should output metric dimensions, even without metrics, because they contain important info about the service.
+        assertEquals(1, downService.metrics.size());
+        assertEquals(0, downService.metrics.get(0).values.size());
+        assertFalse(downService.metrics.get(0).dimensions.isEmpty());
+        assertEquals(DownService.NAME, downService.metrics.get(0).dimensions.get(INSTANCE_DIMENSION_ID.id));
     }
 
     @Test
