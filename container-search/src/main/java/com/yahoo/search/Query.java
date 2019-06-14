@@ -236,15 +236,16 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
     private static void addAliases(QueryProfileType arguments, Map<String, CompoundName> aliases) {
-        String prefix = getPrefix(arguments);
+        CompoundName prefix = getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
-                aliases.put(alias, new CompoundName(prefix+field.getName()));
+                aliases.put(alias, prefix.append(field.getName()));
         }
     }
-    private static String getPrefix(QueryProfileType type) {
-        if (type.getId().getName().equals("native")) return ""; // The arguments of this directly
-        return type.getId().getName() + ".";
+
+    private static CompoundName getPrefix(QueryProfileType type) {
+        if (type.getId().getName().equals("native")) return CompoundName.empty; // The arguments of this directly
+        return type.getComponentIdAsCompoundName();
     }
 
     public static void addNativeQueryProfileTypesTo(QueryProfileTypeRegistry registry) {
@@ -391,22 +392,22 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * dependent objects for the appropriate subset of the given property values
      */
     private void setFieldsFrom(Properties properties, Map<String, String> context) {
-        setFrom("", properties, Query.getArgumentType(), context);
+        setFrom(CompoundName.empty, properties, Query.getArgumentType(), context);
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
      * (if any) set it to properties(), recursively.
      */
-    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
-        prefix = prefix + getPrefix(arguments);
+    private void setFrom(CompoundName prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = prefix.append(getPrefix(arguments));
         for (FieldDescription field : arguments.fields().values()) {
 
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
-                CompoundName fullName = new CompoundName(prefix + field.getName());
+                CompoundName fullName = prefix.append(field.getName());
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
                     try {
-                        properties().set(fullName + "." + entry.getKey(), entry.getValue(), context);
+                        properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
                     } catch (IllegalArgumentException e) {
                         throw new QueryException("Invalid request parameter", e);
                     }
@@ -416,7 +417,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
             }
             else {
-                CompoundName fullName = new CompoundName(prefix + field.getName());
+                CompoundName fullName = prefix.append(field.getName());
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     try {

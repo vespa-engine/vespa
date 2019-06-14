@@ -8,7 +8,11 @@ import com.yahoo.component.provider.FreezableSimpleComponent;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.QueryProfile;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -19,11 +23,12 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public class QueryProfileType extends FreezableSimpleComponent {
 
+    private final CompoundName componentIdAsCompoundName;
     /** The fields of this query profile type */
-    private Map<String, FieldDescription> fields = new HashMap<>();
+    private Map<String, FieldDescription> fields;
 
     /** The query profile types this inherits */
-    private List<QueryProfileType> inherited = new ArrayList<>();
+    private List<QueryProfileType> inherited;
 
     /** If this is true, keys which are not declared in this type cannot be set in instances */
     private boolean strict = false;
@@ -41,15 +46,20 @@ public class QueryProfileType extends FreezableSimpleComponent {
     }
 
     public QueryProfileType(ComponentId id) {
+        this(id, new HashMap<>(), new ArrayList<>());
+    }
+
+    private QueryProfileType(ComponentId id, Map<String, FieldDescription> fields, List<QueryProfileType> inherited) {
         super(id);
         QueryProfile.validateName(id.getName());
+        componentIdAsCompoundName = new CompoundName(getId().getName());
+        this.fields = fields;
+        this.inherited = inherited;
     }
 
     private QueryProfileType(ComponentId id, Map<String, FieldDescription> fields, List<QueryProfileType> inherited,
                             boolean strict, boolean matchAsPath, boolean builtin, Map<String,String> aliases) {
-        super(id);
-        this.fields = new HashMap<>(fields);
-        this.inherited = new ArrayList<>(inherited);
+        this(id, new HashMap<>(fields), new ArrayList<>(inherited));
         this.strict = strict;
         this.matchAsPath = matchAsPath;
         this.builtin = builtin;
@@ -83,6 +93,8 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
         return new QueryProfileType(getId(), unfrozenFields, unfrozenInherited, strict, matchAsPath, builtin, aliases);
     }
+
+    public CompoundName getComponentIdAsCompoundName() { return componentIdAsCompoundName; }
 
     /** Mark this type as built into the system. Do not use */
     public void setBuiltin(boolean builtin) { this.builtin=builtin; }
