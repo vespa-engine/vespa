@@ -231,8 +231,6 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<Credentials> credentials) {
-        if ( ! (id.instance().isDefault())) // TODO: Support instances properly
-            throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
         try (Lock lock = lock(id)) {
@@ -251,7 +249,7 @@ public class ApplicationController {
                 if (credentials.isEmpty())
                     throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
 
-                if (id.instance().isDefault()) // Only store the application permits for non-user applications.
+                if ( ! id.instance().isTester()) // Only store the application permits for non-user applications.
                     accessControl.createApplication(id, credentials.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);

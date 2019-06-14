@@ -156,8 +156,12 @@ public class DeploymentTester {
     }
 
     public Application createApplication(String applicationName, String tenantName, long projectId, long propertyId) {
+        return createApplication("default", applicationName, tenantName, projectId, propertyId);
+    }
+
+    public Application createApplication(String instanceName, String applicationName, String tenantName, long projectId, long propertyId) {
         TenantName tenant = tester.createTenant(tenantName, UUID.randomUUID().toString(), propertyId);
-        return tester.createApplication(tenant, applicationName, "default", projectId);
+        return tester.createApplication(tenant, applicationName, instanceName, projectId);
     }
 
     public void restartController() { tester.createNewController(); }

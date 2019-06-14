@@ -176,16 +176,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance")) return applications(path.get("tenant"), Optional.of(path.get("application")), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return application(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -198,23 +210,33 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/user")) return createUser(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
-            return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), false, request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), true, request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), true, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return submit(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/promote")) return promoteApplicationDeployment(path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -223,21 +245,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePATCH(Path path, HttpRequest request) {
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}"))
-            return patchApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return patchApplication(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return patchApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("choice"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default",  "all");
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"), "default");
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("choice"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"), path.get("instance"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
-            return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -302,25 +329,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse applications(String tenantName, HttpRequest request) {
+    private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
         Cursor array = slime.setArray();
-        for (Application application : controller.applications().asList(tenant))
+        for (Application application : controller.applications().asList(tenant)) {
+            if (applicationName.isPresent() && ! application.id().application().toString().equals(applicationName.get()))
+                continue;
             toSlime(application, array.addObject(), request);
+        }
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse application(String tenantName, String applicationName, HttpRequest request) {
+    private HttpResponse application(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Slime slime = new Slime();
-        toSlime(slime.setObject(), getApplication(tenantName, applicationName), request);
+        toSlime(slime.setObject(), getApplication(tenantName, applicationName, instanceName), request);
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
+    private HttpResponse patchApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
-        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, "default"), application -> {
+        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, instanceName), application -> {
             Inspector majorVersionField = requestObject.field("majorVersion");
             if (majorVersionField.valid()) {
                 Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int) majorVersionField.asLong();
@@ -340,8 +370,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(messageBuilder.toString());
     }
 
-    private Application getApplication(String tenantName, String applicationName) {
-        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
+    private Application getApplication(String tenantName, String applicationName, String instanceName) {
+        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         return controller.applications().get(applicationId)
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
     }
@@ -532,7 +562,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 deploymentObject.setString("url", withPath(request.getUri().getPath() +
                                                            "/environment/" + deployment.zone().environment().value() +
                                                            "/region/" + deployment.zone().region().value() +
-                                                           "/instance/" + application.id().instance().value(),
+                                                           ( request.getUri().getPath().contains("/instance/") ? "" : "/instance/" + application.id().instance().value()),
                                                            request.getUri()).toString());
             }
         }
@@ -725,11 +755,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse deploying(String tenant, String application, HttpRequest request) {
-        Application app = controller.applications().require(ApplicationId.from(tenant, application, "default"));
+    private HttpResponse deploying(String tenant, String application, String instance, HttpRequest request) {
+        Application app = controller.applications().require(ApplicationId.from(tenant, application, instance));
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        if (!app.change().isEmpty()) {
+        if ( ! app.change().isEmpty()) {
             app.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
             app.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.id()));
             root.setBool("pinned", app.change().isPinned());
@@ -804,9 +834,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
-    private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
+    private HttpResponse createApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         try {
             Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                     ? Optional.empty()
@@ -826,10 +856,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
-    private HttpResponse deployPlatform(String tenantName, String applicationName, boolean pin, HttpRequest request) {
+    private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
         request = controller.auditLogger().log(request);
         String versionString = readToString(request.getData());
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
             Version version = Version.fromString(versionString);
@@ -837,12 +867,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 version = controller.systemVersion();
             if ( ! systemHasVersion(version))
                 throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
-                                                       "Version is not active in this system. " +
-                                                       "Active versions: " + controller.versionStatus().versions()
-                                                                                       .stream()
-                                                                                       .map(VespaVersion::versionNumber)
-                                                                                       .map(Version::toString)
-                                                                                       .collect(joining(", ")));
+                                                   "Version is not active in this system. " +
+                                                   "Active versions: " + controller.versionStatus().versions()
+                                                                                   .stream()
+                                                                                   .map(VespaVersion::versionNumber)
+                                                                                   .map(Version::toString)
+                                                                                   .collect(joining(", ")));
             Change change = Change.of(version);
             if (pin)
                 change = change.withPin();
@@ -854,9 +884,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment to the last known application package for the given application. */
-    private HttpResponse deployApplication(String tenantName, String applicationName, HttpRequest request) {
+    private HttpResponse deployApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         controller.auditLogger().log(request);
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
             Change change = Change.of(application.get().deploymentJobs().statusOf(JobType.component).get().lastSuccess().get().application());
@@ -867,8 +897,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */
-    private HttpResponse cancelDeploy(String tenantName, String applicationName, String choice) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+    private HttpResponse cancelDeploy(String tenantName, String applicationName, String instanceName, String choice) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
             Change change = application.get().change();
@@ -1041,8 +1071,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return tenant(tenant.get(), request);
     }
 
-    private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+    private HttpResponse deleteApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
@@ -1059,9 +1089,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // TODO: Change to return JSON
         return new StringResponse("Deactivated " + path(TenantResource.API_PATH, tenantName,
                                                         ApplicationResource.API_PATH, applicationName,
+                                                        "instance", instanceName,
                                                         EnvironmentResource.API_PATH, environment,
-                                                        "region", region,
-                                                        "instance", instanceName));
+                                                        "region", region));
     }
 
     /**
@@ -1180,7 +1210,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         Cursor applicationArray = object.setArray("applications");
         for (Application application : controller.applications().asList(tenant.name())) {
-            if (application.id().instance().isDefault()) {// TODO: Skip non-default applications until supported properly
+            if ( ! application.id().instance().isTester()) {
                 if (recurseOverApplications(request))
                     toSlime(applicationArray.addObject(), application, request);
                 else
@@ -1269,8 +1299,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
-        object.setString("url", withPath("/application/v4/tenant/" + application.id().tenant().value() +
-                                         "/application/" + application.id().application().value(), request.getUri()).toString());
+        object.setString("url", withPath("/application/v4" +
+                                               "/tenant/" + application.id().tenant().value() +
+                                               "/application/" + application.id().application().value() +
+                                               "/instance/" + application.id().instance().value(),
+                                         request.getUri()).toString());
     }
 
     private Slime toSlime(ActivateResult result) {
@@ -1423,7 +1456,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new RunId(appIdFromPath(path), jobTypeFromPath(path), number);
     }
 
-    private HttpResponse submit(String tenant, String application, HttpRequest request) {
+    private HttpResponse submit(String tenant, String application, String instance, HttpRequest request) {
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions);
@@ -1438,6 +1471,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
                                                             application,
+                                                            instance,
                                                             sourceRevision,
                                                             authorEmail,
                                                             projectId,

@@ -85,6 +85,7 @@ import static org.junit.Assert.assertThat;
 
 /**
  * Testcases for vespa-documentgen-plugin
+ *
  * @author vegardh
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
