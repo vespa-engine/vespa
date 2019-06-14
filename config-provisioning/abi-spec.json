@@ -391,7 +391,6 @@
       "public boolean hasFastDisk()",
       "public double getBandwidth()",
       "public double getMinCpuCores()",
-      "public java.lang.String getDescription()",
       "public boolean isRetired()",
       "public com.yahoo.config.provision.Flavor$Type getType()",
       "public boolean isDocker()",

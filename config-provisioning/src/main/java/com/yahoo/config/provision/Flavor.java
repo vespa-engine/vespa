@@ -24,7 +24,6 @@ public class Flavor {
     private final boolean isStock;
     private final Type type;
     private final double bandwidth;
-    private final String description;
     private final boolean retired;
     private List<Flavor> replacesFlavors;
 
@@ -43,7 +42,6 @@ public class Flavor {
                                            flavorConfig.minDiskAvailableGb(),
                                            flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         this.bandwidth = flavorConfig.bandwidth();
-        this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
         this.replacesFlavors = new ArrayList<>();
     }
@@ -60,7 +58,6 @@ public class Flavor {
         this.isStock = true;
         this.type = Type.DOCKER_CONTAINER;
         this.bandwidth = 1;
-        this.description = "";
         this.retired = false;
         this.replacesFlavors = List.of();
         this.resources = resources;
@@ -96,8 +93,6 @@ public class Flavor {
     public double getBandwidth() { return bandwidth; }
 
     public double getMinCpuCores() { return resources.vcpu(); }
-
-    public String getDescription() { return description; }
 
     /** Returns whether the flavor is retired */
     public boolean isRetired() {
