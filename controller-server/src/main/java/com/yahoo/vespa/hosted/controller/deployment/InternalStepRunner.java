@@ -90,7 +90,7 @@ public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
 
-    static final Duration endpointTimeout = Duration.ofMinutes(15);
+    static final Duration endpointTimeout = Duration.ofMinutes(30);
     static final Duration installationTimeout = Duration.ofMinutes(150);
 
     private final Controller controller;
