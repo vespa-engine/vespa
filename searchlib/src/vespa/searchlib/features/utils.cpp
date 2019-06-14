@@ -9,8 +9,8 @@ template <typename T>
 T strToInt(vespalib::stringref str)
 {
     T retval = 0;
-    if ((str.size() > 2) && (str[0] == '0') && ((str[0] | 0x20) == 'x')) {
-        std::from_chars(str.data(), str.data()+str.size(), retval, 16);
+    if ((str.size() > 2) && (str[0] == '0') && ((str[1] | 0x20) == 'x')) {
+        std::from_chars(str.data()+2, str.data()+str.size(), retval, 16);
     } else {
         std::from_chars(str.data(), str.data()+str.size(), retval, 10);
     }
