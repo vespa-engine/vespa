@@ -25,9 +25,6 @@ import java.util.Set;
 public interface ConfigServer {
 
     interface PreparedApplication {
-        // TODO: Remove the two methods below
-        default void activate() {}
-        default List<Log> messages() { return List.of(); }
         PrepareResponse prepareResponse();
     }
 
