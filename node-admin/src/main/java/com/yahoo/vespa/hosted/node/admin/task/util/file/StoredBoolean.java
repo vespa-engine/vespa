@@ -35,6 +35,15 @@ public class StoredBoolean {
         }
     }
 
+    /** Sets value to true. */
+    public void set(TaskContext context, boolean value) {
+        if (value) {
+            set(context);
+        } else {
+            clear(context);
+        }
+    }
+
     /** Sets value to false. */
     public void clear(TaskContext context) {
         if (value()) {
