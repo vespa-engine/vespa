@@ -3,6 +3,8 @@ package ai.vespa.hosted.cd;
 import ai.vespa.hosted.cd.metric.Metrics;
 
 import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * An endpoint in a Vespa application {@link Deployment}, which allows document and metrics retrieval.
@@ -15,6 +17,8 @@ import java.net.URI;
 public interface Endpoint {
 
     URI uri();
+
+    <T> HttpResponse<T> send(HttpRequest.Builder request, HttpResponse.BodyHandler<T> handler);
 
     Search search(Query query);
 

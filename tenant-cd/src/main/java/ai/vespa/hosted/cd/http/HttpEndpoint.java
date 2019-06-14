@@ -13,6 +13,8 @@ import ai.vespa.hosted.cd.TestEndpoint;
 import ai.vespa.hosted.cd.Visit;
 import ai.vespa.hosted.cd.metric.Metrics;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -58,15 +60,23 @@ public class HttpEndpoint implements TestEndpoint {
     }
 
     @Override
+    public <T> HttpResponse<T> send(HttpRequest.Builder request, HttpResponse.BodyHandler<T> handler) {
+        try {
+            return client.send(authenticator.authenticated(request).build(), handler);
+        }
+        catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public Search search(Query query) {
         try {
             URI target = endpoint.resolve(searchApiPath).resolve("?" + query.rawQuery());
-            HttpRequest request = authenticator.authenticated(HttpRequest.newBuilder()
-                                                                         .timeout(query.timeout().orElse(Duration.ofMillis(500))
-                                                                                       .plus(Duration.ofSeconds(1)))
-                                                                         .uri(target))
-                                               .build();
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<byte[]> response = send(HttpRequest.newBuilder(target)
+                                                            .timeout(query.timeout().orElse(Duration.ofMillis(500))
+                                                                          .plus(Duration.ofSeconds(1))),
+                                                 HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() / 100 != 2) // TODO consider allowing 504 if specified.
                 throw new RuntimeException("Non-OK status code " + response.statusCode() + " at " + target +
                                            ", with response \n" + new String(response.body()));
