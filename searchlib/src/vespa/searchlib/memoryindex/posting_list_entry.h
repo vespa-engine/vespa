@@ -22,9 +22,14 @@ public:
         : _features()
     {
     }
-       datastore::EntryRef get_features() const { return _features; }
 
-    // Reference moved data (used when compacting FeatureStore)
+    datastore::EntryRef get_features() const { return _features; }
+
+    /*
+     * Reference moved features (used when compacting FeatureStore).
+     * The moved features must have the same content as the original
+     * features.
+     */
     void update_features(datastore::EntryRef features) const { _features = features; }
 };
 
