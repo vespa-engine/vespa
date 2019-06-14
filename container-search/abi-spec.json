@@ -6141,6 +6141,7 @@
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.component.ComponentId)",
       "public com.yahoo.search.query.profile.types.QueryProfileType unfrozen()",
+      "public com.yahoo.processing.request.CompoundName getComponentIdAsCompoundName()",
       "public void setBuiltin(boolean)",
       "public boolean isBuiltin()",
       "public java.util.List inherited()",
