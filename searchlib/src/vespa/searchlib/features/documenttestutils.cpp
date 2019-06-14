@@ -18,7 +18,8 @@ using namespace search::fef;
 
 namespace search::features::util {
 
-feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback)
+feature_t
+lookupConnectedness(const search::fef::IQueryEnvironment& env, uint32_t termId, feature_t fallback)
 {
     if (termId == 0) {
         return fallback; // no previous term
@@ -26,14 +27,15 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env, uint32
 
     const ITermData * data = env.getTerm(termId);
     const ITermData * prev = env.getTerm(termId - 1);
-    if (data == NULL || prev == NULL) {
+    if (data == nullptr || prev == nullptr) {
         return fallback; // default value
     }
     return lookupConnectedness(env, data->getUniqueId(), prev->getUniqueId(), fallback);
 }
 
-feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
-                              uint32_t currUniqueId, uint32_t prevUniqueId, feature_t fallback)
+feature_t
+lookupConnectedness(const search::fef::IQueryEnvironment& env,
+                    uint32_t currUniqueId, uint32_t prevUniqueId, feature_t fallback)
 {
     // Connectedness of 0.5 between term with unique id 2 and term with unique id 1 is represented as:
     // [vespa.term.2.connexity: "1", vespa.term.2.connexity: "0.5"]
@@ -49,33 +51,40 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
     return fallback;
 }
 
-feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback)
+feature_t
+lookupSignificance(const search::fef::IQueryEnvironment& env, const ITermData& data, feature_t fallback)
 {
-    const ITermData * data = env.getTerm(termId);
-    if (data == NULL) {
-        return fallback;
-    }
-
     // Significance of 0.5 for term with unique id 1 is represented as:
     // [vespa.term.1.significance: "0.5"]
     vespalib::asciistream os;
-    os << "vespa.term." << data->getUniqueId() << ".significance";
+    os << "vespa.term." << data.getUniqueId() << ".significance";
     Property p = env.getProperties().lookup(os.str());
     if (p.found()) {
         return strToNum<feature_t>(p.get());
     }
-
     return fallback;
 }
 
-double getRobertsonSparckJonesWeight(double docCount, double docsInCorpus)
+feature_t
+lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, feature_t fallback)
+{
+    const ITermData * data = env.getTerm(termId);
+    if (data == nullptr) {
+        return fallback;
+    }
+    return lookupSignificance(env, *data, fallback);
+}
+
+double
+getRobertsonSparckJonesWeight(double docCount, double docsInCorpus)
 {
     return std::log((docsInCorpus - docCount + 0.5)/(docCount + 0.5));
 }
 
 static const double N = 1000000.0;
 
-feature_t getSignificance(double docFreq)
+feature_t
+getSignificance(double docFreq)
 {
     if (docFreq < (1.0/N)) {
       docFreq = 1.0/N;
@@ -95,7 +104,8 @@ feature_t getSignificance(double docFreq)
 #endif
 }
 
-feature_t getSignificance(const search::fef::ITermData &termData)
+feature_t
+getSignificance(const search::fef::ITermData& termData)
 {
     typedef search::fef::ITermFieldRangeAdapter FRA;
     double df = 0;
@@ -115,7 +125,7 @@ lookupTable(const search::fef::IIndexEnvironment & env, const vespalib::string &
     vespalib::string tn1 = env.getProperties().lookup(featureName, table).get(fallback);
     vespalib::string tn2 = env.getProperties().lookup(featureName, table, fieldName).get(tn1);
     const search::fef::Table * retval = env.getTableManager().getTable(tn2);
-    if (retval == NULL) {
+    if (retval == nullptr) {
         LOG(warning, "Could not find the %s '%s' to be used for field '%s' in feature '%s'",
             table.c_str(), tn2.c_str(), fieldName.c_str(), featureName.c_str());
     }

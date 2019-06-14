@@ -116,6 +116,17 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
  * Uses the property map of the query environment to lookup this data.
  *
  * @param env          The query environment.
+ * @param term         The term data.
+ * @param fallback     The value to return if the significance was not found in the property map.
+ * @return             The significance.
+ */
+feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& data, feature_t fallback);
+
+/**
+ * Returns the significance of the given term.
+ * Uses the property map of the query environment to lookup this data.
+ *
+ * @param env          The query environment.
  * @param termId       The term id.
  * @param fallback     The value to return if the significance was not found in the property map.
  * @return             The significance.
