@@ -171,7 +171,7 @@ assertPostingList(const std::string &exp,
         uint32_t docId = itr.getKey();
         ss << docId;
         if (store != nullptr) { // consider features as well
-            EntryRef ref(itr.getData());
+            EntryRef ref(itr.getData().get_features());
             store->setupForField(0, decoder);
             store->setupForUnpackFeatures(ref, decoder);
             decoder.unpackFeatures(matchData, docId);

@@ -127,36 +127,35 @@ FieldIndex::compactFeatures()
             const PostingList *tree = _postingListStore.getTreeEntry(pidx);
             auto pitr = tree->begin(_postingListStore.getAllocator());
             for (; pitr.valid(); ++pitr) {
-                EntryRef oldFeatures(pitr.getData());
+                const PostingListEntry &posting_entry(pitr.getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
+                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, posting_entry.get_features());
 
                 // Features must be written before reference is updated.
                 std::atomic_thread_fence(std::memory_order_release);
 
-                // Ugly, ugly due to const_cast in iterator
-                pitr.writeData(newFeatures.ref());
+                // Reference the moved data
+                posting_entry.update_features(newFeatures);
             }
         } else {
             const PostingListKeyDataType *shortArray = _postingListStore.getKeyDataEntry(pidx, clusterSize);
             const PostingListKeyDataType *ite = shortArray + clusterSize;
             for (const PostingListKeyDataType *it = shortArray; it < ite; ++it) {
-                EntryRef oldFeatures(it->getData());
+                const PostingListEntry &posting_entry(it->getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
+                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, posting_entry.get_features());
 
                 // Features must be written before reference is updated.
                 std::atomic_thread_fence(std::memory_order_release);
 
-                // Ugly, ugly due to const_cast, but new data is
-                // semantically equal to old data
-                const_cast<PostingListKeyDataType *>(it)->setData(newFeatures.ref());
+                // Reference the moved data
+                posting_entry.update_features(newFeatures);
             }
         }
     }
@@ -189,7 +188,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             assert(pitr.valid());
             for (; pitr.valid(); ++pitr) {
                 uint32_t docId = pitr.getKey();
-                EntryRef featureRef(pitr.getData());
+                EntryRef featureRef(pitr.getData().get_features());
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
                 features.set_doc_id(docId);
@@ -202,7 +201,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             const PostingListKeyDataType *kde = kd + clusterSize;
             for (; kd != kde; ++kd) {
                 uint32_t docId = kd->_key;
-                EntryRef featureRef(kd->getData());
+                EntryRef featureRef(kd->getData().get_features());
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
                 features.set_doc_id(docId);
