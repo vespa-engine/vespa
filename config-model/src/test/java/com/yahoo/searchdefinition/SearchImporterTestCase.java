@@ -45,7 +45,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
 
         SDDocumentType document = search.getDocument();
         assertEquals("simple", document.getName());
-        assertEquals(25, document.getFieldCount());
+        assertEquals(23, document.getFieldCount());
 
         SDField field;
         Attribute attribute;
