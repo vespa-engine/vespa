@@ -1,8 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
+import com.yahoo.vespa.model.container.http.JettyHttpServer;
+
+import java.util.Optional;
 
 /**
  * A container that is typically used by container clusters set up from the user application.
@@ -15,14 +20,25 @@ public final class ApplicationContainer extends Container {
 
     private final boolean isHostedVespa;
 
+    private final Optional<String> tlsSecretsKey;
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, false, index, isHostedVespa);
+    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<String> tlsSecretsKey) {
+        this(parent, name, false, index, isHostedVespa, tlsSecretsKey);
     }
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<String> tlsSecretsKey) {
         super(parent, name, retired, index);
         this.isHostedVespa = isHostedVespa;
+        this.tlsSecretsKey = tlsSecretsKey;
+
+        if(isHostedVespa) {
+            //this.getHttp().getBindings(). TODO: replace bindings on port 443 with 4443
+
+            // set up port 4443 based on tlsSecretsKey
+            final JettyHttpServer defaultHttpsServer = new JettyHttpServer(new ComponentId("DefaultHttpsServer"));
+
+            defaultHttpsServer.addConnector(new ConnectorFactory("TlsSearchServer", 4443));
+        }
     }
 
     @Override

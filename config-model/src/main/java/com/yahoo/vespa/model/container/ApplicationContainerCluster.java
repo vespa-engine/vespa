@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,8 +46,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
+    private Optional<String> tlsSecretsKeyName;
+
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
+
+        this.tlsSecretsKeyName = deployState.tlsSecretsKeyName();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
 
@@ -137,6 +142,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(RankingConstantsConfig.Builder builder) {
         if (modelEvaluation != null) modelEvaluation.getConfig(builder);
+    }
+
+    public Optional<String> getTlsSecretsKeyName() {
+        return tlsSecretsKeyName;
     }
 
 }

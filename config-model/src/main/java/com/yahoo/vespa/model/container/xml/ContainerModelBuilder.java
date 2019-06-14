@@ -412,7 +412,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ApplicationContainerCluster cluster) {
-        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
+        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa(), cluster.getTlsSecretsKeyName());
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -478,7 +478,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
-            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
+            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa(), cluster.getTlsSecretsKeyName());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
             node.initService(context.getDeployLogger());
@@ -667,7 +667,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
+            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa(), cluster.getTlsSecretsKeyName());
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);
