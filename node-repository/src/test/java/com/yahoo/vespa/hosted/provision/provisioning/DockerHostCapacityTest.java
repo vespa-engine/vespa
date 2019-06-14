@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -18,12 +19,16 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author smorgrav
  */
 public class DockerHostCapacityTest {
 
+    private final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
     private DockerHostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
@@ -31,6 +36,8 @@ public class DockerHostCapacityTest {
 
     @Before
     public void setup() {
+        doAnswer(invocation -> invocation.getArguments()[0]).when(hostResourcesCalculator).availableCapacityOf(any());
+
         // Create flavors
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         flavorDocker = nodeFlavors.getFlavorOrThrow("docker");
@@ -54,7 +61,7 @@ public class DockerHostCapacityTest {
 
         // init docker host capacity
         nodes = new ArrayList<>(List.of(host1, host2, host3, nodeA, nodeB, nodeC, nodeD, nodeE));
-        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}));
+        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
     }
 
     @Test
@@ -70,7 +77,7 @@ public class DockerHostCapacityTest {
         Node nodeF = Node.create("nodeF", Set.of("::6"), Set.of(),
                 "nodeF", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
         nodes.add(nodeF);
-        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}));
+        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
         assertFalse(capacity.hasCapacity(host1, flavorDocker.resources()));
         assertFalse(capacity.hasCapacity(host1, flavorDocker2.resources()));
     }
@@ -80,6 +87,20 @@ public class DockerHostCapacityTest {
         assertEquals(2, capacity.freeIPs(host1));
         assertEquals(1, capacity.freeIPs(host2));
         assertEquals(0, capacity.freeIPs(host3));
+    }
+
+    @Test
+    public void freeCapacityOf() {
+        assertEquals(new NodeResources(5, 4, 8), capacity.freeCapacityOf(host1, false));
+        assertEquals(new NodeResources(5, 6, 8), capacity.freeCapacityOf(host3, false));
+
+        doAnswer(invocation -> {
+            NodeResources totalHostResources = (NodeResources) invocation.getArguments()[0];
+            return totalHostResources.subtract(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.any));
+        }).when(hostResourcesCalculator).availableCapacityOf(any());
+
+        assertEquals(new NodeResources(4, 2, 5), capacity.freeCapacityOf(host1, false));
+        assertEquals(new NodeResources(4, 4, 5), capacity.freeCapacityOf(host3, false));
     }
 
     private Set<String> generateIPs(int start, int count) {
