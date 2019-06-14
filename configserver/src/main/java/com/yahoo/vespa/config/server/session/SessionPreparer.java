@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -42,6 +43,7 @@ import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -141,6 +143,7 @@ public class SessionPreparer {
         final Rotations rotations; // TODO: Remove this once we have migrated fully to container endpoints
         final ContainerEndpointsCache containerEndpoints;
         final Set<Rotation> rotationsSet;
+        final Set<ContainerEndpoint> endpointsSet;
         final ModelContext.Properties properties;
 
         private ApplicationPackage applicationPackage;
@@ -162,6 +165,7 @@ public class SessionPreparer {
             this.rotations = new Rotations(curator, tenantPath);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.rotationsSet = getRotations(params.rotations());
+            this.endpointsSet = getEndpoints(params.containerEndpoints());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
@@ -171,6 +175,7 @@ public class SessionPreparer {
                                                               configserverConfig.hostedVespa(),
                                                               zone,
                                                               rotationsSet,
+                                                              endpointsSet,
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
                                                               context.getFlagSource());
@@ -263,6 +268,13 @@ public class SessionPreparer {
                 rotations = this.rotations.readRotationsFromZooKeeper(applicationId);
             }
             return rotations;
+        }
+
+        private Set<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
+            if (endpoints == null || endpoints.isEmpty()) {
+                endpoints = this.containerEndpoints.read(applicationId);
+            }
+            return ImmutableSet.copyOf(endpoints);
         }
 
     }
