@@ -37,6 +37,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useFdispatchByDefault = true;
     private boolean dispatchWithProtobuf = true;
     private boolean useAdaptiveDispatch = false;
+    private String tlsSecretsKeyName = null;
 
 
     @Override public boolean multitenant() { return multitenant; }
@@ -54,6 +55,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
     @Override public boolean dispatchWithProtobuf() { return dispatchWithProtobuf; }
+    @Override public String tlsSecretsKeyName() { return tlsSecretsKeyName; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
@@ -85,6 +87,11 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
+
+    public TestProperties setTlsSecretsKeyName(String tlsSecretsKeyName) {
+        this.tlsSecretsKeyName = tlsSecretsKeyName;
+        return this;
+    }
 
     public static class Spec implements ConfigServerSpec {
 
