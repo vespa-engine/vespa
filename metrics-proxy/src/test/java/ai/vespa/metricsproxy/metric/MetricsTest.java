@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.metric;
 
+import ai.vespa.metricsproxy.metric.model.StatusCode;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
 import org.junit.Test;
@@ -46,7 +47,8 @@ public class MetricsTest {
     public void testBasicMetric() {
         Metrics m = new Metrics();
         m.add(new Metric("count", 1, System.currentTimeMillis() / 1000));
-        assertThat(m.get("count").intValue(), is(1));
+        assertThat(m.getMetrics().size(), is(1));
+        assertThat(m.getMetrics().get(0).getName(), is("count"));
     }
 
     @Test
@@ -62,7 +64,7 @@ public class MetricsTest {
 
         m = HealthMetric.get("bad", "test message");
         assertThat(m.isOk(), is(false));
-        assertThat(m.getStatus(), is("bad"));
+        assertThat(m.getStatus(), is(StatusCode.UNKNOWN));
     }
 
     @Test

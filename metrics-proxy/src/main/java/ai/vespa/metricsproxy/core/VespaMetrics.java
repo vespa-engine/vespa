@@ -14,7 +14,6 @@ import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaService;
-import ai.vespa.metricsproxy.service.VespaServices;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +31,6 @@ import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.yahoo.log.LogLevel.DEBUG;
 
 /**
  * @author Unknown
@@ -77,8 +75,6 @@ public class VespaMetrics {
     public List<MetricsPacket.Builder> getMetrics(List<VespaService> services) {
         List<MetricsPacket.Builder> metricsPackets = new ArrayList<>();
 
-        log.log(DEBUG, () -> "Updating services prior to fetching metrics, number of services= " + services.size());
-
         Map<ConsumersConfig.Consumer.Metric, List<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric();
 
         for (VespaService service : services) {
@@ -86,25 +82,42 @@ public class VespaMetrics {
             Optional<MetricsPacket.Builder> systemCheck = getSystemMetrics(service);
             systemCheck.ifPresent(metricsPackets::add);
 
-            // One metrics packet per set of metrics that share the same dimensions+consumers
-            // TODO: Move aggregation into MetricsPacket itself?
-            Metrics serviceMetrics = getServiceMetrics(service, consumersByMetric);
-            Map<AggregationKey, List<Metric>> aggregatedMetrics =
-                    aggregateMetrics(service.getDimensions(), serviceMetrics);
+            Metrics allServiceMetrics = service.getMetrics();
 
-            aggregatedMetrics.forEach((aggregationKey, metrics) -> {
-                MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId(service.getMonitoringName()))
-                        .putMetrics(metrics)
-                        .putDimension(METRIC_TYPE_DIMENSION_ID, "standard")
-                        .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName())
-                        .putDimensions(aggregationKey.getDimensions());
-                setMetaInfo(builder, serviceMetrics.getTimeStamp());
-                builder.addConsumers(aggregationKey.getConsumers());
-                metricsPackets.add(builder);
-            });
+            if (! allServiceMetrics.getMetrics().isEmpty()) {
+                Metrics serviceMetrics = getServiceMetrics(allServiceMetrics, consumersByMetric);
+
+                // One metrics packet per set of metrics that share the same dimensions+consumers
+                // TODO: Move aggregation into MetricsPacket itself?
+                Map<AggregationKey, List<Metric>> aggregatedMetrics = aggregateMetrics(service.getDimensions(), serviceMetrics);
+
+                aggregatedMetrics.forEach((aggregationKey, metrics) -> {
+                    MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId(service.getMonitoringName()))
+                            .putMetrics(metrics)
+                            .putDimension(METRIC_TYPE_DIMENSION_ID, "standard")
+                            .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName())
+                            .putDimensions(aggregationKey.getDimensions());
+                    setMetaInfo(builder, serviceMetrics.getTimeStamp());
+                    builder.addConsumers(aggregationKey.getConsumers());
+                    metricsPackets.add(builder);
+                });
+            } else {
+                // Service did not return any metrics, so add metrics packet based on service health.
+                // TODO: Make VespaService.getMetrics return MetricsPacket and handle health on its own.
+                metricsPackets.add(getHealth(service));
+            }
         }
-
         return metricsPackets;
+    }
+
+    private MetricsPacket.Builder getHealth(VespaService service) {
+        HealthMetric health = service.getHealth();
+        return new MetricsPacket.Builder(toServiceId(service.getMonitoringName()))
+                .timestamp(System.currentTimeMillis() / 1000)
+                .statusCode(health.getStatus().ordinal())  // TODO: MetricsPacket should use StatusCode instead of int
+                .statusMessage(health.getMessage())
+                .putDimensions(service.getDimensions())
+                .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName());
     }
 
     /**
@@ -112,16 +125,15 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private Metrics getServiceMetrics(VespaService service, Map<ConsumersConfig.Consumer.Metric, List<ConsumerId>> consumersByMetric) {
-        Metrics serviceMetrics = new Metrics();
-        Metrics allServiceMetrics = service.getMetrics();
-        serviceMetrics.setTimeStamp(getMostRecentTimestamp(allServiceMetrics));
+    private Metrics getServiceMetrics(Metrics allServiceMetrics, Map<ConsumersConfig.Consumer.Metric, List<ConsumerId>> consumersByMetric) {
+        Metrics configuredServiceMetrics = new Metrics();
+        configuredServiceMetrics.setTimeStamp(getMostRecentTimestamp(allServiceMetrics));
         for (Metric candidate : allServiceMetrics.getMetrics()) {
             getConfiguredMetrics(candidate.getName(), consumersByMetric.keySet()).forEach(
-                    configuredMetric -> serviceMetrics.add(
+                    configuredMetric -> configuredServiceMetrics.add(
                             metricWithConfigProperties(candidate, configuredMetric, consumersByMetric)));
         }
-        return serviceMetrics;
+        return configuredServiceMetrics;
     }
 
     private Map<DimensionId, String> extractDimensions(Map<DimensionId, String> dimensions, List<ConsumersConfig.Consumer.Metric.Dimension> configuredDimensions) {

@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 public abstract class HttpMetricFetcher {
     private final static Logger log = Logger.getLogger(HttpMetricFetcher.class.getPackage().getName());
     public final static String STATE_PATH = "/state/v1/";
-    final static String METRICS_PATH = STATE_PATH + "metrics";
-    final static String HEALTH_PATH = STATE_PATH + "health";
     // The call to apache will do 3 retries. As long as we check the services in series, we can't have this too high.
     public static int CONNECTION_TIMEOUT = 5000;
     private final static int SOCKET_TIMEOUT = 60000;

@@ -6,7 +6,7 @@ package ai.vespa.metricsproxy.core;
 
 import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
-import ai.vespa.metricsproxy.metric.ExternalMetrics;
+import ai.vespa.metricsproxy.metric.HealthMetric;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
@@ -15,6 +15,7 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.service.DownService;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
@@ -23,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +64,21 @@ public class MetricsManagerTest {
     }
 
     @Test
+    public void service_that_is_down_has_a_separate_metrics_packet() {
+        // Reset to use only the service that is down
+        var downService = new DownService(HealthMetric.getDown("No response"));
+        List<VespaService> testServices = Collections.singletonList(downService);
+        MetricsManager metricsManager = TestUtil.createMetricsManager(new VespaServices(testServices),
+                                                                      getMetricsConsumers(),getApplicationDimensions(), getNodeDimensions());
+
+        List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
+        assertThat(packets.size(), is(1));
+        assertTrue(packets.get(0).metrics().isEmpty());
+        assertThat(packets.get(0).dimensions().get(toDimensionId("instance")), is(DownService.NAME));
+        assertThat(packets.get(0).dimensions().get(toDimensionId("global")), is("value"));
+    }
+
+    @Test
     public void each_service_gets_separate_metrics_packets() {
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertThat(packets.size(), is(2));
@@ -77,11 +94,11 @@ public class MetricsManagerTest {
 
     @Test
     public void verify_expected_output_from_getMetricsById() {
-        String dummy0Metrics = metricsManager.getMetricsByConfigId("dummy/id/0");
+        String dummy0Metrics = metricsManager.getMetricsByConfigId(SERVICE_0_ID);
         assertThat(dummy0Metrics, containsString("'dummy.id.0'.val=1.050"));
         assertThat(dummy0Metrics, containsString("'dummy.id.0'.c_test=1"));
 
-        String dummy1Metrics = metricsManager.getMetricsByConfigId("dummy/id/1");
+        String dummy1Metrics = metricsManager.getMetricsByConfigId(SERVICE_1_ID);
         assertThat(dummy1Metrics, containsString("'dummy.id.1'.val=2.350"));
         assertThat(dummy1Metrics, containsString("'dummy.id.1'.c_test=6"));
     }

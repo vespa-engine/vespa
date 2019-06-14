@@ -22,10 +22,10 @@ public class MetricsFetcherTest {
         String jsonData = TestUtil.getFileContents("metrics-state.json");
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         Metrics metrics = fetcher.createMetrics(jsonData, 0);
-        assertThat("Wrong number of metrics", metrics.size(), is(10));
-        assertThat("Wrong value for metric", metrics.get("query_hits.count").intValue(), is(28));
-        assertThat("Wrong value for metric ", metrics.get("queries.rate").doubleValue(), is(0.4667));
-        assertThat("Wrong timestamp", metrics.getTimeStamp(), is(1334134700L));
+        assertThat(metrics.size(), is(10));
+        assertThat(metrics.getMetric("query_hits.count").getValue().intValue(), is(28));
+        assertThat(metrics.getMetric("queries.rate").getValue().doubleValue(), is(0.4667));
+        assertThat(metrics.getTimeStamp(), is(1334134700L));
     }
 
     @Test

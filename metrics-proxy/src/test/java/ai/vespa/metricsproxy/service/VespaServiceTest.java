@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
+import static ai.vespa.metricsproxy.service.RemoteMetricsFetcher.METRICS_PATH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -30,7 +31,7 @@ public class VespaServiceTest {
     public void setupHTTPServer() {
         csPort = 18632; // see factory/doc/port-ranges.txt
         try {
-            service = new MockHttpServer(csPort, response, HttpMetricFetcher.METRICS_PATH);
+            service = new MockHttpServer(csPort, response, METRICS_PATH);
         } catch (Exception e) {
             e.printStackTrace();
         }
