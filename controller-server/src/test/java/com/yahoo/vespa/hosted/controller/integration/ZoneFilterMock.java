@@ -43,7 +43,7 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList all() {
-        return filter(zoneId -> true);
+        return filter(zone -> true);
     }
 
     @Override
@@ -63,17 +63,17 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList in(Environment... environments) {
-        return filter(zoneId -> new HashSet<>(Arrays.asList(environments)).contains(zoneId.environment()));
+        return filter(zone -> new HashSet<>(Arrays.asList(environments)).contains(zone.getEnvironment()));
     }
 
     @Override
     public ZoneList in(RegionName... regions) {
-        return filter(zoneId -> new HashSet<>(Arrays.asList(regions)).contains(zoneId.region()));
+        return filter(zone -> new HashSet<>(Arrays.asList(regions)).contains(zone.getRegionName()));
     }
 
     @Override
     public ZoneList among(ZoneId... zones) {
-        return filter(zoneId -> new HashSet<>(Arrays.asList(zones)).contains(zoneId));
+        return filter(zone -> new HashSet<>(Arrays.asList(zones)).contains(zone.getId()));
     }
 
     @Override
@@ -88,15 +88,15 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public ZoneList ofCloud(CloudName cloud) {
-        return filter(zoneId -> zoneId.cloud().equals(cloud));
+        return filter(zone -> zone.getCloudName().equals(cloud));
     }
 
-    private ZoneFilterMock filter(Predicate<ZoneId> condition) {
+    private ZoneFilterMock filter(Predicate<ZoneApi> condition) {
         return new ZoneFilterMock(
                 zones.stream()
-                        .filter(zoneApi -> negate ?
-                                condition.negate().test(zoneApi.toDeprecatedId()) :
-                                condition.test(zoneApi.toDeprecatedId()))
+                        .filter(zone -> negate ?
+                                condition.negate().test(zone) :
+                                condition.test(zone))
                         .collect(Collectors.toList()),
                 false);
     }

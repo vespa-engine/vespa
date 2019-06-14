@@ -26,19 +26,16 @@ public class ZoneIdTest {
         ZoneId zoneId = ZoneId.from(environment, region);
         assertEquals(region, zoneId.region());
         assertEquals(environment, zoneId.environment());
-        assertEquals(CloudName.defaultName(), zoneId.cloud());
         assertEquals(SystemName.defaultSystem(), zoneId.system());
 
         ZoneId zoneIdWithSystem = ZoneId.from(system, environment, region);
         assertEquals(region, zoneIdWithSystem.region());
         assertEquals(environment, zoneIdWithSystem.environment());
-        assertEquals(CloudName.defaultName(), zoneIdWithSystem.cloud());
         assertEquals(system, zoneIdWithSystem.system());
 
         ZoneId zoneIdWithCloudAndSystem = ZoneId.from(environment, region, cloud, system);
         assertEquals(region, zoneIdWithCloudAndSystem.region());
         assertEquals(environment, zoneIdWithCloudAndSystem.environment());
-        assertEquals(cloud, zoneIdWithCloudAndSystem.cloud());
         assertEquals(system, zoneIdWithCloudAndSystem.system());
     }
 

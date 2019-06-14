@@ -374,7 +374,7 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
         assertTestLogEntries(id, Step.copyVespaLogs,
-                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in zone test.us-east-1 in default ..."),
+                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in test.us-east-1 ..."),
                              new LogEntry(lastId + 3, 1554970337084L, info,
                                           "17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\n" +
                                           "Switching to the latest deployed set of configurations and components. Application switch number: 2"),
