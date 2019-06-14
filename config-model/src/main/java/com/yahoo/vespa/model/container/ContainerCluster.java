@@ -37,6 +37,7 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -63,6 +64,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -189,6 +191,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
+        addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("vespa-testrunner-components-jar-with-dependencies.jar")));
         addJaxProviders();
     }
 
