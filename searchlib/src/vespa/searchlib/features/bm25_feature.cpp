@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm25_feature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
@@ -23,6 +24,21 @@ using fef::ITermFieldData;
 using fef::MatchDataDetails;
 using fef::objectstore::as_value;
 
+namespace {
+
+double
+get_inverse_document_frequency(const ITermFieldData& term_field,
+                               const fef::IQueryEnvironment& env,
+                               const ITermData& term)
+
+{
+    double fallback = Bm25Executor::calculate_inverse_document_frequency(term_field.get_matching_doc_count(),
+                                                                         term_field.get_total_doc_count());
+    return util::lookupSignificance(env, term, fallback);
+}
+
+}
+
 Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
                            const fef::IQueryEnvironment& env,
                            double avg_field_length,
@@ -39,10 +55,8 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
         for (size_t j = 0; j < term->numFields(); ++j) {
             const ITermFieldData& term_field = term->field(j);
             if (field.id() == term_field.getFieldId()) {
-                // TODO: Add support for using significance instead of default idf if specified in the query
                 _terms.emplace_back(term_field.getHandle(MatchDataDetails::Cheap),
-                                    calculate_inverse_document_frequency(term_field.get_matching_doc_count(),
-                                                                         term_field.get_total_doc_count()));
+                                    get_inverse_document_frequency(term_field, env, *term));
             }
         }
     }
@@ -114,7 +128,7 @@ Bm25Blueprint::visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFe
 {
     (void) env;
     (void) visitor;
-    // TODO: Implement
+    // TODO: Implement when feature is supported end-2-end with both memory and disk index.
 }
 
 fef::Blueprint::UP

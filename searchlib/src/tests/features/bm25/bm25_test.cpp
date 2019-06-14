@@ -135,6 +135,7 @@ struct Bm25ExecutorTest : public ::testing::Test {
     void add_query_term(const vespalib::string& field_name, uint32_t matching_doc_count) {
         auto* term = test.getQueryEnv().getBuilder().addIndexNode({field_name});
         term->field(0).setDocFreq(matching_doc_count, total_doc_count);
+        term->setUniqueId(test.getQueryEnv().getNumTerms() - 1);
     }
     void setup() {
         EXPECT_TRUE(test.setup());
@@ -234,6 +235,14 @@ TEST_F(Bm25ExecutorTest, b_param_can_be_overriden)
     prepare_term(0, 0, 3, 20);
     scorer.b_param = 0.9;
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
+}
+
+TEST_F(Bm25ExecutorTest, inverse_document_frequency_can_be_overriden_with_significance)
+{
+    test.getQueryEnv().getProperties().add("vespa.term.0.significance", "0.35");
+    setup();
+    prepare_term(0, 0, 3, 20);
+    EXPECT_TRUE(execute(score(3.0, 20, 0.35)));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
