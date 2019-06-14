@@ -191,8 +191,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
-        addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("vespa-testrunner-components-jar-with-dependencies.jar")));
         addJaxProviders();
+        addTestrunnerComponentsIfTester(deployState);
     }
 
     public void setZone(Zone zone) {
@@ -205,6 +205,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void addDefaultHandlersWithVip() {
         addDefaultHandlersExceptStatus();
         addVipHandler();
+    }
+
+    private void addTestrunnerComponentsIfTester(DeployState deployState) {
+        if (deployState.getProperties().applicationId().instance().isTester())
+            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("vespa-testrunner-components-jar-with-dependencies.jar")));
     }
 
     public final void addDefaultHandlersExceptStatus() {
