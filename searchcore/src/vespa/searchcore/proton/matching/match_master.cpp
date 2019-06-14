@@ -130,7 +130,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
     RankProgram &rankProgram = matchTools->rank_program();
 
     std::vector<vespalib::string> featureNames;
-    FeatureResolver resolver(rankProgram.get_seeds());
+    FeatureResolver resolver(rankProgram.get_seeds(false));
     featureNames.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
