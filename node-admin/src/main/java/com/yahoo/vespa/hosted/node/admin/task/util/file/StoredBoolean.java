@@ -35,7 +35,6 @@ public class StoredBoolean {
         }
     }
 
-    /** Sets value to true. */
     public void set(TaskContext context, boolean value) {
         if (value) {
             set(context);
