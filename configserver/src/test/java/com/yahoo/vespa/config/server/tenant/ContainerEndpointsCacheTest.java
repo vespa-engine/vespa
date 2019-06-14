@@ -17,7 +17,7 @@ public class ContainerEndpointsCacheTest {
     public void readWriteFromCache() {
         final var cache = new ContainerEndpointsCache(Path.createRoot(), new MockCurator());
         final var endpoints = List.of(
-                new ContainerEndpoint(new ClusterId("the-cluster-1"), List.of("a", "b", "c"))
+                new ContainerEndpoint("the-cluster-1", List.of("a", "b", "c"))
         );
 
         cache.write(ApplicationId.defaultId(), endpoints);

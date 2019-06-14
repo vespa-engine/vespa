@@ -269,7 +269,7 @@ public class SessionPreparer {
     }
 
     private static List<ContainerEndpoint> toContainerEndpoints(String globalServceId, Set<Rotation> rotations) {
-        return List.of(new ContainerEndpoint(new ClusterId(globalServceId),
+        return List.of(new ContainerEndpoint(globalServceId,
                                              rotations.stream()
                                                       .map(Rotation::getId)
                                                       .collect(Collectors.toUnmodifiableList())));

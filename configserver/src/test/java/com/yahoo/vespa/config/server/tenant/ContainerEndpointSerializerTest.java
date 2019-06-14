@@ -30,7 +30,7 @@ public class ContainerEndpointSerializerTest {
 
     @Test
     public void writeReadSingleEndpoint() {
-        final var endpoint = new ContainerEndpoint(new ClusterId("foo"), List.of("a", "b"));
+        final var endpoint = new ContainerEndpoint("foo", List.of("a", "b"));
         final var serialized = new Slime();
         ContainerEndpointSerializer.endpointToSlime(serialized.setObject(), endpoint);
         final var deserialized = ContainerEndpointSerializer.endpointFromSlime(serialized.get());
@@ -40,7 +40,7 @@ public class ContainerEndpointSerializerTest {
 
     @Test
     public void writeReadEndpoints() {
-        final var endpoints = List.of(new ContainerEndpoint(new ClusterId("foo"), List.of("a", "b")));
+        final var endpoints = List.of(new ContainerEndpoint("foo", List.of("a", "b")));
         final var serialized = ContainerEndpointSerializer.endpointListToSlime(endpoints);
         final var deserialized = ContainerEndpointSerializer.endpointListFromSlime(serialized);
 

@@ -42,7 +42,7 @@ public class ContainerEndpointSerializer {
             names.add(containerName);
         });
 
-        return new ContainerEndpoint(new ClusterId(clusterId), names);
+        return new ContainerEndpoint(clusterId, names);
     }
 
     public static List<ContainerEndpoint> endpointListFromSlime(Slime slime) {

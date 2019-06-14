@@ -84,10 +84,10 @@ public class PrepareParamsTest {
 
     @Test
     public void testCorrectParsingWithContainerEndpoints() {
-        var endpoints = List.of(new ContainerEndpoint(new ClusterId("qrs1"),
+        var endpoints = List.of(new ContainerEndpoint("qrs1",
                                                       List.of("c1.example.com",
                                                               "c2.example.com")),
-                                new ContainerEndpoint(new ClusterId("qrs2"),
+                                new ContainerEndpoint("qrs2",
                                                       List.of("c3.example.com",
                                                               "c4.example.com")));
         var param = "[\n" +

@@ -218,7 +218,7 @@ public class SessionPreparerTest {
         var params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
-        var expected = List.of(new ContainerEndpoint(new ClusterId("qrs"),
+        var expected = List.of(new ContainerEndpoint("qrs",
                                                      List.of("app1.tenant1.global.vespa.example.com",
                                                              "rotation-042.vespa.global.routing")));
         assertEquals(expected, readContainerEndpoints(applicationId));
@@ -248,10 +248,10 @@ public class SessionPreparerTest {
                                                 .build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
-        var expected = List.of(new ContainerEndpoint(new ClusterId("foo"),
+        var expected = List.of(new ContainerEndpoint("foo",
                                                      List.of("foo.app1.tenant1.global.vespa.example.com",
                                                              "rotation-042.vespa.global.routing")),
-                               new ContainerEndpoint(new ClusterId("bar"),
+                               new ContainerEndpoint("bar",
                                                      List.of("bar.app1.tenant1.global.vespa.example.com",
                                                              "rotation-043.vespa.global.routing")));
         assertEquals(expected, readContainerEndpoints(applicationId));
