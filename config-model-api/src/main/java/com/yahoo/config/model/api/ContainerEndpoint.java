@@ -1,5 +1,5 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.tenant;
+package com.yahoo.config.model.api;
 
 import java.util.List;
 import java.util.Objects;

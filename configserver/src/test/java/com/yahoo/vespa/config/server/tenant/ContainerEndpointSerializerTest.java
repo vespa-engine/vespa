@@ -1,5 +1,6 @@
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.slime.Slime;
 import org.junit.Test;
 
