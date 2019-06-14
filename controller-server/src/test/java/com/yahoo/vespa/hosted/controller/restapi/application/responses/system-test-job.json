@@ -28,6 +28,6 @@
     "tasks": {
       "deploy": "running"
     },
-    "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test/run/1"
+    "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1"
   }
 }

@@ -20,7 +20,7 @@ public class BadgeApiTest extends ControllerContainerTest {
     @Test
     public void testBadgeApi() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        Application application = tester.createApplication("domain", "tenant", "application");
+        Application application = tester.createApplication("domain", "tenant", "application", "default");
         ApplicationPackage packageWithService = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))

@@ -246,7 +246,7 @@ public class ApplicationController {
                 if (credentials.isEmpty())
                     throw new IllegalArgumentException("Could not create '" + id + "': No credentials provided");
 
-                if (id.instance().isDefault()) // Only store the application permits for non-user applications.
+                if ( ! id.instance().isTester()) // Only store the application permits for non-user applications.
                     accessControl.createApplication(id, credentials.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
