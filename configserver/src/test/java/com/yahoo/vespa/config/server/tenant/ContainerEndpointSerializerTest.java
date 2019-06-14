@@ -1,7 +1,6 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import org.junit.Test;
 
 import java.util.List;

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
 import org.junit.Test;
 

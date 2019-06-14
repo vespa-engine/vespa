@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Test;
 

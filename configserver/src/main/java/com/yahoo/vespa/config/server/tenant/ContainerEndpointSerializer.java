@@ -5,7 +5,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 
 import java.util.ArrayList;
 import java.util.List;
