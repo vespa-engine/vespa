@@ -30,7 +30,6 @@ import org.junit.Test;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,19 +55,19 @@ public class MetricsReporterTest {
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true);
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodeRepository.addNodes(Collections.singletonList(node));
+        nodeRepository.addNodes(List.of(node));
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
-        nodeRepository.addNodes(Collections.singletonList(hostNode));
+        nodeRepository.addNodes(List.of(hostNode));
 
         Map<String, Number> expectedMetrics = new HashMap<>();
-        expectedMetrics.put("hostedVespa.provisionedHosts", 1L);
-        expectedMetrics.put("hostedVespa.parkedHosts", 0L);
-        expectedMetrics.put("hostedVespa.readyHosts", 0L);
-        expectedMetrics.put("hostedVespa.reservedHosts", 0L);
-        expectedMetrics.put("hostedVespa.activeHosts", 0L);
-        expectedMetrics.put("hostedVespa.inactiveHosts", 0L);
-        expectedMetrics.put("hostedVespa.dirtyHosts", 0L);
-        expectedMetrics.put("hostedVespa.failedHosts", 0L);
+        expectedMetrics.put("hostedVespa.provisionedHosts", 1);
+        expectedMetrics.put("hostedVespa.parkedHosts", 0);
+        expectedMetrics.put("hostedVespa.readyHosts", 0);
+        expectedMetrics.put("hostedVespa.reservedHosts", 0);
+        expectedMetrics.put("hostedVespa.activeHosts", 0);
+        expectedMetrics.put("hostedVespa.inactiveHosts", 0);
+        expectedMetrics.put("hostedVespa.dirtyHosts", 0);
+        expectedMetrics.put("hostedVespa.failedHosts", 0);
         expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
@@ -92,7 +91,7 @@ public class MetricsReporterTest {
         when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(
@@ -120,18 +119,18 @@ public class MetricsReporterTest {
         // Allow 4 containers
         Set<String> ipAddressPool = ImmutableSet.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost",
+        Node dockerHost = Node.create("openStackId1", Set.of("::1"), ipAddressPool, "dockerHost",
                                       Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        nodeRepository.addNodes(Collections.singletonList(dockerHost));
+        nodeRepository.addNodes(List.of(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
-        Node container1 = Node.createDockerNode(Collections.singleton("::2"), Collections.emptySet(), "container1",
+        Node container1 = Node.createDockerNode(Set.of("::2"), Set.of(), "container1",
                                                 Optional.of("dockerHost"), new NodeResources(1, 3, 2), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
 
-        Node container2 = Node.createDockerNode(Collections.singleton("::3"), Collections.emptySet(), "container2",
+        Node container2 = Node.createDockerNode(Set.of("::3"), Set.of(), "container2",
                                                 Optional.of("dockerHost"), new NodeResources(2, 4, 4), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
@@ -141,7 +140,7 @@ public class MetricsReporterTest {
         when(orchestrator.getNodeStatuses()).thenReturn(hostName -> Optional.of(HostStatus.NO_REMARKS));
         ServiceModel serviceModel = mock(ServiceModel.class);
         when(serviceMonitor.getServiceModelSnapshot()).thenReturn(serviceModel);
-        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Collections.emptyMap());
+        when(serviceModel.getServiceInstancesByHostName()).thenReturn(Map.of());
 
         TestMetric metric = new TestMetric();
         MetricsReporter metricsReporter = new MetricsReporter(
@@ -154,8 +153,8 @@ public class MetricsReporterTest {
         );
         metricsReporter.maintain();
 
-        assertEquals(0L, metric.values.get("hostedVespa.readyHosts")); /** Only tenants counts **/
-        assertEquals(2L, metric.values.get("hostedVespa.reservedHosts"));
+        assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts
+        assertEquals(2, metric.values.get("hostedVespa.reservedHosts"));
 
         assertEquals(12.0, metric.values.get("hostedVespa.docker.totalCapacityDisk"));
         assertEquals(10.0, metric.values.get("hostedVespa.docker.totalCapacityMem"));
@@ -164,27 +163,6 @@ public class MetricsReporterTest {
         assertEquals(6.0, metric.values.get("hostedVespa.docker.freeCapacityDisk"));
         assertEquals(3.0, metric.values.get("hostedVespa.docker.freeCapacityMem"));
         assertEquals(4.0, metric.values.get("hostedVespa.docker.freeCapacityCpu"));
-
-        assertContext(metric, "hostedVespa.docker.freeCapacityFlavor", 1, 0);
-        assertContext(metric, "hostedVespa.docker.hostsAvailableFlavor", 1l, 0l);
-    }
-
-    private void assertContext(TestMetric metric, String key, Number dockerValue, Number docker2Value) {
-        List<Metric.Context> freeCapacityFlavor = metric.context.get(key);
-        assertEquals(freeCapacityFlavor.size(), 2);
-
-        // Get the value for the two flavors
-        TestMetric.TestContext contextFlavorDocker = (TestMetric.TestContext)freeCapacityFlavor.get(0);
-        TestMetric.TestContext contextFlavorDocker2 = (TestMetric.TestContext)freeCapacityFlavor.get(1);
-        if (!contextFlavorDocker.properties.containsValue("docker")) {
-            TestMetric.TestContext temp = contextFlavorDocker;
-            contextFlavorDocker = contextFlavorDocker2;
-            contextFlavorDocker2 = temp;
-        }
-
-        assertEquals(dockerValue, contextFlavorDocker.value);
-        assertEquals(docker2Value, contextFlavorDocker2.value);
-
     }
 
     private ApplicationId app(String tenant) {

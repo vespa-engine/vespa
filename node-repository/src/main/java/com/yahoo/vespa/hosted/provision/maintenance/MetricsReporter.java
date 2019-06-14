@@ -3,25 +3,22 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
-import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +26,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 
 /**
  * @author oyving
@@ -56,8 +55,7 @@ public class MetricsReporter extends Maintainer {
 
     @Override
     public void maintain() {
-        LockedNodeList nodes = nodeRepository().list(() -> {}); // Ignore locking for the purposes of reporting metrics
-
+        NodeList nodes = nodeRepository().list();
         Map<HostName, List<ServiceInstance>> servicesByHost =
                 serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName();
 
@@ -122,12 +120,8 @@ public class MetricsReporter extends Maintainer {
 
         metric.set("wantToRetire", node.status().wantToRetire() ? 1 : 0, context);
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
-        metric.set("hardwareFailure",
-                node.status().hardwareFailureDescription().isPresent() ? 1 : 0,
-                context);
-        metric.set("hardwareDivergence",
-                node.status().hardwareDivergence().isPresent() ? 1 : 0,
-                context);
+        metric.set("hardwareFailure", node.status().hardwareFailureDescription().isPresent() ? 1 : 0, context);
+        metric.set("hardwareDivergence", node.status().hardwareDivergence().isPresent() ? 1 : 0, context);
 
         orchestrator.apply(new HostName(node.hostname()))
                     .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN ? 1 : 0)
@@ -183,63 +177,57 @@ public class MetricsReporter extends Maintainer {
     }
 
     private Metric.Context getContextAt(String... point) {
-        if (point.length % 2 != 0) {
+        if (point.length % 2 != 0)
             throw new IllegalArgumentException("Dimension specification comes in pairs");
-        }
 
         Map<String, String> dimensions = new HashMap<>();
         for (int i = 0; i < point.length; i += 2) {
             dimensions.put(point[i], point[i + 1]);
         }
 
-        Metric.Context context = contextMap.get(dimensions);
-        if (context != null) {
-            return context;
-        }
-
-        context = metric.createContext(dimensions);
-        contextMap.put(dimensions, context);
-        return context;
+        return contextMap.computeIfAbsent(dimensions, metric::createContext);
     }
 
-    private void updateStateMetrics(LockedNodeList nodes) {
-        Map<Node.State, List<Node>> nodesByState = nodes.asList().stream()
+    private void updateStateMetrics(NodeList nodes) {
+        Map<Node.State, List<Node>> nodesByState = nodes.nodeType(NodeType.tenant).asList().stream()
                 .collect(Collectors.groupingBy(Node::state));
 
         // Metrics pr state
         for (Node.State state : Node.State.values()) {
-            List<Node> nodesInState = nodesByState.getOrDefault(state, new ArrayList<>());
-            long size = nodesInState.stream().filter(node -> node.type() == NodeType.tenant).count();
-            metric.set("hostedVespa." + state.name() + "Hosts", size, null);
+            List<Node> nodesInState = nodesByState.getOrDefault(state, List.of());
+            metric.set("hostedVespa." + state.name() + "Hosts", nodesInState.size(), null);
         }
     }
 
-    private void updateDockerMetrics(LockedNodeList nodes) {
-        // Capacity flavors for docker
-        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        metric.set("hostedVespa.docker.totalCapacityCpu",
-                   capacity.getCapacityTotal(NodeResources.DiskSpeed.any).vcpu(), null);
-        metric.set("hostedVespa.docker.totalCapacityMem",
-                   capacity.getCapacityTotal(NodeResources.DiskSpeed.any).memoryGb(), null);
-        metric.set("hostedVespa.docker.totalCapacityDisk",
-                   capacity.getCapacityTotal(NodeResources.DiskSpeed.any).diskGb(), null);
-        metric.set("hostedVespa.docker.freeCapacityCpu",
-                   capacity.getFreeCapacityTotal(NodeResources.DiskSpeed.any).vcpu(), null);
-        metric.set("hostedVespa.docker.freeCapacityMem",
-                   capacity.getFreeCapacityTotal(NodeResources.DiskSpeed.any).memoryGb(), null);
-        metric.set("hostedVespa.docker.freeCapacityDisk",
-                   capacity.getFreeCapacityTotal(NodeResources.DiskSpeed.any).diskGb(), null);
+    private void updateDockerMetrics(NodeList nodes) {
+        NodeResources totalCapacity = getCapacityTotal(nodes);
+        metric.set("hostedVespa.docker.totalCapacityCpu", totalCapacity.vcpu(), null);
+        metric.set("hostedVespa.docker.totalCapacityMem", totalCapacity.memoryGb(), null);
+        metric.set("hostedVespa.docker.totalCapacityDisk", totalCapacity.diskGb(), null);
 
-        List<Flavor> dockerFlavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
-                .filter(f -> f.getType().equals(Flavor.Type.DOCKER_CONTAINER))
-                .collect(Collectors.toList());
-        for (Flavor flavor : dockerFlavors) {
-            Metric.Context context = getContextAt("flavor", flavor.name());
-            metric.set("hostedVespa.docker.freeCapacityFlavor",
-                       capacity.freeCapacityInFlavorEquivalence(flavor), context);
-            metric.set("hostedVespa.docker.hostsAvailableFlavor",
-                       capacity.getNofHostsAvailableFor(flavor), context);
-        }
+        NodeResources totalFreeCapacity = getFreeCapacityTotal(nodes);
+        metric.set("hostedVespa.docker.freeCapacityCpu", totalFreeCapacity.vcpu(), null);
+        metric.set("hostedVespa.docker.freeCapacityMem", totalFreeCapacity.memoryGb(), null);
+        metric.set("hostedVespa.docker.freeCapacityDisk", totalFreeCapacity.diskGb(), null);
     }
 
+    private static NodeResources getCapacityTotal(NodeList nodes) {
+        return nodes.nodeType(NodeType.host).asList().stream()
+                .map(host -> host.flavor().resources())
+                .map(resources -> resources.withDiskSpeed(any))
+                .reduce(new NodeResources(0, 0, 0, any), NodeResources::add);
+    }
+
+    private static NodeResources getFreeCapacityTotal(NodeList nodes) {
+        return nodes.nodeType(NodeType.host).asList().stream()
+                .map(n -> freeCapacityOf(nodes, n))
+                .map(resources -> resources.withDiskSpeed(any))
+                .reduce(new NodeResources(0, 0, 0, any), NodeResources::add);
+    }
+
+    private static NodeResources freeCapacityOf(NodeList nodes, Node dockerHost) {
+        return nodes.childrenOf(dockerHost).asList().stream()
+                .map(node -> node.flavor().resources().withDiskSpeed(any))
+                .reduce(dockerHost.flavor().resources().withDiskSpeed(any), NodeResources::subtract);
+    }
 }

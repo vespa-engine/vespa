@@ -19,7 +19,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -37,7 +36,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -221,17 +219,13 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
-        DockerHostCapacity capacity = new DockerHostCapacity(new LockedNodeList(tester.nodeRepository().getNodes(Node.State.values()), () -> {}));
-        assertThat(capacity.freeCapacityInFlavorEquivalence(new Flavor(flavor)), greaterThan(0));
-
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
         assertThat(initialSpareCapacity.size(), is(2));
 
         try {
             hosts = tester.prepare(application1, clusterSpec, 4, 1, flavor);
             fail("Was able to deploy with 4 nodes, should not be able to use spare capacity");
-        } catch (OutOfCapacityException e) {
-        }
+        } catch (OutOfCapacityException ignored) { }
 
         tester.fail(hosts.get(0));
         hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);

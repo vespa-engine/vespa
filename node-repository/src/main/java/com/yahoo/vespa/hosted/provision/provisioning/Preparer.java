@@ -27,10 +27,10 @@ class Preparer {
     private final int spareCount;
 
     public Preparer(NodeRepository nodeRepository, int spareCount, Optional<HostProvisioner> hostProvisioner,
-                    BooleanFlag dynamicProvisioningEnabled) {
+                    HostResourcesCalculator hostResourcesCalculator, BooleanFlag dynamicProvisioningEnabled) {
         this.nodeRepository = nodeRepository;
         this.spareCount = spareCount;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, dynamicProvisioningEnabled);
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, hostResourcesCalculator, dynamicProvisioningEnabled);
     }
 
     /**
