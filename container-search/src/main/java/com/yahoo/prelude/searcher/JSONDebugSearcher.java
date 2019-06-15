@@ -3,6 +3,7 @@ package com.yahoo.prelude.searcher;
 
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
@@ -27,7 +28,7 @@ public class JSONDebugSearcher extends Searcher {
     private static CompoundName PROPERTYNAME = new CompoundName("dumpjson");
 
     @Override
-    public Result search(com.yahoo.search.Query query, Execution execution) {
+    public Result search(Query query, Execution execution) {
         Result r = execution.search(query);
         String propertyName = query.properties().getString(PROPERTYNAME);
         if (propertyName != null) {

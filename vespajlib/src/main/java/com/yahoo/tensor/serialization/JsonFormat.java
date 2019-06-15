@@ -19,21 +19,33 @@ import java.util.Iterator;
  * A JSON map containing a 'cells' array.
  * See http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor
  */
-// TODO: We should probably move reading of this format from the document module to here
 public class JsonFormat {
 
-    /** Serializes the given tensor into JSON format */
+    /** Serializes the given tensor value into JSON format */
     public static byte[] encode(Tensor tensor) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        Cursor cellsArray = root.setArray("cells");
+        encodeCells(tensor, root);
+        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
+    }
+
+    /** Serializes the given tensor type and value into JSON format */
+    public static byte[] encodeWithType(Tensor tensor) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("type", tensor.type().toString());
+        encodeCells(tensor, root);
+        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
+    }
+
+    private static void encodeCells(Tensor tensor, Cursor rootObject) {
+        Cursor cellsArray = rootObject.setArray("cells");
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Tensor.Cell cell = i.next();
             Cursor cellObject = cellsArray.addObject();
             encodeAddress(tensor.type(), cell.getKey(), cellObject.setObject("address"));
             cellObject.setDouble("value", cell.getValue());
         }
-        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
     }
 
     private static void encodeAddress(TensorType type, TensorAddress address, Cursor addressObject) {

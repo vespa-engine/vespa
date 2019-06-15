@@ -104,14 +104,22 @@
       "com.yahoo.data.access.ObjectTraverser"
     ],
     "attributes": [
-      "public",
-      "final"
+      "public"
     ],
     "methods": [
       "public void <init>(java.lang.StringBuilder, boolean)",
       "public void encode(com.yahoo.data.access.Inspector)",
+      "protected void encodeEMPTY()",
+      "protected void encodeBOOL(boolean)",
+      "protected void encodeLONG(long)",
+      "protected void encodeDOUBLE(double)",
+      "protected void encodeSTRING(java.lang.String)",
+      "protected void encodeDATA(byte[])",
+      "protected void encodeARRAY(com.yahoo.data.access.Inspector)",
+      "protected void encodeOBJECT(com.yahoo.data.access.Inspector)",
       "public void entry(int, com.yahoo.data.access.Inspector)",
-      "public void field(java.lang.String, com.yahoo.data.access.Inspector)"
+      "public void field(java.lang.String, com.yahoo.data.access.Inspector)",
+      "public java.lang.StringBuilder target()"
     ],
     "fields": []
   },
@@ -124,7 +132,8 @@
     ],
     "methods": [
       "public void <init>()",
-      "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, java.lang.StringBuilder, boolean)"
+      "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, java.lang.StringBuilder, boolean)",
+      "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, com.yahoo.data.access.simple.JsonRender$StringEncoder)"
     ],
     "fields": []
   },

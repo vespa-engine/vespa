@@ -10,7 +10,7 @@ import com.yahoo.data.access.simple.JsonRender;
 
 /**
  * A wrapper for structured data representing an array of position values.
- **/
+ */
 public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
 
     private final Inspector value;
