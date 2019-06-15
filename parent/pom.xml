@@ -441,9 +441,14 @@
                 <version>${asm.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.goldmansachs</groupId>
-                <artifactId>gs-collections</artifactId>
-                <version>6.1.0</version>
+                <groupId>org.eclipse.collections</groupId>
+                <artifactId>eclipse-collections</artifactId>
+                <version>9.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.collections</groupId>
+                <artifactId>eclipse-collections-api</artifactId>
+                <version>9.2.0</version>
             </dependency>
             <dependency>
                 <groupId>com.infradna.tool</groupId>

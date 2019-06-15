@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.index;
 
-import com.gs.collections.api.map.primitive.LongObjectMap;
-import com.gs.collections.api.tuple.primitive.LongObjectPair;
-import com.gs.collections.impl.map.mutable.primitive.LongObjectHashMap;
 import com.yahoo.search.predicate.serialization.SerializationHelper;
+import org.eclipse.collections.api.map.primitive.LongObjectMap;
+import org.eclipse.collections.api.tuple.primitive.LongObjectPair;
+import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
