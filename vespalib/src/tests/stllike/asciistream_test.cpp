@@ -40,10 +40,21 @@ AsciistreamTest::verifyBothWays(T value, const char * expected)
     os << value;
     EXPECT_EQUAL(os.str(), string(expected));
     EXPECT_EQUAL(os.size(), strlen(expected));
-    T v;
-    os >> v;
-    EXPECT_EQUAL(value, v);
-    EXPECT_TRUE(os.empty());
+    {
+        T v;
+        os >> v;
+        EXPECT_EQUAL(value, v);
+        EXPECT_TRUE(os.empty());
+    }
+
+    {
+        os << "   " << expected;
+        T v;
+        os >> v;
+        EXPECT_EQUAL(value, v);
+        EXPECT_TRUE(os.empty());
+        EXPECT_EQUAL(0u, os.size());
+    }
 }
 
 template <typename T>

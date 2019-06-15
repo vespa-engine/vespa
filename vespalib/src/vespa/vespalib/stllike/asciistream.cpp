@@ -221,7 +221,7 @@ T strToInt(T & v, const char *begin, const char *end)
         throwInputError(err.ec, "strToInt", begin);
     }
 
-    return err.ptr - curr;
+    return err.ptr - begin;
 }
 
 }
