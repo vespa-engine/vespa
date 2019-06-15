@@ -33,11 +33,6 @@ public interface NodeAgent {
     void updateContainerNodeMetrics();
 
     /**
-     * Returns true if NodeAgent is waiting for an image download to finish
-     */
-    boolean isDownloadingImage();
-
-    /**
      * Returns and resets number of unhandled exceptions
      */
     int getAndResetNumberOfUnhandledExceptions();

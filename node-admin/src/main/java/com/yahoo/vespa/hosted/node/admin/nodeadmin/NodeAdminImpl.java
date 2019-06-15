@@ -39,10 +39,8 @@ public class NodeAdminImpl implements NodeAdmin {
     private boolean previousWantFrozen;
     private boolean isFrozen;
     private Instant startOfFreezeConvergence;
-
     private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
 
-    private final GaugeWrapper numberOfContainersInLoadImageState;
     private final GaugeWrapper jvmHeapUsed;
     private final GaugeWrapper jvmHeapFree;
     private final GaugeWrapper jvmHeapTotal;
@@ -108,14 +106,11 @@ public class NodeAdminImpl implements NodeAdmin {
     public void updateNodeAgentMetrics() {
         int numberContainersWaitingImage = 0;
         int numberOfNewUnhandledExceptions = 0;
-
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
-            if (nodeAgentWithScheduler.isDownloadingImage()) numberContainersWaitingImage++;
             numberOfNewUnhandledExceptions += nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
             nodeAgentWithScheduler.updateContainerNodeMetrics();
         }
 
-        numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
         numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
     }
 
@@ -208,7 +203,6 @@ public class NodeAdminImpl implements NodeAdmin {
         @Override public void stopForHostSuspension() { nodeAgent.stopForHostSuspension(); }
         @Override public void stopForRemoval() { nodeAgent.stopForRemoval(); }
         @Override public void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(); }
-        @Override public boolean isDownloadingImage() { return nodeAgent.isDownloadingImage(); }
         @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }

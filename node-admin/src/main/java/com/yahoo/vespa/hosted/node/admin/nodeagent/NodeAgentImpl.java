@@ -73,8 +73,6 @@ public class NodeAgentImpl implements NodeAgent {
     private final DoubleFlag containerCpuCap;
 
     private int numberOfUnhandledException = 0;
-    private DockerImage imageBeingDownloaded = null;
-
     private long currentRebootGeneration = 0;
     private Optional<Long> currentRestartGeneration = Optional.empty();
 
@@ -378,14 +376,10 @@ public class NodeAgentImpl implements NodeAgent {
                 || (zone.getSystemName().isCd() && zone.getEnvironment() != Environment.prod);
     }
 
-    private void scheduleDownLoadIfNeeded(NodeSpec node, Optional<Container> container) {
-        if (node.getWantedDockerImage().equals(container.map(c -> c.image))) return;
+    private boolean downloadImageIfNeeded(NodeSpec node, Optional<Container> container) {
+        if (node.getWantedDockerImage().equals(container.map(c -> c.image))) return false;
 
-        if (dockerOperations.pullImageAsyncIfNeeded(node.getWantedDockerImage().get())) {
-            imageBeingDownloaded = node.getWantedDockerImage().get();
-        } else if (imageBeingDownloaded != null) { // Image was downloading, but now it's ready
-            imageBeingDownloaded = null;
-        }
+        return node.getWantedDockerImage().map(dockerOperations::pullImageAsyncIfNeeded).orElse(false);
     }
 
     public void converge(NodeAgentContext context) {
@@ -448,9 +442,8 @@ public class NodeAgentImpl implements NodeAgent {
                         .filter(diskUtil -> diskUtil >= 0.8)
                         .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context));
 
-                scheduleDownLoadIfNeeded(node, container);
-                if (isDownloadingImage()) {
-                    context.log(logger, "Waiting for image to download " + imageBeingDownloaded.asString());
+                if (downloadImageIfNeeded(node, container)) {
+                    context.log(logger, "Waiting for image to download " + context.node().getWantedDockerImage().get().asString());
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
@@ -631,11 +624,6 @@ public class NodeAgentImpl implements NodeAgent {
         Optional<Container> container = dockerOperations.getContainer(context);
         if (! container.isPresent()) containerState = ABSENT;
         return container;
-    }
-
-    @Override
-    public boolean isDownloadingImage() {
-        return imageBeingDownloaded != null;
     }
 
     @Override
