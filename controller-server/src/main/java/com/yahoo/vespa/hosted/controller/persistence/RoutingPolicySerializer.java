@@ -24,6 +24,13 @@ import java.util.function.Function;
  */
 public class RoutingPolicySerializer {
 
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    //          (and rewrite all nodes on startup), changes to the serialized format must be made
+    //          such that what is serialized on version N+1 can be read by version N:
+    //          - ADDING FIELDS: Always ok
+    //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
+    //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
+
     private static final String routingPoliciesField = "routingPolicies";
     private static final String clusterField = "cluster";
     private static final String canonicalNameField = "canonicalName";
