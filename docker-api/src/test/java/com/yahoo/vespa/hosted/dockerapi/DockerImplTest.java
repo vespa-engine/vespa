@@ -14,8 +14,7 @@ import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
@@ -37,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class DockerImplTest {
 
     private final DockerClient dockerClient = mock(DockerClient.class);
-    private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+    private final MetricReceiver metricReceiver = new MetricReceiver();
     private final DockerImpl docker = new DockerImpl(dockerClient, metricReceiver);
 
     @Test

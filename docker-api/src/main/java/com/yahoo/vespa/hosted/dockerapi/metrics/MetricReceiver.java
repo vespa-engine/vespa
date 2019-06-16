@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
 import com.google.inject.Inject;
-import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.metrics.simple.Point;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,30 +12,26 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Export metrics to both /state/v1/metrics and makes them available programmatically.
- * Each metric belongs to a monitoring application
+ * Stores the latest metric for the given application, name, dimension triplet in memory
  *
  * @author freva
  */
-public class MetricReceiverWrapper {
+public class MetricReceiver {
     // Application names used
     public static final String APPLICATION_HOST = "vespa.host";
     public static final String APPLICATION_NODE = "vespa.node";
 
     private final Object monitor = new Object();
     private final Map<DimensionType, Map<String, ApplicationMetrics>> metrics = new HashMap<>();
-    private final MetricReceiver metricReceiver;
 
     @Inject
-    public MetricReceiverWrapper(MetricReceiver metricReceiver) {
-        this.metricReceiver = metricReceiver;
-    }
+    public MetricReceiver() { }
 
     /**
      * Creates a counter metric under vespa.host application, with no dimensions and default dimension type
      * See {@link #declareCounter(String, String, Dimensions, DimensionType)}
      */
-    public CounterWrapper declareCounter(String name) {
+    public Counter declareCounter(String name) {
         return declareCounter(name, Dimensions.NONE);
     }
 
@@ -45,21 +39,16 @@ public class MetricReceiverWrapper {
      * Creates a counter metric under vespa.host application, with the given dimensions and default dimension type
      * See {@link #declareCounter(String, String, Dimensions, DimensionType)}
      */
-    public CounterWrapper declareCounter(String name, Dimensions dimensions) {
+    public Counter declareCounter(String name, Dimensions dimensions) {
         return declareCounter(APPLICATION_HOST, name, dimensions, DimensionType.DEFAULT);
     }
 
     /** Creates a counter metric. This method is idempotent. */
-    public CounterWrapper declareCounter(String application, String name, Dimensions dimensions, DimensionType type) {
+    public Counter declareCounter(String application, String name, Dimensions dimensions, DimensionType type) {
         synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, type);
-            if (!metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new HashMap<>());
-            if (!metricsByDimensions.get(dimensions).containsKey(name)) {
-                CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions.dimensionsMap)));
-                metricsByDimensions.get(dimensions).put(name, counter);
-            }
-
-            return (CounterWrapper) metricsByDimensions.get(dimensions).get(name);
+            return (Counter) getOrCreateApplicationMetrics(application, type)
+                    .computeIfAbsent(dimensions, d -> new HashMap<>())
+                    .computeIfAbsent(name, n -> new Counter());
         }
     }
 
@@ -67,7 +56,7 @@ public class MetricReceiverWrapper {
      * Creates a gauge metric under vespa.host application, with no dimensions and default dimension type
      * See {@link #declareGauge(String, String, Dimensions, DimensionType)}
      */
-    public GaugeWrapper declareGauge(String name) {
+    public Gauge declareGauge(String name) {
         return declareGauge(name, Dimensions.NONE);
     }
 
@@ -75,22 +64,16 @@ public class MetricReceiverWrapper {
      * Creates a gauge metric under vespa.host application, with the given dimensions and default dimension type
      * See {@link #declareGauge(String, String, Dimensions, DimensionType)}
      */
-    public GaugeWrapper declareGauge(String name, Dimensions dimensions) {
+    public Gauge declareGauge(String name, Dimensions dimensions) {
         return declareGauge(APPLICATION_HOST, name, dimensions, DimensionType.DEFAULT);
     }
 
     /** Creates a gauge metric. This method is idempotent */
-    public GaugeWrapper declareGauge(String application, String name, Dimensions dimensions, DimensionType type) {
+    public Gauge declareGauge(String application, String name, Dimensions dimensions, DimensionType type) {
         synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, type);
-            if (!metricsByDimensions.containsKey(dimensions))
-                metricsByDimensions.put(dimensions, new HashMap<>());
-            if (!metricsByDimensions.get(dimensions).containsKey(name)) {
-                GaugeWrapper gauge = new GaugeWrapper(metricReceiver.declareGauge(name, new Point(dimensions.dimensionsMap)));
-                metricsByDimensions.get(dimensions).put(name, gauge);
-            }
-
-            return (GaugeWrapper) metricsByDimensions.get(dimensions).get(name);
+            return (Gauge) getOrCreateApplicationMetrics(application, type)
+                    .computeIfAbsent(dimensions, d -> new HashMap<>())
+                    .computeIfAbsent(name, n -> new Gauge());
         }
     }
 
@@ -140,5 +123,6 @@ public class MetricReceiverWrapper {
         DEFAULT,
 
         /** Pretagged metrics will only get the dimensions explicitly set when creating the counter/gauge */
-        PRETAGGED}
+        PRETAGGED
+    }
 }

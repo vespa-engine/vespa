@@ -26,8 +26,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
-import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
@@ -55,14 +55,14 @@ public class DockerImpl implements Docker {
 
     private final DockerClient dockerClient;
     private final DockerImageGarbageCollector dockerImageGC;
-    private final CounterWrapper numberOfDockerApiFails;
+    private final Counter numberOfDockerApiFails;
 
     @Inject
-    public DockerImpl(MetricReceiverWrapper metricReceiverWrapper) {
-        this(createDockerClient(), metricReceiverWrapper);
+    public DockerImpl(MetricReceiver metricReceiver) {
+        this(createDockerClient(), metricReceiver);
     }
 
-    DockerImpl(DockerClient dockerClient, MetricReceiverWrapper metricReceiver) {
+    DockerImpl(DockerClient dockerClient, MetricReceiver metricReceiver) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
 

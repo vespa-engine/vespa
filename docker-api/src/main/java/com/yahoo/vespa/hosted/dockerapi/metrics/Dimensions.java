@@ -1,13 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Each metric reported to secret agent has dimensions.
- *
- * @author valerijf
+ * @author freva
  */
 public class Dimensions {
 

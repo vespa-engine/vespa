@@ -1,22 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
-import com.yahoo.metrics.simple.MetricReceiver;
 import org.junit.Test;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper.APPLICATION_HOST;
-import static com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper.DimensionType.DEFAULT;
+import static com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver.APPLICATION_HOST;
+import static com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver.DimensionType.DEFAULT;
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author freva
  */
-public class MetricReceiverWrapperTest {
+public class MetricReceiverTest {
     private static final Dimensions hostDimension = new Dimensions.Builder().add("host", "abc.yahoo.com").build();
-    private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+    private final MetricReceiver metricReceiver = new MetricReceiver();
 
     @Test
     public void testDefaultValue() {
@@ -27,7 +26,7 @@ public class MetricReceiverWrapperTest {
 
     @Test
     public void testSimpleIncrementMetric() {
-        CounterWrapper counter = metricReceiver.declareCounter("a_counter.value", hostDimension);
+        Counter counter = metricReceiver.declareCounter("a_counter.value", hostDimension);
 
         counter.add(5);
         counter.add(8);
@@ -39,7 +38,7 @@ public class MetricReceiverWrapperTest {
 
     @Test
     public void testSimpleGauge() {
-        GaugeWrapper gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
+        Gauge gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
 
         gauge.sample(42);
         gauge.sample(-342.23);
@@ -51,12 +50,12 @@ public class MetricReceiverWrapperTest {
 
     @Test
     public void testRedeclaringSameGauge() {
-        GaugeWrapper gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
+        Gauge gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
         gauge.sample(42);
 
         // Same as hostDimension, but new instance.
         Dimensions newDimension = new Dimensions.Builder().add("host", "abc.yahoo.com").build();
-        GaugeWrapper newGauge = metricReceiver.declareGauge("test.gauge", newDimension);
+        Gauge newGauge = metricReceiver.declareGauge("test.gauge", newDimension);
         newGauge.sample(56);
 
         assertEquals(getMetricsForDimension(hostDimension).get("test.gauge"), 56.);
@@ -64,12 +63,12 @@ public class MetricReceiverWrapperTest {
 
     @Test
     public void testSameMetricNameButDifferentDimensions() {
-        GaugeWrapper gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
+        Gauge gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
         gauge.sample(42);
 
         // Not the same as hostDimension.
         Dimensions newDimension = new Dimensions.Builder().add("host", "abcd.yahoo.com").build();
-        GaugeWrapper newGauge = metricReceiver.declareGauge("test.gauge", newDimension);
+        Gauge newGauge = metricReceiver.declareGauge("test.gauge", newDimension);
         newGauge.sample(56);
 
         assertEquals(getMetricsForDimension(hostDimension).get("test.gauge"), 42.);
