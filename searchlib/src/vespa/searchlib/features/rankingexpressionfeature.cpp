@@ -282,6 +282,14 @@ RankingExpressionBlueprint::createInstance() const
     return std::make_unique<RankingExpressionBlueprint>(_expression_replacer);
 }
 
+void
+RankingExpressionBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore & store) const
+{
+    if (_intrinsic_expression) {
+        return _intrinsic_expression->prepare_shared_state(env, store);
+    }
+}
+
 fef::FeatureExecutor &
 RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {

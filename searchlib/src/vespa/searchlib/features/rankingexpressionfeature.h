@@ -26,7 +26,7 @@ private:
 public:
     RankingExpressionBlueprint();
     RankingExpressionBlueprint(rankingexpression::ExpressionReplacer::SP replacer);
-    ~RankingExpressionBlueprint();
+    ~RankingExpressionBlueprint() override;
 
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
     fef::Blueprint::UP createInstance() const override;
@@ -37,6 +37,7 @@ public:
     }
 
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
