@@ -1079,8 +1079,12 @@ DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
 
 }  // namespace proton
 
-template class search::btree::
-BTreeIterator<proton::DocumentMetaStore::DocId,
-              search::btree::BTreeNoLeafData,
-              search::btree::NoAggregated,
-              const proton::DocumentMetaStore::KeyComp &>;
+namespace search::btree {
+
+template class BTreeIteratorBase<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS, BTreeDefaultTraits::PATH_SIZE>;
+
+template class BTreeConstIterator<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, const proton::DocumentMetaStore::KeyComp &>;
+
+template class BTreeIterator<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, const proton::DocumentMetaStore::KeyComp &>;
+
+}
