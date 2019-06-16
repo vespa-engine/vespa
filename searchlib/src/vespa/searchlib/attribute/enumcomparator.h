@@ -27,13 +27,18 @@ public:
     /**
      * Creates a comparator using the given enum store.
      **/
-    EnumStoreComparatorT(const EnumStoreType & enumStore);
+    EnumStoreComparatorT(const EnumStoreType & enumStore)
+        : _enumStore(enumStore),
+          _value()
+    {}
     /**
      * Creates a comparator using the given enum store and that uses the
      * given value during compare if the enum index is invalid.
      **/
-    EnumStoreComparatorT(const EnumStoreType & enumStore,
-                         EntryValue value);
+    EnumStoreComparatorT(const EnumStoreType & enumStore, EntryValue value)
+        : _enumStore(enumStore),
+          _value(value)
+    {}
 
     static int compare(EntryValue lhs, EntryValue rhs) {
         if (lhs < rhs) {
@@ -60,7 +65,7 @@ private:
     typedef typename ParentType::EnumIndex EnumIndex;
     typedef typename ParentType::EntryValue EntryValue;
     using ParentType::getValue;
-    bool _prefix;
+    bool   _prefix;
     size_t _prefixLen;
 public:
     /**
@@ -89,22 +94,6 @@ public:
         return compareFolded(getValue(lhs), getValue(rhs)) < 0;
     }
 };
-
-
-template <typename EntryType>
-EnumStoreComparatorT<EntryType>::EnumStoreComparatorT(const EnumStoreType & enumStore) :
-    _enumStore(enumStore),
-    _value()
-{
-}
-
-template <typename EntryType>
-EnumStoreComparatorT<EntryType>::EnumStoreComparatorT(const EnumStoreType & enumStore,
-                                                      EntryValue value) :
-    _enumStore(enumStore),
-    _value(value)
-{
-}
 
 template <>
 int
