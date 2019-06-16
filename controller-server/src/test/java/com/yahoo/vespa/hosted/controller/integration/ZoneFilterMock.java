@@ -83,7 +83,7 @@ public class ZoneFilterMock implements ZoneList {
 
     @Override
     public List<ZoneId> ids() {
-        return List.copyOf(zones.stream().map(ZoneApi::toDeprecatedId).collect(Collectors.toList()));
+        return List.copyOf(zones.stream().map(ZoneApi::getId).collect(Collectors.toList()));
     }
 
     @Override

@@ -20,28 +20,14 @@ public class ZoneId {
 
     private final Environment environment;
     private final RegionName region;
-    private final SystemName system;
-
-    private ZoneId(Environment environment, RegionName region, CloudName cloud, SystemName system) {
-        this.environment = Objects.requireNonNull(environment, "environment must be non-null");
-        this.region = Objects.requireNonNull(region, "region must be non-null");
-        this.system = Objects.requireNonNull(system, "system must be non-null");
-    }
 
     private ZoneId(Environment environment, RegionName region) {
-        this(environment, region, CloudName.defaultName(), SystemName.defaultSystem());
+        this.environment = Objects.requireNonNull(environment, "environment must be non-null");
+        this.region = Objects.requireNonNull(region, "region must be non-null");
     }
 
     public static ZoneId from(Environment environment, RegionName region) {
         return new ZoneId(environment, region);
-    }
-
-    public static ZoneId from(SystemName system, Environment environment, RegionName region) {
-        return new ZoneId(environment, region, CloudName.defaultName(), system);
-    }
-
-    public static ZoneId from(Environment environment, RegionName region, CloudName cloud, SystemName system) {
-        return new ZoneId(environment, region, cloud, system);
     }
 
     public static ZoneId from(String environment, String region) {
@@ -55,18 +41,12 @@ public class ZoneId {
             case 2:
                 return from(parts[0], parts[1]);
             case 4:
-                return from(parts[2], parts[3], parts[0], parts[1]);
+                // Deprecated: parts[0] == cloud, parts[1] == system
+                // TODO: Figure out whether this can be removed
+                return from(parts[2], parts[3]);
             default:
                 throw new IllegalArgumentException("Cannot deserialize zone id '" + value + "'");
         }
-    }
-
-    public static ZoneId from(Environment environment, RegionName region, CloudName cloud) {
-        return new ZoneId(environment, region, cloud, SystemName.defaultSystem());
-    }
-
-    public static ZoneId from(String environment, String region, String cloud, String system) {
-        return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud), SystemName.from(system));
     }
 
     public static ZoneId defaultId() {
@@ -79,10 +59,6 @@ public class ZoneId {
 
     public RegionName region() {
         return region;
-    }
-
-    public SystemName system() {
-        return system;
     }
 
     /** Returns the serialised value of this. Inverse of {@code ZoneId.from(String value)}. */

@@ -34,7 +34,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
         if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
                                                               .orElse(true)) {
             log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
-            controller().applications().deploy(application, zone.toDeprecatedId(), target);
+            controller().applications().deploy(application, zone.getId(), target);
         }
     }
 
@@ -45,7 +45,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
         if (minVersion.isEmpty()) return true;
 
         return     minVersion.get().equals(target)
-                && application.configConvergedIn(zone.toDeprecatedId(), controller(), Optional.of(target));
+                && application.configConvergedIn(zone.getId(), controller(), Optional.of(target));
     }
 
     @Override

@@ -81,12 +81,12 @@ public class OsApiTest extends ControllerContainerTest {
 
         // Status is updated after some zones are upgraded
         upgradeAndUpdateStatus();
-        completeUpgrade(zone1.toDeprecatedId());
+        completeUpgrade(zone1.getId());
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-partially-upgraded.json");
 
         // All zones are upgraded
         upgradeAndUpdateStatus();
-        completeUpgrade(zone2.toDeprecatedId(), zone3.toDeprecatedId());
+        completeUpgrade(zone2.getId(), zone3.getId());
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-all-upgraded.json");
 
         // Downgrade with force is permitted

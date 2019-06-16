@@ -50,7 +50,7 @@ public class SystemUpgraderTest {
 
         Version version1 = Version.fromString("6.5");
         // Bootstrap a system without host applications
-        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId()),
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
                                         SystemApplication.configServer, SystemApplication.proxy);
         // Fail a few nodes. Failed nodes should not affect versions
         failNodeIn(zone1, SystemApplication.configServer);
@@ -144,7 +144,7 @@ public class SystemUpgraderTest {
         SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         // Bootstrap system
-        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId()), SystemApplication.configServer,
+        tester.configServer().bootstrap(List.of(zone1.getId()), SystemApplication.configServer,
                                         SystemApplication.proxy);
         Version version1 = Version.fromString("6.5");
         tester.upgradeSystem(version1);
@@ -184,7 +184,7 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId()), SystemApplication.all());
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()), SystemApplication.all());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
@@ -282,7 +282,7 @@ public class SystemUpgraderTest {
     public void does_not_deploy_proxy_app_in_zones_without_proxy() {
         List<SystemApplication> applications = List.of(
                 SystemApplication.configServerHost, SystemApplication.configServer, SystemApplication.tenantHost);
-        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId()), applications);
+        tester.configServer().bootstrap(List.of(zone1.getId()), applications);
         tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
 
         SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
@@ -309,7 +309,7 @@ public class SystemUpgraderTest {
 
     private void convergeServices(SystemApplication application, ZoneApi... zones) {
         for (ZoneApi zone : zones) {
-            tester.controllerTester().configServer().convergeServices(application.id(), zone.toDeprecatedId());
+            tester.controllerTester().configServer().convergeServices(application.id(), zone.getId());
         }
     }
 
