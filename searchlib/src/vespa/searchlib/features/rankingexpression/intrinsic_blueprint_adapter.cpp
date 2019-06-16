@@ -29,8 +29,11 @@ struct IntrinsicBlueprint : IntrinsicExpression {
         : blueprint(std::move(blueprint_in)), type(type_in) {}
     vespalib::string describe_self() const override { return blueprint->getName(); }
     const FeatureType &result_type() const override { return type; }
-    FeatureExecutor &create_executor(const QueryEnv &queryEnv, vespalib::Stash &stash) const override {
-        return blueprint->createExecutor(queryEnv, stash);
+    void prepare_shared_state(const QueryEnv & env, fef::IObjectStore & store) const override {
+        blueprint->prepareSharedState(env, store);
+    }
+    FeatureExecutor &create_executor(const QueryEnv &env, vespalib::Stash &stash) const override {
+        return blueprint->createExecutor(env, stash);
     }
 };
 

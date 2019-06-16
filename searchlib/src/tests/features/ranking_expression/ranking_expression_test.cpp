@@ -26,6 +26,8 @@ struct DummyExpression : IntrinsicExpression {
     DummyExpression(const FeatureType &type_in) : type(type_in) {}
     vespalib::string describe_self() const override { return "dummy"; }
     const FeatureType &result_type() const override { return type; }
+    void prepare_shared_state(const QueryEnv &, IObjectStore &) const override {
+    }
     FeatureExecutor &create_executor(const QueryEnv &, vespalib::Stash &stash) const override {
         return stash.create<DummyExecutor>();
     }
@@ -81,7 +83,7 @@ SetupResult::SetupResult(const TypeMap &object_inputs,
     setup_ok = rank.setup(index_env, {});
     EXPECT_TRUE(!deps.accept_type_mismatch);
 }
-SetupResult::~SetupResult() {}
+SetupResult::~SetupResult() = default;
 
 void verify_output_type(const TypeMap &object_inputs,
                         const vespalib::string &expression, const FeatureType &expect)
