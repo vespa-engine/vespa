@@ -80,8 +80,7 @@ public class NodeAdminStateUpdater {
         metricsScheduler.scheduleAtFixedRate(() -> {
             try {
                 if (suspendedStates.contains(currentState)) return;
-                nodeAdmin.updateNodeAgentMetrics();
-                nodeAdmin.updateNodeAdminMetrics();
+                nodeAdmin.updateMetrics();
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Metric fetcher scheduler failed", e);
             }

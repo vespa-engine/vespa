@@ -44,7 +44,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final GaugeWrapper jvmHeapUsed;
     private final GaugeWrapper jvmHeapFree;
     private final GaugeWrapper jvmHeapTotal;
-    private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
+    private final CounterWrapper numberOfUnhandledExceptions;
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver, Clock clock) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
@@ -103,19 +103,12 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void updateNodeAgentMetrics() {
-        int numberContainersWaitingImage = 0;
-        int numberOfNewUnhandledExceptions = 0;
+    public void updateMetrics() {
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
-            numberOfNewUnhandledExceptions += nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
+            numberOfUnhandledExceptions.add(nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions());
             nodeAgentWithScheduler.updateContainerNodeMetrics();
         }
 
-        numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
-    }
-
-    @Override
-    public void updateNodeAdminMetrics() {
         Runtime runtime = Runtime.getRuntime();
         long freeMemory = runtime.freeMemory();
         long totalMemory = runtime.totalMemory();

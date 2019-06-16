@@ -16,11 +16,8 @@ public interface NodeAdmin {
     /** Start/stop NodeAgents and schedule next NodeAgent ticks with the given NodeAgentContexts */
     void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts);
 
-    /** Gather node agent and its docker container metrics and forward them to the {@code MetricReceiverWrapper} */
-    void updateNodeAgentMetrics();
-
-    /** Gather node admin metrics and forward them to the {@code MetricReceiverWrapper} */
-    void updateNodeAdminMetrics();
+    /** Update node admin metrics */
+    void updateMetrics();
 
     /**
      * Attempts to freeze/unfreeze all NodeAgents and itself. To freeze a NodeAgent means that
