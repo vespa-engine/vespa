@@ -19,10 +19,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CANONICAL_FLAVOR;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CLUSTER_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.CLUSTER_TYPE;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames.FLAVOR;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
 
 /**
@@ -37,8 +35,6 @@ public class MetricsProxyContainer extends Container implements
 {
 
     static final class NodeDimensionNames {
-        static final String FLAVOR = "flavor";
-        static final String CANONICAL_FLAVOR = "canonicalFlavor";
         static final String CLUSTER_TYPE = "clustertype";
         static final String CLUSTER_ID = "clusterid";
     }
@@ -118,11 +114,6 @@ public class MetricsProxyContainer extends Container implements
     public void getConfig(NodeDimensionsConfig.Builder builder) {
         Map<String, String> dimensions = new LinkedHashMap<>();
         if (isHostedVespa) {
-            getHostResource().getFlavor().ifPresent(flavor -> {
-                dimensions.put(FLAVOR, flavor.name());
-                dimensions.put(CANONICAL_FLAVOR, flavor.canonicalName());
-            });
-
             getHostResource().primaryClusterMembership().map(ClusterMembership::cluster).ifPresent(cluster -> {
                 dimensions.put(CLUSTER_TYPE, cluster.type().name());
                 dimensions.put(CLUSTER_ID, cluster.id().value());

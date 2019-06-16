@@ -11,7 +11,6 @@ import org.junit.Test;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CONTAINER_CONFIG_ID;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_FLAVOR;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
@@ -108,8 +107,6 @@ public class MetricsProxyContainerTest {
 
         assertEquals("content", config.dimensions(NodeDimensionNames.CLUSTER_TYPE));
         assertEquals("my-content", config.dimensions(NodeDimensionNames.CLUSTER_ID));
-        assertEquals(MY_FLAVOR, config.dimensions(NodeDimensionNames.FLAVOR));
-        assertEquals(MY_FLAVOR, config.dimensions(NodeDimensionNames.CANONICAL_FLAVOR));
     }
 
 
@@ -162,7 +159,7 @@ public class MetricsProxyContainerTest {
                            "    </admin>",
                            "    <content version='1.0' id='my-content'>",
                            "        <documents />",
-                           "        <nodes count='1' flavor='" + MY_FLAVOR + "' />",
+                           "        <nodes count='1' />",
                            "    </content>",
                            "</services>"
         );
