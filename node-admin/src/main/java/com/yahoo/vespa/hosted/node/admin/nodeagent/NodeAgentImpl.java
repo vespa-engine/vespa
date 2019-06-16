@@ -40,7 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -601,27 +600,13 @@ public class NodeAgentImpl implements NodeAgent {
             for (DimensionMetrics dimensionMetrics : metrics) {
                 params.append(dimensionMetrics.toSecretAgentReport());
             }
-        } catch (JsonProcessingException e) {
-            // TODO: wrap everything into one try-block (to avoid 'return') when old metrics proxy is discontinued
-            context.log(logger, LogLevel.WARNING, "Failed to wrap metrics in secret agent report", e);
-            return;
-        }
-        String wrappedMetrics = "s:" + params.toString();
+            String wrappedMetrics = "s:" + params.toString();
 
-        // Push metrics to the metrics proxy in each container
-        runPushMetricsCommand(context, wrappedMetrics, true);
-        runPushMetricsCommand(context, wrappedMetrics, false);
-    }
-
-    // TODO: Clean up and inline method when old metrics proxy has been discontinued.
-    private void runPushMetricsCommand(NodeAgentContext context, String wrappedMetrics, boolean newMetricsProxy) {
-        int port = newMetricsProxy ? 19095 : 19091;
-        String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:" + port,  "setExtraMetrics", wrappedMetrics};
-        try {
+            // Push metrics to the metrics proxy in each container
+            String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19095",  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
-        } catch (DockerExecTimeoutException  e) {
-            Level level = newMetricsProxy ? LogLevel.DEBUG : LogLevel.WARNING;
-            context.log(logger, level, "Failed to push metrics to container", e);
+        } catch (JsonProcessingException | DockerExecTimeoutException  e) {
+            context.log(logger, LogLevel.WARNING, "Failed to push metrics to container", e);
         }
 
     }
