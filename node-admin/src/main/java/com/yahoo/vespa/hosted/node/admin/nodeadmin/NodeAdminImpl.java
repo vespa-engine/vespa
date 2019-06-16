@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
@@ -41,24 +41,24 @@ public class NodeAdminImpl implements NodeAdmin {
     private Instant startOfFreezeConvergence;
     private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
 
-    private final GaugeWrapper jvmHeapUsed;
-    private final GaugeWrapper jvmHeapFree;
-    private final GaugeWrapper jvmHeapTotal;
-    private final CounterWrapper numberOfUnhandledExceptions;
+    private final Gauge jvmHeapUsed;
+    private final Gauge jvmHeapFree;
+    private final Gauge jvmHeapTotal;
+    private final Counter numberOfUnhandledExceptions;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver, Clock clock) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiver metricReceiver, Clock clock) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
                 metricReceiver, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
     }
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver,
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiver metricReceiver,
                          Clock clock, Duration freezeTimeout, Duration spread) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
                 metricReceiver, clock, freezeTimeout, spread);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  MetricReceiverWrapper metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
+                  MetricReceiver metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
 
         this.clock = clock;

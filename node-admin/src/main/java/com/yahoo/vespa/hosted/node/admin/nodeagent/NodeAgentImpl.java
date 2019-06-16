@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -533,7 +533,7 @@ public class NodeAgentImpl implements NodeAgent {
         Dimensions dimensions = dimensionsBuilder.build();
 
         ContainerStats stats = containerStats.get();
-        final String APP = MetricReceiverWrapper.APPLICATION_NODE;
+        final String APP = MetricReceiver.APPLICATION_NODE;
         final int totalNumCpuCores = stats.getCpuStats().getOnlineCpus();
         final long cpuContainerKernelTime = stats.getCpuStats().getUsageInKernelMode();
         final long cpuContainerTotalTime = stats.getCpuStats().getTotalUsage();
