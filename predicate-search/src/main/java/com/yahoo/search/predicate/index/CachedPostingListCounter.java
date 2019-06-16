@@ -2,9 +2,9 @@
 package com.yahoo.search.predicate.index;
 
 import com.google.common.collect.MinMaxPriorityQueue;
-import com.gs.collections.api.tuple.primitive.ObjectLongPair;
-import com.gs.collections.impl.map.mutable.primitive.ObjectIntHashMap;
-import com.gs.collections.impl.map.mutable.primitive.ObjectLongHashMap;
+import org.eclipse.collections.api.tuple.primitive.ObjectLongPair;
+import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
+import org.eclipse.collections.impl.map.mutable.primitive.ObjectLongHashMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,7 +119,7 @@ public class CachedPostingListCounter {
 
     private static class Entry implements Comparable<Entry> {
         public final int[] docIds;
-        public final double cost;
+        final double cost;
 
         private Entry(int[] docIds, long frequency) {
             this.docIds = docIds;
