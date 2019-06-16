@@ -68,13 +68,12 @@ public class NodeAdminImpl implements NodeAdmin {
         this.isFrozen = true;
         this.startOfFreezeConvergence = clock.instant();
 
-        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
-        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
-        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
+        this.numberOfUnhandledExceptions = metricReceiver.declareCounter("unhandled_exceptions",
+                new Dimensions(Map.of("src", "node-agents")));
 
-        this.jvmHeapUsed = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.used");
-        this.jvmHeapFree = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.free");
-        this.jvmHeapTotal = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.total");
+        this.jvmHeapUsed = metricReceiver.declareGauge("mem.heap.used");
+        this.jvmHeapFree = metricReceiver.declareGauge("mem.heap.free");
+        this.jvmHeapTotal = metricReceiver.declareGauge("mem.heap.total");
     }
 
     @Override
