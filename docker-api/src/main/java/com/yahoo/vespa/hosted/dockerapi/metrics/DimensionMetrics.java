@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 /**
  * @author freva
@@ -26,20 +27,27 @@ public class DimensionMetrics {
         this.metrics = Objects.requireNonNull(metrics);
     }
 
-    Map<String, Object> getMetrics() {
-        Map<String, Object> report = new HashMap<>();
-        report.put("application", application);
-        report.put("dimensions", dimensions.dimensionsMap);
-        report.put("metrics", metrics);
-        report.put("routing", routing);
-        return report;
-    }
-
     public String toSecretAgentReport() throws JsonProcessingException {
-        Map<String, Object> report = getMetrics();
+        Map<String, Object> report = new TreeMap<>();
+        report.put("application", application);
+        report.put("dimensions", new TreeMap<>(dimensions.asMap()));
+        report.put("metrics", new TreeMap<>(metrics));
+        report.put("routing", routing);
         report.put("timestamp", System.currentTimeMillis() / 1000);
 
         return objectMapper.writeValueAsString(report);
+    }
+
+    public String getApplication() {
+        return application;
+    }
+
+    public Dimensions getDimensions() {
+        return dimensions;
+    }
+
+    public Map<String, Number> getMetrics() {
+        return metrics;
     }
 
     @Override

@@ -34,10 +34,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -713,8 +711,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.updateContainerNodeMetrics();
 
-        Set<Map<String, Object>> actualMetrics = metricReceiver.getDefaultMetricsRaw();
-        assertEquals(Collections.emptySet(), actualMetrics);
+        assertEquals(List.of(), metricReceiver.getDefaultMetrics());
     }
 
     @Test

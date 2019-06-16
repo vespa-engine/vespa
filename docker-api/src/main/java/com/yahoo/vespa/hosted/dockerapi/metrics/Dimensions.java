@@ -13,10 +13,14 @@ public class Dimensions {
 
     public static final Dimensions NONE = new Dimensions(Map.of());
 
-    final Map<String, String> dimensionsMap;
+    private final Map<String, String> dimensionsMap;
 
-    private Dimensions(Map<String, String> dimensionsMap) {
+    public Dimensions(Map<String, String> dimensionsMap) {
         this.dimensionsMap = Map.copyOf(dimensionsMap);
+    }
+
+    public Map<String, String> asMap() {
+        return dimensionsMap;
     }
 
     @Override
