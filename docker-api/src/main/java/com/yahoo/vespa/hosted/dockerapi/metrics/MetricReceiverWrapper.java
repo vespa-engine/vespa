@@ -6,14 +6,11 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +21,6 @@ import java.util.stream.Collectors;
  */
 public class MetricReceiverWrapper {
     // Application names used
-    public static final String APPLICATION_DOCKER = "docker";
     public static final String APPLICATION_HOST = "vespa.host";
     public static final String APPLICATION_NODE = "vespa.node";
 
@@ -38,13 +34,23 @@ public class MetricReceiverWrapper {
     }
 
     /**
-     *  Declaring the same dimensions and name results in the same CounterWrapper instance (idempotent).
+     * Creates a counter metric under vespa.host application, with no dimensions and default dimension type
+     * See {@link #declareCounter(String, String, Dimensions, DimensionType)}
      */
-    public CounterWrapper declareCounter(String application, Dimensions dimensions, String name) {
-        return declareCounter(application, dimensions, name, DimensionType.DEFAULT);
+    public CounterWrapper declareCounter(String name) {
+        return declareCounter(name, Dimensions.NONE);
     }
 
-    public CounterWrapper declareCounter(String application, Dimensions dimensions, String name, DimensionType type) {
+    /**
+     * Creates a counter metric under vespa.host application, with the given dimensions and default dimension type
+     * See {@link #declareCounter(String, String, Dimensions, DimensionType)}
+     */
+    public CounterWrapper declareCounter(String name, Dimensions dimensions) {
+        return declareCounter(APPLICATION_HOST, name, dimensions, DimensionType.DEFAULT);
+    }
+
+    /** Creates a counter metric. This method is idempotent. */
+    public CounterWrapper declareCounter(String application, String name, Dimensions dimensions, DimensionType type) {
         synchronized (monitor) {
             Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, type);
             if (!metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new HashMap<>());
@@ -58,13 +64,23 @@ public class MetricReceiverWrapper {
     }
 
     /**
-     *  Declaring the same dimensions and name results in the same GaugeWrapper instance (idempotent).
+     * Creates a gauge metric under vespa.host application, with no dimensions and default dimension type
+     * See {@link #declareGauge(String, String, Dimensions, DimensionType)}
      */
-    public GaugeWrapper declareGauge(String application, Dimensions dimensions, String name) {
-        return declareGauge(application, dimensions, name, DimensionType.DEFAULT);
+    public GaugeWrapper declareGauge(String name) {
+        return declareGauge(name, Dimensions.NONE);
     }
 
-    public GaugeWrapper declareGauge(String application, Dimensions dimensions, String name, DimensionType type) {
+    /**
+     * Creates a gauge metric under vespa.host application, with the given dimensions and default dimension type
+     * See {@link #declareGauge(String, String, Dimensions, DimensionType)}
+     */
+    public GaugeWrapper declareGauge(String name, Dimensions dimensions) {
+        return declareGauge(APPLICATION_HOST, name, dimensions, DimensionType.DEFAULT);
+    }
+
+    /** Creates a gauge metric. This method is idempotent */
+    public GaugeWrapper declareGauge(String application, String name, Dimensions dimensions, DimensionType type) {
         synchronized (monitor) {
             Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, type);
             if (!metricsByDimensions.containsKey(dimensions))
@@ -82,24 +98,10 @@ public class MetricReceiverWrapper {
         return getMetricsByType(DimensionType.DEFAULT);
     }
 
-    // For testing, returns same as getDefaultMetrics(), but without "timestamp"
-    public Set<Map<String, Object>> getDefaultMetricsRaw() {
-        synchronized (monitor) {
-            Set<Map<String, Object>> dimensionMetrics = new HashSet<>();
-            metrics.getOrDefault(DimensionType.DEFAULT, new HashMap<>())
-                    .forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
-                    .map(entry -> new DimensionMetrics(application, entry.getKey(),
-                            entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
-                    .map(DimensionMetrics::getMetrics)
-                    .forEach(dimensionMetrics::add));
-            return dimensionMetrics;
-        }
-    }
-
     public List<DimensionMetrics> getMetricsByType(DimensionType type) {
         synchronized (monitor) {
             List<DimensionMetrics> dimensionMetrics = new ArrayList<>();
-            metrics.getOrDefault(type, new HashMap<>())
+            metrics.getOrDefault(type, Map.of())
                     .forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
                     .map(entry -> new DimensionMetrics(application, entry.getKey(),
                             entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
@@ -117,24 +119,10 @@ public class MetricReceiverWrapper {
         }
     }
 
-    // For testing
-    Map<String, Number> getMetricsForDimension(String application, Dimensions dimensions) {
-        synchronized (monitor) {
-            Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application, DimensionType.DEFAULT);
-            return metricsByDimensions.getOrDefault(dimensions, Collections.emptyMap())
-                    .entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
-        }
-    }
-
-    private Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application, DimensionType type) {
-        Map<String, ApplicationMetrics> applicationMetrics = metrics.computeIfAbsent(type, m -> new HashMap<>());
-        if (! applicationMetrics.containsKey(application)) {
-            ApplicationMetrics metrics = new ApplicationMetrics();
-            applicationMetrics.put(application, metrics);
-        }
-        return applicationMetrics.get(application).metricsByDimensions();
+    Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application, DimensionType type) {
+        return metrics.computeIfAbsent(type, m -> new HashMap<>())
+                .computeIfAbsent(application, app -> new ApplicationMetrics())
+                .metricsByDimensions();
     }
 
     // "Application" is the monitoring application, not Vespa application
@@ -147,5 +135,10 @@ public class MetricReceiverWrapper {
     }
 
     // Used to distinguish whether metrics have been populated with all tag vaules
-    public enum DimensionType {DEFAULT, PRETAGGED}
+    public enum DimensionType {
+        /** Default metrics get added default dimensions set in check config */
+        DEFAULT,
+
+        /** Pretagged metrics will only get the dimensions explicitly set when creating the counter/gauge */
+        PRETAGGED}
 }

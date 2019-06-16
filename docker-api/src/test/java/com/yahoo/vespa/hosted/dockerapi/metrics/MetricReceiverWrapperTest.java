@@ -5,7 +5,10 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper.APPLICATION_HOST;
+import static com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper.DimensionType.DEFAULT;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -13,84 +16,85 @@ import static org.junit.Assert.assertEquals;
  */
 public class MetricReceiverWrapperTest {
     private static final Dimensions hostDimension = new Dimensions.Builder().add("host", "abc.yahoo.com").build();
-    private static final String applicationDocker = MetricReceiverWrapper.APPLICATION_DOCKER;
+    private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
 
     @Test
     public void testDefaultValue() {
-        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+        metricReceiver.declareCounter("some.name", hostDimension);
 
-        metricReceiver.declareCounter(applicationDocker, hostDimension, "some.name");
-
-        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, hostDimension).get("some.name"), 0L);
+        assertEquals(getMetricsForDimension(hostDimension).get("some.name"), 0L);
     }
 
     @Test
     public void testSimpleIncrementMetric() {
-        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        CounterWrapper counter = metricReceiver.declareCounter(applicationDocker, hostDimension, "a_counter.value");
+        CounterWrapper counter = metricReceiver.declareCounter("a_counter.value", hostDimension);
 
         counter.add(5);
         counter.add(8);
 
-        Map<String, Number> latestMetrics = metricReceiver.getMetricsForDimension(applicationDocker, hostDimension);
+        Map<String, Number> latestMetrics = getMetricsForDimension(hostDimension);
         assertEquals("Expected only 1 metric value to be set", 1, latestMetrics.size());
         assertEquals(latestMetrics.get("a_counter.value"), 13L); // 5 + 8
     }
 
     @Test
     public void testSimpleGauge() {
-        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        GaugeWrapper gauge = metricReceiver.declareGauge(applicationDocker, hostDimension, "test.gauge");
+        GaugeWrapper gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
 
         gauge.sample(42);
         gauge.sample(-342.23);
 
-        Map<String, Number> latestMetrics = metricReceiver.getMetricsForDimension(applicationDocker, hostDimension);
+        Map<String, Number> latestMetrics = getMetricsForDimension(hostDimension);
         assertEquals("Expected only 1 metric value to be set", 1, latestMetrics.size());
         assertEquals(latestMetrics.get("test.gauge"), -342.23);
     }
 
     @Test
     public void testRedeclaringSameGauge() {
-        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        GaugeWrapper gauge = metricReceiver.declareGauge(applicationDocker, hostDimension, "test.gauge");
+        GaugeWrapper gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
         gauge.sample(42);
 
         // Same as hostDimension, but new instance.
         Dimensions newDimension = new Dimensions.Builder().add("host", "abc.yahoo.com").build();
-        GaugeWrapper newGauge = metricReceiver.declareGauge(applicationDocker, newDimension, "test.gauge");
+        GaugeWrapper newGauge = metricReceiver.declareGauge("test.gauge", newDimension);
         newGauge.sample(56);
 
-        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, hostDimension).get("test.gauge"), 56.);
+        assertEquals(getMetricsForDimension(hostDimension).get("test.gauge"), 56.);
     }
 
     @Test
     public void testSameMetricNameButDifferentDimensions() {
-        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        GaugeWrapper gauge = metricReceiver.declareGauge(applicationDocker, hostDimension, "test.gauge");
+        GaugeWrapper gauge = metricReceiver.declareGauge("test.gauge", hostDimension);
         gauge.sample(42);
 
         // Not the same as hostDimension.
         Dimensions newDimension = new Dimensions.Builder().add("host", "abcd.yahoo.com").build();
-        GaugeWrapper newGauge = metricReceiver.declareGauge(applicationDocker, newDimension, "test.gauge");
+        GaugeWrapper newGauge = metricReceiver.declareGauge("test.gauge", newDimension);
         newGauge.sample(56);
 
-        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, hostDimension).get("test.gauge"), 42.);
-        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, newDimension).get("test.gauge"), 56.);
+        assertEquals(getMetricsForDimension(hostDimension).get("test.gauge"), 42.);
+        assertEquals(getMetricsForDimension(newDimension).get("test.gauge"), 56.);
     }
 
     @Test
     public void testDeletingMetric() {
-        MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        metricReceiver.declareGauge(applicationDocker, hostDimension, "test.gauge");
+        metricReceiver.declareGauge("test.gauge", hostDimension);
 
         Dimensions differentDimension = new Dimensions.Builder().add("host", "abcd.yahoo.com").build();
-        metricReceiver.declareGauge(applicationDocker, differentDimension, "test.gauge");
+        metricReceiver.declareGauge("test.gauge", differentDimension);
 
-        assertEquals(2, metricReceiver.getDefaultMetricsRaw().size());
-        metricReceiver.deleteMetricByDimension(applicationDocker, differentDimension, MetricReceiverWrapper.DimensionType.DEFAULT);
-        assertEquals(1, metricReceiver.getDefaultMetricsRaw().size());
-        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, hostDimension).size(), 1);
-        assertEquals(metricReceiver.getMetricsForDimension(applicationDocker, differentDimension).size(), 0);
+        assertEquals(2, metricReceiver.getMetricsByType(DEFAULT).size());
+        metricReceiver.deleteMetricByDimension(APPLICATION_HOST, differentDimension, DEFAULT);
+        assertEquals(1, metricReceiver.getMetricsByType(DEFAULT).size());
+        assertEquals(getMetricsForDimension(hostDimension).size(), 1);
+        assertEquals(getMetricsForDimension(differentDimension).size(), 0);
+    }
+
+    private Map<String, Number> getMetricsForDimension(Dimensions dimensions) {
+        return metricReceiver.getOrCreateApplicationMetrics(APPLICATION_HOST, DEFAULT)
+                .getOrDefault(dimensions, Map.of())
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
     }
 }

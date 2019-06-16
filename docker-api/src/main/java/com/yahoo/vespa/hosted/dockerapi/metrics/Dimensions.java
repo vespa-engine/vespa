@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,10 +10,13 @@ import java.util.Map;
  * @author valerijf
  */
 public class Dimensions {
-    final Map<String, Object> dimensionsMap;
 
-    private Dimensions(Map<String, Object> dimensionsMap) {
-        this.dimensionsMap = dimensionsMap;
+    public static final Dimensions NONE = new Dimensions(Map.of());
+
+    final Map<String, String> dimensionsMap;
+
+    private Dimensions(Map<String, String> dimensionsMap) {
+        this.dimensionsMap = Map.copyOf(dimensionsMap);
     }
 
     @Override
@@ -45,7 +47,7 @@ public class Dimensions {
         }
 
         public Dimensions build() {
-            return new Dimensions(Collections.unmodifiableMap(new HashMap<>(dimensionsMap)));
+            return new Dimensions(dimensionsMap);
         }
     }
 }
