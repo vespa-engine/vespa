@@ -704,6 +704,10 @@ template
 class btree::BTreeIteratorBase<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
 
+template class btree::BTreeConstIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+
+template class btree::BTreeConstIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+
 template
 class btree::BTreeIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
                            const EnumStoreComparatorWrapper, EnumTreeTraits>;
