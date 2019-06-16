@@ -6,6 +6,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.posting_iterator");
@@ -62,7 +63,7 @@ PostingIterator::doUnpack(uint32_t docId)
     assert(docId == getDocId());
     assert(_itr.valid());
     assert(docId == _itr.getKey());
-    datastore::EntryRef featureRef(_itr.getData());
+    datastore::EntryRef featureRef(_itr.getData().get_features());
     _featureStore.setupForUnpackFeatures(featureRef, _featureDecoder);
     _featureDecoder.unpackFeatures(_matchData, docId);
     setUnpacked();
@@ -70,3 +71,59 @@ PostingIterator::doUnpack(uint32_t docId)
 
 }
 
+namespace search::btree {
+
+template class BTreeNodeTT<uint32_t,
+                           search::memoryindex::PostingListEntry,
+                           search::btree::NoAggregated,
+                           BTreeDefaultTraits::INTERNAL_SLOTS>;
+
+template class BTreeLeafNode<uint32_t,
+                             search::memoryindex::PostingListEntry,
+                             search::btree::NoAggregated,
+                             BTreeDefaultTraits::LEAF_SLOTS>;
+
+template class BTreeNodeStore<uint32_t,
+                              search::memoryindex::PostingListEntry,
+                              search::btree::NoAggregated,
+                              BTreeDefaultTraits::INTERNAL_SLOTS,
+                              BTreeDefaultTraits::LEAF_SLOTS>;
+
+template class BTreeIteratorBase<uint32_t,
+                                 search::memoryindex::PostingListEntry,
+                                 search::btree::NoAggregated,
+                                 BTreeDefaultTraits::INTERNAL_SLOTS,
+                                 BTreeDefaultTraits::LEAF_SLOTS,
+                                 BTreeDefaultTraits::PATH_SIZE>;
+
+template class BTreeIterator<uint32_t,
+                             search::memoryindex::PostingListEntry,
+                             search::btree::NoAggregated,
+                             std::less<uint32_t>,
+                             BTreeDefaultTraits>;
+
+template class BTree<uint32_t,
+                     search::memoryindex::PostingListEntry,
+                     search::btree::NoAggregated,
+                     std::less<uint32_t>,
+                     BTreeDefaultTraits>;
+
+template class BTreeRoot<uint32_t,
+                         search::memoryindex::PostingListEntry,
+                         search::btree::NoAggregated,
+                         std::less<uint32_t>,
+                         BTreeDefaultTraits>;
+
+template class BTreeRootBase<uint32_t,
+                             search::memoryindex::PostingListEntry,
+                             search::btree::NoAggregated,
+                             BTreeDefaultTraits::INTERNAL_SLOTS,
+                             BTreeDefaultTraits::LEAF_SLOTS>;
+
+template class BTreeNodeAllocator<uint32_t,
+                                  search::memoryindex::PostingListEntry,
+                                  search::btree::NoAggregated,
+                                  BTreeDefaultTraits::INTERNAL_SLOTS,
+                                  BTreeDefaultTraits::LEAF_SLOTS>;
+
+}

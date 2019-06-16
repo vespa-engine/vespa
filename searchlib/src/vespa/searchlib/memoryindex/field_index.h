@@ -5,6 +5,7 @@
 #include "feature_store.h"
 #include "field_index_remover.h"
 #include "word_store.h"
+#include "posting_list_entry.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/indexbuilder.h>
@@ -35,8 +36,8 @@ class OrderedFieldIndexInserter;
 class FieldIndex {
 public:
     // Mapping from docid -> feature ref
-    using PostingList = btree::BTreeRoot<uint32_t, uint32_t, search::btree::NoAggregated>;
-    using PostingListStore = btree::BTreeStore<uint32_t, uint32_t,
+    using PostingList = btree::BTreeRoot<uint32_t, PostingListEntry, search::btree::NoAggregated>;
+    using PostingListStore = btree::BTreeStore<uint32_t, PostingListEntry,
                                                search::btree::NoAggregated,
                                                std::less<uint32_t>,
                                                btree::BTreeDefaultTraits>;
