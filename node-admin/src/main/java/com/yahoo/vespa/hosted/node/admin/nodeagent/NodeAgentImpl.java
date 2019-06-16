@@ -391,7 +391,7 @@ public class NodeAgentImpl implements NodeAgent {
     public void converge(NodeAgentContext context) {
         try {
             doConverge(context);
-        } catch (OrchestratorException | ConvergenceException e) {
+        } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
@@ -436,6 +436,7 @@ public class NodeAgentImpl implements NodeAgent {
             case reserved:
             case parked:
             case failed:
+            case inactive:
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context);
                 break;
@@ -481,10 +482,6 @@ public class NodeAgentImpl implements NodeAgent {
                 context.log(logger, "Call resume against Orchestrator");
                 orchestrator.resume(context.hostname().value());
                 break;
-            case inactive:
-                removeContainerIfNeededUpdateContainerState(context, container);
-                updateNodeRepoWithCurrentAttributes(context);
-                break;
             case provisioned:
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
                 break;
@@ -497,7 +494,7 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             default:
-                throw new RuntimeException("UNKNOWN STATE " + node.getState().name());
+                throw new ConvergenceException("UNKNOWN STATE " + node.getState().name());
         }
     }
 

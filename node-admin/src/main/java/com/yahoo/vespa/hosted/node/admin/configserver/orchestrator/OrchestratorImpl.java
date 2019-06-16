@@ -40,8 +40,7 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to suspend " + hostName + ": " +
-                    e.toString());
+            throw new OrchestratorException("Failed to suspend " + hostName + ": " + e.toString());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on suspend", e);
         }
@@ -60,9 +59,8 @@ public class OrchestratorImpl implements Orchestrator {
                                        parentHostName, params);
             batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class);
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to batch suspend for " +
-                    parentHostName + ": " + e.toString());
-        } catch (Exception e) {
+            throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e.toString());
+        } catch (RuntimeException e) {
             throw new RuntimeException("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
         }
 
@@ -80,9 +78,8 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to suspend " + hostName + ": " +
-                    e.toString());
-        } catch (Exception e) {
+            throw new OrchestratorException("Failed to suspend " + hostName + ": " + e.toString());
+        } catch (RuntimeException e) {
             throw new RuntimeException("Got error on resume", e);
         }
 
