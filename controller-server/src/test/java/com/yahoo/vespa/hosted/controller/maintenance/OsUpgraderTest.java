@@ -57,16 +57,16 @@ public class OsUpgraderTest {
         );
 
         // Bootstrap system
-        tester.configServer().bootstrap(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId(), zone5.toDeprecatedId()),
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
                                         List.of(SystemApplication.tenantHost));
 
         // Add system applications that exist in a real system, but are currently not upgraded
-        tester.configServer().addNodes(List.of(zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId(), zone5.toDeprecatedId()),
+        tester.configServer().addNodes(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
                                        List.of(SystemApplication.configServer));
 
         // Fail a few nodes. Failed nodes should not affect versions
-        failNodeIn(zone1.toDeprecatedId(), SystemApplication.tenantHost);
-        failNodeIn(zone3.toDeprecatedId(), SystemApplication.tenantHost);
+        failNodeIn(zone1.getId(), SystemApplication.tenantHost);
+        failNodeIn(zone3.getId(), SystemApplication.tenantHost);
 
         // New OS version released
         Version version1 = Version.fromString("7.1");
@@ -78,37 +78,37 @@ public class OsUpgraderTest {
 
         // zone 1: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.tenantHost, zone1.toDeprecatedId());
+        assertWanted(version1, SystemApplication.tenantHost, zone1.getId());
 
         // Other zones remain on previous version (none)
-        assertWanted(Version.emptyVersion, SystemApplication.proxy, zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId());
+        assertWanted(Version.emptyVersion, SystemApplication.proxy, zone2.getId(), zone3.getId(), zone4.getId());
 
         // zone 1: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone1.toDeprecatedId());
+        completeUpgrade(version1, SystemApplication.tenantHost, zone1.getId());
         statusUpdater.maintain();
         assertEquals(2, nodesOn(version1).size());
         assertEquals(11, nodesOn(Version.emptyVersion).size());
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.proxy, zone2.toDeprecatedId(), zone3.toDeprecatedId());
+        assertWanted(version1, SystemApplication.proxy, zone2.getId(), zone3.getId());
 
         // zone 4: still on previous version
-        assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4.toDeprecatedId());
+        assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4.getId());
 
         // zone 2 and 3: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone2.toDeprecatedId(), zone3.toDeprecatedId());
+        completeUpgrade(version1, SystemApplication.tenantHost, zone2.getId(), zone3.getId());
 
         // zone 4: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.tenantHost, zone4.toDeprecatedId());
+        assertWanted(version1, SystemApplication.tenantHost, zone4.getId());
 
         // zone 4: completes upgrade
-        completeUpgrade(version1, SystemApplication.tenantHost, zone4.toDeprecatedId());
+        completeUpgrade(version1, SystemApplication.tenantHost, zone4.getId());
 
         // Next run does nothing as all zones are upgraded
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.tenantHost, zone1.toDeprecatedId(), zone2.toDeprecatedId(), zone3.toDeprecatedId(), zone4.toDeprecatedId());
+        assertWanted(version1, SystemApplication.tenantHost, zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId());
         statusUpdater.maintain();
         assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud).stream()
                                                         .allMatch(node -> node.version().equals(version1)));

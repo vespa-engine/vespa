@@ -26,17 +26,6 @@ public class ZoneIdTest {
         ZoneId zoneId = ZoneId.from(environment, region);
         assertEquals(region, zoneId.region());
         assertEquals(environment, zoneId.environment());
-        assertEquals(SystemName.defaultSystem(), zoneId.system());
-
-        ZoneId zoneIdWithSystem = ZoneId.from(system, environment, region);
-        assertEquals(region, zoneIdWithSystem.region());
-        assertEquals(environment, zoneIdWithSystem.environment());
-        assertEquals(system, zoneIdWithSystem.system());
-
-        ZoneId zoneIdWithCloudAndSystem = ZoneId.from(environment, region, cloud, system);
-        assertEquals(region, zoneIdWithCloudAndSystem.region());
-        assertEquals(environment, zoneIdWithCloudAndSystem.environment());
-        assertEquals(system, zoneIdWithCloudAndSystem.system());
     }
 
     @Test
@@ -44,12 +33,6 @@ public class ZoneIdTest {
         ZoneId zoneId = ZoneId.from(environment, region);
         assertEquals(environment.value() + "." + region.value(), zoneId.value());
         assertEquals(ZoneId.from(zoneId.value()), zoneId);
-
-        ZoneId zoneIdWithCloudAndSystem = ZoneId.from(environment, region, cloud, system);
-        assertEquals(environment.value() + "." + region.value(), zoneIdWithCloudAndSystem.value());
-        assertEquals(ZoneId.from(zoneIdWithCloudAndSystem.value()), zoneIdWithCloudAndSystem);
-        // TODO: Expect cloud and system to be part of deserialized value when the new format is supported everywhere
-        //assertEquals(cloud.value() + "." + system.name() + "." + environment.value() + "." + region.value() , zoneId.value());
 
         String serializedZoneId = "some.illegal.value";
         expectedException.expect(IllegalArgumentException.class);
