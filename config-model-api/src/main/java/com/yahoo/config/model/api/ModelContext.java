@@ -56,7 +56,7 @@ public interface ModelContext {
         boolean useFdispatchByDefault();
         boolean dispatchWithProtobuf();
         boolean useAdaptiveDispatch();
-        // TODO: Remove when 7.60 is the oldest model in use
+        // TODO: Remove when 7.61 is the oldest model in use
         default boolean enableMetricsProxyContainer() { return false; }
     }
 
