@@ -3,6 +3,7 @@
 
 #include "hash_set_insert.hpp"
 #include "hashtable.hpp"
+#include "identity.h"
 
 namespace vespalib {
 
@@ -84,11 +85,11 @@ hash_set<K, H, EQ, M>::insert(K &&value) {
 
 #define VESPALIB_HASH_SET_INSTANTIATE(K) \
     template class vespalib::hash_set<K>; \
-    template class vespalib::hashtable<K, K, vespalib::hash<K>, std::equal_to<>, std::_Identity<K>>; \
+    template class vespalib::hashtable<K, K, vespalib::hash<K>, std::equal_to<>, vespalib::Identity>; \
     template class vespalib::Array<vespalib::hash_node<K>>;
 
 #define VESPALIB_HASH_SET_INSTANTIATE_H(K, H) \
     template class vespalib::hash_set<K, H>; \
-    template class vespalib::hashtable<K, K, H, std::equal_to<>, std::_Identity<K>>; \
+    template class vespalib::hashtable<K, K, H, std::equal_to<>, vespalib::Identity>; \
     template class vespalib::Array<vespalib::hash_node<K>>;
 
