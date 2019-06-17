@@ -3,11 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -39,11 +38,10 @@ import static org.mockito.Mockito.when;
 public class NodeAdminImplTest {
 
     private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory = mock(NodeAgentWithSchedulerFactory.class);
-    private final NodeAgentContextFactory nodeAgentContextFactory = mock(NodeAgentContextFactory.class);
     private final ManualClock clock = new ManualClock();
 
     private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentWithSchedulerFactory,
-            new MetricReceiver(), clock, Duration.ZERO, Duration.ZERO);
+            new Metrics(), clock, Duration.ZERO, Duration.ZERO);
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() {

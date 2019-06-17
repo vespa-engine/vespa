@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  *
  * @author freva
  */
-public class MetricReceiver {
+public class Metrics {
     // Application names used
     public static final String APPLICATION_HOST = "vespa.host";
     public static final String APPLICATION_NODE = "vespa.node";
@@ -25,7 +25,7 @@ public class MetricReceiver {
     private final Map<DimensionType, Map<String, ApplicationMetrics>> metrics = new HashMap<>();
 
     @Inject
-    public MetricReceiver() { }
+    public Metrics() { }
 
     /**
      * Creates a counter metric under vespa.host application, with no dimensions and default dimension type

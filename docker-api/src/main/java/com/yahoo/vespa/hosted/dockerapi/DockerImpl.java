@@ -27,7 +27,7 @@ import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
@@ -58,15 +58,15 @@ public class DockerImpl implements Docker {
     private final Counter numberOfDockerApiFails;
 
     @Inject
-    public DockerImpl(MetricReceiver metricReceiver) {
-        this(createDockerClient(), metricReceiver);
+    public DockerImpl(Metrics metrics) {
+        this(createDockerClient(), metrics);
     }
 
-    DockerImpl(DockerClient dockerClient, MetricReceiver metricReceiver) {
+    DockerImpl(DockerClient dockerClient, Metrics metrics) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
 
-        numberOfDockerApiFails = metricReceiver.declareCounter("docker.api_fails");
+        numberOfDockerApiFails = metrics.declareCounter("docker.api_fails");
     }
 
     @Override

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
@@ -46,19 +46,19 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Gauge jvmHeapTotal;
     private final Counter numberOfUnhandledExceptions;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiver metricReceiver, Clock clock) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metricReceiver, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
+                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
     }
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiver metricReceiver,
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics,
                          Clock clock, Duration freezeTimeout, Duration spread) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metricReceiver, clock, freezeTimeout, spread);
+                metrics, clock, freezeTimeout, spread);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  MetricReceiver metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
+                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
 
         this.clock = clock;
@@ -68,12 +68,12 @@ public class NodeAdminImpl implements NodeAdmin {
         this.isFrozen = true;
         this.startOfFreezeConvergence = clock.instant();
 
-        this.numberOfUnhandledExceptions = metricReceiver.declareCounter("unhandled_exceptions",
+        this.numberOfUnhandledExceptions = metrics.declareCounter("unhandled_exceptions",
                 new Dimensions(Map.of("src", "node-agents")));
 
-        this.jvmHeapUsed = metricReceiver.declareGauge("mem.heap.used");
-        this.jvmHeapFree = metricReceiver.declareGauge("mem.heap.free");
-        this.jvmHeapTotal = metricReceiver.declareGauge("mem.heap.total");
+        this.jvmHeapUsed = metrics.declareGauge("mem.heap.used");
+        this.jvmHeapFree = metrics.declareGauge("mem.heap.free");
+        this.jvmHeapTotal = metrics.declareGauge("mem.heap.total");
     }
 
     @Override

@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
@@ -76,7 +76,7 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    private final MetricReceiver metricReceiver = new MetricReceiver();
+    private final Metrics metrics = new Metrics();
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
     private final HealthChecker healthChecker = mock(HealthChecker.class);
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
@@ -710,7 +710,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.updateContainerNodeMetrics();
 
-        assertEquals(List.of(), metricReceiver.getDefaultMetrics());
+        assertEquals(List.of(), metrics.getDefaultMetrics());
     }
 
     @Test

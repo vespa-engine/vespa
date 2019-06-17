@@ -5,7 +5,7 @@
     <!-- Please update container test when changing this file -->
     <accesslog type="vespa" fileNamePattern="logs/vespa/node-admin/access.log.%Y%m%d%H%M%S" symlinkName="access.log" />
     <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
-    <component id="metrics-wrapper" class="com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiver" bundle="docker-api"/>
+    <component id="metrics" class="com.yahoo.vespa.hosted.dockerapi.metrics.Metrics" bundle="docker-api"/>
 
     <preprocess:include file="variant.xml" required="false"/>
   </container>
