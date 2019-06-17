@@ -13,11 +13,11 @@ private:
     struct QueryTerm {
         fef::TermFieldHandle handle;
         const fef::TermFieldMatchData* tfmd;
-        double inverse_doc_freq;
-        QueryTerm(fef::TermFieldHandle handle_, double inverse_doc_freq_)
+        double idf_mul_k1_plus_one;
+        QueryTerm(fef::TermFieldHandle handle_, double inverse_doc_freq, double k1_param)
             : handle(handle_),
               tfmd(nullptr),
-              inverse_doc_freq(inverse_doc_freq_)
+              idf_mul_k1_plus_one(inverse_doc_freq * (k1_param + 1))
         {}
     };
 
@@ -25,8 +25,11 @@ private:
 
     QueryTermVector _terms;
     double _avg_field_length;
-    double _k1_param; // Determines term frequency saturation characteristics.
-    double _b_param;  // Adjusts the effects of the field length of the document matched compared to the average field length.
+
+    // The 'k1' param determines term frequency saturation characteristics.
+    // The 'b' param adjusts the effects of the field length of the document matched compared to the average field length.
+    double _k1_mul_b;
+    double _k1_mul_one_minus_b;
 
 public:
     Bm25Executor(const fef::FieldInfo& field,
