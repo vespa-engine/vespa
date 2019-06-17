@@ -40,7 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -620,8 +619,7 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
         } catch (DockerExecTimeoutException  e) {
-            Level level = newMetricsProxy ? LogLevel.DEBUG : LogLevel.WARNING;
-            context.log(logger, level, "Failed to push metrics to container", e);
+            context.log(logger, LogLevel.DEBUG, "Failed to push metrics to container", e);
         }
 
     }
