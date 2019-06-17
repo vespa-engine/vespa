@@ -39,6 +39,8 @@ public class MasterElectionTest extends FleetControllerTest {
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
 
+    private static int defaultZkSessionTimeoutInMillis() { return 10_000; }
+
     protected void setUpFleetController(int count, boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         if (zooKeeperServer == null) {
             zooKeeperServer = new ZooKeeperTestServer();
@@ -46,7 +48,7 @@ public class MasterElectionTest extends FleetControllerTest {
         slobrok = new Slobrok();
         usingFakeTimer = useFakeTimer;
         this.options = options;
-        this.options.zooKeeperSessionTimeout = 10 * timeoutMS;
+        this.options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         this.options.slobrokConnectionSpecs = new String[1];
         this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
@@ -62,7 +64,7 @@ public class MasterElectionTest extends FleetControllerTest {
                                                int fleetControllerIndex, int fleetControllerCount) throws Exception
     {
         FleetControllerOptions options = o.clone();
-        options.zooKeeperSessionTimeout = 10 * timeoutMS;
+        options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         options.slobrokConnectionSpecs = new String[1];
         options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port(); // Spec.fromLocalHostName(slobrok.port()).toString();
@@ -251,7 +253,6 @@ public class MasterElectionTest extends FleetControllerTest {
         FleetControllerOptions options = defaultOptions("mycluster");
         // "Magic" port value is in range allocated to module for testing.
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
-        options.zooKeeperSessionTimeout = 100;
         options.masterZooKeeperCooldownPeriod = 100;
         setUpFleetController(2, true, options);
         waitForMaster(0);
@@ -273,7 +274,6 @@ public class MasterElectionTest extends FleetControllerTest {
     public void testZooKeeperUnavailable() throws Exception {
         startingTest("MasterElectionTest::testZooKeeperUnavailable");
         FleetControllerOptions options = defaultOptions("mycluster");
-        options.zooKeeperSessionTimeout = 100;
         options.masterZooKeeperCooldownPeriod = 100;
         options.zooKeeperServerAddress = "localhost";
         setUpFleetController(5, true, options);
