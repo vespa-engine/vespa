@@ -5,11 +5,11 @@ package com.yahoo.vespa.hosted.dockerapi.metrics;
  * @author freva
  */
 public class Counter implements MetricValue {
-    private final Object lock  = new Object();
+    private final Object lock = new Object();
 
     private long value = 0;
 
-    public void add() {
+    public void increment() {
         add(1L);
     }
 
