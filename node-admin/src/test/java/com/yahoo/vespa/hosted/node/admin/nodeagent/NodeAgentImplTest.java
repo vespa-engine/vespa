@@ -685,9 +685,6 @@ public class NodeAgentImplTest {
                     .replaceAll("\"timestamp\":\\d+", "\"timestamp\":0")
                     .replaceAll("([0-9]+\\.[0-9]{1,3})([0-9]*)", "$1"); // Only keep the first 3 decimals
 
-            // TODO: Remove when old metrics proxy is discontinued.
-            calledCommand[3] = calledCommand[3].replaceFirst("19091", "19095");
-
             assertEquals(context, calledContainerName);
             assertEquals(5L, calledTimeout);
             assertArrayEquals(expectedCommand, calledCommand);
