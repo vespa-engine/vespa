@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredDirectSslProvider;
 
 import java.util.Optional;
 
@@ -31,13 +32,12 @@ public final class ApplicationContainer extends Container {
         this.isHostedVespa = isHostedVespa;
         this.tlsSecretsKey = tlsSecretsKey;
 
-        if(isHostedVespa) {
-            //this.getHttp().getBindings(). TODO: replace bindings on port 443 with 4443
-
+        if (isHostedVespa && tlsSecretsKey.isPresent()) {
             // set up port 4443 based on tlsSecretsKey
-            final JettyHttpServer defaultHttpsServer = new JettyHttpServer(new ComponentId("DefaultHttpsServer"));
-
-            defaultHttpsServer.addConnector(new ConnectorFactory("TlsSearchServer", 4443));
+            String server = "DefaultHttpsServer"; // TODO: verify that using this makes sense in all cases below
+            final JettyHttpServer defaultHttpsServer = new JettyHttpServer(new ComponentId(server));
+            defaultHttpsServer.addConnector(new ConnectorFactory(server, 4443,
+                    new ConfiguredDirectSslProvider(server, tlsSecretsKey + "TODO", tlsSecretsKey + "TODO", null, null)));
         }
     }
 

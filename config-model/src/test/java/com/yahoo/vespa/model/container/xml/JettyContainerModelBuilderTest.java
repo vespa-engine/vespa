@@ -10,7 +10,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -174,7 +174,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
-        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredSslProvider.COMPONENT_CLASS));
+        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredFilebasedSslProvider.COMPONENT_CLASS));
     }
 
     @Test
