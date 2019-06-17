@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
@@ -39,28 +39,26 @@ public class NodeAdminImpl implements NodeAdmin {
     private boolean previousWantFrozen;
     private boolean isFrozen;
     private Instant startOfFreezeConvergence;
-
     private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
 
-    private final GaugeWrapper numberOfContainersInLoadImageState;
-    private final GaugeWrapper jvmHeapUsed;
-    private final GaugeWrapper jvmHeapFree;
-    private final GaugeWrapper jvmHeapTotal;
-    private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
+    private final Gauge jvmHeapUsed;
+    private final Gauge jvmHeapFree;
+    private final Gauge jvmHeapTotal;
+    private final Counter numberOfUnhandledExceptions;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver, Clock clock) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metricReceiver, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
+                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
     }
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, MetricReceiverWrapper metricReceiver,
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics,
                          Clock clock, Duration freezeTimeout, Duration spread) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metricReceiver, clock, freezeTimeout, spread);
+                metrics, clock, freezeTimeout, spread);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  MetricReceiverWrapper metricReceiver, Clock clock, Duration freezeTimeout, Duration spread) {
+                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
 
         this.clock = clock;
@@ -70,13 +68,12 @@ public class NodeAdminImpl implements NodeAdmin {
         this.isFrozen = true;
         this.startOfFreezeConvergence = clock.instant();
 
-        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
-        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
-        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
+        this.numberOfUnhandledExceptions = metrics.declareCounter("unhandled_exceptions",
+                new Dimensions(Map.of("src", "node-agents")));
 
-        this.jvmHeapUsed = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.used");
-        this.jvmHeapFree = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.free");
-        this.jvmHeapTotal = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST, new Dimensions.Builder().build(), "mem.heap.total");
+        this.jvmHeapUsed = metrics.declareGauge("mem.heap.used");
+        this.jvmHeapFree = metrics.declareGauge("mem.heap.free");
+        this.jvmHeapTotal = metrics.declareGauge("mem.heap.total");
     }
 
     @Override
@@ -105,22 +102,12 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void updateNodeAgentMetrics() {
-        int numberContainersWaitingImage = 0;
-        int numberOfNewUnhandledExceptions = 0;
-
+    public void updateMetrics() {
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
-            if (nodeAgentWithScheduler.isDownloadingImage()) numberContainersWaitingImage++;
-            numberOfNewUnhandledExceptions += nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions();
+            numberOfUnhandledExceptions.add(nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions());
             nodeAgentWithScheduler.updateContainerNodeMetrics();
         }
 
-        numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
-        numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
-    }
-
-    @Override
-    public void updateNodeAdminMetrics() {
         Runtime runtime = Runtime.getRuntime();
         long freeMemory = runtime.freeMemory();
         long totalMemory = runtime.totalMemory();
@@ -208,7 +195,6 @@ public class NodeAdminImpl implements NodeAdmin {
         @Override public void stopForHostSuspension() { nodeAgent.stopForHostSuspension(); }
         @Override public void stopForRemoval() { nodeAgent.stopForRemoval(); }
         @Override public void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(); }
-        @Override public boolean isDownloadingImage() { return nodeAgent.isDownloadingImage(); }
         @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }

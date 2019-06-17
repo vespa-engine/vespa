@@ -4,45 +4,65 @@ package com.yahoo.vespa.hosted.dockerapi.metrics;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 /**
  * @author freva
  */
 public class DimensionMetrics {
-    private final static ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Map<String, Object> routing = Map.of("yamas", Map.of("namespaces", List.of("Vespa")));
 
     private final String application;
     private final Dimensions dimensions;
     private final Map<String, Number> metrics;
 
     DimensionMetrics(String application, Dimensions dimensions, Map<String, Number> metrics) {
-        this.application = application;
-        this.dimensions = dimensions;
-        this.metrics = metrics;
-    }
-
-    Map<String, Object> getMetrics() {
-        final Map<String, Object> routing = new HashMap<>();
-        final Map<String, Object> routingMonitoring = new HashMap<>();
-        routing.put("yamas", routingMonitoring);
-        routingMonitoring.put("namespaces", Collections.singletonList("Vespa"));
-
-        Map<String, Object> report = new HashMap<>();
-        report.put("application", application);
-        report.put("dimensions", dimensions.dimensionsMap);
-        report.put("metrics", metrics);
-        report.put("routing", routing);
-        return report;
+        this.application = Objects.requireNonNull(application);
+        this.dimensions = Objects.requireNonNull(dimensions);
+        this.metrics = Objects.requireNonNull(metrics);
     }
 
     public String toSecretAgentReport() throws JsonProcessingException {
-        Map<String, Object> report = getMetrics();
+        Map<String, Object> report = new TreeMap<>();
+        report.put("application", application);
+        report.put("dimensions", new TreeMap<>(dimensions.asMap()));
+        report.put("metrics", new TreeMap<>(metrics));
+        report.put("routing", routing);
         report.put("timestamp", System.currentTimeMillis() / 1000);
 
         return objectMapper.writeValueAsString(report);
+    }
+
+    public String getApplication() {
+        return application;
+    }
+
+    public Dimensions getDimensions() {
+        return dimensions;
+    }
+
+    public Map<String, Number> getMetrics() {
+        return metrics;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DimensionMetrics that = (DimensionMetrics) o;
+        return application.equals(that.application) &&
+                dimensions.equals(that.dimensions) &&
+                metrics.equals(that.metrics);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(application, dimensions, metrics);
     }
 
     public static class Builder {
