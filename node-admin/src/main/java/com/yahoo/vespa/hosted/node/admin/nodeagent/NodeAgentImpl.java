@@ -600,26 +600,15 @@ public class NodeAgentImpl implements NodeAgent {
             for (DimensionMetrics dimensionMetrics : metrics) {
                 params.append(dimensionMetrics.toSecretAgentReport());
             }
-        } catch (JsonProcessingException e) {
-            // TODO: wrap everything into one try-block (to avoid 'return') when old metrics proxy is discontinued
-            context.log(logger, LogLevel.WARNING, "Failed to wrap metrics in secret agent report", e);
-            return;
-        }
-        String wrappedMetrics = "s:" + params.toString();
+            String wrappedMetrics = "s:" + params.toString();
 
-        // Push metrics to the metrics proxy in each container
-        runPushMetricsCommand(context, wrappedMetrics, true);
-        runPushMetricsCommand(context, wrappedMetrics, false);
-    }
-
-    // TODO: Clean up and inline method when old metrics proxy has been discontinued.
-    private void runPushMetricsCommand(NodeAgentContext context, String wrappedMetrics, boolean newMetricsProxy) {
-        int port = newMetricsProxy ? 19095 : 19091;
-        String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:" + port,  "setExtraMetrics", wrappedMetrics};
-        try {
+            // Push metrics to the metrics proxy in each container.
+            // TODO Remove port selection logic when all hosted apps have upgraded to Vespa 7.
+            int port = context.node().getVespaVersion().map(version -> version.getMajor() == 6).orElse(false) ? 19091 : 19095;
+            String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:" + port,  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
-        } catch (DockerExecTimeoutException  e) {
-            context.log(logger, LogLevel.DEBUG, "Failed to push metrics to container", e);
+        } catch (JsonProcessingException | DockerExecTimeoutException  e) {
+            context.log(logger, LogLevel.WARNING, "Failed to push metrics to container", e);
         }
 
     }
