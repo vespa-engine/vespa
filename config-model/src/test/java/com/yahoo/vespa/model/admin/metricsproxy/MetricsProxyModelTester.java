@@ -27,7 +27,6 @@ class MetricsProxyModelTester {
     static final String MY_TENANT = "mytenant";
     static final String MY_APPLICATION = "myapp";
     static final String MY_INSTANCE = "myinstance";
-    static final String MY_FLAVOR = "myflavor";
 
     static final String CLUSTER_CONFIG_ID = "admin/metrics";
 
@@ -47,7 +46,7 @@ class MetricsProxyModelTester {
         var numberOfHosts = 2;
         var tester = new VespaModelTester();
         tester.enableMetricsProxyContainer(true);
-        tester.addHosts(flavorFromString(MY_FLAVOR), numberOfHosts);
+        tester.addHosts(numberOfHosts);
         tester.setHosted(true);
         tester.setApplicationId(MY_TENANT, MY_APPLICATION, MY_INSTANCE);
         return tester.createModel(servicesXml, true);
