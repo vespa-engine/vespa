@@ -11,8 +11,8 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import java.time.Duration;
 
 /**
- * <p>A session for synchronous access to a document repository. This class
- * provides simple document access where throughput is not a concern.</p>
+ * A session for synchronous access to a document repository. This class
+ * provides simple document access where throughput is not a concern.
  *
  * @author Simon Thoresen Hult
  * @author bjorncs
@@ -20,16 +20,15 @@ import java.time.Duration;
 public interface SyncSession extends Session {
 
     /**
-     * <p>Puts a document. When this method returns, the document is safely
-     * received. This enables setting condition compared to using Document.</p>
+     * Puts a document. When this method returns, the document is safely
+     * received. This enables setting condition compared to using Document.
      *
      * @param documentPut The DocumentPut operation
      */
     void put(DocumentPut documentPut);
 
     /**
-     * <p>Puts a document. When this method returns, the document is safely
-     * received.</p>
+     * Puts a document. When this method returns, the document is safely received.
      *
      * @param documentPut The DocumentPut operation
      * @param priority The priority with which to perform this operation.
@@ -39,7 +38,7 @@ public interface SyncSession extends Session {
     }
 
     /**
-     * <p>Gets a document.</p>
+     * Gets a document.
      *
      * @param id The id of the document to get.
      * @return The known document having this id, or null if there is no
@@ -65,7 +64,7 @@ public interface SyncSession extends Session {
     }
 
     /**
-     * <p>Gets a document with timeout.</p>
+     * Gets a document with timeout.
      *
      * @param id The id of the document to get.
      * @param timeout Timeout. If timeout is null, an unspecified default will be used.
@@ -77,7 +76,7 @@ public interface SyncSession extends Session {
     Document get(DocumentId id, Duration timeout);
 
     /**
-     * <p>Gets a document with timeout. </p>
+     * Gets a document with timeout.
      *
      * @param id       The id of the document to get.
      * @param fieldSet A comma-separated list of fields to retrieve
@@ -93,12 +92,12 @@ public interface SyncSession extends Session {
     /**
      * <p>Removes a document if it is present and condition is fulfilled.</p>
      * @param documentRemove document to delete
-     * @return true If the document with this id was removed, false otherwise.
+     * @return true if the document with this id was removed, false otherwise.
      */
     boolean remove(DocumentRemove documentRemove);
 
     /**
-     * <p>Removes a document if it is present.</p>
+     * Removes a document if it is present.
      *
      * @param documentRemove Document remove operation
      * @param priority The priority with which to perform this operation.
@@ -109,7 +108,7 @@ public interface SyncSession extends Session {
     boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority priority);
 
     /**
-     * <p>Updates a document.</p>
+     * Updates a document.
      *
      * @param update The updates to perform.
      * @return True, if the document was found and updated.
@@ -119,7 +118,7 @@ public interface SyncSession extends Session {
     boolean update(DocumentUpdate update);
 
     /**
-     * <p>Updates a document.</p>
+     * Updates a document.
      *
      * @param update   The updates to perform.
      * @param priority The priority with which to perform this operation.

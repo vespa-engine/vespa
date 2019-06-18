@@ -16,7 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Extends a {@code FutureTask<Result>}, with some added error handling
+ * Extends a {@code FutureTask&lt;Result&gt;}, with some added error handling
  * 
  * @author bratseth
  */
