@@ -100,16 +100,10 @@ TEST_FF("require that compiled evaluation passes all conformance tests", MyEvalT
 
 //-----------------------------------------------------------------------------
 
-TEST("require that invalid function evaluates to a error") {
+TEST("require that invalid function is tagged with error") {
     std::vector<vespalib::string> params({"x", "y", "z", "w"});
     Function function = Function::parse(params, "x & y");
     EXPECT_TRUE(function.has_error());
-    InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
-    InterpretedFunction::Context ctx(ifun);
-    SimpleParams my_params({1,2,3,4});
-    const Value &result = ifun.eval(ctx, my_params);
-    EXPECT_TRUE(result.is_error());
-    EXPECT_EQUAL(error_value, result.as_double());
 }
 
 //-----------------------------------------------------------------------------

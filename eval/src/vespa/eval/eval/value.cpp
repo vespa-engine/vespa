@@ -6,9 +6,6 @@
 namespace vespalib {
 namespace eval {
 
-ValueType ErrorValue::_type = ValueType::error_type();
-const ErrorValue ErrorValue::instance;
-
 ValueType DoubleValue::_type = ValueType::double_type();
 
 } // namespace vespalib::eval
