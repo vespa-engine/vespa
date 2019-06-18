@@ -36,8 +36,9 @@ class OrderedFieldIndexInserter;
 class FieldIndex {
 public:
     // Mapping from docid -> feature ref
-    using PostingList = btree::BTreeRoot<uint32_t, PostingListEntry, search::btree::NoAggregated>;
-    using PostingListStore = btree::BTreeStore<uint32_t, PostingListEntry,
+    using PostingListEntryType = PostingListEntry<false>;
+    using PostingList = btree::BTreeRoot<uint32_t, PostingListEntryType, search::btree::NoAggregated>;
+    using PostingListStore = btree::BTreeStore<uint32_t, PostingListEntryType,
                                                search::btree::NoAggregated,
                                                std::less<uint32_t>,
                                                btree::BTreeDefaultTraits>;

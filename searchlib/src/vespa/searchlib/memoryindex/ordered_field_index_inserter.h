@@ -28,6 +28,7 @@ private:
     using PostingListStore = FieldIndex::PostingListStore;
     using KeyComp = FieldIndex::KeyComp;
     using WordKey = FieldIndex::WordKey;
+    using PostingListEntryType = FieldIndex::PostingListEntryType;
     using PostingListKeyDataType = FieldIndex::PostingListKeyDataType;
     FieldIndex        &_fieldIndex;
     DictionaryTree::Iterator _dItr;

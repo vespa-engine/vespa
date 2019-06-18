@@ -267,7 +267,7 @@ FakeMemTreeOccMgr::flush()
             }
         } else {
             if (!itr.valid() || docId < itr.getKey()) {
-                tree.insert(itr, docId, i->getFeatureRef());
+                tree.insert(itr, docId, PostingListEntryType(i->getFeatureRef()));
             }
         }
     }

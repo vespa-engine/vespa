@@ -127,7 +127,7 @@ FieldIndex::compactFeatures()
             const PostingList *tree = _postingListStore.getTreeEntry(pidx);
             auto pitr = tree->begin(_postingListStore.getAllocator());
             for (; pitr.valid(); ++pitr) {
-                const PostingListEntry &posting_entry(pitr.getData());
+                const PostingListEntryType& posting_entry(pitr.getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
@@ -144,7 +144,7 @@ FieldIndex::compactFeatures()
             const PostingListKeyDataType *shortArray = _postingListStore.getKeyDataEntry(pidx, clusterSize);
             const PostingListKeyDataType *ite = shortArray + clusterSize;
             for (const PostingListKeyDataType *it = shortArray; it < ite; ++it) {
-                const PostingListEntry &posting_entry(it->getData());
+                const PostingListEntryType& posting_entry(it->getData());
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
