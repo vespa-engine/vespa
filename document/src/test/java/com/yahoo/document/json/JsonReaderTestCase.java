@@ -52,6 +52,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.text.Utf8;
 import org.junit.After;
 import org.junit.Before;
@@ -63,6 +64,7 @@ import org.mockito.internal.matchers.Contains;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -1294,6 +1296,24 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testParsingOfDenseTensorOnDenseForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+
+        Tensor tensor = assertTensorField(expected,
+                                          createPutWithTensor(inputJson("{",
+                                                                        "  'values': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]",
+                                                                        "}"), "dense_tensor"), "dense_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+    }
+
+    @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
         assertSparseTensorField("{{x:a,y:b}:2.0}",
                                 createPutWithSparseTensor(inputJson("{",
@@ -1689,11 +1709,14 @@ public class JsonReaderTestCase {
         return assertTensorField(expectedTensor, put, "sparse_tensor");
     }
     private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
-        final Document doc = put.getDocument();
+        return assertTensorField(Tensor.from(expectedTensor), put, tensorFieldName);
+    }
+    private static Tensor assertTensorField(Tensor expectedTensor, DocumentPut put, String tensorFieldName) {
+        Document doc = put.getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, doc.getId().toString());
         TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField(tensorFieldName));
-        assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
+        assertEquals(expectedTensor, fieldValue.getTensor().get());
         return fieldValue.getTensor().get();
     }
 

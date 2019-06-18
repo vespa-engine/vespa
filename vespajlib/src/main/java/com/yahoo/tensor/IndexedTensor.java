@@ -382,8 +382,10 @@ public abstract class IndexedTensor implements Tensor {
 
         DimensionSizes sizes() { return sizes; }
 
+        /** Sets a value by its right-adjacent traversal position */
         public abstract void cellByDirectIndex(long index, double value);
 
+        /** Sets a value by its right-adjacent traversal position */
         public abstract void cellByDirectIndex(long index, float value);
 
     }

@@ -58,6 +58,7 @@ public class JsonFormat {
     }
 
     /** Deserializes the given tensor from JSON format */
+    // NOTE: This must be kept in sync with com.yahoo.document.json.readers.TensorReader in the document module
     public static Tensor decode(TensorType type, byte[] jsonTensorValue) {
         Tensor.Builder builder = Tensor.Builder.of(type);
         Inspector root = new JsonDecoder().decode(new Slime(), jsonTensorValue).get();
@@ -66,6 +67,8 @@ public class JsonFormat {
             decodeCells(root.field("cells"), builder);
         else if (root.field("values").valid())
             decodeValues(root.field("values"), builder);
+        else if (builder.type().dimensions().stream().anyMatch(d -> d.isIndexed())) // sparse can be empty
+            throw new IllegalArgumentException("Expected a tensor value to contain either 'cells' or 'values'");
         return builder.build();
     }
 
@@ -102,4 +105,5 @@ public class JsonFormat {
             indexedBuilder.cellByDirectIndex(index.next(), value.asDouble());
         });
     }
+
 }
