@@ -354,7 +354,7 @@ TEST_F("require that multiple words at same position works", Fixture)
                  f._inserter.toStr());
 }
 
-TEST_F("require that cheap features are calculated", Fixture)
+TEST_F("require that interleaved features are calculated", Fixture)
 {
     f.invertDocument(17, *makeDoc17(f._b));
     f._inserter.setVerbose();

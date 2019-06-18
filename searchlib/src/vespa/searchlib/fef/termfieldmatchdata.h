@@ -61,7 +61,7 @@ private:
     uint16_t  _flags;
     uint16_t  _sz;
 
-    // Number of occurrences and field length used when unpacking "cheap" features.
+    // Number of occurrences and field length used when unpacking interleaved features.
     // This can exist in addition to full position features.
     uint16_t _numOccs;
     uint16_t _fieldLength;
@@ -284,7 +284,7 @@ public:
     }
 
     /**
-     * Tag that this instance is used for ranking (cheap features)
+     * Tag that this instance is used for ranking (interleaved features)
      */
     void setNeedInterleavedFeatures(bool needed) {
         if (needed) {

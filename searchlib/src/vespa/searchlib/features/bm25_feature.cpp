@@ -55,7 +55,7 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
         for (size_t j = 0; j < term->numFields(); ++j) {
             const ITermFieldData& term_field = term->field(j);
             if (field.id() == term_field.getFieldId()) {
-                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Cheap),
+                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
                                     get_inverse_document_frequency(term_field, env, *term),
                                     k1_param);
             }
