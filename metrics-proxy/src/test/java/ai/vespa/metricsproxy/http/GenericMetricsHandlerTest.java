@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
 import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.GenericMetricsHandler.DEFAULT_PUBLIC_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
@@ -64,13 +65,13 @@ public class GenericMetricsHandlerTest {
     private static RequestHandlerTestDriver testDriver;
 
     @BeforeClass
-    public static void setupMetricsManager() {
+    public static void setup() {
         MetricsManager metricsManager = TestUtil.createMetricsManager(vespaServices, getMetricsConsumers(), getApplicationDimensions(), getNodeDimensions());
         metricsManager.setExtraMetrics(ImmutableList.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
                         .timestamp(Instant.now().getEpochSecond())
                         .putMetrics(ImmutableList.of(new Metric(CPU_METRIC, 12.345)))));
-        GenericMetricsHandler handler = new GenericMetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices);
+        GenericMetricsHandler handler = new GenericMetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices, getMetricsConsumers());
         testDriver = new RequestHandlerTestDriver(handler);
     }
 
@@ -152,7 +153,7 @@ public class GenericMetricsHandlerTest {
 
         return new MetricsConsumers(new ConsumersConfig.Builder()
                                             .consumer(new ConsumersConfig.Consumer.Builder()
-                                                              .name(VESPA_CONSUMER_ID.id)
+                                                              .name(DEFAULT_PUBLIC_CONSUMER_ID.id)
                                                               .metric(new ConsumersConfig.Consumer.Metric.Builder()
                                                                               .name(CPU_METRIC)
                                                                               .outputname(CPU_METRIC))

@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.http;
 
+import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -20,25 +21,33 @@ import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 
 /**
- * Handler exposing the generic metrics format via http.
+ * Http handler that exposes the generic metrics format.
  *
  * @author gjoranv
  */
 public class GenericMetricsHandler extends ThreadedHttpRequestHandler {
+    private static final Logger log = Logger.getLogger(GenericMetricsHandler.class.getName());
 
     public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default-public");
 
+    private final MetricsConsumers metricsConsumers;
     private final MetricsManager metricsManager;
     private final VespaServices vespaServices;
 
     @Inject
-    public GenericMetricsHandler(Executor executor, MetricsManager metricsManager, VespaServices vespaServices) {
+    public GenericMetricsHandler(Executor executor,
+                                 MetricsManager metricsManager,
+                                 VespaServices vespaServices,
+                                 MetricsConsumers metricsConsumers) {
         super(executor);
+        this.metricsConsumers = metricsConsumers;
         this.metricsManager = metricsManager;
         this.vespaServices = vespaServices;
     }
@@ -46,11 +55,27 @@ public class GenericMetricsHandler extends ThreadedHttpRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            List<MetricsPacket> metrics = metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());
+            ConsumerId consumer = getConsumerOrDefault(request.getProperty("consumer"));
+
+            List<MetricsPacket> metrics = metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now())
+                    .stream()
+                    .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
+                    .collect(Collectors.toList());
             return new Response(200, toGenericJsonModel(metrics).serialize());
         } catch (JsonRenderingException e) {
             return new Response(500, e.getMessageAsJson());
         }
+    }
+
+    private ConsumerId getConsumerOrDefault(String consumer) {
+        if (consumer == null) return DEFAULT_PUBLIC_CONSUMER_ID;
+
+        ConsumerId consumerId = toConsumerId(consumer);
+        if (! metricsConsumers.getAllConsumers().contains(consumerId)) {
+            log.info("No consumer with id '" + consumer + "' - using the default consumer instead.");
+            return DEFAULT_PUBLIC_CONSUMER_ID;
+        }
+        return consumerId;
     }
 
     private static class Response extends HttpResponse {
