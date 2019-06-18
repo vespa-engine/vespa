@@ -118,7 +118,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.rotations = rotations;
-        this.endpoints = endpoints;
+        this.endpoints = Set.copyOf(endpoints);
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
@@ -236,6 +236,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Set<Rotation> getRotations() {
         return this.rotations; // todo: consider returning a copy or immutable view
+    }
+
+    public Set<ContainerEndpoint> getEndpoints() {
+        return endpoints;
     }
 
     /** Returns the zone in which this is currently running */

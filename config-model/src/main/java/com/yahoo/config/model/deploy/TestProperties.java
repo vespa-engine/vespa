@@ -3,6 +3,7 @@ package com.yahoo.config.model.deploy;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -31,6 +32,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean hostedVespa = false;
     private Zone zone;
     private Set<Rotation> rotations;
+    private Set<ContainerEndpoint> endpoints;
     private boolean isBootstrap = false;
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
@@ -49,6 +51,8 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Zone zone() { return zone; }
     @Override public Set<Rotation> rotations() { return rotations; }
+    @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
+
     @Override public boolean isBootstrap() { return isBootstrap; }
     @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
