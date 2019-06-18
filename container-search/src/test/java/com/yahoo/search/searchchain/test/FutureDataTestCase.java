@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain.test;
 
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentId;
 import com.yahoo.processing.response.*;
 import com.yahoo.search.Query;
@@ -34,23 +32,25 @@ import com.yahoo.component.chain.Chain;
 public class FutureDataTestCase {
 
     @Test
-    public void testAsyncFederation() throws InterruptedException, ExecutionException, TimeoutException {
+    public void testAsyncFederation() throws InterruptedException, ExecutionException {
         // Setup environment
         AsyncProviderSearcher asyncProviderSearcher = new AsyncProviderSearcher();
         Searcher syncProviderSearcher = new SyncProviderSearcher();
-        Chain<Searcher> asyncSource = new Chain<Searcher>(new ComponentId("async"),asyncProviderSearcher);
-        Chain<Searcher> syncSource = new Chain<>(new ComponentId("sync"),syncProviderSearcher);
+        Chain<Searcher> asyncSource = new Chain<>(new ComponentId("async"), asyncProviderSearcher);
+        Chain<Searcher> syncSource = new Chain<>(new ComponentId("sync"), syncProviderSearcher);
         SearchChainResolver searchChainResolver=
-                new SearchChainResolver.Builder().addSearchChain(new ComponentId("sync"),new FederationOptions().setUseByDefault(true)).
-                                                  addSearchChain(new ComponentId("async"),new FederationOptions().setUseByDefault(true)).
+                new SearchChainResolver.Builder().addSearchChain(new ComponentId("sync"), new FederationOptions().setUseByDefault(true)).
+                                                  addSearchChain(new ComponentId("async"), new FederationOptions().setUseByDefault(true)).
                                                   build();
-        Chain<Searcher> main = new Chain<Searcher>(new FederationSearcher(new ComponentId("federator"),searchChainResolver));
+        Chain<Searcher> main = new Chain<>(new FederationSearcher(new ComponentId("federator"), searchChainResolver));
         SearchChainRegistry searchChainRegistry = new SearchChainRegistry();
         searchChainRegistry.register(main);
         searchChainRegistry.register(syncSource);
         searchChainRegistry.register(asyncSource);
 
-        Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry,null)).search(new Query());
+        Query query = new Query();
+        query.setTimeout(5000);
+        Result result = new Execution(main, Execution.Context.createContextStub(searchChainRegistry,null)).search(query);
         assertNotNull(result);
 
         HitGroup syncGroup = (HitGroup)result.hits().get("source:sync");
@@ -59,29 +59,29 @@ public class FutureDataTestCase {
         HitGroup asyncGroup = (HitGroup)result.hits().get("source:async");
         assertNotNull(asyncGroup);
 
-        assertEquals("Got all sync data",3,syncGroup.size());
-        assertEquals("sync:0",syncGroup.get(0).getId().toString());
-        assertEquals("sync:1",syncGroup.get(1).getId().toString());
-        assertEquals("sync:2",syncGroup.get(2).getId().toString());
+        assertEquals("Got all sync data", 3, syncGroup.size());
+        assertEquals("sync:0", syncGroup.get(0).getId().toString());
+        assertEquals("sync:1", syncGroup.get(1).getId().toString());
+        assertEquals("sync:2",  syncGroup.get(2).getId().toString());
 
         assertTrue(asyncGroup.incoming()==asyncProviderSearcher.incomingData);
-        assertEquals("Got no async data yet",0,asyncGroup.size());
+        assertEquals("Got no async data yet", 0, asyncGroup.size());
         asyncProviderSearcher.simulateOneHitIOComplete(new Hit("async:0"));
-        assertEquals("Got no async data yet, as we haven't completed the incoming buffer and there is no data listener",0,asyncGroup.size());
+        assertEquals("Got no async data yet, as we haven't completed the incoming buffer and there is no data listener", 0, asyncGroup.size());
         asyncProviderSearcher.simulateOneHitIOComplete(new Hit("async:1"));
         asyncProviderSearcher.simulateAllHitsIOComplete();
-        assertEquals("Got no async data yet, as we haven't pulled it",0,asyncGroup.size());
+        assertEquals("Got no async data yet, as we haven't pulled it", 0, asyncGroup.size());
         asyncGroup.complete().get();
-        assertEquals("Completed, so we have the data",2,asyncGroup.size());
-        assertEquals("async:0",asyncGroup.get(0).getId().toString());
-        assertEquals("async:1",asyncGroup.get(1).getId().toString());
+        assertEquals("Completed, so we have the data", 2, asyncGroup.size());
+        assertEquals("async:0", asyncGroup.get(0).getId().toString());
+        assertEquals("async:1", asyncGroup.get(1).getId().toString());
     }
 
     @Test
     public void testFutureData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
-        AsyncProviderSearcher futureDataSource=new AsyncProviderSearcher();
-        Chain<Searcher> chain=new Chain<>(Collections.<Searcher>singletonList(futureDataSource));
+        AsyncProviderSearcher futureDataSource = new AsyncProviderSearcher();
+        Chain<Searcher> chain = new Chain<>(Collections.<Searcher>singletonList(futureDataSource));
 
         // Execute
         Query query = new Query();
@@ -102,7 +102,7 @@ public class FutureDataTestCase {
         // Results with future hit groups will be passed to rendering directly and start rendering immediately.
         // For this test we block and wait for the data instead:
         result.hits().complete().get(1000, TimeUnit.MILLISECONDS);
-        assertEquals(2,result.hits().getConcreteSize());
+        assertEquals(2, result.hits().getConcreteSize());
     }
 
     /**
@@ -117,7 +117,7 @@ public class FutureDataTestCase {
         public Result search(Query query, Execution execution) {
             if (incomingData != null) throw new IllegalArgumentException("This test searcher is one-time use only");
 
-            HitGroup hitGroup=HitGroup.createAsync("Async source");
+            HitGroup hitGroup = HitGroup.createAsync("Async source");
             this.incomingData = hitGroup.incoming();
             // A real implementation would do query.properties().get("jdisc.request") here
             // to get the jDisc request and use it to spawn a child request to the backend
