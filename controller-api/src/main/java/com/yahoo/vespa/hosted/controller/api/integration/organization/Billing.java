@@ -6,8 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 /**
  * @author olaa
  */
-public class MockBillingHandler implements BillingHandler {
+public interface Billing {
 
-    @Override
-    public void handleBilling(ApplicationId applicationId, String customerId) {}
+    void handleBilling(ApplicationId applicationId, String customerId);
 }

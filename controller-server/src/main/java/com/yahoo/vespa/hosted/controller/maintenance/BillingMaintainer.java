@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 
 import java.time.Duration;
@@ -14,11 +14,11 @@ import java.util.EnumSet;
  */
 public class BillingMaintainer extends Maintainer {
 
-    private final BillingHandler billingHandler;
+    private final Billing billing;
 
-    public BillingMaintainer(Controller controller, Duration interval, JobControl jobControl, BillingHandler billingHandler) {
+    public BillingMaintainer(Controller controller, Duration interval, JobControl jobControl, Billing billing) {
         super(controller, interval, jobControl, BillingMaintainer.class.getSimpleName(), EnumSet.of(SystemName.cd));
-        this.billingHandler = billingHandler;
+        this.billing = billing;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class BillingMaintainer extends Maintainer {
                 .forEach(cloudTenant -> controller().applications().asList(cloudTenant.name())
                         .stream()
                         .forEach( application -> {
-                            billingHandler.handleBilling(application.id(), cloudTenant.billingInfo().customerId());
+                            billing.handleBilling(application.id(), cloudTenant.billingInfo().customerId());
                         })
                 );
     }

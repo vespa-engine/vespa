@@ -5,7 +5,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
@@ -65,7 +65,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
                                  ResourceSnapshotConsumer resourceSnapshotConsumer,
-                                 BillingHandler billingHandler,
+                                 Billing billing,
                                  SelfHostedCostConfig selfHostedCostConfig) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
@@ -88,7 +88,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepositoryClient, Clock.systemUTC(), metric, resourceSnapshotConsumer);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
-        billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billingHandler);
+        billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
     }
 
     public Upgrader upgrader() { return upgrader; }
