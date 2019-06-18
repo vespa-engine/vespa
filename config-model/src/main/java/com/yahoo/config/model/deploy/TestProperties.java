@@ -32,7 +32,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean hostedVespa = false;
     private Zone zone;
     private Set<Rotation> rotations;
-    private Set<ContainerEndpoint> endpoints;
+    private Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean isBootstrap = false;
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
