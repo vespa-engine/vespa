@@ -46,11 +46,7 @@ public class LogWriter {
      * </UL>
      */
     private Writer nextWriter() throws IOException {
-
-        if (writer != null) {
-            writer.close();
-        }
-
+        close();
         int maxAttempts = 1000;
         while (maxAttempts-- > 0) {
             String name = prefix + "-" + generation++;
@@ -119,15 +115,15 @@ public class LogWriter {
     }
 
 
-    public void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         if (writer != null) {
             writer.flush();
         }
     }
 
-    public void close() throws IOException {
-        flush();
+    public synchronized void close() throws IOException {
         if (writer != null) {
+            writer.flush();
             writer.close();
             writer = null;
         }
