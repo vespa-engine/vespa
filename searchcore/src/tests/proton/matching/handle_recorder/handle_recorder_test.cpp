@@ -59,11 +59,11 @@ TEST(HandleRecorderTest, the_same_handle_can_be_in_both_normal_and_cheap_set)
 namespace {
 
 void check_tagging(const TermFieldMatchData &tfmd, bool exp_not_needed,
-                   bool exp_needs_normal_features, bool exp_needs_cheap_features)
+                   bool exp_needs_normal_features, bool exp_needs_interleaved_features)
 {
     EXPECT_EQ(tfmd.isNotNeeded(), exp_not_needed);
     EXPECT_EQ(tfmd.needs_normal_features(), exp_needs_normal_features);
-    EXPECT_EQ(tfmd.needs_cheap_features(), exp_needs_cheap_features);
+    EXPECT_EQ(tfmd.needs_interleaved_features(), exp_needs_interleaved_features);
 }
 
 }

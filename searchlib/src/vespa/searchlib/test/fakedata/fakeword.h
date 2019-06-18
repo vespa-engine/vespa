@@ -241,14 +241,14 @@ public:
              const fef::TermFieldMatchDataArray &matchData,
              uint32_t stride,
              bool unpack_normal_features,
-             bool unpack_cheap_features,
+             bool unpack_interleaved_features,
              bool verbose) const;
 
     bool
     validate(search::queryeval::SearchIterator *iterator,
              const fef::TermFieldMatchDataArray &matchData,
              bool unpack_normal_features,
-             bool unpack_cheap_features,
+             bool unpack_interleaved_features,
              bool verbose) const;
 
     bool validate(search::queryeval::SearchIterator *iterator,
@@ -258,7 +258,7 @@ public:
     validate(search::diskindex::FieldReader &fieldReader,
              uint32_t wordNum,
              const fef::TermFieldMatchDataArray &matchData,
-             bool decode_cheap_features,
+             bool decode_interleaved_features,
              bool verbose) const;
 
     void validate(const std::vector<uint32_t> &docIds) const;

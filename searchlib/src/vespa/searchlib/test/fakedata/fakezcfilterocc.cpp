@@ -173,7 +173,7 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     params.set("docIdLimit", fw._docIdLimit);
     params.set("minChunkDocs", _posting_params._min_chunk_docs); // Control chunking
     params.set("minSkipDocs", _posting_params._min_skip_docs);   // Control skip info
-    params.set("cheap_features", _posting_params._encode_cheap_features);
+    params.set("interleaved_features", _posting_params._encode_interleaved_features);
     writer.set_posting_list_params(params);
     auto &writeContext = writer.get_write_context();
     search::ComprBuffer &cb = writeContext;
@@ -278,7 +278,7 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
         assert(features.doc_id() == doc._docId);
         assert(features.elements().size() == check_features.elements().size());
         assert(features.word_positions().size() == check_features.word_positions().size());
-        if (_posting_params._encode_cheap_features) {
+        if (_posting_params._encode_interleaved_features) {
             assert(features.field_length() == doc._collapsedDocWordFeatures._field_len);
             assert(features.num_occs() == doc._collapsedDocWordFeatures._num_occs);
         }
@@ -318,9 +318,9 @@ FakeZcFilterOcc::hasWordPositions() const
 }
 
 bool
-FakeZcFilterOcc::has_cheap_features() const
+FakeZcFilterOcc::has_interleaved_features() const
 {
-    return _posting_params._encode_cheap_features;
+    return _posting_params._encode_interleaved_features;
 }
 
 size_t
@@ -725,7 +725,7 @@ class FakeZc4SkipPosOcc : public FakeZcFilterOcc
     search::index::PostingListCounts _counts;
 protected:
     bool _unpack_normal_features;
-    bool _unpack_cheap_features;
+    bool _unpack_interleaved_features;
     FakeZc4SkipPosOcc(const FakeWord &fw, const Zc4PostingParams &posting_params, const char *name_suffix);
 public:
     FakeZc4SkipPosOcc(const FakeWord &fw);
@@ -734,7 +734,7 @@ public:
     bool hasWordPositions() const override;
     SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
     bool enable_unpack_normal_features() const override { return _unpack_normal_features; }
-    bool enable_unpack_cheap_features() const override { return _unpack_cheap_features; }
+    bool enable_unpack_interleaved_features() const override { return _unpack_interleaved_features; }
 };
 
 
@@ -743,7 +743,7 @@ FakeZc4SkipPosOcc<bigEndian>::FakeZc4SkipPosOcc(const FakeWord &fw, const Zc4Pos
     : FakeZcFilterOcc(fw, bigEndian, posting_params, name_suffix),
       _counts(),
       _unpack_normal_features(true),
-      _unpack_cheap_features(true)
+      _unpack_interleaved_features(true)
 {
     setup(fw);
     _counts._bitLength = _compressedBits;
@@ -784,10 +784,10 @@ createIterator(const TermFieldMatchDataArray &matchData) const
 {
     if (matchData.valid()) {
         assert(_unpack_normal_features == matchData[0]->needs_normal_features());
-        assert(_unpack_cheap_features == matchData[0]->needs_cheap_features());
+        assert(_unpack_interleaved_features == matchData[0]->needs_interleaved_features());
     } else {
         assert(!_unpack_normal_features);
-        assert(!_unpack_cheap_features);
+        assert(!_unpack_interleaved_features);
     }
 return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
 }
@@ -821,7 +821,7 @@ public:
         : FakeZc4SkipPosOcc<true>(fw, Zc4PostingParams(force_skip, disable_chunking, fw._docIdLimit, false, true, true),
                                   ".zc4skipposoccbe.cf.ncu")
     {
-        _unpack_cheap_features = false;
+        _unpack_interleaved_features = false;
     }
 };
 
@@ -854,7 +854,7 @@ public:
         : FakeZc4SkipPosOcc<true>(fw, Zc4PostingParams(disable_skip, disable_chunking, fw._docIdLimit, false, true, true),
                                   ".zc4noskipposoccbe.cf.ncu")
     {
-        _unpack_cheap_features = false;
+        _unpack_interleaved_features = false;
     }
 };
 

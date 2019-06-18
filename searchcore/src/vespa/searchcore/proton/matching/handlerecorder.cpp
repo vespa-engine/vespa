@@ -124,7 +124,7 @@ HandleRecorder::tag_match_data(MatchData &match_data)
             tfmd.tagAsNotNeeded();
         } else {
             tfmd.setNeedNormalFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Normal)) != 0);
-            tfmd.setNeedCheapFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Cheap)) != 0);
+            tfmd.setNeedInterleavedFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Cheap)) != 0);
         }
     }
 }

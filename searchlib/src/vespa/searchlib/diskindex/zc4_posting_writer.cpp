@@ -191,7 +191,7 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
         uint32_t featureSize = dit->_features_size;
         e.encodeExpGolomb(docId - baseDocId, docIdK);
         baseDocId = docId + 1;
-        if (_encode_cheap_features) {
+        if (_encode_interleaved_features) {
             assert(dit->_field_length > 0);
             e.encodeExpGolomb(dit->_field_length - 1, K_VALUE_ZCPOSTING_FIELD_LENGTH);
             assert(dit->_num_occs > 0);

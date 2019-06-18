@@ -69,7 +69,7 @@ public:
 
     bool open(const vespalib::string &prefix, uint32_t minSkipDocs, uint32_t minChunkDocs,
               bool dynamicKPosOccFormat,
-              bool encode_cheap_features,
+              bool encode_interleaved_features,
               const Schema &schema, uint32_t indexId,
               const index::FieldLengthInfo &field_length_info,
               const TuneFileSeqWrite &tuneFileWrite,

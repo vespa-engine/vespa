@@ -257,32 +257,32 @@ TEST("require that TermFieldMatchData can be tagged as needed or not") {
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(tfmd.needs_normal_features());
-    EXPECT_TRUE(tfmd.needs_cheap_features());
+    EXPECT_TRUE(tfmd.needs_interleaved_features());
     tfmd.tagAsNotNeeded();
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(tfmd.isNotNeeded());
     EXPECT_TRUE(!tfmd.needs_normal_features());
-    EXPECT_TRUE(!tfmd.needs_cheap_features());
+    EXPECT_TRUE(!tfmd.needs_interleaved_features());
     tfmd.setNeedNormalFeatures(true);
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(tfmd.needs_normal_features());
-    EXPECT_TRUE(!tfmd.needs_cheap_features());
-    tfmd.setNeedCheapFeatures(true);
+    EXPECT_TRUE(!tfmd.needs_interleaved_features());
+    tfmd.setNeedInterleavedFeatures(true);
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(tfmd.needs_normal_features());
-    EXPECT_TRUE(tfmd.needs_cheap_features());
+    EXPECT_TRUE(tfmd.needs_interleaved_features());
     tfmd.setNeedNormalFeatures(false);
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(!tfmd.needs_normal_features());
-    EXPECT_TRUE(tfmd.needs_cheap_features());
-    tfmd.setNeedCheapFeatures(false);
+    EXPECT_TRUE(tfmd.needs_interleaved_features());
+    tfmd.setNeedInterleavedFeatures(false);
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(tfmd.isNotNeeded());
     EXPECT_TRUE(!tfmd.needs_normal_features());
-    EXPECT_TRUE(!tfmd.needs_cheap_features());
+    EXPECT_TRUE(!tfmd.needs_interleaved_features());
 }
 
 TEST("require that MatchData soft_reset retains appropriate state") {    

@@ -62,11 +62,11 @@ public:
     virtual bool
     hasWordPositions() const = 0;
 
-    virtual bool has_cheap_features() const;
+    virtual bool has_interleaved_features() const;
 
     virtual bool enable_unpack_normal_features() const;
 
-    virtual bool enable_unpack_cheap_features() const;
+    virtual bool enable_unpack_interleaved_features() const;
 
     /*
      * Single posting list performance, without feature unpack.

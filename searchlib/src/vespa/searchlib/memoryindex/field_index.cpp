@@ -22,7 +22,7 @@ namespace search::memoryindex {
 
 namespace {
 
-void set_cheap_features(DocIdAndFeatures &features)
+void set_interleaved_features(DocIdAndFeatures &features)
 {
     // Set cheap features based on normal features.
     // TODO: Update when proper cheap features are present in memory index.
@@ -192,7 +192,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
                 features.set_doc_id(docId);
-                set_cheap_features(features);
+                set_interleaved_features(features);
                 indexBuilder.add_document(features);
             }
         } else {
@@ -205,7 +205,7 @@ FieldIndex::dump(search::index::IndexBuilder & indexBuilder)
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
                 features.set_doc_id(docId);
-                set_cheap_features(features);
+                set_interleaved_features(features);
                 indexBuilder.add_document(features);
             }
         }

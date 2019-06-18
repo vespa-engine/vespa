@@ -50,7 +50,7 @@ FakePosting::l4SkipBitSize() const
 }
 
 bool
-FakePosting::has_cheap_features() const
+FakePosting::has_interleaved_features() const
 {
     return false;
 }
@@ -62,7 +62,7 @@ FakePosting::enable_unpack_normal_features() const
 }
 
 bool
-FakePosting::enable_unpack_cheap_features() const
+FakePosting::enable_unpack_interleaved_features() const
 {
     return true;
 }

@@ -69,15 +69,15 @@ public:
     uint32_t           _prevDocId;  // Previous document id
     uint32_t           _numDocs;    // Documents in chunk or word
     bool               _decode_normal_features;
-    bool               _decode_cheap_features;
+    bool               _decode_interleaved_features;
     bool               _unpack_normal_features;
-    bool               _unpack_cheap_features;
+    bool               _unpack_interleaved_features;
     uint32_t           _field_length;
     uint32_t           _num_occs;
 
     ZcRareWordPostingIteratorBase(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
-                                  bool decode_normal_features, bool decode_cheap_features,
-                                  bool unpack_normal_features, bool unpack_cheap_features);
+                                  bool decode_normal_features, bool decode_interleaved_features,
+                                  bool unpack_normal_features, bool unpack_interleaved_features);
 
     void doUnpack(uint32_t docId) override;
     void rewind(Position start) override;
@@ -120,17 +120,17 @@ class ZcRareWordPostingIterator : public ZcRareWordPostingIteratorBase<bigEndian
     using ParentClass::setAtEnd;
     using ParentClass::_numDocs;
     using ParentClass::_decode_normal_features;
-    using ParentClass::_decode_cheap_features;
+    using ParentClass::_decode_interleaved_features;
     using ParentClass::_unpack_normal_features;
-    using ParentClass::_unpack_cheap_features;
+    using ParentClass::_unpack_interleaved_features;
     using ParentClass::_field_length;
     using ParentClass::_num_occs;
     ZcPostingDocIdKParam<dynamic_k> _doc_id_k_param;
 public:
     using ParentClass::_decodeContext;
     ZcRareWordPostingIterator(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
-                              bool decode_normal_features, bool decode_cheap_features,
-                              bool unpack_normal_features, bool unpack_cheap_features);
+                              bool decode_normal_features, bool decode_interleaved_features,
+                              bool unpack_normal_features, bool unpack_interleaved_features);
     void doSeek(uint32_t docId) override;
     void readWordStart(uint32_t docIdLimit) override;
 };
@@ -276,9 +276,9 @@ protected:
     uint64_t _featuresSize;
     bool     _hasMore;
     bool     _decode_normal_features;
-    bool     _decode_cheap_features;
+    bool     _decode_interleaved_features;
     bool     _unpack_normal_features;
-    bool     _unpack_cheap_features;
+    bool     _unpack_interleaved_features;
     uint32_t _chunkNo;
     uint32_t _field_length;
     uint32_t _num_occs;
@@ -287,7 +287,7 @@ protected:
         uint32_t docId = prevDocId + 1;
         ZCDECODE(_valI, docId +=);
         setDocId(docId);
-        if (_decode_cheap_features) {
+        if (_decode_interleaved_features) {
             ZCDECODE(_valI, _field_length = 1 +);
             ZCDECODE(_valI, _num_occs = 1 +);
         }
@@ -301,8 +301,8 @@ protected:
     void doSeek(uint32_t docId) override;
 public:
     ZcPostingIteratorBase(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
-                          bool decode_normal_features, bool decode_cheap_features,
-                          bool unpack_normal_features, bool unpack_cheap_features);
+                          bool decode_normal_features, bool decode_interleaved_features,
+                          bool unpack_normal_features, bool unpack_interleaved_features);
 };
 
 template <bool bigEndian>
@@ -330,8 +330,8 @@ public:
 
     ZcPostingIterator(uint32_t minChunkDocs, bool dynamicK, const PostingListCounts &counts,
                       const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
-                      bool decode_normal_features, bool decode_cheap_features,
-                      bool unpack_normal_features, bool unpack_cheap_features);
+                      bool decode_normal_features, bool decode_interleaved_features,
+                      bool unpack_normal_features, bool unpack_interleaved_features);
 
 
     void doUnpack(uint32_t docId) override;

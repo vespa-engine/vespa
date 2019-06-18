@@ -358,7 +358,7 @@ TEST_F("require that cheap features are calculated", Fixture)
 {
     f.invertDocument(17, *makeDoc17(f._b));
     f._inserter.setVerbose();
-    f._inserter.set_show_cheap_features();
+    f._inserter.set_show_interleaved_features();
     f.pushDocuments();
     EXPECT_EQUAL("f=1,"
                  "w=bar0,a=17(fl=2,occs=1,e=0,w=1,l=2[1]),"
