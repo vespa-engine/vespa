@@ -18,10 +18,13 @@ using namespace search::memoryindex;
 using search::index::schema::DataType;
 using search::test::SearchIteratorVerifier;
 
+using FieldIndexType = FieldIndex<false>;
+using PostingIteratorType = PostingIterator<false>;
+
 class Verifier : public SearchIteratorVerifier {
 private:
     mutable TermFieldMatchData _tfmd;
-    FieldIndex _field_index;
+    FieldIndexType _field_index;
 
 public:
     Verifier(const Schema& schema)
@@ -41,8 +44,8 @@ public:
         (void) strict;
         TermFieldMatchDataArray match_data;
         match_data.add(&_tfmd);
-        return std::make_unique<PostingIterator>(_field_index.find("a"),
-                                                 _field_index.getFeatureStore(), 0, match_data);
+        return std::make_unique<PostingIteratorType>(_field_index.find("a"),
+                                                     _field_index.getFeatureStore(), 0, match_data);
     }
 };
 

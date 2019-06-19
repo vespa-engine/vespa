@@ -13,10 +13,11 @@ LOG_SETUP(".searchlib.memoryindex.posting_iterator");
 
 namespace search::memoryindex {
 
-PostingIterator::PostingIterator(FieldIndex::PostingList::ConstIterator itr,
-                                 const FeatureStore & featureStore,
-                                 uint32_t packedIndex,
-                                 const fef::TermFieldMatchDataArray & matchData) :
+template <bool interleaved_features>
+PostingIterator<interleaved_features>::PostingIterator(PostingListIteratorType itr,
+                                                       const FeatureStore& featureStore,
+                                                       uint32_t packedIndex,
+                                                       const fef::TermFieldMatchDataArray& matchData) :
     queryeval::RankedSearchIteratorBase(matchData),
     _itr(itr),
     _featureStore(featureStore),
@@ -25,10 +26,12 @@ PostingIterator::PostingIterator(FieldIndex::PostingList::ConstIterator itr,
     _featureStore.setupForField(packedIndex, _featureDecoder);
 }
 
-PostingIterator::~PostingIterator() {}
+template <bool interleaved_features>
+PostingIterator<interleaved_features>::~PostingIterator() = default;
 
+template <bool interleaved_features>
 void
-PostingIterator::initRange(uint32_t begin, uint32_t end)
+PostingIterator<interleaved_features>::initRange(uint32_t begin, uint32_t end)
 {
     SearchIterator::initRange(begin, end);
     _itr.lower_bound(begin);
@@ -40,8 +43,9 @@ PostingIterator::initRange(uint32_t begin, uint32_t end)
     clearUnpacked();
 }
 
+template <bool interleaved_features>
 void
-PostingIterator::doSeek(uint32_t docId)
+PostingIterator<interleaved_features>::doSeek(uint32_t docId)
 {
     if (getUnpacked()) {
         clearUnpacked();
@@ -54,8 +58,9 @@ PostingIterator::doSeek(uint32_t docId)
     }
 }
 
+template <bool interleaved_features>
 void
-PostingIterator::doUnpack(uint32_t docId)
+PostingIterator<interleaved_features>::doUnpack(uint32_t docId)
 {
     if (!_matchData.valid() || getUnpacked()) {
         return;
@@ -69,59 +74,62 @@ PostingIterator::doUnpack(uint32_t docId)
     setUnpacked();
 }
 
+template
+class PostingIterator<false>;
+
 }
 
 namespace search::btree {
 
 template class BTreeNodeTT<uint32_t,
-                           search::memoryindex::PostingListEntry,
+                           search::memoryindex::PostingListEntry<false>,
                            search::btree::NoAggregated,
                            BTreeDefaultTraits::INTERNAL_SLOTS>;
 
 template class BTreeLeafNode<uint32_t,
-                             search::memoryindex::PostingListEntry,
+                             search::memoryindex::PostingListEntry<false>,
                              search::btree::NoAggregated,
                              BTreeDefaultTraits::LEAF_SLOTS>;
 
 template class BTreeNodeStore<uint32_t,
-                              search::memoryindex::PostingListEntry,
+                              search::memoryindex::PostingListEntry<false>,
                               search::btree::NoAggregated,
                               BTreeDefaultTraits::INTERNAL_SLOTS,
                               BTreeDefaultTraits::LEAF_SLOTS>;
 
 template class BTreeIteratorBase<uint32_t,
-                                 search::memoryindex::PostingListEntry,
+                                 search::memoryindex::PostingListEntry<false>,
                                  search::btree::NoAggregated,
                                  BTreeDefaultTraits::INTERNAL_SLOTS,
                                  BTreeDefaultTraits::LEAF_SLOTS,
                                  BTreeDefaultTraits::PATH_SIZE>;
 
 template class BTreeIterator<uint32_t,
-                             search::memoryindex::PostingListEntry,
+                             search::memoryindex::PostingListEntry<false>,
                              search::btree::NoAggregated,
                              std::less<uint32_t>,
                              BTreeDefaultTraits>;
 
 template class BTree<uint32_t,
-                     search::memoryindex::PostingListEntry,
+                     search::memoryindex::PostingListEntry<false>,
                      search::btree::NoAggregated,
                      std::less<uint32_t>,
                      BTreeDefaultTraits>;
 
 template class BTreeRoot<uint32_t,
-                         search::memoryindex::PostingListEntry,
+                         search::memoryindex::PostingListEntry<false>,
                          search::btree::NoAggregated,
                          std::less<uint32_t>,
                          BTreeDefaultTraits>;
 
 template class BTreeRootBase<uint32_t,
-                             search::memoryindex::PostingListEntry,
+                             search::memoryindex::PostingListEntry<false>,
                              search::btree::NoAggregated,
                              BTreeDefaultTraits::INTERNAL_SLOTS,
                              BTreeDefaultTraits::LEAF_SLOTS>;
 
 template class BTreeNodeAllocator<uint32_t,
-                                  search::memoryindex::PostingListEntry,
+                                  search::memoryindex::PostingListEntry<false>,
                                   search::btree::NoAggregated,
                                   BTreeDefaultTraits::INTERNAL_SLOTS,
                                   BTreeDefaultTraits::LEAF_SLOTS>;

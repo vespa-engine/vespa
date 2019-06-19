@@ -9,18 +9,18 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-namespace fakedata {
+namespace search::fakedata {
 
-class FakeMemTreeOccMgr : public FakeWord::RandomizedWriter
-{
+class FakeMemTreeOccMgr : public FakeWord::RandomizedWriter {
 public:
-    typedef memoryindex::FieldIndex::PostingList Tree;
-    typedef Tree::NodeAllocatorType NodeAllocator;
-    typedef memoryindex::FeatureStore FeatureStore;
-    typedef datastore::EntryRef EntryRef;
-    typedef index::Schema Schema;
-    typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
+    // TODO: Create implementation for "interleaved features" posting list as well.
+    using Tree = memoryindex::FieldIndex<false>::PostingList;
+    using PostingListEntryType = memoryindex::FieldIndex<false>::PostingListEntryType;
+    using NodeAllocator = Tree::NodeAllocatorType;
+    using FeatureStore = memoryindex::FeatureStore;
+    using EntryRef = datastore::EntryRef;
+    using Schema = index::Schema;
+    using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 
     vespalib::GenerationHandler _generationHandler;
     NodeAllocator _allocator;
@@ -179,6 +179,4 @@ public:
     queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
-} // namespace fakedata
-
-} // namespace search
+}
