@@ -314,7 +314,7 @@ private:
     vespalib::string _attrKey;
     vespalib::string _queryVectorKey;
 
-    vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
+    const vespalib::string & getAttribute(const fef::IQueryEnvironment & env) const;
     const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
 
 public:

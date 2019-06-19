@@ -816,6 +816,16 @@ make_queryvector_key(const vespalib::string & base, const vespalib::string & sub
     return key;
 }
 
+const vespalib::string &
+make_queryvector_key_for_attribute(const IAttributeVector & attribute, const vespalib::string & key, vespalib::string & scratchPad) {
+    if (attribute.hasEnum() && (attribute.getCollectionType() == attribute::CollectionType::WSET)) {
+        scratchPad = key;
+        scratchPad.append(".").append(attribute.getName());
+        return scratchPad;
+    }
+    return key;
+}
+
 vespalib::string
 make_attribute_key(const vespalib::string & base, const vespalib::string & subKey) {
     vespalib::string key(base);
@@ -828,11 +838,12 @@ make_attribute_key(const vespalib::string & base, const vespalib::string & subKe
 
 const IAttributeVector *
 DotProductBlueprint::upgradeIfNecessary(const IAttributeVector * attribute, const IQueryEnvironment & env) const {
-    if ((attribute->getCollectionType() == attribute::CollectionType::WSET) &&
+    if ((attribute != nullptr) &&
+        (attribute->getCollectionType() == attribute::CollectionType::WSET) &&
         attribute->hasEnum() &&
         (attribute->isStringType() || attribute->isIntegerType()))
     {
-        attribute = env.getAttributeContext().getAttributeStableEnum(getAttribute(env));
+        attribute = env.getAttributeContext().getAttributeStableEnum(attribute->getName());
     }
     return attribute;
 }
@@ -911,7 +922,7 @@ DotProductBlueprint::DotProductBlueprint() :
 
 DotProductBlueprint::~DotProductBlueprint() = default;
 
-vespalib::string
+const vespalib::string &
 DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
 {
     Property prop = env.getProperties().lookup(getBaseName(), _attributeOverride);
@@ -961,7 +972,8 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
     if (queryVector == nullptr) {
         fef::Anything::UP arguments = createQueryVector(env, attribute, getBaseName(), _queryVector);
         if (arguments) {
-            store.add(_queryVectorKey, std::move(arguments));
+            vespalib::string scratchPad;
+            store.add(make_queryvector_key_for_attribute(*attribute, _queryVectorKey, scratchPad), std::move(arguments));
         }
     }
 
@@ -973,16 +985,20 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
 {
     // Doing it "manually" here to avoid looking up attribute override unless needed.
     const fef::Anything * attributeArg = env.getObjectStore().get(_attrKey);
-    const IAttributeVector * attribute = (attributeArg != nullptr)
-                                       ? static_cast<const fef::AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
-                                       : env.getAttributeContext().getAttribute(getAttribute(env));
+    const IAttributeVector * attribute = nullptr;
+    if (attributeArg != nullptr) {
+        attribute = static_cast<const fef::AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue();
+    } else {
+        attribute = env.getAttributeContext().getAttribute(getAttribute(env));
+        attribute = upgradeIfNecessary(attribute, env);
+    }
     if (attribute == nullptr) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             getAttribute(env).c_str());
         return stash.create<SingleZeroValueExecutor>();
     }
-    attribute = upgradeIfNecessary(attribute, env);
-    const fef::Anything * queryVectorArg = env.getObjectStore().get(_queryVectorKey);
+    vespalib::string scratchPad;
+    const fef::Anything * queryVectorArg = env.getObjectStore().get(make_queryvector_key_for_attribute(*attribute, _queryVectorKey, scratchPad));
     if (queryVectorArg != nullptr) {
         return createFromObject(attribute, *queryVectorArg, stash);
     } else {
