@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -138,7 +137,7 @@ ViewSet::~ViewSet() {}
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
     virtual vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
-        return std::make_unique<ErrorConstantValue>();
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 };
 

@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/searchcore/proton/matching/constant_value_repo.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
 using namespace proton::matching;
@@ -36,7 +35,7 @@ public:
         if (itr != _map.end()) {
             return std::make_unique<DoubleConstantValue>(itr->second);
         }
-        return std::make_unique<ErrorConstantValue>();
+        return std::make_unique<BadConstantValue>();
     }
 };
 
@@ -58,14 +57,14 @@ TEST_F("require that constant value can be retrieved from repo", Fixture)
     EXPECT_EQUAL(3, f.repo.getConstant("foo")->value().as_double());
 }
 
-TEST_F("require that non-existing constant value in repo returns error value", Fixture)
+TEST_F("require that non-existing constant value in repo returns nullptr", Fixture)
 {
-    EXPECT_TRUE(f.repo.getConstant("none")->value().is_error());
+    EXPECT_TRUE(f.repo.getConstant("none").get() == nullptr);
 }
 
-TEST_F("require that non-existing constant value in factory returns error value", Fixture)
+TEST_F("require that non-existing constant value in factory returns bad constant", Fixture)
 {
-    EXPECT_TRUE(f.repo.getConstant("bar")->value().is_error());
+    EXPECT_TRUE(f.repo.getConstant("bar")->type().is_error());
 }
 
 TEST_F("require that reconfigure replaces existing constant values in repo", Fixture)
@@ -73,7 +72,7 @@ TEST_F("require that reconfigure replaces existing constant values in repo", Fix
     f.repo.reconfigure(RankingConstants({{"bar", "double", "path_3"},
                                          {"baz", "double", "path_2"}}));
     f.factory.add("path_3", "double", 7);
-    EXPECT_TRUE(f.repo.getConstant("foo")->value().is_error());
+    EXPECT_TRUE(f.repo.getConstant("foo").get() == nullptr);
     EXPECT_EQUAL(7, f.repo.getConstant("bar")->value().as_double());
     EXPECT_EQUAL(5, f.repo.getConstant("baz")->value().as_double());
 }
