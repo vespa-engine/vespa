@@ -9,7 +9,7 @@ namespace search::memoryindex {
 /**
  * Entry per document in memory index posting list.
  */
-template <bool has_interleaved_features>
+template <bool interleaved_features>
 class PostingListEntry {
     mutable datastore::EntryRef _features; // reference to compressed features
 

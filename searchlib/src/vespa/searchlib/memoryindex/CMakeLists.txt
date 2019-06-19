@@ -5,6 +5,7 @@ vespa_add_library(searchlib_memoryindex OBJECT
     document_inverter.cpp
     feature_store.cpp
     field_index.cpp
+    field_index_base.cpp
     field_index_collection.cpp
     field_index_remover.cpp
     field_inverter.cpp

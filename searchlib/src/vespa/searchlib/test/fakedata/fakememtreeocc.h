@@ -13,8 +13,9 @@ namespace search::fakedata {
 
 class FakeMemTreeOccMgr : public FakeWord::RandomizedWriter {
 public:
-    using Tree = memoryindex::FieldIndex::PostingList;
-    using PostingListEntryType = memoryindex::FieldIndex::PostingListEntryType;
+    // TODO: Create implementation for "interleaved features" posting list as well.
+    using Tree = memoryindex::FieldIndex<false>::PostingList;
+    using PostingListEntryType = memoryindex::FieldIndex<false>::PostingListEntryType;
     using NodeAllocator = Tree::NodeAllocatorType;
     using FeatureStore = memoryindex::FeatureStore;
     using EntryRef = datastore::EntryRef;

@@ -129,10 +129,10 @@ search::queryeval::SearchIterator *
 FakeMemTreeOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
-    return new search::memoryindex::PostingIterator(_tree.begin(_allocator),
-                                                    _mgr._featureStore,
-                                                    _packedIndex,
-                                                    matchData);
+    return new search::memoryindex::PostingIterator<false>(_tree.begin(_allocator),
+                                                           _mgr._featureStore,
+                                                           _packedIndex,
+                                                           matchData);
 }
 
 

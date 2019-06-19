@@ -18,26 +18,29 @@ class IFieldIndexInsertListener;
  * and for each word updating the posting list with docId adds / removes.
  *
  * Insert order must be properly sorted, first by word, then by docId.
+ *
+ * The template parameter specifies whether the posting lists of the field index have interleaved features or not.
  */
+template <bool interleaved_features>
 class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
 private:
     vespalib::stringref _word;
     uint32_t _prevDocId;
     bool     _prevAdd;
-    using DictionaryTree = FieldIndex::DictionaryTree;
-    using PostingListStore = FieldIndex::PostingListStore;
-    using KeyComp = FieldIndex::KeyComp;
-    using WordKey = FieldIndex::WordKey;
-    using PostingListEntryType = FieldIndex::PostingListEntryType;
-    using PostingListKeyDataType = FieldIndex::PostingListKeyDataType;
-    FieldIndex        &_fieldIndex;
-    DictionaryTree::Iterator _dItr;
+    using FieldIndexType = FieldIndex<interleaved_features>;
+    using DictionaryTree = typename FieldIndexType::DictionaryTree;
+    using PostingListStore = typename FieldIndexType::PostingListStore;
+    using KeyComp = typename FieldIndexType::KeyComp;
+    using WordKey = typename FieldIndexType::WordKey;
+    using PostingListEntryType = typename FieldIndexType::PostingListEntryType;
+    using PostingListKeyDataType = typename FieldIndexType::PostingListKeyDataType;
+    FieldIndexType& _fieldIndex;
+    typename DictionaryTree::Iterator _dItr;
     IFieldIndexInsertListener &_listener;
 
     // Pending changes to posting list for (_word)
     std::vector<uint32_t>    _removes;
     std::vector<PostingListKeyDataType> _adds;
-
 
     static constexpr uint32_t noFieldId = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t noDocId = std::numeric_limits<uint32_t>::max();
@@ -50,7 +53,7 @@ private:
     void flushWord();
 
 public:
-    OrderedFieldIndexInserter(FieldIndex &fieldIndex);
+    OrderedFieldIndexInserter(FieldIndexType& fieldIndex);
     ~OrderedFieldIndexInserter() override;
     void setNextWord(const vespalib::stringref word) override;
     void add(uint32_t docId, const index::DocIdAndFeatures &features) override;

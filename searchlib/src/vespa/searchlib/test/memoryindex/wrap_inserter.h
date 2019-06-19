@@ -20,7 +20,7 @@ public:
     {
     }
 
-    WrapInserter(FieldIndex& field_index)
+    WrapInserter(IFieldIndex& field_index)
             : _inserter(field_index.getInserter())
     {
     }
