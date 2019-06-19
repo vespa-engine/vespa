@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
+import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import org.xml.sax.SAXException;
@@ -111,6 +112,7 @@ public class SessionPreparer {
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeRotZK();
+                preparation.writeTlsZK();
                 var globalServiceId = context.getApplicationPackage().getDeployment()
                                              .map(DeploymentSpec::fromXml)
                                              .flatMap(DeploymentSpec::globalServiceId);
@@ -140,6 +142,7 @@ public class SessionPreparer {
         final com.yahoo.component.Version vespaVersion;
 
         final Rotations rotations; // TODO: Remove this once we have migrated fully to container endpoints
+        final TlsSecretsKeys tlsSecretsKeys;
         final ContainerEndpointsCache containerEndpoints;
         final Set<Rotation> rotationsSet;
         final ModelContext.Properties properties;
@@ -161,6 +164,7 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.rotations = new Rotations(curator, tenantPath);
+            this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.rotationsSet = getRotations(params.rotations());
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
@@ -233,6 +237,11 @@ public class SessionPreparer {
         void writeRotZK() {
             rotations.writeRotationsToZooKeeper(applicationId, rotationsSet);
             checkTimeout("write rotations to zookeeper");
+        }
+
+        void writeTlsZK() {
+            tlsSecretsKeys.writeTlsSecretsKeyToZooKeeper(applicationId, params.tlsSecretsKeyName().orElse(null));
+            checkTimeout("write tlsSecretsKey to zookeeper");
         }
 
         void writeContainerEndpointsZK(Optional<String> globalServiceId) {
