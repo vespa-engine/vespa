@@ -45,6 +45,7 @@ public final class PrepareParams {
     private final boolean isBootstrap;
     private final Optional<Version> vespaVersion;
     private final Set<Rotation> rotations;
+    private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
