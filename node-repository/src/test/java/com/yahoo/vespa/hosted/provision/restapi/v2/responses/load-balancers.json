@@ -2,6 +2,8 @@
   "loadBalancers": [
     {
       "id": "tenant4:application4:instance4:id4",
+      "state": "active",
+      "changedAt": 123,
       "application": "application4",
       "tenant": "tenant4",
       "instance": "instance4",

@@ -5,9 +5,9 @@ import com.google.common.collect.Iterators;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RotationName;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -112,18 +111,18 @@ public class LoadBalancerProvisionerTest {
         removeTransaction.commit();
 
         assertEquals(2, loadBalancers.get().size());
-        assertTrue("Deactivated load balancers", loadBalancers.get().stream().allMatch(LoadBalancer::inactive));
+        assertTrue("Deactivated load balancers", loadBalancers.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.inactive));
 
         // Application is redeployed with one cluster and load balancer is re-activated
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
-        assertFalse("Re-activated load balancer for " + containerCluster1,
-                    loadBalancers.get().stream()
-                                 .filter(lb -> lb.id().cluster().equals(containerCluster1))
-                                 .findFirst()
-                                 .orElseThrow()
-                                 .inactive());
+        assertEquals("Re-activated load balancer for " + containerCluster1, LoadBalancer.State.active,
+                     loadBalancers.get().stream()
+                                  .filter(lb -> lb.id().cluster().equals(containerCluster1))
+                                  .map(LoadBalancer::state)
+                                  .findFirst()
+                                  .orElseThrow());
     }
 
     private ClusterSpec clusterRequest(ClusterSpec.Type type, ClusterSpec.Id id) {

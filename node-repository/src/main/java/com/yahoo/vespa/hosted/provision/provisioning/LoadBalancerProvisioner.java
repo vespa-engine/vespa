@@ -57,7 +57,7 @@ public class LoadBalancerProvisioner {
                     LoadBalancerInstance instance = create(application, kv.getKey().id(), kv.getValue());
                     // Load balancer is always re-activated here to avoid reallocation if an application/cluster is
                     // deleted and then redeployed.
-                    LoadBalancer loadBalancer = new LoadBalancer(id, instance, false);
+                    LoadBalancer loadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.active, nodeRepository.clock().instant());
                     loadBalancers.put(loadBalancer.id(), loadBalancer);
                     db.writeLoadBalancer(loadBalancer);
                 }
@@ -73,8 +73,9 @@ public class LoadBalancerProvisioner {
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
+                var now = nodeRepository.clock().instant();
                 List<LoadBalancer> deactivatedLoadBalancers = nodeRepository.loadBalancers().owner(application).asList().stream()
-                                                                            .map(LoadBalancer::deactivate)
+                                                                            .map(lb -> lb.with(LoadBalancer.State.inactive, now))
                                                                             .collect(Collectors.toList());
                 db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
             }

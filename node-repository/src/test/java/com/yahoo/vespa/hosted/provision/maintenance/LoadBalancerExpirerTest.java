@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,8 +51,8 @@ public class LoadBalancerExpirerTest {
 
         // Remove one application deactivates load balancers for that application
         removeApplication(app1);
-        assertTrue(loadBalancers.get().get(lb1).inactive());
-        assertFalse(loadBalancers.get().get(lb2).inactive());
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb1).state());
+        assertNotSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb2).state());
 
         // Expirer defers removal while nodes are still allocated to application
         expirer.maintain();
@@ -62,12 +64,12 @@ public class LoadBalancerExpirerTest {
         assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb1));
 
         // Active load balancer is left alone
-        assertFalse(loadBalancers.get().get(lb2).inactive());
+        assertSame(LoadBalancer.State.active, loadBalancers.get().get(lb2).state());
         assertTrue("Active load balancer is not removed", tester.loadBalancerService().instances().containsKey(lb2));
     }
 
     private void dirtyNodesOf(ApplicationId application) {
-        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, "unit-test");
+        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
 
     private void removeApplication(ApplicationId application) {

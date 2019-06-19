@@ -15,9 +15,9 @@ import com.yahoo.vespa.hosted.provision.lb.Real;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -36,12 +36,13 @@ public class LoadBalancerSerializer {
 
     private static final String idField = "id";
     private static final String hostnameField = "hostname";
+    private static final String stateField = "state";
+    private static final String changedAtField = "changedAt";
     private static final String dnsZoneField = "dnsZone";
     private static final String inactiveField = "inactive";
     private static final String portsField = "ports";
     private static final String networksField = "networks";
     private static final String realsField = "reals";
-    private static final String nameField = "name";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
 
@@ -51,6 +52,8 @@ public class LoadBalancerSerializer {
 
         root.setString(idField, loadBalancer.id().serializedForm());
         root.setString(hostnameField, loadBalancer.instance().hostname().toString());
+        root.setString(stateField, asString(loadBalancer.state()));
+        root.setLong(changedAtField, loadBalancer.changedAt().toEpochMilli());
         loadBalancer.instance().dnsZone().ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
         Cursor portArray = root.setArray(portsField);
         loadBalancer.instance().ports().forEach(portArray::addLong);
@@ -63,8 +66,6 @@ public class LoadBalancerSerializer {
             realObject.setString(ipAddressField, real.ipAddress());
             realObject.setLong(portField, real.port());
         });
-        root.setBool(inactiveField, loadBalancer.inactive());
-
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
@@ -72,10 +73,10 @@ public class LoadBalancerSerializer {
         }
     }
 
-    public static LoadBalancer fromJson(byte[] data) {
+    public static LoadBalancer fromJson(byte[] data, Instant defaultChangedAt) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
-        Set<Real> reals = new LinkedHashSet<>();
+        var reals = new LinkedHashSet<Real>();
         object.field(realsField).traverse((ArrayTraverser) (i, realObject) -> {
             reals.add(new Real(HostName.from(realObject.field(hostnameField).asString()),
                                realObject.field(ipAddressField).asString(),
@@ -83,25 +84,61 @@ public class LoadBalancerSerializer {
 
         });
 
-        Set<Integer> ports = new LinkedHashSet<>();
+        var ports = new LinkedHashSet<Integer>();
         object.field(portsField).traverse((ArrayTraverser) (i, port) -> ports.add((int) port.asLong()));
 
-        Set<String> networks = new LinkedHashSet<>();
+        var networks = new LinkedHashSet<String>();
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 new LoadBalancerInstance(
                                         HostName.from(object.field(hostnameField).asString()),
-                                        optionalField(object.field(dnsZoneField), DnsZone::new),
+                                        optionalString(object.field(dnsZoneField), DnsZone::new),
                                         ports,
                                         networks,
                                         reals
                                 ),
-                                object.field(inactiveField).asBool());
+                                stateFromSlime(object),
+                                instantFromSlime(object.field(changedAtField), defaultChangedAt));
     }
 
-    private static <T> Optional<T> optionalField(Inspector field, Function<String, T> fieldMapper) {
-        return Optional.of(field).filter(Inspector::valid).map(Inspector::asString).map(fieldMapper);
+    private static Instant instantFromSlime(Cursor field, Instant defaultValue) {
+        return optionalValue(field, (value) -> Instant.ofEpochMilli(value.asLong())).orElse(defaultValue);
+    }
+
+    private static LoadBalancer.State stateFromSlime(Inspector object) {
+        var inactiveValue = optionalValue(object.field(inactiveField), Inspector::asBool);
+        if (inactiveValue.isPresent()) { // TODO(mpolden): Remove reading of "inactive" field after June 2019
+            return inactiveValue.get() ? LoadBalancer.State.inactive : LoadBalancer.State.active;
+        } else {
+            return stateFromString(object.field(stateField).asString());
+        }
+    }
+
+    private static <T> Optional<T> optionalValue(Inspector field, Function<Inspector, T> fieldMapper) {
+        return Optional.of(field).filter(Inspector::valid).map(fieldMapper);
+    }
+
+    private static <T> Optional<T> optionalString(Inspector field, Function<String, T> fieldMapper) {
+        return optionalValue(field, Inspector::asString).map(fieldMapper);
+    }
+
+    private static String asString(LoadBalancer.State state) {
+        switch (state) {
+            case active: return "active";
+            case inactive: return "inactive";
+            case reserved: return "reserved";
+            default: throw new IllegalArgumentException("No serialization defined for state enum '" + state + "'");
+        }
+    }
+
+    private static LoadBalancer.State stateFromString(String state) {
+        switch (state) {
+            case "active": return LoadBalancer.State.active;
+            case "inactive": return LoadBalancer.State.inactive;
+            case "reserved": return LoadBalancer.State.reserved;
+            default: throw new IllegalArgumentException("No serialization defined for state string '" + state + "'");
+        }
     }
 
 }
