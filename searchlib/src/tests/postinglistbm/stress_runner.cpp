@@ -215,13 +215,13 @@ makeSomePostings(FPFactory *postingFactory,
             tfmda.add(&md);
 
             md.setNeedNormalFeatures(posting->enable_unpack_normal_features());
-            md.setNeedCheapFeatures(posting->enable_unpack_cheap_features());
+            md.setNeedInterleavedFeatures(posting->enable_unpack_interleaved_features());
             std::unique_ptr<SearchIterator> iterator(posting->createIterator(tfmda));
             if (posting->hasWordPositions()) {
                 if (stride != 0) {
-                    word->validate(iterator.get(), tfmda, stride, posting->enable_unpack_normal_features(), posting->has_cheap_features() && posting->enable_unpack_cheap_features(), verbose);
+                    word->validate(iterator.get(), tfmda, stride, posting->enable_unpack_normal_features(), posting->has_interleaved_features() && posting->enable_unpack_interleaved_features(), verbose);
                 } else {
-                    word->validate(iterator.get(), tfmda, posting->enable_unpack_normal_features(), posting->has_cheap_features() && posting->enable_unpack_cheap_features(), verbose);
+                    word->validate(iterator.get(), tfmda, posting->enable_unpack_normal_features(), posting->has_interleaved_features() && posting->enable_unpack_interleaved_features(), verbose);
                 }
             } else {
                 word->validate(iterator.get(), verbose);

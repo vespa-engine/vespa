@@ -89,7 +89,7 @@ Verifier::Verifier(FakePosting::SP fp)
 {
     if (_fp) {
         _tfmd.setNeedNormalFeatures(_fp->enable_unpack_normal_features());
-        _tfmd.setNeedCheapFeatures(_fp->enable_unpack_cheap_features());
+        _tfmd.setNeedInterleavedFeatures(_fp->enable_unpack_interleaved_features());
     }
     _tfmda.add(&_tfmd);
 }

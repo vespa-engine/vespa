@@ -10,12 +10,12 @@ namespace search::fef {
  * Normal:
  *   Full match data positions should be available. This is the default.
  *
- * Cheap:
- *   Cheap match data ('number of occurrences' and 'field length') should be available.
+ * Interleaved:
+ *   Interleaved match data ('number of occurrences' and 'field length') should be available.
  */
 enum class MatchDataDetails {
     Normal = 1,
-    Cheap = 2
+    Interleaved = 2
 };
 
 }

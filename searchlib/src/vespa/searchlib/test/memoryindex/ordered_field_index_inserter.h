@@ -11,7 +11,7 @@ class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
     std::stringstream _ss;
     bool _first;
     bool _verbose;
-    bool _show_cheap_features;
+    bool _show_interleaved_features;
     uint32_t _fieldId;
 
     void
@@ -28,7 +28,7 @@ public:
         : _ss(),
           _first(true),
           _verbose(false),
-          _show_cheap_features(false),
+          _show_interleaved_features(false),
           _fieldId(0)
     {
     }
@@ -57,7 +57,7 @@ public:
             _ss << "(";
             auto wpi = features.word_positions().begin();
             bool firstElement = true;
-            if (_show_cheap_features) {
+            if (_show_interleaved_features) {
                 _ss << "fl=" << features.field_length() <<
                     ",occs=" << features.num_occs();
                 firstElement = false;
@@ -114,7 +114,7 @@ public:
     }
 
     void setVerbose() { _verbose = true; }
-    void set_show_cheap_features() { _show_cheap_features = true; }
+    void set_show_interleaved_features() { _show_interleaved_features = true; }
 };
 
 }

@@ -53,15 +53,15 @@ private:
     static constexpr uint16_t RAW_SCORE_FLAG = 1;
     static constexpr uint16_t MULTIPOS_FLAG = 2;
     static constexpr uint16_t UNPACK_NORMAL_FEATURES_FLAG = 4;
-    static constexpr uint16_t UNPACK_CHEAP_FEATURES_FLAG = 8;
-    static constexpr uint16_t UNPACK_ALL_FEATURES_MASK = UNPACK_NORMAL_FEATURES_FLAG | UNPACK_CHEAP_FEATURES_FLAG;
+    static constexpr uint16_t UNPACK_INTERLEAVED_FEATURES_FLAG = 8;
+    static constexpr uint16_t UNPACK_ALL_FEATURES_MASK = UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG;
 
     uint32_t  _docId;
     uint16_t  _fieldId;
     uint16_t  _flags;
     uint16_t  _sz;
 
-    // Number of occurrences and field length used when unpacking "cheap" features.
+    // Number of occurrences and field length used when unpacking interleaved features.
     // This can exist in addition to full position features.
     uint16_t _numOccs;
     uint16_t _fieldLength;
@@ -259,17 +259,17 @@ public:
      * This indicates if this instance is actually used for ranking or not.
      * @return true if it is not needed.
      */
-    bool  isNotNeeded() const { return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_CHEAP_FEATURES_FLAG)) == 0u); }
+    bool  isNotNeeded() const { return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG)) == 0u); }
 
     bool needs_normal_features() const { return ((_flags & UNPACK_NORMAL_FEATURES_FLAG) != 0u); }
 
-    bool needs_cheap_features() const { return ((_flags & UNPACK_CHEAP_FEATURES_FLAG) != 0u); }
+    bool needs_interleaved_features() const { return ((_flags & UNPACK_INTERLEAVED_FEATURES_FLAG) != 0u); }
 
     /**
      * Tag that this instance is not really used for ranking.
      */
     void tagAsNotNeeded() {
-        _flags &=  ~(UNPACK_NORMAL_FEATURES_FLAG | UNPACK_CHEAP_FEATURES_FLAG);
+        _flags &=  ~(UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG);
     }
 
     /**
@@ -284,13 +284,13 @@ public:
     }
 
     /**
-     * Tag that this instance is used for ranking (cheap features)
+     * Tag that this instance is used for ranking (interleaved features)
      */
-    void setNeedCheapFeatures(bool needed) {
+    void setNeedInterleavedFeatures(bool needed) {
         if (needed) {
-            _flags |= UNPACK_CHEAP_FEATURES_FLAG;
+            _flags |= UNPACK_INTERLEAVED_FEATURES_FLAG;
         } else {
-            _flags &= ~UNPACK_CHEAP_FEATURES_FLAG;
+            _flags &= ~UNPACK_INTERLEAVED_FEATURES_FLAG;
         }
     }
 

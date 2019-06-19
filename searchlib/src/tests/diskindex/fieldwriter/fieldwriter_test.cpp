@@ -149,7 +149,7 @@ public:
     std::unique_ptr<FieldWriter> _fieldWriter;
 private:
     bool _dynamicK;
-    bool _encode_cheap_features;
+    bool _encode_interleaved_features;
     uint32_t _numWordIds;
     uint32_t _docIdLimit;
     vespalib::string _namepref;
@@ -173,12 +173,12 @@ WrappedFieldWriter::~WrappedFieldWriter() {}
 
 WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
                                        bool dynamicK,
-                                       bool encode_cheap_features,
+                                       bool encode_interleaved_features,
                                        uint32_t numWordIds,
                                        uint32_t docIdLimit)
     : _fieldWriter(),
       _dynamicK(dynamicK),
-      _encode_cheap_features(encode_cheap_features),
+      _encode_interleaved_features(encode_interleaved_features),
       _numWordIds(numWordIds),
       _docIdLimit(docIdLimit),
       _namepref(dirprefix + namepref),
@@ -200,7 +200,7 @@ WrappedFieldWriter::open()
     _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds);
     _fieldWriter->open(_namepref,
                        minSkipDocs, minChunkDocs,
-                       _dynamicK, _encode_cheap_features,
+                       _dynamicK, _encode_interleaved_features,
                        _schema, _indexId,
                        FieldLengthInfo(4.5, 42),
                        tuneFileWrite, fileHeaderContext);
@@ -358,7 +358,7 @@ void
 writeField(FakeWordSet &wordSet,
            uint32_t docIdLimit,
            const std::string &namepref,
-           bool dynamicK, bool encode_cheap_features)
+           bool dynamicK, bool encode_interleaved_features)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
@@ -368,14 +368,14 @@ writeField(FakeWordSet &wordSet,
 
     LOG(info,
         "enter writeField, "
-        "namepref=%s, dynamicK=%s, encode_cheap_features=%s",
+        "namepref=%s, dynamicK=%s, encode_interleaved_features=%s",
         namepref.c_str(),
         dynamicKStr,
-        bool_to_str(encode_cheap_features));
+        bool_to_str(encode_interleaved_features));
     tv.SetNow();
     before = tv.Secs();
     WrappedFieldWriter ostate(namepref,
-                              dynamicK, encode_cheap_features,
+                              dynamicK, encode_interleaved_features,
                               wordSet.getNumWords(), docIdLimit);
     FieldWriter::remove(dirprefix + namepref);
     ostate.open();
@@ -394,11 +394,11 @@ writeField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave writeField, "
-        "namepref=%s, dynamicK=%s, encode_cheap_features=%s"
+        "namepref=%s, dynamicK=%s, encode_interleaved_features=%s"
         " elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
-        bool_to_str(encode_cheap_features),
+        bool_to_str(encode_interleaved_features),
         after - before);
 }
 
@@ -408,7 +408,7 @@ readField(FakeWordSet &wordSet,
           uint32_t docIdLimit,
           const std::string &namepref,
           bool dynamicK,
-          bool decode_cheap_features,
+          bool decode_interleaved_features,
           bool verbose)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
@@ -420,10 +420,10 @@ readField(FakeWordSet &wordSet,
                              docIdLimit);
     LOG(info,
         "enter readField, "
-        "namepref=%s, dynamicK=%s, decode_cheap_features=%s",
+        "namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(),
         dynamicKStr,
-        bool_to_str(decode_cheap_features));
+        bool_to_str(decode_interleaved_features));
     tv.SetNow();
     before = tv.Secs();
     istate.open();
@@ -442,7 +442,7 @@ readField(FakeWordSet &wordSet,
             TermFieldMatchDataArray tfmda;
             tfmda.add(&mdfield1);
 
-            word->validate(*istate._fieldReader, wordNum, tfmda, decode_cheap_features, verbose);
+            word->validate(*istate._fieldReader, wordNum, tfmda, decode_interleaved_features, verbose);
             ++wordNum;
         }
     }
@@ -452,11 +452,11 @@ readField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave readField, "
-        "namepref=%s, dynamicK=%s, decode_cheap_features=%s"
+        "namepref=%s, dynamicK=%s, decode_interleaved_features=%s"
         " elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
-        bool_to_str(decode_cheap_features),
+        bool_to_str(decode_interleaved_features),
         after - before);
 }
 
@@ -465,7 +465,7 @@ void
 randReadField(FakeWordSet &wordSet,
               const std::string &namepref,
               bool dynamicK,
-              bool decode_cheap_features,
+              bool decode_interleaved_features,
               bool verbose)
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
@@ -477,10 +477,10 @@ randReadField(FakeWordSet &wordSet,
 
     LOG(info,
         "enter randReadField,"
-        " namepref=%s, dynamicK=%s, decode_cheap_features=%s",
+        " namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(),
         dynamicKStr,
-        bool_to_str(decode_cheap_features));
+        bool_to_str(decode_interleaved_features));
     tv.SetNow();
     before = tv.Secs();
 
@@ -545,12 +545,12 @@ randReadField(FakeWordSet &wordSet,
                     sb(handle.createIterator(counts, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
-                word->validate(sb.get(), tfmda, true, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 19, true, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 99, true, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 799, true, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 6399, true, decode_cheap_features, verbose);
-                word->validate(sb.get(), tfmda, 11999, true, decode_cheap_features, verbose);
+                word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);
+                word->validate(sb.get(), tfmda, 19, true, decode_interleaved_features, verbose);
+                word->validate(sb.get(), tfmda, 99, true, decode_interleaved_features, verbose);
+                word->validate(sb.get(), tfmda, 799, true, decode_interleaved_features, verbose);
+                word->validate(sb.get(), tfmda, 6399, true, decode_interleaved_features, verbose);
+                word->validate(sb.get(), tfmda, 11999, true, decode_interleaved_features, verbose);
                 ++wordNum;
             }
         }
@@ -564,11 +564,11 @@ randReadField(FakeWordSet &wordSet,
     after = tv.Secs();
     LOG(info,
         "leave randReadField, namepref=%s,"
-        " dynamicK=%s, decode_cheap_features=%s, "
+        " dynamicK=%s, decode_interleaved_features=%s, "
         "elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
-        bool_to_str(decode_cheap_features),
+        bool_to_str(decode_interleaved_features),
         after - before);
 }
 
@@ -580,7 +580,7 @@ fusionField(uint32_t numWordIds,
             const vespalib::string &opref,
             bool doRaw,
             bool dynamicK,
-            bool encode_cheap_features)
+            bool encode_interleaved_features)
 {
     const char *rawStr = doRaw ? "true" : "false";
     const char *dynamicKStr = dynamicK ? "true" : "false";
@@ -589,17 +589,17 @@ fusionField(uint32_t numWordIds,
     LOG(info,
         "enter fusionField, ipref=%s, opref=%s,"
         " raw=%s,"
-        " dynamicK=%s, encode_cheap_features=%s",
+        " dynamicK=%s, encode_interleaved_features=%s",
         ipref.c_str(),
         opref.c_str(),
         rawStr,
-        dynamicKStr, bool_to_str(encode_cheap_features));
+        dynamicKStr, bool_to_str(encode_interleaved_features));
 
     FastOS_Time tv;
     double before;
     double after;
     WrappedFieldWriter ostate(opref,
-                              dynamicK, encode_cheap_features,
+                              dynamicK, encode_interleaved_features,
                               numWordIds, docIdLimit);
     WrappedFieldReader istate(ipref, numWordIds, docIdLimit);
 
@@ -628,12 +628,12 @@ fusionField(uint32_t numWordIds,
     after = tv.Secs();
     LOG(info,
         "leave fusionField, ipref=%s, opref=%s,"
-        " raw=%s dynamicK=%s, encode_cheap_features=%s,"
+        " raw=%s dynamicK=%s, encode_interleaved_features=%s,"
         " elapsed=%10.6f",
         ipref.c_str(),
         opref.c_str(),
         rawStr,
-        dynamicKStr, bool_to_str(encode_cheap_features),
+        dynamicKStr, bool_to_str(encode_interleaved_features),
         after - before);
 }
 
@@ -642,20 +642,20 @@ void
 testFieldWriterVariant(FakeWordSet &wordSet, uint32_t doc_id_limit,
                        const vespalib::string &file_name_prefix,
                        bool dynamic_k,
-                       bool encode_cheap_features,
+                       bool encode_interleaved_features,
                        bool verbose)
 {
-    writeField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_cheap_features);
-    readField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_cheap_features, verbose);
-    randReadField(wordSet, file_name_prefix, dynamic_k, encode_cheap_features, verbose);
+    writeField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_interleaved_features);
+    readField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
+    randReadField(wordSet, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
     fusionField(wordSet.getNumWords(),
                 doc_id_limit,
                 file_name_prefix, file_name_prefix + "x",
-                false, dynamic_k, encode_cheap_features);
+                false, dynamic_k, encode_interleaved_features);
     fusionField(wordSet.getNumWords(),
                 doc_id_limit,
                 file_name_prefix, file_name_prefix + "xx",
-                true, dynamic_k, encode_cheap_features);
+                true, dynamic_k, encode_interleaved_features);
     check_fusion(file_name_prefix);
     remove_field(file_name_prefix);
 }

@@ -31,7 +31,7 @@ protected:
         ~NoSkipBase();
         void setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id);
         void set_features_pos(uint64_t features_pos) { _features_pos = features_pos; }
-        void read(bool decode_cheap_features);
+        void read(bool decode_interleaved_features);
         void check_end(uint32_t last_doc_id);
         uint32_t get_doc_id()       const { return _doc_id; }
         uint32_t get_doc_id_pos()   const { return _doc_id_pos; }
@@ -45,7 +45,7 @@ protected:
     public:
         NoSkip();
         ~NoSkip();
-        void read(bool decode_cheap_features);
+        void read(bool decode_interleaved_features);
         void check_not_end(uint32_t last_doc_id);
         uint32_t get_field_length() const { return _field_length; }
         uint32_t get_num_occs()     const { return _num_occs; }
