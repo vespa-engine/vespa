@@ -3,6 +3,7 @@
 
 #include "hashtable.h"
 #include "hash_fun.h"
+#include "identity.h"
 #include <initializer_list>
 
 namespace vespalib {
@@ -11,7 +12,7 @@ template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_t
 class hash_set
 {
 private:
-    using HashTable = hashtable< K, K, H, EQ, std::_Identity<K>, M>;
+    using HashTable = hashtable< K, K, H, EQ, Identity, M>;
     HashTable _ht;
 public:
     typedef typename HashTable::iterator iterator;
