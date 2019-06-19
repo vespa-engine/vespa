@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -130,7 +131,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating
                                                flagSource,
-                                               null /* TODO Read from ZK */);
+                                               new TlsSecretsKeys(curator, TenantRepository.getTenantPath(tenant)).readTlsSecretsKeyFromZookeeper(applicationId).orElse(null));
     }
 
 }
