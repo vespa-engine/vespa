@@ -39,6 +39,8 @@ import java.util.Set;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -139,6 +141,8 @@ public class LbServicesProducerTest {
 
     @Test
     public void testConfigAliasesWithRotations() throws IOException, SAXException {
+        assumeTrue(useGlobalServiceId);
+
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
                                                                                   .rotations(rotations)
                                                                                   .properties(new TestProperties().setHostedVespa(true)));
@@ -150,14 +154,14 @@ public class LbServicesProducerTest {
                 .hosts("foo.foo.yahoo.com")
                 .services(QRSERVER.serviceName);
 
-        if (useGlobalServiceId) {
-            assertThat(services.servicealiases(), contains("service1"));
-            assertThat("Missing rotations in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
-        }
+        assertThat(services.servicealiases(), contains("service1"));
+        assertThat("Missing rotations in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
     }
 
     @Test
     public void testConfigAliasesWithEndpoints() throws IOException, SAXException {
+        assumeFalse(useGlobalServiceId);
+
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
                 .endpoints(endpoints)
                 .properties(new TestProperties().setHostedVespa(true)));
@@ -169,10 +173,8 @@ public class LbServicesProducerTest {
                 .hosts("foo.foo.yahoo.com")
                 .services(QRSERVER.serviceName);
 
-        if (! useGlobalServiceId) {
-            assertThat(services.servicealiases(), contains("service1"));
-            assertThat("Missing endpoints in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
-        }
+        assertThat(services.servicealiases(), contains("service1"));
+        assertThat("Missing endpoints in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
     }
 
     private Map<TenantName, Set<ApplicationInfo>> randomizeApplications(Map<TenantName, Set<ApplicationInfo>> testModel, int seed) {
