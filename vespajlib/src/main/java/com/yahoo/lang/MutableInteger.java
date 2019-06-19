@@ -24,6 +24,12 @@ public class MutableInteger {
         return value;
     }
 
+    /** Increments the value by 1 and returns the value of this *before* incrementing */
+    public int next() {
+        value++;
+        return value - 1;
+    }
+
     /** Adds the increment to the current value and returns the resulting value */
     public int subtract(int increment) {
         value -= increment;
