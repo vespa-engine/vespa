@@ -309,6 +309,7 @@ class DotProductBlueprint : public fef::Blueprint {
 private:
     using IAttributeVector = attribute::IAttributeVector;
     vespalib::string _defaultAttribute;
+    vespalib::string _attributeOverride;
     vespalib::string _queryVector;
     vespalib::string _attrKey;
     vespalib::string _queryVectorKey;

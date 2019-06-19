@@ -903,6 +903,7 @@ createQueryVector(const IQueryEnvironment & env, const IAttributeVector * attrib
 DotProductBlueprint::DotProductBlueprint() :
     Blueprint("dotProduct"),
     _defaultAttribute(),
+    _attributeOverride(),
     _queryVector(),
     _attrKey(),
     _queryVectorKey()
@@ -913,7 +914,7 @@ DotProductBlueprint::~DotProductBlueprint() = default;
 vespalib::string
 DotProductBlueprint::getAttribute(const IQueryEnvironment & env) const
 {
-    Property prop = env.getProperties().lookup(getBaseName(), _defaultAttribute + ".override.name");
+    Property prop = env.getProperties().lookup(getBaseName(), _attributeOverride);
     if (prop.found() && !prop.get().empty()) {
         return prop.get();
     }
@@ -929,6 +930,7 @@ bool
 DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & params)
 {
     _defaultAttribute = params[0].getValue();
+    _attributeOverride = _defaultAttribute + ".override.name";
     _queryVector = params[1].getValue();
     _attrKey = make_attribute_key(getBaseName(), _defaultAttribute);
     _queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
