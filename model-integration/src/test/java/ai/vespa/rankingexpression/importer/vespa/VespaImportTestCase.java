@@ -31,11 +31,11 @@ public class VespaImportTestCase {
         assertEquals("tensor(x[3])", model.inputs().get("input2").toString());
 
         assertEquals(2, model.smallConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.smallConstants().get("constant1"));
+        assertEquals("tensor(x[3]):{{x:0}:0.5,{x:1}:1.5,{x:2}:2.5}", model.smallConstants().get("constant1"));
         assertEquals("tensor():{3.0}", model.smallConstants().get("constant2"));
 
         assertEquals(1, model.largeConstants().size());
-        assertEquals("tensor(x[3]):[0.5, 1.5, 2.5]", model.largeConstants().get("constant1asLarge"));
+        assertEquals("tensor(x[3]):{{x:0}:0.5,{x:1}:1.5,{x:2}:2.5}", model.largeConstants().get("constant1asLarge"));
 
         assertEquals(2, model.expressions().size());
         assertEquals("reduce(reduce(input1 * input2, sum, name) * constant1, max, x) * constant2",
