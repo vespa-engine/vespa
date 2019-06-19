@@ -9,11 +9,9 @@ n_inputs = 5
 n_outputs = 3
 
 input = tf.placeholder(tf.float32, shape=(None, n_inputs), name="input")
-
-W = tf.Variable(tf.random.uniform([n_inputs, n_outputs]), name="weights")  # or just add uniform random
+W = tf.Variable(tf.random.uniform([n_inputs, n_outputs]), name="weights")
 b = tf.Variable(tf.random.uniform([n_outputs]), name="bias")
 Z = tf.matmul(input, W) + b
-
 hidden_layer = tf.nn.relu(Z)
 output_layer = tf.nn.softmax(hidden_layer, name="output")
 
