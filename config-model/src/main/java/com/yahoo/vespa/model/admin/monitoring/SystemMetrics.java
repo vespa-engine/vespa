@@ -8,7 +8,6 @@ import java.util.Set;
 /**
  * @author gjoranv
  */
-@SuppressWarnings("UnusedDeclaration") // Used by model amenders
 public class SystemMetrics {
     public static final String CPU_UTIL = "cpu.util";
     public static final String CPU_SYS_UTIL = "cpu.sys.util";
