@@ -28,8 +28,11 @@ public class PredefinedMetricSets {
 
     private static Map<String, MetricSet> toMapById(MetricSet... metricSets) {
         Map<String, MetricSet> availableMetricSets = new LinkedHashMap<>();
-        for (MetricSet metricSet : metricSets)
-            availableMetricSets.put(metricSet.getId(), metricSet);
+        for (MetricSet metricSet : metricSets) {
+            var existing = availableMetricSets.put(metricSet.getId(), metricSet);
+            if (existing != null)
+                throw new IllegalArgumentException("There are two predefined metric sets with id " + existing.getId());
+        }
         return Collections.unmodifiableMap(availableMetricSets);
     }
 
