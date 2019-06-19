@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
@@ -46,12 +47,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
-    private Optional<String> tlsSecretsKeyName;
+    private Optional<TlsSecrets> tlsSecretsKeyName;
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
 
-        this.tlsSecretsKeyName = deployState.tlsSecretsKeyName();
+        this.tlsSecretsKeyName = deployState.tlsSecrets();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
 
@@ -144,7 +145,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (modelEvaluation != null) modelEvaluation.getConfig(builder);
     }
 
-    public Optional<String> getTlsSecretsKeyName() {
+    public Optional<TlsSecrets> getTlsSecretsKeyName() {
         return tlsSecretsKeyName;
     }
 

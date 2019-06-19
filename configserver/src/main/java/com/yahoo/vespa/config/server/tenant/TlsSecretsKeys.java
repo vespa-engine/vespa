@@ -3,9 +3,10 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.path.Path;
-
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -20,19 +21,21 @@ import java.util.Optional;
 public class TlsSecretsKeys {
 
     private final Path path;
+    private final SecretStore secretStore;
     private final Curator curator;
 
-    public TlsSecretsKeys(Curator curator, Path tenantPath) {
+    public TlsSecretsKeys(Curator curator, Path tenantPath, SecretStore secretStore) {
         this.curator = curator;
         this.path = tenantPath.append("tlsSecretsKeys/");
+        this.secretStore = secretStore;
     }
 
-    public Optional<String> readTlsSecretsKeyFromZookeeper(ApplicationId application) {
+    public Optional<TlsSecrets> readTlsSecretsKeyFromZookeeper(ApplicationId application) {
         try {
             Optional<byte[]> data = curator.getData(tlsSecretsKeyOf(application));
             if (data.isEmpty() || data.get().length == 0) return Optional.empty();
             String tlsSecretsKey = new ObjectMapper().readValue(data.get(), new TypeReference<String>() {});
-            return Optional.of(tlsSecretsKey);
+            return readFromSecretStore(Optional.ofNullable(tlsSecretsKey));
         } catch (Exception e) {
             throw new RuntimeException("Error reading TLS secret key of " + application, e);
         }
@@ -46,6 +49,27 @@ public class TlsSecretsKeys {
         } catch (Exception e) {
             throw new RuntimeException("Could not write TLS secret key of " + application, e);
         }
+    }
+
+    public Optional<TlsSecrets> getTlsSecrets(Optional<String> secretKeyname, ApplicationId applicationId) {
+        if (secretKeyname == null || secretKeyname.isEmpty()) {
+            return readTlsSecretsKeyFromZookeeper(applicationId);
+        }
+        return readFromSecretStore(secretKeyname);
+    }
+
+    private Optional<TlsSecrets> readFromSecretStore(Optional<String> secretKeyname) {
+        if(secretKeyname.isEmpty()) return Optional.empty();
+        TlsSecrets tlsSecretParameters = TlsSecrets.MISSING;
+        try {
+            String cert = secretStore.getSecret(secretKeyname + "-cert");
+            String key = secretStore.getSecret(secretKeyname + "-key");
+            tlsSecretParameters = new TlsSecrets(cert, key);
+        } catch (RuntimeException e) {
+            // Assume not ready yet
+//            log.log(LogLevel.DEBUG, "Could not fetch certificate/key with prefix: " + secretKeyname.get(), e);
+        }
+        return Optional.of(tlsSecretParameters);
     }
 
     /** Returns a transaction which deletes these tls secrets key if they exist */

@@ -58,7 +58,7 @@ public interface ModelContext {
         boolean useAdaptiveDispatch();
         // TODO: Remove when 7.61 is the oldest model in use
         default boolean enableMetricsProxyContainer() { return false; }
-        String tlsSecretsKeyName();
+        Optional<TlsSecrets> tlsSecrets();
     }
 
 }

@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
@@ -132,7 +133,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useFdispatchByDefault;
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
-        private final String tlsSecretsKeyName;
+        private final Optional<TlsSecrets> tlsSecrets;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -146,7 +147,7 @@ public class ModelContextImpl implements ModelContext {
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource,
-                          String tlsSecretsKeyName) {
+                          Optional<TlsSecrets> tlsSecrets) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -166,7 +167,7 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.tlsSecretsKeyName = tlsSecretsKeyName;
+            this.tlsSecrets = tlsSecrets;
         }
 
         @Override
@@ -219,7 +220,7 @@ public class ModelContextImpl implements ModelContext {
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
 
         @Override
-        public String tlsSecretsKeyName() { return tlsSecretsKeyName; }
+        public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
     }
 
 }

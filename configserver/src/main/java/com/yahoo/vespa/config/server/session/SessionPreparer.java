@@ -12,11 +12,13 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -69,6 +71,7 @@ public class SessionPreparer {
     private final Curator curator;
     private final Zone zone;
     private final FlagSource flagSource;
+    private final SecretStore secretStore;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -79,7 +82,8 @@ public class SessionPreparer {
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,
                            Zone zone,
-                           FlagSource flagSource) {
+                           FlagSource flagSource,
+                           SecretStore secretStore) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
@@ -89,6 +93,7 @@ public class SessionPreparer {
         this.curator = curator;
         this.zone = zone;
         this.flagSource = flagSource;
+        this.secretStore = secretStore;
     }
 
     /**
@@ -142,10 +147,11 @@ public class SessionPreparer {
         final com.yahoo.component.Version vespaVersion;
 
         final Rotations rotations; // TODO: Remove this once we have migrated fully to container endpoints
-        final TlsSecretsKeys tlsSecretsKeys;
         final ContainerEndpointsCache containerEndpoints;
         final Set<Rotation> rotationsSet;
         final ModelContext.Properties properties;
+        private final TlsSecretsKeys tlsSecretsKeys;
+        private final Optional<TlsSecrets> tlsSecrets;
 
         private ApplicationPackage applicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
@@ -164,9 +170,11 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.rotations = new Rotations(curator, tenantPath);
-            this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.rotationsSet = getRotations(params.rotations());
+            this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath, secretStore);
+            this.tlsSecrets = tlsSecretsKeys.getTlsSecrets(params.tlsSecretsKeyName(), applicationId);
+
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
@@ -179,7 +187,7 @@ public class SessionPreparer {
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
                                                               context.getFlagSource(),
-                                                              params.tlsSecretsKeyName().orElse(null));
+                                                              tlsSecrets);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,

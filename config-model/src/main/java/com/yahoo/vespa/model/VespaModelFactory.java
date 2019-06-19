@@ -143,7 +143,7 @@ public class VespaModelFactory implements ModelFactory {
             .zone(zone)
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
-            .tlsSecretsKeyName(modelContext.properties().tlsSecretsKeyName());
+            .tlsSecrets(modelContext.properties().tlsSecrets());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build(validationParameters);
     }

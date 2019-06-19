@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -21,23 +22,23 @@ public final class ApplicationContainer extends Container {
 
     private final boolean isHostedVespa;
 
-    private final Optional<String> tlsSecretsKey;
+    private final Optional<TlsSecrets> tlsSecrets;
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<String> tlsSecretsKey) {
-        this(parent, name, false, index, isHostedVespa, tlsSecretsKey);
+    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
+        this(parent, name, false, index, isHostedVespa, tlsSecrets);
     }
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<String> tlsSecretsKey) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
         super(parent, name, retired, index);
         this.isHostedVespa = isHostedVespa;
-        this.tlsSecretsKey = tlsSecretsKey;
+        this.tlsSecrets = tlsSecrets;
 
-        if (isHostedVespa && tlsSecretsKey.isPresent()) {
+        if (isHostedVespa && tlsSecrets.isPresent()) {
             // set up port 4443 based on tlsSecretsKey
             String server = "DefaultHttpsServer"; // TODO: verify that using this makes sense in all cases below
             final JettyHttpServer defaultHttpsServer = new JettyHttpServer(new ComponentId(server));
             defaultHttpsServer.addConnector(new ConnectorFactory(server, 4443,
-                    new ConfiguredDirectSslProvider(server, tlsSecretsKey + "TODO", tlsSecretsKey + "TODO", null, null)));
+                    new ConfiguredDirectSslProvider(server, tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
         }
     }
 

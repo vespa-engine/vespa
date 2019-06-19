@@ -17,6 +17,7 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.MockReloadHandler;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -72,7 +73,7 @@ public class SessionPreparerTest {
     private SessionPreparer preparer;
     private TestComponentRegistry componentRegistry;
     private MockFileDistributionFactory fileDistributionFactory;
-
+    private MockSecretStore secretStore = new MockSecretStore();
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -107,7 +108,8 @@ public class SessionPreparerTest {
                 componentRegistry.getStaticConfigDefinitionRepo(),
                 curator,
                 componentRegistry.getZone(),
-                flagSource);
+                flagSource,
+                secretStore);
     }
 
     @Test(expected = InvalidApplicationException.class)

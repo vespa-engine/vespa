@@ -12,6 +12,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -54,6 +55,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final Curator curator;
     private final DeployLogger logger;
     private final FlagSource flagSource;
+    private final SecretStore secretStore;
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long appGeneration,
@@ -72,6 +74,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.curator = globalComponentRegistry.getCurator();
         this.logger = new SilentDeployLogger();
         this.flagSource = globalComponentRegistry.getFlagSource();
+        this.secretStore = globalComponentRegistry.getSecretStore();
     }
 
     @Override
@@ -131,7 +134,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating
                                                flagSource,
-                                               new TlsSecretsKeys(curator, TenantRepository.getTenantPath(tenant)).readTlsSecretsKeyFromZookeeper(applicationId).orElse(null));
+                                               new TlsSecretsKeys(curator, TenantRepository.getTenantPath(tenant), secretStore).readTlsSecretsKeyFromZookeeper(applicationId));
     }
 
 }
