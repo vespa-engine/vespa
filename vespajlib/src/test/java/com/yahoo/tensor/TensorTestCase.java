@@ -89,9 +89,9 @@ public class TensorTestCase {
 
     @Test
     public void testCombineInDimensionIndexed() {
-        Tensor input =  Tensor.from("tensor(input[]):{{input:0}:3, {input:1}:7}");
+        Tensor input =  Tensor.from("tensor(input[2]):{{input:0}:3, {input:1}:7}");
         Tensor result = input.concat(11, "input");
-        assertEquals("tensor(input[]):{{input:0}:3.0,{input:1}:7.0,{input:2}:11.0}", result.toString());
+        assertEquals("tensor(input[3]):[3.0, 7.0, 11.0]", result.toString());
     }
 
     /** All functions are more throughly tested in searchlib EvaluationTestCase */
