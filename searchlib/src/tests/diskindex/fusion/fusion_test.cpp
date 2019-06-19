@@ -59,8 +59,8 @@ protected:
     const Schema & getSchema() const { return _schema; }
 
     void requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap);
-    void make_empty_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector);
-    void merge_empty_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources);
+    void make_simple_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector);
+    void merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources);
 public:
     FusionTest();
 };
@@ -95,6 +95,72 @@ toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeight
     }
     ss << "}";
     return ss.str();
+}
+
+std::unique_ptr<Document>
+make_doc10(DocBuilder &b)
+{
+    b.startDocument("doc::10");
+    b.startIndexField("f0").
+        addStr("a").addStr("b").addStr("c").addStr("d").
+        addStr("e").addStr("f").addStr("z").
+        endField();
+    b.startIndexField("f1").
+        addStr("w").addStr("x").
+        addStr("y").addStr("z").
+        endField();
+    b.startIndexField("f2").
+        startElement(4).addStr("ax").addStr("ay").addStr("z").endElement().
+        startElement(5).addStr("ax").endElement().
+        endField();
+    b.startIndexField("f3").
+        startElement(4).addStr("wx").addStr("z").endElement().
+        endField();
+
+    return b.endDocument();
+}
+
+Schema::IndexField
+make_index_field(vespalib::stringref name, CollectionType collection_type, bool interleaved_features)
+{
+    Schema::IndexField index_field(name, DataType::STRING, collection_type);
+    index_field.set_experimental_posting_list_format(interleaved_features);
+    return index_field;
+}
+
+Schema
+make_schema(bool interleaved_features)
+{
+    Schema schema;
+    schema.addIndexField(make_index_field("f0", CollectionType::SINGLE, interleaved_features));
+    schema.addIndexField(make_index_field("f1", CollectionType::SINGLE, interleaved_features));
+    schema.addIndexField(make_index_field("f2", CollectionType::ARRAY, interleaved_features));
+    schema.addIndexField(make_index_field("f3", CollectionType::WEIGHTEDSET, interleaved_features));
+    return schema;
+}
+
+void
+assert_interleaved_features(DiskIndex &d, const vespalib::string &field, const vespalib::string &term, uint32_t doc_id, uint32_t exp_num_occs, uint32_t exp_field_length)
+{
+    using LookupResult = DiskIndex::LookupResult;
+    using PostingListHandle = index::PostingListHandle;
+    using SearchIterator = search::queryeval::SearchIterator;
+
+    const Schema &schema = d.getSchema();
+    uint32_t field_id(schema.getIndexFieldId(field));
+    std::unique_ptr<LookupResult> lookup_result(d.lookup(field_id, term));
+    ASSERT_TRUE(lookup_result);
+    std::unique_ptr<PostingListHandle> handle(d.readPostingList(*lookup_result));
+    ASSERT_TRUE(handle);
+    TermFieldMatchData tfmd;
+    TermFieldMatchDataArray tfmda;
+    tfmda.add(&tfmd);
+    std::unique_ptr<SearchIterator> sbap(handle->createIterator(lookup_result->counts, tfmda));
+    sbap->initFullRange();
+    EXPECT_TRUE(sbap->seek(doc_id));
+    sbap->unpack(doc_id);
+    EXPECT_EQ(exp_num_occs, tfmd.getNumOccs());
+    EXPECT_EQ(exp_field_length, tfmd.getFieldLength());
 }
 
 void
@@ -253,24 +319,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     DocumentInverter inv(schema, invertThreads, pushThreads, fic);
     Document::UP doc;
 
-    b.startDocument("doc::10");
-    b.startIndexField("f0").
-        addStr("a").addStr("b").addStr("c").addStr("d").
-        addStr("e").addStr("f").addStr("z").
-        endField();
-    b.startIndexField("f1").
-        addStr("w").addStr("x").
-        addStr("y").addStr("z").
-        endField();
-    b.startIndexField("f2").
-        startElement(4).addStr("ax").addStr("ay").addStr("z").endElement().
-        startElement(5).addStr("ax").endElement().
-        endField();
-    b.startIndexField("f3").
-        startElement(4).addStr("wx").addStr("z").endElement().
-        endField();
-
-    doc = b.endDocument();
+    doc = make_doc10(b);
     inv.invertDocument(10, *doc);
     invertThreads.sync();
     myPushDocument(inv);
@@ -400,11 +449,21 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
 }
 
 void
-FusionTest::make_empty_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector)
+FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector)
 {
     FieldIndexCollection fic(_schema, field_length_inspector);
-    uint32_t numDocs = 1;
-    uint32_t numWords = 1;
+    uint32_t numDocs = 20;
+    uint32_t numWords = 1000;
+    DocBuilder b(_schema);
+    SequencedTaskExecutor invertThreads(2);
+    SequencedTaskExecutor pushThreads(2);
+    DocumentInverter inv(_schema, invertThreads, pushThreads, fic);
+
+    inv.invertDocument(10, *make_doc10(b));
+    invertThreads.sync();
+    myPushDocument(inv);
+    pushThreads.sync();
+
     IndexBuilder ib(_schema);
     TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
@@ -415,12 +474,12 @@ FusionTest::make_empty_index(const vespalib::string &dump_dir, const IFieldLengt
 }
 
 void
-FusionTest::merge_empty_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources)
+FusionTest::merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources)
 {
     vespalib::ThreadStackExecutor executor(4, 0x10000);
     TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    SelectorArray selector(1, 0);
+    SelectorArray selector(20, 0);
     ASSERT_TRUE(Fusion::merge(_schema, dump_dir, sources, selector,
                               false,
                               tuneFileIndexing, fileHeaderContext, executor));
@@ -428,12 +487,8 @@ FusionTest::merge_empty_indexes(const vespalib::string &dump_dir, const std::vec
 
 FusionTest::FusionTest()
     : ::testing::Test(),
-      _schema()
+      _schema(make_schema(false))
 {
-    _schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
-    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
-    _schema.addIndexField(Schema::IndexField("f2", DataType::STRING, CollectionType::ARRAY));
-    _schema.addIndexField(Schema::IndexField("f3", DataType::STRING, CollectionType::WEIGHTEDSET));
 }
 
 TEST_F(FusionTest, require_that_normal_fusion_is_working)
@@ -470,12 +525,28 @@ void clean_field_length_testdirs()
 TEST_F(FusionTest, require_that_average_field_length_is_preserved)
 {
     clean_field_length_testdirs();
-    make_empty_index("fldump2", MockFieldLengthInspector());
-    make_empty_index("fldump3", MyMockFieldLengthInspector());
-    merge_empty_indexes("fldump4", {"fldump2", "fldump3"});
+    make_simple_index("fldump2", MockFieldLengthInspector());
+    make_simple_index("fldump3", MyMockFieldLengthInspector());
+    merge_simple_indexes("fldump4", {"fldump2", "fldump3"});
     DiskIndex disk_index("fldump4");
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     EXPECT_EQ(3.5, disk_index.get_field_length_info("f0").get_average_field_length());
+    clean_field_length_testdirs();
+}
+
+TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed)
+{
+    clean_field_length_testdirs();
+    make_simple_index("fldump2", MockFieldLengthInspector());
+    _schema = make_schema(true); // want interleaved features
+    merge_simple_indexes("fldump4", {"fldump2"});
+    DiskIndex disk_index("fldump4");
+    ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
+    assert_interleaved_features(disk_index, "f0", "a", 10, 1, 7);
+    assert_interleaved_features(disk_index, "f1", "w", 10, 1, 4);
+    assert_interleaved_features(disk_index, "f2", "ax", 10, 2, 4);
+    assert_interleaved_features(disk_index, "f2", "ay", 10, 1, 3);
+    assert_interleaved_features(disk_index, "f3", "wx", 10, 1, 2);
     clean_field_length_testdirs();
 }
 

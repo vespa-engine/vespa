@@ -117,15 +117,19 @@ public:
 /*
  * Field reader that strips information from source, e.g. remove
  * weights or discard nonzero elements, due to collection type change.
+ * It is also used to regenerate interleaved features from normal features.
  */
 class FieldReaderStripInfo : public FieldReader
 {
 private:
     bool _hasElements;
     bool _hasElementWeights;
+    bool _want_interleaved_features;
+    bool _regenerate_interleaved_features;
 public:
     FieldReaderStripInfo(const IndexIterator &index);
     bool allowRawFeatures() override;
+    bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
     void read() override;
     void getFeatureParams(PostingListParams &params) override;
 };

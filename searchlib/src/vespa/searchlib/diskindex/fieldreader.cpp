@@ -14,6 +14,7 @@ LOG_SETUP(".diskindex.fieldreader");
 namespace {
 
 vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
+vespalib::string interleaved_features("interleaved_features");
 
 }
 
@@ -192,12 +193,16 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
 {
     assert(index.isValid());
     if (index.hasMatchingOldFields(oldSchema)) {
-        return std::make_unique<FieldReader>();      // The common case
+        if (!index.use_experimental_posting_list_format() ||
+            index.has_matching_experimental_posting_list_format(oldSchema)) {
+            return std::make_unique<FieldReader>();      // The common case
+        }
     }
     if (!index.hasOldFields(oldSchema)) {
         return std::make_unique<FieldReaderEmpty>(index); // drop data
     }
     // field exists in old schema with different collection type setting
+    // or old field is missing wanted interleaved features.
     return std::make_unique<FieldReaderStripInfo>(index);   // degraded
 }
 
@@ -230,7 +235,9 @@ FieldReaderEmpty::getFeatureParams(PostingListParams &params)
 
 FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index)
     : _hasElements(false),
-      _hasElementWeights(false)
+      _hasElementWeights(false),
+      _want_interleaved_features(index.use_experimental_posting_list_format()),
+      _regenerate_interleaved_features(false)
 {
     PosOccFieldsParams fieldsParams;
     fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
@@ -247,6 +254,26 @@ FieldReaderStripInfo::allowRawFeatures()
     return false;
 }
 
+bool
+FieldReaderStripInfo::open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead)
+{
+    if (!FieldReader::open(prefix, tuneFileRead)) {
+        return false;
+    }
+    if (_want_interleaved_features) {
+        PostingListParams params;
+        bool decode_interleaved_features = false;
+        _oldposoccfile->getParams(params);
+        params.get(interleaved_features, decode_interleaved_features);
+        if (!decode_interleaved_features) {
+            _regenerate_interleaved_features = true;
+        }
+        if (!_hasElements) {
+            _regenerate_interleaved_features = true;
+        }
+    }
+    return true;
+}
 
 void
 FieldReaderStripInfo::read()
@@ -282,6 +309,19 @@ FieldReaderStripInfo::read()
             }
         }
         break;
+    }
+    if (_regenerate_interleaved_features) {
+        // Regenerate interleaved featues from normal features.
+        uint32_t field_length = 0;
+        uint32_t num_occs = 0;
+        DocIdAndFeatures &features = _docIdAndFeatures;
+        for (const auto &element : features.elements()) {
+            field_length += element.getElementLen();
+            num_occs += element.getNumOccs();
+        }
+        // Note: Length of elements without occurrences is not included.
+        features.set_field_length(field_length);
+        features.set_num_occs(num_occs);
     }
 }
 

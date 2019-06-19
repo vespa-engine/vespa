@@ -119,6 +119,8 @@ public:
          * @param oldSchema old schema, present in an input index
          */
         bool hasMatchingOldFields(const Schema &oldSchema) const;
+
+        bool has_matching_experimental_posting_list_format(const Schema &oldSchema) const;
     };
 
     static IndexSettings getIndexSettings(const Schema &schema, const uint32_t index);

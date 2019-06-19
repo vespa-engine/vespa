@@ -69,6 +69,20 @@ SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema) const
 }
 
 bool
+SchemaUtil::IndexIterator::has_matching_experimental_posting_list_format(const Schema &oldSchema) const
+{
+    assert(isValid());
+    const Schema::IndexField &newField = getSchema().getIndexField(getIndex());
+    const vespalib::string &fieldName = newField.getName();
+    uint32_t oldFieldId = oldSchema.getIndexFieldId(fieldName);
+    if (oldFieldId == Schema::UNKNOWN_FIELD_ID) {
+        return false;
+    }
+    const Schema::IndexField &oldField = oldSchema.getIndexField(oldFieldId);
+    return (oldField.use_experimental_posting_list_format() == newField.use_experimental_posting_list_format());
+}
+
+bool
 SchemaUtil::validateIndexField(const Schema::IndexField &field)
 {
     bool ok = true;
