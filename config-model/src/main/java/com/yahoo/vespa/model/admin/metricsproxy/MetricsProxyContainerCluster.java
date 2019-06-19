@@ -47,7 +47,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.LEGACY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.ZONE;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.getDefaultMetricsConsumer;
+import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.JarSuffix.JAR_WITH_DEPS;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.absoluteBundlePath;
@@ -128,7 +128,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     public void getConfig(ConsumersConfig.Builder builder) {
-        var amendedDefaultConsumer = addMetrics(getDefaultMetricsConsumer(), getAdditionalDefaultMetrics().getMetrics());
+        var amendedDefaultConsumer = addMetrics(getVespaMetricsConsumer(), getAdditionalDefaultMetrics().getMetrics());
         builder.consumer.addAll(generateConsumers(amendedDefaultConsumer, getUserMetricsConsumers()));
     }
 
