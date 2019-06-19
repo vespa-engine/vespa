@@ -28,15 +28,15 @@ public class MultiDockerTest {
             tester.addChildNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
                             .state(NodeState.dirty)
-                            .minCpuCores(1)
-                            .minMainMemoryAvailableGb(1)
-                            .minDiskAvailableGb(1)
+                            .vcpus(1)
+                            .memoryGb(1)
+                            .diskGb(1)
                             .build());
 
             tester.inOrder(tester.docker).deleteContainer(eq(new ContainerName("host2")));
             tester.inOrder(tester.storageMaintainer).archiveNodeStorage(
                     argThat(context -> context.containerName().equals(new ContainerName("host2"))));
-            tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.getHostname()), eq(NodeState.ready));
+            tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.hostname()), eq(NodeState.ready));
 
             addAndWaitForNode(tester, "host3.test.yahoo.com", DockerImage.fromString("image1"));
         }
@@ -47,13 +47,13 @@ public class MultiDockerTest {
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
                 .state(NodeState.active)
-                .nodeType(NodeType.tenant)
+                .type(NodeType.tenant)
                 .flavor("docker")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
-                .minCpuCores(2)
-                .minMainMemoryAvailableGb(4)
-                .minDiskAvailableGb(1)
+                .vcpus(2)
+                .memoryGb(4)
+                .diskGb(1)
                 .build();
 
         tester.addChildNodeRepositoryNode(nodeSpec);

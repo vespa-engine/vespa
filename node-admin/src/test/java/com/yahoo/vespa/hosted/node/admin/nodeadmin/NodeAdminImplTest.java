@@ -160,7 +160,7 @@ public class NodeAdminImplTest {
         NodeSpec nodeSpec = new NodeSpec.Builder()
                 .hostname(hostname)
                 .state(NodeState.active)
-                .nodeType(NodeType.tenant)
+                .type(NodeType.tenant)
                 .flavor("default")
                 .build();
 

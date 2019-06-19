@@ -64,13 +64,13 @@ public class DockerOperationsImpl implements DockerOperations {
         context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
-        Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().getHostname()).orElseThrow(
-                () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().getHostname() +
+        Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().hostname()).orElseThrow(
+                () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().hostname() +
                                            ". Missing an AAAA DNS entry?"));
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
-                context.node().getWantedDockerImage().get(), context.containerName())
-                .withHostName(context.node().getHostname())
+                context.node().wantedDockerImage().get(), context.containerName())
+                .withHostName(context.node().hostname())
                 .withResources(containerResources)
                 .withManagedBy(MANAGER_NAME)
                 .withUlimit("nofile", 262_144, 262_144)
@@ -88,7 +88,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN")  // Needed for perf
                 .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
-        if (context.node().getMembership().map(NodeMembership::getClusterType).map("content"::equalsIgnoreCase).orElse(false)) {
+        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false)) {
             command.withSecurityOpts("seccomp=unconfined");
         }
 
@@ -101,20 +101,20 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withIpAddress(ipV6Local);
 
             // IPv4 - Only present for some containers
-            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().getHostname())
+            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname())
                     .map(ipV4Address -> {
                         InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
                         return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
                     });
             ipV4Local.ifPresent(command::withIpAddress);
 
-            addEtcHosts(containerData, context.node().getHostname(), ipV4Local, ipV6Local);
+            addEtcHosts(containerData, context.node().hostname(), ipV4Local, ipV6Local);
         }
 
         addMounts(context, command);
 
         // TODO: Enforce disk constraints
-        long minMainMemoryAvailableMb = (long) (context.node().getMinMainMemoryAvailableGb() * 1024);
+        long minMainMemoryAvailableMb = (long) (context.node().memoryGb() * 1024);
         if (minMainMemoryAvailableMb > 0) {
             // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
             // only has this much physical memory (overrides total memory reported by `free -m`).

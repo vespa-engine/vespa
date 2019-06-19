@@ -157,12 +157,12 @@ public class StorageMaintainerTest {
 
             NodeSpec nodeSpec = new NodeSpec.Builder()
                     .hostname("host123-5.test.domain.tld")
-                    .nodeType(nodeType)
+                    .type(nodeType)
                     .state(NodeState.active)
                     .parentHostname("host123.test.domain.tld")
                     .owner(new NodeOwner("tenant", "application", "instance"))
                     .membership(new NodeMembership("clusterType", "clusterId", null, 0, false))
-                    .vespaVersion(Version.fromString("6.305.12"))
+                    .currentVespaVersion(Version.fromString("6.305.12"))
                     .flavor("d-2-8-50")
                     .canonicalFlavor("d-2-8-50")
                     .build();

@@ -59,7 +59,7 @@ public class NodeAdminStateUpdaterTest {
     public void state_convergence() {
         mockNodeRepo(NodeState.active, 4);
         List<String> activeHostnames = nodeRepository.getNodes(hostHostname.value()).stream()
-                .map(NodeSpec::getHostname)
+                .map(NodeSpec::hostname)
                 .collect(Collectors.toList());
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
         suspendHostnames.add(hostHostname.value());
@@ -170,7 +170,7 @@ public class NodeAdminStateUpdaterTest {
 
         // When doing batch suspend, only suspend the containers if the host is not active
         List<String> activeHostnames = nodeRepository.getNodes(hostHostname.value()).stream()
-                .map(NodeSpec::getHostname)
+                .map(NodeSpec::hostname)
                 .collect(Collectors.toList());
         updater.converge(SUSPENDED);
         verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(activeHostnames));
@@ -206,9 +206,9 @@ public class NodeAdminStateUpdaterTest {
         updater.adjustNodeAgentsToRunFromNodeRepository();
         updater.adjustNodeAgentsToRunFromNodeRepository();
 
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host3.yahoo.com")), eq(acl));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
         verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
     }
@@ -224,9 +224,9 @@ public class NodeAdminStateUpdaterTest {
         updater.adjustNodeAgentsToRunFromNodeRepository();
         updater.adjustNodeAgentsToRunFromNodeRepository();
 
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory, times(1)).create(argThat(spec -> spec.getHostname().equals("host3.yahoo.com")), eq(Acl.EMPTY));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(1)).create(argThat(spec -> spec.hostname().equals("host3.yahoo.com")), eq(Acl.EMPTY));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
         verify(nodeRepository, times(2)).getAcls(eq(hostHostname.value())); // During the first tick, the cache is invalidated and retried
     }
@@ -241,8 +241,8 @@ public class NodeAdminStateUpdaterTest {
         updater.adjustNodeAgentsToRunFromNodeRepository();
         updater.adjustNodeAgentsToRunFromNodeRepository();
 
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host1.yahoo.com")), eq(acl));
-        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.getHostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
         verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
     }
@@ -261,11 +261,11 @@ public class NodeAdminStateUpdaterTest {
                 .mapToObj(i -> new NodeSpec.Builder()
                         .hostname("host" + i + ".yahoo.com")
                         .state(NodeState.active)
-                        .nodeType(NodeType.tenant)
+                        .type(NodeType.tenant)
                         .flavor("docker")
-                        .minCpuCores(1)
-                        .minMainMemoryAvailableGb(1)
-                        .minDiskAvailableGb(1)
+                        .vcpus(1)
+                        .memoryGb(1)
+                        .diskGb(1)
                         .build())
                 .collect(Collectors.toList());
 
@@ -274,11 +274,11 @@ public class NodeAdminStateUpdaterTest {
         when(nodeRepository.getNode(eq(hostHostname.value()))).thenReturn(new NodeSpec.Builder()
                 .hostname(hostHostname.value())
                 .state(hostState)
-                .nodeType(NodeType.tenant)
+                .type(NodeType.tenant)
                 .flavor("default")
-                .minCpuCores(1)
-                .minMainMemoryAvailableGb(1)
-                .minDiskAvailableGb(1)
+                .vcpus(1)
+                .memoryGb(1)
+                .diskGb(1)
                 .build());
     }
 

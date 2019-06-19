@@ -125,7 +125,7 @@ public class NodeAdminStateUpdater {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
-        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).getState() == NodeState.active;
+        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).state() == NodeState.active;
         switch (wantedState) {
             case RESUMED:
                 if (hostIsActiveInNR) orchestrator.resume(hostHostname);
@@ -164,7 +164,7 @@ public class NodeAdminStateUpdater {
     void adjustNodeAgentsToRunFromNodeRepository() {
         try {
             Map<String, NodeSpec> nodeSpecByHostname = nodeRepository.getNodes(hostHostname).stream()
-                    .collect(Collectors.toMap(NodeSpec::getHostname, Function.identity()));
+                    .collect(Collectors.toMap(NodeSpec::hostname, Function.identity()));
             Map<String, Acl> aclByHostname = Optional.of(cachedAclSupplier.get())
                     .filter(acls -> acls.keySet().containsAll(nodeSpecByHostname.keySet()))
                     .orElseGet(cachedAclSupplier::invalidateAndGet);
@@ -183,8 +183,8 @@ public class NodeAdminStateUpdater {
     private List<String> getNodesInActiveState() {
         return nodeRepository.getNodes(hostHostname)
                              .stream()
-                             .filter(node -> node.getState() == NodeState.active)
-                             .map(NodeSpec::getHostname)
+                             .filter(node -> node.state() == NodeState.active)
+                             .map(NodeSpec::hostname)
                              .collect(Collectors.toList());
     }
 

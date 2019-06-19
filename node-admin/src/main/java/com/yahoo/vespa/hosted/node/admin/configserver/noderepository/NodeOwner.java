@@ -17,15 +17,15 @@ public class NodeOwner {
         this.instance = instance;
     }
 
-    public String getTenant() {
+    public String tenant() {
         return tenant;
     }
 
-    public String getApplication() {
+    public String application() {
         return application;
     }
 
-    public String getInstance() {
+    public String instance() {
         return instance;
     }
 
