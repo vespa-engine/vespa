@@ -38,8 +38,8 @@ struct Eval {
         double _number;
         TensorSpec _tensor;
     public:
-        Result() : _type(Type::ERROR), _number(error_value), _tensor("error") {}
-        Result(const TensorEngine &engine, const Value &value) : _type(Type::ERROR), _number(error_value), _tensor("error") {
+        Result() : _type(Type::ERROR), _number(0.0), _tensor("error") {}
+        Result(const TensorEngine &engine, const Value &value) : _type(Type::ERROR), _number(0.0), _tensor("error") {
             if (value.is_double()) {
                 _type = Type::NUMBER;
             }

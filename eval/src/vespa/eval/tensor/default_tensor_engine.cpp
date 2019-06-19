@@ -81,9 +81,6 @@ const Value &to_default(const Value &value, Stash &stash) {
 }
 
 const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
-    if (!tensor) {
-        return stash.create<DoubleValue>(eval::error_value);
-    }
     if (tensor->type().is_tensor()) {
         return *stash.create<Value::UP>(std::move(tensor));
     }
@@ -91,9 +88,6 @@ const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
 }
 
 Value::UP to_value(std::unique_ptr<Tensor> tensor) {
-    if (!tensor) {
-        return std::make_unique<DoubleValue>(eval::error_value);
-    }
     if (tensor->type().is_tensor()) {
         return tensor;
     }
@@ -343,13 +337,9 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
             return fallback_reduce(a, aggr, dimensions, stash);
         }
     } else {
-        if (dimensions.empty()) {
-            Aggregator &aggregator = Aggregator::create(aggr, stash);
-            aggregator.first(a.as_double());
-            return stash.create<DoubleValue>(aggregator.result());
-        } else {
-            return stash.create<DoubleValue>(eval::error_value);
-        }
+        Aggregator &aggregator = Aggregator::create(aggr, stash);
+        aggregator.first(a.as_double());
+        return stash.create<DoubleValue>(aggregator.result());
     }
 }
 
