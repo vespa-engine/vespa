@@ -2,21 +2,33 @@
 
 #include "field_index.h"
 #include "ordered_field_index_inserter.h"
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include "posting_iterator.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreestore.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.field_index");
+
+using search::fef::TermFieldMatchDataArray;
 using search::index::DocIdAndFeatures;
-using search::index::WordDocElementFeatures;
 using search::index::Schema;
+using search::index::WordDocElementFeatures;
+using search::queryeval::BooleanMatchIteratorWrapper;
+using search::queryeval::FieldSpecBase;
+using search::queryeval::SearchIterator;
+using search::queryeval::SimpleLeafBlueprint;
+using vespalib::GenerationHandler;
 
 namespace search::memoryindex {
 
@@ -223,6 +235,62 @@ FieldIndex::getMemoryUsage() const
     usage.merge(_featureStore.getMemoryUsage());
     usage.merge(_remover.getStore().getMemoryUsage());
     return usage;
+}
+
+namespace {
+
+class MemoryTermBlueprint : public SimpleLeafBlueprint {
+private:
+    GenerationHandler::Guard _guard;
+    FieldIndex::PostingList::ConstIterator _posting_itr;
+    const FeatureStore& _feature_store;
+    const uint32_t _field_id;
+    const bool _use_bit_vector;
+
+public:
+    MemoryTermBlueprint(GenerationHandler::Guard&& guard,
+                        FieldIndex::PostingList::ConstIterator posting_itr,
+                        const FeatureStore& feature_store,
+                        const FieldSpecBase& field,
+                        uint32_t field_id,
+                        bool use_bit_vector)
+        : SimpleLeafBlueprint(field),
+          _guard(),
+          _posting_itr(posting_itr),
+          _feature_store(feature_store),
+          _field_id(field_id),
+          _use_bit_vector(use_bit_vector)
+    {
+        _guard = std::move(guard);
+        HitEstimate estimate(_posting_itr.size(), !_posting_itr.valid());
+        setEstimate(estimate);
+    }
+
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda, bool) const override {
+        auto result = std::make_unique<PostingIterator>(_posting_itr, _feature_store, _field_id, tfmda);
+        if (_use_bit_vector) {
+            LOG(debug, "Return BooleanMatchIteratorWrapper: field_id(%u), doc_count(%zu)",
+                _field_id, _posting_itr.size());
+            return std::make_unique<BooleanMatchIteratorWrapper>(std::move(result), tfmda);
+        }
+        LOG(debug, "Return PostingIterator: field_id(%u), doc_count(%zu)",
+            _field_id, _posting_itr.size());
+        return result;
+    }
+};
+
+}
+
+std::unique_ptr<queryeval::SimpleLeafBlueprint>
+FieldIndex::make_term_blueprint(const vespalib::string& term,
+                                const queryeval::FieldSpecBase& field,
+                                uint32_t field_id)
+{
+    auto guard = takeGenerationGuard();
+    auto posting_itr = findFrozen(term);
+    bool use_bit_vector = field.isFilter();
+    return std::make_unique<MemoryTermBlueprint>(std::move(guard), posting_itr, getFeatureStore(),
+                                                 field, field_id, use_bit_vector);
 }
 
 }

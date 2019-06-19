@@ -4,8 +4,9 @@
 
 #include "feature_store.h"
 #include "field_index_remover.h"
-#include "word_store.h"
+#include "i_field_index.h"
 #include "posting_list_entry.h"
+#include "word_store.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/indexbuilder.h>
@@ -18,10 +19,10 @@
 
 namespace search::memoryindex {
 
-class OrderedFieldIndexInserter;
+class IOrderedFieldIndexInserter;
 
 /**
- * Memory index for a single field using lock-free B-Trees in underlying components.
+ * Implementation of memory index for a single field using lock-free B-Trees in underlying components.
  *
  * It consists of the following components:
  *   - WordStore containing all unique words in this field (across all documents).
@@ -33,7 +34,7 @@ class OrderedFieldIndexInserter;
  *
  * Elements in the three stores are accessed using 32-bit references / handles.
  */
-class FieldIndex {
+class FieldIndex : public IFieldIndex {
 public:
     // Mapping from docid -> feature ref
     using PostingListEntryType = PostingListEntry<false>;
@@ -93,7 +94,7 @@ private:
     FeatureStore            _featureStore;
     uint32_t                _fieldId;
     FieldIndexRemover       _remover;
-    std::unique_ptr<OrderedFieldIndexInserter> _inserter;
+    std::unique_ptr<IOrderedFieldIndexInserter> _inserter;
     index::FieldLengthCalculator _calculator;
 
 public:
@@ -114,11 +115,11 @@ public:
     PostingList::ConstIterator
     findFrozen(const vespalib::stringref word) const;
 
-    uint64_t getNumUniqueWords() const { return _numUniqueWords; }
-    const FeatureStore & getFeatureStore() const { return _featureStore; }
-    const WordStore &getWordStore() const { return _wordStore; }
-    OrderedFieldIndexInserter &getInserter() const { return *_inserter; }
-    index::FieldLengthCalculator &get_calculator() { return _calculator; }
+    uint64_t getNumUniqueWords() const override { return _numUniqueWords; }
+    const FeatureStore & getFeatureStore() const override { return _featureStore; }
+    const WordStore &getWordStore() const override { return _wordStore; }
+    IOrderedFieldIndexInserter &getInserter() override { return *_inserter; }
+    index::FieldLengthCalculator &get_calculator() override { return _calculator; }
 
 private:
     void freeze() {
@@ -147,27 +148,30 @@ private:
     }
 
 public:
-    GenerationHandler::Guard takeGenerationGuard() {
+    GenerationHandler::Guard takeGenerationGuard() override {
         return _generationHandler.takeGuard();
     }
 
-    void
-    compactFeatures();
+    void compactFeatures() override;
 
-    void dump(search::index::IndexBuilder & indexBuilder);
+    void dump(search::index::IndexBuilder & indexBuilder) override;
 
-    vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const override;
     DictionaryTree &getDictionaryTree() { return _dict; }
     PostingListStore &getPostingListStore() { return _postingListStore; }
-    FieldIndexRemover &getDocumentRemover() { return _remover; }
+    FieldIndexRemover &getDocumentRemover() override { return _remover; }
 
-    void commit() {
+    void commit() override {
         _remover.flush();
         freeze();
         transferHoldLists();
         incGeneration();
         trimHoldLists();
     }
+
+    std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
+                                                                        const queryeval::FieldSpecBase& field,
+                                                                        uint32_t field_id) override;
 };
 
 }

@@ -72,8 +72,7 @@ public:
      */
     void rewind() override;
 
-    // Used by unit test
-    datastore::EntryRef getWordRef() const;
+    datastore::EntryRef getWordRef() const override;
 };
 
 }

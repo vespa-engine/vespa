@@ -3,9 +3,14 @@
 #pragma once
 
 #include "i_field_index_collection.h"
-#include "field_index.h"
+#include "i_field_index.h"
+#include <memory>
+#include <vector>
 
-namespace search::index { class IFieldLengthInspector; }
+namespace search::index {
+    class IFieldLengthInspector;
+    class Schema;
+}
 
 namespace search::memoryindex {
 
@@ -19,26 +24,15 @@ class FieldInverter;
  * for a given word in a given field.
  */
 class FieldIndexCollection : public IFieldIndexCollection {
-public:
-    using PostingList = FieldIndex::PostingList;
-
 private:
     using GenerationHandler = vespalib::GenerationHandler;
 
-    std::vector<std::unique_ptr<FieldIndex>> _fieldIndexes;
+    std::vector<std::unique_ptr<IFieldIndex>> _fieldIndexes;
     uint32_t                _numFields;
 
 public:
     FieldIndexCollection(const index::Schema& schema, const index::IFieldLengthInspector& inspector);
     ~FieldIndexCollection();
-    PostingList::Iterator find(const vespalib::stringref word,
-                               uint32_t fieldId) const {
-        return _fieldIndexes[fieldId]->find(word);
-    }
-
-    PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t fieldId) const {
-        return _fieldIndexes[fieldId]->findFrozen(word);
-    }
 
     uint64_t getNumUniqueWords() const {
         uint64_t numUniqueWords = 0;
@@ -52,11 +46,11 @@ public:
 
     vespalib::MemoryUsage getMemoryUsage() const;
 
-    FieldIndex *getFieldIndex(uint32_t fieldId) const {
+    IFieldIndex *getFieldIndex(uint32_t fieldId) const {
         return _fieldIndexes[fieldId].get();
     }
 
-    const std::vector<std::unique_ptr<FieldIndex>> &getFieldIndexes() const { return _fieldIndexes; }
+    const std::vector<std::unique_ptr<IFieldIndex>> &getFieldIndexes() const { return _fieldIndexes; }
 
     uint32_t getNumFields() const { return _numFields; }
 
