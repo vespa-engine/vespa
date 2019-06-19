@@ -148,8 +148,6 @@ class NodesResponse extends HttpResponse {
         object.setString("canonicalFlavor", node.flavor().canonicalName());
         object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
         object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
-        if (node.flavor().getDescription() != null && ! node.flavor().getDescription().isEmpty())
-            object.setString("description", node.flavor().getDescription());
         object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
