@@ -105,6 +105,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
@@ -695,7 +696,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /**
-     * Returns a version at least as old as the oldest platform the given application is on, and which is released.
+     * Returns a non-broken, released version at least as old as the oldest platform the given application is on.
      *
      * If no known version is applicable, the newest version at least as old as the oldest platform is selected,
      * among all versions released for this system. If no such versions exists, throws an IllegalStateException.
@@ -703,12 +704,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private Version compileVersion(ApplicationId id) {
         Version oldestPlatform = controller.applications().oldestInstalledPlatform(id);
         return controller.versionStatus().versions().stream()
+                         .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
                          .filter(VespaVersion::isReleased)
                          .map(VespaVersion::versionNumber)
                          .filter(version -> ! version.isAfter(oldestPlatform))
                          .max(Comparator.naturalOrder())
                          .orElseGet(() -> controller.mavenRepository().metadata().versions().stream()
                                                     .filter(version -> ! version.isAfter(oldestPlatform))
+                                                    .filter(version -> ! controller.versionStatus().versions().stream()
+                                                                                   .map(VespaVersion::versionNumber)
+                                                                                   .collect(Collectors.toSet()).contains(version))
                                                     .max(Comparator.naturalOrder())
                                                     .orElseThrow(() -> new IllegalStateException("No available releases of " +
                                                                                                  controller.mavenRepository().artifactId())));

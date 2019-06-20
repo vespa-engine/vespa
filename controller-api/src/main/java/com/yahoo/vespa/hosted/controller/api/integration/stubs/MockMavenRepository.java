@@ -19,6 +19,7 @@ public class MockMavenRepository implements MavenRepository {
     @Override
     public Metadata metadata() {
         return new Metadata(id, List.of(Version.fromString("6.0"),
+                                        Version.fromString("6.1"),
                                         Version.fromString("6.2")));
     }
 

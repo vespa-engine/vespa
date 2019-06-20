@@ -61,6 +61,8 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Test;
@@ -369,6 +371,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT),
                               "");
 
+        // Set version 6.1 to broken to change compile version for.
+        controllerTester.upgrader().overrideConfidence(Version.fromString("6.1"), VespaVersion.Confidence.broken);
+        tester.computeVersionStatus();
         setDeploymentMaintainedInfo(controllerTester);
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
