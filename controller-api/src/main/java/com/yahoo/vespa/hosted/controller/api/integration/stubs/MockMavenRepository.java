@@ -17,9 +17,14 @@ public class MockMavenRepository implements MavenRepository {
     public static final ArtifactId id = new ArtifactId("ai.vespa", "search");
 
     @Override
-    public Metadata getMetadata() {
-        return new Metadata(id, List.of(Version.fromString("6.1"),
+    public Metadata metadata() {
+        return new Metadata(id, List.of(Version.fromString("6.0"),
                                         Version.fromString("6.2")));
+    }
+
+    @Override
+    public ArtifactId artifactId() {
+        return id;
     }
 
 }

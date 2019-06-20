@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
-import com.yahoo.vespa.hosted.controller.api.integration.maven.ArtifactId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -130,7 +129,7 @@ public class VersionStatus {
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
                                                                                             controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
-        List<Version> releasedVersions = controller.mavenRepository().getMetadata().versions();
+        List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
             if (statistics.version().isEmpty()) continue;

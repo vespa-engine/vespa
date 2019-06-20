@@ -29,7 +29,7 @@ public class MavenRepositoryClient implements MavenRepository {
     }
 
     @Override
-    public Metadata getMetadata() {
+    public Metadata metadata() {
         try {
             HttpRequest request = HttpRequest.newBuilder(withArtifactPath(apiUrl, id)).build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
@@ -42,6 +42,11 @@ public class MavenRepositoryClient implements MavenRepository {
         catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public ArtifactId artifactId() {
+        return id;
     }
 
     static URI withArtifactPath(URI baseUrl, ArtifactId id) {
