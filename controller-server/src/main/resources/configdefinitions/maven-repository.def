@@ -6,3 +6,10 @@ namespace=vespa.hosted.controller.maven.repository.config
 #
 apiUrl string default=https://repo.maven.apache.org/maven2/
 
+# Group ID of the artifact to list versions for
+#
+groupId string default=com.yahoo.vespa
+
+# Artifact ID of the artifact to list versions for
+#
+artifactId string default=tenant-base

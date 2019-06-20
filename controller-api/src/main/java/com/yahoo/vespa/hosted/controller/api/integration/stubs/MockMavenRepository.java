@@ -14,10 +14,12 @@ import java.util.List;
  */
 public class MockMavenRepository implements MavenRepository {
 
+    public static final ArtifactId id = new ArtifactId("ai.vespa", "search");
+
     @Override
-    public Metadata getMetadata(ArtifactId id) {
-        return new Metadata(id, List.of(Version.fromString("3.2.1"),
-                                        Version.fromString("1.2.3")));
+    public Metadata getMetadata() {
+        return new Metadata(id, List.of(Version.fromString("6.1"),
+                                        Version.fromString("6.2")));
     }
 
 }

@@ -7,6 +7,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.maven;
  */
 public interface MavenRepository {
 
-    Metadata getMetadata(ArtifactId id);
+    /** Returns metadata about all releases of a specific artifact to this repository. */
+    Metadata getMetadata();
 
 }
