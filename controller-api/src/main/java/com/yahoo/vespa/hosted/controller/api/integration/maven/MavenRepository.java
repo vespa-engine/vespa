@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.maven;
  *
  * @author jonmv
  */
-public interface Repository {
+public interface MavenRepository {
 
     Metadata getMetadata(ArtifactId id);
 

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.ArtifactId;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.Metadata;
-import com.yahoo.vespa.hosted.controller.api.integration.maven.Repository;
+import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @author jonmv
  */
-public class MockRepository implements Repository {
+public class MockMavenRepository implements MavenRepository {
 
     @Override
     public Metadata getMetadata(ArtifactId id) {

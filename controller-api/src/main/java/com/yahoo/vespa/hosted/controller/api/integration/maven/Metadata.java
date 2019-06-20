@@ -31,12 +31,11 @@ public class Metadata {
 
     /** Creates a new Metadata object from the given XML document. */
     public static Metadata fromXml(String xml) {
-        Element root = XML.getDocument(xml).getDocumentElement();
-        Element metadata = XML.getChild(root, "metadata");
+        Element metadata = XML.getDocument(xml).getDocumentElement();
         ArtifactId id = new ArtifactId(XML.getValue(XML.getChild(metadata, "groupId")),
                                        XML.getValue(XML.getChild(metadata, "artifactId")));
         List<Version> versions = new ArrayList<>();
-        for (Element version : XML.getChildren(XML.getChild(metadata, "versioning"), "versions"))
+        for (Element version : XML.getChildren(XML.getChild(XML.getChild(metadata, "versioning"), "versions")))
             versions.add(Version.fromString(XML.getValue(version)));
 
         return new Metadata(id, versions);
