@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
+import com.yahoo.vespa.hosted.controller.api.integration.maven.ArtifactId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -129,14 +130,17 @@ public class VersionStatus {
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
                                                                                             controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
+        List<Version> releasedVersions = controller.mavenRepository().getMetadata().versions();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
             if (statistics.version().isEmpty()) continue;
 
             try {
+                boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 VespaVersion vespaVersion = createVersion(statistics,
                                                           statistics.version().equals(controllerVersion),
                                                           statistics.version().equals(systemVersion),
+                                                          isReleased,
                                                           systemApplicationVersions.getList(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
@@ -145,8 +149,6 @@ public class VersionStatus {
                                        statistics.version().toFullString(), e);
             }
         }
-
-        
 
         Collections.sort(versions);
 
@@ -241,10 +243,11 @@ public class VersionStatus {
         }
         return versionMap.values();
     }
-    
+
     private static VespaVersion createVersion(DeploymentStatistics statistics,
                                               boolean isControllerVersion,
-                                              boolean isSystemVersion, 
+                                              boolean isSystemVersion,
+                                              boolean isReleased,
                                               Collection<HostName> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
@@ -263,6 +266,7 @@ public class VersionStatus {
                                 gitSha.sha, committedAt,
                                 isControllerVersion,
                                 isSystemVersion,
+                                isReleased,
                                 configServerHostnames,
                                 confidence
         );

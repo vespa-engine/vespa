@@ -254,7 +254,7 @@ public class VersionStatusTest {
         assertTrue("Status for version without applications is removed",
                    tester.controller().versionStatus().versions().stream()
                            .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
-        
+
         // Another default application upgrades, raising confidence to high
         tester.completeUpgrade(default8, version2, "default");
         tester.completeUpgrade(default9, version2, "default");
@@ -294,6 +294,11 @@ public class VersionStatusTest {
         assertEquals("6.2", versions.get(0).versionNumber().toString());
         assertEquals("6.4", versions.get(1).versionNumber().toString());
         assertEquals("6.5", versions.get(2).versionNumber().toString());
+
+        // Check release status is correct (static data in MockMavenRepository).
+        assertTrue(versions.get(0).isReleased());
+        assertFalse(versions.get(1).isReleased());
+        assertFalse(versions.get(2).isReleased());
     }
 
     @Test
