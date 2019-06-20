@@ -22,7 +22,7 @@ public class BatchNormImportTestCase {
                                                                     "src/test/models/tensorflow/batch_norm/saved");
         ImportedModel.Signature signature = model.get().signature("serving_default");
 
-        assertEquals("Has skipped outputs",
+        assertEquals("Should have no skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
 

@@ -29,7 +29,7 @@ public class DropoutImportTestCase {
 
         ImportedModel.Signature signature = model.get().signature("serving_default");
 
-        Assert.assertEquals("Has skipped outputs",
+        Assert.assertEquals("Should have no skipped outputs",
                             0, model.get().signature("serving_default").skippedOutputs().size());
 
         ImportedMlFunction function = signature.outputFunction("y", "y");
