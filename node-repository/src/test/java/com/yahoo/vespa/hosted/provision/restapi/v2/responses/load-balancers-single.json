@@ -1,27 +1,6 @@
 {
   "loadBalancers": [
     {
-      "id": "tenant1:application1:instance1:id1",
-      "state": "reserved",
-      "changedAt": 123,
-      "application": "application1",
-      "tenant": "tenant1",
-      "instance": "instance1",
-      "cluster": "id1",
-      "hostname": "lb-tenant1.application1.instance1-id1",
-      "dnsZone": "zone-id-1",
-      "networks": [
-        "10.2.3.0/24",
-        "10.4.5.0/24"
-      ],
-      "ports": [
-        4443
-      ],
-      "reals": [],
-      "rotations": [],
-      "inactive": false
-    },
-    {
       "id": "tenant4:application4:instance4:id4",
       "state": "active",
       "changedAt": 123,

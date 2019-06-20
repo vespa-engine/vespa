@@ -139,16 +139,21 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
+        return prepare(application, cluster, capacity, groups, true);
+    }
+
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups, boolean idempotentPrepare) {
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
-        // prepare twice to ensure idempotence
         List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
-        List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
-        assertEquals(hosts1, hosts2);
+        if (idempotentPrepare) { // prepare twice to ensure idempotence
+            List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, groups, provisionLogger);
+            assertEquals(hosts1, hosts2);
+        }
         Set<String> newlyActivated = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         newlyActivated.removeAll(reservedBefore);
         newlyActivated.removeAll(inactiveBefore);
-        return hosts2;
+        return hosts1;
     }
 
     public void activate(ApplicationId application, Collection<HostSpec> hosts) {

@@ -29,7 +29,7 @@ public class LoadBalancerList {
 
     /** Returns the subset of load balancers that are inactive */
     public LoadBalancerList inactive() {
-        return of(loadBalancers.stream().filter(LoadBalancer::inactive));
+        return of(loadBalancers.stream().filter(lb -> lb.state() == LoadBalancer.State.inactive));
     }
 
     public List<LoadBalancer> asList() {
