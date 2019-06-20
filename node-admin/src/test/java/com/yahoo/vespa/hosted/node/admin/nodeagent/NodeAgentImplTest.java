@@ -64,11 +64,11 @@ public class NodeAgentImplTest {
     private final String hostName = "host1.test.yahoo.com";
     private final NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
             .hostname(hostName)
-            .nodeType(NodeType.tenant)
+            .type(NodeType.tenant)
             .flavor("docker")
-            .minCpuCores(MIN_CPU_CORES)
-            .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
-            .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB);
+            .vcpus(MIN_CPU_CORES)
+            .memoryGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+            .diskGb(MIN_DISK_AVAILABLE_GB);
 
     private final NodeAgentContextSupplier contextSupplier = mock(NodeAgentContextSupplier.class);
     private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
@@ -90,7 +90,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -119,7 +119,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -140,7 +140,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -214,7 +214,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -241,7 +241,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion);
+                .currentVespaVersion(vespaVersion);
 
         NodeAgentContext firstContext = createContext(specBuilder.build());
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -250,9 +250,9 @@ public class NodeAgentImplTest {
         when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.doConverge(firstContext);
-        NodeAgentContext secondContext = createContext(specBuilder.minDiskAvailableGb(200).build());
+        NodeAgentContext secondContext = createContext(specBuilder.diskGb(200).build());
         nodeAgent.doConverge(secondContext);
-        NodeAgentContext thirdContext = createContext(specBuilder.minCpuCores(4).build());
+        NodeAgentContext thirdContext = createContext(specBuilder.vcpus(4).build());
         nodeAgent.doConverge(thirdContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
@@ -288,7 +288,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion);
+                .currentVespaVersion(vespaVersion);
 
         NodeAgentContext firstContext = createContext(specBuilder.build());
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -297,7 +297,7 @@ public class NodeAgentImplTest {
         when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.doConverge(firstContext);
-        NodeAgentContext secondContext = createContext(specBuilder.minMainMemoryAvailableGb(20).build());
+        NodeAgentContext secondContext = createContext(specBuilder.memoryGb(20).build());
         nodeAgent.doConverge(secondContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 2, 20);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
@@ -325,7 +325,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .wantedRestartGeneration(wantedRestartGeneration)
                 .currentRestartGeneration(currentRestartGeneration)
                 .build();
@@ -357,7 +357,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .wantedRebootGeneration(wantedRebootGeneration)
                 .currentRebootGeneration(currentRebootGeneration)
                 .build();
@@ -400,7 +400,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.failed)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -446,7 +446,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.inactive)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -548,7 +548,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .wantedDockerImage(dockerImage)
                 .state(NodeState.active)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -570,7 +570,7 @@ public class NodeAgentImplTest {
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -651,10 +651,10 @@ public class NodeAgentImplTest {
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .owner(owner)
                 .membership(membership)
-                .minMainMemoryAvailableGb(2)
+                .memoryGb(2)
                 .allowedToBeDown(true)
                 .parentHostname("parent.host.name.yahoo.com")
                 .build();
@@ -713,7 +713,7 @@ public class NodeAgentImplTest {
     @Test
     public void testRunningConfigServer() {
         final NodeSpec node = nodeBuilder
-                .nodeType(NodeType.config)
+                .type(NodeType.config)
                 .wantedDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)

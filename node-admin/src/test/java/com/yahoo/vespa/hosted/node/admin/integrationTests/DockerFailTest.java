@@ -29,13 +29,13 @@ public class DockerFailTest {
                     .wantedDockerImage(dockerImage)
                     .currentDockerImage(dockerImage)
                     .state(NodeState.active)
-                    .nodeType(NodeType.tenant)
+                    .type(NodeType.tenant)
                     .flavor("docker")
                     .wantedRestartGeneration(1L)
                     .currentRestartGeneration(1L)
-                    .minCpuCores(1)
-                    .minMainMemoryAvailableGb(1)
-                    .minDiskAvailableGb(1)
+                    .vcpus(1)
+                    .memoryGb(1)
+                    .diskGb(1)
                     .build());
 
             tester.inOrder(tester.docker).createContainerCommand(eq(dockerImage), eq(containerName));

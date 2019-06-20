@@ -26,11 +26,11 @@ public interface NodeAgentContext extends TaskContext {
 
     /** @return hostname of the docker container this context applies to */
     default HostName hostname() {
-        return HostName.from(node().getHostname());
+        return HostName.from(node().hostname());
     }
 
     default NodeType nodeType() {
-        return node().getNodeType();
+        return node().type();
     }
 
     AthenzIdentity identity();

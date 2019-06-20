@@ -158,23 +158,23 @@ public class StorageMaintainer {
     private Map<String, Object> generateTags(NodeAgentContext context) {
         Map<String, String> tags = new LinkedHashMap<>();
         tags.put("namespace", "Vespa");
-        tags.put("role", nodeTypeToRole(context.node().getNodeType()));
+        tags.put("role", nodeTypeToRole(context.node().type()));
         tags.put("zone", context.zone().getId().value());
-        context.node().getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version.toFullString()));
+        context.node().currentVespaVersion().ifPresent(version -> tags.put("vespaVersion", version.toFullString()));
 
         if (! isConfigserverLike(context.nodeType())) {
-            tags.put("state", context.node().getState().toString());
-            context.node().getParentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
-            context.node().getOwner().ifPresent(owner -> {
-                tags.put("tenantName", owner.getTenant());
-                tags.put("app", owner.getApplication() + "." + owner.getInstance());
-                tags.put("applicationName", owner.getApplication());
-                tags.put("instanceName", owner.getInstance());
-                tags.put("applicationId", owner.getTenant() + "." + owner.getApplication() + "." + owner.getInstance());
+            tags.put("state", context.node().state().toString());
+            context.node().parentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
+            context.node().owner().ifPresent(owner -> {
+                tags.put("tenantName", owner.tenant());
+                tags.put("app", owner.application() + "." + owner.instance());
+                tags.put("applicationName", owner.application());
+                tags.put("instanceName", owner.instance());
+                tags.put("applicationId", owner.tenant() + "." + owner.application() + "." + owner.instance());
             });
-            context.node().getMembership().ifPresent(membership -> {
-                tags.put("clustertype", membership.getClusterType());
-                tags.put("clusterid", membership.getClusterId());
+            context.node().membership().ifPresent(membership -> {
+                tags.put("clustertype", membership.clusterType());
+                tags.put("clusterid", membership.clusterId());
             });
         }
 
@@ -260,20 +260,20 @@ public class StorageMaintainer {
 
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("hostname", context.node().getHostname());
+        attributes.put("hostname", context.node().hostname());
         attributes.put("region", context.zone().getRegionName().value());
         attributes.put("environment", context.zone().getEnvironment().value());
-        attributes.put("flavor", context.node().getFlavor());
+        attributes.put("flavor", context.node().flavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
         attributes.put("cpu_microcode_version", getMicrocodeVersion());
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
-        context.node().getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
-        context.node().getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version.toFullString()));
-        context.node().getOwner().ifPresent(owner -> {
-            attributes.put("tenant", owner.getTenant());
-            attributes.put("application", owner.getApplication());
-            attributes.put("instance", owner.getInstance());
+        context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
+        context.node().currentVespaVersion().ifPresent(version -> attributes.put("vespa_version", version.toFullString()));
+        context.node().owner().ifPresent(owner -> {
+            attributes.put("tenant", owner.tenant());
+            attributes.put("application", owner.application());
+            attributes.put("instance", owner.instance());
         });
         return Collections.unmodifiableMap(attributes);
     }
