@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
+import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -83,6 +84,7 @@ public class Controller extends AbstractComponent {
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
+    private final MavenRepository mavenRepository;
 
     /**
      * Creates a controller 
@@ -95,11 +97,13 @@ public class Controller extends AbstractComponent {
                       RoutingGenerator routingGenerator, Chef chef,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource) {
+                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
+                      MavenRepository mavenRepository) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
              configServer, metricsService, routingGenerator, chef,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource);
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
+             mavenRepository);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
@@ -109,7 +113,7 @@ public class Controller extends AbstractComponent {
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer, FlagSource flagSource) {
+                      Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -122,6 +126,7 @@ public class Controller extends AbstractComponent {
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.nameServiceForwarder = new NameServiceForwarder(curator);
+        this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
@@ -164,9 +169,9 @@ public class Controller extends AbstractComponent {
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
-    public NameServiceForwarder nameServiceForwarder() {
-        return nameServiceForwarder;
-    }
+    public NameServiceForwarder nameServiceForwarder() { return nameServiceForwarder; }
+
+    public MavenRepository mavenRepository() { return mavenRepository; }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {

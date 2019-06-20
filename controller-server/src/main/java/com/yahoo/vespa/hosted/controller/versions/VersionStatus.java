@@ -145,6 +145,9 @@ public class VersionStatus {
                                        statistics.version().toFullString(), e);
             }
         }
+
+        
+
         Collections.sort(versions);
 
         return new VersionStatus(versions);
