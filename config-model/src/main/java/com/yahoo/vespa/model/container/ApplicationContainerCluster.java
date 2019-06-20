@@ -47,12 +47,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
-    private Optional<TlsSecrets> tlsSecretsKeyName;
+    private Optional<TlsSecrets> tlsSecrets;
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
 
-        this.tlsSecretsKeyName = deployState.tlsSecrets();
+        this.tlsSecrets = deployState.tlsSecrets();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
 
@@ -145,8 +145,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (modelEvaluation != null) modelEvaluation.getConfig(builder);
     }
 
-    public Optional<TlsSecrets> getTlsSecretsKeyName() {
-        return tlsSecretsKeyName;
+    public Optional<TlsSecrets> getTlsSecrets() {
+        return tlsSecrets;
     }
 
 }

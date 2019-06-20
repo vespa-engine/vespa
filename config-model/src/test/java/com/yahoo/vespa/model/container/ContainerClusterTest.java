@@ -212,7 +212,7 @@ public class ContainerClusterTest {
 
 
     private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {
-        ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa(), cluster.getTlsSecretsKeyName());
+        ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa(), cluster.getTlsSecrets());
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService(deployLogger);
         cluster.addContainer(container);
