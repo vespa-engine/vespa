@@ -39,11 +39,10 @@ void verify_tensor(const TensorSpec &expect, ConstantValue::UP actual) {
 }
 
 void verify_invalid(ConstantValue::UP actual) {
-    EXPECT_EQUAL(actual->type(), ValueType::double_type());
-    EXPECT_EQUAL(actual->value().as_double(), 0.0);
+    EXPECT_TRUE(actual->type().is_error());
 }
 
-TEST_F("require that invalid types loads an empty double", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+TEST_F("require that invalid types gives bad constant value", ConstantTensorLoader(SimpleTensorEngine::ref())) {
     TEST_DO(verify_invalid(f1.create(TEST_PATH("dense.json"), "invalid type spec")));
 }
 

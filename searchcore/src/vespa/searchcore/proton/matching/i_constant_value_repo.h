@@ -9,7 +9,7 @@ namespace matching {
 
 /**
  * Interface for retrieving a named constant rank value to be used by features in the rank framework.
- * If the given value is not found an vespalib::eval::ErrorValue should be returned.
+ * If the given value is not found a nullptr should be returned.
  */
 struct IConstantValueRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const = 0;

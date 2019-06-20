@@ -75,13 +75,17 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
     ValueType value_type = ValueType::from_spec(type);
     if (value_type.is_error()) {
         LOG(warning, "invalid type specification: %s", type.c_str());
-        return std::make_unique<SimpleConstantValue>(_engine.from_spec(TensorSpec("double")));
+        return std::make_unique<BadConstantValue>();
     }
     if (ends_with(path, ".tbf")) {
         vespalib::MappedFileInput file(path);
         vespalib::Memory content = file.get();
         vespalib::nbostream stream(content.data, content.size);
-        return std::make_unique<SimpleConstantValue>(_engine.decode(stream));
+        try {
+            return std::make_unique<SimpleConstantValue>(_engine.decode(stream));
+        } catch (std::exception &) {
+            return std::make_unique<BadConstantValue>();
+        }
     }
     Slime slime;
     decode_json(path, slime);
@@ -99,7 +103,11 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         cells[i]["address"].traverse(extractor);
         spec.add(address, cells[i]["value"].asDouble());
     }
-    return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
+    try {
+        return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
+    } catch (std::exception &) {
+        return std::make_unique<BadConstantValue>();
+    }
 }
 
 } // namespace vespalib::eval

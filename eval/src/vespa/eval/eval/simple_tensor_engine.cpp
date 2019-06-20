@@ -40,22 +40,14 @@ const Value &to_value(std::unique_ptr<SimpleTensor> tensor, Stash &stash) {
     if (tensor->type().is_tensor()) {
         return *stash.create<Value::UP>(std::move(tensor));
     }
-    if (tensor->type().is_double()) {
-        return stash.create<DoubleValue>(tensor->as_double());
-    }
-    assert(tensor->type().is_error());
-    return ErrorValue::instance;
+    return stash.create<DoubleValue>(tensor->as_double());
 }
 
 Value::UP to_value(std::unique_ptr<SimpleTensor> tensor) {
     if (tensor->type().is_tensor()) {
         return tensor;
     }
-    if (tensor->type().is_double()) {
-        return std::make_unique<DoubleValue>(tensor->as_double());
-    }
-    assert(tensor->type().is_error());
-    return std::make_unique<ErrorValue>();
+    return std::make_unique<DoubleValue>(tensor->as_double());
 }
 
 } // namespace vespalib::eval::<unnamed>
