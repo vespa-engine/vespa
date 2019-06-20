@@ -545,7 +545,7 @@ TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed)
     assert_interleaved_features(disk_index, "f0", "a", 10, 1, 7);
     assert_interleaved_features(disk_index, "f1", "w", 10, 1, 4);
     assert_interleaved_features(disk_index, "f2", "ax", 10, 2, 4);
-    assert_interleaved_features(disk_index, "f2", "ay", 10, 1, 3);
+    assert_interleaved_features(disk_index, "f2", "ay", 10, 1, 4);
     assert_interleaved_features(disk_index, "f3", "wx", 10, 1, 2);
     clean_field_length_testdirs();
 }

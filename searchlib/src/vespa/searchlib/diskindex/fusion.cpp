@@ -3,7 +3,9 @@
 #include "fusion.h"
 #include "fieldreader.h"
 #include "dictionarywordreader.h"
+#include "field_length_scanner.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
@@ -28,6 +30,8 @@ using search::diskindex::DocIdMapping;
 using search::diskindex::WordNumMapping;
 using search::docsummary::DocumentSummary;
 using search::index::FieldLengthInfo;
+using search::bitcompression::PosOccFieldParams;
+using search::bitcompression::PosOccFieldsParams;
 using search::index::PostingListParams;
 using search::index::Schema;
 using search::index::SchemaUtil;
@@ -304,17 +308,39 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
 }
 
 
+std::shared_ptr<FieldLengthScanner>
+Fusion::allocate_field_length_scanner(const SchemaUtil::IndexIterator &index)
+{
+    if (index.use_experimental_posting_list_format()) {
+        PosOccFieldsParams fieldsParams;
+        fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
+        assert(fieldsParams.getNumFields() > 0);
+        const PosOccFieldParams &fieldParams = fieldsParams.getFieldParams()[0];
+        if (fieldParams._hasElements) {
+            for (const auto &old_index : _oldIndexes) {
+                const Schema &old_schema = old_index.getSchema();
+                if (index.hasOldFields(old_schema) &&
+                    !index.has_matching_experimental_posting_list_format(old_schema)) {
+                    return std::make_shared<FieldLengthScanner>(_docIdLimit);
+                }
+            }
+        }
+    }
+    return std::shared_ptr<FieldLengthScanner>();
+}
+
 bool
 Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list,
                               std::vector<std::unique_ptr<FieldReader> > & readers)
 {
+    auto field_length_scanner = allocate_field_length_scanner(index);
     vespalib::string indexName = index.getName();
     for (const auto &oi : _oldIndexes) {
         const Schema &oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
-        auto reader = FieldReader::allocFieldReader(index, oldSchema);
+        auto reader = FieldReader::allocFieldReader(index, oldSchema, field_length_scanner);
         reader->setup(list[oi.getIndex()], oi.getDocIdMapping());
         if (!reader->open(oi.getPath() + "/" + indexName + "/", _tuneFileIndexing._read)) {
             return false;

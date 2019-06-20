@@ -4,6 +4,7 @@
 #include "zcposocc.h"
 #include "extposocc.h"
 #include "pagedict4file.h"
+#include "field_length_scanner.h"
 #include <vespa/vespalib/util/error.h>
 
 #include <vespa/log/log.h>
@@ -189,7 +190,8 @@ FieldReader::get_field_length_info() const
 
 std::unique_ptr<FieldReader>
 FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
-                              const Schema &oldSchema)
+                              const Schema &oldSchema,
+                              std::shared_ptr<FieldLengthScanner> field_length_scanner)
 {
     assert(index.isValid());
     if (index.hasMatchingOldFields(oldSchema)) {
@@ -203,7 +205,7 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
     }
     // field exists in old schema with different collection type setting
     // or old field is missing wanted interleaved features.
-    return std::make_unique<FieldReaderStripInfo>(index);   // degraded
+    return std::make_unique<FieldReaderStripInfo>(index, field_length_scanner);   // degraded
 }
 
 
@@ -233,11 +235,12 @@ FieldReaderEmpty::getFeatureParams(PostingListParams &params)
 }
 
 
-FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index)
+FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner> field_length_scanner)
     : _hasElements(false),
       _hasElementWeights(false),
       _want_interleaved_features(index.use_experimental_posting_list_format()),
-      _regenerate_interleaved_features(false)
+      _regenerate_interleaved_features(false),
+      _field_length_scanner(std::move(field_length_scanner))
 {
     PosOccFieldsParams fieldsParams;
     fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
@@ -272,7 +275,28 @@ FieldReaderStripInfo::open(const vespalib::string &prefix, const TuneFileSeqRead
             _regenerate_interleaved_features = true;
         }
     }
+    if (_regenerate_interleaved_features && _hasElements && _field_length_scanner) {
+        scan_element_lengths();
+        close();
+        if (!FieldReader::open(prefix, tuneFileRead)) {
+            return false;
+        }
+    }
     return true;
+}
+
+void
+FieldReaderStripInfo::scan_element_lengths()
+{
+    for (;;) {
+        FieldReader::read();
+        if (_wordNum == noWordNumHigh()) {
+            break;
+        }
+        DocIdAndFeatures &features = _docIdAndFeatures;
+        assert(!features.has_raw_data());
+        _field_length_scanner->scan_features(features);
+    }
 }
 
 void
@@ -319,7 +343,9 @@ FieldReaderStripInfo::read()
             field_length += element.getElementLen();
             num_occs += element.getNumOccs();
         }
-        // Note: Length of elements without occurrences is not included.
+        if (_hasElements && _field_length_scanner) {
+            field_length = _field_length_scanner->get_field_length(features.doc_id());
+        }
         features.set_field_length(field_length);
         features.set_num_occs(num_occs);
     }

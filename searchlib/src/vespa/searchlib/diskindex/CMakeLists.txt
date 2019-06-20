@@ -12,6 +12,7 @@ vespa_add_library(searchlib_diskindex OBJECT
     extposocc.cpp
     fieldreader.cpp
     fieldwriter.cpp
+    field_length_scanner.cpp
     fileheader.cpp
     fusion.cpp
     indexbuilder.cpp
