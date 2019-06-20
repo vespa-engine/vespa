@@ -107,7 +107,7 @@ public class VersionStatusSerializer {
                                 Instant.ofEpochMilli(object.field(committedAtField).asLong()),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
-                                object.field(isReleasedField).asBool(),
+                                object.field(isReleasedField).valid() ? object.field(isReleasedField).asBool() : true,
                                 configServersFromSlime(object.field(configServersField)),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
