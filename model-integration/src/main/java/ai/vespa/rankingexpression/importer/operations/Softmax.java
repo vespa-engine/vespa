@@ -6,6 +6,11 @@ import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
 
+/**
+ * Convert imported 'softmax' operation to the Vespa softmax ranking function.
+ *
+ * @author lesters
+ */
 public class Softmax extends IntermediateOperation {
 
     public Softmax(String modelName, String nodeName, List<IntermediateOperation> inputs) {
