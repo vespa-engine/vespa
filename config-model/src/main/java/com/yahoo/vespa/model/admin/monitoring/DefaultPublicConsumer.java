@@ -24,8 +24,7 @@ public class DefaultPublicConsumer {
                                                                          emptyList(),
                                                                          ImmutableList.of(defaultPublicMetricSet,
                                                                                           defaultVespaMetricSet,
-                                                                                          systemMetricSet,
-                                                                                          networkMetricSet));
+                                                                                          systemMetricSet));
 
     public static MetricsConsumer getDefaultPublicConsumer() {
         return new MetricsConsumer(DEFAULT_PUBLIC_CONSUMER_ID, publicConsumerMetrics);
