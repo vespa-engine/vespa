@@ -16,6 +16,11 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * Http client implementation of a {@link MavenRepository}, which uses a configured repository and artifact ID.
+ *
+ * @author jonmv
+ */
 public class MavenRepositoryClient implements MavenRepository {
 
     private final HttpClient client;
