@@ -47,10 +47,6 @@ public class LoadBalancer {
 
     /** Returns a copy of this with state set to given state */
     public LoadBalancer with(State state, Instant changedAt) {
-        if (changedAt.isBefore(this.changedAt)) {
-            throw new IllegalArgumentException("Invalid changeAt: '" + changedAt + "' is before existing value '" +
-                                               this.changedAt + "'");
-        }
         if (this.state != State.reserved && state == State.reserved) {
             throw new IllegalArgumentException("Invalid state transition: " + this.state + " -> " + state);
         }
