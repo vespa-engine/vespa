@@ -266,8 +266,7 @@ public:
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda, bool) const override {
-        using PostingIteratorType = PostingIterator<interleaved_features>;
-        auto result = std::make_unique<PostingIteratorType>(_posting_itr, _feature_store, _field_id, tfmda);
+        auto result = make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda);
         if (_use_bit_vector) {
             LOG(debug, "Return BooleanMatchIteratorWrapper: field_id(%u), doc_count(%zu)",
                 _field_id, _posting_itr.size());

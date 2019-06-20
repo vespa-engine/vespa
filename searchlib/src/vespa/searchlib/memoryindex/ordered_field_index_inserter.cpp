@@ -118,7 +118,9 @@ OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId,
     assert(_prevDocId == noDocId || _prevDocId < docId ||
            (_prevDocId == docId && !_prevAdd));
     datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
-    _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef)));
+    _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef,
+                                                                       features.num_occs(),
+                                                                       features.field_length())));
     _listener.insert(_dItr.getKey()._wordRef, docId);
     _prevDocId = docId;
     _prevAdd = true;

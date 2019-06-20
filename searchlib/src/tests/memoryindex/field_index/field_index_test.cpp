@@ -43,7 +43,6 @@ using test::WrapInserter;
 using FieldIndexType = FieldIndex<false>;
 using PostingList = FieldIndexType::PostingList;
 using PostingConstItr = PostingList::ConstIterator;
-using PostingIteratorType = PostingIterator<false>;
 
 class MyBuilder : public IndexBuilder {
 private:
@@ -201,20 +200,20 @@ assertPostingList(std::vector<uint32_t> &exp, PostingConstItr itr)
 
 FieldIndexType::PostingList::Iterator
 find_in_field_index(const vespalib::stringref word,
-                    uint32_t fieldId,
+                    uint32_t field_id,
                     const FieldIndexCollection& fic)
 {
-    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(fieldId));
+    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(field_id));
     assert(field_index != nullptr);
     return field_index->find(word);
 }
 
 FieldIndexType::PostingList::ConstIterator
 find_frozen_in_field_index(const vespalib::stringref word,
-                           uint32_t fieldId,
+                           uint32_t field_id,
                            const FieldIndexCollection& fic)
 {
-    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(fieldId));
+    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(field_id));
     assert(field_index != nullptr);
     return field_index->findFrozen(word);
 }
@@ -495,6 +494,10 @@ struct FieldIndexTest : public ::testing::Test {
           idx(schema, 0)
     {
     }
+    SearchIterator::UP search(const vespalib::stringref word,
+                              const TermFieldMatchDataArray& match_data) {
+        return make_search_iterator<false>(idx.find(word), idx.getFeatureStore(), 0, match_data);
+    }
 };
 
 Schema
@@ -673,30 +676,26 @@ TEST_F(FieldIndexTest, require_that_posting_iterator_is_working)
     TermFieldMatchDataArray matchData;
     matchData.add(&tfmd);
     {
-        PostingIteratorType itr(idx.find("not"),
-                                idx.getFeatureStore(),
-                                0, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", matchData);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(idx.find("a"),
-                                idx.getFeatureStore(),
-                                0, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("a", matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{4:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         EXPECT_EQ("{6:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(itr.seek(40));
-        EXPECT_EQ(40u, itr.getDocId());
-        itr.unpack(40);
+        EXPECT_TRUE(itr->seek(40));
+        EXPECT_EQ(40u, itr->getDocId());
+        itr->unpack(40);
         EXPECT_EQ("{7:0,1}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(41));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(41));
+        EXPECT_TRUE(itr->isAtEnd());
     }
 }
 
@@ -792,11 +791,16 @@ public:
           _inv(_schema, _invertThreads, _pushThreads, _fic)
     {
     }
-    PostingList::Iterator find(const vespalib::stringref word, uint32_t fieldId) const {
-        return find_in_field_index(word, fieldId, _fic);
+    PostingList::Iterator find(const vespalib::stringref word, uint32_t field_id) const {
+        return find_in_field_index(word, field_id, _fic);
     }
-    PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t fieldId) const {
-        return find_frozen_in_field_index(word, fieldId, _fic);
+    PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t field_id) const {
+        return find_frozen_in_field_index(word, field_id, _fic);
+    }
+    SearchIterator::UP search(const vespalib::stringref word, uint32_t field_id,
+                              const TermFieldMatchDataArray& match_data) {
+        return make_search_iterator<false>(findFrozen(word, field_id), featureStoreRef(_fic, field_id),
+                                           field_id, match_data);
     }
 };
 
@@ -956,52 +960,52 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     TermFieldMatchDataArray matchData;
     matchData.add(&tfmd);
     {
-        PostingIteratorType itr(findFrozen("not", 0), featureStoreRef(_fic, 0), 0, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", 0, matchData);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("a", 0), featureStoreRef(_fic, 0), 0, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("a", 0, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{4:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         EXPECT_EQ("{6:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(itr.seek(40));
-        EXPECT_EQ(40u, itr.getDocId());
-        itr.unpack(40);
+        EXPECT_TRUE(itr->seek(40));
+        EXPECT_EQ(40u, itr->getDocId());
+        itr->unpack(40);
         EXPECT_EQ("{7:0,1,4}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(41));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(41));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("x", 0), featureStoreRef(_fic, 0), 0, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("x", 0, matchData);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("x", 1), featureStoreRef(_fic, 1), 1, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        auto itr = search("x", 1, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         EXPECT_EQ("{6:2[e=0,w=1,l=6]}", toString(tfmd.getIterator(), true, true));
     }
     {
-        PostingIteratorType itr(findFrozen("x", 2), featureStoreRef(_fic, 2), 2, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        auto itr = search("x", 2, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         // weight is hardcoded to 1 for new style il doc array field
         EXPECT_EQ("{2:1[e=0,w=1,l=2]}", toString(tfmd.getIterator(), true, true));
     }
     {
-        PostingIteratorType itr(findFrozen("x", 3), featureStoreRef(_fic, 3), 3, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        auto itr = search("x", 3, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         EXPECT_EQ("{2:1[e=0,w=6,l=2]}",
                   toString(tfmd.getIterator(), true, true));
     }
@@ -1195,49 +1199,41 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
     matchData.add(&tfmd);
     {
         uint32_t fieldId = _schema.getIndexFieldId("iu");
-        PostingIteratorType itr(findFrozen("not", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         uint32_t fieldId = _schema.getIndexFieldId("iu");
-        PostingIteratorType itr(findFrozen("example", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("example", fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{9:2}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         uint32_t fieldId = _schema.getIndexFieldId("iau");
-        PostingIteratorType itr(findFrozen("example", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("example", fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{9:2[e=0,l=9]}",
                   toString(tfmd.getIterator(), true, false));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         uint32_t fieldId = _schema.getIndexFieldId("iwu");
-        PostingIteratorType itr(findFrozen("example", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("example", fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{9:2[e=0,w=4,l=9]}",
                   toString(tfmd.getIterator(), true, true));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         search::diskindex::IndexBuilder dib(_schema);
@@ -1281,37 +1277,31 @@ TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
     matchData.add(&tfmd);
     uint32_t fieldId = _schema.getIndexFieldId("f0");
     {
-        PostingIteratorType itr(findFrozen("not", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("我就"
-                                           "是那个",
-                                           fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("我就"
+                          "是那个",
+                          fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{2:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("大灰"
-                                           "狼",
-                                           fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("大灰"
+                          "狼",
+                          fieldId, matchData);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{2:1}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
 }
 

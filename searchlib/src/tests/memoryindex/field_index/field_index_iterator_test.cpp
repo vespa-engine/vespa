@@ -19,7 +19,6 @@ using search::index::schema::DataType;
 using search::test::SearchIteratorVerifier;
 
 using FieldIndexType = FieldIndex<false>;
-using PostingIteratorType = PostingIterator<false>;
 
 class Verifier : public SearchIteratorVerifier {
 private:
@@ -44,8 +43,8 @@ public:
         (void) strict;
         TermFieldMatchDataArray match_data;
         match_data.add(&_tfmd);
-        return std::make_unique<PostingIteratorType>(_field_index.find("a"),
-                                                     _field_index.getFeatureStore(), 0, match_data);
+        return make_search_iterator<false>(_field_index.find("a"),
+                                           _field_index.getFeatureStore(), 0, match_data);
     }
 };
 
