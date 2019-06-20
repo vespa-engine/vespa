@@ -13,6 +13,8 @@ import java.util.Set;
 import static java.util.Collections.emptyList;
 
 /**
+ * TODO: Add content metrics.
+ *
  * @author gjoranv
  */
 public class DefaultPublicMetrics {
