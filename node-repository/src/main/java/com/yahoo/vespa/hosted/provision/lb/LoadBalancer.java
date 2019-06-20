@@ -51,7 +51,7 @@ public class LoadBalancer {
             throw new IllegalArgumentException("Invalid changeAt: '" + changedAt + "' is before existing value '" +
                                                this.changedAt + "'");
         }
-        if (this.state == State.active && state == State.reserved) {
+        if (this.state != State.reserved && state == State.reserved) {
             throw new IllegalArgumentException("Invalid state transition: " + this.state + " -> " + state);
         }
         return new LoadBalancer(id, instance, state, changedAt);

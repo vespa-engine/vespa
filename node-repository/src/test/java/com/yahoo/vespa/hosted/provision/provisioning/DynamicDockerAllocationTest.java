@@ -386,7 +386,6 @@ public class DynamicDockerAllocationTest {
         tester.activate(application, hosts1);
 
         NodeResources resources = new NodeResources(1.5, 8, 50);
-        System.out.println("Redeploying with " + resources);
         List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, resources), 1);
         tester.activate(application, hosts2);
 
