@@ -157,7 +157,7 @@ public class NodeRepositoryNode {
         this.flavor = flavor;
     }
 
-    public String canonicalFlavor() {
+    public String getCanonicalFlavor() {
         return canonicalFlavor;
     }
 
