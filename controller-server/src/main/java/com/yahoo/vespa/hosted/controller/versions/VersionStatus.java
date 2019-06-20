@@ -129,14 +129,17 @@ public class VersionStatus {
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
                                                                                             controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
+        List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
             if (statistics.version().isEmpty()) continue;
 
             try {
+                boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 VespaVersion vespaVersion = createVersion(statistics,
                                                           statistics.version().equals(controllerVersion),
                                                           statistics.version().equals(systemVersion),
+                                                          isReleased,
                                                           systemApplicationVersions.getList(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
@@ -145,6 +148,7 @@ public class VersionStatus {
                                        statistics.version().toFullString(), e);
             }
         }
+
         Collections.sort(versions);
 
         return new VersionStatus(versions);
@@ -238,10 +242,11 @@ public class VersionStatus {
         }
         return versionMap.values();
     }
-    
+
     private static VespaVersion createVersion(DeploymentStatistics statistics,
                                               boolean isControllerVersion,
-                                              boolean isSystemVersion, 
+                                              boolean isSystemVersion,
+                                              boolean isReleased,
                                               Collection<HostName> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
@@ -260,6 +265,7 @@ public class VersionStatus {
                                 gitSha.sha, committedAt,
                                 isControllerVersion,
                                 isSystemVersion,
+                                isReleased,
                                 configServerHostnames,
                                 confidence
         );

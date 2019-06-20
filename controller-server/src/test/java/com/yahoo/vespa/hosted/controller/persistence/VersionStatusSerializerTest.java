@@ -36,9 +36,9 @@ public class VersionStatusSerializerTest {
                         ApplicationId.from("tenant2", "success2", "default"))
         );
         vespaVersions.add(new VespaVersion(statistics, "dead", Instant.now(), false, false,
-                                           asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
+                                           true, asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         vespaVersions.add(new VespaVersion(statistics, "cafe", Instant.now(), true, true,
-                                           asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
+                                           false, asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         VersionStatus status = new VersionStatus(vespaVersions);
         VersionStatusSerializer serializer = new VersionStatusSerializer();
         VersionStatus deserialized = serializer.fromSlime(serializer.toSlime(status));
@@ -51,6 +51,7 @@ public class VersionStatusSerializerTest {
             assertEquals(a.committedAt().truncatedTo(MILLIS), b.committedAt());
             assertEquals(a.isControllerVersion(), b.isControllerVersion());
             assertEquals(a.isSystemVersion(), b.isSystemVersion());
+            assertEquals(a.isReleased(), b.isReleased());
             assertEquals(a.statistics(), b.statistics());
             assertEquals(a.systemApplicationHostnames(), b.systemApplicationHostnames());
             assertEquals(a.confidence(), b.confidence());

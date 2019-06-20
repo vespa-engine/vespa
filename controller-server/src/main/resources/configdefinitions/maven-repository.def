@@ -1,0 +1,15 @@
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.hosted.controller.maven.repository.config
+
+
+# URL to the Maven repository API that holds artifacts for tenants in the controller's system
+#
+apiUrl string default=https://repo.maven.apache.org/maven2/
+
+# Group ID of the artifact to list versions for
+#
+groupId string default=com.yahoo.vespa
+
+# Artifact ID of the artifact to list versions for
+#
+artifactId string default=tenant-base
