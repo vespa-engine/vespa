@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
@@ -17,15 +18,19 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Periodically remove inactive load balancers permanently.
+ * Periodically expire load balancers.
  *
- * When an application is removed, any associated load balancers are only deactivated. This maintainer ensures that
- * underlying load balancer instances are eventually freed.
+ * Load balancers expire from the following states:
+ *
+ * {@link LoadBalancer.State#inactive}: An application is removed and load balancers are deactivated.
+ * {@link LoadBalancer.State#reserved}: An prepared application is never successfully activated, thus never activating
+ *                                      any prepared load balancers.
  *
  * @author mpolden
  */
 public class LoadBalancerExpirer extends Maintainer {
 
+    private static final Duration reservedExpiry = Duration.ofHours(1);
     private static final Duration inactiveExpiry = Duration.ofHours(1);
 
     private final LoadBalancerService service;
@@ -39,7 +44,19 @@ public class LoadBalancerExpirer extends Maintainer {
 
     @Override
     protected void maintain() {
+        expireReserved();
         removeInactive();
+    }
+
+    private void expireReserved() {
+        try (Lock lock = db.lockLoadBalancers()) {
+            var now = nodeRepository().clock().instant();
+            var expirationTime = now.minus(reservedExpiry);
+            var expired = nodeRepository().loadBalancers()
+                                          .in(State.reserved)
+                                          .changedBefore(expirationTime);
+            expired.forEach(lb -> db.writeLoadBalancer(lb.with(State.inactive, now)));
+        }
     }
 
     private void removeInactive() {

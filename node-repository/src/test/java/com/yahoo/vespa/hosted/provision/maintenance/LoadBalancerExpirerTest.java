@@ -73,6 +73,43 @@ public class LoadBalancerExpirerTest {
         assertTrue("Active load balancer is not removed", tester.loadBalancerService().instances().containsKey(lb2));
     }
 
+    @Test
+    public void test_expire_reserved() {
+        LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
+                                                              Duration.ofDays(1),
+                                                              tester.loadBalancerService());
+        Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
+
+
+        // Prepare application
+        ClusterSpec.Id cluster = ClusterSpec.Id.from("qrs");
+        ApplicationId app = tester.makeApplicationId();
+        LoadBalancerId lb = new LoadBalancerId(app, cluster);
+        deployApplication(app, cluster, false);
+
+        // Provisions load balancer in reserved
+        assertSame(LoadBalancer.State.reserved, loadBalancers.get().get(lb).state());
+
+        // Expirer does nothing
+        expirer.maintain();
+        assertSame(LoadBalancer.State.reserved, loadBalancers.get().get(lb).state());
+
+        // Application never activates and nodes are dirtied. Expirer moves load balancer to inactive after timeout
+        dirtyNodesOf(app);
+        tester.clock().advance(Duration.ofHours(1));
+        expirer.maintain();
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
+
+        // Expirer does nothing as inactive expiration time has not yet passed
+        expirer.maintain();
+        assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
+
+        // Expirer removes inactive load balancer
+        tester.clock().advance(Duration.ofHours(1));
+        expirer.maintain();
+        assertFalse("Inactive load balancer removed", loadBalancers.get().containsKey(lb));
+    }
+
     private void dirtyNodesOf(ApplicationId application) {
         tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
@@ -84,12 +121,18 @@ public class LoadBalancerExpirerTest {
     }
 
     private void deployApplication(ApplicationId application, ClusterSpec.Id cluster) {
+        deployApplication(application, cluster, true);
+    }
+
+    private void deployApplication(ApplicationId application, ClusterSpec.Id cluster, boolean activate) {
         tester.makeReadyNodes(10, "d-1-1-1");
         List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
                                                                                Vtag.currentVersion, false, Collections.emptySet()),
                                               2, 1,
                                               new NodeResources(1, 1, 1));
-        tester.activate(application, hosts);
+        if (activate) {
+            tester.activate(application, hosts);
+        }
     }
 
 }
