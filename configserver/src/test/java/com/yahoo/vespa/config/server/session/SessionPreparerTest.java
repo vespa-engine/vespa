@@ -15,7 +15,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
@@ -27,7 +26,7 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -218,7 +217,7 @@ public class SessionPreparerTest {
         var params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
-        var expected = List.of(new ContainerEndpoint(new ClusterId("qrs"),
+        var expected = List.of(new ContainerEndpoint("qrs",
                                                      List.of("app1.tenant1.global.vespa.example.com",
                                                              "rotation-042.vespa.global.routing")));
         assertEquals(expected, readContainerEndpoints(applicationId));
@@ -248,10 +247,10 @@ public class SessionPreparerTest {
                                                 .build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
-        var expected = List.of(new ContainerEndpoint(new ClusterId("foo"),
+        var expected = List.of(new ContainerEndpoint("foo",
                                                      List.of("foo.app1.tenant1.global.vespa.example.com",
                                                              "rotation-042.vespa.global.routing")),
-                               new ContainerEndpoint(new ClusterId("bar"),
+                               new ContainerEndpoint("bar",
                                                      List.of("bar.app1.tenant1.global.vespa.example.com",
                                                              "rotation-043.vespa.global.routing")));
         assertEquals(expected, readContainerEndpoints(applicationId));

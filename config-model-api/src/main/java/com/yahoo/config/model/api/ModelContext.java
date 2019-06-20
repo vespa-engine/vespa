@@ -50,6 +50,7 @@ public interface ModelContext {
         boolean hostedVespa();
         Zone zone();
         Set<Rotation> rotations();
+        Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();

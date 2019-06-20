@@ -1,7 +1,5 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.tenant;
-
-import com.yahoo.vespa.applicationmodel.ClusterId;
+package com.yahoo.config.model.api;
 
 import java.util.List;
 import java.util.Objects;
@@ -15,15 +13,15 @@ import java.util.Objects;
  */
 public class ContainerEndpoint {
 
-    private final ClusterId clusterId;
+    private final String clusterId;
     private final List<String> names;
 
-    public ContainerEndpoint(ClusterId clusterId, List<String> names) {
+    public ContainerEndpoint(String clusterId, List<String> names) {
         this.clusterId = Objects.requireNonNull(clusterId);
         this.names = List.copyOf(Objects.requireNonNull(names));
     }
 
-    public ClusterId clusterId() {
+    public String clusterId() {
         return clusterId;
     }
 

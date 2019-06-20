@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -126,6 +127,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean hostedVespa;
         private final Zone zone;
         private final Set<Rotation> rotations;
+        private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
@@ -142,6 +144,7 @@ public class ModelContextImpl implements ModelContext {
                           boolean hostedVespa,
                           Zone zone,
                           Set<Rotation> rotations,
+                          Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
                           FlagSource flagSource) {
@@ -154,6 +157,7 @@ public class ModelContextImpl implements ModelContext {
             this.hostedVespa = hostedVespa;
             this.zone = zone;
             this.rotations = rotations;
+            this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
@@ -196,6 +200,9 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public Set<Rotation> rotations() { return rotations; }
+
+        @Override
+        public Set<ContainerEndpoint> endpoints() { return endpoints; }
 
         @Override
         public boolean isBootstrap() { return isBootstrap; }
