@@ -228,7 +228,7 @@ public abstract class IndexedTensor implements Tensor {
             if (type.valueType() == TensorType.Value.DOUBLE)
                 b.append(get(index));
             else if (type.valueType() == TensorType.Value.FLOAT)
-                b.append(getFloat(index));
+                b.append(get(index)); // TODO: Use getFloat
             else
                 throw new IllegalStateException("Unexpected value type " + type.valueType());
 
