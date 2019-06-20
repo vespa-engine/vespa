@@ -62,8 +62,8 @@ public class TlsSecretsKeys {
         if(secretKeyname.isEmpty()) return Optional.empty();
         TlsSecrets tlsSecretParameters = TlsSecrets.MISSING;
         try {
-            String cert = secretStore.getSecret(secretKeyname + "-cert");
-            String key = secretStore.getSecret(secretKeyname + "-key");
+            String cert = secretStore.getSecret(secretKeyname.get() + "-cert");
+            String key = secretStore.getSecret(secretKeyname.get() + "-key");
             tlsSecretParameters = new TlsSecrets(cert, key);
         } catch (RuntimeException e) {
             // Assume not ready yet
