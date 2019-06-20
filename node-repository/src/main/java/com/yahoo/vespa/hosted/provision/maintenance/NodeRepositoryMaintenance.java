@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
@@ -176,7 +175,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            loadBalancerExpiry = Duration.ofHours(1);
+            loadBalancerExpiry = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             hostProvisionerInterval = Duration.ofMinutes(5);
             hostDeprovisionerInterval = Duration.ofMinutes(5);

@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
  */
 public class LoadBalancerExpirer extends Maintainer {
 
+    private static final Duration inactiveExpiry = Duration.ofHours(1);
+
     private final LoadBalancerService service;
     private final CuratorDatabaseClient db;
 
@@ -44,15 +46,20 @@ public class LoadBalancerExpirer extends Maintainer {
         List<LoadBalancerId> failed = new ArrayList<>();
         Exception lastException = null;
         try (Lock lock = db.lockLoadBalancers()) {
-            for (LoadBalancer loadBalancer : nodeRepository().loadBalancers().inactive().asList()) {
-                if (hasNodes(loadBalancer.id().application())) { // Defer removal if there are still nodes allocated to application
+            var now = nodeRepository().clock().instant();
+            var expirationTime = now.minus(inactiveExpiry);
+            var expired = nodeRepository().loadBalancers()
+                                          .in(State.inactive)
+                                          .changedBefore(expirationTime);
+            for (var lb : expired) {
+                if (hasNodes(lb.id().application())) { // Defer removal if there are still nodes allocated to application
                     continue;
                 }
                 try {
-                    service.remove(loadBalancer.id().application(), loadBalancer.id().cluster());
-                    db.removeLoadBalancer(loadBalancer.id());
+                    service.remove(lb.id().application(), lb.id().cluster());
+                    db.removeLoadBalancer(lb.id());
                 } catch (Exception e) {
-                    failed.add(loadBalancer.id());
+                    failed.add(lb.id());
                     lastException = e;
                 }
             }

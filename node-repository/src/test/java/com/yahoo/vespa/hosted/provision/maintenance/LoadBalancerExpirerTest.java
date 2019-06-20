@@ -33,7 +33,7 @@ public class LoadBalancerExpirerTest {
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
-    public void test_maintain() {
+    public void test_remove_inactive() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
@@ -57,9 +57,14 @@ public class LoadBalancerExpirerTest {
         // Expirer defers removal while nodes are still allocated to application
         expirer.maintain();
         assertEquals(2, tester.loadBalancerService().instances().size());
-
-        // Expirer removes load balancers once nodes are deallocated
         dirtyNodesOf(app1);
+
+        // Expirer defers removal until expiration time passes
+        expirer.maintain();
+        assertTrue("Inactive load balancer not removed", tester.loadBalancerService().instances().containsKey(lb1));
+
+        // Expirer removes load balancers once expiration time passes
+        tester.clock().advance(Duration.ofHours(1));
         expirer.maintain();
         assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb1));
 
