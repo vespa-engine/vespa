@@ -11,7 +11,8 @@ import org.junit.Test;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CONTAINER_CONFIG_ID;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
@@ -49,7 +50,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void metrics_proxy_requires_less_memory_than_other_containers() {
-        VespaModel model = getModel(servicesWithContent());
+        VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
         assertThat(container.getStartupCommand(), containsString("-Xms32m"));
         assertThat(container.getStartupCommand(), containsString("-Xmx512m"));
@@ -57,7 +58,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void http_server_is_running_on_expected_port() {
-        VespaModel model = getModel(servicesWithContent());
+        VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
         assertEquals(19092, container.getSearchPort());
         assertEquals(19092, container.getHealthPort());
@@ -69,7 +70,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void metrics_rpc_server_is_running_on_expected_port() {
-        VespaModel model = getModel(servicesWithContent());
+        VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
         int offset = container.metricsRpcPortOffset();
@@ -85,7 +86,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void admin_rpc_server_is_running() {
-        VespaModel model = getModel(servicesWithContent());
+        VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
         int offset = container.metricsRpcPortOffset() - 1;
@@ -99,7 +100,7 @@ public class MetricsProxyContainerTest {
     @Test
     public void hosted_application_propagates_node_dimensions() {
         String services = servicesWithContent();
-        VespaModel hostedModel = getHostedModel(services);
+        VespaModel hostedModel = getModel(services, hosted);
         assertEquals(1, hostedModel.getHosts().size());
         String configId = CLUSTER_CONFIG_ID + "/" + hostedModel.getHosts().iterator().next().getHostname();
         NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel, configId);

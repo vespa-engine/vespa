@@ -5,6 +5,7 @@
 package ai.vespa.metricsproxy.http;
 
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 
 /**
@@ -28,6 +30,8 @@ import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJ
  * @author gjoranv
  */
 public class GenericMetricsHandler extends ThreadedHttpRequestHandler {
+
+    public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default-public");
 
     private final MetricsManager metricsManager;
     private final VespaServices vespaServices;
