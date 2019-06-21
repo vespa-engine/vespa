@@ -76,7 +76,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final Version wantedNodeVespaVersion;
     private final Instant now;
     private final HostProvisioner provisioner;
-    private final Optional<TlsSecrets> tlsSecrets;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -103,8 +102,7 @@ public class DeployState implements ConfigDefinitionStore {
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
                         Instant now,
-                        Version wantedNodeVespaVersion,
-                        Optional<TlsSecrets> tlsSecrets) {
+                        Version wantedNodeVespaVersion) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -123,7 +121,6 @@ public class DeployState implements ConfigDefinitionStore {
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = new ImportedMlModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
                                                    modelImporters);
-        this.tlsSecrets = tlsSecrets;
 
         ValidationOverrides suppliedValidationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                                                             .orElse(ValidationOverrides.empty);
@@ -252,7 +249,7 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
-    public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
+    public Optional<TlsSecrets> tlsSecrets() { return properties.tlsSecrets(); }
 
     public static class Builder {
 
@@ -342,11 +339,6 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder tlsSecrets(Optional<TlsSecrets> tlsSecrets) {
-            this.tlsSecrets = tlsSecrets;
-            return this;
-        }
-
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -373,8 +365,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    queryProfiles,
                                    semanticRules,
                                    now,
-                                   wantedNodeVespaVersion,
-                                   tlsSecrets);
+                                   wantedNodeVespaVersion);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,

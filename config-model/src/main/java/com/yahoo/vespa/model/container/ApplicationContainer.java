@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -22,8 +21,6 @@ public final class ApplicationContainer extends Container {
 
     private final boolean isHostedVespa;
 
-    private final Optional<TlsSecrets> tlsSecrets;
-
     public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
         this(parent, name, false, index, isHostedVespa, tlsSecrets);
     }
@@ -31,14 +28,15 @@ public final class ApplicationContainer extends Container {
     public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
         super(parent, name, retired, index);
         this.isHostedVespa = isHostedVespa;
-        this.tlsSecrets = tlsSecrets;
 
         if (isHostedVespa && tlsSecrets.isPresent()) {
-            // set up port 4443 based on tlsSecretsKey
-            String server = "DefaultHttpsServer"; // TODO: verify that using this makes sense in all cases below
-            final JettyHttpServer defaultHttpsServer = new JettyHttpServer(new ComponentId(server));
-            defaultHttpsServer.addConnector(new ConnectorFactory(server, 4443,
-                    new ConfiguredDirectSslProvider(server, tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
+            String connectorName = "tls4443";
+            JettyHttpServer server = getDefaultHttpServer();
+            if(getHttp() != null) {
+                server = getHttp().getHttpServer();
+            }
+            server.addConnector(new ConnectorFactory(connectorName, 4443,
+                                                     new ConfiguredDirectSslProvider(server.getComponentId().getName(), tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
         }
     }
 

@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
@@ -13,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -20,15 +22,22 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -210,6 +219,37 @@ public class ContainerClusterTest {
         assertEquals(0, cluster.getAllComponents().stream().map(c -> c.getClassId().getName()).filter(c -> c.equals("com.yahoo.jdisc.http.filter.security.RoutingConfigProvider")).count());
     }
 
+    @Test
+    public void requireThatProvidingTlsSecretOpensPort4443() {
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
+
+        addContainer(state.getDeployLogger(), cluster, "c1", "host-c1");
+        Optional<ApplicationContainer> container = cluster.getContainers().stream().findFirst();
+        assertTrue(container.isPresent());
+
+        var httpServer = (container.get().getHttp() == null) ? container.get().getDefaultHttpServer() : container.get().getHttp().getHttpServer();
+
+        // Verify that there are two connectors
+        List<ConnectorFactory> connectorFactories = httpServer.getConnectorFactories();
+        assertEquals(2, connectorFactories.size());
+        List<Integer> ports = connectorFactories.stream()
+                                                .map(ConnectorFactory::getListenPort)
+                                                .collect(Collectors.toList());
+        assertThat(ports, Matchers.containsInAnyOrder(8080, 4443));
+
+        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
+
+        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
+        tlsPort.getConfig(builder);
+
+        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
+        assertTrue(connectorConfig.ssl().enabled());
+        assertEquals("CERT", connectorConfig.ssl().certificate());
+        assertEquals("KEY", connectorConfig.ssl().privateKey());
+        assertEquals(4443, connectorConfig.listenPort());
+    }
 
     private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {
         ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa(), cluster.getTlsSecrets());
