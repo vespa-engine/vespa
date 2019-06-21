@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
+import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.ConfiguredDirectSslProvider;
 
@@ -31,10 +32,10 @@ public final class ApplicationContainer extends Container {
 
         if (isHostedVespa && tlsSecrets.isPresent()) {
             String connectorName = "tls4443";
-            JettyHttpServer server = getDefaultHttpServer();
-            if(getHttp() != null) {
-                server = getHttp().getHttpServer();
-            }
+
+            JettyHttpServer server = Optional.ofNullable(getHttp())
+                                             .map(Http::getHttpServer)
+                                             .orElse(getDefaultHttpServer());
             server.addConnector(new ConnectorFactory(connectorName, 4443,
                                                      new ConfiguredDirectSslProvider(server.getComponentId().getName(), tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
         }
