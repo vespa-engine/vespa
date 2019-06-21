@@ -81,7 +81,7 @@ public class DockerTester implements AutoCloseable {
         NodeSpec hostSpec = new NodeSpec.Builder()
                 .hostname(HOST_HOSTNAME.value())
                 .state(NodeState.active)
-                .nodeType(NodeType.host)
+                .type(NodeType.host)
                 .flavor("default")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)

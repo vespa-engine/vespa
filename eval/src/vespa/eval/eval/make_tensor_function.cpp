@@ -142,8 +142,8 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const If &node) override {
         make_if(node);
     }
-    void visit(const Error &node) override {
-        make_const(node, ErrorValue::instance);
+    void visit(const Error &) override {
+        abort();
     }
     void visit(const TensorMap &node) override {
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));

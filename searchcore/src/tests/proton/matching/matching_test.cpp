@@ -6,7 +6,6 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/i_constant_value_repo.h>
 #include <vespa/searchcore/proton/matching/isearchcontext.h>
@@ -105,7 +104,7 @@ const uint32_t NUM_DOCS = 1000;
 
 struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
-        return std::make_unique<proton::matching::ErrorConstantValue>();
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 };
 

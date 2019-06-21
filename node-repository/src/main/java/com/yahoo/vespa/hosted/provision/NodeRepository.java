@@ -399,10 +399,7 @@ public class NodeRepository extends AbstractComponent {
 
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
-            db.writeTo(Node.State.inactive,
-                       db.getNodes(application, Node.State.reserved, Node.State.active),
-                       Agent.application, Optional.empty(), transaction
-            );
+            deactivate(db.getNodes(application, Node.State.reserved, Node.State.active), transaction);
         }
     }
 

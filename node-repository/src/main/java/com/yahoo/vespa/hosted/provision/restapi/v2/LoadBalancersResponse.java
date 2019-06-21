@@ -55,6 +55,8 @@ public class LoadBalancersResponse extends HttpResponse {
         loadBalancers().forEach(lb -> {
             Cursor lbObject = loadBalancerArray.addObject();
             lbObject.setString("id", lb.id().serializedForm());
+            lbObject.setString("state", lb.state().name());
+            lbObject.setLong("changedAt", lb.changedAt().toEpochMilli());
             lbObject.setString("application", lb.id().application().application().value());
             lbObject.setString("tenant", lb.id().application().tenant().value());
             lbObject.setString("instance", lb.id().application().instance().value());
@@ -76,9 +78,9 @@ public class LoadBalancersResponse extends HttpResponse {
                 realObject.setLong("port", real.port());
             });
 
-            lbObject.setArray("rotations"); // To avoid changing the API. This can be removed when clients stop expecting this
-
-            lbObject.setBool("inactive", lb.inactive());
+            // TODO(mpolden): The following fields preserves API compatibility. These can be removed once clients stop expecting them
+            lbObject.setArray("rotations");
+            lbObject.setBool("inactive", lb.state() == LoadBalancer.State.inactive);
         });
 
         new JsonFormat(true).encode(stream, slime);

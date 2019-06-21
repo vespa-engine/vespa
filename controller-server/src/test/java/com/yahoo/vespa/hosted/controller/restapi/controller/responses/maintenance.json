@@ -4,6 +4,9 @@
       "name": "ApplicationOwnershipConfirmer"
     },
     {
+      "name": "BillingMaintainer"
+    },
+    {
       "name": "ClusterInfoMaintainer"
     },
     {

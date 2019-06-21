@@ -1,9 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -47,7 +45,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                                 String vespaUser, String vespaUserOnHost) {
         this.node = Objects.requireNonNull(node);
         this.acl = Objects.requireNonNull(acl);
-        this.containerName = ContainerName.fromHostname(node.getHostname());
+        this.containerName = ContainerName.fromHostname(node.hostname());
         this.identity = Objects.requireNonNull(identity);
         this.dockerNetworking = Objects.requireNonNull(dockerNetworking);
         this.zone = Objects.requireNonNull(zone);
@@ -181,12 +179,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             this.nodeSpecBuilder
                     .hostname(hostname)
                     .state(NodeState.active)
-                    .nodeType(NodeType.tenant)
+                    .type(NodeType.tenant)
                     .flavor("d-2-8-50");
         }
 
         public Builder nodeType(NodeType nodeType) {
-            this.nodeSpecBuilder.nodeType(nodeType);
+            this.nodeSpecBuilder.type(nodeType);
             return this;
         }
 

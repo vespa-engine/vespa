@@ -6,8 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.vespa.applicationmodel.ClusterId;
-import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import org.junit.Test;
 
 import java.net.URLEncoder;
@@ -84,10 +83,10 @@ public class PrepareParamsTest {
 
     @Test
     public void testCorrectParsingWithContainerEndpoints() {
-        var endpoints = List.of(new ContainerEndpoint(new ClusterId("qrs1"),
+        var endpoints = List.of(new ContainerEndpoint("qrs1",
                                                       List.of("c1.example.com",
                                                               "c2.example.com")),
-                                new ContainerEndpoint(new ClusterId("qrs2"),
+                                new ContainerEndpoint("qrs2",
                                                       List.of("c3.example.com",
                                                               "c4.example.com")));
         var param = "[\n" +

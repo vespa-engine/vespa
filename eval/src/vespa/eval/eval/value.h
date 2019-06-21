@@ -20,7 +20,6 @@ constexpr double error_value = 31212.0;
 struct Value {
     typedef std::unique_ptr<Value> UP;
     typedef std::reference_wrapper<const Value> CREF;
-    virtual bool is_error() const { return false; }
     virtual bool is_double() const { return false; }
     virtual bool is_tensor() const { return false; }
     virtual double as_double() const { return 0.0; }
@@ -28,17 +27,6 @@ struct Value {
     virtual const Tensor *as_tensor() const { return nullptr; }
     virtual const ValueType &type() const = 0;
     virtual ~Value() {}
-};
-
-class ErrorValue : public Value
-{
-private:
-    static ValueType _type;
-public:
-    static const ErrorValue instance;
-    bool is_error() const override { return true; }
-    double as_double() const override { return error_value; }
-    const ValueType &type() const override { return _type; }
 };
 
 class DoubleValue : public Value

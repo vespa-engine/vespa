@@ -39,7 +39,7 @@ public class MasterElectionTest extends FleetControllerTest {
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
 
-    private static int defaultZkSessionTimeoutInMillis() { return 10_000; }
+    private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
     protected void setUpFleetController(int count, boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         if (zooKeeperServer == null) {

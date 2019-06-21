@@ -74,6 +74,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.committedAt(),
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
+                                           version.isReleased(),
                                            ImmutableSet.of("config1.test", "config2.test").stream()
                                                        .map(HostName::from)
                                                        .collect(Collectors.toSet()),

@@ -40,10 +40,21 @@ AsciistreamTest::verifyBothWays(T value, const char * expected)
     os << value;
     EXPECT_EQUAL(os.str(), string(expected));
     EXPECT_EQUAL(os.size(), strlen(expected));
-    T v;
-    os >> v;
-    EXPECT_EQUAL(value, v);
-    EXPECT_TRUE(os.empty());
+    {
+        T v;
+        os >> v;
+        EXPECT_EQUAL(value, v);
+        EXPECT_TRUE(os.empty());
+    }
+
+    {
+        os << "   " << expected;
+        T v;
+        os >> v;
+        EXPECT_EQUAL(value, v);
+        EXPECT_TRUE(os.empty());
+        EXPECT_EQUAL(0u, os.size());
+    }
 }
 
 template <typename T>
@@ -72,16 +83,16 @@ AsciistreamTest::testIllegalNumbers()
     {
         asciistream is("777777777777");
         uint16_t s(0);
-        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An unsigned short can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         uint32_t i(0);
-        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An unsigned int can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         int16_t si(0);
-        EXPECT_EXCEPTION(is >> si, IllegalArgumentException, "A short can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> si, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         int32_t ii(0);
-        EXPECT_EXCEPTION(is >> ii, IllegalArgumentException, "An int can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> ii, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         is << "777777777777";
         EXPECT_EQUAL(24u, is.size());
@@ -95,10 +106,10 @@ AsciistreamTest::testIllegalNumbers()
     {
         asciistream is("-77");
         uint16_t s(0);
-        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An unsigned short can not represent '-77'");
+        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "Illegal strToInt value '-77'");
         EXPECT_EQUAL(3u, is.size());
         uint32_t i(0);
-        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An unsigned int can not represent '-77'");
+        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "Illegal strToInt value '-77'");
         EXPECT_EQUAL(3u, is.size());
     }
     {
@@ -131,12 +142,12 @@ AsciistreamTest::testIllegalNumbers()
         EXPECT_TRUE(is.empty());
         {
             uint32_t l(0);
-            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a unsigned long long from ''.");
+            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "buffer underflow at pos 0.");
             EXPECT_TRUE(is.empty());
         }
         {
             int32_t l(0);
-            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a long long from ''.");
+            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "buffer underflow at pos 0");
             EXPECT_TRUE(is.empty());
         }
         {

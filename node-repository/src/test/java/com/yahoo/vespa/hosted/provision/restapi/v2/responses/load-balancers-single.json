@@ -1,0 +1,36 @@
+{
+  "loadBalancers": [
+    {
+      "id": "tenant4:application4:instance4:id4",
+      "state": "active",
+      "changedAt": 123,
+      "application": "application4",
+      "tenant": "tenant4",
+      "instance": "instance4",
+      "cluster": "id4",
+      "hostname": "lb-tenant4.application4.instance4-id4",
+      "dnsZone": "zone-id-1",
+      "networks": [
+        "10.2.3.0/24",
+        "10.4.5.0/24"
+      ],
+      "ports": [
+        4443
+      ],
+      "reals": [
+        {
+          "hostname": "host13.yahoo.com",
+          "ipAddress": "127.0.13.1",
+          "port": 4080
+        },
+        {
+          "hostname": "host14.yahoo.com",
+          "ipAddress": "127.0.14.1",
+          "port": 4080
+        }
+      ],
+      "rotations": [],
+      "inactive": false
+    }
+  ]
+}

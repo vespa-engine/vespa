@@ -12,7 +12,8 @@ import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfi
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 /**

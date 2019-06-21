@@ -10,22 +10,22 @@ import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricS
 import static java.util.Collections.emptyList;
 
 /**
- * This class sets up the default 'Vespa' metrics consumer.
+ * This class sets up the 'Vespa' metrics consumer.
  *
  * @author trygve
  * @author gjoranv
  */
-public class DefaultMetricsConsumer {
+public class VespaMetricsConsumer {
 
     public static final String VESPA_CONSUMER_ID = VespaMetrics.VESPA_CONSUMER_ID.id;
 
-    private static final MetricSet defaultConsumerMetrics = new MetricSet("default-consumer",
+    private static final MetricSet defaultConsumerMetrics = new MetricSet("vespa-consumer-metrics",
                                                                           emptyList(),
                                                                           ImmutableList.of(vespaMetricSet,
                                                                                            systemMetricSet,
                                                                                            networkMetricSet));
 
-    public static MetricsConsumer getDefaultMetricsConsumer() {
+    public static MetricsConsumer getVespaMetricsConsumer() {
         return new MetricsConsumer(VESPA_CONSUMER_ID, defaultConsumerMetrics);
     }
 

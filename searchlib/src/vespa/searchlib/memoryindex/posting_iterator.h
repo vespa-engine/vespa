@@ -9,10 +9,15 @@ namespace search::memoryindex {
 
 /**
  * Search iterator for memory field index posting list.
+ *
+ * The template parameter specifies whether the wrapped posting list has interleaved features or not.
  */
+template <bool interleaved_features>
 class PostingIterator : public queryeval::RankedSearchIteratorBase {
 private:
-    FieldIndex::PostingList::ConstIterator             _itr;
+    using FieldIndexType = FieldIndex<interleaved_features>;
+    using PostingListIteratorType = typename FieldIndexType::PostingList::ConstIterator;
+    PostingListIteratorType                            _itr;
     const FeatureStore                                &_featureStore;
     FeatureStore::DecodeContextCooked                  _featureDecoder;
 
@@ -25,7 +30,7 @@ public:
      * @param packedIndex  the field or field collection owning features.
      * @param matchData    the match data to unpack features into.
      **/
-    PostingIterator(FieldIndex::PostingList::ConstIterator itr,
+    PostingIterator(PostingListIteratorType itr,
                     const FeatureStore &featureStore,
                     uint32_t packedIndex,
                     const fef::TermFieldMatchDataArray &matchData);

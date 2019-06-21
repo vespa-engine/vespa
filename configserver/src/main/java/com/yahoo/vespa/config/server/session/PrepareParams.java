@@ -10,7 +10,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
-import com.yahoo.vespa.config.server.tenant.ContainerEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 
 import java.time.Clock;

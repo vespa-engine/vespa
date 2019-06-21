@@ -14,15 +14,14 @@ class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
     bool _show_interleaved_features;
     uint32_t _fieldId;
 
-    void
-    addComma()
-    {
+    void addComma() {
         if (!_first) {
             _ss << ",";
         } else {
             _first = false;
         }
     }
+
 public:
     OrderedFieldIndexInserter()
         : _ss(),
@@ -33,23 +32,17 @@ public:
     {
     }
 
-    virtual void
-    setNextWord(const vespalib::stringref word) override
-    {
+    virtual void setNextWord(const vespalib::stringref word) override {
         addComma();
         _ss << "w=" << word;
     }
 
-    void
-    setFieldId(uint32_t fieldId)
-    {
+    void setFieldId(uint32_t fieldId) {
         _fieldId = fieldId;
     }
 
-    virtual void
-    add(uint32_t docId,
-        const index::DocIdAndFeatures &features) override
-    {
+    virtual void add(uint32_t docId,
+                     const index::DocIdAndFeatures &features) override {
         (void) features;
         addComma();
         _ss << "a=" << docId;
@@ -85,9 +78,9 @@ public:
         }
     }
 
-    virtual void
-    remove(uint32_t docId) override
-    {
+    virtual datastore::EntryRef getWordRef() const override { return datastore::EntryRef(); }
+
+    virtual void remove(uint32_t docId) override {
         addComma();
         _ss << "r=" << docId;
     }
@@ -99,15 +92,11 @@ public:
         _ss << "f=" << _fieldId;
     }
 
-    std::string
-    toStr() const
-    {
+    std::string toStr() const {
         return _ss.str();
     }
 
-    void
-    reset()
-    {
+    void reset() {
         _ss.str("");
         _first = true;
         _verbose = false;

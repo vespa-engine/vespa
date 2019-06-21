@@ -298,7 +298,6 @@ struct TestContext {
     }
 
     void test_tensor_create_type() {
-        TEST_DO(verify_create_type("error"));
         TEST_DO(verify_create_type("double"));
         TEST_DO(verify_create_type("tensor(x{})"));
         TEST_DO(verify_create_type("tensor(x{},y{})"));

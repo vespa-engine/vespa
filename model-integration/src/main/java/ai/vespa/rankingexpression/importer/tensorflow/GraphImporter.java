@@ -2,6 +2,7 @@
 
 package ai.vespa.rankingexpression.importer.tensorflow;
 
+import ai.vespa.rankingexpression.importer.operations.Softmax;
 import ai.vespa.rankingexpression.importer.operations.Sum;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
@@ -112,6 +113,7 @@ class GraphImporter {
             case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu());
             case "relu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.relu());
             case "selu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.selu());
+            case "softmax":     return new Softmax(modelName, nodeName, inputs);
 
             // state ops
             case "variable":    return new Constant(modelName, nodeName, nodeType);

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -14,6 +15,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -33,6 +35,10 @@ public class ModelContextImplTest {
 
         final Rotation rotation = new Rotation("this.is.a.mock.rotation");
         final Set<Rotation> rotations = Collections.singleton(rotation);
+
+        final ContainerEndpoint endpoint = new ContainerEndpoint("foo", List.of("a", "b"));
+        final Set<ContainerEndpoint> endpoints = Collections.singleton(endpoint);
+
         final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
         ModelContext context = new ModelContextImpl(
@@ -53,6 +59,7 @@ public class ModelContextImplTest {
                         false,
                         Zone.defaultZone(),
                         rotations,
+                        endpoints,
                         false,
                         false,
                         flagSource,
@@ -72,6 +79,7 @@ public class ModelContextImplTest {
         assertNotNull(context.properties().zone());
         assertFalse(context.properties().hostedVespa());
         assertThat(context.properties().rotations(), equalTo(rotations));
+        assertThat(context.properties().endpoints(), equalTo(endpoints));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
         assertThat(context.properties().useDedicatedNodeForLogserver(), equalTo(true));
     }

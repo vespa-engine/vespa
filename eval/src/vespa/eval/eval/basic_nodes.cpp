@@ -21,8 +21,8 @@ struct Frame {
 };
 
 struct NoParams : LazyParams {
-    const Value &resolve(size_t, Stash &stash) const override {
-        return stash.create<ErrorValue>();
+    const Value &resolve(size_t, Stash &) const override {
+        abort();
     }
 };
 

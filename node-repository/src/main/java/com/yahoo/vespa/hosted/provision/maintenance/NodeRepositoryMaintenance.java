@@ -7,16 +7,10 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
-import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
-import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -47,7 +41,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final DirtyExpirer dirtyExpirer;
     private final ProvisionedExpirer provisionedExpirer;
     private final NodeRebooter nodeRebooter;
-    private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
     private final InfrastructureProvisioner infrastructureProvisioner;
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
@@ -91,11 +84,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
-
-        RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));
-        FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
-                NodeRetirer.SPARE_NODES_POLICY, FlavorSpareCount.constructFlavorSpareCountGraph(zone.nodeFlavors().get().getFlavors()));
-        nodeRetirer = new NodeRetirer(nodeRepository, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, policy);
     }
 
     @Override
@@ -109,7 +97,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
-        nodeRetirer.deconstruct();
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();
@@ -153,7 +140,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration dirtyExpiry;
         private final Duration provisionedExpiry;
         private final Duration rebootInterval;
-        private final Duration nodeRetirerInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
@@ -172,11 +158,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
             rebootInterval = Duration.ofDays(30);
-            nodeRetirerInterval = Duration.ofMinutes(30);
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            loadBalancerExpiry = Duration.ofHours(1);
+            loadBalancerExpiry = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             hostProvisionerInterval = Duration.ofMinutes(5);
             hostDeprovisionerInterval = Duration.ofMinutes(5);

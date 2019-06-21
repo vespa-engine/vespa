@@ -139,6 +139,7 @@ public class VespaModelFactory implements ModelFactory {
             .vespaVersion(version())
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
+            .endpoints(modelContext.properties().endpoints())
             .modelImporters(modelImporters)
             .zone(zone)
             .now(clock.instant())
