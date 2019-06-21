@@ -293,8 +293,8 @@ FieldIndex<interleaved_features>::make_term_blueprint(const vespalib::string& te
             (std::move(guard), posting_itr, getFeatureStore(), field, field_id, use_bit_vector);
 }
 
-template
-class FieldIndex<false>;
+template class FieldIndex<false>;
+template class FieldIndex<true>;
 
 }
 

@@ -74,4 +74,7 @@ public:
     void update_features(datastore::EntryRef features) const { _features = features; }
 };
 
+template class PostingListEntry<false>;
+template class PostingListEntry<true>;
+
 }

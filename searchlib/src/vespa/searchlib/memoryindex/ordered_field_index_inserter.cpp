@@ -155,7 +155,7 @@ OrderedFieldIndexInserter<interleaved_features>::getWordRef() const
     return _dItr.getKey()._wordRef;
 }
 
-template
-class OrderedFieldIndexInserter<false>;
+template class OrderedFieldIndexInserter<false>;
+template class OrderedFieldIndexInserter<true>;
 
 }

@@ -126,8 +126,10 @@ PostingIterator<interleaved_features, unpack_normal_features, unpack_interleaved
         _feature_decoder.unpackFeatures(_matchData, docId);
         setUnpacked();
     }
-    if (unpack_interleaved_features) {
-        // TODO: implement
+    if (interleaved_features && unpack_interleaved_features) {
+        auto* tfmd = _matchData[0];
+        tfmd->setNumOccs(_itr.getData().get_num_occs());
+        tfmd->setFieldLength(_itr.getData().get_field_length());
     }
 }
 
@@ -139,8 +141,24 @@ make_search_iterator(typename FieldIndex<interleaved_features>::PostingList::Con
                      const fef::TermFieldMatchDataArray& match_data)
 {
     assert(match_data.size() == 1);
-    return std::make_unique<PostingIterator<interleaved_features, true, false>>
-            (itr, feature_store, field_id, match_data);
+    auto* tfmd = match_data[0];
+    if (tfmd->needs_normal_features()) {
+       if (tfmd->needs_interleaved_features()) {
+           return std::make_unique<PostingIterator<interleaved_features, true, true>>
+                   (itr, feature_store, field_id, match_data);
+       } else {
+           return std::make_unique<PostingIterator<interleaved_features, true, false>>
+                   (itr, feature_store, field_id, match_data);
+       }
+    } else {
+        if (tfmd->needs_interleaved_features()) {
+            return std::make_unique<PostingIterator<interleaved_features, false, true>>
+                    (itr, feature_store, field_id, match_data);
+        } else {
+            return std::make_unique<PostingIterator<interleaved_features, false, false>>
+                    (itr, feature_store, field_id, match_data);
+        }
+    }
 }
 
 template
@@ -150,9 +168,24 @@ make_search_iterator<false>(typename FieldIndex<false>::PostingList::ConstIterat
                             uint32_t,
                             const fef::TermFieldMatchDataArray&);
 
-template class PostingIteratorBase<false>;
+template
+queryeval::SearchIterator::UP
+make_search_iterator<true>(typename FieldIndex<true>::PostingList::ConstIterator,
+                           const FeatureStore&,
+                           uint32_t,
+                           const fef::TermFieldMatchDataArray&);
 
+template class PostingIteratorBase<false>;
+template class PostingIteratorBase<true>;
+
+template class PostingIterator<false, false, false>;
+template class PostingIterator<false, false, true>;
 template class PostingIterator<false, true, false>;
+template class PostingIterator<false, true, true>;
+template class PostingIterator<true, false, false>;
+template class PostingIterator<true, false, true>;
+template class PostingIterator<true, true, false>;
+template class PostingIterator<true, true, true>;
 
 }
 

@@ -32,5 +32,7 @@ FieldIndexBase::FieldIndexBase(const index::Schema& schema, uint32_t fieldId,
 {
 }
 
+FieldIndexBase::~FieldIndexBase() = default;
+
 }
 

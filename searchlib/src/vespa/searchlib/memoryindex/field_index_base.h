@@ -99,6 +99,7 @@ public:
 
     FieldIndexBase(const index::Schema& schema, uint32_t fieldId);
     FieldIndexBase(const index::Schema& schema, uint32_t fieldId, const index::FieldLengthInfo& info);
+    ~FieldIndexBase();
 
     uint64_t getNumUniqueWords() const override { return _numUniqueWords; }
     const FeatureStore& getFeatureStore() const override { return _featureStore; }

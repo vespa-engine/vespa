@@ -32,6 +32,8 @@ class IOrderedFieldIndexInserter;
 template <bool interleaved_features>
 class FieldIndex : public FieldIndexBase {
 public:
+    static constexpr bool has_interleaved_features = interleaved_features;
+
     // Mapping from docid -> feature ref
     using PostingListEntryType = PostingListEntry<interleaved_features>;
     using PostingList = btree::BTreeRoot<uint32_t, PostingListEntryType, search::btree::NoAggregated>;
