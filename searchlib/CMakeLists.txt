@@ -106,6 +106,7 @@ vespa_define_module(
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex
     src/tests/diskindex/fieldwriter
+    src/tests/diskindex/field_length_scanner
     src/tests/diskindex/fusion
     src/tests/diskindex/pagedict4
     src/tests/docstore/chunk

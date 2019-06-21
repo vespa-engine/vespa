@@ -123,6 +123,7 @@ Zc4PostingSeqRead::getParams(PostingListParams &params)
         params.set("minChunkDocs", _reader.get_posting_params()._min_chunk_docs);
     }
     params.set("minSkipDocs", _reader.get_posting_params()._min_skip_docs);
+    params.set(interleaved_features, _reader.get_posting_params()._encode_interleaved_features);
 }
 
 
@@ -357,6 +358,7 @@ getParams(PostingListParams &params)
         params.set("minChunkDocs", _writer.get_min_chunk_docs());
     }
     params.set("minSkipDocs", _writer.get_min_skip_docs());
+    params.set(interleaved_features, _writer.get_encode_interleaved_features());
 }
 
 

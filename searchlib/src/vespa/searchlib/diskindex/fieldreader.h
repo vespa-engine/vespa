@@ -13,6 +13,8 @@
 
 namespace search::diskindex {
 
+class FieldLengthScanner;
+
 /*
  * FieldReader is used to read a dictionary and posting list file
  * together, and get a sequential view of the stored data.
@@ -95,7 +97,7 @@ public:
     uint32_t getDocIdLimit() const { return _docIdLimit; }
     const index::FieldLengthInfo &get_field_length_info() const;
 
-    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema);
+    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema, std::shared_ptr<FieldLengthScanner> field_length_scanner);
 };
 
 
@@ -117,16 +119,22 @@ public:
 /*
  * Field reader that strips information from source, e.g. remove
  * weights or discard nonzero elements, due to collection type change.
+ * It is also used to regenerate interleaved features from normal features.
  */
 class FieldReaderStripInfo : public FieldReader
 {
 private:
     bool _hasElements;
     bool _hasElementWeights;
+    bool _want_interleaved_features;
+    bool _regenerate_interleaved_features;
+    std::shared_ptr<FieldLengthScanner> _field_length_scanner;
 public:
-    FieldReaderStripInfo(const IndexIterator &index);
+    FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner>);
     bool allowRawFeatures() override;
+    bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
     void read() override;
+    void scan_element_lengths();
     void getFeatureParams(PostingListParams &params) override;
 };
 
