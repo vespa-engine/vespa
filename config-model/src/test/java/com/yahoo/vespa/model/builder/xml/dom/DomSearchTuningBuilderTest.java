@@ -273,6 +273,21 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(cfg.summary().cache().maxbytes(), -30);
     }
 
+    @Test
+    public void requireThatWeCanPopulateSummary() {
+        Tuning t = createTuning(parseXml("<summary>",
+                "<io>",
+                "<read>populate</read>",
+                "</io>",
+                "</summary>"));
+
+        assertEquals(Tuning.SearchNode.IoType.POPULATE, t.searchNode.summary.io.read);
+
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(ProtonConfig.Summary.Read.Io.MMAP, cfg.summary().read().io());
+        assertEquals(ProtonConfig.Summary.Read.Mmap.Options.POPULATE, cfg.summary().read().mmap().options().get(0));
+    }
+
 
     @Test
     public void requireThatWeCanParseInitializeTag() {
