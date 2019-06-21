@@ -116,7 +116,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 if (configServers.size() == 1) break;
 
                 // Failure to communicate with a config server is not abnormal during upgrades
-                if (HttpConnectionException.isKnownConnectionException(e)) {
+                if (ConnectionException.isKnownConnectionException(e)) {
                     logger.info("Failed to connect to " + configServer + " (upgrading?), will try next: " + e.getMessage());
                 } else {
                     logger.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
@@ -127,7 +127,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         String prefix = configServers.size() == 1 ?
                 "Request against " + configServers.get(0) + " failed: " :
                 "All requests against the config servers (" + configServers + ") failed, last as follows: ";
-        throw HttpConnectionException.handleException(prefix, lastException);
+        throw ConnectionException.handleException(prefix, lastException);
     }
 
     @Override

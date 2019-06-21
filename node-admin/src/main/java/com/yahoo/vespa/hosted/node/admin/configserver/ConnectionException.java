@@ -12,19 +12,19 @@ import java.net.SocketTimeoutException;
  * @author freva
  */
 @SuppressWarnings("serial")
-public class HttpConnectionException extends ConvergenceException {
+public class ConnectionException extends ConvergenceException {
 
-    private HttpConnectionException(String message) {
+    private ConnectionException(String message) {
         super(message);
     }
 
     /**
-     * Returns {@link HttpConnectionException} if the given Throwable is of a known and well understood error or
+     * Returns {@link ConnectionException} if the given Throwable is of a known and well understood error or
      * a RuntimeException with the given exception as cause otherwise.
      */
     public static RuntimeException handleException(String prefix, Throwable t) {
         if (isKnownConnectionException(t))
-            return new HttpConnectionException(prefix + t.getMessage());
+            return new ConnectionException(prefix + t.getMessage());
 
         return new RuntimeException(prefix, t);
     }
