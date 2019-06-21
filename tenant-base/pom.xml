@@ -33,7 +33,6 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
-        <test_framework_version>${vespaversion}</test_framework_version>
         <target_jdk_version>11</target_jdk_version>
         <compiler_plugin_version>3.8.0</compiler_plugin_version>
         <surefire_version>2.22.0</surefire_version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
@@ -55,13 +54,6 @@
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>tenant-cd</artifactId>
-            <version>${test_framework_version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>container</artifactId>
             <version>${vespaversion}</version>
             <scope>provided</scope>
@@ -70,6 +62,13 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-test</artifactId>
+            <version>${vespaversion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-cd</artifactId>
             <version>${vespaversion}</version>
             <scope>test</scope>
         </dependency>
