@@ -13,28 +13,25 @@ import java.util.Optional;
 import static com.yahoo.component.ComponentSpecification.fromString;
 
 /**
- * Configure SSL with PEM encoded certificate/key strings
- *
  * @author mortent
- * @author andreer
  */
-public class ConfiguredDirectSslProvider extends SimpleComponent implements ConnectorConfig.Producer {
+public class ConfiguredSslProvider extends SimpleComponent implements ConnectorConfig.Producer {
     public static final String COMPONENT_ID_PREFIX = "configured-ssl-provider@";
     public static final String COMPONENT_CLASS = ConfiguredSslContextFactoryProvider.class.getName();
     public static final String COMPONENT_BUNDLE = "jdisc_http_service";
 
-    private final String privateKey;
-    private final String certificate;
+    private final String privateKeyPath;
+    private final String certificatePath;
     private final String caCertificatePath;
     private final ConnectorConfig.Ssl.ClientAuth.Enum clientAuthentication;
 
-    public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String clientAuthentication) {
+    public ConfiguredSslProvider(String servername, String privateKeyPath, String certificatePath, String caCertificatePath, String clientAuthentication) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
                                                      fromString(COMPONENT_CLASS),
                                                      fromString(COMPONENT_BUNDLE))));
-        this.privateKey = privateKey;
-        this.certificate = certificate;
+        this.privateKeyPath = privateKeyPath;
+        this.certificatePath = certificatePath;
         this.caCertificatePath = caCertificatePath;
         this.clientAuthentication = mapToConfigEnum(clientAuthentication);
     }
@@ -42,8 +39,8 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
     @Override
     public void getConfig(ConnectorConfig.Builder builder) {
         builder.ssl.enabled(true);
-        builder.ssl.privateKey(privateKey);
-        builder.ssl.certificate(certificate);
+        builder.ssl.privateKeyFile(privateKeyPath);
+        builder.ssl.certificateFile(certificatePath);
         builder.ssl.caCertificateFile(Optional.ofNullable(caCertificatePath).orElse(""));
         builder.ssl.clientAuth(clientAuthentication);
     }
