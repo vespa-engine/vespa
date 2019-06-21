@@ -233,6 +233,16 @@ FieldIndex<interleaved_features>::getMemoryUsage() const
     return usage;
 }
 
+template <bool interleaved_features>
+queryeval::SearchIterator::UP
+FieldIndex<interleaved_features>::make_search_iterator(const vespalib::string& term,
+                                                       uint32_t field_id,
+                                                       const fef::TermFieldMatchDataArray& match_data) const
+{
+    return search::memoryindex::make_search_iterator<interleaved_features>
+            (find(term), getFeatureStore(), field_id, match_data);
+}
+
 namespace {
 
 template <bool interleaved_features>

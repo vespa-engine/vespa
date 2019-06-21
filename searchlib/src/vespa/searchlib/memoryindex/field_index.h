@@ -5,6 +5,7 @@
 #include "field_index_base.h"
 #include "posting_list_entry.h"
 #include <vespa/searchlib/index/indexbuilder.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
@@ -93,6 +94,13 @@ public:
         incGeneration();
         trimHoldLists();
     }
+
+    /**
+     * Should only by used by unit tests.
+     */
+    queryeval::SearchIterator::UP make_search_iterator(const vespalib::string& term,
+                                                       uint32_t field_id,
+                                                       const fef::TermFieldMatchDataArray& match_data) const;
 
     std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
                                                                         const queryeval::FieldSpecBase& field,

@@ -18,8 +18,7 @@ using namespace search::memoryindex;
 using search::index::schema::DataType;
 using search::test::SearchIteratorVerifier;
 
-using FieldIndexType = FieldIndex<false>;
-
+template <typename FieldIndexType>
 class Verifier : public SearchIteratorVerifier {
 private:
     mutable TermFieldMatchData _tfmd;
@@ -43,8 +42,7 @@ public:
         (void) strict;
         TermFieldMatchDataArray match_data;
         match_data.add(&_tfmd);
-        return make_search_iterator<false>(_field_index.find("a"),
-                                           _field_index.getFeatureStore(), 0, match_data);
+        return _field_index.make_search_iterator("a", 0, match_data);
     }
 };
 
@@ -56,9 +54,10 @@ get_schema()
     return result;
 }
 
+template <typename FieldIndexType>
 struct Fixture {
     Schema schema;
-    Verifier verifier;
+    Verifier<FieldIndexType> verifier;
     Fixture()
         : schema(get_schema()),
           verifier(schema)
@@ -66,7 +65,12 @@ struct Fixture {
     }
 };
 
-TEST_F("require that posting iterator conforms", Fixture)
+TEST_F("require that normal posting iterator conforms", Fixture<FieldIndex<false>>)
+{
+    f.verifier.verify();
+}
+
+TEST_F("require that interleaved posting iterator conforms", Fixture<FieldIndex<true>>)
 {
     f.verifier.verify();
 }

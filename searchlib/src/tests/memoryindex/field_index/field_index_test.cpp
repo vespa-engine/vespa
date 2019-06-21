@@ -840,6 +840,40 @@ TEST_F(FieldIndexCollectionTest, require_that_dumping_words_with_no_docs_to_inde
     }
 }
 
+
+struct FieldIndexCollectionTypeTest : public ::testing::Test {
+    Schema schema;
+    FieldIndexCollection fic;
+    FieldIndexCollectionTypeTest()
+        : schema(make_schema()),
+          fic(schema, MockFieldLengthInspector())
+    {
+    }
+    Schema make_schema() {
+        Schema result;
+        result.addIndexField(Schema::IndexField("normal", DataType::STRING));
+        Schema::IndexField interleaved("interleaved", DataType::STRING);
+        interleaved.set_experimental_posting_list_format(true);
+        result.addIndexField(interleaved);
+        return result;
+    }
+};
+
+template <typename FieldIndexType>
+void
+expect_field_index_type(const IFieldIndex* field_index)
+{
+    auto* other_type = dynamic_cast<const FieldIndexType*>(field_index);
+    EXPECT_TRUE(other_type != nullptr);
+}
+
+TEST_F(FieldIndexCollectionTypeTest, instantiates_field_index_type_based_on_schema_config)
+{
+    expect_field_index_type<FieldIndex<false>>(fic.getFieldIndex(0));
+    expect_field_index_type<FieldIndex<true>>(fic.getFieldIndex(1));
+}
+
+
 class InverterTest : public ::testing::Test {
 public:
     Schema _schema;
