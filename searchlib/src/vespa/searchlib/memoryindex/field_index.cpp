@@ -233,6 +233,16 @@ FieldIndex<interleaved_features>::getMemoryUsage() const
     return usage;
 }
 
+template <bool interleaved_features>
+queryeval::SearchIterator::UP
+FieldIndex<interleaved_features>::make_search_iterator(const vespalib::string& term,
+                                                       uint32_t field_id,
+                                                       const fef::TermFieldMatchDataArray& match_data) const
+{
+    return search::memoryindex::make_search_iterator<interleaved_features>
+            (find(term), getFeatureStore(), field_id, match_data);
+}
+
 namespace {
 
 template <bool interleaved_features>
@@ -266,8 +276,7 @@ public:
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda, bool) const override {
-        using PostingIteratorType = PostingIterator<interleaved_features>;
-        auto result = std::make_unique<PostingIteratorType>(_posting_itr, _feature_store, _field_id, tfmda);
+        auto result = make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda);
         if (_use_bit_vector) {
             LOG(debug, "Return BooleanMatchIteratorWrapper: field_id(%u), doc_count(%zu)",
                 _field_id, _posting_itr.size());
@@ -294,8 +303,8 @@ FieldIndex<interleaved_features>::make_term_blueprint(const vespalib::string& te
             (std::move(guard), posting_itr, getFeatureStore(), field, field_id, use_bit_vector);
 }
 
-template
-class FieldIndex<false>;
+template class FieldIndex<false>;
+template class FieldIndex<true>;
 
 }
 

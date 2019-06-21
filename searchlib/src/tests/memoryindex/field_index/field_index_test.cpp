@@ -14,6 +14,7 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -31,6 +32,7 @@ using namespace fef;
 using namespace index;
 
 using document::Document;
+using queryeval::RankedSearchIteratorBase;
 using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -40,10 +42,7 @@ using vespalib::GenerationHandler;
 namespace memoryindex {
 
 using test::WrapInserter;
-using FieldIndexType = FieldIndex<false>;
-using PostingList = FieldIndexType::PostingList;
-using PostingConstItr = PostingList::ConstIterator;
-using PostingIteratorType = PostingIterator<false>;
+using NormalFieldIndex = FieldIndex<false>;
 
 class MyBuilder : public IndexBuilder {
 private:
@@ -132,11 +131,21 @@ public:
     }
 };
 
+struct SimpleMatchData {
+    TermFieldMatchData term;
+    TermFieldMatchDataArray array;
+    SimpleMatchData() : term(), array() {
+        array.add(&term);
+    }
+    ~SimpleMatchData() {}
+};
+
 std::string
-toString(FieldPositionsIterator posItr,
+toString(const SimpleMatchData& match_data,
          bool hasElements = false,
          bool hasWeights = false)
 {
+    auto posItr = match_data.term.getIterator();
     std::stringstream ss;
     ss << "{";
     ss << posItr.getFieldLength() << ":";
@@ -157,16 +166,15 @@ toString(FieldPositionsIterator posItr,
     return ss.str();
 }
 
+template <typename PostingIteratorType>
 bool
 assertPostingList(const std::string &exp,
-                  PostingConstItr itr,
+                  PostingIteratorType itr,
                   const FeatureStore *store = nullptr)
 {
     std::stringstream ss;
     FeatureStore::DecodeContextCooked decoder(nullptr);
-    TermFieldMatchData tfmd;
-    TermFieldMatchDataArray matchData;
-    matchData.add(&tfmd);
+    SimpleMatchData match_data;
     ss << "[";
     for (size_t i = 0; itr.valid(); ++itr, ++i) {
         if (i > 0) ss << ",";
@@ -176,8 +184,8 @@ assertPostingList(const std::string &exp,
             EntryRef ref(itr.getData().get_features());
             store->setupForField(0, decoder);
             store->setupForUnpackFeatures(ref, decoder);
-            decoder.unpackFeatures(matchData, docId);
-            ss << toString(tfmd.getIterator());
+            decoder.unpackFeatures(match_data.array, docId);
+            ss << toString(match_data);
         }
     }
     ss << "]";
@@ -186,8 +194,9 @@ assertPostingList(const std::string &exp,
     return result;
 }
 
+template <typename PostingIteratorType>
 bool
-assertPostingList(std::vector<uint32_t> &exp, PostingConstItr itr)
+assertPostingList(std::vector<uint32_t> &exp, PostingIteratorType itr)
 {
     std::stringstream ss;
     ss << "[";
@@ -199,22 +208,26 @@ assertPostingList(std::vector<uint32_t> &exp, PostingConstItr itr)
     return assertPostingList(ss.str(), itr);
 }
 
-FieldIndexType::PostingList::Iterator
+template <bool interleaved_features>
+typename FieldIndex<interleaved_features>::PostingList::Iterator
 find_in_field_index(const vespalib::stringref word,
-                    uint32_t fieldId,
+                    uint32_t field_id,
                     const FieldIndexCollection& fic)
 {
-    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(fieldId));
+    using FieldIndexType = FieldIndex<interleaved_features>;
+    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(field_id));
     assert(field_index != nullptr);
     return field_index->find(word);
 }
 
-FieldIndexType::PostingList::ConstIterator
+template <bool interleaved_features>
+typename FieldIndex<interleaved_features>::PostingList::ConstIterator
 find_frozen_in_field_index(const vespalib::stringref word,
-                           uint32_t fieldId,
+                           uint32_t field_id,
                            const FieldIndexCollection& fic)
 {
-    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(fieldId));
+    using FieldIndexType = FieldIndex<interleaved_features>;
+    auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(field_id));
     assert(field_index != nullptr);
     return field_index->findFrozen(word);
 }
@@ -353,7 +366,7 @@ public:
     bool assertPosting(const vespalib::string &word,
                        uint32_t fieldId) {
         std::vector<uint32_t> exp = _mock.find(word, fieldId);
-        PostingConstItr itr = find_in_field_index(word, fieldId, _fieldIndexes);
+        auto itr = find_in_field_index<false>(word, fieldId, _fieldIndexes);
         bool result = assertPostingList(exp, itr);
         EXPECT_TRUE(result);
         return result;
@@ -411,7 +424,7 @@ public:
     {
     }
 
-    MyDrainRemoves(FieldIndexType& field_index)
+    MyDrainRemoves(IFieldIndex& field_index)
             : _remover(field_index.getDocumentRemover())
     {
     }
@@ -487,6 +500,7 @@ make_single_field_schema()
     return result;
 }
 
+template <typename FieldIndexType>
 struct FieldIndexTest : public ::testing::Test {
     Schema schema;
     FieldIndexType idx;
@@ -495,7 +509,175 @@ struct FieldIndexTest : public ::testing::Test {
           idx(schema, 0)
     {
     }
+    ~FieldIndexTest() {}
+    SearchIterator::UP search(const vespalib::stringref word,
+                              const SimpleMatchData& match_data) {
+        return make_search_iterator<FieldIndexType::has_interleaved_features>(idx.find(word), idx.getFeatureStore(), 0, match_data.array);
+    }
 };
+
+using FieldIndexTestTypes = ::testing::Types<FieldIndex<false>, FieldIndex<true>>;
+TYPED_TEST_CASE(FieldIndexTest, FieldIndexTestTypes);
+
+// Disable warnings emitted by gtest generated files when using typed tests
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
+
+TYPED_TEST(FieldIndexTest, require_that_fresh_insert_works)
+{
+    EXPECT_TRUE(assertPostingList("[]", this->idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", this->idx.findFrozen("a")));
+    EXPECT_EQ(0u, this->idx.getNumUniqueWords());
+    WrapInserter(this->idx).word("a").add(10).flush();
+    EXPECT_TRUE(assertPostingList("[10]", this->idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", this->idx.findFrozen("a")));
+    this->idx.commit();
+    EXPECT_TRUE(assertPostingList("[10]", this->idx.findFrozen("a")));
+    EXPECT_EQ(1u, this->idx.getNumUniqueWords());
+}
+
+TYPED_TEST(FieldIndexTest, require_that_append_insert_works)
+{
+    WrapInserter(this->idx).word("a").add(10).flush().rewind().
+            word("a").add(5).flush();
+    EXPECT_TRUE(assertPostingList("[5,10]", this->idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", this->idx.findFrozen("a")));
+    WrapInserter(this->idx).rewind().word("a").add(20).flush();
+    EXPECT_TRUE(assertPostingList("[5,10,20]", this->idx.find("a")));
+    EXPECT_TRUE(assertPostingList("[]", this->idx.findFrozen("a")));
+    this->idx.commit();
+    EXPECT_TRUE(assertPostingList("[5,10,20]", this->idx.findFrozen("a")));
+}
+
+TYPED_TEST(FieldIndexTest, require_that_remove_works)
+{
+    WrapInserter(this->idx).word("a").remove(10).flush();
+    EXPECT_TRUE(assertPostingList("[]", this->idx.find("a")));
+    WrapInserter(this->idx).add(10).add(20).add(30).flush();
+    EXPECT_TRUE(assertPostingList("[10,20,30]", this->idx.find("a")));
+    WrapInserter(this->idx).rewind().word("a").remove(10).flush();
+    EXPECT_TRUE(assertPostingList("[20,30]", this->idx.find("a")));
+    WrapInserter(this->idx).remove(20).flush();
+    EXPECT_TRUE(assertPostingList("[30]", this->idx.find("a")));
+    WrapInserter(this->idx).remove(30).flush();
+    EXPECT_TRUE(assertPostingList("[]", this->idx.find("a")));
+    EXPECT_EQ(1u, this->idx.getNumUniqueWords());
+    MyDrainRemoves(this->idx).drain(10);
+    WrapInserter(this->idx).rewind().word("a").add(10).flush();
+    EXPECT_TRUE(assertPostingList("[10]", this->idx.find("a")));
+}
+
+void
+addElement(DocIdAndFeatures &f,
+           uint32_t elemLen,
+           uint32_t numOccs,
+           int32_t weight = 1)
+{
+    f.elements().emplace_back(f.elements().size(), weight, elemLen);
+    f.elements().back().setNumOccs(numOccs);
+    for (uint32_t i = 0; i < numOccs; ++i) {
+        f.word_positions().emplace_back(i);
+    }
+}
+
+DocIdAndFeatures
+getFeatures(uint32_t elemLen, uint32_t numOccs, int32_t weight = 1)
+{
+    DocIdAndFeatures f;
+    addElement(f, elemLen, numOccs, weight);
+    f.set_num_occs(numOccs);
+    f.set_field_length(elemLen);
+    return f;
+}
+
+TYPED_TEST(FieldIndexTest, require_that_posting_iterator_is_working)
+{
+    WrapInserter(this->idx).word("a").add(10, getFeatures(4, 1)).
+        add(20, getFeatures(5, 2)).
+        add(30, getFeatures(6, 1)).
+        add(40, getFeatures(7, 2)).flush();
+    SimpleMatchData match_data;
+    {
+        auto itr = this->search("not", match_data);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
+    }
+    {
+        auto itr = this->search("a", match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
+        EXPECT_EQ("{4:0}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
+        EXPECT_EQ("{6:0}", toString(match_data));
+        EXPECT_TRUE(itr->seek(40));
+        EXPECT_EQ(40u, itr->getDocId());
+        itr->unpack(40);
+        EXPECT_EQ("{7:0,1}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(41));
+        EXPECT_TRUE(itr->isAtEnd());
+    }
+}
+
+#pragma GCC diagnostic pop
+
+struct FieldIndexInterleavedFeaturesTest : public FieldIndexTest<FieldIndex<true>> {
+    SimpleMatchData match_data;
+    FieldIndexInterleavedFeaturesTest()
+        : FieldIndexTest<FieldIndex<true>>()
+    {
+        WrapInserter(idx).word("a").add(10, getFeatures(5, 2)).flush();
+    }
+    void
+    expect_features_unpacked(const std::string& exp_field_positions,
+                             uint32_t exp_num_occs,
+                             uint32_t exp_field_length) {
+        auto itr = search("a", match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
+        EXPECT_EQ(exp_field_positions, toString(match_data));
+        EXPECT_EQ(exp_num_occs, match_data.term.getNumOccs());
+        EXPECT_EQ(exp_field_length, match_data.term.getFieldLength());
+        EXPECT_EQ(10, match_data.term.getDocId());
+        auto& ranked_itr = dynamic_cast<RankedSearchIteratorBase&>(*itr);
+        EXPECT_TRUE(ranked_itr.getUnpacked());
+        EXPECT_TRUE(!itr->seek(11));
+        EXPECT_TRUE(itr->isAtEnd());
+    }
+};
+
+TEST_F(FieldIndexInterleavedFeaturesTest, only_normal_features_are_unpacked)
+{
+    match_data.term.setNeedNormalFeatures(true);
+    match_data.term.setNeedInterleavedFeatures(false);
+    expect_features_unpacked("{5:0,1}", 0, 0);
+}
+
+TEST_F(FieldIndexInterleavedFeaturesTest, only_interleaved_features_are_unpacked)
+{
+    match_data.term.setNeedNormalFeatures(false);
+    match_data.term.setNeedInterleavedFeatures(true);
+    expect_features_unpacked("{1000000:}", 2, 5);
+}
+
+TEST_F(FieldIndexInterleavedFeaturesTest, both_normal_and_interleaved_features_are_unpacked)
+{
+    match_data.term.setNeedNormalFeatures(true);
+    match_data.term.setNeedInterleavedFeatures(true);
+    expect_features_unpacked("{5:0,1}", 2, 5);
+}
+
+TEST_F(FieldIndexInterleavedFeaturesTest, no_features_are_unpacked)
+{
+    match_data.term.setNeedNormalFeatures(false);
+    match_data.term.setNeedInterleavedFeatures(false);
+    expect_features_unpacked("{1000000:}", 0, 0);
+}
 
 Schema
 make_multi_field_schema()
@@ -508,8 +690,6 @@ make_multi_field_schema()
     return result;
 }
 
-
-
 struct FieldIndexCollectionTest : public ::testing::Test {
     Schema schema;
     FieldIndexCollection fic;
@@ -520,37 +700,11 @@ struct FieldIndexCollectionTest : public ::testing::Test {
     }
     ~FieldIndexCollectionTest() {}
 
-    FieldIndexType::PostingList::Iterator find(const vespalib::stringref word,
-                                               uint32_t fieldId) const {
-        return find_in_field_index(word, fieldId, fic);
+    NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word,
+                                                 uint32_t field_id) const {
+        return find_in_field_index<false>(word, field_id, fic);
     }
 };
-
-TEST_F(FieldIndexTest, require_that_fresh_insert_works)
-{
-    EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
-    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
-    EXPECT_EQ(0u, idx.getNumUniqueWords());
-    WrapInserter(idx).word("a").add(10).flush();
-    EXPECT_TRUE(assertPostingList("[10]", idx.find("a")));
-    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
-    idx.commit();
-    EXPECT_TRUE(assertPostingList("[10]", idx.findFrozen("a")));
-    EXPECT_EQ(1u, idx.getNumUniqueWords());
-}
-
-TEST_F(FieldIndexTest, require_that_append_insert_works)
-{
-    WrapInserter(idx).word("a").add(10).flush().rewind().
-            word("a").add(5).flush();
-    EXPECT_TRUE(assertPostingList("[5,10]", idx.find("a")));
-    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
-    WrapInserter(idx).rewind().word("a").add(20).flush();
-    EXPECT_TRUE(assertPostingList("[5,10,20]", idx.find("a")));
-    EXPECT_TRUE(assertPostingList("[]", idx.findFrozen("a")));
-    idx.commit();
-    EXPECT_TRUE(assertPostingList("[5,10,20]", idx.findFrozen("a")));
-}
 
 TEST_F(FieldIndexCollectionTest, require_that_multiple_posting_lists_across_multiple_fields_can_exist)
 {
@@ -563,24 +717,6 @@ TEST_F(FieldIndexCollectionTest, require_that_multiple_posting_lists_across_mult
     EXPECT_TRUE(assertPostingList("[12]", find("b", 1)));
     EXPECT_TRUE(assertPostingList("[]", find("a", 2)));
     EXPECT_TRUE(assertPostingList("[]", find("c", 0)));
-}
-
-TEST_F(FieldIndexTest, require_that_remove_works)
-{
-    WrapInserter(idx).word("a").remove(10).flush();
-    EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
-    WrapInserter(idx).add(10).add(20).add(30).flush();
-    EXPECT_TRUE(assertPostingList("[10,20,30]", idx.find("a")));
-    WrapInserter(idx).rewind().word("a").remove(10).flush();
-    EXPECT_TRUE(assertPostingList("[20,30]", idx.find("a")));
-    WrapInserter(idx).remove(20).flush();
-    EXPECT_TRUE(assertPostingList("[30]", idx.find("a")));
-    WrapInserter(idx).remove(30).flush();
-    EXPECT_TRUE(assertPostingList("[]", idx.find("a")));
-    EXPECT_EQ(1u, idx.getNumUniqueWords());
-    MyDrainRemoves(idx).drain(10);
-    WrapInserter(idx).rewind().word("a").add(10).flush();
-    EXPECT_TRUE(assertPostingList("[10]", idx.find("a")));
 }
 
 TEST_F(FieldIndexCollectionTest, require_that_multiple_insert_and_remove_works)
@@ -625,27 +761,6 @@ TEST_F(FieldIndexCollectionTest, require_that_multiple_insert_and_remove_works)
     EXPECT_TRUE(inserter.assertPostings());
 }
 
-void
-addElement(DocIdAndFeatures &f,
-           uint32_t elemLen,
-           uint32_t numOccs,
-           int32_t weight = 1)
-{
-    f.elements().emplace_back(f.elements().size(), weight, elemLen);
-    f.elements().back().setNumOccs(numOccs);
-    for (uint32_t i = 0; i < numOccs; ++i) {
-        f.word_positions().emplace_back(i);
-    }
-}
-
-DocIdAndFeatures
-getFeatures(uint32_t elemLen, uint32_t numOccs, int32_t weight = 1)
-{
-    DocIdAndFeatures f;
-    addElement(f, elemLen, numOccs, weight);
-    return f;
-}
-
 TEST_F(FieldIndexCollectionTest, require_that_features_are_in_posting_lists)
 {
     WrapInserter(fic, 0).word("a").add(1, getFeatures(4, 2)).flush();
@@ -661,43 +776,6 @@ TEST_F(FieldIndexCollectionTest, require_that_features_are_in_posting_lists)
     EXPECT_TRUE(assertPostingList("[4{7:0,1}]",
                                   find("c", 1),
                                   featureStorePtr(fic, 1)));
-}
-
-TEST_F(FieldIndexTest, require_that_posting_iterator_is_working)
-{
-    WrapInserter(idx).word("a").add(10, getFeatures(4, 1)).
-        add(20, getFeatures(5, 2)).
-        add(30, getFeatures(6, 1)).
-        add(40, getFeatures(7, 2)).flush();
-    TermFieldMatchData tfmd;
-    TermFieldMatchDataArray matchData;
-    matchData.add(&tfmd);
-    {
-        PostingIteratorType itr(idx.find("not"),
-                                idx.getFeatureStore(),
-                                0, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
-    }
-    {
-        PostingIteratorType itr(idx.find("a"),
-                                idx.getFeatureStore(),
-                                0, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
-        EXPECT_EQ("{4:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
-        EXPECT_EQ("{6:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(itr.seek(40));
-        EXPECT_EQ(40u, itr.getDocId());
-        itr.unpack(40);
-        EXPECT_EQ("{7:0,1}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(41));
-        EXPECT_TRUE(itr.isAtEnd());
-    }
 }
 
 TEST_F(FieldIndexCollectionTest, require_that_basic_dumping_to_index_builder_is_working)
@@ -774,6 +852,40 @@ TEST_F(FieldIndexCollectionTest, require_that_dumping_words_with_no_docs_to_inde
     }
 }
 
+
+struct FieldIndexCollectionTypeTest : public ::testing::Test {
+    Schema schema;
+    FieldIndexCollection fic;
+    FieldIndexCollectionTypeTest()
+        : schema(make_schema()),
+          fic(schema, MockFieldLengthInspector())
+    {
+    }
+    Schema make_schema() {
+        Schema result;
+        result.addIndexField(Schema::IndexField("normal", DataType::STRING));
+        Schema::IndexField interleaved("interleaved", DataType::STRING);
+        interleaved.set_experimental_posting_list_format(true);
+        result.addIndexField(interleaved);
+        return result;
+    }
+};
+
+template <typename FieldIndexType>
+void
+expect_field_index_type(const IFieldIndex* field_index)
+{
+    auto* other_type = dynamic_cast<const FieldIndexType*>(field_index);
+    EXPECT_TRUE(other_type != nullptr);
+}
+
+TEST_F(FieldIndexCollectionTypeTest, instantiates_field_index_type_based_on_schema_config)
+{
+    expect_field_index_type<FieldIndex<false>>(fic.getFieldIndex(0));
+    expect_field_index_type<FieldIndex<true>>(fic.getFieldIndex(1));
+}
+
+
 class InverterTest : public ::testing::Test {
 public:
     Schema _schema;
@@ -792,11 +904,16 @@ public:
           _inv(_schema, _invertThreads, _pushThreads, _fic)
     {
     }
-    PostingList::Iterator find(const vespalib::stringref word, uint32_t fieldId) const {
-        return find_in_field_index(word, fieldId, _fic);
+    NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word, uint32_t field_id) const {
+        return find_in_field_index<false>(word, field_id, _fic);
     }
-    PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t fieldId) const {
-        return find_frozen_in_field_index(word, fieldId, _fic);
+    NormalFieldIndex::PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t field_id) const {
+        return find_frozen_in_field_index<false>(word, field_id, _fic);
+    }
+    SearchIterator::UP search(const vespalib::stringref word, uint32_t field_id,
+                              const SimpleMatchData& match_data) {
+        return make_search_iterator<false>(findFrozen(word, field_id), featureStoreRef(_fic, field_id),
+                                           field_id, match_data.array);
     }
 };
 
@@ -952,58 +1069,56 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         afterStats._activeBuffers,
         afterStats._holdBuffers);
 
-    TermFieldMatchData tfmd;
-    TermFieldMatchDataArray matchData;
-    matchData.add(&tfmd);
+    SimpleMatchData match_data;
     {
-        PostingIteratorType itr(findFrozen("not", 0), featureStoreRef(_fic, 0), 0, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", 0, match_data);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("a", 0), featureStoreRef(_fic, 0), 0, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
-        EXPECT_EQ("{4:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
-        EXPECT_EQ("{6:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(itr.seek(40));
-        EXPECT_EQ(40u, itr.getDocId());
-        itr.unpack(40);
-        EXPECT_EQ("{7:0,1,4}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(41));
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("a", 0, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
+        EXPECT_EQ("{4:0}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
+        EXPECT_EQ("{6:0}", toString(match_data));
+        EXPECT_TRUE(itr->seek(40));
+        EXPECT_EQ(40u, itr->getDocId());
+        itr->unpack(40);
+        EXPECT_EQ("{7:0,1,4}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(41));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("x", 0), featureStoreRef(_fic, 0), 0, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("x", 0, match_data);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("x", 1), featureStoreRef(_fic, 1), 1, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
-        EXPECT_EQ("{6:2[e=0,w=1,l=6]}", toString(tfmd.getIterator(), true, true));
+        auto itr = search("x", 1, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
+        EXPECT_EQ("{6:2[e=0,w=1,l=6]}", toString(match_data, true, true));
     }
     {
-        PostingIteratorType itr(findFrozen("x", 2), featureStoreRef(_fic, 2), 2, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        auto itr = search("x", 2, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         // weight is hardcoded to 1 for new style il doc array field
-        EXPECT_EQ("{2:1[e=0,w=1,l=2]}", toString(tfmd.getIterator(), true, true));
+        EXPECT_EQ("{2:1[e=0,w=1,l=2]}", toString(match_data, true, true));
     }
     {
-        PostingIteratorType itr(findFrozen("x", 3), featureStoreRef(_fic, 3), 3, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(30u, itr.getDocId());
-        itr.unpack(30);
+        auto itr = search("x", 3, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(30u, itr->getDocId());
+        itr->unpack(30);
         EXPECT_EQ("{2:1[e=0,w=6,l=2]}",
-                  toString(tfmd.getIterator(), true, true));
+                  toString(match_data, true, true));
     }
 }
 
@@ -1190,54 +1305,44 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 
     _pushThreads.sync();
 
-    TermFieldMatchData tfmd;
-    TermFieldMatchDataArray matchData;
-    matchData.add(&tfmd);
+    SimpleMatchData match_data;
     {
         uint32_t fieldId = _schema.getIndexFieldId("iu");
-        PostingIteratorType itr(findFrozen("not", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         uint32_t fieldId = _schema.getIndexFieldId("iu");
-        PostingIteratorType itr(findFrozen("example", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
-        EXPECT_EQ("{9:2}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("example", fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
+        EXPECT_EQ("{9:2}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         uint32_t fieldId = _schema.getIndexFieldId("iau");
-        PostingIteratorType itr(findFrozen("example", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("example", fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{9:2[e=0,l=9]}",
-                  toString(tfmd.getIterator(), true, false));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+                  toString(match_data, true, false));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         uint32_t fieldId = _schema.getIndexFieldId("iwu");
-        PostingIteratorType itr(findFrozen("example", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
+        auto itr = search("example", fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
         EXPECT_EQ("{9:2[e=0,w=4,l=9]}",
-                  toString(tfmd.getIterator(), true, true));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+                  toString(match_data, true, true));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
         search::diskindex::IndexBuilder dib(_schema);
@@ -1276,42 +1381,34 @@ TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
 
     _pushThreads.sync();
 
-    TermFieldMatchData tfmd;
-    TermFieldMatchDataArray matchData;
-    matchData.add(&tfmd);
+    SimpleMatchData match_data;
     uint32_t fieldId = _schema.getIndexFieldId("f0");
     {
-        PostingIteratorType itr(findFrozen("not", fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("not", fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("我就"
-                                           "是那个",
-                                           fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
-        EXPECT_EQ("{2:0}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("我就"
+                          "是那个",
+                          fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
+        EXPECT_EQ("{2:0}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        PostingIteratorType itr(findFrozen("大灰"
-                                           "狼",
-                                           fieldId),
-                                featureStoreRef(_fic, fieldId),
-                                fieldId, matchData);
-        itr.initFullRange();
-        EXPECT_EQ(10u, itr.getDocId());
-        itr.unpack(10);
-        EXPECT_EQ("{2:1}", toString(tfmd.getIterator()));
-        EXPECT_TRUE(!itr.seek(25));
-        EXPECT_TRUE(itr.isAtEnd());
+        auto itr = search("大灰"
+                          "狼",
+                          fieldId, match_data);
+        itr->initFullRange();
+        EXPECT_EQ(10u, itr->getDocId());
+        itr->unpack(10);
+        EXPECT_EQ("{2:1}", toString(match_data));
+        EXPECT_TRUE(!itr->seek(25));
+        EXPECT_TRUE(itr->isAtEnd());
     }
 }
 
