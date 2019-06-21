@@ -9,7 +9,7 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
 import org.w3c.dom.Element;
 
@@ -39,7 +39,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             String certificateFile = XML.getValue(XML.getChild(sslConfigurator, "certificate-file"));
             Optional<String> caCertificateFile = XmlHelper.getOptionalChildValue(sslConfigurator, "ca-certificates-file");
             Optional<String> clientAuthentication = XmlHelper.getOptionalChildValue(sslConfigurator, "client-authentication");
-            return new ConfiguredFilebasedSslProvider(
+            return new ConfiguredSslProvider(
                     serverName,
                     privateKeyFile,
                     certificateFile,

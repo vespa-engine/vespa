@@ -60,22 +60,14 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
 
     private static void validateConfig(ConnectorConfig.Ssl config) {
         if (!config.enabled()) return;
+        if (config.certificateFile().isEmpty()) {
+            throw new IllegalArgumentException("Missing certificate file.");
+        }
+        if (config.privateKeyFile().isEmpty()) {
+            throw new IllegalArgumentException("Missing private key file.");
+        }
 
-        if(hasBoth(config.certificate(), config.certificateFile()))
-            throw new IllegalArgumentException("Specified both certificate and certificate file.");
-
-        if(hasBoth(config.privateKey(), config.privateKeyFile()))
-            throw new IllegalArgumentException("Specified both private key and private key file.");
-
-        if(hasNeither(config.certificate(), config.certificateFile()))
-            throw new IllegalArgumentException("Specified neither certificate or certificate file.");
-
-        if(hasNeither(config.privateKey(), config.privateKeyFile()))
-            throw new IllegalArgumentException("Specified neither private key or private key file.");
     }
-
-    private static boolean hasBoth(String a, String b) { return !a.isBlank() && !b.isBlank(); }
-    private static boolean hasNeither(String a, String b) { return a.isBlank() && b.isBlank(); }
 
     private static KeyStore createTruststore(ConnectorConfig.Ssl sslConfig) {
         List<X509Certificate> caCertificates = X509CertificateUtils.certificateListFromPem(readToString(sslConfig.caCertificateFile()));
@@ -85,19 +77,9 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
     }
 
     private static KeyStore createKeystore(ConnectorConfig.Ssl sslConfig) {
-        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
-        List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(getCertificate(sslConfig));
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(readToString(sslConfig.privateKeyFile()));
+        List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(readToString(sslConfig.certificateFile()));
         return KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificates).build();
-    }
-
-    private static String getPrivateKey(ConnectorConfig.Ssl config) {
-        if(!config.privateKey().isBlank()) return config.privateKey();
-        return readToString(config.privateKeyFile());
-    }
-
-    private static String getCertificate(ConnectorConfig.Ssl config) {
-        if(!config.certificate().isBlank()) return config.certificate();
-        return readToString(config.certificateFile());
     }
 
     private static String readToString(String filename) {

@@ -7,7 +7,6 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -47,5 +46,4 @@ public interface GlobalComponentRegistry {
     StripedExecutor<TenantName> getZkWatcherExecutor();
     FlagSource getFlagSource();
     ExecutorService getZkCacheExecutor();
-    SecretStore getSecretStore();
 }

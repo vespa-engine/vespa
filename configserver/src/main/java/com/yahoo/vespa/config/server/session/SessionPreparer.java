@@ -13,13 +13,11 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -36,7 +34,6 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
-import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import org.xml.sax.SAXException;
@@ -72,7 +69,6 @@ public class SessionPreparer {
     private final Curator curator;
     private final Zone zone;
     private final FlagSource flagSource;
-    private final SecretStore secretStore;
 
     @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
@@ -83,8 +79,7 @@ public class SessionPreparer {
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,
                            Zone zone,
-                           FlagSource flagSource,
-                           SecretStore secretStore) {
+                           FlagSource flagSource) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
@@ -94,7 +89,6 @@ public class SessionPreparer {
         this.curator = curator;
         this.zone = zone;
         this.flagSource = flagSource;
-        this.secretStore = secretStore;
     }
 
     /**
@@ -118,7 +112,6 @@ public class SessionPreparer {
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeRotZK();
-                preparation.writeTlsZK();
                 var globalServiceId = context.getApplicationPackage().getDeployment()
                                              .map(DeploymentSpec::fromXml)
                                              .flatMap(DeploymentSpec::globalServiceId);
@@ -152,8 +145,6 @@ public class SessionPreparer {
         final Set<Rotation> rotationsSet;
         final Set<ContainerEndpoint> endpointsSet;
         final ModelContext.Properties properties;
-        private final TlsSecretsKeys tlsSecretsKeys;
-        private final Optional<TlsSecrets> tlsSecrets;
 
         private ApplicationPackage applicationPackage;
         private List<PreparedModelsBuilder.PreparedModelResult> modelResultList;
@@ -174,10 +165,7 @@ public class SessionPreparer {
             this.rotations = new Rotations(curator, tenantPath);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.rotationsSet = getRotations(params.rotations());
-            this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath, secretStore);
-            this.tlsSecrets = tlsSecretsKeys.getTlsSecrets(params.tlsSecretsKeyName(), applicationId);
             this.endpointsSet = getEndpoints(params.containerEndpoints());
-
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig.multitenant(),
                                                               ConfigServerSpec.fromConfig(configserverConfig),
@@ -190,8 +178,7 @@ public class SessionPreparer {
                                                               endpointsSet,
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
-                                                              context.getFlagSource(),
-                                                              tlsSecrets);
+                                                              context.getFlagSource());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
@@ -249,11 +236,6 @@ public class SessionPreparer {
         void writeRotZK() {
             rotations.writeRotationsToZooKeeper(applicationId, rotationsSet);
             checkTimeout("write rotations to zookeeper");
-        }
-
-        void writeTlsZK() {
-            tlsSecretsKeys.writeTlsSecretsKeyToZooKeeper(applicationId, params.tlsSecretsKeyName().orElse(null));
-            checkTimeout("write tlsSecretsKey to zookeeper");
         }
 
         void writeContainerEndpointsZK(Optional<String> globalServiceId) {

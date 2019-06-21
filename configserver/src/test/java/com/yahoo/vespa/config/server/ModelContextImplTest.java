@@ -62,8 +62,7 @@ public class ModelContextImplTest {
                         endpoints,
                         false,
                         false,
-                        flagSource,
-                        null),
+                        flagSource),
                 Optional.empty(),
                 new Version(6), 
                 new Version(6));

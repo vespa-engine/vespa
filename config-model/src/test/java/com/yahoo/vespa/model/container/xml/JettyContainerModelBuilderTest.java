@@ -1,19 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredSslProvider;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -24,7 +21,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -178,7 +174,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
-        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredFilebasedSslProvider.COMPONENT_CLASS));
+        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredSslProvider.COMPONENT_CLASS));
     }
 
     @Test
@@ -224,37 +220,6 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         createModel(root, clusterElem);
         ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
         assertTrue(sslProvider.ssl().enabled());
-    }
-
-    @Test
-    public void verify_that_container_setup_additional_tls4443(){
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
-                "    <http>",
-                "        <server port='9000' id='ssl'>",
-                "            <ssl>",
-                "                <private-key-file>/foo/key</private-key-file>",
-                "                <certificate-file>/foo/cert</certificate-file>",
-                "            </ssl>",
-                "        </server>",
-                "    </http>",
-                nodesXml,
-                "",
-                "</jdisc>");
-
-        DeployState deployState = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
-        createModel(root, deployState, null, clusterElem);
-        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
-        assertTrue(sslProvider.ssl().enabled());
-        assertEquals("", sslProvider.ssl().certificate());
-        assertEquals("", sslProvider.ssl().privateKey());
-
-        ConnectorConfig providedTls = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/tls4443");
-        assertTrue(providedTls.ssl().enabled());
-        assertEquals("CERT", providedTls.ssl().certificate());
-        assertEquals("KEY", providedTls.ssl().privateKey());
-        assertEquals(4443, providedTls.listenPort());
-
     }
 
     private static void assertChildComponentExists(ConnectorFactory connectorFactory, String className) {

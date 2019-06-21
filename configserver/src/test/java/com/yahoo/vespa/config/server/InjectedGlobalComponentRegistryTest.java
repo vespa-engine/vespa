@@ -78,7 +78,7 @@ public class InjectedGlobalComponentRegistryTest {
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
                                                     generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone,
-                                                    new ConfigServerDB(configserverConfig), new InMemoryFlagSource(), new MockSecretStore());
+                                                    new ConfigServerDB(configserverConfig), new InMemoryFlagSource());
     }
 
     @Test
