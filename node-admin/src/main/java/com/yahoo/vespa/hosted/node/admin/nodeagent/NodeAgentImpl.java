@@ -536,6 +536,7 @@ public class NodeAgentImpl implements NodeAgent {
         final int totalNumCpuCores = stats.getCpuStats().getOnlineCpus();
         final long cpuContainerKernelTime = stats.getCpuStats().getUsageInKernelMode();
         final long cpuContainerTotalTime = stats.getCpuStats().getTotalUsage();
+        final long cpuContainerThrottledTime = stats.getCpuStats().getThrottledTime();
         final long cpuSystemTotalTime = stats.getCpuStats().getSystemCpuUsage();
         final long memoryTotalBytes = stats.getMemoryStats().getLimit();
         final long memoryTotalBytesUsage = stats.getMemoryStats().getUsage();
@@ -564,6 +565,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
+                .withMetric("cpu.throttled_time", cpuContainerThrottledTime)
                 .withMetric("cpu.vcpus", node.vcpus())
                 .withMetric("disk.limit", diskTotalBytes);
 
