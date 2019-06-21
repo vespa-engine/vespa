@@ -422,15 +422,16 @@ public class ApplicationController {
                                   ZoneId zone, DeployOptions deployOptions,
                                   Set<String> rotationNames) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
-        ConfigServer.PreparedApplication preparedApplication =
-                configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationPackage.zippedContent());
-
-        // Refresh routing policies on successful deployment. At this point we can safely assume that the config server
-        // has allocated load balancers for the deployment.
-        routingPolicies.refresh(application, zone);
-
-        return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
-                                  applicationPackage.zippedContent().length);
+        try {
+            ConfigServer.PreparedApplication preparedApplication =
+                    configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationPackage.zippedContent());
+            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
+                                      applicationPackage.zippedContent().length);
+        } finally {
+            // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
+            // any DNS updates can be propagated as early as possible.
+            routingPolicies.refresh(application, zone);
+        }
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
