@@ -10,8 +10,8 @@ s:
     },
     "metrics": {
         "cpu.sys.util": 3.402,
-        "cpu.throttled_cpu_time": 290.0,
-        "cpu.throttled_time": 47.0,
+        "cpu.throttled_cpu_time.rate": 5.087,
+        "cpu.throttled_time.rate": 0.824,
         "cpu.util": 5.4,
         "cpu.vcpus": 2.0,
         "disk.limit": 250000000000,

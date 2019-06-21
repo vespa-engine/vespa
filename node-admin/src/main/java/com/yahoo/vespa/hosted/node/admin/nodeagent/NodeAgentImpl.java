@@ -546,8 +546,8 @@ public class NodeAgentImpl implements NodeAgent {
         final double allocatedCpuRatio = node.vcpus() / totalNumCpuCores;
         double cpuUsageRatioOfAllocated = lastCpuMetric.getCpuUsageRatio() / allocatedCpuRatio;
         double cpuKernelUsageRatioOfAllocated = lastCpuMetric.getCpuKernelUsageRatio() / allocatedCpuRatio;
-        double cpuThrottledTime = lastCpuMetric.getThrottledTime();
-        double cpuThrottledCpuTime = lastCpuMetric.getThrottledCpuTime();
+        double cpuThrottledTimeRate = lastCpuMetric.getThrottledTimeRate();
+        double cpuThrottledCpuTimeRate = lastCpuMetric.getThrottledCpuTimeRate();
 
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryUsageRatio = (double) memoryTotalBytesUsed / memoryTotalBytes;
@@ -563,8 +563,8 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
-                .withMetric("cpu.throttled_time", cpuThrottledTime)
-                .withMetric("cpu.throttled_cpu_time", cpuThrottledCpuTime)
+                .withMetric("cpu.throttled_time.rate", cpuThrottledTimeRate)
+                .withMetric("cpu.throttled_cpu_time.rate", cpuThrottledCpuTimeRate)
                 .withMetric("cpu.vcpus", node.vcpus())
                 .withMetric("disk.limit", diskTotalBytes);
 
@@ -622,8 +622,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     class CpuUsageReporter {
-        private static final double BILLION = 1_000_000_000d;
-        private static final double PERIOD_IN_SECONDS = ContainerResources.CPU_PERIOD_US / 1_000_000d;
+        private static final double PERIOD_IN_NANOSECONDS = 1_000d * ContainerResources.CPU_PERIOD_US;
         private long containerKernelUsage = 0;
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
@@ -667,12 +666,14 @@ public class NodeAgentImpl implements NodeAgent {
             return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerKernelUsage / deltaSystemUsage;
         }
 
-        double getThrottledTime() {
-            return deltaThrottlingActivePeriods == 0 ? Double.NaN : deltaThrottledPeriods * PERIOD_IN_SECONDS;
+        double getThrottledTimeRate() {
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN :
+                    (double) deltaThrottledPeriods / deltaThrottlingActivePeriods;
         }
 
-        double getThrottledCpuTime() {
-            return deltaThrottlingActivePeriods == 0 ? Double.NaN : deltaThrottledTime / BILLION;
+        double getThrottledCpuTimeRate() {
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN :
+                    deltaThrottledTime / (PERIOD_IN_NANOSECONDS * deltaThrottlingActivePeriods);
         }
     }
 
