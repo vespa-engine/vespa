@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.state;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
-import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpConnectionException;
 import com.yahoo.vespa.hosted.node.admin.configserver.state.bindings.HealthResponse;
 import org.junit.Test;
 
@@ -29,7 +29,8 @@ public class StateImplTest {
 
     @Test
     public void connectException() {
-        RuntimeException exception = HttpException.handleException("Error: ", new ConnectException("connection refused"));
+        RuntimeException exception =
+                HttpConnectionException.handleException("Error: ", new ConnectException("connection refused"));
         when(api.get(any(), any())).thenThrow(exception);
 
         HealthCode code = state.getHealth();

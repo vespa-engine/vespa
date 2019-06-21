@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.state;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpConnectionException;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.state.bindings.HealthResponse;
 
@@ -20,7 +21,7 @@ public class StateImpl implements State {
         try {
             HealthResponse response = configServerApi.get("/state/v1/health", HealthResponse.class);
             return HealthCode.fromString(response.status.code);
-        } catch (HttpException e) {
+        } catch (HttpConnectionException | HttpException e) {
             return HealthCode.DOWN;
         }
     }

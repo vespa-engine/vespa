@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.orchestrator;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpConnectionException;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
@@ -41,6 +43,8 @@ public class OrchestratorImpl implements Orchestrator {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to suspend " + hostName + ": " + e.toString());
+        } catch (HttpConnectionException e) {
+            throw new ConvergenceException("Failed to suspend " + hostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on suspend", e);
         }
@@ -60,6 +64,8 @@ public class OrchestratorImpl implements Orchestrator {
             batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class);
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e.toString());
+        } catch (HttpConnectionException e) {
+            throw new ConvergenceException("Failed to batch suspend for " + parentHostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on batch suspend for " + parentHostName + ", with nodes " + hostNames, e);
         }
@@ -78,7 +84,9 @@ public class OrchestratorImpl implements Orchestrator {
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
         } catch (HttpException e) {
-            throw new OrchestratorException("Failed to suspend " + hostName + ": " + e.toString());
+            throw new OrchestratorException("Failed to resume " + hostName + ": " + e.toString());
+        } catch (HttpConnectionException e) {
+            throw new ConvergenceException("Failed to resume " + hostName + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Got error on resume", e);
         }
