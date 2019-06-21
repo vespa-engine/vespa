@@ -38,8 +38,9 @@ class Preparer {
 
     /** Prepare all required resources for the given application and cluster */
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+        var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
         prepareLoadBalancer(application, cluster, requestedNodes);
-        return prepareNodes(application, cluster, requestedNodes, wantedGroups);
+        return nodes;
     }
 
     /**
