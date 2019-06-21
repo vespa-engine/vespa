@@ -96,6 +96,8 @@ public class ContainerStats {
         private final long totalUsage;
         private final long usageInKernelMode;
         private final long throttledTime;
+        private final long throttlingActivePeriods;
+        private final long throttledPeriods;
 
         public CpuStats(CpuStatsConfig cpuStats) {
             // Added in 1.27
@@ -104,13 +106,23 @@ public class ContainerStats {
             this.totalUsage = cpuStats.getCpuUsage().getTotalUsage();
             this.usageInKernelMode = cpuStats.getCpuUsage().getUsageInKernelmode();
             this.throttledTime = cpuStats.getThrottlingData().getThrottledTime();
+            this.throttlingActivePeriods = cpuStats.getThrottlingData().getPeriods();
+            this.throttledPeriods = cpuStats.getThrottlingData().getThrottledPeriods();
         }
 
         public int getOnlineCpus() { return this.onlineCpus; }
         public long getSystemCpuUsage() { return this.systemCpuUsage; }
         public long getTotalUsage() { return totalUsage; }
         public long getUsageInKernelMode() { return usageInKernelMode; }
+
+        /** Total CPU time processes in this container were throttled for */
         public long getThrottledTime() { return throttledTime; }
+
+        /** Number of periods when throttling enabled for this container */
+        public long getThrottlingActivePeriods() { return throttlingActivePeriods; }
+
+        /** Number of periods this container hit the throttling limit */
+        public long getThrottledPeriods() { return throttledPeriods; }
     }
 
     // For testing only, create ContainerStats from JSON returned by docker daemon stats API

@@ -18,9 +18,9 @@
     },
     "system_cpu_usage":5876874910000000,
     "throttling_data":{
-      "periods":3212,
-      "throttled_periods":322,
-      "throttled_time":4490
+      "periods":820694,
+      "throttled_periods":177731,
+      "throttled_time":81891944744550
     }
   },
   "cpu_stats":{
@@ -41,9 +41,9 @@
     },
     "system_cpu_usage":5876882680000000,
     "throttling_data":{
-      "periods":3242,
-      "throttled_periods":332,
-      "throttled_time":4523
+      "periods":821264,
+      "throttled_periods":178201,
+      "throttled_time":82181944744550
     }
   },
   "memory_stats":{
