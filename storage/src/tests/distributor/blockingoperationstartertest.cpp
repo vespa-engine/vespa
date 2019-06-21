@@ -1,30 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/distributor/blockingoperationstarter.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <tests/distributor/maintenancemocks.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
-
-namespace storage {
-
-namespace distributor {
-
 using document::BucketId;
+using namespace ::testing;
 
-class BlockingOperationStarterTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(BlockingOperationStarterTest);
-    CPPUNIT_TEST(testOperationNotBlockedWhenNoMessagesPending);
-    CPPUNIT_TEST(testOperationBlockedWhenMessagesPending);
-    CPPUNIT_TEST_SUITE_END();
+namespace storage::distributor {
 
+struct BlockingOperationStarterTest : Test {
     std::shared_ptr<Operation> createMockOperation() {
-        return std::shared_ptr<Operation>(new MockOperation(makeDocumentBucket(BucketId(16, 1))));
+        return std::make_shared<MockOperation>(makeDocumentBucket(BucketId(16, 1)));
     }
     std::shared_ptr<Operation> createBlockingMockOperation() {
-        std::shared_ptr<MockOperation> op(new MockOperation(makeDocumentBucket(BucketId(16, 1))));
+        auto op = std::make_shared<MockOperation>(makeDocumentBucket(BucketId(16, 1)));
         op->setShouldBlock(true);
         return op;
     }
@@ -35,43 +28,30 @@ class BlockingOperationStarterTest : public CppUnit::TestFixture {
     std::unique_ptr<PendingMessageTracker> _messageTracker;
     std::unique_ptr<BlockingOperationStarter> _operationStarter;
 
-public:
-    void testOperationNotBlockedWhenNoMessagesPending();
-    void testOperationBlockedWhenMessagesPending();
-
-    void setUp() override;
+    void SetUp() override;
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(BlockingOperationStarterTest);
-
 void
-BlockingOperationStarterTest::setUp()
+BlockingOperationStarterTest::SetUp()
 {
-    _starterImpl.reset(new MockOperationStarter());
-    _compReg.reset(new StorageComponentRegisterImpl());
+    _starterImpl = std::make_unique<MockOperationStarter>();
+    _compReg = std::make_unique<StorageComponentRegisterImpl>();
     _compReg->setClock(_clock);
     _clock.setAbsoluteTimeInSeconds(1);
-    _messageTracker.reset(new PendingMessageTracker(*_compReg));
-    _operationStarter.reset(new BlockingOperationStarter(*_messageTracker, *_starterImpl));
+    _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg);
+    _operationStarter = std::make_unique<BlockingOperationStarter>(*_messageTracker, *_starterImpl);
 }
 
-void
-BlockingOperationStarterTest::testOperationNotBlockedWhenNoMessagesPending()
-{
-    CPPUNIT_ASSERT(_operationStarter->start(createMockOperation(),
-                                            OperationStarter::Priority(0)));
-    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri 0\n"),
-                         _starterImpl->toString());
+TEST_F(BlockingOperationStarterTest, operation_not_blocked_when_no_messages_pending) {
+    ASSERT_TRUE(_operationStarter->start(createMockOperation(), OperationStarter::Priority(0)));
+    EXPECT_EQ("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri 0\n",
+              _starterImpl->toString());
 }
 
-void
-BlockingOperationStarterTest::testOperationBlockedWhenMessagesPending()
-{
+TEST_F(BlockingOperationStarterTest, operation_blocked_when_messages_pending) {
     // start should return true but not forward message to underlying starter.
-    CPPUNIT_ASSERT(_operationStarter->start(createBlockingMockOperation(),
-                                            OperationStarter::Priority(0)));
-    CPPUNIT_ASSERT_EQUAL(std::string(""), _starterImpl->toString());
+    ASSERT_TRUE(_operationStarter->start(createBlockingMockOperation(), OperationStarter::Priority(0)));
+    EXPECT_EQ("", _starterImpl->toString());
 }
 
-}
 }

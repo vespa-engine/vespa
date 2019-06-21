@@ -11,23 +11,23 @@
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 
-using namespace std::literals::string_literals;
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage::distributor {
 
-struct StateCheckersTest : public CppUnit::TestFixture,
-                           public DistributorTestUtil
-{
-    StateCheckersTest() {}
+struct StateCheckersTest : Test, DistributorTestUtil {
+    StateCheckersTest() = default;
 
-    void setUp() override {
+    void SetUp() override {
         createLinks();
     }
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
@@ -44,50 +44,6 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         bool shouldCheck() const { return _msgType != UINT32_MAX; }
     };
 
-    void testSplit();
-    void testInconsistentSplit();
-    void splitCanBeScheduledWhenReplicasOnRetiredNodes();
-    void testSynchronizeAndMove();
-    void testDoNotMergeInconsistentlySplitBuckets();
-    void doNotMoveReplicasWithinRetiredNodes();
-    void testDeleteExtraCopies();
-    void testDoNotDeleteActiveExtraCopies();
-    void testConsistentCopiesOnRetiredNodesMayBeDeleted();
-    void redundantCopyDeletedEvenWhenAllNodesRetired();
-    void testJoin();
-    void testDoNotJoinBelowClusterStateBitCount();
-    void testAllowInconsistentJoinInDifferingSiblingIdealState();
-    void testDoNotAllowInconsistentJoinWhenNotInIdealState();
-    void testDoNotAllowInconsistentJoinWhenConfigDisabled();
-    void testNoJoinWhenInvalidCopyExists();
-    void testNoJoinOnDifferentNodes();
-    void testNoJoinWhenCopyCountAboveRedundancyLevelsForLeftSibling();
-    void testNoJoinWhenCopyCountAboveRedundancyLevelsForRightSibling();
-    void testNoJoinWhenCopyCountAboveRedundancyLevelsForBothSiblings();
-    void joinCanBeScheduledWhenReplicasOnRetiredNodes();
-    void testBucketState();
-    void testDoNotActivateNonReadyCopiesWhenIdealNodeInMaintenance();
-    void testDoNotChangeActiveStateForInconsistentlySplitBuckets();
-    void testNoActiveChangeForNonIdealCopiesWhenOtherwiseIdentical();
-    void testBucketStatePerGroup();
-    void allowActivationOfRetiredNodes();
-    void inhibitBucketActivationIfDisabledInConfig();
-    void inhibitBucketDeactivationIfDisabledInConfig();
-    void retiredNodesOutOfSyncAreMerged();
-    void testGarbageCollection();
-    void gc_ops_are_prioritized_with_low_priority_category();
-    void gcInhibitedWhenIdealNodeInMaintenance();
-    void testNoRemoveWhenIdealNodeInMaintenance();
-    void testStepwiseJoinForSmallBucketsWithoutSiblings();
-    void testNoStepwiseJoinWhenDisabledThroughConfig();
-    void testNoStepwiseJoinWhenSingleSiblingTooLarge();
-    void testStepwiseJoinMaySkipMultipleBitsWhenConsistent();
-    void testStepwiseJoinDoesNotSkipBeyondLevelWithSibling();
-    void contextPopulatesIdealStateContainers();
-    void statsUpdatedWhenMergingDueToMove();
-    void statsUpdatedWhenMergingDueToMissingCopy();
-    void statsUpdatedWhenMergingDueToOutOfSyncCopies();
-
     void enableClusterState(const lib::ClusterState& systemState) {
         _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
     }
@@ -95,16 +51,16 @@ struct StateCheckersTest : public CppUnit::TestFixture,
     void insertJoinableBuckets();
 
     void assertCurrentIdealState(const document::BucketId& bucket,
-                                 const std::vector<uint16_t> expected)
+                                 const std::vector<uint16_t>& expected)
     {
-        auto &distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
+        auto& distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
         std::vector<uint16_t> idealNodes(
                 distributorBucketSpace
                 .getDistribution().getIdealStorageNodes(
                         distributorBucketSpace.getClusterState(),
                         bucket,
                         "ui"));
-        CPPUNIT_ASSERT_EQUAL(expected, idealNodes);
+        ASSERT_EQ(expected, idealNodes);
     }
 
     void enableInconsistentJoinInConfig(bool enabled);
@@ -259,7 +215,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
                 checker, c, false, *params._blockerMessage,
                 params._includeMessagePriority,
                 params._includeSchedulingPriority);
-        CPPUNIT_ASSERT_EQUAL(params._expect, result);
+        ASSERT_EQ(params._expect, result);
     }
 
     std::string testSynchronizeAndMove(
@@ -281,59 +237,10 @@ struct StateCheckersTest : public CppUnit::TestFixture,
                                 bool includePriority = false);
     std::string testBucketStatePerGroup(const std::string& bucketInfo,
                                         bool includePriority = false);
-
-    CPPUNIT_TEST_SUITE(StateCheckersTest);
-    CPPUNIT_TEST(testSplit);
-    CPPUNIT_TEST(testInconsistentSplit);
-    CPPUNIT_TEST(splitCanBeScheduledWhenReplicasOnRetiredNodes);
-    CPPUNIT_TEST(testSynchronizeAndMove);
-    CPPUNIT_TEST(testDoNotMergeInconsistentlySplitBuckets);
-    CPPUNIT_TEST(doNotMoveReplicasWithinRetiredNodes);
-    CPPUNIT_TEST(retiredNodesOutOfSyncAreMerged);
-    CPPUNIT_TEST(testDoNotChangeActiveStateForInconsistentlySplitBuckets);
-    CPPUNIT_TEST(testDeleteExtraCopies);
-    CPPUNIT_TEST(testDoNotDeleteActiveExtraCopies);
-    CPPUNIT_TEST(testConsistentCopiesOnRetiredNodesMayBeDeleted);
-    CPPUNIT_TEST(redundantCopyDeletedEvenWhenAllNodesRetired);
-    CPPUNIT_TEST(testJoin);
-    CPPUNIT_TEST(testDoNotJoinBelowClusterStateBitCount);
-    CPPUNIT_TEST(testAllowInconsistentJoinInDifferingSiblingIdealState);
-    CPPUNIT_TEST(testDoNotAllowInconsistentJoinWhenNotInIdealState);
-    CPPUNIT_TEST(testDoNotAllowInconsistentJoinWhenConfigDisabled);
-    CPPUNIT_TEST(testNoJoinWhenInvalidCopyExists);
-    CPPUNIT_TEST(testNoJoinOnDifferentNodes);
-    CPPUNIT_TEST(testNoJoinWhenCopyCountAboveRedundancyLevelsForLeftSibling);
-    CPPUNIT_TEST(testNoJoinWhenCopyCountAboveRedundancyLevelsForRightSibling);
-    CPPUNIT_TEST(testNoJoinWhenCopyCountAboveRedundancyLevelsForBothSiblings);
-    CPPUNIT_TEST(joinCanBeScheduledWhenReplicasOnRetiredNodes);
-    CPPUNIT_TEST(testBucketState);
-    CPPUNIT_TEST(testDoNotActivateNonReadyCopiesWhenIdealNodeInMaintenance);
-    CPPUNIT_TEST(testNoActiveChangeForNonIdealCopiesWhenOtherwiseIdentical);
-    CPPUNIT_TEST(testBucketStatePerGroup);
-    CPPUNIT_TEST(allowActivationOfRetiredNodes);
-    CPPUNIT_TEST(inhibitBucketActivationIfDisabledInConfig);
-    CPPUNIT_TEST(inhibitBucketDeactivationIfDisabledInConfig);
-    CPPUNIT_TEST(testGarbageCollection);
-    CPPUNIT_TEST(gc_ops_are_prioritized_with_low_priority_category);
-    CPPUNIT_TEST(gcInhibitedWhenIdealNodeInMaintenance);
-    CPPUNIT_TEST(testNoRemoveWhenIdealNodeInMaintenance);
-    CPPUNIT_TEST(testStepwiseJoinForSmallBucketsWithoutSiblings);
-    CPPUNIT_TEST(testNoStepwiseJoinWhenDisabledThroughConfig);
-    CPPUNIT_TEST(testNoStepwiseJoinWhenSingleSiblingTooLarge);
-    CPPUNIT_TEST(testStepwiseJoinMaySkipMultipleBitsWhenConsistent);
-    CPPUNIT_TEST(testStepwiseJoinDoesNotSkipBeyondLevelWithSibling);
-    CPPUNIT_TEST(contextPopulatesIdealStateContainers);
-    CPPUNIT_TEST(statsUpdatedWhenMergingDueToMove);
-    CPPUNIT_TEST(statsUpdatedWhenMergingDueToMissingCopy);
-    CPPUNIT_TEST(statsUpdatedWhenMergingDueToOutOfSyncCopies);
-    CPPUNIT_TEST_SUITE_END();
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(StateCheckersTest);
-
-
-StateCheckersTest::CheckerParams::CheckerParams() {}
-StateCheckersTest::CheckerParams::~CheckerParams() {}
+StateCheckersTest::CheckerParams::CheckerParams() = default;
+StateCheckersTest::CheckerParams::~CheckerParams() = default;
 
 
 const StateCheckersTest::PendingMessage
@@ -359,95 +266,76 @@ std::string StateCheckersTest::testSplit(uint32_t splitCount,
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
-
-
-void
-StateCheckersTest::testSplit()
-{
+TEST_F(StateCheckersTest, split) {
     setupDistributor(3, 10, "distributor:1 storage:2");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (2000 b, 10 docs, 10 meta, 2000 b total) "
-                        "is higher than the configured limit of (1000, 4294967295)]"),
-            testSplit((uint32_t)-1, 1000, 16, "0=100/10/2000"));
+    EXPECT_EQ("[Splitting bucket because its maximum size (2000 b, 10 docs, 10 meta, 2000 b total) "
+              "is higher than the configured limit of (1000, 4294967295)]",
+              testSplit((uint32_t)-1, 1000, 16, "0=100/10/2000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, "
-                        "200 docs, 200 meta, 1000 b total) "
-                        "is higher than the configured limit of (10000, 100)] "
-                        "(pri 175)"),
-            testSplit(100, 10000, 16, "0=100/200/1000", PendingMessage(), true));
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, "
+              "200 docs, 200 meta, 1000 b total) "
+              "is higher than the configured limit of (10000, 100)] "
+              "(pri 175)",
+              testSplit(100, 10000, 16, "0=100/200/1000", PendingMessage(), true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testSplit(1000, 1000, 16, "0=100/200/200"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testSplit(1000, 1000, 16, "0=100/200/200"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testSplit(1000, 1000, 16, "0=100/200/200/2000/2000"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testSplit(1000, 1000, 16, "0=100/200/200/2000/2000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because the current system size requires "
-                        "a higher minimum split bit]"),
-            testSplit((uint32_t)-1, (uint32_t)-1, 24, "0=100/200/1000"));
+    EXPECT_EQ("[Splitting bucket because the current system size requires "
+              "a higher minimum split bit]",
+              testSplit((uint32_t)-1, (uint32_t)-1, 24, "0=100/200/1000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
-                        "is higher than the configured limit of (10000, 100)]"),
-            testSplit(100, 10000, 16, "0=100/10/10,1=100/1000/1000"));
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
+              "is higher than the configured limit of (10000, 100)]",
+              testSplit(100, 10000, 16, "0=100/10/10,1=100/1000/1000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
-                        "is higher than the configured limit of (10000, 100)]"),
-            testSplit(100, 10000, 16, "0=1/0/0,1=100/1000/1000"));
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
+              "is higher than the configured limit of (10000, 100)]",
+              testSplit(100, 10000, 16, "0=1/0/0,1=100/1000/1000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
-                        "is higher than the configured limit of (10000, 100)]"),
-            testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000"));
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
+              "is higher than the configured limit of (10000, 100)]",
+              testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testSplit(1000, 1000, 16, "0=100/1/200000"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testSplit(1000, 1000, 16, "0=100/1/200000"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BLOCKED"),
-            testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
-                      PendingMessage(api::MessageType::SPLITBUCKET_ID, 0)));
+    EXPECT_EQ("BLOCKED",
+              testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
+                        PendingMessage(api::MessageType::SPLITBUCKET_ID, 0)));
 
-        // Split on too high meta
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, 100 docs, 2100 meta, 15000000 b total) "
-                        "is higher than the configured limit of (10000000, 1000)]"),
-            testSplit(1000, 10000000, 16, "0=14/100/1000/2100/15000000"));
-        // Split on too high file size
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, 100 docs, 1500 meta, 21000000 b total) "
-                        "is higher than the configured limit of (10000000, 1000)]"),
-            testSplit(1000, 10000000, 16, "0=14/100/1000/1500/21000000"));
+    // Split on too high meta
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, 100 docs, 2100 meta, 15000000 b total) "
+              "is higher than the configured limit of (10000000, 1000)]",
+              testSplit(1000, 10000000, 16, "0=14/100/1000/2100/15000000"));
+    // Split on too high file size
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, 100 docs, 1500 meta, 21000000 b total) "
+              "is higher than the configured limit of (10000000, 1000)]",
+              testSplit(1000, 10000000, 16, "0=14/100/1000/1500/21000000"));
 
     // Don't block higher priority splits than what's already pending.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
-                        "is higher than the configured limit of (10000, 100)]"),
-            testSplit(100, 10000, 16, "0=100/10/10,1=100/1000/1000",
-                      PendingMessage(api::MessageType::SPLITBUCKET_ID, 255)));
+    EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, 1000 docs, 1000 meta, 1000 b total) "
+              "is higher than the configured limit of (10000, 100)]",
+              testSplit(100, 10000, 16, "0=100/10/10,1=100/1000/1000",
+                        PendingMessage(api::MessageType::SPLITBUCKET_ID, 255)));
 
     // But must block equal priority splits that are already pending, or
     // we'll end up spamming the nodes with splits!
     // NOTE: assuming split priority of 175.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BLOCKED"),
-            testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
-                      PendingMessage(api::MessageType::SPLITBUCKET_ID, 175)));
+    EXPECT_EQ("BLOCKED",
+              testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
+                        PendingMessage(api::MessageType::SPLITBUCKET_ID, 175)));
 
     // Don't split if we're already joining, since there's a window of time
     // where the bucket will appear to be inconsistently split when the join
     // is not finished on all the nodes.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BLOCKED"),
-            testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
-                      PendingMessage(api::MessageType::JOINBUCKETS_ID, 175)));
+    EXPECT_EQ("BLOCKED",
+              testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
+                        PendingMessage(api::MessageType::JOINBUCKETS_ID, 175)));
 }
 
 std::string
@@ -461,53 +349,43 @@ StateCheckersTest::testInconsistentSplit(const document::BucketId& bid,
                             PendingMessage(), includePriority);
 }
 
-void
-StateCheckersTest::testInconsistentSplit()
-{
+TEST_F(StateCheckersTest, inconsistent_split) {
     setupDistributor(3, 10, "distributor:1 storage:2");
 
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testInconsistentSplit(document::BucketId(16, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testInconsistentSplit(document::BucketId(16, 1)));
 
     insertBucketInfo(document::BucketId(17, 1), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001): [Bucket is inconsistently "
-                        "split (list includes 0x4000000000000001, 0x4400000000000001) "
-                        "Splitting it to improve the problem (max used bits 17)]"),
-            testInconsistentSplit(document::BucketId(16, 1)));
+    EXPECT_EQ("BucketId(0x4000000000000001): [Bucket is inconsistently "
+              "split (list includes 0x4000000000000001, 0x4400000000000001) "
+              "Splitting it to improve the problem (max used bits 17)]",
+              testInconsistentSplit(document::BucketId(16, 1)));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testInconsistentSplit(document::BucketId(17, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testInconsistentSplit(document::BucketId(17, 1)));
 
     insertBucketInfo(document::BucketId(17, 1), 0, 0x0, 0, 0);
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001): [Bucket is inconsistently "
-                        "split (list includes 0x4000000000000001, 0x4400000000000001) "
-                        "Splitting it to improve the problem (max used bits "
-                        "17)] (pri 110)"),
-            testInconsistentSplit(document::BucketId(16, 1), true));
+    EXPECT_EQ("BucketId(0x4000000000000001): [Bucket is inconsistently "
+              "split (list includes 0x4000000000000001, 0x4400000000000001) "
+              "Splitting it to improve the problem (max used bits "
+              "17)] (pri 110)",
+              testInconsistentSplit(document::BucketId(16, 1), true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testInconsistentSplit(document::BucketId(17, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testInconsistentSplit(document::BucketId(17, 1)));
 }
 
-void
-StateCheckersTest::splitCanBeScheduledWhenReplicasOnRetiredNodes()
-{
+TEST_F(StateCheckersTest, split_can_be_scheduled_when_replicas_on_retired_nodes) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "distributor:1 storage:2, .0.s:r .1.s:r");
-    CPPUNIT_ASSERT_EQUAL(
-            "[Splitting bucket because its maximum size (2000 b, 10 docs, "
-            "10 meta, 2000 b total) is higher than the configured limit of "
-            "(1000, 4294967295)]"s,
-            testSplit(UINT32_MAX, 1000, 16, "0=100/10/2000"));
+    EXPECT_EQ("[Splitting bucket because its maximum size (2000 b, 10 docs, "
+              "10 meta, 2000 b total) is higher than the configured limit of "
+              "(1000, 4294967295)]",
+              testSplit(UINT32_MAX, 1000, 16, "0=100/10/2000"));
 }
 
 std::string
@@ -535,55 +413,50 @@ StateCheckersTest::insertJoinableBuckets()
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
 }
 
-void
-StateCheckersTest::testJoin()
-{
+TEST_F(StateCheckersTest, join) {
     setupDistributor(3, 10, "distributor:1 storage:2");
 
     insertJoinableBuckets();
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x8000000000000001): "
-            "[Joining buckets BucketId(0x8400000000000001) and "
-            "BucketId(0x8400000100000001) because their size "
-            "(2 bytes, 2 docs) is less than the configured limit "
-            "of (100, 10)"),
-            testJoin(10, 100, 16, document::BucketId(33, 1)));
+    EXPECT_EQ("BucketId(0x8000000000000001): "
+              "[Joining buckets BucketId(0x8400000000000001) and "
+              "BucketId(0x8400000100000001) because their size "
+              "(2 bytes, 2 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 16, document::BucketId(33, 1)));
 
     insertJoinableBuckets();
     // Join size is 0, so only look at document count
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x8000000000000001): "
-            "[Joining buckets BucketId(0x8400000000000001) and "
-            "BucketId(0x8400000100000001) because their size "
-            "(2 bytes, 2 docs) is less than the configured limit "
-            "of (0, 3) (pri 155)"),
-            testJoin(3, 0, 16, document::BucketId(33, 1), PendingMessage(), true));
+    EXPECT_EQ("BucketId(0x8000000000000001): "
+              "[Joining buckets BucketId(0x8400000000000001) and "
+              "BucketId(0x8400000100000001) because their size "
+              "(2 bytes, 2 docs) is less than the configured limit "
+              "of (0, 3) (pri 155)",
+              testJoin(3, 0, 16, document::BucketId(33, 1), PendingMessage(), true));
 
     insertJoinableBuckets();
     // Should not generate joins for both pairs, just the primary
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 16, document::BucketId(33, 0x100000001)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 0x100000001)));
 
     insertJoinableBuckets();
     // Should not generate join if min split bits is higher
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-                         testJoin(10, 100, 33, document::BucketId(33, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 33, document::BucketId(33, 1)));
 
     insertJoinableBuckets();
     // Meta data too big, no join
     insertBucketInfo(document::BucketId(33, 1), 1,
                      api::BucketInfo(0x1, 1, 1, 1000, 1000));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-                         testJoin(10, 100, 16, document::BucketId(33, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 1)));
 
     insertJoinableBuckets();
     // Bucket recently created
     insertBucketInfo(document::BucketId(33, 1), 1,
                      api::BucketInfo(0x1, 0, 0, 0, 0));
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-                         testJoin(10, 100, 16, document::BucketId(33, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 1)));
 
 }
 
@@ -594,19 +467,16 @@ StateCheckersTest::testJoin()
  * the safest is to never violate this and to effectively make distribution
  * bit increases a one-way street.
  */
-void
-StateCheckersTest::testDoNotJoinBelowClusterStateBitCount()
-{
+TEST_F(StateCheckersTest, do_not_join_below_cluster_state_bit_count) {
     setupDistributor(2, 2, "bits:16 distributor:1 storage:2");
     // Insert sibling buckets at 16 bits that are small enough to be joined
     // unless there is special logic for dealing with distribution bits.
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(16, (1 << 15) | 1), 1, 0x1, 1, 1);
     using ConfiguredMinSplitBits = uint32_t;
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testJoin(100, 100, ConfiguredMinSplitBits(8),
-                     document::BucketId(16, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(100, 100, ConfiguredMinSplitBits(8),
+                       document::BucketId(16, 1)));
 }
 
 void
@@ -617,9 +487,7 @@ StateCheckersTest::enableInconsistentJoinInConfig(bool enabled)
     getConfig().configure(config);
 }
 
-void
-StateCheckersTest::testAllowInconsistentJoinInDifferingSiblingIdealState()
-{
+TEST_F(StateCheckersTest, allow_inconsistent_join_in_differing_sibling_ideal_state) {
     // Normally, bucket siblings have an ideal state on the same node in order
     // to enable joining these back together. However, the ideal disks assigned
     // may differ and it's sufficient for a sibling bucket's ideal disk to be
@@ -645,18 +513,15 @@ StateCheckersTest::testAllowInconsistentJoinInDifferingSiblingIdealState()
 
     enableInconsistentJoinInConfig(true);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x8000000000000001): "
-            "[Joining buckets BucketId(0x8400000000000001) and "
-            "BucketId(0x8400000100000001) because their size "
-            "(6 bytes, 4 docs) is less than the configured limit "
-            "of (100, 10)"),
-            testJoin(10, 100, 16, sibling1));
+    EXPECT_EQ("BucketId(0x8000000000000001): "
+              "[Joining buckets BucketId(0x8400000000000001) and "
+              "BucketId(0x8400000100000001) because their size "
+              "(6 bytes, 4 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 16, sibling1));
 }
 
-void
-StateCheckersTest::testDoNotAllowInconsistentJoinWhenNotInIdealState()
-{
+TEST_F(StateCheckersTest, do_not_allow_inconsistent_join_when_not_in_ideal_state) {
     setupDistributor(2, 4, "distributor:1 storage:4 .0.d:20 .0.d.14.s:d .2.d:20 .3.d:20");
     document::BucketId sibling1(33, 0x000000001);
     document::BucketId sibling2(33, 0x100000001);
@@ -671,13 +536,11 @@ StateCheckersTest::testDoNotAllowInconsistentJoinWhenNotInIdealState()
 
     enableInconsistentJoinInConfig(true);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-                         testJoin(10, 100, 16, sibling1));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, sibling1));
 }
 
-void
-StateCheckersTest::testDoNotAllowInconsistentJoinWhenConfigDisabled()
-{
+TEST_F(StateCheckersTest, do_not_allow_inconsistent_join_when_config_disabled) {
     setupDistributor(2, 3, "distributor:1 storage:3 .0.d:20 .0.d.14.s:d .2.d:20");
     document::BucketId sibling1(33, 0x000000001); // ideal disk 14 on node 0
     document::BucketId sibling2(33, 0x100000001); // ideal disk 1 on node 0
@@ -694,74 +557,60 @@ StateCheckersTest::testDoNotAllowInconsistentJoinWhenConfigDisabled()
 
     enableInconsistentJoinInConfig(false);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-                         testJoin(10, 100, 16, sibling1));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, sibling1));
 }
 
-void
-StateCheckersTest::testNoJoinWhenInvalidCopyExists()
-{
+TEST_F(StateCheckersTest, no_join_when_invalid_copy_exists) {
     setupDistributor(3, 10, "distributor:1 storage:3");
 
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
     // No join when there exists an invalid copy
     insertBucketInfo(document::BucketId(33, 1), 1, api::BucketInfo());
 
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-                         testJoin(10, 100, 16, document::BucketId(33, 1)));    
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 1)));
 }
 
-void
-StateCheckersTest::testNoJoinOnDifferentNodes()
-{
+TEST_F(StateCheckersTest, no_join_on_different_nodes) {
     setupDistributor(3, 10, "distributor:1 storage:2");
 
     insertBucketInfo(document::BucketId(33, 0x000000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 16, document::BucketId(33, 0x1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 0x1)));
 }
 
-void
-StateCheckersTest::testNoJoinWhenCopyCountAboveRedundancyLevelsForLeftSibling()
-{
+TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_left_sibling) {
     setupDistributor(3, 10, "distributor:1 storage:2");
     setRedundancy(1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 0, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 16, document::BucketId(33, 0x1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 0x1)));
 }
 
-void
-StateCheckersTest::testNoJoinWhenCopyCountAboveRedundancyLevelsForRightSibling()
-{
+TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_right_sibling) {
     setupDistributor(3, 10, "distributor:1 storage:2");
     setRedundancy(1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 16, document::BucketId(33, 0x1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 0x1)));
 }
 
-void
-StateCheckersTest::testNoJoinWhenCopyCountAboveRedundancyLevelsForBothSiblings()
-{
+TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_both_siblings) {
     setupDistributor(3, 10, "distributor:1 storage:2");
     setRedundancy(1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 16, document::BucketId(33, 0x1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 16, document::BucketId(33, 0x1)));
 }
 
 std::string
@@ -784,9 +633,7 @@ StateCheckersTest::testSynchronizeAndMove(const std::string& bucketInfo,
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
-void
-StateCheckersTest::testSynchronizeAndMove()
-{
+TEST_F(StateCheckersTest, synchronize_and_move) {
     // Plus if it was more obvious which nodes were in ideal state for various
     // cluster states. (One possibility to override ideal state function for
     // test)
@@ -903,30 +750,24 @@ StateCheckersTest::testSynchronizeAndMove()
             .clusterState("distributor:1 storage:4"));
 }
 
-void
-StateCheckersTest::testDoNotMergeInconsistentlySplitBuckets()
-{
+TEST_F(StateCheckersTest, do_not_merge_inconsistently_split_buckets) {
     // No merge generated if buckets are inconsistently split.
     // This matches the case where a bucket has been split into 2 on one
     // node and is not yet split on another; we should never try to merge
     // either two of the split leaf buckets back onto the first node!
     // Running state checker on a leaf:
     addNodesToBucketDB(document::BucketId(16, 0), "0=2");
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testSynchronizeAndMove("1=1", // 17 bits
-                                   "distributor:1 storage:4"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testSynchronizeAndMove("1=1", // 17 bits
+                                     "distributor:1 storage:4"));
     // Running state checker on an inner node bucket:
     addNodesToBucketDB(document::BucketId(18, 0), "0=2");
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testSynchronizeAndMove("0=1", // 17 bits
-                                   "distributor:1 storage:4"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testSynchronizeAndMove("0=1", // 17 bits
+                                     "distributor:1 storage:4"));
 }
 
-void
-StateCheckersTest::doNotMoveReplicasWithinRetiredNodes()
-{
+TEST_F(StateCheckersTest, do_not_move_replicas_within_retired_nodes) {
     // Nodes 1 and 3 would be in ideal state if the nodes were not retired.
     // Here, all nodes are retired and we should thus not do any sort of
     // moving.
@@ -938,9 +779,7 @@ StateCheckersTest::doNotMoveReplicasWithinRetiredNodes()
                           ".0.s:r .1.s:r .2.s:r .3.s:r"));
 }
 
-void
-StateCheckersTest::retiredNodesOutOfSyncAreMerged()
-{
+TEST_F(StateCheckersTest, retired_nodes_out_of_sync_are_merged) {
     // Normally, we'd do a merge that'd move the bucket to new nodes, leaving
     // the out of sync retired nodes as source-only replicas. But here we
     // don't have that choice and thus try to do the most useful thing we can
@@ -980,139 +819,106 @@ StateCheckersTest::testDeleteExtraCopies(
 }
 
 
-void
-StateCheckersTest::testDeleteExtraCopies()
-{
+TEST_F(StateCheckersTest, delete_extra_copies) {
     setupDistributor(2, 100, "distributor:1 storage:4");
 
     {
-        auto &distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
+        auto& distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
         std::vector<uint16_t> idealNodes(
                 distributorBucketSpace
                 .getDistribution().getIdealStorageNodes(
                         distributorBucketSpace.getClusterState(),
                         document::BucketId(17, 0),
                         "ui"));
-        std::vector<uint16_t> wanted;
-        wanted.push_back(1);
-        wanted.push_back(3);
-        CPPUNIT_ASSERT_EQUAL(wanted, idealNodes);
+        std::vector<uint16_t> wanted = {1, 3};
+        ASSERT_EQ(wanted, idealNodes);
     }
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Remove empty buckets",
-            std::string("[Removing all copies since bucket is empty:node(idx=0,crc=0x0,"
-                        "docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]"
-                        " (pri 100)"),
-            testDeleteExtraCopies("0=0", 2, PendingMessage(), "", true));
+    EXPECT_EQ("[Removing all copies since bucket is empty:node(idx=0,crc=0x0,"
+              "docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]"
+              " (pri 100)",
+              testDeleteExtraCopies("0=0", 2, PendingMessage(), "", true)) << "Remove empty buckets";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Remove extra trusted copy",
-            std::string("[Removing redundant in-sync copy from node 2]"),
-            testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t"));
+    EXPECT_EQ("[Removing redundant in-sync copy from node 2]",
+              testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t")) << "Remove extra trusted copy";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Redundant copies in sync can be removed without trusted being a "
-            "factor of consideration. Ideal state copy not removed.",
-            std::string("[Removing redundant in-sync copy from node 2]"),
-            testDeleteExtraCopies("3=3/3/3,1=3/3/3/t,2=3/3/3/t"));
+    EXPECT_EQ("[Removing redundant in-sync copy from node 2]",
+             testDeleteExtraCopies("3=3/3/3,1=3/3/3/t,2=3/3/3/t"))
+             << "Redundant copies in sync can be removed without trusted being a "
+                "factor of consideration. Ideal state copy not removed.";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Need redundancy number of copies",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=3,1=3"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=3,1=3")) << "Need redundancy number of copies";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not remove extra copies without enough trusted copies",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=0/0/1,1=3,2=3"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=0/0/1,1=3,2=3"))
+              << "Do not remove extra copies without enough trusted copies";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not remove buckets that have meta entries",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=0/0/1,1=0/0/1"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=0/0/1,1=0/0/1"))
+              << "Do not remove buckets that have meta entries";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not remove any recently created copies",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=1/0/0/t,1=1/0/0/t,2=1/0/0/t"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=1/0/0/t,1=1/0/0/t,2=1/0/0/t"))
+              << "Do not remove any recently created copies";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not remove untrusted copy that is out of sync",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=2/3/4,1=1/2/3/t,2=1/2/3/t"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=2/3/4,1=1/2/3/t,2=1/2/3/t"))
+              << "Do not remove untrusted copy that is out of sync";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not remove out of sync copies, even if we have more than #"
-            "redundancy trusted copies",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=2/3/4,1=1/2/3/t,2=1/2/3/t,3=1/2/3/t"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+             testDeleteExtraCopies("0=2/3/4,1=1/2/3/t,2=1/2/3/t,3=1/2/3/t"))
+             << "Do not remove out of sync copies, even if we have more than #"
+                "redundancy trusted copies";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Don't remove unless we have enough trusted "
-            "copies to satisfy redundancy",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=2/3/4,1=1/2/3,2=2/3/4,3=1/2/3"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=2/3/4,1=1/2/3,2=2/3/4,3=1/2/3"))
+              << "Don't remove unless we have enough trusted "
+                 "copies to satisfy redundancy";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Only remove empty copies unless all other copies are in sync",
-            std::string("[Removing empty copy from node 4]"),
-            testDeleteExtraCopies("0=2/3/4,1=1/2/3,2=2/3/4,3=1/2/3,4=0/0/0"));
+    EXPECT_EQ("[Removing empty copy from node 4]",
+             testDeleteExtraCopies("0=2/3/4,1=1/2/3,2=2/3/4,3=1/2/3,4=0/0/0"))
+             << "Only remove empty copies unless all other copies are in sync";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Remove redundant empty copy",
-            std::string("[Removing empty copy from node 0]"),
-            testDeleteExtraCopies("1=2/3,3=1/2/3,0=0/0/0"));
+    EXPECT_EQ("[Removing empty copy from node 0]",
+              testDeleteExtraCopies("1=2/3,3=1/2/3,0=0/0/0")) << "Remove redundant empty copy";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Remove empty bucket with multiple copies",
-            std::string(
-                    "[Removing all copies since bucket is empty:"
-                    "node(idx=0,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false), "
-                    "node(idx=1,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false), "
-                    "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]"),
-            testDeleteExtraCopies("0=0/0/0,1=0/0/0,2=0/0/0"));
+    EXPECT_EQ("[Removing all copies since bucket is empty:"
+              "node(idx=0,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false), "
+              "node(idx=1,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false), "
+              "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]",
+              testDeleteExtraCopies("0=0/0/0,1=0/0/0,2=0/0/0")) << "Remove empty bucket with multiple copies";
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Pending persistence operation blocks delete",
-            std::string("BLOCKED"),
-            testDeleteExtraCopies("0=0/0/0,1=1/2/3/t,2=1/2/3/t",
-                                  2,
-                                  PendingMessage(api::MessageType::PUT_ID, 255)));
+    EXPECT_EQ("BLOCKED",
+              testDeleteExtraCopies("0=0/0/0,1=1/2/3/t,2=1/2/3/t",
+                                    2,
+                                    PendingMessage(api::MessageType::PUT_ID, 255)))
+              << "Pending persistence operation blocks delete";
 }
 
-void
-StateCheckersTest::testDoNotDeleteActiveExtraCopies()
-{
+TEST_F(StateCheckersTest, do_not_delete_active_extra_copies) {
     setupDistributor(2, 100, "distributor:1 storage:4");
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not delete redundant copy if it is marked active",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t/a"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t/a"))
+              << "Do not delete redundant copy if it is marked active";
 }
 
-void
-StateCheckersTest::testConsistentCopiesOnRetiredNodesMayBeDeleted()
-{
+TEST_F(StateCheckersTest, consistent_copies_on_retired_nodes_may_be_deleted) {
     setupDistributor(2, 100, "distributor:1 storage:4 .1.s:r");
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Remove in-sync copy on node that is retired",
-            std::string("[Removing redundant in-sync copy from node 1]"),
-            testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t"));
+    EXPECT_EQ("[Removing redundant in-sync copy from node 1]",
+              testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t"))
+              << "Remove in-sync copy on node that is retired";
 }
 
-void
-StateCheckersTest::redundantCopyDeletedEvenWhenAllNodesRetired()
-{
+TEST_F(StateCheckersTest, redundant_copy_deleted_even_when_all_nodes_retired) {
     setupDistributor(2, 100, "distributor:1 storage:4 "
                      ".0.s:r .1.s:r .2.s:r .3.s:r");
 
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Remove in-sync copy on node that is retired",
-            "[Removing redundant in-sync copy from node 2]"s,
-            testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t"));
+    EXPECT_EQ("[Removing redundant in-sync copy from node 2]",
+              testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t"))
+              << "Remove in-sync copy on node that is retired";
 }
 
 std::string StateCheckersTest::testBucketState(
@@ -1130,9 +936,7 @@ std::string StateCheckersTest::testBucketState(
                             includePriority);
 }
 
-void
-StateCheckersTest::testBucketState()
-{
+TEST_F(StateCheckersTest, bucket_state) {
     setupDistributor(2, 100, "distributor:1 storage:4");
 
     {
@@ -1144,105 +948,87 @@ StateCheckersTest::testBucketState()
         getConfig().setMaintenancePriorities(mp);
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState(""));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState(""));
 
     // Node 1 is in ideal state
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 1 as active:"
-                        " copy is ideal state priority 0] (pri 90)"),
-            testBucketState("1=2/3/4", 2, true));
+    EXPECT_EQ("[Setting node 1 as active:"
+              " copy is ideal state priority 0] (pri 90)",
+              testBucketState("1=2/3/4", 2, true));
 
     // Node 3 is in ideal state
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 3 as active:"
-                        " copy is ideal state priority 1]"),
-            testBucketState("3=2/3/4"));
+    EXPECT_EQ("[Setting node 3 as active:"
+              " copy is ideal state priority 1]",
+              testBucketState("3=2/3/4"));
 
     // No trusted nodes, but node 1 is first in ideal state.
     // Also check bad case where more than 1 node is set as active just
     // to ensure we can get out of that situation if it should ever happen.
     // Nothing done with node 3 since is't not active and shouldn't be.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 1 as active:"
-                        " copy is ideal state priority 0]"
-                        "[Setting node 0 as inactive]"
-                        "[Setting node 2 as inactive] (pri 120)"),
-            testBucketState("0=3/4/5/u/a,1=3,2=4/5/6/u/a,3=3", 2, true));
+    EXPECT_EQ("[Setting node 1 as active:"
+              " copy is ideal state priority 0]"
+              "[Setting node 0 as inactive]"
+              "[Setting node 2 as inactive] (pri 120)",
+              testBucketState("0=3/4/5/u/a,1=3,2=4/5/6/u/a,3=3", 2, true));
 
     // Test setting active when only node available is not contained
     // within the resolved ideal state.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 0 as active: first available copy]"),
-            testBucketState("0=2/3/4"));
+    EXPECT_EQ("[Setting node 0 as active: first available copy]",
+              testBucketState("0=2/3/4"));
 
     // A trusted ideal state copy should be set active rather than a non-trusted
     // ideal state copy
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 3 as active:"
-                        " copy is trusted and ideal state priority 1]"
-                        "[Setting node 1 as inactive]"),
-            testBucketState("1=2/3/4/u/a,3=5/6/7/t"));
+    EXPECT_EQ("[Setting node 3 as active:"
+              " copy is trusted and ideal state priority 1]"
+              "[Setting node 1 as inactive]",
+              testBucketState("1=2/3/4/u/a,3=5/6/7/t"));
 
     // None of the ideal state copies are trusted but a non-ideal copy is.
     // The trusted copy should be active.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 2 as active: copy is trusted]"),
-            testBucketState("1=2/3/4,3=5/6/7/,2=8/9/10/t"));
+    EXPECT_EQ("[Setting node 2 as active: copy is trusted]",
+              testBucketState("1=2/3/4,3=5/6/7/,2=8/9/10/t"));
 
     // Make sure bucket db ordering does not matter
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 2 as active: copy is trusted]"),
-            testBucketState("2=8/9/10/t,1=2/3/4,3=5/6/7"));
+    EXPECT_EQ("[Setting node 2 as active: copy is trusted]",
+              testBucketState("2=8/9/10/t,1=2/3/4,3=5/6/7"));
 
     // If copy is already active, we shouldn't generate operations
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=2/3/4/t/a"));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=2/3/4,3=5/6/7/t/a"));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("2=8/9/10/t/a,1=2/3/4,3=5/6/7"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=2/3/4/t/a"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=2/3/4,3=5/6/7/t/a"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("2=8/9/10/t/a,1=2/3/4,3=5/6/7"));
 
     // If multiple buckets are active, deactive all but one
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 2 as inactive]"
-                        "[Setting node 3 as inactive]"),
-            testBucketState("1=1/2/3/t/a,2=1/2/3/t/a,3=1/2/3/t/a"));
+    EXPECT_EQ("[Setting node 2 as inactive]"
+              "[Setting node 3 as inactive]",
+              testBucketState("1=1/2/3/t/a,2=1/2/3/t/a,3=1/2/3/t/a"));
 
     // Invalid buckets should not be included
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=0/0/1,3=0/0/1"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=0/0/1,3=0/0/1"));
 
     // Ready preferred over trusted & ideal state
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("2=8/9/10/t/i/u,1=2/3/4/u/a/r,3=5/6/7"));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 2 as active: copy is ready]"
-                        "[Setting node 1 as inactive]"),
-            testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=5/6/7/u/i/u"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("2=8/9/10/t/i/u,1=2/3/4/u/a/r,3=5/6/7"));
+    EXPECT_EQ("[Setting node 2 as active: copy is ready]"
+              "[Setting node 1 as inactive]",
+              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=5/6/7/u/i/u"));
 
     // Prefer in ideal state if multiple copies ready
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 3 as active: copy is ready]"
-                        "[Setting node 1 as inactive]"),
-            testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=5/6/7/u/i/r"));
+    EXPECT_EQ("[Setting node 3 as active: copy is ready]"
+              "[Setting node 1 as inactive]",
+              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=5/6/7/u/i/r"));
 
     // Prefer ideal state if all ready but no trusted
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 1 as active: copy is ready]"),
-            testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/i/r,3=5/6/7/u/i/r"));
+    EXPECT_EQ("[Setting node 1 as active: copy is ready]",
+              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/i/r,3=5/6/7/u/i/r"));
 
     // Prefer trusted over ideal state
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 2 as active: copy is ready and trusted]"
-                        "[Setting node 1 as inactive]"),
-            testBucketState("2=8/9/10/t/i/r,1=2/3/4/u/a/r,3=5/6/7"));
+    EXPECT_EQ("[Setting node 2 as active: copy is ready and trusted]"
+              "[Setting node 1 as inactive]",
+              testBucketState("2=8/9/10/t/i/r,1=2/3/4/u/a/r,3=5/6/7"));
 }
 
 /**
@@ -1251,38 +1037,30 @@ StateCheckersTest::testBucketState()
  * into maintenance violates that assumption. See bug 6833209 for context and
  * details.
  */
-void
-StateCheckersTest::testDoNotActivateNonReadyCopiesWhenIdealNodeInMaintenance()
-{
+TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_maintenance) {
     setupDistributor(2, 100, "distributor:1 storage:4 .1.s:m");
     // Ideal node 1 is in maintenance and no ready copy available.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
     // But we should activate another copy iff there's another ready copy.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 2 as active: copy is ready]"),
-            testBucketState("2=8/9/10/u/i/r,3=5/6/7/u/i/u"));
+    EXPECT_EQ("[Setting node 2 as active: copy is ready]",
+              testBucketState("2=8/9/10/u/i/r,3=5/6/7/u/i/u"));
 }
 
 /**
  * We really do not want to activate buckets when they are inconsistent.
  * See bug 6395693 for a set of reasons why.
  */
-void
-StateCheckersTest::testDoNotChangeActiveStateForInconsistentlySplitBuckets()
-{
+TEST_F(StateCheckersTest, do_not_change_active_state_for_inconsistently_split_buckets) {
     setupDistributor(2, 100, "distributor:1 storage:4");
     // Running state checker on a leaf:
     addNodesToBucketDB(document::BucketId(16, 0), "0=2");
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=1")); // 17 bits
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=1")); // 17 bits
     // Running state checker on an inner node bucket:
     addNodesToBucketDB(document::BucketId(18, 0), "0=2");
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testSynchronizeAndMove("0=1")); // 17 bits
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testSynchronizeAndMove("0=1")); // 17 bits
 }
 
 /**
@@ -1299,21 +1077,17 @@ StateCheckersTest::testDoNotChangeActiveStateForInconsistentlySplitBuckets()
  *
  * See bug 7278932.
  */
-void
-StateCheckersTest::testNoActiveChangeForNonIdealCopiesWhenOtherwiseIdentical()
-{
+TEST_F(StateCheckersTest, no_active_change_for_non_ideal_copies_when_otherwise_identical) {
     setupDistributor(2, 100, "distributor:1 storage:50");
     // 1 is more ideal than 3 in this state, but since they're both not part
     // of the #redundancy ideal set, activation should not change hands.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=2/3/4/t/i/r,3=2/3/4/t/a/r"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=2/3/4/t/i/r,3=2/3/4/t/a/r"));
     // Same applies if the copies aren't ready, since if a copy has been marked
     // as active it will already have started background indexing. No need in
     // undoing that if we don't have any better candidates going anyway.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=2/3/4/t,3=2/3/4/t/a"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=2/3/4/t,3=2/3/4/t/a"));
 }
 
 std::string StateCheckersTest::testBucketStatePerGroup(
@@ -1329,9 +1103,7 @@ std::string StateCheckersTest::testBucketStatePerGroup(
                             includePriority);
 }
 
-void
-StateCheckersTest::testBucketStatePerGroup()
-{
+TEST_F(StateCheckersTest, bucket_state_per_group) {
     setupDistributor(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
     vespa::config::content::StorDistributionConfigBuilder config;
     config.activePerLeafGroup = true;
@@ -1358,7 +1130,7 @@ StateCheckersTest::testBucketStatePerGroup()
     config.group[3].nodes[0].index = 9;
     config.group[3].nodes[1].index = 10;
     config.group[3].nodes[2].index = 11;
-    lib::Distribution::SP distr(new lib::Distribution(config));
+    auto distr = std::make_shared<lib::Distribution>(config);
     triggerDistributionChange(std::move(distr));
 
     {
@@ -1369,85 +1141,72 @@ StateCheckersTest::testBucketStatePerGroup()
     }
 
     // Node 1 and 8 is is ideal state
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 1 as active: "
-                        "copy is trusted and ideal state priority 4]"
-                        "[Setting node 6 as active: "
-                        "copy is trusted and ideal state priority 0] (pri 90)"),
-            testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
-                                    "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t", true));
+    EXPECT_EQ("[Setting node 1 as active: "
+              "copy is trusted and ideal state priority 4]"
+              "[Setting node 6 as active: "
+              "copy is trusted and ideal state priority 0] (pri 90)",
+              testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
+                                      "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t", true));
 
     // Data differ between groups
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 1 as active: "
-                        "copy is trusted and ideal state priority 4]"
-                        "[Setting node 6 as active: "
-                        "copy is ideal state priority 0] (pri 90)"),
-            testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
-                                    "5=5/6/7, 6=5/6/7, 8=5/6/7", true));
+    EXPECT_EQ("[Setting node 1 as active: "
+              "copy is trusted and ideal state priority 4]"
+              "[Setting node 6 as active: "
+              "copy is ideal state priority 0] (pri 90)",
+              testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
+                                      "5=5/6/7, 6=5/6/7, 8=5/6/7", true));
 
     // Disable too
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 0 as inactive]"
-                        "[Setting node 3 as inactive]"
-                        "[Setting node 5 as inactive]"
-                        "[Setting node 8 as inactive] (pri 90)"),
-            testBucketStatePerGroup("0=2/3/4/t/a, 1=2/3/4/t/a, 3=2/3/4/t/a, "
-                                    "5=2/3/4/t/a, 6=2/3/4/t/a, 8=2/3/4/t/a",
-                                    true));
+    EXPECT_EQ("[Setting node 0 as inactive]"
+              "[Setting node 3 as inactive]"
+              "[Setting node 5 as inactive]"
+              "[Setting node 8 as inactive] (pri 90)",
+              testBucketStatePerGroup("0=2/3/4/t/a, 1=2/3/4/t/a, 3=2/3/4/t/a, "
+                                      "5=2/3/4/t/a, 6=2/3/4/t/a, 8=2/3/4/t/a",
+                                      true));
 
     // Node 1 and 8 is is ideal state
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Setting node 1 as active: "
-                        "copy is trusted and ideal state priority 4]"
-                        "[Setting node 6 as active: "
-                        "copy is trusted and ideal state priority 0]"
-                        "[Setting node 9 as active: "
-                        "copy is trusted and ideal state priority 2] (pri 90)"),
-            testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
-                                    "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t, "
-                                    "9=2/3/4/t, 10=2/3/4/t, 11=2/3/4/t",
-                                    true));
+    EXPECT_EQ("[Setting node 1 as active: "
+              "copy is trusted and ideal state priority 4]"
+              "[Setting node 6 as active: "
+              "copy is trusted and ideal state priority 0]"
+              "[Setting node 9 as active: "
+              "copy is trusted and ideal state priority 2] (pri 90)",
+              testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
+                                      "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t, "
+                                      "9=2/3/4/t, 10=2/3/4/t, 11=2/3/4/t",
+                                      true));
 }
 
-void
-StateCheckersTest::allowActivationOfRetiredNodes()
-{
+TEST_F(StateCheckersTest, allow_activation_of_retired_nodes) {
     // All nodes in retired state implies that the ideal state is empty. But
     // we still want to be able to shuffle bucket activations around in order
     // to preserve coverage.
     setupDistributor(2, 2, "distributor:1 storage:2 .0.s:r .1.s:r");
-    CPPUNIT_ASSERT_EQUAL(
-            "[Setting node 1 as active: copy is trusted]"
-            "[Setting node 0 as inactive]"s,
-            testBucketState("0=2/3/4/u/a,1=5/6/7/t"));
+    EXPECT_EQ("[Setting node 1 as active: copy is trusted]"
+              "[Setting node 0 as inactive]",
+              testBucketState("0=2/3/4/u/a,1=5/6/7/t"));
 }
 
-void
-StateCheckersTest::inhibitBucketActivationIfDisabledInConfig()
-{
+TEST_F(StateCheckersTest, inhibit_bucket_activation_if_disabled_in_config) {
     setupDistributor(2, 4, "distributor:1 storage:4");
     disableBucketActivationInConfig(true);
 
     // Node 1 is in ideal state and only replica and should be activated in
     // an indexed cluster context (but not here).
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=2/3/4", 2, true));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=2/3/4", 2, true));
 }
 
-void
-StateCheckersTest::inhibitBucketDeactivationIfDisabledInConfig()
-{
+TEST_F(StateCheckersTest, inhibit_bucket_deactivation_if_disabled_in_config) {
     setupDistributor(2, 4, "distributor:1 storage:4");
     disableBucketActivationInConfig(true);
 
     // Multiple replicas which would have been deactivated. This test is mostly
     // for the sake of completion; a scenario where buckets are active while
     // having no indexed documents configured should not happen.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testBucketState("1=1/2/3/t/a,2=1/2/3/t/a,3=1/2/3/t/a"));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testBucketState("1=1/2/3/t/a,2=1/2/3/t/a,3=1/2/3/t/a"));
 }
 
 std::string StateCheckersTest::testGarbageCollection(
@@ -1473,60 +1232,48 @@ std::string StateCheckersTest::testGarbageCollection(
                             includePriority, includeSchedulingPri);
 }
 
-void
-StateCheckersTest::testGarbageCollection()
-{
+TEST_F(StateCheckersTest, garbage_collection) {
     // BucketId(17, 0) has id (and thus 'hash') 0x4400000000000000. With a
     // check interval modulo of 3600, this implies a start point of 848.
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testGarbageCollection(900, 3600 + 847, 3600));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testGarbageCollection(900, 3600 + 847, 3600));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Needs garbage collection: Last check at 900, current time 4448, "
-                        "configured interval 3600]"),
-            testGarbageCollection(900, 3600 + 848, 3600));
+    EXPECT_EQ("[Needs garbage collection: Last check at 900, current time 4448, "
+              "configured interval 3600]",
+              testGarbageCollection(900, 3600 + 848, 3600));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Needs garbage collection: Last check at 3, current time 4000, "
-                        "configured interval 3600]"),
-            testGarbageCollection(3, 4000, 3600));
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
+              "configured interval 3600]",
+              testGarbageCollection(3, 4000, 3600));
 
     // GC start point 3648.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testGarbageCollection(3, 3647, 8000));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testGarbageCollection(3, 3647, 8000));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Needs garbage collection: Last check at 3, current time 4000, "
-                        "configured interval 3600]"),
-            testGarbageCollection(3, 4000, 3600));
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
+              "configured interval 3600]",
+              testGarbageCollection(3, 4000, 3600));
 
     // GC explicitly disabled.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testGarbageCollection(3, 4000, 0));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testGarbageCollection(3, 4000, 0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testGarbageCollection(3, 3, 1));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testGarbageCollection(3, 3, 1));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Needs garbage collection: Last check at 3, current time 4000, "
-                        "configured interval 300] (pri 200)"),
-            testGarbageCollection(3, 4000, 300, 1, true));
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
+              "configured interval 300] (pri 200)",
+              testGarbageCollection(3, 4000, 300, 1, true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("NO OPERATIONS GENERATED"),
-            testGarbageCollection(3850, 4000, 300, 1));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testGarbageCollection(3850, 4000, 300, 1));
 }
 
-void StateCheckersTest::gc_ops_are_prioritized_with_low_priority_category() {
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("[Needs garbage collection: Last check at 3, current time 4000, "
-                        "configured interval 300] (scheduling pri VERY_LOW)"),
-            testGarbageCollection(3, 4000, 300, 1, false, true));
+TEST_F(StateCheckersTest, gc_ops_are_prioritized_with_low_priority_category) {
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
+              "configured interval 300] (scheduling pri VERY_LOW)",
+              testGarbageCollection(3, 4000, 300, 1, false, true));
 }
 
 /**
@@ -1535,9 +1282,7 @@ void StateCheckersTest::gc_ops_are_prioritized_with_low_priority_category() {
  * the replicas when the node out of maintenance. Consequently we should not
  * trigger GC for buckets when this is the case.
  */
-void
-StateCheckersTest::gcInhibitedWhenIdealNodeInMaintenance()
-{
+TEST_F(StateCheckersTest, gc_inhibited_when_ideal_node_in_maintenance) {
     // Redundancy is 3, so with only 3 nodes, node 1 is guaranteed to be part of
     // the ideal state of any bucket in the system.
     setupDistributor(3, 3, "distributor:1 storage:3 .1.s:m");
@@ -1560,7 +1305,7 @@ StateCheckersTest::gcInhibitedWhenIdealNodeInMaintenance()
     // overshot the GC check cycle.
     auto result = testStateChecker(checker, c, false, PendingMessage(), false);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"), result);
+    EXPECT_EQ("NO OPERATIONS GENERATED", result);
 }
 
 /*
@@ -1569,17 +1314,14 @@ StateCheckersTest::gcInhibitedWhenIdealNodeInMaintenance()
  * (it's bad mojo to potentially delete something that would've been merged
  * had it not been for a node being in maintenance).
  */
-void
-StateCheckersTest::testNoRemoveWhenIdealNodeInMaintenance()
-{
-    CPPUNIT_ASSERT_EQUAL_MSG(
-            "Do not remove when ideal node is in maintenance mode",
-            std::string("NO OPERATIONS GENERATED"),
-            testDeleteExtraCopies("0=10/100/1/true,"
-                                  "1=10/100/1/true,"
-                                  "2=10/100/1/true",
-                                  2, PendingMessage(),
-                                  "distributor:1 storage:3 .1.s:m"));
+TEST_F(StateCheckersTest, no_remove_when_ideal_node_in_maintenance) {
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testDeleteExtraCopies("0=10/100/1/true,"
+                                    "1=10/100/1/true,"
+                                    "2=10/100/1/true",
+                                    2, PendingMessage(),
+                                    "distributor:1 storage:3 .1.s:m"))
+              << "Do not remove when ideal node is in maintenance mode";
 }
 
 /*
@@ -1591,9 +1333,7 @@ StateCheckersTest::testNoRemoveWhenIdealNodeInMaintenance()
  *
  * See bug 6768991 for context.
  */
-void
-StateCheckersTest::testStepwiseJoinForSmallBucketsWithoutSiblings()
-{
+TEST_F(StateCheckersTest, stepwise_join_for_small_buckets_without_siblings) {
     setupDistributor(3, 10, "distributor:1 storage:2 bits:1");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = true;
@@ -1602,31 +1342,27 @@ StateCheckersTest::testStepwiseJoinForSmallBucketsWithoutSiblings()
     // into bucket (2, 1).
     insertBucketInfo(document::BucketId(3, 1), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(3, 0x3), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x0800000000000001): "
-            "[Joining buckets BucketId(0x0c00000000000001) and "
-            "BucketId(0x0c00000000000001) because their size "
-            "(1 bytes, 1 docs) is less than the configured limit "
-            "of (100, 10)"),
-            testJoin(10, 100, 2, document::BucketId(3, 1)));
+    EXPECT_EQ("BucketId(0x0800000000000001): "
+              "[Joining buckets BucketId(0x0c00000000000001) and "
+              "BucketId(0x0c00000000000001) because their size "
+              "(1 bytes, 1 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 2, document::BucketId(3, 1)));
 
     // Other bucket should be joined as well. Together the two join targets
     // will transform into a mighty sibling pair that can rule the galaxy
     // (and also be joined together afterwards)!
     insertBucketInfo(document::BucketId(3, 1), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(3, 0x3), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x0800000000000003): "
-            "[Joining buckets BucketId(0x0c00000000000003) and "
-            "BucketId(0x0c00000000000003) because their size "
-            "(1 bytes, 1 docs) is less than the configured limit "
-            "of (100, 10)"),
-            testJoin(10, 100, 2, document::BucketId(3, 0x3)));
+    EXPECT_EQ("BucketId(0x0800000000000003): "
+              "[Joining buckets BucketId(0x0c00000000000003) and "
+              "BucketId(0x0c00000000000003) because their size "
+              "(1 bytes, 1 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 2, document::BucketId(3, 0x3)));
 }
 
-void
-StateCheckersTest::testNoStepwiseJoinWhenDisabledThroughConfig()
-{
+TEST_F(StateCheckersTest, no_stepwise_join_when_disabled_through_config) {
     setupDistributor(3, 10, "distributor:1 storage:2 bits:1");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = false;
@@ -1636,13 +1372,11 @@ StateCheckersTest::testNoStepwiseJoinWhenDisabledThroughConfig()
     // into bucket 1 if it had been config-enabled.
     insertBucketInfo(document::BucketId(3, 1), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(3, 0x3), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 1, document::BucketId(3, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 1, document::BucketId(3, 1)));
 }
 
-void
-StateCheckersTest::testNoStepwiseJoinWhenSingleSiblingTooLarge()
-{
+TEST_F(StateCheckersTest, no_stepwise_join_when_single_sibling_too_large) {
     setupDistributor(3, 10, "distributor:1 storage:2 bits:1");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = true;
@@ -1651,13 +1385,11 @@ StateCheckersTest::testNoStepwiseJoinWhenSingleSiblingTooLarge()
     // Bucket is exactly at the boundary where it's too big.
     insertBucketInfo(document::BucketId(3, 1), 1, 0x1, 10, 100);
     insertBucketInfo(document::BucketId(3, 0x3), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(std::string("NO OPERATIONS GENERATED"),
-            testJoin(10, 100, 1, document::BucketId(3, 1)));
+    EXPECT_EQ("NO OPERATIONS GENERATED",
+              testJoin(10, 100, 1, document::BucketId(3, 1)));
 }
 
-void
-StateCheckersTest::testStepwiseJoinMaySkipMultipleBitsWhenConsistent()
-{
+TEST_F(StateCheckersTest, stepwise_join_may_skip_multiple_bits_when_consistent) {
     setupDistributor(2, 10, "distributor:1 storage:2 bits:8");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = true;
@@ -1666,18 +1398,15 @@ StateCheckersTest::testStepwiseJoinMaySkipMultipleBitsWhenConsistent()
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
     // No buckets further up in the tree, can join up to the distribution bit
     // limit at 8.
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x2000000000000001): "
-            "[Joining buckets BucketId(0x4000000000000001) and "
-            "BucketId(0x4000000000000001) because their size "
-            "(1 bytes, 1 docs) is less than the configured limit "
-            "of (100, 10)"),
-            testJoin(10, 100, 8, document::BucketId(16, 1)));
+    EXPECT_EQ("BucketId(0x2000000000000001): "
+              "[Joining buckets BucketId(0x4000000000000001) and "
+              "BucketId(0x4000000000000001) because their size "
+              "(1 bytes, 1 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 8, document::BucketId(16, 1)));
 }
 
-void
-StateCheckersTest::testStepwiseJoinDoesNotSkipBeyondLevelWithSibling()
-{
+TEST_F(StateCheckersTest, stepwise_join_does_not_skip_beyond_level_with_sibling) {
     setupDistributor(2, 10, "distributor:1 storage:2 bits:8");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = true;
@@ -1689,44 +1418,34 @@ StateCheckersTest::testStepwiseJoinDoesNotSkipBeyondLevelWithSibling()
     // the (16, 0) bucket cannot be moved further up than level 11 as it has a
     // sibling there (0x2c00000000000400 sibling of 0x2c00000000000000).
     insertBucketInfo(document::BucketId(11, 1 << 10), 1, 0x1, 1, 1);
-    CPPUNIT_ASSERT_EQUAL(std::string(
-            "BucketId(0x2c00000000000000): "
-            "[Joining buckets BucketId(0x4000000000000000) and "
-            "BucketId(0x4000000000000000) because their size "
-            "(1 bytes, 1 docs) is less than the configured limit "
-            "of (100, 10)"),
-            testJoin(10, 100, 8, document::BucketId(16, 0)));
+    EXPECT_EQ("BucketId(0x2c00000000000000): "
+              "[Joining buckets BucketId(0x4000000000000000) and "
+              "BucketId(0x4000000000000000) because their size "
+              "(1 bytes, 1 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 8, document::BucketId(16, 0)));
 }
 
-void
-StateCheckersTest::joinCanBeScheduledWhenReplicasOnRetiredNodes()
-{
+TEST_F(StateCheckersTest, join_can_be_scheduled_when_replicas_on_retired_nodes) {
     setupDistributor(1, 1, "distributor:1 storage:1 .0.s.:r");
     insertJoinableBuckets();
-    CPPUNIT_ASSERT_EQUAL(
-            "BucketId(0x8000000000000001): "
-            "[Joining buckets BucketId(0x8400000000000001) and "
-            "BucketId(0x8400000100000001) because their size "
-            "(2 bytes, 2 docs) is less than the configured limit "
-            "of (100, 10)"s,
-            testJoin(10, 100, 16, document::BucketId(33, 1)));
+    EXPECT_EQ("BucketId(0x8000000000000001): "
+              "[Joining buckets BucketId(0x8400000000000001) and "
+              "BucketId(0x8400000100000001) because their size "
+              "(2 bytes, 2 docs) is less than the configured limit "
+              "of (100, 10)",
+              testJoin(10, 100, 16, document::BucketId(33, 1)));
 }
 
-void
-StateCheckersTest::contextPopulatesIdealStateContainers()
-{
+TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     // 1 and 3 are ideal nodes for bucket {17, 0}
     setupDistributor(2, 100, "distributor:1 storage:4");
 
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
-    CPPUNIT_ASSERT_EQUAL((std::vector<uint16_t>{1, 3}), c.idealState);
-    CPPUNIT_ASSERT_EQUAL(size_t(2), c.unorderedIdealState.size());
-    CPPUNIT_ASSERT(c.unorderedIdealState.find(1)
-                   != c.unorderedIdealState.end());
-    CPPUNIT_ASSERT(c.unorderedIdealState.find(3)
-                   != c.unorderedIdealState.end());
+    ASSERT_THAT(c.idealState, ElementsAre(1, 3));
+    ASSERT_THAT(c.unorderedIdealState, UnorderedElementsAre(1, 3));
 }
 
 namespace {
@@ -1738,9 +1457,8 @@ class StateCheckerRunner
     NodeMaintenanceStatsTracker _statsTracker;
     std::string _result;
 public:
-    StateCheckerRunner(StateCheckersTest& fixture);
+    explicit StateCheckerRunner(StateCheckersTest& fixture);
     ~StateCheckerRunner();
-
 
     StateCheckerRunner& addToDb(const document::BucketId& bid,
                                 const std::string& bucketInfo)
@@ -1780,13 +1498,11 @@ StateCheckerRunner<Checker>::StateCheckerRunner(StateCheckersTest& fixture)
     : _fixture(fixture)
 {}
 template <typename Checker>
-StateCheckerRunner<Checker>::~StateCheckerRunner() {}
+StateCheckerRunner<Checker>::~StateCheckerRunner() = default;
 
 } // anon ns
 
-void
-StateCheckersTest::statsUpdatedWhenMergingDueToMove()
-{
+TEST_F(StateCheckersTest, stats_updated_when_merging_due_to_move) {
     StateCheckerRunner<SynchronizeAndMoveStateChecker> runner(*this);
     // Ideal state for bucket {17,0} in given cluster state is [1, 3]
     runner.addToDb({17, 0}, "0=1,1=1,2=1")
@@ -1796,7 +1512,7 @@ StateCheckersTest::statsUpdatedWhenMergingDueToMove()
     {
         NodeMaintenanceStats wanted;
         wanted.copyingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(1, makeBucketSpace()));
     }
     // Moving 1 bucket from nodes {0, 2} into 3.
     // Note that we do not at this point in time distinguish _which_ of these
@@ -1804,19 +1520,17 @@ StateCheckersTest::statsUpdatedWhenMergingDueToMove()
     {
         NodeMaintenanceStats wanted;
         wanted.copyingIn = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.movingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(0, makeBucketSpace()));
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(2, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(0, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(2, makeBucketSpace()));
     }
 }
 
-void
-StateCheckersTest::statsUpdatedWhenMergingDueToMissingCopy()
-{
+TEST_F(StateCheckersTest, stats_updated_when_merging_due_to_missing_copy) {
     StateCheckerRunner<SynchronizeAndMoveStateChecker> runner(*this);
     // Ideal state for bucket {17,0} in given cluster state is [1, 3]
     runner.addToDb({17, 0}, "1=1")
@@ -1826,18 +1540,16 @@ StateCheckersTest::statsUpdatedWhenMergingDueToMissingCopy()
     {
         NodeMaintenanceStats wanted;
         wanted.copyingIn = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.copyingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(1, makeBucketSpace()));
     }
 }
 
-void
-StateCheckersTest::statsUpdatedWhenMergingDueToOutOfSyncCopies()
-{
+TEST_F(StateCheckersTest, stats_updated_when_merging_due_to_out_of_sync_copies) {
     StateCheckerRunner<SynchronizeAndMoveStateChecker> runner(*this);
     runner.addToDb({17, 0}, "1=1,3=2")
           .clusterState("distributor:1 storage:4")
@@ -1845,8 +1557,8 @@ StateCheckersTest::statsUpdatedWhenMergingDueToOutOfSyncCopies()
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1, makeBucketSpace()));
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(1, makeBucketSpace()));
+        EXPECT_EQ(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
 }
 

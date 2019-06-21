@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <iomanip>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
@@ -8,40 +7,19 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
-class RemoveOperationTest : public CppUnit::TestFixture,
-                            public DistributorTestUtil
-{
-    CPPUNIT_TEST_SUITE(RemoveOperationTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testNotFound);
-    CPPUNIT_TEST(testStorageFailure);
-    CPPUNIT_TEST(testNotInDB);
-    CPPUNIT_TEST(testMultipleCopies);
-    CPPUNIT_TEST(canSendRemoveWhenAllReplicaNodesRetired);
-    CPPUNIT_TEST_SUITE_END();
-
-protected:
-    void testSimple();
-    void testNotFound();
-    void testStorageFailure();
-    void testNoReply();
-    void testNotInDB();
-    void testMultipleCopies();
-    void testRevert();
-    void canSendRemoveWhenAllReplicaNodesRetired();
-
-public:
+struct RemoveOperationTest : Test, DistributorTestUtil {
     document::DocumentId docId;
     document::BucketId bucketId;
     std::unique_ptr<RemoveOperation> op;
 
-    void setUp() override {
+    void SetUp() override {
         createLinks();
 
         docId = document::DocumentId(document::DocIdString("test", "uri"));
@@ -49,19 +27,19 @@ public:
         enableDistributorClusterState("distributor:1 storage:4");
     };
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
     void sendRemove(document::DocumentId dId) {
-        std::shared_ptr<api::RemoveCommand> msg(
-                new api::RemoveCommand(makeDocumentBucket(document::BucketId(0)), dId, 100));
+        auto msg = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), dId, 100);
 
-        op.reset(new RemoveOperation(getExternalOperationHandler(),
-                                     getDistributorBucketSpace(),
-                                     msg,
-                                     getDistributor().getMetrics().
-                                     removes[msg->getLoadType()]));
+        op = std::make_unique<RemoveOperation>(
+                getExternalOperationHandler(),
+                getDistributorBucketSpace(),
+                msg,
+                getDistributor().getMetrics().
+                removes[msg->getLoadType()]);
 
         op->start(_sender, framework::MilliSecTime(0));
     }
@@ -71,13 +49,13 @@ public:
                         uint64_t oldTimestamp)
     {
         if (index == (uint32_t)-1) {
-            index = _sender.commands.size() - 1;
+            index = _sender.commands().size() - 1;
         }
 
-        std::shared_ptr<api::StorageMessage> msg2  = _sender.commands[index];
-        api::RemoveCommand* removec = dynamic_cast<api::RemoveCommand*>(msg2.get());
+        std::shared_ptr<api::StorageMessage> msg2  = _sender.command(index);
+        auto* removec = dynamic_cast<api::RemoveCommand*>(msg2.get());
         std::unique_ptr<api::StorageReply> reply(removec->makeReply());
-        api::RemoveReply* removeR = static_cast<api::RemoveReply*>(reply.get());
+        auto* removeR = static_cast<api::RemoveReply*>(reply.get());
         removeR->setOldTimestamp(oldTimestamp);
         callback.onReceive(_sender,
                            std::shared_ptr<api::StorageReply>(reply.release()));
@@ -88,116 +66,92 @@ public:
     }
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(RemoveOperationTest);
-
-void
-RemoveOperationTest::testSimple()
-{
+TEST_F(RemoveOperationTest, simple) {
     addNodesToBucketDB(bucketId, "1=0");
 
     sendRemove();
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 1"),
+    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 1",
             _sender.getLastCommand());
 
     replyToMessage(*op, -1, 34);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
-                        "timestamp 100, removed doc from 34) ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
+              "timestamp 100, removed doc from 34) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-RemoveOperationTest::testNotFound()
-{
+TEST_F(RemoveOperationTest, not_found) {
     addNodesToBucketDB(bucketId, "1=0");
 
     sendRemove();
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 1"),
-            _sender.getLastCommand());
+    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 1",
+              _sender.getLastCommand());
 
     replyToMessage(*op, -1, 0);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
-                        "timestamp 100, not found) ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
+              "timestamp 100, not found) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-RemoveOperationTest::testStorageFailure()
-{
+TEST_F(RemoveOperationTest, storage_failure) {
     addNodesToBucketDB(bucketId, "1=0");
 
     sendRemove();
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 1"),
-            _sender.getLastCommand());
+    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 1",
+              _sender.getLastCommand());
 
     sendReply(*op, -1, api::ReturnCode::INTERNAL_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
-                        "timestamp 100, not found) ReturnCode(INTERNAL_FAILURE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
+              "timestamp 100, not found) ReturnCode(INTERNAL_FAILURE)",
+              _sender.getLastReply());
 }
 
-void
-RemoveOperationTest::testNotInDB()
-{
+TEST_F(RemoveOperationTest, not_in_db) {
     sendRemove();
 
-    CPPUNIT_ASSERT_EQUAL(std::string("RemoveReply(BucketId(0x0000000000000000), "
-                                     "doc:test:uri, timestamp 100, not found) ReturnCode(NONE)"),
-                         _sender.getLastReply());
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), "
+              "doc:test:uri, timestamp 100, not found) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-RemoveOperationTest::testMultipleCopies()
-{
+TEST_F(RemoveOperationTest, multiple_copies) {
     addNodesToBucketDB(bucketId, "1=0, 2=0, 3=0");
 
     sendRemove();
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 1,"
-                        "Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 2,"
-                        "Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 3"),
-            _sender.getCommands(true, true));
+    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 1,"
+              "Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 2,"
+              "Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 3",
+              _sender.getCommands(true, true));
 
     replyToMessage(*op, 0, 34);
     replyToMessage(*op, 1, 34);
     replyToMessage(*op, 2, 75);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("RemoveReply(BucketId(0x0000000000000000), "
-                        "doc:test:uri, timestamp 100, removed doc from 75) ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), "
+              "doc:test:uri, timestamp 100, removed doc from 75) ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-RemoveOperationTest::canSendRemoveWhenAllReplicaNodesRetired()
-{
+TEST_F(RemoveOperationTest, can_send_remove_when_all_replica_nodes_retired) {
     enableDistributorClusterState("distributor:1 storage:1 .0.s:r");
     addNodesToBucketDB(bucketId, "0=123");
     sendRemove();
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
-                        "timestamp 100) => 0"),
-            _sender.getLastCommand());
+    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "timestamp 100) => 0",
+              _sender.getLastCommand());
 }
 
-} // distributor
-} // storage
+} // storage::distributor

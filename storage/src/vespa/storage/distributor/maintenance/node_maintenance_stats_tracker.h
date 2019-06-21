@@ -32,6 +32,9 @@ struct NodeMaintenanceStats
                 && copyingOut == other.copyingOut
                 && total == other.total);
     }
+    bool operator!=(const NodeMaintenanceStats& other) const noexcept {
+        return !(*this == other);
+    }
 };
 
 std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);

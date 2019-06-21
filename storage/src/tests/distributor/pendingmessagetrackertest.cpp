@@ -8,38 +8,17 @@
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/vdslib/state/random.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage::distributor {
 
 using namespace std::chrono_literals;
 
-class PendingMessageTrackerTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(PendingMessageTrackerTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testMultipleMessages);
-    CPPUNIT_TEST(testStartPage);
-    CPPUNIT_TEST(testGetPendingMessageTypes);
-    CPPUNIT_TEST(testHasPendingMessage);
-    CPPUNIT_TEST(testGetAllMessagesForSingleBucket);
-    CPPUNIT_TEST(busy_reply_marks_node_as_busy);
-    CPPUNIT_TEST(busy_node_duration_can_be_adjusted);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
-    void testSimple();
-    void testMultipleMessages();
-    void testStartPage();
-    void testGetPendingMessageTypes();
-    void testHasPendingMessage();
-    void testGetAllMessagesForSingleBucket();
-    void busy_reply_marks_node_as_busy();
-    void busy_node_duration_can_be_adjusted();
-
-private:
+struct PendingMessageTrackerTest : Test {
     void insertMessages(PendingMessageTracker& tracker);
 
 };
@@ -98,30 +77,6 @@ public:
         _tracker->reply(*putReply);
     }
 
-    std::shared_ptr<api::RemoveCommand> sendRemove(
-            const RequestBuilder& builder)
-    {
-        assignMockedTime(builder.atTime());
-        auto remove = createRemoveToNode(builder.toNode());
-        _tracker->insert(remove);
-        return remove;
-    }
-
-    void sendRemoveReply(api::RemoveCommand& removeCmd,
-                         const RequestBuilder& builder)
-    {
-        assignMockedTime(builder.atTime());
-        auto removeReply = removeCmd.makeReply();
-        _tracker->reply(*removeReply);
-    }
-
-    void sendPutAndReplyWithLatency(uint16_t node,
-                                    std::chrono::milliseconds latency)
-    {
-        auto put = sendPut(RequestBuilder().atTime(1000ms).toNode(node));
-        sendPutReply(*put, RequestBuilder().atTime(1000ms + latency));
-    }
-
     PendingMessageTracker& tracker() { return *_tracker; }
     auto& clock() { return _clock; }
 
@@ -145,10 +100,10 @@ private:
 
     std::shared_ptr<api::PutCommand> createPutToNode(uint16_t node) const {
         document::BucketId bucket(16, 1234);
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bucket),
-                                    createDummyDocumentForBucket(bucket),
-                                    api::Timestamp(123456)));
+        auto cmd = std::make_shared<api::PutCommand>(
+                makeDocumentBucket(bucket),
+                createDummyDocumentForBucket(bucket),
+                api::Timestamp(123456));
         cmd->setAddress(makeStorageAddress(node));
         return cmd;
     }
@@ -157,11 +112,10 @@ private:
             uint16_t node) const
     {
         document::BucketId bucket(16, 1234);
-        std::shared_ptr<api::RemoveCommand> cmd(
-                new api::RemoveCommand(makeDocumentBucket(bucket),
-                                       document::DocumentId(
-                                            createDummyIdString(bucket)),
-                                       api::Timestamp(123456)));
+        auto cmd = std::make_shared<api::RemoveCommand>(
+                makeDocumentBucket(bucket),
+                document::DocumentId(createDummyIdString(bucket)),
+                api::Timestamp(123456));
         cmd->setAddress(makeStorageAddress(node));
         return cmd;
     }
@@ -183,15 +137,11 @@ Fixture::Fixture()
     // flip out and die on an explicit nullptr check.
     _tracker = std::make_unique<PendingMessageTracker>(_compReg);
 }
-Fixture::~Fixture() {}
+Fixture::~Fixture() = default;
 
-}
+} // anonymous namespace
 
-CPPUNIT_TEST_SUITE_REGISTRATION(PendingMessageTrackerTest);
-
-void
-PendingMessageTrackerTest::testSimple()
-{
+TEST_F(PendingMessageTrackerTest, simple) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
@@ -208,14 +158,12 @@ PendingMessageTrackerTest::testSimple()
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=bucket"));
 
-        CPPUNIT_ASSERT_CONTAIN(
-                std::string(
-                        "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
-                        "<ul>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> "
-                        "Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                        "</ul>\n"),
-                ost.str());
+        EXPECT_THAT(ost.str(), HasSubstr(
+                "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
+                "<ul>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> "
+                "Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "</ul>\n"));
     }
 
     api::RemoveReply reply(*remove);
@@ -225,7 +173,7 @@ PendingMessageTrackerTest::testSimple()
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=bucket"));
 
-        CPPUNIT_ASSERT_MSG(ost.str(), ost.str().find("doc:") == std::string::npos);
+        EXPECT_THAT(ost.str(), Not(HasSubstr("doc:")));
     }
 }
 
@@ -251,9 +199,7 @@ PendingMessageTrackerTest::insertMessages(PendingMessageTracker& tracker)
     }
 }
 
-void
-PendingMessageTrackerTest::testStartPage()
-{
+TEST_F(PendingMessageTrackerTest, start_page) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
@@ -263,21 +209,16 @@ PendingMessageTrackerTest::testStartPage()
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages"));
 
-        CPPUNIT_ASSERT_CONTAIN(
-                std::string(
-                        "<h1>Pending messages to storage nodes</h1>\n"
-                        "View:\n"
-                        "<ul>\n"
-                        "<li><a href=\"?order=bucket\">Group by bucket</a></li>"
-                        "<li><a href=\"?order=node\">Group by node</a></li>"),
-                ost.str());
-
+        EXPECT_THAT(ost.str(), HasSubstr(
+                "<h1>Pending messages to storage nodes</h1>\n"
+                "View:\n"
+                "<ul>\n"
+                "<li><a href=\"?order=bucket\">Group by bucket</a></li>"
+                "<li><a href=\"?order=node\">Group by node</a></li>"));
     }
 }
 
-void
-PendingMessageTrackerTest::testMultipleMessages()
-{
+TEST_F(PendingMessageTrackerTest, multiple_messages) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
@@ -290,45 +231,41 @@ PendingMessageTrackerTest::testMultipleMessages()
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=bucket"));
 
-        CPPUNIT_ASSERT_CONTAIN(
-                std::string(
-                        "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
-                        "<ul>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                        "</ul>\n"
-                        "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000011d7))</b>\n"
-                        "<ul>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                        "</ul>\n"
-                        ),
-                ost.str());
+        EXPECT_THAT(ost.str(), HasSubstr(
+                "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
+                "<ul>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "</ul>\n"
+                "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000011d7))</b>\n"
+                "<ul>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "</ul>\n"));
     }
     {
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=node"));
 
-        CPPUNIT_ASSERT_CONTAIN(std::string(
-                                     "<b>Node 0 (pending count: 4)</b>\n"
-                                     "<ul>\n"
-                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                                     "</ul>\n"
-                                     "<b>Node 1 (pending count: 4)</b>\n"
-                                     "<ul>\n"
-                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                                     "</ul>\n"
-            ), ost.str());
+        EXPECT_THAT(ost.str(), HasSubstr(
+                "<b>Node 0 (pending count: 4)</b>\n"
+                "<ul>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "</ul>\n"
+                "<b>Node 1 (pending count: 4)</b>\n"
+                "<ul>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "</ul>\n"));
     }
 }
 
@@ -376,9 +313,7 @@ public:
 
 }
 
-void
-PendingMessageTrackerTest::testGetPendingMessageTypes()
-{
+TEST_F(PendingMessageTrackerTest, get_pending_message_types) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
@@ -394,25 +329,23 @@ PendingMessageTrackerTest::testGetPendingMessageTypes()
     {
         TestChecker checker;
         tracker.checkPendingMessages(0, makeDocumentBucket(bid), checker);
-        CPPUNIT_ASSERT_EQUAL(127, (int)checker.pri);
+        EXPECT_EQ(127, static_cast<int>(checker.pri));
     }
 
     {
         TestChecker checker;
         tracker.checkPendingMessages(0, makeDocumentBucket(document::BucketId(16, 1235)), checker);
-        CPPUNIT_ASSERT_EQUAL(255, (int)checker.pri);
+        EXPECT_EQ(255, static_cast<int>(checker.pri));
     }
 
     {
         TestChecker checker;
         tracker.checkPendingMessages(1, makeDocumentBucket(bid), checker);
-        CPPUNIT_ASSERT_EQUAL(255, (int)checker.pri);
+        EXPECT_EQ(255, static_cast<int>(checker.pri));
     }
 }
 
-void
-PendingMessageTrackerTest::testHasPendingMessage()
-{
+TEST_F(PendingMessageTrackerTest, has_pending_message) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
@@ -420,7 +353,7 @@ PendingMessageTrackerTest::testHasPendingMessage()
     PendingMessageTracker tracker(compReg);
     document::BucketId bid(16, 1234);
 
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
+    EXPECT_FALSE(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
 
     {
         auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
@@ -429,11 +362,11 @@ PendingMessageTrackerTest::testHasPendingMessage()
         tracker.insert(remove);
     }
 
-    CPPUNIT_ASSERT(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(0, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(2, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(document::BucketId(16, 1233)), api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::DELETEBUCKET_ID));
+    EXPECT_TRUE(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
+    EXPECT_FALSE(tracker.hasPendingMessage(0, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
+    EXPECT_FALSE(tracker.hasPendingMessage(2, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
+    EXPECT_FALSE(tracker.hasPendingMessage(1, makeDocumentBucket(document::BucketId(16, 1233)), api::MessageType::REMOVE_ID));
+    EXPECT_FALSE(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::DELETEBUCKET_ID));
 }
 
 namespace {
@@ -455,9 +388,7 @@ public:
 
 } // anon ns
 
-void
-PendingMessageTrackerTest::testGetAllMessagesForSingleBucket()
-{
+TEST_F(PendingMessageTrackerTest, get_all_messages_for_single_bucket) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
@@ -469,16 +400,16 @@ PendingMessageTrackerTest::testGetAllMessagesForSingleBucket()
     {
         OperationEnumerator enumerator;
         tracker.checkPendingMessages(makeDocumentBucket(document::BucketId(16, 1234)), enumerator);
-        CPPUNIT_ASSERT_EQUAL(std::string("Remove -> 0\n"
-                    "Remove -> 0\n"
-                    "Remove -> 1\n"
-                    "Remove -> 1\n"),
-                enumerator.str());
+        EXPECT_EQ("Remove -> 0\n"
+                  "Remove -> 0\n"
+                  "Remove -> 1\n"
+                  "Remove -> 1\n",
+                  enumerator.str());
     }
     {
         OperationEnumerator enumerator;
         tracker.checkPendingMessages(makeDocumentBucket(document::BucketId(16, 9876)), enumerator);
-        CPPUNIT_ASSERT_EQUAL(std::string(""), enumerator.str());
+        EXPECT_EQ("", enumerator.str());
     }
 }
 
@@ -486,23 +417,23 @@ PendingMessageTrackerTest::testGetAllMessagesForSingleBucket()
 // but have the same actual semantics as busy merges (i.e. "queue is full", not "node
 // is too busy to accept new requests in general").
 
-void PendingMessageTrackerTest::busy_reply_marks_node_as_busy() {
+TEST_F(PendingMessageTrackerTest, busy_reply_marks_node_as_busy) {
     Fixture f;
     auto cmd = f.sendPut(RequestBuilder().toNode(0));
-    CPPUNIT_ASSERT(!f.tracker().getNodeInfo().isBusy(0));
+    EXPECT_FALSE(f.tracker().getNodeInfo().isBusy(0));
     f.sendPutReply(*cmd, RequestBuilder(), api::ReturnCode(api::ReturnCode::BUSY));
-    CPPUNIT_ASSERT(f.tracker().getNodeInfo().isBusy(0));
-    CPPUNIT_ASSERT(!f.tracker().getNodeInfo().isBusy(1));
+    EXPECT_TRUE(f.tracker().getNodeInfo().isBusy(0));
+    EXPECT_FALSE(f.tracker().getNodeInfo().isBusy(1));
 }
 
-void PendingMessageTrackerTest::busy_node_duration_can_be_adjusted() {
+TEST_F(PendingMessageTrackerTest, busy_node_duration_can_be_adjusted) {
     Fixture f;
     auto cmd = f.sendPut(RequestBuilder().toNode(0));
     f.tracker().setNodeBusyDuration(std::chrono::seconds(10));
     f.sendPutReply(*cmd, RequestBuilder(), api::ReturnCode(api::ReturnCode::BUSY));
-    CPPUNIT_ASSERT(f.tracker().getNodeInfo().isBusy(0));
+    EXPECT_TRUE(f.tracker().getNodeInfo().isBusy(0));
     f.clock().addSecondsToTime(11);
-    CPPUNIT_ASSERT(!f.tracker().getNodeInfo().isBusy(0));
+    EXPECT_FALSE(f.tracker().getNodeInfo().isBusy(0));
 }
 
 }

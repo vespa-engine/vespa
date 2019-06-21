@@ -4,7 +4,7 @@
 #include <vespa/storage/persistence/mergehandler.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <tests/distributor/messagesenderstub.h>
+#include <tests/common/message_sender_stub.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <gmock/gmock.h>

@@ -7,7 +7,6 @@
 #include <vespa/config-load-type.h>
 #include <vespa/config-fleetcontroller.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/config.h>
@@ -122,7 +121,7 @@ TestStorageApp::waitUntilInitialized(
                 error << " ";
                 initializer->reportStatus(error, framework::HttpUrlPath(""));
                 LOG(error, "%s", error.str().c_str());
-                CPPUNIT_FAIL(error.str().c_str());
+                throw std::runtime_error(error.str());
             }
         }
     }
@@ -170,9 +169,9 @@ TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     ns.setDiskCount(dc);
     _nodeStateUpdater.setReportedNodeState(ns);
-        // Tests should know how many disks they want to use. If testing auto
-        // detection, you should not need this utility.
-    CPPUNIT_ASSERT(dc > 0);
+    // Tests should know how many disks they want to use. If testing auto
+    // detection, you should not need this utility.
+    assert(dc > 0);
 }
 
 TestServiceLayerApp::~TestServiceLayerApp() {}
@@ -190,8 +189,7 @@ TestServiceLayerApp::setPersistenceProvider(
         spi::PersistenceProvider::UP provider)
 {
     _partitions = provider->getPartitionStates().getList();
-    CPPUNIT_ASSERT_EQUAL(spi::PartitionId(_compReg.getDiskCount()),
-                         _partitions.size());
+    assert(spi::PartitionId(_compReg.getDiskCount()) == _partitions.size());
     _persistenceProvider = std::move(provider);
 }
 

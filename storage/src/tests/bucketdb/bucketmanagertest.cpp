@@ -200,7 +200,7 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
 
     // Make sure we have at least one empty bucket
     TestBucketInfo& info = (++_bucketInfo.begin())->second;
-    CPPUNIT_ASSERT(info.size != 0);
+    assert(info.size != 0);
     info.size = 0;
     info.count = 0;
     info.crc = 0;

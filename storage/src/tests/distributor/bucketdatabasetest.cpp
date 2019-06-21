@@ -113,7 +113,7 @@ struct StoppingProcessor : public BucketDatabase::EntryProcessor {
 
 }
 
-TEST_P(BucketDatabaseTest, testIterating) {
+TEST_P(BucketDatabaseTest, iterating) {
     // Do some insertions
     db().update(BucketDatabase::Entry(document::BucketId(16, 0x10), BI(1)));
     db().update(BucketDatabase::Entry(document::BucketId(16, 0x0b), BI(2)));
@@ -186,7 +186,7 @@ BucketDatabaseTest::doFindParents(const std::vector<document::BucketId>& ids,
     return ost.str();
 }
 
-TEST_P(BucketDatabaseTest, testFindParents) {
+TEST_P(BucketDatabaseTest, find_parents) {
     // test what parents in the DB (specified in vector) are parents of the
     // specified bucket. Result is a list of indexes into the vector.
 
@@ -287,7 +287,7 @@ BucketDatabaseTest::doFindAll(const std::vector<document::BucketId>& ids,
     return ost.str();
 }
 
-TEST_P(BucketDatabaseTest, testFindAll) {
+TEST_P(BucketDatabaseTest, find_all) {
     std::vector<document::BucketId> buckets;
     EXPECT_EQ(
             std::string(""),
@@ -389,7 +389,7 @@ BucketDatabaseTest::doCreate(const std::vector<document::BucketId>& ids,
 }
 
 // TODO rewrite in terms of bucket getter, not creator
-TEST_P(BucketDatabaseTest, testCreateAppropriateBucket) {
+TEST_P(BucketDatabaseTest, create_appropriate_bucket) {
         // Use min split bits when no relevant bucket exist.
     EXPECT_EQ(
             document::BucketId(36,0x0000004d2),
@@ -439,7 +439,7 @@ TEST_P(BucketDatabaseTest, testCreateAppropriateBucket) {
                      document::BucketId(58, 0x00000000010004d2)));
 }
 
-TEST_P(BucketDatabaseTest, testGetNext) {
+TEST_P(BucketDatabaseTest, get_next) {
     db().update(BucketDatabase::Entry(document::BucketId(16, 16), BI(1)));
     db().update(BucketDatabase::Entry(document::BucketId(16, 11), BI(2)));
     db().update(BucketDatabase::Entry(document::BucketId(16, 42), BI(3)));
@@ -492,7 +492,7 @@ BucketDatabaseTest::doTestUpperBound(const UBoundFunc& f)
     EXPECT_EQ(BucketId(8, 0xff), f(db(), BucketId(8, 0)));
 }
 
-TEST_P(BucketDatabaseTest, testUpperBoundReturnsNextInOrderGreaterBucket) {
+TEST_P(BucketDatabaseTest, upper_bound_returns_next_in_order_greater_bucket) {
     doTestUpperBound([](const BucketDatabase& bucketDb,
                         const document::BucketId& id)
     {
@@ -500,7 +500,7 @@ TEST_P(BucketDatabaseTest, testUpperBoundReturnsNextInOrderGreaterBucket) {
     });
 }
 
-TEST_P(BucketDatabaseTest, testGetNextReturnsUpperBoundBucket) {
+TEST_P(BucketDatabaseTest, get_next_returns_upper_bound_bucket) {
     // getNext() would generally be implemented in terms of upperBound(), but
     // make sure it conforms to the same contract in case this changes.
     doTestUpperBound([](const BucketDatabase& bucketDb,
@@ -510,7 +510,7 @@ TEST_P(BucketDatabaseTest, testGetNextReturnsUpperBoundBucket) {
     });
 }
 
-TEST_P(BucketDatabaseTest, testChildCount) {
+TEST_P(BucketDatabaseTest, child_count) {
     // Empty tree; inserts cannot create inconsistencies.
     EXPECT_EQ(0u, db().childCount(BucketId(3, 1)));
 

@@ -1,69 +1,38 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <string>
-#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <string>
 
 using document::test::makeDocumentBucket;
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 using document::BucketId;
-typedef MaintenancePriority Priority;
+using Priority = MaintenancePriority;
 
-class SimpleBucketPriorityDatabaseTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(SimpleBucketPriorityDatabaseTest);
-    CPPUNIT_TEST(testIteratorRangeIsEqualOnEmptyDatabase);
-    CPPUNIT_TEST(testCanGetPrioritizedBucket);
-    CPPUNIT_TEST(testIterateOverMultiplePriorities);
-    CPPUNIT_TEST(testMultipleSetPriorityForOneBucket);
-    CPPUNIT_TEST(testIterateOverMultipleBucketsWithMultiplePriorities);
-    CPPUNIT_TEST(testNoMaintenanceNeededClearsBucketFromDatabase);
-    CPPUNIT_TEST_SUITE_END();
-
-    typedef SimpleBucketPriorityDatabase::const_iterator const_iterator;
-
-public:
-    void testIteratorRangeIsEqualOnEmptyDatabase();
-    void testCanGetPrioritizedBucket();
-    void testIterateOverMultiplePriorities();
-    void testMultipleSetPriorityForOneBucket();
-    void testIterateOverMultipleBucketsWithMultiplePriorities();
-    void testNoMaintenanceNeededClearsBucketFromDatabase();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(SimpleBucketPriorityDatabaseTest);
-
-void
-SimpleBucketPriorityDatabaseTest::testIteratorRangeIsEqualOnEmptyDatabase()
-{
+TEST(SimpleBucketPriorityDatabaseTest, iterator_range_is_equal_on_empty_database) {
     SimpleBucketPriorityDatabase queue;
-    const_iterator begin(queue.begin());
-    const_iterator end(queue.end());
+    auto begin = queue.begin();
+    auto end = queue.end();
 
-    CPPUNIT_ASSERT(begin == end);
-    CPPUNIT_ASSERT(begin == begin);
-    CPPUNIT_ASSERT(end == end);
+    EXPECT_TRUE(begin == end);
+    EXPECT_TRUE(begin == begin);
+    EXPECT_TRUE(end == end);
 }
 
-void
-SimpleBucketPriorityDatabaseTest::testCanGetPrioritizedBucket()
-{
+TEST(SimpleBucketPriorityDatabaseTest, can_get_prioritized_bucket) {
     SimpleBucketPriorityDatabase queue;
 
     PrioritizedBucket lowPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::VERY_LOW);
     queue.setPriority(lowPriBucket);
 
     PrioritizedBucket highest(*queue.begin());
-    CPPUNIT_ASSERT_EQUAL(lowPriBucket, highest);
+    EXPECT_EQ(lowPriBucket, highest);
 }
 
-void
-SimpleBucketPriorityDatabaseTest::testIterateOverMultiplePriorities()
-{
+TEST(SimpleBucketPriorityDatabaseTest, iterate_over_multiple_priorities) {
     SimpleBucketPriorityDatabase queue;
 
     PrioritizedBucket lowPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::LOW);
@@ -71,18 +40,16 @@ SimpleBucketPriorityDatabaseTest::testIterateOverMultiplePriorities()
     queue.setPriority(lowPriBucket);
     queue.setPriority(highPriBucket);
 
-    const_iterator iter(queue.begin());
-    CPPUNIT_ASSERT_EQUAL(highPriBucket, *iter);
+    auto iter = queue.begin();
+    ASSERT_EQ(highPriBucket, *iter);
     ++iter;
-    CPPUNIT_ASSERT(iter != queue.end());
-    CPPUNIT_ASSERT_EQUAL(lowPriBucket, *iter);
+    ASSERT_TRUE(iter != queue.end());
+    ASSERT_EQ(lowPriBucket, *iter);
     ++iter;
-    CPPUNIT_ASSERT(iter == queue.end());
+    ASSERT_TRUE(iter == queue.end());
 }
 
-void
-SimpleBucketPriorityDatabaseTest::testMultipleSetPriorityForOneBucket()
-{
+TEST(SimpleBucketPriorityDatabaseTest, multiple_set_priority_for_one_bucket) {
     SimpleBucketPriorityDatabase queue;
 
     PrioritizedBucket lowPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::LOW);
@@ -91,15 +58,13 @@ SimpleBucketPriorityDatabaseTest::testMultipleSetPriorityForOneBucket()
     queue.setPriority(lowPriBucket);
     queue.setPriority(highPriBucket);
 
-    const_iterator iter(queue.begin());
-    CPPUNIT_ASSERT_EQUAL(highPriBucket, *iter);
+    auto iter = queue.begin();
+    ASSERT_EQ(highPriBucket, *iter);
     ++iter;
-    CPPUNIT_ASSERT(iter == queue.end());
+    ASSERT_TRUE(iter == queue.end());
 }
 
-void
-SimpleBucketPriorityDatabaseTest::testNoMaintenanceNeededClearsBucketFromDatabase()
-{
+TEST(SimpleBucketPriorityDatabaseTest, no_maintenance_needed_clears_bucket_from_database) {
     SimpleBucketPriorityDatabase queue;
 
     PrioritizedBucket highPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::HIGH);
@@ -108,13 +73,11 @@ SimpleBucketPriorityDatabaseTest::testNoMaintenanceNeededClearsBucketFromDatabas
     queue.setPriority(highPriBucket);
     queue.setPriority(noPriBucket);
 
-    const_iterator iter(queue.begin());
-    CPPUNIT_ASSERT(iter == queue.end());
+    auto iter = queue.begin();
+    ASSERT_TRUE(iter == queue.end());
 }
 
-void
-SimpleBucketPriorityDatabaseTest::testIterateOverMultipleBucketsWithMultiplePriorities()
-{
+TEST(SimpleBucketPriorityDatabaseTest, iterate_over_multiple_buckets_with_multiple_priorities) {
     SimpleBucketPriorityDatabase queue;
 
     PrioritizedBucket lowPriBucket1(makeDocumentBucket(BucketId(16, 1)), Priority::LOW);
@@ -129,17 +92,15 @@ SimpleBucketPriorityDatabaseTest::testIterateOverMultipleBucketsWithMultiplePrio
     queue.setPriority(highPriBucket2);
     queue.setPriority(lowPriBucket1);
 
-    const_iterator iter(queue.begin());
+    auto iter = queue.begin();
     PrioritizedBucket lastBucket(makeDocumentBucket(BucketId()), Priority::PRIORITY_LIMIT);
     for (int i = 0; i < 5; ++i) {
-        CPPUNIT_ASSERT(iter != queue.end());
-        CPPUNIT_ASSERT(!iter->moreImportantThan(lastBucket));
+        ASSERT_TRUE(iter != queue.end());
+        ASSERT_FALSE(iter->moreImportantThan(lastBucket));
         lastBucket = *iter;
         ++iter;
     }
-    CPPUNIT_ASSERT(iter == queue.end());
+    ASSERT_TRUE(iter == queue.end());
 }
 
 }
-}
-

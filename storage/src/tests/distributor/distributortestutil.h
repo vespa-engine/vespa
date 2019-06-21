@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "messagesenderstub.h"
+#include "distributor_message_sender_stub.h"
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
@@ -181,14 +181,14 @@ protected:
     std::unique_ptr<framework::TickingThreadPool> _threadPool;
     std::unique_ptr<Distributor> _distributor;
     std::unique_ptr<storage::DistributorComponent> _component;
-    MessageSenderStub _sender;
-    MessageSenderStub _senderDown;
+    DistributorMessageSenderStub _sender;
+    DistributorMessageSenderStub _senderDown;
     HostInfo _hostInfo;
 
     struct MessageSenderImpl : public ChainedMessageSender {
-        MessageSenderStub& _sender;
-        MessageSenderStub& _senderDown;
-        MessageSenderImpl(MessageSenderStub& up, MessageSenderStub& down)
+        DistributorMessageSenderStub& _sender;
+        DistributorMessageSenderStub& _senderDown;
+        MessageSenderImpl(DistributorMessageSenderStub& up, DistributorMessageSenderStub& down)
             : _sender(up), _senderDown(down) {}
 
         void sendUp(const std::shared_ptr<api::StorageMessage>& msg) override {

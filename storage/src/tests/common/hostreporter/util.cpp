@@ -2,12 +2,11 @@
 #include "util.h"
 #include <vespa/storage/common/hostreporter/hostreporter.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/jsonstream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
-namespace util {
+namespace storage::util {
+
 namespace {
 using Object = vespalib::JsonStream::Object;
 using End = vespalib::JsonStream::End;
@@ -27,8 +26,8 @@ reporterToSlime(HostReporter &hostReporter, vespalib::Slime &slime) {
     size_t parsed = JsonFormat::decode(Memory(jsonData), slime);
 
     if (parsed == 0) {
-        CPPUNIT_FAIL("jsonData is not json:\n" + jsonData);
+        throw std::runtime_error("jsonData is not json:\n" + jsonData);
     }
 }
-}
+
 }

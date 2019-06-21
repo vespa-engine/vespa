@@ -169,14 +169,7 @@ public:
         return *_readOnlyBucketSpaceRepo;
     }
 
-private:
-    friend class Distributor_Test;
-    friend class BucketDBUpdaterTest;
-    friend class DistributorTestUtil;
-    friend class ExternalOperationHandler_Test;
-    friend class Operation_Test;
-    friend class MetricUpdateHook;
-
+    class Status;
     class MetricUpdateHook : public framework::MetricUpdateHook
     {
     public:
@@ -192,6 +185,12 @@ private:
     private:
         Distributor& _self;
     };
+
+private:
+    friend struct DistributorTest;
+    friend class BucketDBUpdaterTest;
+    friend class DistributorTestUtil;
+    friend class MetricUpdateHook;
 
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
@@ -292,7 +291,6 @@ private:
     framework::TickingThreadPool& _threadPool;
     vespalib::Monitor _statusMonitor;
 
-    class Status;
     mutable std::vector<std::shared_ptr<Status>> _statusToDo;
     mutable std::vector<std::shared_ptr<Status>> _fetchedStatusRequests;
 
