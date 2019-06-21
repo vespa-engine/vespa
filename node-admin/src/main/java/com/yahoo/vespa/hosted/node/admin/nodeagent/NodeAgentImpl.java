@@ -562,7 +562,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
-                .withMetric("cpu.throttled_time", cpuThrottledTime)
+                .withMetric("cpu.throttled_time.ns", cpuThrottledTime)
                 .withMetric("cpu.vcpus", node.vcpus())
                 .withMetric("disk.limit", diskTotalBytes);
 

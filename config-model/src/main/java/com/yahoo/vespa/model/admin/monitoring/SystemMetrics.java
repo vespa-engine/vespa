@@ -12,7 +12,7 @@ import java.util.Set;
 public class SystemMetrics {
     public static final String CPU_UTIL = "cpu.util";
     public static final String CPU_SYS_UTIL = "cpu.sys.util";
-    public static final String CPU_THROTTLED_TIME = "cpu.throttled_time";
+    public static final String CPU_THROTTLED_TIME = "cpu.throttled_time.ns";
     public static final String CPU_VCPUS = "cpu.vcpus";
     public static final String DISK_LIMIT = "disk.limit";
     public static final String DISK_USED = "disk.used";
