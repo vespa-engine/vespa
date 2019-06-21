@@ -16,6 +16,9 @@ package ai.vespa.hosted.cd;
  */
 public interface ProductionTest {
 
+    /** Use with JUnit 5 @Tag to have this run in the production jobs in the pipeline. */
+    String name = "ai.vespa.hosted.cd.ProductionTest";
+
     // Want to verify metrics (Vespa).
     // Want to verify external metrics (YAMAS, other).
     // May want to verify search gives expected results.

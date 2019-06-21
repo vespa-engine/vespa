@@ -17,6 +17,10 @@ package ai.vespa.hosted.cd;
  * @author jonmv
  */
 public interface StagingTest {
+
+    /** Use with JUnit 5 @Tag to have this run in the staging test job in the pipeline. */
+    String name = "ai.vespa.hosted.cd.StagingTest";
+
     // Want to verify documents are not damaged by upgrade.
     // May want to verify metrics during upgrade.
 }

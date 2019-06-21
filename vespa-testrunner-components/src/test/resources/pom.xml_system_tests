@@ -6,7 +6,7 @@
     <version>1.0.0</version>
 
     <properties>
-        <maven_version>4.12</maven_version>
+        <junit_version>5.4.2</junit_version>
         <surefire_version>2.22.0</surefire_version>
         <my-comp.jar.path>components/my-comp.jar</my-comp.jar.path>
         <main.jar.path>main.jar</main.jar.path>
@@ -14,9 +14,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${maven_version}</version>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit_version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit_version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
