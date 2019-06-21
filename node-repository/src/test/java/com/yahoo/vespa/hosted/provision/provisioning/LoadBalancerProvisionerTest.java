@@ -51,7 +51,7 @@ public class LoadBalancerProvisionerTest {
                 clusterRequest(ClusterSpec.Type.container, containerCluster1),
                 clusterRequest(ClusterSpec.Type.content, contentCluster));
         assertEquals(1, lbApp1.get().size());
-        assertEquals("Prepare provisions load balancer with 0 reals", Set.of(), lbApp1.get().get(0).instance().reals());
+        assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbApp1.get().get(0).instance().reals().size());
         tester.activate(app1, nodes);
         tester.activate(app2, prepare(app2, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs"))));
         assertEquals(1, lbApp2.get().size());
@@ -109,11 +109,12 @@ public class LoadBalancerProvisionerTest {
                                             .collect(Collectors.toList());
         assertEquals(activeContainers, reals);
 
-        // Application is removed and load balancer is deactivated
+        // Application is removed, nodes and load balancer are deactivated
         NestedTransaction removeTransaction = new NestedTransaction();
         tester.provisioner().remove(removeTransaction, app1);
         removeTransaction.commit();
-
+        dirtyNodesOf(app1);
+        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().getNodes(app1, Node.State.reserved, Node.State.active).isEmpty());
         assertEquals(2, lbApp1.get().size());
         assertTrue("Deactivated load balancers", lbApp1.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.inactive));
         assertTrue("Load balancers for " + app2 + " remain active", lbApp2.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.active));
@@ -128,6 +129,10 @@ public class LoadBalancerProvisionerTest {
                                  .map(LoadBalancer::state)
                                  .findFirst()
                                  .orElseThrow());
+    }
+
+    private void dirtyNodesOf(ApplicationId application) {
+        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {

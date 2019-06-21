@@ -17,7 +17,18 @@
       "ports": [
         4443
       ],
-      "reals": [],
+      "reals": [
+        {
+          "hostname": "host1.yahoo.com",
+          "ipAddress": "127.0.1.1",
+          "port": 4080
+        },
+        {
+          "hostname": "host10.yahoo.com",
+          "ipAddress": "127.0.10.1",
+          "port": 4080
+        }
+      ],
       "rotations": [],
       "inactive": false
     },
