@@ -623,6 +623,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     class CpuUsageReporter {
         private static final double BILLION = 1_000_000_000d;
+        private static final double PERIOD_IN_SECONDS = ContainerResources.CPU_PERIOD_US / 1_000_000d;
         private long containerKernelUsage = 0;
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
@@ -667,11 +668,11 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         double getThrottledTime() {
-            return deltaSystemUsage == 0 ? Double.NaN : 60d * deltaThrottledPeriods / deltaThrottlingActivePeriods;
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN : deltaThrottledPeriods * PERIOD_IN_SECONDS;
         }
 
         double getThrottledCpuTime() {
-            return deltaSystemUsage == 0 ? Double.NaN : deltaThrottledTime / BILLION;
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN : deltaThrottledTime / BILLION;
         }
     }
 
