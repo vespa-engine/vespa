@@ -78,7 +78,9 @@
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabled(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder privateKeyFile(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder privateKey(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder certificateFile(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder certificate(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder caCertificateFile(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder clientAuth(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl build()"
@@ -131,7 +133,9 @@
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder)",
       "public boolean enabled()",
       "public java.lang.String privateKeyFile()",
+      "public java.lang.String privateKey()",
       "public java.lang.String certificateFile()",
+      "public java.lang.String certificate()",
       "public java.lang.String caCertificateFile()",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum clientAuth()"
     ],

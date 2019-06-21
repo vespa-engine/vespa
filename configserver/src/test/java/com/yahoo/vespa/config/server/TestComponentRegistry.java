@@ -5,12 +5,12 @@ import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -21,7 +21,6 @@ import com.yahoo.vespa.config.server.session.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantRequestHandlerTest;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
@@ -34,7 +33,6 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 /**
@@ -60,6 +58,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ConfigServerDB configServerDB;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
+    private final SecretStore secretStore;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
@@ -73,7 +72,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
                                   Zone zone,
-                                  Clock clock) {
+                                  Clock clock,
+                                  SecretStore secretStore) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -92,6 +92,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.configServerDB = new ConfigServerDB(configserverConfig);
         this.zkWatcherExecutor = new StripedExecutor<>(new InThreadExecutorService());
         this.zkCacheExecutor = new InThreadExecutorService();
+        this.secretStore = secretStore;
     }
 
     public static class Builder {
@@ -161,14 +162,15 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                     .orElse(new MockFileDistributionFactory(configserverConfig));
             HostProvisionerProvider hostProvisionerProvider = hostProvisioner.
                     map(HostProvisionerProvider::withProvisioner).orElseGet(HostProvisionerProvider::empty);
+            SecretStore secretStore = new MockSecretStore();
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
-                                                                  zone, new InMemoryFlagSource());
+                                                                  zone, new InMemoryFlagSource(), secretStore);
             return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
                                              permApp, fileDistributionFactory, hostRegistries, configserverConfig,
                                              sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
-                                             zone, clock);
+                                             zone, clock, secretStore);
         }
     }
 
@@ -218,6 +220,11 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     @Override
     public ExecutorService getZkCacheExecutor() {
         return zkCacheExecutor;
+    }
+
+    @Override
+    public SecretStore getSecretStore() {
+        return secretStore;
     }
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }

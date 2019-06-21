@@ -35,6 +35,7 @@ public final class PrepareParams {
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
     static final String ROTATIONS_PARAM_NAME = "rotations";
     static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
+    static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -45,10 +46,11 @@ public final class PrepareParams {
     private final Optional<Version> vespaVersion;
     private final Set<Rotation> rotations;
     private final List<ContainerEndpoint> containerEndpoints;
+    private final Optional<String> tlsSecretsKeyName;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
-                          boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
-                          Set<Rotation> rotations, List<ContainerEndpoint> containerEndpoints) {
+                          boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion, Set<Rotation> rotations,
+			  List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -61,6 +63,7 @@ public final class PrepareParams {
         if ((rotations != null && !rotations.isEmpty()) && !containerEndpoints.isEmpty()) {
             throw new IllegalArgumentException("Cannot set both rotations and containerEndpoints");
         }
+        this.tlsSecretsKeyName = tlsSecretsKeyName;
     }
 
     public static class Builder {
@@ -74,6 +77,7 @@ public final class PrepareParams {
         private Optional<Version> vespaVersion = Optional.empty();
         private Set<Rotation> rotations;
         private List<ContainerEndpoint> containerEndpoints = List.of();
+        private Optional<String> tlsSecretsKeyName = Optional.empty();
 
         public Builder() { }
 
@@ -136,12 +140,18 @@ public final class PrepareParams {
             if (serialized == null) return this;
             Slime slime = SlimeUtils.jsonToSlime(serialized);
             containerEndpoints = ContainerEndpointSerializer.endpointListFromSlime(slime);
+	    return this;
+	}
+
+        public Builder tlsSecretsKeyName(String tlsSecretsKeyName) {
+            this.tlsSecretsKeyName = Optional.ofNullable(tlsSecretsKeyName)
+                                           .filter(s -> ! s.isEmpty());
             return this;
         }
 
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     verbose, isBootstrap, vespaVersion, rotations, containerEndpoints);
+                                     verbose, isBootstrap, vespaVersion, rotations, containerEndpoints, tlsSecretsKeyName);
         }
 
     }
@@ -155,6 +165,7 @@ public final class PrepareParams {
                             .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
                             .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
+                            .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
                             .build();
     }
 
@@ -212,4 +223,7 @@ public final class PrepareParams {
         return timeoutBudget;
     }
 
+    public Optional<String> tlsSecretsKeyName() {
+        return tlsSecretsKeyName;
+    }
 }

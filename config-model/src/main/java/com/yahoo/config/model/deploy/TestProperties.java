@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
@@ -13,6 +14,7 @@ import com.yahoo.config.provision.Zone;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -39,6 +41,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useFdispatchByDefault = true;
     private boolean dispatchWithProtobuf = true;
     private boolean useAdaptiveDispatch = false;
+    private Optional<TlsSecrets> tlsSecrets = Optional.empty();
 
 
     @Override public boolean multitenant() { return multitenant; }
@@ -58,6 +61,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
     @Override public boolean dispatchWithProtobuf() { return dispatchWithProtobuf; }
+    @Override public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
@@ -89,6 +93,11 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
+
+    public TestProperties setTlsSecrets(Optional<TlsSecrets> tlsSecrets) {
+        this.tlsSecrets = tlsSecrets;
+        return this;
+    }
 
     public static class Spec implements ConfigServerSpec {
 
