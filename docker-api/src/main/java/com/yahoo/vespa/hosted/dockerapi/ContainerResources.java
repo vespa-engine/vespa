@@ -9,7 +9,7 @@ import java.util.Objects;
 public class ContainerResources {
 
     public static final ContainerResources UNLIMITED = ContainerResources.from(0, 0, 0);
-    private static final int CPU_PERIOD = 100_000; // 100 µs
+    public static final int CPU_PERIOD_US = 100_000; // 100 ms
 
     /**
      * Hard limit on container's CPU usage: Implemented using Completely Fair Scheduler (CFS) by allocating a given
@@ -65,11 +65,12 @@ public class ContainerResources {
     // Although docker allows to update cpu quota to 0, this is not a legal value, must be set -1 for unlimited
     // See: https://github.com/docker/for-linux/issues/558
     public int cpuQuota() {
-        return cpus > 0 ? (int) (cpus * CPU_PERIOD) : -1;
+        return cpus > 0 ? (int) (cpus * CPU_PERIOD_US) : -1;
     }
 
+    /** Duration (in µs) of a single period used as the basis for process scheduling */
     public int cpuPeriod() {
-        return CPU_PERIOD;
+        return CPU_PERIOD_US;
     }
 
     public int cpuShares() {

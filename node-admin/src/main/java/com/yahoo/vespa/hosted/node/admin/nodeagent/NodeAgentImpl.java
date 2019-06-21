@@ -534,21 +534,20 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerStats stats = containerStats.get();
         final String APP = Metrics.APPLICATION_NODE;
         final int totalNumCpuCores = stats.getCpuStats().getOnlineCpus();
-        final long cpuContainerKernelTime = stats.getCpuStats().getUsageInKernelMode();
-        final long cpuContainerTotalTime = stats.getCpuStats().getTotalUsage();
-        final long cpuSystemTotalTime = stats.getCpuStats().getSystemCpuUsage();
         final long memoryTotalBytes = stats.getMemoryStats().getLimit();
         final long memoryTotalBytesUsage = stats.getMemoryStats().getUsage();
         final long memoryTotalBytesCache = stats.getMemoryStats().getCache();
         final long diskTotalBytes = (long) (node.diskGb() * BYTES_IN_GB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(context);
 
-        lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
+        lastCpuMetric.updateCpuDeltas(stats.getCpuStats());
 
         // Ratio of CPU cores allocated to this container to total number of CPU cores on this host
         final double allocatedCpuRatio = node.vcpus() / totalNumCpuCores;
         double cpuUsageRatioOfAllocated = lastCpuMetric.getCpuUsageRatio() / allocatedCpuRatio;
         double cpuKernelUsageRatioOfAllocated = lastCpuMetric.getCpuKernelUsageRatio() / allocatedCpuRatio;
+        double cpuThrottledTimeRate = lastCpuMetric.getThrottledTimeRate();
+        double cpuThrottledCpuTimeRate = lastCpuMetric.getThrottledCpuTimeRate();
 
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryUsageRatio = (double) memoryTotalBytesUsed / memoryTotalBytes;
@@ -564,6 +563,8 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
+                .withMetric("cpu.throttled_time.rate", cpuThrottledTimeRate)
+                .withMetric("cpu.throttled_cpu_time.rate", cpuThrottledCpuTimeRate)
                 .withMetric("cpu.vcpus", node.vcpus())
                 .withMetric("disk.limit", diskTotalBytes);
 
@@ -621,22 +622,35 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     class CpuUsageReporter {
+        private static final double PERIOD_IN_NANOSECONDS = 1_000d * ContainerResources.CPU_PERIOD_US;
         private long containerKernelUsage = 0;
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
+        private long throttledTime = 0;
+        private long throttlingActivePeriods = 0;
+        private long throttledPeriods = 0;
 
         private long deltaContainerKernelUsage;
         private long deltaContainerUsage;
         private long deltaSystemUsage;
+        private long deltaThrottledTime;
+        private long deltaThrottlingActivePeriods;
+        private long deltaThrottledPeriods;
 
-        private void updateCpuDeltas(long totalSystemUsage, long totalContainerUsage, long containerKernelUsage) {
-            deltaSystemUsage = this.totalSystemUsage == 0 ? 0 : (totalSystemUsage - this.totalSystemUsage);
-            deltaContainerUsage = totalContainerUsage - this.totalContainerUsage;
-            deltaContainerKernelUsage = containerKernelUsage - this.containerKernelUsage;
+        private void updateCpuDeltas(ContainerStats.CpuStats cpuStats) {
+            deltaSystemUsage = totalSystemUsage == 0 ? 0 : (cpuStats.getSystemCpuUsage() - totalSystemUsage);
+            deltaContainerUsage = cpuStats.getTotalUsage() - totalContainerUsage;
+            deltaContainerKernelUsage = cpuStats.getUsageInKernelMode() - containerKernelUsage;
+            deltaThrottledTime = cpuStats.getThrottledTime() - throttledTime;
+            deltaThrottlingActivePeriods = cpuStats.getThrottlingActivePeriods() - throttlingActivePeriods;
+            deltaThrottledPeriods = cpuStats.getThrottledPeriods() - throttledPeriods;
 
-            this.totalSystemUsage = totalSystemUsage;
-            this.totalContainerUsage = totalContainerUsage;
-            this.containerKernelUsage = containerKernelUsage;
+            totalSystemUsage = cpuStats.getSystemCpuUsage();
+            totalContainerUsage = cpuStats.getTotalUsage();
+            containerKernelUsage = cpuStats.getUsageInKernelMode();
+            throttledTime = cpuStats.getThrottledTime();
+            throttlingActivePeriods = cpuStats.getThrottlingActivePeriods();
+            throttledPeriods = cpuStats.getThrottledPeriods();
         }
 
         /**
@@ -650,6 +664,16 @@ public class NodeAgentImpl implements NodeAgent {
 
         double getCpuKernelUsageRatio() {
             return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerKernelUsage / deltaSystemUsage;
+        }
+
+        double getThrottledTimeRate() {
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN :
+                    (double) deltaThrottledPeriods / deltaThrottlingActivePeriods;
+        }
+
+        double getThrottledCpuTimeRate() {
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN :
+                    deltaThrottledTime / (PERIOD_IN_NANOSECONDS * deltaThrottlingActivePeriods);
         }
     }
 

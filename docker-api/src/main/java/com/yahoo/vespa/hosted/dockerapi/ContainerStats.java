@@ -95,6 +95,9 @@ public class ContainerStats {
         private final long systemCpuUsage;
         private final long totalUsage;
         private final long usageInKernelMode;
+        private final long throttledTime;
+        private final long throttlingActivePeriods;
+        private final long throttledPeriods;
 
         public CpuStats(CpuStatsConfig cpuStats) {
             // Added in 1.27
@@ -102,12 +105,30 @@ public class ContainerStats {
             this.systemCpuUsage = cpuStats.getSystemCpuUsage();
             this.totalUsage = cpuStats.getCpuUsage().getTotalUsage();
             this.usageInKernelMode = cpuStats.getCpuUsage().getUsageInKernelmode();
+            this.throttledTime = cpuStats.getThrottlingData().getThrottledTime();
+            this.throttlingActivePeriods = cpuStats.getThrottlingData().getPeriods();
+            this.throttledPeriods = cpuStats.getThrottlingData().getThrottledPeriods();
         }
 
         public int getOnlineCpus() { return this.onlineCpus; }
+
+        /** Total CPU time (in ns) spent executing all the processes on this host */
         public long getSystemCpuUsage() { return this.systemCpuUsage; }
+
+        /** Total CPU time (in ns) spent running all the processes in this container */
         public long getTotalUsage() { return totalUsage; }
+
+        /** Total CPU time (in ns) spent in kernel mode while executing processes in this container */
         public long getUsageInKernelMode() { return usageInKernelMode; }
+
+        /** Total CPU time (in ns) processes in this container were throttled for */
+        public long getThrottledTime() { return throttledTime; }
+
+        /** Number of periods with throttling enabled for this container */
+        public long getThrottlingActivePeriods() { return throttlingActivePeriods; }
+
+        /** Number of periods this container hit the throttling limit */
+        public long getThrottledPeriods() { return throttledPeriods; }
     }
 
     // For testing only, create ContainerStats from JSON returned by docker daemon stats API
