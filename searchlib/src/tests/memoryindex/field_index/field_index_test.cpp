@@ -14,6 +14,7 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -31,6 +32,7 @@ using namespace fef;
 using namespace index;
 
 using document::Document;
+using queryeval::RankedSearchIteratorBase;
 using queryeval::SearchIterator;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -641,6 +643,9 @@ struct FieldIndexInterleavedFeaturesTest : public FieldIndexTest<FieldIndex<true
         EXPECT_EQ(exp_field_positions, toString(match_data));
         EXPECT_EQ(exp_num_occs, match_data.term.getNumOccs());
         EXPECT_EQ(exp_field_length, match_data.term.getFieldLength());
+        EXPECT_EQ(10, match_data.term.getDocId());
+        auto& ranked_itr = dynamic_cast<RankedSearchIteratorBase&>(*itr);
+        EXPECT_TRUE(ranked_itr.getUnpacked());
         EXPECT_TRUE(!itr->seek(11));
         EXPECT_TRUE(itr->isAtEnd());
     }
@@ -665,6 +670,13 @@ TEST_F(FieldIndexInterleavedFeaturesTest, both_normal_and_interleaved_features_a
     match_data.term.setNeedNormalFeatures(true);
     match_data.term.setNeedInterleavedFeatures(true);
     expect_features_unpacked("{5:0,1}", 2, 5);
+}
+
+TEST_F(FieldIndexInterleavedFeaturesTest, no_features_are_unpacked)
+{
+    match_data.term.setNeedNormalFeatures(false);
+    match_data.term.setNeedInterleavedFeatures(false);
+    expect_features_unpacked("{1000000:}", 0, 0);
 }
 
 Schema

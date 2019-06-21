@@ -124,13 +124,15 @@ PostingIterator<interleaved_features, unpack_normal_features, unpack_interleaved
         datastore::EntryRef featureRef(_itr.getData().get_features());
         _feature_store.setupForUnpackFeatures(featureRef, _feature_decoder);
         _feature_decoder.unpackFeatures(_matchData, docId);
-        setUnpacked();
+    } else {
+        _matchData[0]->reset(docId);
     }
     if (interleaved_features && unpack_interleaved_features) {
         auto* tfmd = _matchData[0];
         tfmd->setNumOccs(_itr.getData().get_num_occs());
         tfmd->setFieldLength(_itr.getData().get_field_length());
     }
+    setUnpacked();
 }
 
 template <bool interleaved_features>
