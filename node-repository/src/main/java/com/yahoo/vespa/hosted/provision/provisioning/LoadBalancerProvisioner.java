@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -22,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 // 2) active | reserved -> inactive
 // 3) inactive -> active | (removed)
 public class LoadBalancerProvisioner {
+
+    private static final Logger log = Logger.getLogger(LoadBalancerProvisioner.class.getName());
 
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
@@ -120,6 +124,8 @@ public class LoadBalancerProvisioner {
         hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
             ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
         });
+        log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
+                               ", targeting: " + nodes);
         return service.create(application, cluster, reals);
     }
 
