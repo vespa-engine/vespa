@@ -669,7 +669,7 @@
     "fields": []
   },
   "com.yahoo.config.provision.ParentHostUnavailableException": {
-    "superClass": "java.lang.RuntimeException",
+    "superClass": "com.yahoo.config.provision.TransientException",
     "interfaces": [],
     "attributes": [
       "public"
@@ -806,6 +806,19 @@
       "public static com.yahoo.config.provision.TenantName defaultName()",
       "public int compareTo(com.yahoo.config.provision.TenantName)",
       "public bridge synthetic int compareTo(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.TransientException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
     "fields": []
   },

@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceException;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -126,7 +127,13 @@ public class LoadBalancerProvisioner {
         });
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
                                ", targeting: " + nodes);
-        return service.create(application, cluster, reals);
+        try {
+            return service.create(application, cluster, reals);
+        } catch (Exception e) {
+            throw new LoadBalancerServiceException("Failed to (re)configure load balancer for " + cluster + " in " +
+                                                   application + ", targeting: " + nodes + ". The operation will be " +
+                                                   "retried on next deployment", e);
+        }
     }
 
     /** Returns a list of active and reserved nodes of type container in given cluster */
