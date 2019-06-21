@@ -95,6 +95,7 @@ public class ContainerStats {
         private final long systemCpuUsage;
         private final long totalUsage;
         private final long usageInKernelMode;
+        private final long throttledTime;
 
         public CpuStats(CpuStatsConfig cpuStats) {
             // Added in 1.27
@@ -102,12 +103,14 @@ public class ContainerStats {
             this.systemCpuUsage = cpuStats.getSystemCpuUsage();
             this.totalUsage = cpuStats.getCpuUsage().getTotalUsage();
             this.usageInKernelMode = cpuStats.getCpuUsage().getUsageInKernelmode();
+            this.throttledTime = cpuStats.getThrottlingData().getThrottledTime();
         }
 
         public int getOnlineCpus() { return this.onlineCpus; }
         public long getSystemCpuUsage() { return this.systemCpuUsage; }
         public long getTotalUsage() { return totalUsage; }
         public long getUsageInKernelMode() { return usageInKernelMode; }
+        public long getThrottledTime() { return throttledTime; }
     }
 
     // For testing only, create ContainerStats from JSON returned by docker daemon stats API
