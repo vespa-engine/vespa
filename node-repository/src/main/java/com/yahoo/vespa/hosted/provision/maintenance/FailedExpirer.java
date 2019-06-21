@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  */
 public class FailedExpirer extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
+    private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
     private static final int maxAllowedFailures = 5; // Stop recycling nodes after this number of failures
 
     private final NodeRepository nodeRepository;
