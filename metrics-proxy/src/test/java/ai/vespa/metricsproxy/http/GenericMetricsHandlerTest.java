@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
-import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
 import static ai.vespa.metricsproxy.http.GenericMetricsHandler.DEFAULT_PUBLIC_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;

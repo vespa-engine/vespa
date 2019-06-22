@@ -22,7 +22,7 @@ public class DefaultPublicMetrics {
     public static MetricSet defaultPublicMetricSet = createMetricSet();
 
     private static MetricSet createMetricSet() {
-        return new MetricSet("default-public",
+        return new MetricSet("public",
                              getAllMetrics(),
                              emptyList());
     }

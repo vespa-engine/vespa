@@ -35,7 +35,7 @@ import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJ
 public class GenericMetricsHandler extends ThreadedHttpRequestHandler {
     private static final Logger log = Logger.getLogger(GenericMetricsHandler.class.getName());
 
-    public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default-public");
+    public static final ConsumerId DEFAULT_PUBLIC_CONSUMER_ID = toConsumerId("default");
 
     private final MetricsConsumers metricsConsumers;
     private final MetricsManager metricsManager;
