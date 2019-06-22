@@ -118,6 +118,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (minMainMemoryAvailableMb > 0) {
             // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
             // only has this much physical memory (overrides total memory reported by `free -m`).
+            // TODO: Remove after all tenants are running > 7.67
             command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
         }
 
