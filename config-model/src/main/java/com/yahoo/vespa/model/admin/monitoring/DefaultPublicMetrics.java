@@ -52,14 +52,14 @@ public class DefaultPublicMetrics {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("queries.rate"));
-        metrics.add(new Metric("query_latency.average")); // TODO: Remove in Vespa 8?
+        metrics.add(new Metric("query_latency.average"));
         metrics.add(new Metric("query_latency.95percentile"));
         metrics.add(new Metric("query_latency.99percentile"));
-        metrics.add(new Metric("hits_per_query.average")); // TODO: Remove in Vespa 8?
-        metrics.add(new Metric("totalhits_per_query.average")); // TODO: Remove in Vespa 8?
+        metrics.add(new Metric("hits_per_query.average"));
+        metrics.add(new Metric("totalhits_per_query.average"));
         metrics.add(new Metric("degraded_queries.rate"));
         metrics.add(new Metric("failed_queries.rate"));
-        metrics.add(new Metric("serverActiveThreads.average")); // TODO: Remove in Vespa 8?
+        metrics.add(new Metric("serverActiveThreads.average"));
 
         return metrics;
     }
